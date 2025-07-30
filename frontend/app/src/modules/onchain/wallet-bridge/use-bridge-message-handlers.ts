@@ -1,4 +1,4 @@
-import type { WalletBridgeRequest, WalletBridgeResponse } from './types';
+import type { WalletBridgeRequest, WalletBridgeResponse } from '@shared/wallet-bridge-types';
 import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { BRIDGE_ERROR_CODES, BRIDGE_NOTIFICATION_TYPES, ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES, WALLET_EVENT_TYPES } from '@shared/proxy/constants';
 import { get, promiseTimeout } from '@vueuse/core';

@@ -1,16 +1,10 @@
 import { startPromise } from '@shared/utils';
-import { get } from '@vueuse/core';
+import { get, isDefined, set } from '@vueuse/core';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { useWalletBridge } from '@/composables/wallet-bridge';
-import { AsyncUtilityError, TimeoutError, waitForCondition } from '@/utils/async-utilities';
+import { waitForCondition } from '@/utils/async-utilities';
 import { logger } from '@/utils/logging';
 import { PROXY_CONFIG } from './bridge-config';
-import {
-  BridgeConnectionError,
-  BridgeError,
-  BridgeInitializationError,
-  BridgeTimeoutError,
-} from './bridge-errors';
 import { createResourceManager } from './resource-management';
 
 interface ProxyState {
@@ -56,7 +50,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
     timeoutMs: number = PROXY_CONFIG.CONNECTION_TIMEOUT,
     signal?: AbortSignal,
   ): Promise<void> => {
-    await waitForProxyCondition(
+    await waitForCondition(
       async () => proxyConnect(),
       connected => connected,
       {
@@ -73,7 +67,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
     timeoutMs: number = PROXY_CONFIG.CONNECTION_TIMEOUT,
     signal?: AbortSignal,
   ): Promise<void> => {
-    await waitForProxyCondition(
+    await waitForCondition(
       async () => proxyClientReady(),
       ready => ready,
       {
@@ -146,35 +140,12 @@ export function useWalletProxy(): UseWalletProxyReturn {
     }
   }
 
-  async function waitForProxyCondition<T>(checkFn: () => Promise<T>, condition: (result: T) => boolean, options: {
-    timeout?: number;
-    interval?: number;
-    initialDelay?: number;
-    name: string;
-    signal?: AbortSignal;
-  }): Promise<T> {
-    try {
-      return await waitForCondition(checkFn, condition, options);
-    }
-    catch (error) {
-      // Translate async utility errors to bridge errors
-      if (error instanceof TimeoutError) {
-        throw new BridgeTimeoutError(options.name, options.timeout ?? 30000, error);
-      }
-      if (error instanceof AsyncUtilityError && error.code === 'ABORTED') {
-        throw new BridgeError(`Operation ${options.name} was aborted`, 'ABORTED', error);
-      }
-
-      throw error;
-    }
-  }
-
   // Wait for servers to be listening before opening webpage
   const waitForServersListening = async (
     timeoutMs: number = PROXY_CONFIG.SERVER_TIMEOUT,
     signal?: AbortSignal,
   ): Promise<void> => {
-    await waitForProxyCondition(
+    await waitForCondition(
       async () => {
         const [httpListening, wsListening] = await Promise.all([
           proxyHttpListening(),
@@ -196,7 +167,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
   async function initializeProxy(): Promise<void> {
     const walletBridge = (window as any).walletBridge;
     if (!walletBridge) {
-      throw new BridgeInitializationError('Wallet bridge not available in window object');
+      throw new Error('Wallet bridge not available in window object');
     }
 
     if (!walletBridge.isEnabled()) {
@@ -206,7 +177,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
         logger.debug('Wallet bridge enabled successfully');
       }
       catch (error) {
-        throw new BridgeInitializationError('Failed to enable wallet bridge', error as Error);
+        throw new Error(`Failed to enable wallet bridge: ${(error as Error).message}`);
       }
     }
     else {
@@ -229,16 +200,9 @@ export function useWalletProxy(): UseWalletProxyReturn {
       logger.debug('Bridge client ready for API calls');
     }
     catch (error) {
-      if (error instanceof BridgeTimeoutError) {
-        logger.error(`Bridge setup timed out: ${error.message}`);
-        throw error;
-      }
-      if (error instanceof BridgeError && error.code === 'ABORTED') {
-        logger.debug('Bridge setup was cancelled');
-        throw new BridgeTimeoutError('bridge setup process', PROXY_CONFIG.SERVER_TIMEOUT + PROXY_CONFIG.CONNECTION_TIMEOUT, error);
-      }
-      logger.error('Bridge setup failed:', error);
-      throw new BridgeConnectionError('bridge setup', error as Error);
+      const err = error as Error;
+      logger.error('Bridge setup failed:', err);
+      throw new Error(`Failed to establish bridge connection during bridge setup: ${err.message}`);
     }
   };
 
@@ -318,7 +282,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
       }
       catch (error) {
         logger.error('Failed to disconnect bridge:', error);
-        throw new BridgeError('Failed to disconnect bridge', 'BRIDGE_DISCONNECT_ERROR', error as Error);
+        throw new Error(`Failed to disconnect bridge: ${(error as Error).message}`);
       }
     }
     else {

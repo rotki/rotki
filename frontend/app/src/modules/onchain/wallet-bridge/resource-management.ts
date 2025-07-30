@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
 import { logger } from '@/utils/logging';
 
-export interface ResourceState {
+interface ResourceState {
   isSetupInProgress: boolean;
   setupAbortController: AbortController | null;
   setupTimeout: NodeJS.Timeout | null;

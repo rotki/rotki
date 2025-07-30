@@ -1,5 +1,5 @@
 import type { LogService } from '@electron/main/log-service';
-import { WalletBridgeMessageSchema, WalletBridgeResponseSchema } from '@electron/main/wallet-bridge-types';
+import { WalletBridgeMessageSchema, WalletBridgeResponseSchema } from '@shared/wallet-bridge-types';
 import { IPC_BRIDGE_EVENT_CHANNEL, type PendingRequest, type WalletBridgeIpcCallbacks } from './wallet-bridge-ws-types';
 
 /**
@@ -30,7 +30,7 @@ export class WalletBridgeMessageHandler {
       resetIdleTimer();
 
       // Handle responses from wallet-bridge page
-      if ('id' in data && data.id && this.pendingRequests.has(data.id)) {
+      if ('id' in data && data.id && this.pendingRequests.has(String(data.id))) {
         this.handleResponse(data);
       }
       // Handle wallet event notifications
@@ -53,7 +53,8 @@ export class WalletBridgeMessageHandler {
     }
 
     const response = responseResult.data;
-    const requestInfo = this.pendingRequests.get(data.id);
+    const requestId = String(data.id);
+    const requestInfo = this.pendingRequests.get(requestId);
     if (!requestInfo) {
       this.logger.warn(`No pending request found for ID: ${data.id}`);
       return;
@@ -62,7 +63,7 @@ export class WalletBridgeMessageHandler {
     // Verify this response is from the current active connection
     if (requestInfo.connectionId === this.getActiveConnectionId()) {
       const { resolve, reject } = requestInfo;
-      this.pendingRequests.delete(data.id);
+      this.pendingRequests.delete(requestId);
 
       if (response.error) {
         const error = new Error(response.error.message) as Error & { code?: number };
@@ -75,7 +76,7 @@ export class WalletBridgeMessageHandler {
     }
     else {
       this.logger.warn(`Ignoring response from old connection. Request connection ID: ${requestInfo.connectionId}, current: ${this.getActiveConnectionId()}`);
-      this.pendingRequests.delete(data.id);
+      this.pendingRequests.delete(requestId);
     }
   }
 
