@@ -3,6 +3,8 @@ import { get, isDefined, set } from '@vueuse/core';
 import { ref, type Ref } from 'vue';
 import { useBridgeMessageHandlers } from '@/modules/onchain/wallet-bridge/use-bridge-message-handlers';
 import { logger } from '@/utils/logging';
+import { CLIENT_CONFIG } from './bridge-config';
+
 import {
   isWalletBridgeNotification,
   isWalletBridgeRequest,
@@ -21,13 +23,6 @@ export interface WalletProxyClientComposable {
   lastError: Ref<string | undefined>;
   onTakeOver: (callback: () => void) => void;
 }
-
-// Configuration constants
-const WEBSOCKET_CONFIG = {
-  DEFAULT_BASE_PORT: 40011, // port + 1 from the default bridge port
-  MAX_RETRIES: 5,
-  RETRY_DELAY: 500,
-} as const;
 
 export function useWalletProxyClient(): WalletProxyClientComposable {
   const ws = ref<WebSocket>();
@@ -127,16 +122,16 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     }
 
     // Fallback to default if no port in URL (shouldn't happen for wallet bridge)
-    return `ws://localhost:${WEBSOCKET_CONFIG.DEFAULT_BASE_PORT}/wallet-bridge`;
+    return `ws://localhost:${CLIENT_CONFIG.DEFAULT_BASE_PORT}/wallet-bridge`;
   };
 
   const scheduleRetry = (retryCount: number): void => {
-    if (retryCount < WEBSOCKET_CONFIG.MAX_RETRIES && !get(preventReconnect)) {
+    if (retryCount < CLIENT_CONFIG.MAX_RETRIES && !get(preventReconnect)) {
       setTimeout(() => {
         connect(retryCount + 1).catch((error) => {
           logger.error('Failed to reconnect:', error);
         });
-      }, WEBSOCKET_CONFIG.RETRY_DELAY);
+      }, CLIENT_CONFIG.RETRY_DELAY);
     }
   };
 
@@ -155,7 +150,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
       return;
     }
 
-    if (retryCount >= WEBSOCKET_CONFIG.MAX_RETRIES) {
+    if (retryCount >= CLIENT_CONFIG.MAX_RETRIES) {
       logger.error('Max WebSocket connection attempts reached');
       set(isConnecting, false);
       return;
@@ -209,7 +204,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
       };
 
       websocket.onerror = (error): void => {
-        const errorMessage = `WebSocket connection error (attempt ${retryCount + 1}/${WEBSOCKET_CONFIG.MAX_RETRIES})`;
+        const errorMessage = `WebSocket connection error (attempt ${retryCount + 1}/${CLIENT_CONFIG.MAX_RETRIES})`;
         logger.error(errorMessage, error);
         set(lastError, errorMessage);
         set(ws, undefined);

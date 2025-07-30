@@ -1,6 +1,6 @@
 interface UseWalletBridgeReturn {
   readonly isPackaged: boolean;
-  openWalletBridge: () => Promise<void>;
+  openProxyPageInDefaultBrowser: () => Promise<void>;
   proxyConnect: () => Promise<boolean>;
   proxyHttpListening: () => Promise<boolean>;
   proxyWebSocketListening: () => Promise<boolean>;
@@ -14,7 +14,7 @@ const walletBridge: UseWalletBridgeReturn = {
     return electronApp;
   },
 
-  openWalletBridge: async (): Promise<void> => {
+  openProxyPageInDefaultBrowser: async (): Promise<void> => {
     if (electronApp) {
       await window.walletBridge?.openWalletBridge();
     }
