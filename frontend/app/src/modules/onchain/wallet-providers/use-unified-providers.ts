@@ -38,6 +38,7 @@ export interface UnifiedProvidersComposable {
   detectProviders: (options?: UnifiedDetectionOptions) => Promise<EnhancedProviderDetail[]>;
   selectProvider: (uuid: string) => Promise<boolean>;
   clearProvider: () => void;
+  checkIfSelectedProvider: () => Promise<boolean>;
 
   // Event system
   onProviderChanged: (callback: (provider: EIP1193Provider | undefined) => void) => () => void;
@@ -76,6 +77,26 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   const activeProvider = computed<EIP1193Provider | undefined>(() => get(selectedProvider)?.provider);
   const selectedProviderMetadata = computed<EIP6963ProviderInfo | undefined>(() => get(selectedProvider)?.info);
   const hasSelectedProvider = computed<boolean>(() => !!get(selectedProvider));
+
+  // Check if provider is selected (includes bridge check for Electron mode)
+  const checkIfSelectedProvider = async (): Promise<boolean> => {
+    if (get(isElectronMode)) {
+      try {
+        if (!window.walletBridge) {
+          return false;
+        }
+        const bridgeProvider = await window.walletBridge.getSelectedProvider();
+        return bridgeProvider !== null;
+      }
+      catch (error) {
+        logger.debug('[UnifiedProviders] Failed to check bridge selected provider:', error);
+        return false;
+      }
+    }
+    else {
+      return get(hasSelectedProvider);
+    }
+  };
 
   // Helper to notify provider change listeners
   const notifyProviderChanged = (newProvider: EIP1193Provider | undefined): void => {
@@ -320,6 +341,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   return {
     activeProvider,
     availableProviders: readonly(availableProviders) as Readonly<Ref<EnhancedProviderDetail[]>>,
+    checkIfSelectedProvider,
     cleanup,
     clearProvider,
     detectProviders,

@@ -82,7 +82,7 @@ const chain = computed<string | undefined>(() => {
           v-if="isWalletConnect"
           variant="list"
           size="sm"
-          @click="walletStore.open()"
+          @click="walletStore.connect()"
         >
           {{ t('trade.actions.open_wallet') }}
         </RuiButton>
