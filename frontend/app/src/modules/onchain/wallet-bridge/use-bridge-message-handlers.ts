@@ -3,6 +3,7 @@ import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { BRIDGE_ERROR_CODES, BRIDGE_NOTIFICATION_TYPES, ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES, WALLET_EVENT_TYPES } from '@shared/proxy/constants';
 import { get, promiseTimeout } from '@vueuse/core';
 import { useBridgeLogging } from '@/modules/onchain/wallet-bridge/use-bridge-logging';
+import { useWalletConnectionState } from '@/modules/onchain/wallet-bridge/use-wallet-connection-state';
 import { logger } from '@/utils/logging';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 
@@ -54,6 +55,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
   const getSelectedProvider = (): EIP1193Provider | undefined => get(activeProvider);
 
   const { addLog } = useBridgeLogging();
+  const { trackAccountsRequest } = useWalletConnectionState();
 
   // Reset the flag when provider changes
   onProviderChanged(() => {
@@ -158,8 +160,10 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     };
 
     try {
-      // Try the request
-      const result = await executeRequest();
+      // Try the request - track eth_requestAccounts for connection state
+      const result = message.method === 'eth_requestAccounts'
+        ? await trackAccountsRequest(executeRequest())
+        : await executeRequest();
 
       // Mark successful eth_requestAccounts call
       if (message.method === 'eth_requestAccounts') {
@@ -180,8 +184,8 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
           // Add a small delay before retry to let proxy settle
           await promiseTimeout(REQUEST_CONFIG.RETRY_DELAY);
 
-          // Retry the request
-          const result = await executeRequest();
+          // Retry the request - also track this retry attempt
+          const result = await trackAccountsRequest(executeRequest());
 
           // Mark successful on retry
           hasSuccessfulAccountsRequest = true;

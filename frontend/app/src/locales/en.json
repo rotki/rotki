@@ -4455,6 +4455,7 @@
       "connected_to_electron": "Connected to Rotki",
       "connecting": "Connecting...",
       "connecting_to_electron": "Connecting to Rotki",
+      "connecting_to_wallet": "Connecting to {provider}...",
       "connection_failed": "Connection Failed",
       "connection_logs": "Connection Logs",
       "disconnect": "Disconnect",
