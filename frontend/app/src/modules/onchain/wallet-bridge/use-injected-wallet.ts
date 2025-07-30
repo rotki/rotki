@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import type { EIP1193Provider } from '@/types';
+import { assert } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
 import { BrowserProvider, getAddress } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
@@ -104,6 +105,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       if (accounts.length > 0) {
         set(connectedAddress, getAddress(accounts[0]));
         set(connected, true);
+        await updateChainId();
         logger.debug('Injected provider connected to account successfully');
       }
       else {
@@ -233,6 +235,12 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     return new BrowserProvider(injectedProvider);
   };
 
+  async function updateChainId(): Promise<void> {
+    assert(injectedProvider, 'Injected provider not initialized');
+    const newChainId = await injectedProvider.request<string>({ method: 'eth_chainId' });
+    set(connectedChainId, parseInt(newChainId, 16));
+  }
+
   const switchNetwork = async (chainId: bigint): Promise<void> => {
     if (injectedProvider) {
       try {
@@ -241,8 +249,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
           params: [{ chainId: `0x${chainId.toString(16)}` }],
         });
 
-        const newChainId = await injectedProvider.request<string>({ method: 'eth_chainId' });
-        set(connectedChainId, parseInt(newChainId, 16));
+        await updateChainId();
       }
       catch (error: any) {
         // If the chain doesn't exist, try to add it
