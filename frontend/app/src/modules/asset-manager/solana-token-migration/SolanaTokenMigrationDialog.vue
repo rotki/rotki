@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { isSolanaTokenIdentifier } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { useSolanaTokenMigrationApi } from '@/modules/asset-manager/solana-token-migration/solana-token-migration';
 import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import { useMessageStore } from '@/store/message';
@@ -144,6 +147,28 @@ function isUniqueConstraintError(errorMessage: string): boolean {
     @confirm="save()"
     @cancel="modelValue = undefined; oldAsset = undefined"
   >
+    <template #header="{ title }">
+      <div class="flex flex-row items-center -mt-1 -mb-1 text-black dark:text-white">
+        <div class="grow font-medium text-xl">
+          {{ title }}
+        </div>
+
+        <div class="flex flex-row-reverse">
+          <HintMenuIcon>
+            <i18n-t
+              scope="global"
+              keypath="solana_token_migration.hint"
+              tag="div"
+            >
+              <ExternalLink
+                :text="t('solana_token_migration.usage_guide')"
+                :url="externalLinks.usageGuideSection.solanaTokenMigration"
+              />
+            </i18n-t>
+          </HintMenuIcon>
+        </div>
+      </div>
+    </template>
     <SolanaTokenMigrationForm
       v-if="modelValue"
       ref="form"

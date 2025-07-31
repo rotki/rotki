@@ -34,14 +34,14 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  (event: 'confirm'): void;
-  (event: 'cancel'): void;
+  confirm: [];
+  cancel: [];
 }>();
 
 defineSlots<{
   'default': (props: { wrapper: HTMLDivElement | null }) => any;
   'footer': () => any;
-  'header': () => any;
+  'header': (props: { title: string }) => any;
   'subtitle': () => any;
   'left-buttons': () => any;
 }>();
@@ -104,10 +104,17 @@ function promptClose() {
       data-cy="bottom-dialog"
       class="!rounded-b-none"
     >
-      <template #header>
-        <slot name="header">
-          {{ title }}
-        </slot>
+      <template #custom-header>
+        <div class="mx-4 mt-4">
+          <slot
+            name="header"
+            :title="title"
+          >
+            <h5 class="font-medium text-xl text-black dark:text-white mb-1">
+              {{ title }}
+            </h5>
+          </slot>
+        </div>
       </template>
       <template
         v-if="subtitle || $slots.subtitle"
