@@ -9,7 +9,6 @@ import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
@@ -41,8 +40,6 @@ watch(width, (newWidth) => {
 
 const showDynamicMessage = computed(() => get(activeDashboardMessages).length > 0 && !get(dismissedMessage));
 
-const { showEvmQueryIndicator } = storeToRefs(useFrontendSettingsStore());
-
 const { height: floatingHeight } = useElementSize(floatingRef);
 
 const paddingTop = computed(() => get(floatingHeight) || 0);
@@ -64,7 +61,7 @@ const paddingTop = computed(() => get(floatingHeight) || 0);
         :messages="activeDashboardMessages"
         @dismiss="dismissedMessage = true"
       />
-      <EvmQueryIndicator v-if="showEvmQueryIndicator" />
+      <EvmQueryIndicator />
     </div>
     <div
       class="container"
