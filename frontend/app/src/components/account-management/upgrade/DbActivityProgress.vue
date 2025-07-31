@@ -73,7 +73,9 @@ const multipleUpgrades = computed<boolean>(() => {
             v-if="updateProgress.description"
             class="-ml-2 mt-2 list-disc"
           >
-            <li>{{ updateProgress.description }}</li>
+            <li class="break-words">
+              {{ updateProgress.description }}
+            </li>
           </ul>
         </DefineProgress>
         <ReuseProgress
