@@ -4,6 +4,7 @@ import { isValidSolanaAddress } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
 import { solanaTokenKindsData } from '@/types/blockchain/chains';
 import { useRefPropVModel } from '@/utils/model';
@@ -19,16 +20,37 @@ const modelValue = defineModel<SolanaTokenMigrationData>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-defineProps<{
+const props = defineProps<{
   loading?: boolean;
   oldAsset?: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { oldAsset } = toRefs(props);
+
 const address = useRefPropVModel(modelValue, 'address');
 const decimals = useRefPropVModel(modelValue, 'decimals');
 const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
+const { assetInfo } = useAssetInfoRetrieval();
+
+const assetDetails = computed<string | undefined>(() => {
+  if (!isDefined(oldAsset)) {
+    return undefined;
+  }
+  const identifier = get(oldAsset);
+  const details = get(assetInfo(identifier));
+
+  if (!details) {
+    return identifier;
+  }
+
+  let description = '';
+  if (details.symbol) {
+    description += `[${details.symbol}] `;
+  }
+  return `${description}${details.name} (${identifier})`;
+});
 
 const decimalsModel = computed({
   get() {
@@ -88,7 +110,7 @@ defineExpose({
       class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
     >
       <span class="font-medium">{{ t('asset_management.solana_token_migration.migrating_asset') }}:</span>
-      <span>{{ oldAsset }}</span>
+      <span>{{ assetDetails }}</span>
     </div>
 
     <div class="grid grid-cols-2 gap-4">

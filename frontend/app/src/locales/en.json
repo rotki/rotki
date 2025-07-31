@@ -4268,6 +4268,10 @@
     "location_data_snapshot_suggested": "Suggested filename: location_data_snapshot_import.csv",
     "title": "Import snapshot manually"
   },
+  "solana_token_migration": {
+    "hint": "You can find more information about migrating Solana tokens in our {0}.",
+    "usage_guide": "usage guide"
+  },
   "sorting_selector": {
     "desc": {
       "sort_asc_tooltip": "Change sort to ascending",
