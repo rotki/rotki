@@ -1,11 +1,14 @@
+import importlib.metadata
 import logging
 import os
 import signal
+import sqlite3
 
 import gevent
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.args import app_args
+from rotkehlchen.db.misc import get_sqlcipher_version_string
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -47,6 +50,11 @@ class RotkehlchenServer:
         self.stop_event.set()
 
     def main(self) -> None:
+        # log version of some special dependencies
+        log.info(f'sqlite version: {sqlite3.sqlite_version}')
+        log.info(f'gevent version: {gevent.__version__}')
+        log.info(f'rotki-pysqlcipher version: {importlib.metadata.version("rotki-pysqlcipher3")}')
+        log.info(f'SQLCipher version: {get_sqlcipher_version_string()}')
         # disable printing hub exceptions in stderr. With using the hub to do various
         # tasks that should raise exceptions and have them handled outside the hub
         # printing them in stdout is now too much spam (and would worry users too)
