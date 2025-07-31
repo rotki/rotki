@@ -621,8 +621,8 @@ def test_sqlcipher_detect_version():
         def __init__(self, version):
             self.version = version
 
-        def fetchall(self):
-            return [[self.version]]
+        def fetchone(self):
+            return (self.version,)
 
     class ConnectionMock:
         def __init__(self, version):
