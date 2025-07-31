@@ -126,10 +126,11 @@ export function useMessageHandling(): UseMessageHandling {
 
   const handleDbUploadResult = (data: DbUploadResult): void => {
     const uploaded = data.uploaded;
+    set(uploadProgress, undefined);
+
     if (uploaded) {
       set(uploadStatus, undefined);
       set(uploadStatusAlreadyHandled, false);
-      set(uploadProgress, undefined);
     }
     else {
       if (get(uploadStatusAlreadyHandled))
