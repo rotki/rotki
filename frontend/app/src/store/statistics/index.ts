@@ -5,6 +5,7 @@ import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePremium } from '@/composables/premium';
+import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useNotificationsStore } from '@/store/notifications';
@@ -40,11 +41,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { nftsInNetValue } = storeToRefs(useFrontendSettingsStore());
+  const { nftsInNetValue, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
   const { notify } = useNotificationsStore();
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
-  const { timeframe } = storeToRefs(useSessionSettingsStore());
+  const { scrambleData, scrambleMultiplier, shouldShowAmount, timeframe } = storeToRefs(useSessionSettingsStore());
   const { useExchangeRate } = usePriceUtils();
   const { assetName } = useAssetInfoRetrieval();
   const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
@@ -94,6 +95,14 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
     const starting = startingValue();
     const totalNW = get(totalNetWorth);
+
+    // Apply scrambling to net worth for tray display
+    const scrambledNetWorth = get(useNumberScrambler({
+      enabled: logicOr(scrambleData, logicNot(shouldShowAmount)),
+      multiplier: scrambleMultiplier,
+      value: computed(() => totalNW),
+    }));
+
     const balanceDelta = totalNW.minus(starting);
     const percentage = balanceDelta.div(starting).multipliedBy(100);
 
@@ -105,11 +114,14 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
     const floatPrecision = get(floatingPrecision);
     const delta = balanceDelta.multipliedBy(rate).toFormat(floatPrecision);
+    const rounding = get(valueRoundingMode);
+
+    const netWorth = scrambledNetWorth.toFormat(floatPrecision, rounding);
 
     return {
       currency,
       delta,
-      netWorth: totalNW.toFormat(floatPrecision),
+      netWorth,
       percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
       period: selectedTimeframe,
       up,

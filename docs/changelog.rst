@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10344` Users will now see the net worth on the tray that respects the scramble setting.
 * :bug:`-` Fix CowSwap swaps not being decoded properly in some cases.
 * :bug:`-` Optimism L1 gas fees will now be properly counted on all transactions.
 * :feature:`-` All CSV imports will now show warnings when duplicate entries are found.
