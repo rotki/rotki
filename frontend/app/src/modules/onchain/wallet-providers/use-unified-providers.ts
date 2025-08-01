@@ -16,6 +16,8 @@ interface UnifiedDetectionOptions extends ProviderDetectionOptions {
   retryDelay?: number;
 }
 
+type OnProviderChangedCallback = (provider: EIP1193Provider | undefined, oldProvider: EIP1193Provider | undefined) => void;
+
 // Comprehensive return interface combining both systems
 export interface UnifiedProvidersComposable {
   // Core provider data
@@ -41,7 +43,7 @@ export interface UnifiedProvidersComposable {
   checkIfSelectedProvider: () => Promise<boolean>;
 
   // Event system
-  onProviderChanged: (callback: (provider: EIP1193Provider | undefined) => void) => () => void;
+  onProviderChanged: (callback: OnProviderChangedCallback) => () => void;
 
   // Lifecycle
   initialize: () => void;
@@ -64,7 +66,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   });
 
   // Provider change listeners (from EIP6963 system)
-  const providerChangeListeners = new Set<(provider: EIP1193Provider | undefined) => void>();
+  const providerChangeListeners = new Set<OnProviderChangedCallback>();
 
   // Internal provider map for quick access (from EIP6963 system)
   const providerMap = new Map<string, EIP1193Provider>();
@@ -99,10 +101,10 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   };
 
   // Helper to notify provider change listeners
-  const notifyProviderChanged = (newProvider: EIP1193Provider | undefined): void => {
+  const notifyProviderChanged = (newProvider: EIP1193Provider | undefined, oldProvider: EIP1193Provider | undefined): void => {
     providerChangeListeners.forEach((callback) => {
       try {
-        callback(newProvider);
+        callback(newProvider, oldProvider);
       }
       catch (error) {
         logger.error('[UnifiedProviders] Error in provider change listener:', error);
@@ -116,7 +118,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
       includeLegacy = true,
       maxRetries = 3,
       retryDelay = 500,
-      timeout = 1000,
+      timeout = 2000,
     } = options;
 
     set(isDetecting, true);
@@ -225,6 +227,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
       }
       if (bridgeProviders.length > 1) {
         logger.debug('[UnifiedProviders] Multiple bridge providers available, user selection required');
+        set(showProviderSelection, true);
         return;
       }
     }
@@ -261,6 +264,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
 
     logger.info(`[UnifiedProviders] Selecting ${provider.source} provider: ${provider.info.name} (${uuid})`);
 
+    const oldProvider = get(selectedProvider)?.provider;
     set(selectedProvider, provider);
 
     // Update preferences (automatically persisted by useLocalStorage)
@@ -270,7 +274,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     });
 
     // Notify change listeners
-    notifyProviderChanged(provider.provider);
+    notifyProviderChanged(provider.provider, oldProvider);
 
     // If this is a bridge provider, notify the bridge
     if (provider.source === 'bridge' && window.walletBridge?.selectProvider) {
@@ -300,7 +304,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     });
 
     // Notify change listeners
-    notifyProviderChanged(undefined);
+    notifyProviderChanged(undefined, previousProvider?.provider);
 
     if (previousProvider) {
       logger.info(`[UnifiedProviders] Cleared provider selection: ${previousProvider.info.name}`);
@@ -308,7 +312,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   }
 
   // Event listener registration
-  const onProviderChanged = (callback: (provider: EIP1193Provider | undefined) => void): (() => void) => {
+  const onProviderChanged = (callback: OnProviderChangedCallback): (() => void) => {
     providerChangeListeners.add(callback);
     // Return cleanup function
     return () => {

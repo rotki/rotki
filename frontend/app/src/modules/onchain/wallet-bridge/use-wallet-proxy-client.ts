@@ -32,7 +32,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   const preventReconnect = ref<boolean>(false);
   const onTakeOverCallback = ref<() => void>();
 
-  const { cleanupWalletEventForwarding, handleRequest, setupWalletEventForwarding } = useBridgeMessageHandlers(sendMessage);
+  const { handleRequest } = useBridgeMessageHandlers(sendMessage);
 
   const sendResponse = (response: WalletBridgeResponse): void => {
     const wsInstance = get(ws);
@@ -169,8 +169,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
         set(isConnected, true);
         set(isConnecting, false);
         set(lastError, undefined);
-
-        setupWalletEventForwarding();
         logger.info('WebSocket connected to rotki app');
       };
 
@@ -188,8 +186,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
         logger.info('WebSocket disconnected');
         set(ws, undefined);
         set(isConnected, false);
-
-        cleanupWalletEventForwarding();
 
         // Only retry if this wasn't an intentional disconnect and reconnection is not prevented
         if (!get(intentionalDisconnect) && !get(preventReconnect)) {
@@ -244,7 +240,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   }
 
   const cleanup = (): void => {
-    cleanupWalletEventForwarding();
     disconnect();
     set(onTakeOverCallback, undefined);
   };

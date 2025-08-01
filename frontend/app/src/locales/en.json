@@ -4464,6 +4464,7 @@
       "electron_connection": "Rotki Bridge Connection",
       "electron_disconnected_message": "Connection to rotki is not available",
       "electron_ready_message": "Connection is established",
+      "keep_tab_active": "Keep this tab open and active for the wallet connection to work properly.",
       "multiple_providers_detected": "Multiple Wallet Providers Detected",
       "multiple_providers_message": "{count} wallet providers are available. Please select one in the main application.",
       "no_provider_selected": "No provider selected",
