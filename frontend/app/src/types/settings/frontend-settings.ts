@@ -147,6 +147,7 @@ export const FrontendSettings = z.object({
   minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
   nftsInNetValue: z.boolean().default(true),
   notifyNewNfts: z.boolean().optional().default(false),
+  persistPrivacySettings: z.boolean().default(false),
   persistTableSorting: z.boolean().default(false),
   privacyMode: PrivacyModeEnum.default(PrivacyMode.NORMAL),
   profitLossReportPeriod: ProfitLossTimeframe.default({

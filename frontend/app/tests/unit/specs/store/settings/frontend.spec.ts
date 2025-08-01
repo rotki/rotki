@@ -89,6 +89,7 @@ describe('settings:frontend', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       savedFilters: {},
       balanceUsdValueThreshold: {},
+      persistPrivacySettings: false,
     });
   });
 
@@ -175,6 +176,7 @@ describe('settings:frontend', () => {
       scrambleData: false,
       scrambleMultiplier: 1,
       privacyMode: PrivacyMode.NORMAL,
+      persistPrivacySettings: false,
     };
 
     store.update(state);
@@ -240,5 +242,6 @@ describe('settings:frontend', () => {
     expect(store.enableAliasNames).toBe(true);
     expect(store.blockchainRefreshButtonBehaviour).toBe(BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES);
     expect(store.savedFilters).toMatchObject({});
+    expect(store.persistPrivacySettings).toBe(false);
   });
 });

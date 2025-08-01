@@ -8,23 +8,24 @@ import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { PrivacyMode } from '@/types/session';
 
 interface UseSessionSettingsReturn {
-  initialize: (model: UserSettingsModel, exchanges: Exchange[]) => void;
+  initialize: (model: UserSettingsModel, exchanges: Exchange[]) => Promise<void>;
 }
 
 export function useSessionSettings(): UseSessionSettingsReturn {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
-  const { update: updateFrontendSettings } = useFrontendSettingsStore();
+  const { update: updateFrontendSettings, updateSetting } = useFrontendSettingsStore();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
   const { setConnectedExchanges, update: updateSessionSettings } = useSessionSettingsStore();
   const { checkDefaultThemeVersion } = useThemeMigration();
 
-  const initialize = (
+  const initialize = async (
     { accounting, general, other: { frontendSettings, havePremium, premiumShouldSync } }: UserSettingsModel,
     exchanges: Exchange[],
-  ): void => {
+  ): Promise<void> => {
     if (frontendSettings) {
       const { lastKnownTimeframe, timeframeSetting } = frontendSettings;
       const { decimalSeparator, thousandSeparator } = frontendSettings;
@@ -37,6 +38,13 @@ export function useSessionSettings(): UseSessionSettingsReturn {
         FORMAT: getBnFormat(thousandSeparator, decimalSeparator),
       });
       checkDefaultThemeVersion();
+
+      if (!frontendSettings.persistPrivacySettings) {
+        await updateSetting({
+          privacyMode: PrivacyMode.NORMAL,
+          scrambleData: false,
+        });
+      }
     }
 
     set(premium, havePremium);
