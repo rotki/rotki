@@ -1,7 +1,7 @@
 import { bigNumberify, Blockchain, isEvmIdentifier } from '@rotki/common';
 import { describe, expect, it, vi } from 'vitest';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
@@ -20,7 +20,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
 describe('composables::history/notes', () => {
   setActivePinia(createPinia());
   const { formatNotes } = useHistoryEventNote();
-  const store = useSessionSettingsStore();
+  const store = useFrontendSettingsStore();
 
   it('normal text', () => {
     const notes = 'Normal text';
@@ -409,8 +409,8 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  it('scramble IBAN', () => {
-    store.update({ scrambleData: false });
+  it('scramble IBAN', async () => {
+    await store.updateSetting({ scrambleData: false });
     const iban = 'DE88 5678 9012 1234 345 67';
     const notes = `Send 8,325.00 EURe via bank transfer to Rotki Solutions GmbH (${iban}) with memo "for salaries and insurance"`;
 
@@ -423,7 +423,7 @@ describe('composables::history/notes', () => {
 
     expect(notesToString).toContain(iban);
 
-    store.update({ scrambleData: true });
+    await store.updateSetting({ scrambleData: true });
     formatted = get(notesData);
     notesToString = formatted
       .filter(item => item.type === NoteType.WORD)

@@ -18,6 +18,7 @@ import { CurrencyLocationEnum } from '@/types/currency-location';
 import { DateFormatEnum } from '@/types/date-format';
 import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
 import { TableColumnEnum } from '@/types/table-column';
+import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 export const FRONTEND_SETTINGS_SCHEMA_VERSION = 1;
 
@@ -164,6 +165,8 @@ export const FrontendSettings = z.object({
     // eslint-disable-next-line unicorn/prefer-top-level-await
     .catch({}),
   schemaVersion: z.literal(1),
+  scrambleData: z.boolean().default(false),
+  scrambleMultiplier: z.number().optional().default(generateRandomScrambleMultiplier()),
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   showGraphRangeSelector: z.boolean().default(true),
   subscriptDecimals: z.boolean().default(false),

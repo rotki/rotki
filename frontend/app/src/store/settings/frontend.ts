@@ -53,6 +53,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
   const notifyNewNfts = useComputedRef(settings, 'notifyNewNfts');
+  const scrambleData = useComputedRef(settings, 'scrambleData');
+  const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
 
   const globalItemsPerPage = useItemsPerPage();
 
@@ -139,6 +141,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     refreshPeriod,
     renderAllNftImages,
     savedFilters,
+    scrambleData,
+    scrambleMultiplier,
     selectedTheme,
     settings,
     showGraphRangeSelector,

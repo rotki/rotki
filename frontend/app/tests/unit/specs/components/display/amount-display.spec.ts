@@ -7,7 +7,6 @@ import AmountDisplay, { type AmountInputProps } from '@/components/display/amoun
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
@@ -126,8 +125,8 @@ describe('amountDisplay.vue', () => {
   });
 
   describe('scramble data', () => {
-    beforeEach(() => {
-      useSessionSettingsStore().update({ scrambleData: true });
+    beforeEach(async () => {
+      await useFrontendSettingsStore().updateSetting({ scrambleData: true });
     });
 
     it('displays amount converted to selected fiat currency as scrambled', async () => {

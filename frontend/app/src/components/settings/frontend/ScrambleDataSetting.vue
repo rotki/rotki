@@ -2,23 +2,25 @@
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
-const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
+const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useFrontendSettingsStore());
 
 const scrambleData = ref<boolean>(false);
 const scrambleMultiplier = ref<string>('0');
 
 const { t } = useI18n({ useScope: 'global' });
 
-function randomMultiplier() {
-  set(scrambleMultiplier, generateRandomScrambleMultiplier().toString());
+function randomMultiplier(): string {
+  const value = generateRandomScrambleMultiplier().toString();
+  set(scrambleMultiplier, value);
+  return value;
 }
 
 function setData() {
   set(scrambleData, get(enabled));
-  set(scrambleMultiplier, get(multiplier).toString());
+  set(scrambleMultiplier, (get(multiplier) ?? generateRandomScrambleMultiplier()).toString());
 }
 
 onMounted(setData);
@@ -35,7 +37,7 @@ watch([enabled, multiplier], setData);
     <SettingsOption
       #default="{ error, success, updateImmediate }"
       setting="scrambleData"
-      session-setting
+      frontend-setting
       :error-message="t('frontend_settings.scramble.validation.error')"
     >
       <RuiSwitch
@@ -51,7 +53,7 @@ watch([enabled, multiplier], setData);
     <SettingsOption
       #default="{ error, success, update }"
       setting="scrambleMultiplier"
-      session-setting
+      frontend-setting
       :error-message="t('frontend_settings.scramble.validation.error')"
     >
       <AmountInput
@@ -62,14 +64,14 @@ watch([enabled, multiplier], setData);
         :disabled="!scrambleData"
         :success-messages="success"
         :error-messages="error"
-        @update:model-value="update($event)"
+        @update:model-value="update(Number($event))"
       >
         <template #append>
           <RuiButton
             variant="text"
             icon
             :disabled="!scrambleData"
-            @click="randomMultiplier()"
+            @click="update(Number(randomMultiplier()))"
           >
             <RuiIcon name="lu-shuffle" />
           </RuiButton>

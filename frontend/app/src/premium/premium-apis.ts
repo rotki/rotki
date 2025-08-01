@@ -95,8 +95,6 @@ export function statisticsApi(): StatisticsApi {
 export function userSettings(): UserSettingsApi {
   const {
     privacyMode,
-    scrambleData,
-    scrambleMultiplier,
     shouldShowAmount,
     shouldShowPercentage,
   } = storeToRefs(useSessionSettingsStore());
@@ -104,6 +102,8 @@ export function userSettings(): UserSettingsApi {
     dateInputFormat,
     decimalSeparator,
     graphZeroBased,
+    scrambleData,
+    scrambleMultiplier: scrambleMultiplierRef,
     selectedTheme,
     showGraphRangeSelector,
     subscriptDecimals,
@@ -111,6 +111,14 @@ export function userSettings(): UserSettingsApi {
     useHistoricalAssetBalances,
   } = storeToRefs(useFrontendSettingsStore());
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
+
+  const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? 1);
+
+  watchEffect(() => {
+    const newValue = get(scrambleMultiplierRef);
+    if (newValue !== undefined)
+      set(scrambleMultiplier, newValue);
+  });
 
   return {
     currencySymbol,

@@ -13,6 +13,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
+import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 export interface AmountInputProps {
   value: BigNumber | undefined;
@@ -86,7 +87,16 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { currency, currencySymbol: currentCurrency, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
-const { scrambleData, scrambleMultiplier, shouldShowAmount } = storeToRefs(useSessionSettingsStore());
+const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
+const { scrambleData, scrambleMultiplier: scrambleMultiplierRef } = storeToRefs(useFrontendSettingsStore());
+
+const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? generateRandomScrambleMultiplier());
+
+watchEffect(() => {
+  const newValue = get(scrambleMultiplierRef);
+  if (newValue !== undefined)
+    set(scrambleMultiplier, newValue);
+});
 
 const { assetPrice, isAssetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
 

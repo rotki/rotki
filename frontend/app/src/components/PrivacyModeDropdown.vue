@@ -3,7 +3,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { usePrivacyMode } from '@/composables/privacy';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -27,16 +27,20 @@ const labels = [
 
 const { changePrivacyMode, privacyMode, privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 
-const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
+const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useFrontendSettingsStore());
 
 const scrambleData = ref<boolean>(false);
 const scrambleMultiplier = ref<string>('0');
 
-const randomMultiplier = () => generateRandomScrambleMultiplier().toString();
+function randomMultiplier(): string {
+  const value = generateRandomScrambleMultiplier().toString();
+  set(scrambleMultiplier, value);
+  return value;
+}
 
 function setData() {
   set(scrambleData, get(enabled));
-  set(scrambleMultiplier, get(multiplier).toString());
+  set(scrambleMultiplier, (get(multiplier) ?? generateRandomScrambleMultiplier()).toString());
 }
 
 onMounted(setData);
@@ -125,7 +129,7 @@ watch([enabled, multiplier], setData);
             #default="{ updateImmediate: updateScramble }"
             :class="$style.scrambler__toggle"
             setting="scrambleData"
-            session-setting
+            frontend-setting
           >
             <RuiSwitch
               v-model="scrambleData"
@@ -144,9 +148,9 @@ watch([enabled, multiplier], setData);
           <SettingsOption
             #default="{ updateImmediate: updateMultiplier }"
             setting="scrambleMultiplier"
+            frontend-setting
             :class="$style.scrambler__input"
             :error-message="t('frontend_settings.scramble.validation.error')"
-            session-setting
           >
             <AmountInput
               v-model="scrambleMultiplier"
@@ -157,7 +161,7 @@ watch([enabled, multiplier], setData);
               data-cy="privacy-mode-scramble__multiplier"
               hide-details
               dense
-              @update:model-value="updateMultiplier($event || 1)"
+              @update:model-value="updateMultiplier(Number($event) || 1)"
             >
               <template #append>
                 <RuiButton
@@ -167,7 +171,7 @@ watch([enabled, multiplier], setData);
                   class="-mr-2 !p-2"
                   data-cy="privacy-mode-scramble__random-multiplier"
                   icon
-                  @click="updateMultiplier(randomMultiplier())"
+                  @click="updateMultiplier(Number(randomMultiplier()))"
                 >
                   <RuiIcon name="lu-shuffle" />
                 </RuiButton>
