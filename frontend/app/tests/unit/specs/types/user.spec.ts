@@ -83,6 +83,8 @@ describe('types/user', () => {
       savedFilters: {},
       balanceUsdValueThreshold: {},
       useHistoricalAssetBalances: false,
+      scrambleData: false,
+      scrambleMultiplier: 1,
     };
 
     const raw = {

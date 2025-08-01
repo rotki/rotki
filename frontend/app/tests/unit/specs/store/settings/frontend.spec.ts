@@ -171,6 +171,8 @@ describe('settings:frontend', () => {
         [BalanceSource.MANUAL]: '0',
       },
       useHistoricalAssetBalances: false,
+      scrambleData: false,
+      scrambleMultiplier: 1,
     };
 
     store.update(state);

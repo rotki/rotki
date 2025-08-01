@@ -3,7 +3,6 @@ import type { Exchange } from '@/types/exchanges';
 import { TimeFramePeriod } from '@rotki/common';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { PrivacyMode, type SessionSettings } from '@/types/session';
-import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage('rotki.animations_enabled', true);
@@ -12,8 +11,6 @@ function defaultSessionSettings(): SessionSettings {
   return {
     animationsEnabled: get(isAnimationEnabledSetting),
     privacyMode: PrivacyMode.NORMAL,
-    scrambleData: false,
-    scrambleMultiplier: generateRandomScrambleMultiplier(),
     timeframe: TimeFramePeriod.ALL,
   };
 }
@@ -23,8 +20,6 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   const connectedExchanges = ref<Exchange[]>([]);
 
   const privacyMode = useComputedRef(settings, 'privacyMode');
-  const scrambleData = useComputedRef(settings, 'scrambleData');
-  const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
   const timeframe = useComputedRef(settings, 'timeframe');
   const animationsEnabled = useComputedRef(settings, 'animationsEnabled');
   const shouldShowAmount = computed(() => get(settings).privacyMode < PrivacyMode.SEMI_PRIVATE);
@@ -56,8 +51,6 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     animationsEnabled,
     connectedExchanges,
     privacyMode,
-    scrambleData,
-    scrambleMultiplier,
     setAnimationsEnabled,
     setConnectedExchanges,
     settings,
