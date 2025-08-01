@@ -6,6 +6,7 @@ import { storeToRefs } from 'pinia';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendMessagesStore } from '@/store/backend-messages';
@@ -262,10 +263,10 @@ onUnmounted(() => {
         <span>{{ t('calendar.dialog.settings.tooltip') }}</span>
       </RuiTooltip>
     </template>
-    <RuiCard variant="flat">
-      <template #header>
+    <div class="p-4">
+      <CardTitle class="pb-6">
         {{ t('calendar.dialog.settings.title') }}
-      </template>
+      </CardTitle>
       <div class="flex flex-col gap-1">
         <SettingsOption
           #default="{ updateImmediate, loading, error, success }"
@@ -299,7 +300,7 @@ onUnmounted(() => {
         </SettingsOption>
 
         <!-- Google Calendar Integration -->
-        <div class="border-t pt-4 mt-4">
+        <div class="border-t border-default pt-4">
           <div class="text-subtitle-1 font-medium mb-1 ">
             {{ t('external_services.google_calendar.title') }}
           </div>
@@ -311,21 +312,33 @@ onUnmounted(() => {
             <div class="text-body-2 text-rui-text-secondary">
               {{ t('external_services.google_calendar.description') }}
             </div>
-            <RuiButton
-              color="primary"
-              size="sm"
-              :disabled="isAuthorizing"
-              :loading="isAuthorizing"
-              @click="connectToGoogle()"
-            >
-              <template #prepend>
-                <RuiIcon
-                  name="lu-link"
-                  size="16"
-                />
-              </template>
-              {{ t('external_services.google_calendar.connect_to_google') }}
-            </RuiButton>
+            <div class="flex gap-2">
+              <RuiButton
+                color="primary"
+                size="sm"
+                :disabled="isAuthorizing"
+                :loading="isAuthorizing"
+                @click="connectToGoogle()"
+              >
+                <template #prepend>
+                  <RuiIcon
+                    name="lu-link"
+                    size="16"
+                  />
+                </template>
+                {{ t('external_services.google_calendar.connect_to_google') }}
+              </RuiButton>
+
+              <RuiButton
+                v-if="isAuthorizing"
+                color="primary"
+                size="sm"
+                variant="outlined"
+                @click="isAuthorizing = false"
+              >
+                {{ t('common.actions.cancel') }}
+              </RuiButton>
+            </div>
 
             <!-- Manual Token Input for Docker Mode -->
             <div
@@ -425,7 +438,7 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-      <template #footer>
+      <div class="flex justify-end">
         <RuiButton
           class="ml-auto"
           variant="text"
@@ -434,7 +447,7 @@ onUnmounted(() => {
         >
           {{ t('common.actions.close') }}
         </RuiButton>
-      </template>
-    </RuiCard>
+      </div>
+    </div>
   </RuiMenu>
 </template>
