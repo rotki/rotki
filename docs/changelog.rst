@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10347` rotki will prioritize the native token in the asset selector on the on-chain send menu.
 * :bug:`10344` Users will now see the net worth on the tray that respects the scramble setting.
 * :bug:`-` Fix CowSwap swaps not being decoded properly in some cases.
 * :bug:`-` Optimism L1 gas fees will now be properly counted on all transactions.

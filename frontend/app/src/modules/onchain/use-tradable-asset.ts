@@ -18,7 +18,7 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
   const { balances } = storeToRefs(useBalancesStore());
   const { assetPriceInCurrentCurrency } = usePriceUtils();
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
-  const { isEvm } = useSupportedChains();
+  const { getNativeAsset, isEvm } = useSupportedChains();
 
   // Cache for memoized asset detail computed with size limit
   const assetDetailCache = new Map<string, ComputedRef<TradableAsset | undefined>>();
@@ -99,7 +99,20 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
         fiatValue: price.multipliedBy(item.amount),
         price,
       };
-    }).sort((a, b) => sortDesc(a.fiatValue, b.fiatValue));
+    }).sort((a, b) => {
+      // Check if either asset is a native token
+      const aNative = getNativeAsset(a.chain) === a.asset;
+      const bNative = getNativeAsset(b.chain) === b.asset;
+
+      // If one is native and the other isn't, prioritize the native token
+      if (aNative && !bNative)
+        return -1;
+      if (!aNative && bNative)
+        return 1;
+
+      // If both are native or both are not native, sort by fiat value
+      return sortDesc(a.fiatValue, b.fiatValue);
+    });
   };
 
   const allOwnedAssets = computed<TradableAsset[]>(() => {
