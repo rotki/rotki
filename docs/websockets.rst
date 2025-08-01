@@ -617,3 +617,23 @@ Solana tokens that require manual migration by the user.
 
 
 - ``identifiers``: Asset identifiers that need to manually migrated to solana tokens.
+
+
+Binance Missing Market Pairs
+=================================
+
+Trades were queried from a binance exchange, but no market pairs are selected to query.
+
+::
+
+    {
+        "type": "binance_pairs_missing",
+        "data": {
+            "location": "binance",
+            "name": "Binance 1"
+        }
+    }
+
+
+- ``location``: Location of the binance exchange. Either ``binance`` or ``binanceus``
+- ``name``: Name of the exchange.

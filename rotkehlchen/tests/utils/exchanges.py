@@ -720,6 +720,7 @@ def create_test_binance(
         json_data = json.loads(f.read())
 
     binance._symbols_to_pair = create_binance_symbols_to_pair(json_data, location)
+    binance.selected_pairs = list(binance._symbols_to_pair.keys())
     binance.first_connection_made = True
     return binance
 

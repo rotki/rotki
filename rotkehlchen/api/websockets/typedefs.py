@@ -30,6 +30,7 @@ class WSMessageType(StrEnum):
     GNOSISPAY_SESSIONKEY_EXPIRED = auto()
     SOLANA_TOKENS_MIGRATION = auto()
     DATABASE_UPLOAD_PROGRESS = auto()
+    BINANCE_PAIRS_MISSING = auto()
 
 
 class ProgressUpdateSubType(StrEnum):

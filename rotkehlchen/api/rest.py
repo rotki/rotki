@@ -815,6 +815,11 @@ class RestAPI:
                 message=str(e),
                 status_code=HTTPStatus.BAD_GATEWAY,
             )
+        except InputError as e:
+            return wrap_in_fail_result(
+                message=str(e),
+                status_code=HTTPStatus.CONFLICT,
+            )
 
         return OK_RESULT
 

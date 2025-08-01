@@ -15,6 +15,7 @@ import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
@@ -1125,18 +1126,21 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         last trade queried on each market speeding up the queries. For fiat payments the time
         range is respected.
 
-        May raise due to api query and unexpected id:
+        May raise due to api query, unexpected id, or missing market pairs:
         - RemoteError
         - BinancePermissionError
+        - InputError
         """
         self.first_connection()
-        if self.selected_pairs is not None:
-            iter_markets = list(set(self.selected_pairs).intersection(set(self._symbols_to_pair.keys())))  # noqa: E501
-            log.debug(f'Will query the following binance markets: {iter_markets}')
-        else:
-            iter_markets = list(self._symbols_to_pair.keys())
-            log.debug('Will query all the binance markets')
+        if self.selected_pairs is None or len(self.selected_pairs) == 0:
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.BINANCE_PAIRS_MISSING,
+                data={'location': self.location, 'name': self.name},
+            )
+            raise InputError(f'Cannot query {self.name} trade history with no market pairs selected.')  # noqa: E501
 
+        iter_markets = list(set(self.selected_pairs).intersection(set(self._symbols_to_pair.keys())))  # noqa: E501
+        log.debug(f'Will query the following binance markets: {iter_markets}')
         raw_data = []
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000

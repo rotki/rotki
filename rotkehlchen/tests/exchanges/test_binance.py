@@ -449,6 +449,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     """Test that turning a binance trade that contains unexpected data is handled gracefully"""
     binance = function_scope_binance
     binance.cache_ttl_secs = 0
+    original_selected_pairs = binance.selected_pairs
 
     def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
         if params.get('symbol') == 'BNBBTC' or params.get('symbol') == 'doesnotexist':
@@ -464,7 +465,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
             'rotkehlchen.tests.exchanges.test_binance.BINANCE_MYTRADES_RESPONSE',
             new=input_trade_str,
         )
-        binance.selected_pairs = query_specific_markets
+        binance.selected_pairs = query_specific_markets if query_specific_markets is not None else original_selected_pairs  # noqa: E501
         with patch_get, patch_response:
             events, _ = binance.query_online_history_events(
                 start_ts=Timestamp(0),
