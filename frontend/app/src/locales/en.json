@@ -4450,7 +4450,6 @@
       "sending": "I'm sending"
     },
     "bridge": {
-      "connect_browser_wallet": "Open Browser Wallet Bridge",
       "connect_wallet": "Connect Wallet",
       "connected_to_electron": "Connected to Rotki",
       "connecting": "Connecting...",
@@ -4468,7 +4467,6 @@
       "multiple_providers_detected": "Multiple Wallet Providers Detected",
       "multiple_providers_message": "{count} wallet providers are available. Please select one in the main application.",
       "no_provider_selected": "No provider selected",
-      "no_wallet_connected": "No wallet connected",
       "provider_not_connected": "{provider} - Not connected",
       "retry_connection": "Connect",
       "takeover": {
