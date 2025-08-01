@@ -3089,11 +3089,16 @@ class RestAPI:
                 f'SELECT MIN(end_ts) FROM used_query_ranges WHERE {where_str}',
                 bindings,
             ).fetchone()[0] or Timestamp(0)
+            has_evm_accounts = cursor.execute(
+                f'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain IN ({",".join(["?"] * len(EVM_CHAINS_WITH_TRANSACTIONS))})',  # noqa: E501
+                [blockchain.value for blockchain in EVM_CHAINS_WITH_TRANSACTIONS],
+            ).fetchone()[0] > 0
 
         undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(chain_id=None)
         return _wrap_in_ok_result({
             'last_queried_ts': last_queried_ts,
             'undecoded_tx_count': undecoded_count,
+            'has_evm_accounts': has_evm_accounts,
         })
 
     @async_api_call()
