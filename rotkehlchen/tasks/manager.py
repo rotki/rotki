@@ -70,7 +70,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
-    Location,
     Optional,
     SupportedBlockchain,
     Timestamp,
@@ -411,9 +410,7 @@ class TaskManager:
         queriable_exchanges = []
         with self.database.conn.read_ctx() as cursor:
             for exchange in self.exchange_manager.iterate_exchanges():
-                if exchange.location in (Location.BINANCE, Location.BINANCEUS):
-                    continue  # skip binance due to the way their history is queried
-                queried_range = self.database.get_used_query_range(cursor, f'{exchange.location!s}_trades')  # noqa: E501
+                queried_range = self.database.get_used_query_range(cursor, f'{exchange.location!s}_history_events_{exchange.name}')  # noqa: E501
                 end_ts = queried_range[1] if queried_range else 0
                 if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
                     queriable_exchanges.append(exchange)

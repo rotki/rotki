@@ -5836,7 +5836,7 @@ Querying exchange history events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Events were queried successfully
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: Module for the given events is not active.
+   :statuscode 409: Module for the given events is not active or no market pairs are selected (when querying Binance).
    :statuscode 500: Internal rotki error.
    :statuscode 502: The exchange api could not be reached or returned an unexpected response.
 

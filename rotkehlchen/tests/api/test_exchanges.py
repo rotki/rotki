@@ -1,16 +1,18 @@
 import os
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import _patch, patch
 
 import pytest
 import requests
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -54,6 +56,8 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.exchanges.binance import Binance
+    from rotkehlchen.tests.fixtures import WebsocketReader
 
 
 def mock_validate_api_key() -> None:
@@ -953,6 +957,71 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges: 'APIServer')
     assert 'FTTBNB' not in result
     if ci_run is False:
         assert binance_pairs_num > binanceus_pairs_num
+
+
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
+def test_query_binance_events(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        websocket_connection: 'WebsocketReader',
+) -> None:
+    """Test that querying binance events will only query the market pairs set in the db and
+    will not try to query all markets if no market pairs are set."""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    binance = cast('Binance', rotki.exchange_manager.get_exchange(
+        name='binance',
+        location=Location.BINANCE,
+    ))
+    binance.selected_pairs = []  # create_test_binance automatically selects pairs, so reset this to properly test here.  # noqa: E501
+
+    # Try directly querying with no pairs set to ensure that it never queries all market pairs.
+    with (
+        pytest.raises(InputError),
+        patch.object(binance, 'api_query', side_effect=lambda **kwargs: []) as mock_api_query,
+    ):
+        binance.query_online_history_events(start_ts=Timestamp(0), end_ts=Timestamp(1600000000))
+
+    websocket_connection.wait_until_messages_num(num=1, timeout=5)
+    assert websocket_connection.pop_message() == (missing_ws_msg := {
+        'type': str(WSMessageType.BINANCE_PAIRS_MISSING),
+        'data': {'location': 'binance', 'name': 'binance'},
+    })
+    assert len([x for x in mock_api_query.call_args_list if x.kwargs.get('method') == 'myTrades']) == 0  # noqa: E501
+
+    # Query via the API checking the error with no pairs set and that it works when pairs are set.
+    for with_pairs in (False, True):
+        if with_pairs:
+            with rotki.data.db.conn.write_ctx() as write_cursor:
+                rotki.data.db.set_binance_pairs(
+                    write_cursor=write_cursor,
+                    name='binance',
+                    location=Location.BINANCE,
+                    pairs=['ETHUSDC', 'ETHBTC', 'BNBBTC'],
+                )
+            binance.reset_to_db_extras()
+
+        with patch.object(binance, 'api_query', side_effect=lambda **kwargs: []) as mock_api_query:
+            response = requests.post(
+                api_url_for(rotkehlchen_api_server_with_exchanges, 'exchangeeventsqueryresource'),
+                json={'location': Location.BINANCE.serialize(), 'name': 'binance'},
+            )
+        trades_queries = [x for x in mock_api_query.call_args_list if x.kwargs.get('method') == 'myTrades']  # noqa: E501
+        if with_pairs:
+            assert_proper_sync_response_with_result(response)
+            assert len(trades_queries) == 3
+            assert {x.kwargs['options']['symbol'] for x in trades_queries} == {'ETHUSDC', 'ETHBTC', 'BNBBTC'}  # noqa: E501
+        else:
+            assert_error_response(
+                response=response,
+                contained_in_msg='Cannot query binance trade history with no market pairs selected.',  # noqa: E501
+                status_code=HTTPStatus.CONFLICT,
+            )
+            websocket_connection.wait_until_messages_num(num=3, timeout=5)
+            assert [
+               x for x in websocket_connection.messages
+               if x['type'] != str(WSMessageType.HISTORY_EVENTS_STATUS)
+            ] == [missing_ws_msg]
+            assert len(trades_queries) == 0
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
