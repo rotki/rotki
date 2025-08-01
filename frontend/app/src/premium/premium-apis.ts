@@ -23,7 +23,6 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -94,17 +93,15 @@ export function statisticsApi(): StatisticsApi {
 
 export function userSettings(): UserSettingsApi {
   const {
-    privacyMode,
-    shouldShowAmount,
-    shouldShowPercentage,
-  } = storeToRefs(useSessionSettingsStore());
-  const {
     dateInputFormat,
     decimalSeparator,
     graphZeroBased,
+    privacyMode,
     scrambleData,
     scrambleMultiplier: scrambleMultiplierRef,
     selectedTheme,
+    shouldShowAmount,
+    shouldShowPercentage,
     showGraphRangeSelector,
     subscriptDecimals,
     thousandSeparator,

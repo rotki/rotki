@@ -41,11 +41,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { nftsInNetValue, scrambleData, scrambleMultiplier: scrambleMultiplierRef, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
+  const { nftsInNetValue, scrambleData, scrambleMultiplier: scrambleMultiplierRef, shouldShowAmount, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
   const { notify } = useNotificationsStore();
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
-  const { shouldShowAmount, timeframe } = storeToRefs(useSessionSettingsStore());
+  const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { useExchangeRate } = usePriceUtils();
   const { assetName } = useAssetInfoRetrieval();
 

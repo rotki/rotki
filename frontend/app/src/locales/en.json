@@ -2511,7 +2511,7 @@
       }
     },
     "scramble": {
-      "label": "Use this option when sharing screenshots with others, such as for bug reports. Note: This setting will not be saved between sessions.",
+      "label": "Use this option when sharing screenshots with others, such as for bug reports.",
       "multiplier": {
         "hint": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
         "label": "Scramble multiplier"

@@ -4,7 +4,7 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps<{
   protocolBalance: ProtocolBalance;
@@ -15,7 +15,7 @@ const props = defineProps<{
 const { protocolBalance } = toRefs(props);
 const protocol = useRefMap(protocolBalance, balance => balance.protocol);
 
-const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
+const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 const { t } = useI18n({ useScope: 'global' });
 const { protocolData } = useProtocolData(protocol);
 </script>

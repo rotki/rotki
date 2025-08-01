@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
+import { PrivacyMode } from '@/types/session';
 import {
   BlockchainRefreshButtonBehaviour,
   DashboardTableType,
@@ -85,6 +86,7 @@ describe('types/user', () => {
       useHistoricalAssetBalances: false,
       scrambleData: false,
       scrambleMultiplier: 1,
+      privacyMode: PrivacyMode.NORMAL,
     };
 
     const raw = {

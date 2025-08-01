@@ -8,6 +8,7 @@ import { camelCaseTransformer } from '@/services/axios-transformers';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
+import { PrivacyMode } from '@/types/session';
 import {
   BalanceSource,
   BlockchainRefreshButtonBehaviour,
@@ -173,6 +174,7 @@ describe('settings:frontend', () => {
       useHistoricalAssetBalances: false,
       scrambleData: false,
       scrambleMultiplier: 1,
+      privacyMode: PrivacyMode.NORMAL,
     };
 
     store.update(state);

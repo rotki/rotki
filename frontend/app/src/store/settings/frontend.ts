@@ -5,6 +5,7 @@ import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { PrivacyMode } from '@/types/session';
 import {
   type FrontendSettings,
   type FrontendSettingsPayload,
@@ -53,8 +54,12 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
   const notifyNewNfts = useComputedRef(settings, 'notifyNewNfts');
+  const privacyMode = useComputedRef(settings, 'privacyMode');
   const scrambleData = useComputedRef(settings, 'scrambleData');
   const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
+
+  const shouldShowAmount = computed(() => get(privacyMode) < PrivacyMode.SEMI_PRIVATE);
+  const shouldShowPercentage = computed(() => get(privacyMode) < PrivacyMode.PRIVATE);
 
   const globalItemsPerPage = useItemsPerPage();
 
@@ -136,6 +141,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     nftsInNetValue,
     notifyNewNfts,
     persistTableSorting,
+    privacyMode,
     profitLossReportPeriod,
     queryPeriod,
     refreshPeriod,
@@ -145,6 +151,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     scrambleMultiplier,
     selectedTheme,
     settings,
+    shouldShowAmount,
+    shouldShowPercentage,
     showGraphRangeSelector,
     subscriptDecimals,
     thousandSeparator,
