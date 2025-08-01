@@ -2493,6 +2493,14 @@
         "non_empty": "Please enter the number of seconds"
       }
     },
+    "persist_privacy": {
+      "hint": "When disabled, privacy mode and scramble settings will reset to defaults upon login",
+      "label": "Persist privacy settings and scramble mode across sessions",
+      "title": "Persist Privacy and Scramble Mode Settings",
+      "validation": {
+        "error": "Error setting persist privacy settings: {message}"
+      }
+    },
     "persist_table_sorting": {
       "subtitle": "Save your sorting preferences so they're still there when you come back to the page.",
       "title": "Keep table sorting",

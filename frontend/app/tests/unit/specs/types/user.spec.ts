@@ -87,6 +87,7 @@ describe('types/user', () => {
       scrambleData: false,
       scrambleMultiplier: 1,
       privacyMode: PrivacyMode.NORMAL,
+      persistPrivacySettings: false,
     };
 
     const raw = {

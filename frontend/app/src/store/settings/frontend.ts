@@ -54,6 +54,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
   const notifyNewNfts = useComputedRef(settings, 'notifyNewNfts');
+  const persistPrivacySettings = useComputedRef(settings, 'persistPrivacySettings');
   const privacyMode = useComputedRef(settings, 'privacyMode');
   const scrambleData = useComputedRef(settings, 'scrambleData');
   const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
@@ -140,6 +141,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     minimumDigitToBeAbbreviated,
     nftsInNetValue,
     notifyNewNfts,
+    persistPrivacySettings,
     persistTableSorting,
     privacyMode,
     profitLossReportPeriod,
