@@ -79,7 +79,6 @@ describe('types/user', () => {
       versionUpdateCheckFrequency: 24,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      showEvmQueryIndicator: true,
       subscriptDecimals: false,
       savedFilters: {},
       balanceUsdValueThreshold: {},

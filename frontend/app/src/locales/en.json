@@ -994,12 +994,6 @@
     "moto": "the opensource portfolio manager that protects your privacy",
     "name": "rotki"
   },
-  "app_indicators": {
-    "evm_query_indicator": {
-      "hide": "Hide EVM Events Query Status in Dashboard",
-      "show": "Show EVM Events Query Status in Dashboard"
-    }
-  },
   "asset_balances": {
     "loading": "Please wait while rotki queries the balances..."
   },
@@ -1834,10 +1828,11 @@
     },
     "evm_query_indicator": {
       "go_to_history_events": "Go to history events",
-      "incomplete_decoding": "EVM events last queried {time}, events decoding processes are incomplete, the protocol balances might be outdated.",
-      "last_queried": "EVM events last queried {time}, the protocol balances might be outdated if EVM events hasn't updated for too long",
-      "never_queried": "EVM events have not been queried yet. Go to history events to start query them.",
-      "processing": "Querying and decoding of the history events is in progress, wait until it finishes to see updated protocol balances."
+      "incomplete_decoding": "The last event query completed {time}. Due to incomplete event processing, protocol balances may not reflect the latest state.",
+      "just_updated": "The application has recently been updated. Some balances may not display until transaction processing is fully complete.",
+      "last_queried": "The last event query completed {time}. Protocol balances may be stale or missing if the transaction history has not been refreshed recently.",
+      "never_queried": "The transaction history has not been queried yet. Navigate to history events to begin querying them.",
+      "processing": "Historical event processing is underway. Updated protocol balances will be available once the operation concludes."
     },
     "exchange_balances": {
       "add": "Add an exchange",

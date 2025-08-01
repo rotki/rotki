@@ -13,7 +13,6 @@ import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import ThemeControl from '@/modules/theme/ThemeControl.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import EvmQueryIndicatorToggle from './EvmQueryIndicatorToggle.vue';
 
 const isDevelopment = checkIfDevelopment();
 const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
@@ -43,7 +42,6 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
         <RuiIcon name="lu-code-xml" />
       </RuiButton>
     </RouterLink>
-    <EvmQueryIndicatorToggle />
     <AppUpdateIndicator />
     <UserNotesIndicator v-model:visible="showNotesSidebar" />
     <PinnedIndicator v-model:visible="showPinned" />

@@ -86,7 +86,6 @@ describe('settings:frontend', () => {
       versionUpdateCheckFrequency: Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      showEvmQueryIndicator: true,
       savedFilters: {},
       balanceUsdValueThreshold: {},
     });
@@ -164,7 +163,6 @@ describe('settings:frontend', () => {
       versionUpdateCheckFrequency: 24,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      showEvmQueryIndicator: true,
       subscriptDecimals: false,
       savedFilters: {},
       balanceUsdValueThreshold: {

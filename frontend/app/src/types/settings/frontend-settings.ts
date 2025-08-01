@@ -165,7 +165,6 @@ export const FrontendSettings = z.object({
     .catch({}),
   schemaVersion: z.literal(1),
   selectedTheme: ThemeEnum.default(Theme.AUTO),
-  showEvmQueryIndicator: z.boolean().default(true),
   showGraphRangeSelector: z.boolean().default(true),
   subscriptDecimals: z.boolean().default(false),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),

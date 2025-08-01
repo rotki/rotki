@@ -60,7 +60,6 @@ describe('settings:utils', () => {
       whitelistedDomainsForNftImages: [],
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      showEvmQueryIndicator: true,
       savedFilters: {},
       balanceUsdValueThreshold: {},
     });
