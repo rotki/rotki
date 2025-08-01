@@ -10,7 +10,6 @@ import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
@@ -87,8 +86,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { currency, currencySymbol: currentCurrency, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
-const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
-const { scrambleData, scrambleMultiplier: scrambleMultiplierRef } = storeToRefs(useFrontendSettingsStore());
+const { scrambleData, scrambleMultiplier: scrambleMultiplierRef, shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 
 const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? generateRandomScrambleMultiplier());
 

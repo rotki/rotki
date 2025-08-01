@@ -17,6 +17,7 @@ import { camelCaseTransformer } from '@/services/axios-transformers';
 import { CurrencyLocationEnum } from '@/types/currency-location';
 import { DateFormatEnum } from '@/types/date-format';
 import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
+import { PrivacyMode } from '@/types/session';
 import { TableColumnEnum } from '@/types/table-column';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
@@ -97,6 +98,8 @@ const BlockchainRefreshButtonBehaviourEnum = z.enum(BlockchainRefreshButtonBehav
 
 const SavedFilterLocationEnum = z.enum(SavedFilterLocation);
 
+const PrivacyModeEnum = z.nativeEnum(PrivacyMode);
+
 export enum BalanceSource {
   BLOCKCHAIN = 'BLOCKCHAIN',
   EXCHANGES = 'EXCHANGES',
@@ -145,6 +148,7 @@ export const FrontendSettings = z.object({
   nftsInNetValue: z.boolean().default(true),
   notifyNewNfts: z.boolean().optional().default(false),
   persistTableSorting: z.boolean().default(false),
+  privacyMode: PrivacyModeEnum.default(PrivacyMode.NORMAL),
   profitLossReportPeriod: ProfitLossTimeframe.default({
     quarter: Quarter.ALL,
     year: new Date().getFullYear().toString(),

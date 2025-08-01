@@ -42,7 +42,6 @@ export interface ChangePasswordPayload {
 }
 
 export interface SessionSettings {
-  privacyMode: PrivacyMode;
   timeframe: TimeFramePeriod;
   animationsEnabled: boolean;
 }

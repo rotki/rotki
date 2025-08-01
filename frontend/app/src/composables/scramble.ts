@@ -1,6 +1,5 @@
 import type { ComputedRef } from 'vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 import { findAddressKnownPrefix } from '@/utils/truncate';
 
@@ -16,10 +15,10 @@ interface UseScrambleReturn {
 export function useScramble(): UseScrambleReturn {
   const alphaNumerics = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
   const {
     scrambleData: scrambleSetting,
     scrambleMultiplier: scrambleMultiplierRef,
+    shouldShowAmount,
   } = storeToRefs(useFrontendSettingsStore());
 
   const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? generateRandomScrambleMultiplier());

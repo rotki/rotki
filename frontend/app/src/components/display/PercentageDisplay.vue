@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = withDefaults(
   defineProps<{
@@ -15,7 +15,7 @@ const props = withDefaults(
 );
 
 const { assetPadding, value } = toRefs(props);
-const { shouldShowPercentage } = storeToRefs(useSessionSettingsStore());
+const { shouldShowPercentage } = storeToRefs(useFrontendSettingsStore());
 
 const displayValue = computed<string>(() => {
   if (!get(shouldShowPercentage))
