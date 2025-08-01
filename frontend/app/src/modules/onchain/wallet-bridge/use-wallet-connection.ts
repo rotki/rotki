@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import type { EIP1193Provider } from '@/types';
 import { set } from '@vueuse/shared';
+import { getAddress } from 'ethers';
 import { logger } from '@/utils/logging';
 
 interface UseWalletConnectionReturn {
@@ -29,8 +30,12 @@ export function useWalletConnection(): UseWalletConnectionReturn {
   let accountsChangedListener: ((accounts: string[]) => void) | undefined;
   let chainChangedListener: ((chainId: string) => void) | undefined;
 
+  const setConnectedAddress = (value: string | undefined = undefined): void => {
+    set(connectedAddress, value ? getAddress(value) : value);
+  };
+
   const clearConnectionState = (): void => {
-    set(connectedAddress, undefined);
+    setConnectedAddress();
     set(connectedChainId, undefined);
     set(connectionError, undefined);
   };
@@ -48,10 +53,10 @@ export function useWalletConnection(): UseWalletConnectionReturn {
 
   const handleAccountsChanged = (accounts: string[]): void => {
     if (accounts.length > 0) {
-      set(connectedAddress, accounts[0]);
+      setConnectedAddress(accounts[0]);
     }
     else {
-      set(connectedAddress, undefined);
+      setConnectedAddress();
     }
   };
 
@@ -77,7 +82,7 @@ export function useWalletConnection(): UseWalletConnectionReturn {
       // Get current accounts
       const accounts = await provider.request<string[]>({ method: 'eth_accounts' });
       if (accounts && accounts.length > 0) {
-        set(connectedAddress, accounts[0]);
+        setConnectedAddress(accounts[0]);
         logger.debug('Retrieved current account from provider:', accounts[0]);
       }
 
@@ -117,7 +122,7 @@ export function useWalletConnection(): UseWalletConnectionReturn {
       // Request account access
       const accounts = await provider.request<string[]>({ method: 'eth_requestAccounts' });
       if (accounts.length > 0) {
-        set(connectedAddress, accounts[0]);
+        setConnectedAddress(accounts[0]);
 
         // Get chain ID after connecting
         const chainId = await provider.request<string>({ method: 'eth_chainId' });

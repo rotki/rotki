@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EnhancedProviderDetail } from '@/modules/onchain/wallet-providers/provider-detection';
+import CardTitle from '@/components/typography/CardTitle.vue';
 
 interface Props {
   providers: EnhancedProviderDetail[];
@@ -38,26 +39,24 @@ function handleCancel(): void {
   >
     <RuiCard>
       <template #header>
-        <div class="flex items-center justify-between">
-          <div class="text-h6">
-            {{ t('wallet_provider_selection.title') }}
-          </div>
-          <RuiButton
-            v-if="!loading"
-            variant="text"
-            icon
-            @click="handleCancel()"
-          >
-            <RuiIcon name="lu-x" />
-          </RuiButton>
-        </div>
+        <CardTitle>
+          {{ t('wallet_provider_selection.title') }}
+        </CardTitle>
+        <RuiButton
+          v-if="!loading"
+          variant="text"
+          class="absolute top-4 right-4"
+          icon
+          @click="handleCancel()"
+        >
+          <RuiIcon name="lu-x" />
+        </RuiButton>
+      </template>
+      <template #subheader>
+        {{ t('wallet_provider_selection.description') }}
       </template>
 
       <div class="pb-2">
-        <div class="text-body-1 text-rui-text-secondary mb-6">
-          {{ t('wallet_provider_selection.description') }}
-        </div>
-
         <div
           v-if="loading"
           class="grid grid-cols-2 gap-4"
