@@ -40,6 +40,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -376,7 +377,7 @@ def test_evm_transactions_status(
         json={'async_query': (async_query := random.choice([False, True]))},
     )
     result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
-    assert result == {'last_queried_ts': 0, 'undecoded_tx_count': 0}
+    assert result == {'last_queried_ts': 0, 'undecoded_tx_count': 0, 'has_evm_accounts': True}
 
     # Add some undecoded txs to the db
     setup_ethereum_transactions_test(
@@ -396,4 +397,19 @@ def test_evm_transactions_status(
         json={'async_query': async_query},
     )
     result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
-    assert result == {'last_queried_ts': last_queried_ts, 'undecoded_tx_count': 2}
+    assert result == {'last_queried_ts': last_queried_ts, 'undecoded_tx_count': 2, 'has_evm_accounts': True}  # noqa: E501
+
+    # Remove all ethereum accounts to test has_evm_accounts: False
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.remove_single_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            accounts=ethereum_accounts,
+        )
+
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'evmtransactionsstatusresource'),
+        json={'async_query': async_query},
+    )
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
+    assert result == {'last_queried_ts': 0, 'undecoded_tx_count': 0, 'has_evm_accounts': False}

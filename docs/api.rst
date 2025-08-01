@@ -13900,11 +13900,12 @@ Get EVM transaction status
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {"result": {"last_queried_ts": 1600000000, "undecoded_tx_count": 3}, "message": "" }
+      {"result": {"last_queried_ts": 1600000000, "undecoded_tx_count": 3, "has_evm_accounts": true}, "message": "" }
 
    :resjson object result: An object containing the status data
    :resjson integer last_queried_ts: The last timestamp when transactions for all EVM chains have been queried.
    :resjson integer undecoded_tx_count: The number of transactions waiting to be decoded.
+   :resjson boolean has_evm_accounts: Whether there are any EVM accounts added to rotki.
    :statuscode 200: Status successfully queried.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
