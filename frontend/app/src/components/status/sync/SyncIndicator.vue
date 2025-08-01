@@ -14,9 +14,15 @@ import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 import { TaskType } from '@/types/task-type';
 
+const syncSettingMenuOpen = ref<boolean>(false);
+const pending = ref<boolean>(false);
+const visible = ref<boolean>(false);
+
 const { t } = useI18n({ useScope: 'global' });
-const { logout } = useLogout();
+
+const { premium, premiumSync } = storeToRefs(usePremiumStore());
 const { lastDataUpload } = storeToRefs(usePeriodicStore());
+
 const {
   cancelSync,
   clearUploadStatus,
@@ -28,15 +34,16 @@ const {
   uploadProgress,
   uploadStatus,
 } = useSync();
+const { cancelTaskByTaskType, useIsTaskRunning } = useTaskStore();
+const { logout } = useLogout();
 const { href, onLinkClick } = useLinks();
 
-const { premium, premiumSync } = storeToRefs(usePremiumStore());
-
-const pending = ref<boolean>(false);
-const visible = ref<boolean>(false);
+const isSyncing = useIsTaskRunning(TaskType.FORCE_SYNC);
 
 const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
+
 const textChoice = computed<number>(() => (get(syncAction) === SYNC_UPLOAD ? 1 : 2));
+
 const message = computed<string>(() =>
   get(syncAction) === SYNC_UPLOAD
     ? t('sync_indicator.upload_confirmation.message_upload')
@@ -120,15 +127,15 @@ async function performSync() {
   pause();
 }
 
-const { useIsTaskRunning } = useTaskStore();
-const isSyncing = useIsTaskRunning(TaskType.FORCE_SYNC);
+async function cancelForceSync() {
+  await cancelTaskByTaskType(TaskType.FORCE_SYNC);
+  await nextTick(() => clearUploadStatus());
+}
 
 watch(isSyncing, (current, prev) => {
   if (current !== prev && !current)
     cancelSync();
 });
-
-const syncSettingMenuOpen = ref<boolean>(false);
 </script>
 
 <template>
@@ -224,6 +231,18 @@ const syncSettingMenuOpen = ref<boolean>(false);
                 })
               }}
             </div>
+          </div>
+          <div
+            v-if="pending && uploadProgress"
+            class="flex flex-row-reverse -mb-1"
+          >
+            <RuiButton
+              variant="text"
+              color="primary"
+              @click="cancelForceSync()"
+            >
+              {{ t('common.actions.cancel') }}
+            </RuiButton>
           </div>
         </RuiAlert>
         <RuiAlert

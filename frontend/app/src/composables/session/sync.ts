@@ -88,6 +88,7 @@ export const useSync = createSharedComposable(() => {
 
   const clearUploadStatus = (): void => {
     set(uploadStatus, null);
+    set(uploadProgress, undefined);
   };
 
   return {
