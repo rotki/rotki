@@ -103,8 +103,23 @@ onBeforeMount(() => {
 
     <ProviderSelectionNotification />
 
+    <!-- Tab active alert -->
+    <div class="container !max-w-lg pt-6">
+      <RuiAlert
+        type="warning"
+        variant="default"
+        class="mb-4"
+      >
+        <div class="flex-1 min-w-0">
+          <p class="text-md text-rui-text">
+            {{ t('trade.bridge.keep_tab_active') }}
+          </p>
+        </div>
+      </RuiAlert>
+    </div>
+
     <!-- Main content -->
-    <div class="container !max-w-lg py-6 min-h-screen">
+    <div class="container !max-w-lg pb-6 min-h-screen">
       <h4 class="text-h4 mb-4">
         {{ t('trade.bridge.title') }}
       </h4>

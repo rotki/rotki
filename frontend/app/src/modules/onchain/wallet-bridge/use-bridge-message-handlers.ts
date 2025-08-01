@@ -9,8 +9,6 @@ import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 
 export interface BridgeMessageHandlersComposable {
   handleRequest: (message: WalletBridgeRequest) => Promise<WalletBridgeResponse>;
-  setupWalletEventForwarding: () => void;
-  cleanupWalletEventForwarding: () => void;
 }
 
 // Response creation helpers
@@ -58,9 +56,11 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
   const { trackAccountsRequest } = useWalletConnectionState();
 
   // Reset the flag when provider changes
-  onProviderChanged(() => {
+  onProviderChanged((newProvider, oldProvider) => {
     hasSuccessfulAccountsRequest = false;
     logger.debug('Provider changed, reset accounts request flag');
+    cleanupWalletEventForwarding(oldProvider);
+    setupWalletEventForwarding(newProvider);
   });
 
   async function rpcGetAvailableProviders(message: WalletBridgeRequest): Promise<WalletBridgeResponse> {
@@ -256,13 +256,11 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
 
   // Helper to create event listener with consistent logging and forwarding
   const createEventListener = (eventType: string, logPrefix: string) => (...args: any[]): void => {
-    logger.debug(`${logPrefix}:`, ...args);
+    logger.debug(`forwarding: ${logPrefix}:`, ...args);
     sendWalletEvent(eventType, args.length === 1 ? args[0] : args);
   };
 
-  const setupWalletEventForwarding = (): void => {
-    const provider = getSelectedProvider();
-
+  function setupWalletEventForwarding(provider: EIP1193Provider | undefined): void {
     if (!provider) {
       logger.warn('No wallet provider selected');
       return;
@@ -293,11 +291,9 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
 
     logger.info('Wallet provider event listeners set up');
-  };
+  }
 
-  const cleanupWalletEventForwarding = (): void => {
-    const provider = getSelectedProvider();
-
+  function cleanupWalletEventForwarding(provider: EIP1193Provider | undefined): void {
     if (!provider?.removeListener) {
       return;
     }
@@ -306,11 +302,9 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
     providerEventListeners.clear();
     logger.info('Wallet provider event listeners cleaned up');
-  };
+  }
 
   return {
-    cleanupWalletEventForwarding,
     handleRequest,
-    setupWalletEventForwarding,
   };
 }
