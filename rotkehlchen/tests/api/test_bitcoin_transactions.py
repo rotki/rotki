@@ -74,7 +74,7 @@ def test_query_btc_transactions(
         websocket_connection: WebsocketReader,
 ) -> None:
     """Test that bitcoin transactions are properly queried via the api.
-    Since there are quite a number of transactions, only check decoding of first and last txs.
+    Since there are quite a number of transactions, only check decoding of a couple txs.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     bitcoin_manager = rotki.chains_aggregator.bitcoin
@@ -87,7 +87,7 @@ def test_query_btc_transactions(
     async_query = random.choice([False, True])
     for json, expected_len in (
         ({'async_query': async_query, 'to_timestamp': 1740000000}, 67),  # query partial range first  # noqa: E501
-        ({'async_query': async_query}, 76),  # then query the rest
+        ({'async_query': async_query}, 91),  # then query the rest
     ):
         events = do_tx_query_and_get_events(
             rotkehlchen_api_server=rotkehlchen_api_server,
@@ -99,8 +99,8 @@ def test_query_btc_transactions(
             chain=SupportedBlockchain.BITCOIN,
         )
 
-    assert events[74:] == [HistoryEvent(
-        identifier=68,
+    assert events[74:76] == [HistoryEvent(
+        identifier=83,
         event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf'),  # noqa: E501
         sequence_index=0,
         # The two apis disagree on the timestamp here. Seems to be a bug in blockchain.info.
@@ -116,7 +116,7 @@ def test_query_btc_transactions(
         location_label=(user_address := btc_accounts[0]),
         notes=f'Spend {fee_amount} BTC for fees',
     ), HistoryEvent(
-        identifier=69,
+        identifier=84,
         event_identifier=event_identifier,
         sequence_index=1,
         timestamp=timestamp,

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
+    BLOCKCHAIN_INFO_TX_LIMIT,
     BLOCKCYPHER_BASE_URL,
     BLOCKCYPHER_BATCH_SIZE,
     BLOCKCYPHER_TX_IO_LIMIT,
@@ -93,16 +94,16 @@ class BitcoinManager(BitcoinCommonManager):
             if key == 'addresses':
                 results.extend(request_get_dict(url=base_url, **kwargs)[key])
             else:  # key == 'txs'
-                offset, limit = 0, 50
+                offset = 0
                 while True:
                     results.extend(chunk := request_get_dict(
-                        url=f'{base_url}&n={limit}&offset={offset}',
+                        url=f'{base_url}&n={BLOCKCHAIN_INFO_TX_LIMIT}&offset={offset}',
                         **kwargs,
                     )[key])
-                    if len(chunk) < limit:
+                    if len(chunk) < BLOCKCHAIN_INFO_TX_LIMIT:
                         break  # all txs have been queried
 
-                    offset += limit
+                    offset += BLOCKCHAIN_INFO_TX_LIMIT
 
         return results
 
