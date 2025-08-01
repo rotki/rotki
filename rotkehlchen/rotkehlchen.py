@@ -533,7 +533,7 @@ class Rotkehlchen:
         # old erc721 tokens has been saved during the db upgrade.
         # TODO: Remove this after a couple versions (added in version 1.38).
         self._check_migration_table_and_notify(
-            conn=self.data.db.conn,
+            conn=self.data.db.conn._get_connection(),
             table_name='temp_erc721_data',
             notification_callback=lambda: self.msg_aggregator.add_warning(
                 'Data associated with invalid ERC721 assets is present in your database. '
@@ -544,7 +544,8 @@ class Rotkehlchen:
         # Send a notification to the user if custom Solana tokens were previously
         # added and need to be migrated manually in the app.
         # TODO: Remove this after a couple versions (added in version 1.40).
-        with (global_conn := GlobalDBHandler().conn).cursor() as cursor:
+        global_conn = GlobalDBHandler().conn
+        with global_conn.read_ctx() as cursor:
             self._check_migration_table_and_notify(
                 conn=global_conn,
                 table_name='user_added_solana_tokens',

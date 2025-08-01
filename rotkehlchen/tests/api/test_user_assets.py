@@ -625,7 +625,6 @@ def test_replace_asset(
     Test for both an asset owned by the user and not (the only_in_globaldb case)
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    cursor = rotki.data.db.conn.cursor()
     user_asset1 = {
         'asset_type': 'own chain',
         'name': 'Dfinity token',
@@ -643,7 +642,8 @@ def test_replace_asset(
     user_asset1_id = result['identifier']
 
     if only_in_globaldb:
-        cursor.execute('DELETE FROM assets where identifier=?', (user_asset1_id,))
+        with rotki.data.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute('DELETE FROM assets where identifier=?', (user_asset1_id,))
 
     balances = [{
         'asset': user_asset1_id,
@@ -668,15 +668,16 @@ def test_replace_asset(
         assert_proper_sync_response_with_result(response)
 
     # before the replacement. Check that we got a globaldb entry in owned assets
-    global_cursor = globaldb.conn.cursor()
     if not only_in_globaldb:
-        assert global_cursor.execute(
-            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (user_asset1_id,),
-        ).fetchone()[0] == 1
+        with globaldb.conn.read_ctx() as global_cursor:
+            assert global_cursor.execute(
+                'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (user_asset1_id,),
+            ).fetchone()[0] == 1
         # check the user asset is in user db
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM assets WHERE identifier=?', (user_asset1_id,),
-        ).fetchone()[0] == 1
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM assets WHERE identifier=?', (user_asset1_id,),
+            ).fetchone()[0] == 1
         # Check that the manual balance is returned
         response = requests.get(
             api_url_for(
@@ -688,10 +689,11 @@ def test_replace_asset(
         assert len(expected_balances) == 1
         expected_api_balances = [{**expected_balances[0], 'asset_is_missing': False}]
         assert result['balances'] == expected_api_balances
-        assert cursor.execute(
-            'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
-            (user_asset1_id,),
-        ).fetchone()[0] == 1
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
+                (user_asset1_id,),
+            ).fetchone()[0] == 1
 
     response = requests.put(
         api_url_for(
@@ -760,20 +762,21 @@ def test_replace_asset_not_in_globaldb(
     # Emulate some custom state that can be reached if somehow you end up with a user
     # DB asset that is not in the global DB
     unknown_id = 'foo-boo-goo-doo'
-    cursor = rotki.data.db.conn.cursor()
-    cursor.execute('INSERT INTO assets VALUES(?)', (unknown_id,))
-    cursor.execute(
-        'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
-        'VALUES (?, ?, ?, ?)',
-        (unknown_id, 'forgotten balance', '1', 'A'),
-    )
-    assert cursor.execute(
-        'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
-    ).fetchone()[0] == 1
-    # Check that the manual balance is there -- can't query normally due to unknown asset
-    assert cursor.execute(
-        'SELECT COUNT(*) FROM manually_tracked_balances WHERE asset=?', (unknown_id,),
-    ).fetchone()[0] == 1
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute('INSERT INTO assets VALUES(?)', (unknown_id,))
+        write_cursor.execute(
+            'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
+            'VALUES (?, ?, ?, ?)',
+            (unknown_id, 'forgotten balance', '1', 'A'),
+        )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
+        ).fetchone()[0] == 1
+        # Check that the manual balance is there -- can't query normally due to unknown asset
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM manually_tracked_balances WHERE asset=?', (unknown_id,),
+        ).fetchone()[0] == 1
 
     # now do the replacement
     response = requests.put(
@@ -805,18 +808,19 @@ def test_replace_asset_not_in_globaldb(
         'asset_is_missing': False,
     }]
     # check the previous asset is not in globaldb owned assets
-    global_cursor = globaldb.conn.cursor()
-    assert global_cursor.execute(
-        'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (unknown_id,),
-    ).fetchone()[0] == 0
-    # check the previous asset is not in globaldb
-    assert global_cursor.execute(
-        'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
-    ).fetchone()[0] == 0
+    with globaldb.conn.read_ctx() as global_cursor:
+        assert global_cursor.execute(
+            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (unknown_id,),
+        ).fetchone()[0] == 0
+        # check the previous asset is not in globaldb
+        assert global_cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
+        ).fetchone()[0] == 0
     # check the previous asset is not in userdb anymore
-    assert cursor.execute(
-        'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
-    ).fetchone()[0] == 0
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
+        ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -827,7 +831,6 @@ def test_replace_asset_edge_cases(
 ) -> None:
     """Test that the edge cases/errors are treated properly in the replace assets endpoint"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    cursor = rotki.data.db.conn.cursor()
 
     # Test that completely unknown source asset returns error
     notexisting_id = 'boo-boo-ga-ga'
@@ -878,18 +881,19 @@ def test_replace_asset_edge_cases(
         ), json={'async_query': False, 'balances': balances},
     )
     assert_proper_sync_response_with_result(response)
-    global_cursor = globaldb.conn.cursor()
 
     def assert_db() -> None:
-        assert global_cursor.execute(
-            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (glm_id,),
-        ).fetchone()[0] == 1
-        assert global_cursor.execute(
-            'SELECT COUNT(*) FROM common_asset_details WHERE swapped_for=?', (glm_id,),
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM assets WHERE identifier=?', (glm_id,),
-        ).fetchone()[0] == 1
+        with globaldb.conn.read_ctx() as global_cursor:
+            assert global_cursor.execute(
+                'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (glm_id,),
+            ).fetchone()[0] == 1
+            assert global_cursor.execute(
+                'SELECT COUNT(*) FROM common_asset_details WHERE swapped_for=?', (glm_id,),
+            ).fetchone()[0] == 1
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM assets WHERE identifier=?', (glm_id,),
+            ).fetchone()[0] == 1
 
     assert_db()
 

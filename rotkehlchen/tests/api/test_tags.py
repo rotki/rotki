@@ -676,11 +676,11 @@ def test_delete_utilized_tag(rotkehlchen_api_server: 'APIServer') -> None:
     assert data['result']['public'] is not None
 
     # Now check the DB directly and see that tag mappings of the deleted tag are gone
-    cursor = rotki.data.db.conn.cursor()
-    query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
-    assert len(query) == 1
-    assert query[0][0] == UNIT_BTC_ADDRESS1
-    assert query[0][1] == 'public'
+    with rotki.data.db.conn.read_ctx() as cursor:
+        query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
+        assert len(query) == 1
+        assert query[0][0] == UNIT_BTC_ADDRESS1
+        assert query[0][1] == 'public'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

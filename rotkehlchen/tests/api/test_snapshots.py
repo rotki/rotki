@@ -718,9 +718,9 @@ def test_delete_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
         json={'timestamp': ts},
     )
     assert_simple_ok_response(response)
-    cursor = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.cursor()
-    assert len(cursor.execute('SELECT timestamp FROM timed_balances WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
-    assert len(cursor.execute('SELECT timestamp FROM timed_location_data WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+        assert len(cursor.execute('SELECT timestamp FROM timed_balances WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
+        assert len(cursor.execute('SELECT timestamp FROM timed_location_data WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
 
     # check that an error is thrown for invalid timestamp
     response = requests.delete(

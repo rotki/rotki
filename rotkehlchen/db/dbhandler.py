@@ -55,7 +55,12 @@ from rotkehlchen.db.constants import (
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
+from rotkehlchen.db.drivers.gevent import (
+    DBConnection,
+    DBConnectionPool,
+    DBConnectionType,
+    DBCursor,
+)
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
@@ -91,7 +96,6 @@ from rotkehlchen.db.utils import (
     protect_password_sqlcipher,
     replace_tag_mappings,
     str_to_bool,
-    unlock_database,
 )
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -180,6 +184,7 @@ class DBHandler:
             initial_settings: ModifiableDBSettings | None,
             sql_vm_instructions_cb: int,
             resume_from_backup: bool,
+            pool_size: int = 5,
     ):
         """Database constructor
 
@@ -194,6 +199,7 @@ class DBHandler:
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
+        self.pool_size = pool_size
         self.sqlcipher_version = detect_sqlcipher_version()
         self.setting_to_default_type = {
             'version': (int, ROTKEHLCHEN_DB_VERSION),
@@ -206,8 +212,8 @@ class DBHandler:
             'beacon_rpc_endpoint': (str, None),
             'ask_user_upon_size_discrepancy': (str_to_bool, DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY),  # noqa: E501
         }
-        self.conn: DBConnection = None  # type: ignore
-        self.conn_transient: DBConnection = None  # type: ignore
+        self.conn: DBConnectionPool = None  # type: ignore
+        self.conn_transient: DBConnectionPool = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_evm_token_lock = Semaphore()
         self.password = password
@@ -330,11 +336,11 @@ class DBHandler:
         fresh_db = DBUpgradeManager(self).run_upgrades()
         if fresh_db:  # create tables during the first run and add the DB version
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-            cursor = self.conn.cursor()
-            cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(ROTKEHLCHEN_DB_VERSION)),
-            )
+            with self.conn.write_ctx() as cursor:
+                cursor.execute(
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                    ('version', str(ROTKEHLCHEN_DB_VERSION)),
+                )
 
         # run checks on the database
         self.conn.schema_sanity_check()
@@ -343,24 +349,30 @@ class DBHandler:
         # This logic executes only for the transient db
         self._connect(conn_attribute='conn_transient')
         transient_version = 0
-        cursor = self.conn_transient.cursor()
-        with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
+        with (
+            suppress(sqlcipher.DatabaseError),    # pylint: disable=no-member  # not created yet
+            self.conn_transient.read_ctx() as cursor,
+        ):
             result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
             if result is not None:
                 transient_version = int(result[0])
 
         if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
             # "upgrade" transient DB
-            tables = list(cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))
-            cursor.executescript('PRAGMA foreign_keys = OFF;')
-            cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
-            cursor.executescript('PRAGMA foreign_keys = ON;')
+            with self.conn_transient.write_ctx() as write_cursor:
+                tables = list(write_cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))  # noqa: E501
+                write_cursor.execute('PRAGMA foreign_keys = OFF')
+                for table_name in tables:
+                    write_cursor.execute(f'DROP TABLE IF EXISTS {table_name[0]}')
+                write_cursor.execute('PRAGMA foreign_keys = ON')
+
         self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
-        cursor.execute(
-            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
-        )
-        self.conn_transient.commit()
+
+        with self.conn_transient.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+            )
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -464,30 +476,31 @@ class DBHandler:
         else:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
             connection_type = DBConnectionType.TRANSIENT
+
+        conn_pool = None
         try:
-            conn = DBConnection(
+            conn_pool = DBConnectionPool(
                 path=str(fullpath),
                 connection_type=connection_type,
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+                pool_size=self.pool_size,
+                password=self.password if connection_type != DBConnectionType.GLOBAL else None,
+                sqlcipher_version=self.sqlcipher_version if connection_type != DBConnectionType.GLOBAL else None,  # noqa: E501
             )
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+            if conn_pool is not None:
+                conn_pool.close()
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
             ) from e
-
-        try:
-            unlock_database(
-                db_connection=conn,
-                password=self.password,
-                sqlcipher_version=self.sqlcipher_version,
-            )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            conn.close()
+            if conn_pool is not None:
+                conn_pool.close()
             raise AuthenticationError(
                 'Wrong password or invalid/corrupt database for user',
             ) from e
 
-        setattr(self, conn_attribute, conn)
+        setattr(self, conn_attribute, conn_pool)
 
     def _change_password(
             self,
@@ -564,7 +577,10 @@ class DBHandler:
         than the one supported.
         - AuthenticationError if the wrong password is given
         """
-        self.conn.execute('PRAGMA wal_checkpoint;')
+        # Use a connection from the pool to execute WAL checkpoint
+        with self.conn.write_ctx() as cursor:
+            cursor.execute('PRAGMA wal_checkpoint;')
+
         self.disconnect()
         rdbpath = self.user_data_dir / USERDB_NAME
         # Make copy of existing encrypted DB before removing it
@@ -580,7 +596,7 @@ class DBHandler:
             tempdbpath.write_bytes(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
-            self.conn = DBConnection(
+            temp_conn = DBConnection(
                 path=tempdbpath,
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
@@ -590,8 +606,8 @@ class DBHandler:
             if self.sqlcipher_version == 3:
                 script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'
             script += "SELECT sqlcipher_export('encrypted');DETACH DATABASE encrypted;"
-            self.conn.executescript(script)
-            self.disconnect()
+            temp_conn.executescript(script)
+            temp_conn.close()
 
         try:
             self._connect()
@@ -2268,15 +2284,13 @@ class DBHandler:
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
-        cursor = self.conn.cursor()
         # We don't care about previous value so simple insert or replace should work
-        cursor.execute(
+        self.conn.execute(
             'INSERT OR REPLACE INTO user_credentials'
             '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
             ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret(), None),
         )
         self.conn.commit()
-        cursor.close()
         # Do not update the last write here. If we are starting in a new machine
         # then this write is mandatory and to sync with data from server we need
         # an empty last write ts in that case

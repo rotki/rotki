@@ -1608,11 +1608,11 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
     assert len(accounts.eth) == 2
     assert all(acc in accounts.eth for acc in ethereum_accounts)
     # Also make sure no tag mappings were removed
-    cursor = rotki.data.db.conn.cursor()
-    query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
-    assert len(query) == 1
-    assert query[0][0] == ethereum_accounts[0]
-    assert query[0][1] == 'public'
+    with rotki.data.db.conn.read_ctx() as cursor:
+        query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
+        assert len(query) == 1
+        assert query[0][0] == ethereum_accounts[0]
+        assert query[0][1] == 'public'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -1695,11 +1695,11 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     assert set(rotki.chains_aggregator.accounts.btc) == {UNIT_BTC_ADDRESS2}
 
     # Now check the DB directly and see that tag mappings of the deleted account are gone
-    cursor = rotki.data.db.conn.cursor()
-    query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
-    assert len(query) == 1
-    assert query[0][0] == UNIT_BTC_ADDRESS2
-    assert query[0][1] == 'desktop'
+    with rotki.data.db.conn.read_ctx() as cursor:
+        query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
+        assert len(query) == 1
+        assert query[0][0] == UNIT_BTC_ADDRESS2
+        assert query[0][1] == 'desktop'
 
 
 @pytest.mark.parametrize('have_decoders', [True])

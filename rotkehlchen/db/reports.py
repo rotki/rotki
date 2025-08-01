@@ -286,33 +286,34 @@ class DBAccountingReports:
         May raise:
         - InputError if the report ID does not exist in the DB
         """
-        cursor = self.db.conn_transient.cursor()
         report_id = filter_.report_id
-        query_result = cursor.execute(
-            'SELECT COUNT(*) FROM pnl_reports WHERE identifier=?',
-            (report_id,),
-        )
-        if query_result.fetchone()[0] != 1:
-            raise InputError(
-                f'Tried to get PnL events from non existing report with id {report_id}',
+        with self.db.conn_transient.read_ctx() as cursor:
+            query_result = cursor.execute(
+                'SELECT COUNT(*) FROM pnl_reports WHERE identifier=?',
+                (report_id,),
             )
+            if query_result.fetchone()[0] != 1:
+                raise InputError(
+                    f'Tried to get PnL events from non existing report with id {report_id}',
+                )
 
         query, bindings = filter_.prepare()
         query = f'SELECT timestamp, data FROM pnl_events {query}'
-        cursor.execute(query, bindings)
+        with self.db.conn_transient.read_ctx() as cursor:
+            cursor.execute(query, bindings)
 
-        records = []
-        for result in cursor:
-            try:
-                record = ProcessedAccountingEvent.deserialize_from_db(result[0], result[1])
-            except DeserializationError as e:
-                self.db.msg_aggregator.add_error(
-                    f'Error deserializing AccountingEvent from the DB. Skipping it.'
-                    f'Error was: {e!s}',
-                )
-                continue
+            records = []
+            for result in cursor:
+                try:
+                    record = ProcessedAccountingEvent.deserialize_from_db(result[0], result[1])
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_error(
+                        f'Error deserializing AccountingEvent from the DB. Skipping it.'
+                        f'Error was: {e!s}',
+                    )
+                    continue
 
-            records.append(record)
+                records.append(record)
 
         entries_found = len(records)
         if filter_.pagination is not None:

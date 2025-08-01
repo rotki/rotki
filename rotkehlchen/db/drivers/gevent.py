@@ -8,6 +8,7 @@ from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from pathlib import Path
+from queue import Empty, Queue
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
 from uuid import uuid4
@@ -17,6 +18,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_INDEXES, MINIMIZED_USER_DB_SCHEMA
+from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.globaldb.minimized_schema import (
     MINIMIZED_GLOBAL_DB_INDEXES,
     MINIMIZED_GLOBAL_DB_SCHEMA,
@@ -241,6 +243,146 @@ CALLBACK_MAP = {
 }
 
 
+class DBConnectionPool:
+    """Connection pool that manages multiple SQLite connections for a single database.
+
+    Each connection is dedicated to a single greenlet to avoid the complex synchronization
+    issues that occur when sharing connections between greenlets with progress handlers.
+    """
+
+    def __init__(
+            self,
+            path: str | Path,
+            connection_type: DBConnectionType,
+            sql_vm_instructions_cb: int,
+            pool_size: int = 5,
+            password: str | None = None,
+            sqlcipher_version: int | None = None,
+    ) -> None:
+        self.path = path
+        self.connection_type = connection_type
+        self.sql_vm_instructions_cb = sql_vm_instructions_cb
+        self.pool_size = pool_size
+        self.password = password
+        self.sqlcipher_version = sqlcipher_version
+        self._pool: Queue[DBConnection] = Queue(maxsize=pool_size)
+
+        # Initialize the pool with connections
+        self._initialize_pool()
+
+    def _initialize_pool(self) -> None:
+        """Initialize the connection pool with the specified number of connections."""
+        for _ in range(self.pool_size):
+            conn = DBConnection(
+                path=self.path,
+                connection_type=self.connection_type,
+                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            )
+
+            # Unlock the connection if password is provided (for SQLCipher)
+            if self.password is not None and self.sqlcipher_version is not None:
+                unlock_database(
+                    db_connection=conn,
+                    password=self.password,
+                    sqlcipher_version=self.sqlcipher_version,
+                )
+
+            self._pool.put(conn)
+
+    def _get_connection(self) -> 'DBConnection':
+        """Get a connection from the pool (blocking if none available)."""
+        return self._pool.get()
+
+    def _release_connection(self, conn: 'DBConnection') -> None:
+        """Return a connection back to the pool."""
+        self._pool.put(conn)
+
+    @contextmanager
+    def read_ctx(self) -> Generator[DBCursor, None, None]:
+        """Get a read context using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            with conn.read_ctx() as cursor:
+                yield cursor
+        finally:
+            self._release_connection(conn)
+
+    @contextmanager
+    def write_ctx(self, commit_ts: bool = False) -> Generator[DBCursor, None, None]:
+        """Get a write context using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            with conn.write_ctx(commit_ts=commit_ts) as cursor:
+                yield cursor
+        finally:
+            self._release_connection(conn)
+
+    @contextmanager
+    def savepoint_ctx(
+            self,
+            savepoint_name: str | None = None,
+    ) -> Generator[DBCursor, None, None]:
+        """Get a savepoint context using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            with conn.savepoint_ctx(savepoint_name=savepoint_name) as cursor:
+                yield cursor
+        finally:
+            self._release_connection(conn)
+
+    def close(self) -> None:
+        """Close all connections in the pool."""
+        # Close all connections in the pool
+        while not self._pool.empty():
+            try:
+                conn = self._pool.get_nowait()
+                conn.close()
+            except Empty:
+                break
+
+    def schema_sanity_check(self) -> None:
+        """Perform schema sanity check using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            conn.schema_sanity_check()
+        finally:
+            self._release_connection(conn)
+
+    def executescript(self, script: str) -> None:
+        """Execute a script using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            conn.executescript(script)
+        finally:
+            self._release_connection(conn)
+
+    def execute(self, statement: str, *bindings: Sequence) -> None:
+        """Execute a statement using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            conn.execute(statement, *bindings)
+        finally:
+            self._release_connection(conn)
+
+    def commit(self) -> None:
+        """Commit using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            conn.commit()
+        finally:
+            self._release_connection(conn)
+
+    @contextmanager
+    def critical_section(self) -> Generator[None, None, None]:
+        """Get a critical section using a connection from the pool."""
+        conn = self._get_connection()
+        try:
+            with conn.critical_section():
+                yield
+        finally:
+            self._release_connection(conn)
+
+
 class DBConnection:
 
     def _set_progress_handler(self) -> None:
@@ -253,7 +395,6 @@ class DBConnection:
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
     ) -> None:
-        CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
         self.in_callback = gevent.lock.Semaphore()
         self.transaction_lock = gevent.lock.Semaphore()
@@ -341,7 +482,6 @@ class DBConnection:
 
     def close(self) -> None:
         self._conn.close()
-        CONNECTION_MAP.pop(self.connection_type, None)
 
     @contextmanager
     def read_ctx(self) -> Generator['DBCursor', None, None]:
