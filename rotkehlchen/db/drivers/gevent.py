@@ -87,7 +87,7 @@ class DBCursor:
 
     def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
         if __debug__:
-            logger.trace(f'EXECUTE {statement}')
+            logger.trace(f'EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')
         try:
             self._cursor.execute(statement, *bindings)
         except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
@@ -98,7 +98,7 @@ class DBCursor:
             self._cursor.execute(statement, *bindings)
 
         if __debug__:
-            logger.trace(f'FINISH EXECUTE {statement}')
+            logger.trace(f'FINISH EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
         return self
 
     def executemany(
@@ -107,10 +107,10 @@ class DBCursor:
             *bindings: Sequence[Sequence] | Generator[Sequence, None, None],
     ) -> 'DBCursor':
         if __debug__:
-            logger.trace(f'EXECUTEMANY {statement}')
+            logger.trace(f'EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')
         self._cursor.executemany(statement, *bindings)
         if __debug__:
-            logger.trace(f'FINISH EXECUTEMANY {statement}')
+            logger.trace(f'FINISH EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
         return self
 
     def executescript(self, script: str) -> 'DBCursor':
@@ -118,10 +118,10 @@ class DBCursor:
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
         """
         if __debug__:
-            logger.trace(f'EXECUTESCRIPT {script}')
+            logger.trace(f'EXECUTESCRIPT {script} for cursor {id(self)}')
         self._cursor.executescript(script)
         if __debug__:
-            logger.trace(f'FINISH EXECUTESCRIPT {script}')
+            logger.trace(f'FINISH EXECUTESCRIPT {script} for cursor {id(self)}')
         return self
 
     def switch_foreign_keys(
@@ -140,28 +140,28 @@ class DBCursor:
 
     def fetchone(self) -> Any:
         if __debug__:
-            logger.trace('CURSOR FETCHONE')
+            logger.trace(f'CURSOR FETCHONE  for cursor {id(self)}')
         result = self._cursor.fetchone()
         if __debug__:
-            logger.trace('FINISH CURSOR FETCHONE')
+            logger.trace(f'FINISH CURSOR FETCHONE for cursor {id(self)}')
         return result
 
     def fetchmany(self, size: int | None = None) -> list[Any]:
         if __debug__:
-            logger.trace(f'CURSOR FETCHMANY with {size=}')
+            logger.trace(f'CURSOR FETCHMANY with {size=} for cursor {id(self)}')
         if size is None:
             size = self._cursor.arraysize
         result = self._cursor.fetchmany(size)
         if __debug__:
-            logger.trace('FINISH CURSOR FETCHMANY')
+            logger.trace(f'FINISH CURSOR FETCHMANY for cursor {id(self)}')
         return result
 
     def fetchall(self) -> list[Any]:
         if __debug__:
-            logger.trace('CURSOR FETCHALL')
+            logger.trace(f'CURSOR FETCHALL for cursor {id(self)}')
         result = self._cursor.fetchall()
         if __debug__:
-            logger.trace('FINISH CURSOR FETCHALL')
+            logger.trace(f'FINISH CURSOR FETCHALL for cursor {id(self)}')
         return result
 
     @property
@@ -290,18 +290,18 @@ class DBConnection:
 
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTE {statement}')
+            logger.trace(f'DB CONNECTION EXECUTE {statement} with bindings {bindings}')
         underlying_cursor = self._conn.execute(statement, *bindings)
         if __debug__:
-            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
+            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY with bindings {bindings}')
         return DBCursor(connection=self, cursor=underlying_cursor)
 
     def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> DBCursor:
         if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTEMANY {statement}')
+            logger.trace(f'DB CONNECTION EXECUTEMANY {statement} with bindings {bindings}')
         underlying_cursor = self._conn.executemany(statement, *bindings)
         if __debug__:
-            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
+            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement} with bindings {bindings}')
         return DBCursor(connection=self, cursor=underlying_cursor)
 
     def executescript(self, script: str) -> DBCursor:
