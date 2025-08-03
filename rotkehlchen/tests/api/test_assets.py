@@ -1240,6 +1240,7 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
     assert token.decimals == 18
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
     token_identifier = solana_address_to_identifier(
