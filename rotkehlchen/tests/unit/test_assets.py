@@ -1029,7 +1029,7 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
         # Create a copy of the global db in a temp file
         dest_file = Path(tmpdirname) / 'data' / GLOBALDB_NAME
         os.makedirs(dest_file.parent, exist_ok=True)
-        backup = shutil.copy(packaged_db_path, dest_file)
+        backup = Path(shutil.copy(packaged_db_path, dest_file))
 
         # connect to the database and edit it to verify that we are later connecting
         # to the right one
