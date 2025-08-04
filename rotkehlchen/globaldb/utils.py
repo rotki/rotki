@@ -1,8 +1,9 @@
 import os
 import shutil
-import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import rsqlite
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
@@ -94,7 +95,7 @@ def initialize_globaldb(
                 name='ongoing_upgrade_from_version',
                 default_value=-1,
             )
-    except sqlite3.OperationalError:  # pylint: disable=no-member
+    except rsqlite.OperationalError:  # pylint: disable=no-member
         ongoing_upgrade_from_version = -1  # Fresh DB
 
     if ongoing_upgrade_from_version == -1:

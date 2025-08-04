@@ -1,6 +1,5 @@
 import os
 import shutil
-import sqlite3
 import warnings as test_warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -8,6 +7,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import PropertyMock, patch
 
 import pytest
+import rsqlite
 from eth_utils import is_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
@@ -1033,7 +1033,7 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
 
         # connect to the database and edit it to verify that we are later connecting
         # to the right one
-        conn = sqlite3.connect(dest_file, check_same_thread=False)
+        conn = rsqlite.connect(dest_file, check_same_thread=False)
         conn.cursor().execute('UPDATE assets SET name="my eth" WHERE identifier="ETH"')
         conn.commit()
         conn.close()

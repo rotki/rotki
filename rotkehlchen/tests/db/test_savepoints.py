@@ -1,8 +1,8 @@
-import sqlite3
 from contextlib import suppress
 
 import gevent
 import pytest
+import rsqlite
 
 from rotkehlchen.db.drivers.gevent import ContextError, DBConnection, DBConnectionType
 from rotkehlchen.errors.asset import UnknownAsset
@@ -243,5 +243,5 @@ def test_rollback_in_savepoints():
 
     # leaving the with statement should have released the savepoint and trying to release
     # again the savepoint should raise an error because we have already released it.
-    with pytest.raises(sqlite3.OperationalError):
+    with pytest.raises(rsqlite.OperationalError):
         conn.execute("RELEASE SAVEPOINT 'mysave'")

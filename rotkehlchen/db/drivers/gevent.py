@@ -3,7 +3,6 @@
 but heavily modified"""
 
 import random
-import sqlite3
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, auto
@@ -13,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
 from uuid import uuid4
 
 import gevent
+import rsqlite
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
@@ -27,8 +27,8 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.logging import RotkehlchenLogger
 
-UnderlyingCursor: TypeAlias = sqlite3.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
-UnderlyingConnection: TypeAlias = sqlite3.Connection | sqlcipher.Connection  # pylint: disable=no-member
+UnderlyingCursor: TypeAlias = rsqlite.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
+UnderlyingConnection: TypeAlias = rsqlite.Connection | sqlcipher.Connection  # pylint: disable=no-member
 
 CONTEXT_SWITCH_WAIT = 1  # seconds to wait for a status change in a DB context switch
 import logging
@@ -90,7 +90,7 @@ class DBCursor:
             logger.trace(f'EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')
         try:
             self._cursor.execute(statement, *bindings)
-        except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
+        except (sqlcipher.InterfaceError, rsqlite.InterfaceError):  # pylint: disable=no-member
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
             logger.debug(f'{statement} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
             with suppress(Exception):  # Try to clear any partial results
@@ -170,7 +170,7 @@ class DBCursor:
 
     @property
     def lastrowid(self) -> int:
-        return self._cursor.lastrowid  # type: ignore
+        return self._cursor.lastrowid
 
     def close(self) -> None:
         self._cursor.close()
@@ -268,7 +268,7 @@ class DBConnection:
         self.savepoint_greenlet_id: str | None = None
         self.write_greenlet_id: str | None = None
         if connection_type == DBConnectionType.GLOBAL:
-            self._conn = sqlite3.connect(
+            self._conn = rsqlite.connect(
                 database=path,
                 check_same_thread=False,
                 isolation_level=None,

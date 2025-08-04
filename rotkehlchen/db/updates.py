@@ -2,12 +2,12 @@ import json
 import logging
 import os
 from collections.abc import Callable, Sequence
-from sqlite3 import OperationalError
 from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 from packaging import version as pversion
 from packaging.version import Version
+from rsqlite import OperationalError
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset

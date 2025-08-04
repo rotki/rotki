@@ -1,9 +1,10 @@
 import json
 import logging
 import re
-import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import rsqlite
 
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.misc import DBUpgradeError
@@ -331,7 +332,7 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
                     assets_ids=list(assets_to_add),
                     root_dir=root_dir,
                 )
-            except sqlite3.OperationalError as e:
+            except rsqlite.OperationalError as e:
                 log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
                 return
 

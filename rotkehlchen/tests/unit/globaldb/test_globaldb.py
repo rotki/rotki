@@ -1,11 +1,11 @@
 import itertools
-import sqlite3
 from pathlib import Path
 from shutil import copyfile
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
+import rsqlite
 
 from rotkehlchen.assets.asset import (
     Asset,
@@ -647,7 +647,7 @@ def test_global_db_restore(globaldb, database):
     # Check that the number of assets is the expected
     root_dir = Path(__file__).resolve().parent.parent.parent.parent
     builtin_database = root_dir / 'data' / GLOBALDB_NAME
-    conn = sqlite3.connect(builtin_database)
+    conn = rsqlite.connect(builtin_database)
     cursor_clean_db = conn.cursor()
     tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
     tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
@@ -790,7 +790,7 @@ def test_global_db_reset(globaldb, database):
     # Check that the number of assets is the expected
     root_dir = Path(__file__).resolve().parent.parent.parent.parent
     builtin_database = root_dir / 'data' / GLOBALDB_NAME
-    conn = sqlite3.connect(builtin_database)
+    conn = rsqlite.connect(builtin_database)
     cursor_clean_db = conn.cursor()
     tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
     tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')

@@ -1,7 +1,8 @@
 import logging
-import sqlite3
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
+
+import rsqlite
 
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
@@ -38,7 +39,7 @@ class GlobalDBBinance:
         with self.db.conn.write_ctx() as write_cursor:
             try:
                 write_cursor.executemany(query, [pair.serialize_for_db() for pair in new_pairs])
-            except sqlite3.IntegrityError as e:
+            except rsqlite.IntegrityError as e:
                 raise InputError(
                     f'Tried to add a binance pair to the database but failed due to {e!s}',
                 ) from e
