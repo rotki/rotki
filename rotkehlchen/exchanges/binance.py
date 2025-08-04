@@ -6,13 +6,13 @@ from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import suppress
 from json.decoder import JSONDecodeError
-from sqlite3 import IntegrityError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 from uuid import uuid4
 
 import gevent
 import requests
+from rsqlite import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType

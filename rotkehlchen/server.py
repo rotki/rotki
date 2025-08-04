@@ -2,9 +2,9 @@ import importlib.metadata
 import logging
 import os
 import signal
-import sqlite3
 
 import gevent
+import rsqlite
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.args import app_args
@@ -51,7 +51,7 @@ class RotkehlchenServer:
 
     def main(self) -> None:
         # log version of some special dependencies
-        log.info(f'sqlite version: {sqlite3.sqlite_version}')
+        log.info(f'sqlite version: {rsqlite.sqlite_version}')
         log.info(f'gevent version: {gevent.__version__}')
         log.info(f'rotki-pysqlcipher version: {importlib.metadata.version("rotki-pysqlcipher3")}')
         log.info(f'SQLCipher version: {get_sqlcipher_version_string()}')

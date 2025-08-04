@@ -2,12 +2,12 @@ import json
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
-from sqlite3 import IntegrityError
 from typing import Final
 
 import pytest
 from eth_utils.address import to_checksum_address
 from freezegun import freeze_time
+from rsqlite import IntegrityError
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache

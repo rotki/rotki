@@ -1,10 +1,10 @@
 import logging
 import shutil
-import sqlite3
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
+import rsqlite
 from gevent.lock import Semaphore
 
 from rotkehlchen.assets.asset import (
@@ -271,7 +271,7 @@ class GlobalDBHandler:
                         swapped_for,
                     ),
                 )
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             raise InputError(
                 f'Failed to add asset {asset.identifier} into the assets table due to {e!s}',
             ) from e
@@ -737,7 +737,7 @@ class GlobalDBHandler:
                         'VALUES(?, ?, ?, ?, ?, ?, ?)',
                         (asset_id, None, None, '', None, None, None),
                     )
-                except sqlite3.IntegrityError as e:
+                except rsqlite.IntegrityError as e:
                     raise InputError(
                         f'Failed to add underlying tokens for {parent_token_identifier} '
                         f'due to {e!s}',
@@ -752,7 +752,7 @@ class GlobalDBHandler:
                         parent_token_identifier,
                     ),
                 )
-            except sqlite3.IntegrityError as e:
+            except rsqlite.IntegrityError as e:
                 raise InputError(
                     f'Failed to add underlying tokens for {parent_token_identifier} '
                     f'due to {e!s}',
@@ -1164,7 +1164,7 @@ class GlobalDBHandler:
         """Generic function to add token-specific data to the global DB"""
         try:
             write_cursor.execute(query, bindings)
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             exception_msg = str(e)
             if 'FOREIGN KEY' in exception_msg:
                 msg = (
@@ -1282,7 +1282,7 @@ class GlobalDBHandler:
                 if write_cursor.rowcount != 1 and check_rowcount:
                     raise InputError(f'Tried to edit non existing token with address {address}')
 
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             chain_info = f' at chain {entry.chain_id}' if hasattr(entry, 'chain_id') else ''
             raise InputError(
                 f'Failed to update DB entry for token with address {address}{chain_info} '
@@ -1345,7 +1345,7 @@ class GlobalDBHandler:
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             try:
                 write_cursor.execute(details_update_query, details_update_bindings)
-            except sqlite3.IntegrityError as e:
+            except rsqlite.IntegrityError as e:
                 raise InputError(
                     f'Failed to update DB entry for common_asset_details with identifier '
                     f'{asset.identifier} due to a constraint being hit. Make sure the new values '
@@ -1366,7 +1366,7 @@ class GlobalDBHandler:
                         asset.identifier,
                     ),
                 )
-            except sqlite3.IntegrityError as e:
+            except rsqlite.IntegrityError as e:
                 raise InputError(
                     f'Failed to update DB entry for asset with identifier {asset.identifier} '
                     f'due to a constraint being hit. Make sure the new values are valid.',
@@ -1385,7 +1385,7 @@ class GlobalDBHandler:
                     'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES(?)',
                     [(x.identifier,) for x in assets if not x.identifier.startswith(NFT_DIRECTIVE)],  # noqa: E501
                 )
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             log.error(
                 f'One of the following asset ids caused a DB IntegrityError ({e!s}): '
                 f'{",".join([x.identifier for x in assets])}',
@@ -1564,7 +1564,7 @@ class GlobalDBHandler:
                     ) VALUES (?, ?, ?, ?, ?)
                     """, [x.serialize_for_db() for x in entries],
                 )
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             # roll back any of the executemany that may have gone in
             log.error(
                 f'One of the given historical price entries caused a DB error. {e!s}. '
@@ -1580,7 +1580,7 @@ class GlobalDBHandler:
                             ) VALUES (?, ?, ?, ?, ?)
                             """, entry.serialize_for_db(),
                         )
-                    except sqlite3.IntegrityError as entry_error:
+                    except rsqlite.IntegrityError as entry_error:
                         log.error(
                             f'Failed to add {entry!s} due to {entry_error!s}. Skipping entry addition',  # noqa: E501
                         )
@@ -1603,7 +1603,7 @@ class GlobalDBHandler:
                     """,
                     serialized,
                 )
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             log.error(
                 f'Failed to add single historical price. {e!s}. ',
             )
@@ -1632,7 +1632,7 @@ class GlobalDBHandler:
                         from_asset.identifier,
                     ),
                 )
-            except sqlite3.IntegrityError as e:
+            except rsqlite.IntegrityError as e:
                 # if we got an error, do an extra query to give more information to the user.
                 # In case of an error there has to be a corresponding entry in the db.
                 with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -1660,7 +1660,7 @@ class GlobalDBHandler:
                         str(price),
                     ),
                 )
-            except sqlite3.IntegrityError as e:
+            except rsqlite.IntegrityError as e:
                 # Means foreign keys failure. Should not happen since is checked by marshmallow
                 raise InputError(f'Failed to add manual current price due to: {e!s}') from e
 
@@ -1784,7 +1784,7 @@ class GlobalDBHandler:
 
                 if write_cursor.rowcount == 0:
                     return False
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             log.error(
                 f'Failed to edit manual historical prices from {entry.from_asset} '
                 f'to {entry.to_asset} at timestamp: {entry.timestamp!s} due to {e!s}',
@@ -1839,7 +1839,7 @@ class GlobalDBHandler:
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(querystr, tuple(query_list))
-        except sqlite3.IntegrityError as e:
+        except rsqlite.IntegrityError as e:
             log.error(
                 f'Failed to delete historical prices from {from_asset} to {to_asset} '
                 f'and source: {source!s} due to {e!s}',
@@ -1954,7 +1954,7 @@ class GlobalDBHandler:
                         # Update the owned assets table
                         user_db.update_owned_assets_in_globaldb(cursor)
 
-                except sqlite3.Error as e:
+                except rsqlite.Error as e:
                     log.error(f'Failed to restore assets in globaldb due to {e!s}')
                     return False, 'Failed to restore assets. Read logs to get more information.'
                 finally:  # on the way out always detach the DB. Make sure no transaction is active
@@ -2013,7 +2013,7 @@ class GlobalDBHandler:
                     write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                     # TODO: think about how to implement multiassets insertion
                     write_cursor.switch_foreign_keys('ON')
-            except sqlite3.Error as e:
+            except rsqlite.Error as e:
                 log.error(f'Failed to restore assets in globaldb due to {e!s}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
@@ -2364,7 +2364,7 @@ class GlobalDBHandler:
                         else:
                             raise InputError(msg)
 
-                except sqlite3.IntegrityError as e:
+                except rsqlite.IntegrityError as e:
                     if skip_errors:
                         log.error(msg)
                     else:
@@ -2398,7 +2398,7 @@ class GlobalDBHandler:
                     entry.serialize_for_db()[:2],  # the asset and the exchange symbol.
                 ).fetchone()[0] > 0
         ):
-            raise sqlite3.IntegrityError('Entry already exists in the DB')
+            raise rsqlite.IntegrityError('Entry already exists in the DB')
 
     @staticmethod
     def update_location_asset_mappings(

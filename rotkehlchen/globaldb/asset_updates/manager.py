@@ -1,6 +1,5 @@
 import logging
 import os
-import sqlite3
 from collections import defaultdict
 from contextlib import suppress
 from http import HTTPStatus
@@ -9,6 +8,7 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
+import rsqlite
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -150,7 +150,7 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
             'SELECT * FROM asset_collections WHERE main_asset=?;',
             (local_asset.identifier,),
         ).fetchone()
-    except sqlite3.Error:
+    except rsqlite.Error:
         # If query fails due to missing main_asset
         # column (pre-v10 schema), set collection to None
         collection = None
@@ -259,11 +259,11 @@ class AssetsUpdater:
         try:
             with connection.savepoint_ctx() as cursor:
                 executeall(cursor, action)
-        except sqlite3.Error:
+        except rsqlite.Error:
             try:
                 with connection.savepoint_ctx() as cursor:
                     executeall(cursor, full_insert)
-            except sqlite3.Error as e:
+            except rsqlite.Error as e:
                 log.error(
                     f'Failed to edit or add asset collection with values {result}. '
                     f'{action}. Error: {e!s}',
@@ -290,11 +290,11 @@ class AssetsUpdater:
         try:
             with connection.savepoint_ctx() as cursor:
                 executeall(cursor, action)
-        except sqlite3.Error:
+        except rsqlite.Error:
             try:
                 with connection.savepoint_ctx() as cursor:
                     executeall(cursor, full_insert)
-            except sqlite3.Error as e:
+            except rsqlite.Error as e:
                 log.error(
                     f'Failed to edit asset collection mapping with values {result}. '
                     f'{action}. Error: {e!s}',
@@ -331,12 +331,12 @@ class AssetsUpdater:
 
                 if local_asset is not None:
                     AssetResolver().clean_memory_cache(identifier=local_asset.identifier)
-        except sqlite3.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
+        except rsqlite.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
             if local_asset is None:
                 try:  # if asset is not known then simply do an insertion
                     with connection.savepoint_ctx() as cursor:
                         executeall(cursor, full_insert)
-                except sqlite3.Error as e:
+                except rsqlite.Error as e:
                     self.msg_aggregator.add_warning(
                         f'Failed to add asset {remote_asset_data.identifier} in the '
                         f'DB during the v{version} assets update. Skipping entry. '
@@ -360,7 +360,7 @@ class AssetsUpdater:
                 try:
                     with connection.savepoint_ctx() as cursor:
                         _force_remote_asset(cursor, local_asset, full_insert)
-                except sqlite3.Error as e:
+                except rsqlite.Error as e:
                     self.msg_aggregator.add_warning(
                         f'Failed to resolve conflict for {remote_asset_data.identifier} in '
                         f'the DB during the v{version} assets update. Skipping entry. '
@@ -418,7 +418,7 @@ class AssetsUpdater:
                     try:
                         with connection.write_ctx() as write_cursor:
                             executeall(write_cursor, action)
-                    except sqlite3.Error as e:
+                    except rsqlite.Error as e:
                         log.error(
                             f'Failed to apply update/delete statement {action} from '
                             f'{update_file_type} update v{version} due to {e}. Skipping... ',

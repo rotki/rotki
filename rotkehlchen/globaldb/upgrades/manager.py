@@ -1,9 +1,10 @@
 import logging
 import shutil
-import sqlite3
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import rsqlite
 
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.migrations.manager import (
@@ -110,7 +111,7 @@ def maybe_upgrade_globaldb(
     try:
         with connection.read_ctx() as cursor:
             db_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
-    except sqlite3.OperationalError:  # pylint: disable=no-member
+    except rsqlite.OperationalError:  # pylint: disable=no-member
         return True  # fresh DB -- nothing to upgrade
 
     if db_version < MIN_SUPPORTED_GLOBAL_DB_VERSION:
