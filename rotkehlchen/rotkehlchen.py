@@ -178,6 +178,7 @@ class Rotkehlchen:
             data_dir=self.data_dir,
             perform_assets_updates=True,
             sql_vm_instructions_cb=self.args.sqlite_instructions,
+            db_pool_size=self.args.db_pool_size,
             msg_aggregator=self.msg_aggregator,
         )
         if globaldb.used_backup is True:

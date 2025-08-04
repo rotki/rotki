@@ -26,13 +26,18 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, CONSTANT_ASSETS
 from rotkehlchen.constants.misc import (
+    DEFAULT_DB_POOL_SIZE,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     GLOBALDB_NAME,
     GLOBALDIR_NAME,
     NFT_DIRECTIVE,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
+from rotkehlchen.db.drivers.gevent import (
+    DBConnectionPool,
+    DBConnectionType,
+    DBCursor,
+)
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
@@ -109,8 +114,8 @@ class GlobalDBHandler:
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Path | None = None
-    _packaged_db_conn: DBConnection | None = None
-    conn: DBConnection
+    _packaged_db_conn: DBConnectionPool | None = None
+    conn: DBConnectionPool
     used_backup: bool  # specifies if the global DB was restored from a backup
     packaged_db_lock: Semaphore
     msg_aggregator: 'MessagesAggregator | None' = None
@@ -119,6 +124,7 @@ class GlobalDBHandler:
             cls,
             data_dir: Path | None = None,
             sql_vm_instructions_cb: int | None = None,
+            db_pool_size: int | None = None,
             perform_assets_updates: bool | None = None,
             msg_aggregator: 'MessagesAggregator | None' = None,
     ) -> 'GlobalDBHandler':
@@ -138,6 +144,7 @@ class GlobalDBHandler:
             return GlobalDBHandler.__instance
         assert data_dir is not None, 'First instantiation of GlobalDBHandler should have a data_dir'  # noqa: E501
         assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
+        assert db_pool_size is not None, 'First instantiation of GlobalDBHandler should have a db_pool_size'  # noqa: E501
         assert msg_aggregator is not None, 'First instantiation of GlobalDBHandler should have a messages_aggregator'  # noqa: E501
         assert perform_assets_updates is not None, 'First instantiation of GlobalDBHandler should have a perform_assets_updates'  # noqa: E501
 
@@ -157,6 +164,7 @@ class GlobalDBHandler:
             global_dir=global_dir,
             db_filename=GLOBALDB_NAME,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
+            db_pool_size=db_pool_size,
         )
         GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
 
@@ -181,17 +189,18 @@ class GlobalDBHandler:
             self._packaged_db_conn.close()
 
     @staticmethod
-    def packaged_db_conn() -> DBConnection:
-        """Return a DBConnection instance for the packaged global db."""
+    def packaged_db_conn() -> DBConnectionPool:
+        """Return a DBConnectionPool instance for the packaged global db."""
         if GlobalDBHandler()._packaged_db_conn is not None:
             # mypy does not recognize the initialization as that of a singleton
             return GlobalDBHandler()._packaged_db_conn  # type: ignore
 
         packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / GLOBALDB_NAME
-        packaged_db_conn = DBConnection(
+        packaged_db_conn = DBConnectionPool(
             path=packaged_db_path,
             connection_type=DBConnectionType.GLOBAL,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+            db_pool_size=DEFAULT_DB_POOL_SIZE,
         )
         GlobalDBHandler()._packaged_db_conn = packaged_db_conn
         return packaged_db_conn
@@ -2513,5 +2522,3 @@ class GlobalDBHandler:
         https://github.com/gevent/gevent/issues/1473#issuecomment-548327614
         """
         self.packaged_db_lock.release()
-        self.conn.transaction_lock.release()
-        self.conn.in_callback.release()

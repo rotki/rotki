@@ -29,6 +29,7 @@ with TemporaryDirectory() as temp_data_dir:
         data_dir=Path(temp_data_dir),
         perform_assets_updates=True,
         sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+        db_pool_size=DEFAULT_DB_POOL_SIZE,
         msg_aggregator=(msg_aggregator := MessagesAggregator()),
     )
     db = DBHandler(
@@ -38,7 +39,7 @@ with TemporaryDirectory() as temp_data_dir:
         initial_settings=None,
         sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         resume_from_backup=False,
-        pool_size=DEFAULT_DB_POOL_SIZE,
+        db_pool_size=DEFAULT_DB_POOL_SIZE,
     )
     db.conn.close()
     shutil.move(

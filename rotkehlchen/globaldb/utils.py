@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.gevent import DBConnectionPool, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import SPAM_PROTOCOL
 
@@ -69,7 +69,8 @@ def initialize_globaldb(
         global_dir: Path,
         db_filename: str,
         sql_vm_instructions_cb: int,
-) -> tuple[DBConnection, bool]:
+        db_pool_size: int,
+) -> tuple[DBConnectionPool, bool]:
     """
     Checks the database whether there are any not finished upgrades and automatically uses a
     backup if there are any. If no backup found, throws an error.
@@ -82,10 +83,11 @@ def initialize_globaldb(
     May raise:
         - DBUpgradeError
     """
-    connection = DBConnection(
+    connection = DBConnectionPool(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
     )
     try:
         with connection.read_ctx() as cursor:
@@ -118,9 +120,10 @@ def initialize_globaldb(
         global_dir / backup_to_use,
         global_dir / db_filename,
     )
-    connection = DBConnection(
+    connection = DBConnectionPool(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
     )
     return connection, True
