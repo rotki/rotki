@@ -215,7 +215,7 @@ class DBUpgradeManager:
         Reason for this is to make sure the .db file is the only thing needed for the DB
         backup as we only copy that file.
         """
-        self.db.conn.execute('PRAGMA wal_checkpoint(FULL);')
+        self.db.conn.wal_checkpoint('(FULL)')
         with self.db.conn.read_ctx() as cursor:
             current_version = self.db.get_setting(cursor, 'version')
         if current_version != upgrade.from_version:

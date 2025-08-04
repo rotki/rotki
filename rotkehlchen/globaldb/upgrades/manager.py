@@ -172,7 +172,7 @@ def _perform_single_upgrade(
     progress_handler.new_round(version=to_version)
 
     # WAL checkpoint at start to make sure everything is in the file we copy for backup. For more info check comment in the user DB upgrade.  # noqa: E501
-    connection.execute('PRAGMA wal_checkpoint(FULL);')
+    connection.wal_checkpoint('(FULL)')
     # Create a backup
     tmp_db_filename = f'{ts_now()}_global_db_v{upgrade.from_version}.backup'
     tmp_db_path = global_dir / tmp_db_filename
