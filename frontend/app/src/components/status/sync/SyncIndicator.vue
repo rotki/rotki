@@ -68,13 +68,14 @@ const uploadProgressIcon = computed<string>(() => {
   if (!progress)
     return 'lu-cloud-fill';
 
+  const tick = get(counter) % 2 === 0;
+
   switch (progress.type) {
     case 'compressing':
-      return 'lu-package-2';
+      return tick ? 'lu-folder-shrink-1' : 'lu-folder-shrink-2';
     case 'encrypting':
       return 'lu-shield';
     case 'uploading': {
-      const tick = get(counter) % 2 === 0;
       return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
     }
     default:
@@ -120,11 +121,9 @@ async function performSync() {
   if (get(syncAction) === SYNC_UPLOAD)
     clearUploadStatus();
 
-  resume();
   set(pending, true);
   await forceSync(logout);
   set(pending, false);
-  pause();
 }
 
 async function cancelForceSync() {
@@ -132,9 +131,20 @@ async function cancelForceSync() {
   await nextTick(() => clearUploadStatus());
 }
 
+const runCounter = computed(() => get(pending) || get(uploadProgress)?.type === 'compressing');
+
 watch(isSyncing, (current, prev) => {
   if (current !== prev && !current)
     cancelSync();
+});
+
+watchImmediate(runCounter, (runCounter) => {
+  if (runCounter) {
+    resume();
+  }
+  else {
+    pause();
+  }
 });
 </script>
 
