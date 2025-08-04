@@ -316,6 +316,30 @@ class DBConnection:
             logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
         return DBCursor(connection=self, cursor=underlying_cursor)
 
+    def wal_checkpoint(self, mode: Literal['', '(FULL)', '(PASSIVE)'] = '') -> None:
+        """
+        Perform a WAL checkpoint operation.
+
+        Args:
+            mode: Optional checkpoint mode ('PASSIVE', 'FULL', 'RESTART', 'TRUNCATE').
+                 If '', uses default (PASSIVE).
+
+        This method acquires the callback lock to prevent progress callbacks from
+        interfering with the checkpoint operation, which can cause 'database table is locked'
+        errors due to context switches during the checkpoint.
+
+        See issue #5038 for details.
+        """
+        pragma_sql = f'PRAGMA wal_checkpoint{mode};'
+        # Acquire the callback lock to prevent progress callbacks from causing
+        # context switches during the checkpoint operation
+        with self.in_callback:
+            if __debug__:
+                logger.trace(f'DB CONNECTION {pragma_sql}')
+            self._conn.execute(pragma_sql)
+            if __debug__:
+                logger.trace(f'FINISH DB CONNECTION {pragma_sql}')
+
     def commit(self) -> None:
         with self.in_callback:
             if __debug__:

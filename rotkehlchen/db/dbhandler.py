@@ -547,7 +547,7 @@ class DBHandler:
         tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
         with self.conn.critical_section():
             # flush the wal file to have up to date information when exporting data
-            self.conn.execute('PRAGMA wal_checkpoint;')
+            self.conn.wal_checkpoint()
             self.conn.executescript(
                 f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
                 "SELECT sqlcipher_export('plaintext');"
@@ -564,7 +564,7 @@ class DBHandler:
         than the one supported.
         - AuthenticationError if the wrong password is given
         """
-        self.conn.execute('PRAGMA wal_checkpoint;')
+        self.conn.wal_checkpoint()
         self.disconnect()
         rdbpath = self.user_data_dir / USERDB_NAME
         # Make copy of existing encrypted DB before removing it
