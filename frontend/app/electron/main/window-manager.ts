@@ -99,8 +99,8 @@ export class WindowManager {
   private async loadContent(window: BrowserWindow): Promise<void> {
     const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL;
     if (devServerUrl) {
-      // Load the url of the dev server if in development mode
-      await window.loadURL(devServerUrl);
+      // Load the url of the dev server if in development mode with retry logic
+      await this.loadUrlWithRetry(window, devServerUrl);
       if (process.env.ENABLE_DEV_TOOLS)
         window.webContents.openDevTools();
       return;
@@ -109,6 +109,36 @@ export class WindowManager {
     createProtocol('app');
     // Load the index.html when not in development
     await window.loadURL('app://localhost/index.html');
+  }
+
+  private async loadUrlWithRetry(window: BrowserWindow, url: string, maxRetries: number = 5): Promise<void> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.logger.debug(`Loading URL attempt ${attempt}/${maxRetries}: ${url}`);
+        await window.loadURL(url);
+        this.logger.debug(`Successfully loaded URL on attempt ${attempt}`);
+        return;
+      }
+      catch (error) {
+        lastError = error as Error;
+        this.logger.warn(`Failed to load URL on attempt ${attempt}/${maxRetries}:`, error);
+
+        // Don't retry on the last attempt
+        if (attempt === maxRetries) {
+          break;
+        }
+
+        // Wait with exponential backoff: 1s, 2s, 4s, 8s
+        const delay = Math.min(1000 * (2 ** (attempt - 1)), 8000);
+        this.logger.debug(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    this.logger.error(`Failed to load URL after ${maxRetries} attempts. Last error:`, lastError);
+    throw new Error(`Failed to load dev server URL after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
   }
 
   private createWindowState() {
@@ -169,7 +199,7 @@ export class WindowManager {
 
   listenForAckMessages() {
     // Listen for ack messages from the renderer process
-    ipcMain.on('ack', (event, ...args) => {
+    ipcMain.on('ack', (_event, ...args) => {
       if (args[0] === 1)
         this.clearPending();
       else
