@@ -409,22 +409,22 @@ def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     assert result == [{'location': 'coinbase', 'name': 'Coinbase 1'}]
 
     # Add query ranges to see that they also get deleted when removing the exchange
-    cursor = db.conn.cursor()
-    cursor.executemany(
-        'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
-        [('coinbasepro_trades_CoinbasePro 1', 0, 1579564096),
-         ('coinbasepro_margins_CoinbasePro 1', 0, 1579564096),
-         ('coinbasepro_asset_movements_CoinbasePro 1', 0, 1579564096),
-         ('coinbase_trades_Coinbase 1', 0, 1579564096),
-         ('coinbase_margins_Coinbase 1', 0, 1579564096),
-         ('coinbase_asset_movements_Coinbase 1', 0, 1579564096),
-         ('coinbase_trades_Coinbase 2', 0, 1579564096),
-         ('coinbase_margins_Coinbase 2', 0, 1579564096),
-         ('coinbase_asset_movements_Coinbase 2', 0, 1579564096),
-         ('binance_trades_Binance 1', 0, 1579564096),
-         ('binance_margins_Binance 1', 0, 1579564096),
-         ('binance_asset_movements_Binance 1', 0, 1579564096)],
-    )
+    with db.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
+            [('coinbasepro_trades_CoinbasePro 1', 0, 1579564096),
+             ('coinbasepro_margins_CoinbasePro 1', 0, 1579564096),
+             ('coinbasepro_asset_movements_CoinbasePro 1', 0, 1579564096),
+             ('coinbase_trades_Coinbase 1', 0, 1579564096),
+             ('coinbase_margins_Coinbase 1', 0, 1579564096),
+             ('coinbase_asset_movements_Coinbase 1', 0, 1579564096),
+             ('coinbase_trades_Coinbase 2', 0, 1579564096),
+             ('coinbase_margins_Coinbase 2', 0, 1579564096),
+             ('coinbase_asset_movements_Coinbase 2', 0, 1579564096),
+             ('binance_trades_Binance 1', 0, 1579564096),
+             ('binance_margins_Binance 1', 0, 1579564096),
+             ('binance_asset_movements_Binance 1', 0, 1579564096)],
+        )
 
     # Now remove the registered coinbase exchange
     data = {'location': 'coinbase', 'name': 'Coinbase 1'}
@@ -435,14 +435,14 @@ def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert result == []
     # Also check that the coinbase query ranges have been deleted but not the other ones
-    cursor = db.conn.cursor()
-    result = cursor.execute('SELECT name from used_query_ranges')
-    count = 0
-    for entry in result:
-        count += 1
-        msg = 'only binance or coinbasepro or Coinbase 2 query ranges should remain'
-        assert 'binance' in entry[0] or 'coinbasepro' in entry[0] or 'Coinbase 2' in entry[0], msg
-    assert count == 9, 'only 9 query ranges should remain in the DB'
+    with db.conn.read_ctx() as cursor:
+        result = cursor.execute('SELECT name from used_query_ranges')
+        count = 0
+        for entry in result:
+            count += 1
+            msg = 'only binance or coinbasepro or Coinbase 2 query ranges should remain'
+            assert 'binance' in entry[0] or 'coinbasepro' in entry[0] or 'Coinbase 2' in entry[0], msg  # noqa: E501
+        assert count == 9, 'only 9 query ranges should remain in the DB'
 
     # now try to remove a non-registered exchange
     data = {'location': 'binance', 'name': 'my_binance'}

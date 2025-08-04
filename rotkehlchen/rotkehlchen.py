@@ -128,7 +128,7 @@ from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.gevent import DBConnectionPool, DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -178,6 +178,7 @@ class Rotkehlchen:
             data_dir=self.data_dir,
             perform_assets_updates=True,
             sql_vm_instructions_cb=self.args.sqlite_instructions,
+            db_pool_size=self.args.db_pool_size,
             msg_aggregator=self.msg_aggregator,
         )
         if globaldb.used_backup is True:
@@ -189,6 +190,7 @@ class Rotkehlchen:
             self.data_dir,
             self.msg_aggregator,
             sql_vm_instructions_cb=args.sqlite_instructions,
+            db_pool_size=args.db_pool_size,
         )
         self.cryptocompare = Cryptocompare(database=None)
         self.coingecko = Coingecko(database=None)
@@ -544,7 +546,8 @@ class Rotkehlchen:
         # Send a notification to the user if custom Solana tokens were previously
         # added and need to be migrated manually in the app.
         # TODO: Remove this after a couple versions (added in version 1.40).
-        with (global_conn := GlobalDBHandler().conn).cursor() as cursor:
+        global_conn = GlobalDBHandler().conn
+        with global_conn.read_ctx() as cursor:
             self._check_migration_table_and_notify(
                 conn=global_conn,
                 table_name='user_added_solana_tokens',
@@ -1383,7 +1386,7 @@ class Rotkehlchen:
 
     @staticmethod
     def _check_migration_table_and_notify(
-            conn: 'DBConnection',
+            conn: 'DBConnectionPool',
             table_name: str,
             notification_callback: Callable,
             extra_check_callback: Callable | None = None,

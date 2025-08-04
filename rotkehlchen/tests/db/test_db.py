@@ -164,12 +164,17 @@ TABLES_AT_INIT = [
 ]
 
 
-def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
+def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     """DB Creation logic and tables at start testing"""
     msg_aggregator = MessagesAggregator()
     # Creating a new data dir should work
     users_dir = data_dir / USERSDIR_NAME
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     assert (users_dir / username).exists()
 
@@ -183,7 +188,12 @@ def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
 
     # now relogin and check all tables are there
     del data
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=False, resume_from_backup=False)
     cursor = data.db.conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -194,7 +204,12 @@ def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
     # finally logging in with wrong password should also fail
     data.logout()
     del data
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     with pytest.raises(AuthenticationError):
         data.unlock(username, '1234', create_new=False, resume_from_backup=False)
     data.logout()
@@ -297,10 +312,15 @@ def test_add_remove_exchange(database: DBHandler) -> None:
     assert updated_credentials[Location.COINBASE][0].name == 'Coinbase 2'
 
 
-def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb: int) -> None:
+def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb: int, db_pool_size: int) -> None:  # noqa: E501
     """Create a DB, write some data and then after export/import confirm it's there"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     starting_balance = ManuallyTrackedBalance(
         identifier=-1,
@@ -325,9 +345,14 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
     data.logout()
 
 
-def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
+def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     existing_address = string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
@@ -595,9 +620,14 @@ def test_key_value_cache_entry_types(database):
     assert default_value is None
 
 
-def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb):
+def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     now = int(time.time())
@@ -709,9 +739,14 @@ ASSET_BALANCES = [
 ]
 
 
-def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
+def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:
@@ -763,7 +798,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
-def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions_cb):
+def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     """Make sure that the collection timed balances get combined and sorted properly"""
     msg_aggregator = MessagesAggregator()
     a_ousdc = Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607')
@@ -794,7 +829,12 @@ def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions
             usd_value=FVal('20'),
         ),
     ]
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:
@@ -819,13 +859,18 @@ def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions
     data.logout()
 
 
-def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instructions_cb):
+def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     """
     Test that zero balance entries are inferred properly. (So that the chart in the frontend
     can properly show zero balance periods: https://github.com/rotki/rotki/issues/2822)
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     asset = BalanceType.ASSET.serialize_for_db()
     liability = BalanceType.LIABILITY.serialize_for_db()
@@ -942,10 +987,15 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
     data.logout()
 
 
-def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
+def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     """Test the get_owned_assets with also an unknown asset in the DB"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:
@@ -1019,9 +1069,14 @@ def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
-def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instructions_cb):
+def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     add_starting_balances(data)
@@ -1041,9 +1096,14 @@ def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instr
     data.logout()
 
 
-def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instructions_cb):
+def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     balances = add_starting_balances(data)
@@ -1070,9 +1130,14 @@ def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instruct
     data.logout()
 
 
-def test_get_netvalue_data(data_dir, username, sql_vm_instructions_cb):
+def test_get_netvalue_data(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     add_starting_balances(data)
 
@@ -1088,9 +1153,14 @@ def test_get_netvalue_data(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
-def test_get_netvalue_data_from_date(data_dir, username, sql_vm_instructions_cb):
+def test_get_netvalue_data_from_date(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     add_starting_balances(data)
 
@@ -1102,13 +1172,18 @@ def test_get_netvalue_data_from_date(data_dir, username, sql_vm_instructions_cb)
     data.logout()
 
 
-def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
+def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     """
     Test that the netvalue in a range of time is correctly queried with and without NFTs
     counted in the total.
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     add_starting_nfts(data)
     start_ts = Timestamp(1488326400)
@@ -1131,13 +1206,18 @@ def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
-def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb):
+def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb, db_pool_size):
     """Test that adding and retrieving margin positions from the DB works fine.
 
     Also duplicates should be ignored and an error returned
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     margin1 = MarginPosition(
@@ -1233,21 +1313,31 @@ def test_non_checksummed_eth_account_in_db(database):
     assert f'Invalid ETH account in DB: {invalid_address}' in warnings[1]
 
 
-def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username, sql_vm_instructions_cb):  # noqa: E501
+def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     """Test that with taxfree_after_period being empty the DB can be opened
 
     Regression test for https://github.com/rotki/rotki/issues/587
     """
     # Set the setting
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     with data.db.user_write() as cursor:
         data.db.set_settings(cursor, ModifiableDBSettings(taxfree_after_period=-1))
 
     # now relogin and check that no exception is thrown
     del data
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=False, resume_from_backup=False)
     with data.db.conn.read_ctx() as cursor:
         settings = data.db.get_settings(cursor)
@@ -1255,19 +1345,19 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username, sq
     data.logout()
 
 
-def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb):
+def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb, db_pool_size):
     """
     Test that adding two timed_balances with the same primary key
     i.e (time, currency, category) fails.
     """
-    msg_aggregator = MessagesAggregator()
     db = DBHandler(
         user_data_dir=user_data_dir,
         password='123',
-        msg_aggregator=msg_aggregator,
+        msg_aggregator=MessagesAggregator(),
         initial_settings=None,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         resume_from_backup=False,
+        db_pool_size=db_pool_size,
     )
     balances = [
         DBAssetBalance(
@@ -1432,7 +1522,7 @@ def test_timed_balances_treat_eth2_as_eth(database):
     assert balances == expected_balances
 
 
-def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_vm_instructions_cb):
+def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     """
     Test that adding location and balance data with same timestamp raises an error
     and no balance/location is added.
@@ -1446,6 +1536,7 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
         initial_settings=None,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         resume_from_backup=False,
+        db_pool_size=db_pool_size,
     )
 
     balances = [
@@ -1494,7 +1585,7 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
     db.logout()
 
 
-def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_instructions_cb):
+def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     """Test that setting the premium credentials and getting them back from the DB works
     """
     api_key = (
@@ -1510,7 +1601,12 @@ def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_inst
     )
 
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     data.db.set_rotkehlchen_premium(credentials)
     with data.db.conn.read_ctx() as cursor:
@@ -1521,12 +1617,17 @@ def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_inst
     data.logout()
 
 
-def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instructions_cb):
+def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     """Test that invalid premium credentials unlock still works
     """
     # First manually write invalid data to the DB
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     cursor = data.db.conn.cursor()
     cursor.execute(
@@ -1537,7 +1638,12 @@ def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instruction
 
     # now relogin and check that no exception is thrown
     del data
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=False, resume_from_backup=False)
 
     # and that an error is logged when trying to get premium
@@ -1573,9 +1679,14 @@ def test_get_external_service_credentials(database):
         assert credentials.api_key == f'{service.name.lower()}_key'
 
 
-def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_instructions_cb):
+def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as write_cursor:
@@ -1687,7 +1798,7 @@ def test_values_are_present_in_db(database, enum_class, table_name):
         assert r.fetchone() == (1,), f'The value {enum_class_entry.value} for {table_name} enum is not found in the db. Please add it in rotkehlchen/db/schema.py'  # noqa: E501
 
 
-def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
+def test_binance_pairs(user_data_dir, sql_vm_instructions_cb, db_pool_size):
     msg_aggregator = MessagesAggregator()
     db = DBHandler(
         user_data_dir=user_data_dir,
@@ -1696,6 +1807,7 @@ def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
         initial_settings=None,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         resume_from_backup=False,
+        db_pool_size=db_pool_size,
     )
 
     binance_api_key = ApiKey('binance_api_key')
@@ -1713,7 +1825,7 @@ def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
     db.logout()
 
 
-def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
+def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb, db_pool_size):
     """Test that the DB version gets committed to a fresh DB.
 
     Regression test for https://github.com/rotki/rotki/issues/3744"""
@@ -1725,6 +1837,7 @@ def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
         initial_settings=None,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         resume_from_backup=False,
+        db_pool_size=db_pool_size,
     )
     cursor = db.conn.cursor()
     query = cursor.execute(

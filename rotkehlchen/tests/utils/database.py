@@ -108,11 +108,11 @@ def add_settings_to_test_db(
                 db.add_to_ignored_assets(write_cursor=write_cursor, asset=asset)
 
     if data_migration_version is not None:
-        db.conn.cursor().execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('last_data_migration', data_migration_version),
-        )
-        db.conn.commit()
+        with db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                ('last_data_migration', data_migration_version),
+            )
 
 
 def add_tags_to_test_db(db: DBHandler, tags: list[dict[str, Any]]) -> None:

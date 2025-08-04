@@ -194,11 +194,11 @@ def test_migration_1(database: DBHandler) -> None:
             should_exist=True,
             queryrange_formatstr='{exchange}_{type}',
         )
-        cursor = database.conn.cursor()
-        result = cursor.execute(
-            "SELECT COUNT(*) from used_query_ranges WHERE name='bittrex_trades'",
-        )
-        assert result.fetchone()[0] == 1
+        with database.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                "SELECT COUNT(*) from used_query_ranges WHERE name='bittrex_trades'",
+            )
+            assert result.fetchone()[0] == 1
 
     # Migration shouldn't execute and information should stay in database
     with database.user_write() as write_cursor:

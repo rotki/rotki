@@ -84,6 +84,7 @@ def fixture_load_global_caches() -> list[str]:
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
+        db_pool_size,
         messages_aggregator,
         perform_assets_updates=False,
 ) -> GlobalDBHandler:
@@ -94,6 +95,7 @@ def create_globaldb(
     return GlobalDBHandler(
         data_dir=data_directory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
         msg_aggregator=messages_aggregator,
         perform_assets_updates=perform_assets_updates,
     )
@@ -103,6 +105,7 @@ def _initialize_fixture_globaldb(
         custom_globaldb,
         tmpdir_factory,
         sql_vm_instructions_cb: int,
+        db_pool_size: int,
         reload_user_assets,
         target_globaldb_version,
         globaldb_upgrades,
@@ -147,6 +150,7 @@ def _initialize_fixture_globaldb(
         globaldb = create_globaldb(
             data_directory=new_data_dir,
             sql_vm_instructions_cb=0,
+            db_pool_size=db_pool_size,
             messages_aggregator=messages_aggregator,
         )
 
@@ -169,6 +173,7 @@ def fixture_globaldb(
         custom_globaldb,
         tmpdir_factory,
         sql_vm_instructions_cb,
+        db_pool_size,
         reload_user_assets,
         target_globaldb_version,
         globaldb_upgrades,
@@ -183,6 +188,7 @@ def fixture_globaldb(
         custom_globaldb=custom_globaldb,
         tmpdir_factory=tmpdir_factory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
         reload_user_assets=reload_user_assets,
         target_globaldb_version=target_globaldb_version,
         globaldb_upgrades=globaldb_upgrades,

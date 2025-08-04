@@ -128,7 +128,8 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
         assert timestamps_before_request == timestamps_after_request
 
         # Going to check that after request with ignore_cache ens_mappings will be updated
-        db_changes_before = db_conn.total_changes
+        with db_conn.read_ctx() as cursor:
+            mappings_count_before = cursor.execute('SELECT COUNT(*) FROM ens_mappings').fetchone()[0]  # noqa: E501
 
         response = requests.post(
             api_url_for(
@@ -151,9 +152,10 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
             json={'ethereum_addresses': addrs_1 + addrs_2[1:], 'ignore_cache': True},
         )
         assert_proper_sync_response_with_result(response)
-    db_changes_after = db_conn.total_changes
-    # Check that we have 5 updates because we have 5 rows in ens_mappings table
-    assert db_changes_after == 5 + db_changes_before
+    with db_conn.read_ctx() as cursor:
+        mappings_count_after = cursor.execute('SELECT COUNT(*) FROM ens_mappings').fetchone()[0]
+    # Check that we have 5 new/updated mappings
+    assert mappings_count_after == mappings_count_before + 5
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

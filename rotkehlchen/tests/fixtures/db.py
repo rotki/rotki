@@ -12,7 +12,11 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
-from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, USERSDIR_NAME
+from rotkehlchen.constants.misc import (
+    DEFAULT_DB_POOL_SIZE,
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    USERSDIR_NAME,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
@@ -75,6 +79,11 @@ def fixture_sql_vm_instructions_cb() -> int:
     return DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
+@pytest.fixture(name='db_pool_size')
+def fixture_db_pool_size() -> int:
+    return DEFAULT_DB_POOL_SIZE
+
+
 def _init_database(
         user_data_dir: Path,
         password: str,
@@ -89,6 +98,7 @@ def _init_database(
         data_migration_version: int,
         use_custom_database: str | None,
         sql_vm_instructions_cb: int,
+        db_pool_size: int,
         perform_upgrades_at_unlock: bool,
         skip_sync_globaldb_assets: bool,
 ) -> DBHandler:
@@ -114,6 +124,7 @@ def _init_database(
             initial_settings=None,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
             resume_from_backup=False,
+            db_pool_size=db_pool_size,
         )
     # Make sure that the fixture provided data are included in the DB
     add_settings_to_test_db(db, db_settings, ignored_assets, data_migration_version)
@@ -144,6 +155,7 @@ def database(
         use_custom_database,
         new_db_unlock_actions,
         sql_vm_instructions_cb,
+        db_pool_size,
         perform_upgrades_at_unlock,
         skip_sync_globaldb_assets,
 ) -> Generator[DBHandler | None, None, None]:
@@ -164,6 +176,7 @@ def database(
             data_migration_version=data_migration_version,
             use_custom_database=use_custom_database,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
+            db_pool_size=db_pool_size,
             perform_upgrades_at_unlock=perform_upgrades_at_unlock,
             skip_sync_globaldb_assets=skip_sync_globaldb_assets,
         )

@@ -29,7 +29,7 @@ from rotkehlchen.types import (
 
 
 @pytest.fixture(name='temp_etherscan')
-def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, sql_vm_instructions_cb):  # noqa: E501
+def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     directory = tmpdir_factory.mktemp('someuserdata')
     db = DBHandler(
         user_data_dir=directory,
@@ -38,6 +38,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
         initial_settings=None,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         resume_from_backup=False,
+        db_pool_size=db_pool_size,
     )
 
     # Test with etherscan API key

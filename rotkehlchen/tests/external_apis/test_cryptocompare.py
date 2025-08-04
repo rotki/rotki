@@ -45,18 +45,17 @@ def test_cryptocompare_query_pricehistorical(cryptocompare):
 def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> list[HistoricalPrice]:
     """TODO: This should probably be moved in the globaldb/handler.py if we use it elsewhere
     and made more generic (accept different sources)"""
-    connection = GlobalDBHandler().conn
-    cursor = connection.cursor()
-    query = cursor.execute(
-        'SELECT from_asset, to_asset, source_type, timestamp, price FROM '
-        'price_history WHERE from_asset=? AND to_asset=? AND source_type=? ORDER BY timestamp ASC',
-        (
-            from_asset.identifier,
-            to_asset.identifier,
-            HistoricalPriceOracle.CRYPTOCOMPARE.serialize_for_db(),  # pylint: disable=no-member
-        ),
-    )
-    return [HistoricalPrice.deserialize_from_db(x) for x in query]
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        query = cursor.execute(
+            'SELECT from_asset, to_asset, source_type, timestamp, price FROM '
+            'price_history WHERE from_asset=? AND to_asset=? AND source_type=? ORDER BY timestamp ASC',  # noqa: E501
+            (
+                from_asset.identifier,
+                to_asset.identifier,
+                HistoricalPriceOracle.CRYPTOCOMPARE.serialize_for_db(),  # pylint: disable=no-member
+            ),
+        )
+        return [HistoricalPrice.deserialize_from_db(x) for x in query]
 
 
 def check_cc_result(result: list, forward: bool):

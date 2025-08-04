@@ -1100,7 +1100,7 @@ def test_binance_query_lending_interests_history(
         ]:
             binance.location = location
             assert binance.query_lending_interests_history(
-                cursor=binance.db.conn.cursor(),
+                cursor=cursor,
                 start_ts=Timestamp(0),
                 end_ts=Timestamp(API_TIME_INTERVAL_CONSTRAINT_TS),
             ) is False

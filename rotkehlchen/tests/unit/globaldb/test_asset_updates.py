@@ -558,8 +558,9 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
         }},
         sql_actions={'15': {'assets': update_1, 'collections': '', 'mappings': ''}, '16': {'assets': update_2, 'collections': '', 'mappings': ''}},  # noqa: E501
     )
-    cursor = globaldb.conn.cursor()
-    cursor.execute(f"DELETE FROM settings WHERE name='{ASSETS_VERSION_KEY}'")
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(f"DELETE FROM settings WHERE name='{ASSETS_VERSION_KEY}'")
+
     with update_patch:
         conflicts = assets_updater.perform_update(
             up_to_version=16,
@@ -578,8 +579,8 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
                 for conflict in conflicts
             },
         )
-    assert cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '16'  # noqa: E501
     with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '16'  # noqa: E501
         assert cursor.execute(
             'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry=?;',
             ('eip155:42161/erc20:0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA',),

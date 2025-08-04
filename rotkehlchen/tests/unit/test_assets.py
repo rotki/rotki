@@ -1054,7 +1054,7 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
 
         # check that we can read from the database and is the correct one
         assert globaldb._packaged_db_conn is not None
-        with globaldb._packaged_db_conn.cursor() as cursor:
+        with globaldb._packaged_db_conn.read_ctx() as cursor:
             cursor.execute('SELECT name FROM assets WHERE identifier="ETH"')
             assert cursor.fetchone()[0] == 'my eth'
 

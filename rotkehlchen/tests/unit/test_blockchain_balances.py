@@ -40,9 +40,14 @@ def fixture_use_db():
 
 
 @pytest.fixture(name='blockchain_balances')
-def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_cb):
+def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_cb, db_pool_size):
     if use_db is True:
-        db, _, xpub2, _, all_btc_addresses = setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb)  # noqa: E501
+        db, _, xpub2, _, all_btc_addresses = setup_db_for_xpub_tests_impl(
+            data_dir=data_dir,
+            username=username,
+            sql_vm_instructions_cb=sql_vm_instructions_cb,
+            db_pool_size=db_pool_size,
+        )
         xpub_data = xpub2
         a = BlockchainBalances(db)
         for btc_addy in all_btc_addresses:

@@ -1267,7 +1267,7 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
-def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
+def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator, db_pool_size):
     assert globaldb.used_backup is False
     globaldb.add_setting_value(  # Pretend that an upgrade was started
         name='ongoing_upgrade_from_version',
@@ -1275,7 +1275,12 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
     )
     # There are no backups, so it is supposed to raise an error
     with pytest.raises(DBUpgradeError):
-        create_globaldb(globaldb._data_directory, 0, messages_aggregator)
+        create_globaldb(
+            data_directory=globaldb._data_directory,
+            sql_vm_instructions_cb=0,
+            messages_aggregator=messages_aggregator,
+            db_pool_size=db_pool_size,
+        )
 
     globaldb.conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
 
@@ -1291,7 +1296,12 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
         write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")  # mark as a backup  # noqa: E501
     backup_connection.close()
 
-    globaldb = create_globaldb(globaldb._data_directory, 0, messages_aggregator)  # Now the backup should be used  # noqa: E501
+    globaldb = create_globaldb(  # now the backup should be used
+        data_directory=globaldb._data_directory,
+        sql_vm_instructions_cb=0,
+        messages_aggregator=messages_aggregator,
+        db_pool_size=db_pool_size,
+    )
     assert globaldb.used_backup is True
     # Check that there is no setting left
     assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1

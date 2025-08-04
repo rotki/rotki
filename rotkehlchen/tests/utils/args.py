@@ -1,6 +1,7 @@
 from typing import NamedTuple
 
 from rotkehlchen.constants.misc import (
+    DEFAULT_DB_POOL_SIZE,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
@@ -17,6 +18,7 @@ class ConfigurationArgs(NamedTuple):
     max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB
     max_logfiles_num: int = DEFAULT_MAX_LOG_BACKUP_FILES
     sqlite_instructions: int = DEFAULT_SQL_VM_INSTRUCTIONS_CB
+    db_pool_size: int = DEFAULT_DB_POOL_SIZE
     disable_task_manager: bool = False
 
 
@@ -34,6 +36,7 @@ def default_args(
         max_size_in_mb_all_logs=max_size_in_mb_all_logs,
         max_logfiles_num=DEFAULT_MAX_LOG_BACKUP_FILES,
         sqlite_instructions=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+        db_pool_size=DEFAULT_DB_POOL_SIZE,
         logfile=None,
         logtarget=None,
         disable_task_manager=False,

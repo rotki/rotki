@@ -13,6 +13,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import DEFAULT_DB_POOL_SIZE
 from rotkehlchen.constants.assets import A_COW, A_ETH
 from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
@@ -159,6 +160,7 @@ def _init_db_with_target_version(
             initial_settings=None,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
             resume_from_backup=resume_from_backup,
+            db_pool_size=DEFAULT_DB_POOL_SIZE,
         )
 
 
@@ -3391,13 +3393,18 @@ def test_steps_counted_properly_in_upgrades(user_data_dir):
     last_db.logout()
 
 
-def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):
+def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     """
     If the DB version is greater than the current known version in the
     software warn the user to use the latest version of the software
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     # Manually set a bigger version than the current known one
     cursor = data.db.conn.cursor()
@@ -3410,7 +3417,12 @@ def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instruct
     # now relogin and check that an error is thrown
     data.logout()
     del data
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     with pytest.raises(DBUpgradeError):
         data.unlock(username, '123', create_new=False, resume_from_backup=False)
     DBConnection(  # close the db connection

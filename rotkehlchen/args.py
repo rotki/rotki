@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from rotkehlchen.constants.misc import (
+    DEFAULT_DB_POOL_SIZE,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
@@ -43,6 +44,15 @@ def _positive_int_or_zero(value: str) -> int:
     int_val = int(value)  # ValueError is caught and shown to user
     if int_val < 0:
         raise ValueError('Int value should be positive or zero')
+
+    return int_val
+
+
+def _positive_int(value: str) -> int:
+    """Force positive int https://docs.python.org/3/library/argparse.html#type"""
+    int_val = int(value)  # ValueError is caught and shown to user
+    if int_val <= 0:
+        raise ValueError('Int value should be positive')
 
     return int_val
 
@@ -130,6 +140,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         help='Instructions per sqlite context switch. Should be a positive integer or zero to disable.',  # noqa: E501
         default=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         type=_positive_int_or_zero,
+    )
+    p.add_argument(
+        '--db-pool-size',
+        help='Database connection pool size. Should be a positive integer.',
+        default=DEFAULT_DB_POOL_SIZE,
+        type=_positive_int,
     )
     p.add_argument(
         'version',
