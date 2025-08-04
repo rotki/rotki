@@ -48,7 +48,7 @@ class DBCursor:
 
     def __iter__(self) -> 'DBCursor':
         if __debug__:
-            logger.trace(f'Getting iterator for cursor {self._cursor}')
+            logger.trace(f'Getting iterator for cursor {id(self)}')
         return self
 
     def __next__(self) -> Any:
@@ -58,15 +58,15 @@ class DBCursor:
         https://github.com/python/typeshed/blob/a750a42c65b77963ff097b6cbb6d36cef5912eb7/stdlib/sqlite3/dbapi2.pyi#L397
         """
         if __debug__:
-            logger.trace(f'Get next item for cursor {self._cursor}')
+            logger.trace(f'Get next item for cursor {id(self)}')
         result = next(self._cursor, None)
         if result is None:
             if __debug__:
-                logger.trace(f'Stopping iteration for cursor {self._cursor}')
+                logger.trace(f'Stopping iteration for cursor {id(self)}')
             raise StopIteration
 
         if __debug__:
-            logger.trace(f'Got next item for cursor {self._cursor}')
+            logger.trace(f'Got next item for cursor {id(self)}')
         return result
 
     def __enter__(self) -> 'DBCursor':
