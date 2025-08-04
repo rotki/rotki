@@ -24,11 +24,13 @@ def subprocess_sequence_for_test_db_persistence_after_search() -> None:
     - Crash the application
     """
     add_logging_level('TRACE', TRACE)
-    rotki = Rotkehlchen(default_args(data_dir=default_data_directory().parent / 'test_data'))  # type: ignore
+    data_dir = default_data_directory().parent / 'test_data'
+    rotki = Rotkehlchen(default_args(data_dir=data_dir))  # type: ignore
+    create_new = (data_dir / 'users' / 'testuser' / 'rotkehlchen.db').exists() is False
     rotki.unlock_user(
         user='testuser',
         password='123',
-        create_new=True,
+        create_new=create_new,
         sync_approval='no',
         premium_credentials=None,
         resume_from_backup=False,
