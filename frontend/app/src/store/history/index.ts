@@ -1,6 +1,6 @@
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import { useHistoryApi } from '@/composables/api/history';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { type EvmTransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
@@ -12,7 +12,7 @@ export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = ref<string[]>([]);
   const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
   const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
-  const evmTransactionStatus = ref<{ lastQueriedTs: number; pendingDecode: boolean }>();
+  const evmTransactionStatus = ref<EvmTransactionStatus>();
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
 

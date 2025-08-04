@@ -4,17 +4,20 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import {
+  useHistoryQueryIndicatorSettings,
+} from '@/modules/dashboard/history-events/composables/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 
+const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
+
 interface QueryStatus {
   lastDismissedTs: number;
   lastUsedVersion: string | null;
 }
-
-const DISMISS_THRESHOLD_MS = 21_600_000; // 6 hours
 
 const justUpdated = ref<boolean>(false);
 
@@ -29,6 +32,7 @@ const router = useRouter();
 const { processing } = useHistoryEventsStatus();
 const { allTxChainsInfo } = useSupportedChains();
 const userId = useLoggedUserIdentifier();
+const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();
 const [DefineTimeTooltip, ReuseTimeTooltip] = createReusableTemplate();
 
 const queryStatus = useLocalStorage<QueryStatus>(`${get(userId)}.rotki_query_status`, { lastDismissedTs: 0, lastUsedVersion: null });
@@ -42,6 +46,10 @@ const accounts = computed<BlockchainAccount[]>(() =>
 );
 
 const hasTxAccounts = computed<boolean>(() => {
+  const { hasEvmAccounts = false } = get(transactionStatus) ?? {};
+  if (!hasEvmAccounts) {
+    return false;
+  }
   const filteredChains = get(txChainIds);
   return get(accounts).some(({ chain }) => filteredChains.includes(chain));
 });
@@ -59,21 +67,43 @@ const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);
 
 const processingMessage = computed<string>(() => {
   if (get(processing)) {
-    return t('dashboard.evm_query_indicator.processing');
+    return t('dashboard.history_query_indicator.processing');
   }
   return '';
 });
 
 const showMessage = computed<boolean>(() => {
-  const { lastDismissedTs } = get(queryStatus);
-  const dismissedRecently = Date.now() - lastDismissedTs < DISMISS_THRESHOLD_MS;
   const status = get(transactionStatus);
-  return !dismissedRecently && isDefined(status) && !get(processing);
+  if (!isDefined(status) || get(processing)) {
+    return false;
+  }
+
+  const now = Date.now();
+  const lastQueriedTs = get(lastQueriedTimestamp);
+  const minOutOfSyncMs = get(minOutOfSyncPeriodMs);
+
+  // Don't show if not out of sync enough
+  if (now - lastQueriedTs < minOutOfSyncMs) {
+    return false;
+  }
+
+  // Don't show if dismissed recently
+  const dismissalMs = get(dismissalThresholdMs);
+  const { lastDismissedTs } = get(queryStatus);
+  const dismissedRecently = now - lastDismissedTs < dismissalMs;
+
+  return !dismissedRecently;
 });
 
 const isNeverQueried = computed<boolean>(() => {
   const status = get(transactionStatus);
   return isDefined(status) && status.lastQueriedTs === 0;
+});
+
+const longQuery = computed<boolean>(() => {
+  const status = get(transactionStatus);
+  const now = Date.now();
+  return isDefined(status) && status.undecodedTxCount === 0 && now - status.lastQueriedTs > HUNDRED_EIGHTY_DAYS;
 });
 
 function navigateToHistory(): void {
@@ -138,15 +168,23 @@ onMounted(async () => {
 
       <div v-else-if="showMessage">
         <template v-if="justUpdated">
-          {{ t('dashboard.evm_query_indicator.just_updated') }}
+          {{ t('dashboard.history_query_indicator.just_updated') }}
         </template>
         <template v-else-if="isNeverQueried">
-          {{ t('dashboard.evm_query_indicator.never_queried') }}
+          {{ t('dashboard.history_query_indicator.never_queried') }}
         </template>
         <template v-else>
           <i18n-t
-            v-if="transactionStatus && !transactionStatus.pendingDecode"
-            keypath="dashboard.evm_query_indicator.last_queried"
+            v-if="longQuery"
+            keypath="dashboard.history_query_indicator.last_queried_long"
+          >
+            <template #time>
+              <ReuseTimeTooltip />
+            </template>
+          </i18n-t>
+          <i18n-t
+            v-if="transactionStatus && transactionStatus.undecodedTxCount === 0"
+            keypath="dashboard.history_query_indicator.last_queried"
           >
             <template #time>
               <ReuseTimeTooltip />
@@ -154,7 +192,7 @@ onMounted(async () => {
           </i18n-t>
           <i18n-t
             v-else
-            keypath="dashboard.evm_query_indicator.incomplete_decoding"
+            keypath="dashboard.history_query_indicator.incomplete_decoding"
           >
             <template #time>
               <ReuseTimeTooltip />
@@ -171,7 +209,7 @@ onMounted(async () => {
         color="primary"
         @click="navigateToHistory()"
       >
-        {{ t('dashboard.evm_query_indicator.go_to_history_events') }}
+        {{ t('dashboard.history_query_indicator.go_to_history_events') }}
       </RuiButton>
       <RuiButton
         variant="text"

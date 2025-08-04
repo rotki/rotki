@@ -5,6 +5,7 @@ import type { ActionDataEntry, ActionStatus } from '@/types/action';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
 import { omit } from 'es-toolkit';
+import { z } from 'zod/v4';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -37,10 +38,13 @@ import { getFilename } from '@/utils/file';
 
 interface QueryExchangePayload { name: string; location: string }
 
-interface EvmTransactionStatus {
-  lastQueriedTs: number;
-  pendingDecode: boolean;
-}
+const EvmTransactionStatusSchema = z.object({
+  hasEvmAccounts: z.boolean(),
+  lastQueriedTs: z.number(),
+  undecodedTxCount: z.number(),
+});
+
+export type EvmTransactionStatus = z.infer<typeof EvmTransactionStatusSchema>;
 
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
@@ -339,7 +343,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       },
     );
 
-    return handleResponse(response);
+    return EvmTransactionStatusSchema.parse(handleResponse(response));
   };
 
   return {

@@ -58,6 +58,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const privacyMode = useComputedRef(settings, 'privacyMode');
   const scrambleData = useComputedRef(settings, 'scrambleData');
   const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
+  const evmQueryIndicatorMinOutOfSyncPeriod = useComputedRef(settings, 'evmQueryIndicatorMinOutOfSyncPeriod');
+  const evmQueryIndicatorDismissalThreshold = useComputedRef(settings, 'evmQueryIndicatorDismissalThreshold');
 
   const shouldShowAmount = computed(() => get(privacyMode) < PrivacyMode.SEMI_PRIVATE);
   const shouldShowPercentage = computed(() => get(privacyMode) < PrivacyMode.PRIVATE);
@@ -131,6 +133,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     defaultThemeVersion,
     defiSetupDone,
     enableAliasNames,
+    evmQueryIndicatorDismissalThreshold,
+    evmQueryIndicatorMinOutOfSyncPeriod,
     explorers,
     graphZeroBased,
     ignoreSnapshotError,
