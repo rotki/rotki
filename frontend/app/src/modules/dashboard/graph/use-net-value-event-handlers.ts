@@ -2,6 +2,7 @@ import type { EChartsType } from 'echarts/core';
 import type { Ref } from 'vue';
 import type VChart from 'vue-echarts';
 import { assert, type BigNumber, type NetValue } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
 
 interface UseNetValueEventHandlersParams {
@@ -20,6 +21,8 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   const lastHover = ref<{ timestamp: number; value: BigNumber }>();
   const mousePos = ref({ x: 0, y: 0 });
   const clickTimer = ref<ReturnType<typeof setTimeout>>();
+  const isDragging = ref<boolean>(false);
+  const dragStartPos = ref({ x: 0, y: 0 });
 
   const {
     chartContainer,
@@ -162,7 +165,39 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
  * @return {void} This method does not return a value.
  */
   function setupContainerClickHandler(container: HTMLElement): void {
+    // Track mouse down/up for drag detection
+    container.addEventListener('mousedown', (e) => {
+      set(dragStartPos, { x: e.offsetX, y: e.offsetY });
+      set(isDragging, false);
+    });
+
+    container.addEventListener('mousemove', (e) => {
+      if (e.buttons === 1) { // Left mouse button is pressed
+        const startPos = get(dragStartPos);
+        const distance = Math.hypot(
+          e.offsetX - startPos.x,
+          e.offsetY - startPos.y,
+        );
+        // Consider it a drag if moved more than 5 pixels
+        if (distance > 5) {
+          set(isDragging, true);
+        }
+      }
+    });
+
+    container.addEventListener('mouseup', () => {
+      // Reset drag flag after a short delay to ensure click event sees the correct state
+      setTimeout(() => {
+        set(isDragging, false);
+      }, 10);
+    });
+
     container.addEventListener('click', () => {
+      // Ignore click if it was a drag operation
+      if (get(isDragging)) {
+        return;
+      }
+
       if (isDefined(clickTimer)) {
         clearTimeout(get(clickTimer));
         set(clickTimer, undefined);
@@ -179,6 +214,21 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     });
   }
 
+  function setupZoomToolHandler(instance: EChartsType): void {
+    const activateZoomTool = (): void => {
+      startPromise(nextTick(() => {
+        instance.dispatchAction({
+          dataZoomSelectActive: true,
+          key: 'dataZoomSelect',
+          type: 'takeGlobalCursor',
+        });
+      }));
+    };
+
+    setTimeout(activateZoomTool, 200);
+    instance.on('finished', activateZoomTool);
+  }
+
   function setupChartEventHandlers(): void {
     const currentChart = get(chartInstance);
     const container = get(chartContainer);
@@ -193,6 +243,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     setupMoveMoveHandler(instance);
     setupMouseLeaveHandler(instance);
     setupContainerClickHandler(container);
+    setupZoomToolHandler(instance);
   }
 
   return {

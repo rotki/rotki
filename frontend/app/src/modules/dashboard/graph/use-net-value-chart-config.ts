@@ -1,5 +1,12 @@
 import type { NetValue } from '@rotki/common';
-import type { EChartsOption, LineSeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts';
+import type {
+  BrushComponentOption,
+  EChartsOption,
+  LineSeriesOption,
+  ToolboxComponentOption,
+  XAXisComponentOption,
+  YAXisComponentOption,
+} from 'echarts';
 import type { DataZoomComponentOption, GridComponentOption } from 'echarts/components';
 import type { ComputedRef, Ref } from 'vue';
 import { useGraph } from '@/composables/graphs';
@@ -42,9 +49,13 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
   });
 
   const createInsideDataZoom = (): DataZoomComponentOption => ({
+    moveOnMouseMove: false,
+    moveOnMouseWheel: false,
+    preventDefaultMouseMove: false,
     rangeMode: ['value', 'value'],
     showDetail: false,
     type: 'inside',
+    zoomOnMouseWheel: false,
   });
 
   const createDataZoomConfig = (): DataZoomComponentOption[] => {
@@ -100,11 +111,30 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     },
   });
 
+  const createBrushConfig = (): BrushComponentOption => ({
+    brushLink: 'all',
+    throttleDelay: 300,
+    throttleType: 'debounce',
+    xAxisIndex: 0,
+  });
+
+  const createToolboxConfig = (): ToolboxComponentOption => ({
+    feature: {
+      dataZoom: {
+        icon: undefined,
+        yAxisIndex: false,
+      },
+    },
+    top: -100,
+  });
+
   const chartOption = computed<EChartsOption>(() => ({
     backgroundColor: 'transparent',
+    brush: createBrushConfig(),
     dataZoom: createDataZoomConfig(),
     grid: createGridConfig(),
     series: createSeriesConfig(),
+    toolbox: createToolboxConfig(),
     tooltip: {
       trigger: 'axis',
     },
