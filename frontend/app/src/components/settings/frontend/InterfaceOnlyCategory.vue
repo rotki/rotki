@@ -8,6 +8,7 @@ import LanguageSetting from '@/components/settings/general/language/LanguageSett
 import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting.vue';
 import RefreshSetting from '@/components/settings/general/RefreshSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import HistoryQueryIndicatorSettings from '@/modules/settings/interface/HistoryQueryIndicatorSettings.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -25,5 +26,6 @@ const { t } = useI18n({ useScope: 'global' });
     <RefreshSetting />
     <QueryPeriodSetting />
     <Explorers />
+    <HistoryQueryIndicatorSettings />
   </SettingCategory>
 </template>

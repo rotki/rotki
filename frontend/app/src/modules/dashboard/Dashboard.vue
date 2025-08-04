@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
 import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
-import EvmQueryIndicator from '@/components/dashboard/EvmQueryIndicator.vue';
 import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
@@ -9,6 +8,7 @@ import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
+import HistoryQueryIndicator from '@/modules/dashboard/history-progress/HistoryQueryIndicator.vue';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
@@ -61,7 +61,7 @@ const paddingTop = computed(() => get(floatingHeight) || 0);
         :messages="activeDashboardMessages"
         @dismiss="dismissedMessage = true"
       />
-      <EvmQueryIndicator />
+      <HistoryQueryIndicator />
     </div>
     <div
       class="container"

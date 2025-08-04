@@ -116,6 +116,9 @@ export const BalanceUsdValueThresholdV1 = z.partialRecord(z.enum(BalanceSource),
 
 export type BalanceUsdValueThreshold = z.infer<typeof BalanceUsdValueThresholdV1>;
 
+const EvmQueryIndicatorMinOutOfSyncPeriod = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
+const EvmQueryIndicatorDismissalThreshold = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
+
 export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
   amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
@@ -137,6 +140,8 @@ export const FrontendSettings = z.object({
   defaultThemeVersion: z.number().default(1),
   defiSetupDone: z.boolean().default(false),
   enableAliasNames: z.boolean().default(true),
+  evmQueryIndicatorDismissalThreshold: EvmQueryIndicatorDismissalThreshold.default(Defaults.DEFAULT_EVM_QUERY_INDICATOR_DISMISSAL_THRESHOLD),
+  evmQueryIndicatorMinOutOfSyncPeriod: EvmQueryIndicatorMinOutOfSyncPeriod.default(Defaults.DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD),
   explorers: ExplorersSettings.default({}),
   graphZeroBased: z.boolean().default(false),
   ignoreSnapshotError: z.boolean().default(false),

@@ -177,6 +177,8 @@ describe('settings:frontend', () => {
       scrambleMultiplier: 1,
       privacyMode: PrivacyMode.NORMAL,
       persistPrivacySettings: false,
+      evmQueryIndicatorMinOutOfSyncPeriod: 12,
+      evmQueryIndicatorDismissalThreshold: 6,
     };
 
     store.update(state);
