@@ -1240,6 +1240,47 @@ def test_find_beefy_finance_vaults_price(ethereum_inquirer: 'EthereumInquirer', 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_beefy_finance_clm_vaults_price(
+        database: 'DBHandler',
+        inquirer_defi: 'Inquirer',
+) -> None:
+    """Test that we get the correct prices for Beefy finance CLM vault tokens.
+    Checks both the cow token and the rcow token (reward pool token that always has the
+    same price as the cow token)
+    """
+    cow_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xc0Fdb17dd0811e9a6855b9bb0C6c0bbC2194C98F'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='cowUniswapOpUSDC-WETH',
+        name='Cow Uniswap Op USDC-WETH',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+    )
+    rcow_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x2e6513098909aF0de22648ed7EDF2E529E4D34b2'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='rcowUniswapOpUSDC-WETH',
+        name='Reward Cow Uniswap Arb WBTC-USDT',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=cow_token.evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    cow_price = inquirer_defi.find_usd_price(cow_token)
+    rcow_price = inquirer_defi.find_usd_price(rcow_token)
+    assert cow_price == rcow_price == FVal('3280.3835424538426781759')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
     """Test that we get the correct price for Uniswap V3 position NFTs in all supported chains."""
 
