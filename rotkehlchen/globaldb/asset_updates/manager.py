@@ -14,7 +14,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.gevent import DBConnectionPool, DBCursor
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -28,7 +28,7 @@ from .parsers import AssetCollectionParser, AssetParser, MultiAssetMappingsParse
 from .types import UpdateFileType
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.gevent import DBConnectionPool
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -116,7 +116,7 @@ def _replace_assets_from_db_cursor(
 
 
 def _replace_assets_from_db(
-        connection: 'DBConnection',
+        connection: 'DBConnectionPool',
         sourcedb_path: Path,
 ) -> None:
     """Replace asset-related tables with data from source database.
@@ -242,7 +242,7 @@ class AssetsUpdater:
 
     def _process_asset_collection(
             self,
-            connection: 'DBConnection',
+            connection: 'DBConnectionPool',
             action: str,
             full_insert: str,
             version: int,
@@ -271,7 +271,7 @@ class AssetsUpdater:
 
     def _process_multiasset_mapping(
             self,
-            connection: 'DBConnection',
+            connection: 'DBConnectionPool',
             action: str,
             full_insert: str,
             version: int,
@@ -302,7 +302,7 @@ class AssetsUpdater:
 
     def _handle_asset_update(
             self,
-            connection: 'DBConnection',
+            connection: 'DBConnectionPool',
             remote_asset_data: AssetData,
             assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
             action: str,
@@ -380,7 +380,7 @@ class AssetsUpdater:
 
     def _apply_single_version_update(
             self,
-            connection: 'DBConnection',
+            connection: 'DBConnectionPool',
             version: int,
             text: str,
             assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
@@ -535,6 +535,7 @@ class AssetsUpdater:
                 global_dir=tmpdir,
                 db_filename=temp_db_name,
                 sql_vm_instructions_cb=self.globaldb.conn.sql_vm_instructions_cb,
+                db_pool_size=self.globaldb.conn.db_pool_size,
             )
 
             # open write_ctx early to avoid modifications in the globaldb during the update
@@ -567,7 +568,7 @@ class AssetsUpdater:
 
     def _perform_update(
             self,
-            connection: 'DBConnection',
+            connection: 'DBConnectionPool',
             assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
             up_to_version: int | None,
             updates: dict[int, dict[UpdateFileType, str]],

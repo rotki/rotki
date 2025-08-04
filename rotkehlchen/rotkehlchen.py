@@ -128,7 +128,7 @@ from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.gevent import DBConnectionPool, DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -535,7 +535,7 @@ class Rotkehlchen:
         # old erc721 tokens has been saved during the db upgrade.
         # TODO: Remove this after a couple versions (added in version 1.38).
         self._check_migration_table_and_notify(
-            conn=self.data.db.conn._get_connection(),
+            conn=self.data.db.conn,
             table_name='temp_erc721_data',
             notification_callback=lambda: self.msg_aggregator.add_warning(
                 'Data associated with invalid ERC721 assets is present in your database. '
@@ -1386,7 +1386,7 @@ class Rotkehlchen:
 
     @staticmethod
     def _check_migration_table_and_notify(
-            conn: 'DBConnection',
+            conn: 'DBConnectionPool',
             table_name: str,
             notification_callback: Callable,
             extra_check_callback: Callable | None = None,

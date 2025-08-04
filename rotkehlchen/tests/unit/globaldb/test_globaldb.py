@@ -161,7 +161,7 @@ def test_get_ethereum_token_identifier(globaldb):
     assert token_0_id == user_tokens[0].identifier
 
 
-def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb, messages_aggregator):  # noqa: E501
+def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb, db_pool_size, messages_aggregator):  # noqa: E501
     """Test for https://github.com/rotki/rotki/issues/2781"""
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -174,7 +174,12 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
     with pytest.raises(ValueError) as excinfo:
-        create_globaldb(new_data_dir, sql_vm_instructions_cb, messages_aggregator)
+        create_globaldb(
+            data_directory=new_data_dir,
+            sql_vm_instructions_cb=0,
+            messages_aggregator=messages_aggregator,
+            db_pool_size=db_pool_size,
+        )
 
     msg = (
         f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
@@ -1309,7 +1314,7 @@ def test_check_wal_mode_of_package_db(globaldb: GlobalDBHandler) -> None:
     that no new files are created and this is why we prevent from shipping the dpackaged database
     in WAL mode.
     """
-    with globaldb.packaged_db_conn().cursor() as cursor:
+    with globaldb.packaged_db_conn().read_ctx() as cursor:
         journal_mode = cursor.execute('PRAGMA journal_mode').fetchone()[0]
 
     assert journal_mode == 'delete'

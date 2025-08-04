@@ -167,17 +167,17 @@ def test_adding_user_tokens(
     )
 
     # also test that the addition of underlying tokens has created proper asset entries for them
-    cursor = GlobalDBHandler().conn.cursor()
-    result = cursor.execute(
-        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?)',
-        [ethaddress_to_identifier(x) for x in [underlying_address1, underlying_address2, underlying_address3, underlying_address4]],  # noqa: E501
-    ).fetchone()[0]
-    assert result == 4
-    result = cursor.execute(
-        'SELECT COUNT(*) from evm_tokens WHERE address IN (?, ?, ?, ?)',
-        (underlying_address1, underlying_address2, underlying_address3, underlying_address4),
-    ).fetchone()[0]
-    assert result == 4
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?)',
+            [ethaddress_to_identifier(x) for x in [underlying_address1, underlying_address2, underlying_address3, underlying_address4]],  # noqa: E501
+        ).fetchone()[0]
+        assert result == 4
+        result = cursor.execute(
+            'SELECT COUNT(*) from evm_tokens WHERE address IN (?, ?, ?, ?)',
+            (underlying_address1, underlying_address2, underlying_address3, underlying_address4),
+        ).fetchone()[0]
+        assert result == 4
 
     # now test that adding a token with underlying tokens adding up to more than 100% is caught
     bad_token: EvmToken = EvmToken.initialize(
@@ -431,15 +431,15 @@ def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
     underlying1_id = ethaddress_to_identifier(underlying_address1)
     underlying2_id = ethaddress_to_identifier(underlying_address2)
     underlying3_id = ethaddress_to_identifier(underlying_address3)
-    cursor = GlobalDBHandler().conn.cursor()
-    initial_underlying_num = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]  # noqa: E501
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        initial_underlying_num = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]  # noqa: E501
 
-    # Make sure the equivalent assets we will delete exist in the DB
-    result = cursor.execute(
-        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?, ?)',
-        (token0_id, token1_id, underlying1_id, underlying2_id, underlying3_id),
-    ).fetchone()[0]
-    assert result == 5
+        # Make sure the equivalent assets we will delete exist in the DB
+        result = cursor.execute(
+            'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?, ?)',
+            (token0_id, token1_id, underlying1_id, underlying2_id, underlying3_id),
+        ).fetchone()[0]
+        assert result == 5
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -461,8 +461,9 @@ def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # also check the mapping for the underlying still tokens exists
-    result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
-    assert result == initial_underlying_num, 'check underlying tokens mapping is unchanged'
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
+        assert result == initial_underlying_num, 'check underlying tokens mapping is unchanged'
 
     # test that deleting a non existing address is handled properly
     non_existent_address = make_evm_address()
@@ -526,8 +527,9 @@ def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
     )
     assert_proper_response(response)
     # Check that with the MKR deletion `swapped_for` was set to null
-    new_swapped_for = cursor.execute('SELECT swapped_for FROM common_asset_details WHERE identifier = ?', (token0_id,)).fetchone()  # noqa: E501
-    assert new_swapped_for is not None and new_swapped_for[0] is None
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        new_swapped_for = cursor.execute('SELECT swapped_for FROM common_asset_details WHERE identifier = ?', (token0_id,)).fetchone()  # noqa: E501
+        assert new_swapped_for is not None and new_swapped_for[0] is None
 
     # now test that deleting the token with underlying tokens works
     response = requests.delete(
@@ -554,11 +556,12 @@ def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
     assert result == initial_underlying_num - 7
     # and that the equivalent asset entries were also deleted
-    result = cursor.execute(
-        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?)',
-        (token0_id, token1_id),
-    ).fetchone()[0]
-    assert result == 0
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT COUNT(*) from assets WHERE identifier IN (?, ?)',
+            (token0_id, token1_id),
+        ).fetchone()[0]
+        assert result == 0
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

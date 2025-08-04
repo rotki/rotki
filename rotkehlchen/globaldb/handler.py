@@ -2026,8 +2026,8 @@ class GlobalDBHandler:
                 log.error(f'Failed to restore assets in globaldb due to {e!s}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
-                with self.conn.transaction_lock, self.conn.read_ctx() as read_cursor:
-                    read_cursor.execute("DETACH DATABASE 'clean_db';")
+                with self.conn.write_ctx() as write_cursor:
+                    write_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
 

@@ -466,7 +466,6 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
                 status_code=HTTPStatus.OK,
             )
 
-        cursor = globaldb.conn.cursor()
         # check conflicts were solved as per the given choices and new asset also added
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 999999991
@@ -488,8 +487,9 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         assert dai.decimals == 8
         assert dai.protocol == 'maker'
         # make sure data is in both tables
-        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
+        with globaldb.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
 
         dash = CryptoAsset('DASH')
         assert dash.identifier == 'DASH'
@@ -501,8 +501,9 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         assert dash.swapped_for is None
         assert dash.coingecko == 'dash'
         assert dash.cryptocompare == 'DASH'
-        assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
+        with globaldb.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('DASH',)).fetchone()[0] == 1  # noqa: E501
 
         new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
@@ -514,8 +515,9 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         assert new_asset.swapped_for is None
         assert new_asset.coingecko == ''
         assert new_asset.cryptocompare == ''
-        assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
+        with globaldb.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('121-ada-FADS-as',)).fetchone()[0] == 1  # noqa: E501
 
         ctk = EvmToken('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F')
         assert ctk.name == 'Conflicting token'
@@ -529,8 +531,9 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
         assert ctk.evm_address == '0x1B175474E89094C44Da98b954EedeAC495271d0F'
         assert ctk.decimals == 18
         assert ctk.protocol is None
-        assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x1B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
+        with globaldb.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address=?', ('0x1B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F',)).fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.skip('Broken after changes in the assets. Check #4876')
@@ -737,8 +740,8 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         }},
         sql_actions={'15': {'assets': update_15, 'collections': '', 'mappings': ''}},
     )
-    cursor = globaldb.conn.cursor()
-    cursor.execute('DELETE FROM settings WHERE name=?', (ASSETS_VERSION_KEY,))
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM settings WHERE name=?', (ASSETS_VERSION_KEY,))
     start_assets_num = count_total_assets()
     with update_patch:
         response = requests.get(

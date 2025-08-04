@@ -34,7 +34,7 @@ from .v11_v12 import migrate_to_v12
 from .v12_v13 import migrate_to_v13
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.gevent import DBConnectionPool
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -92,7 +92,7 @@ UPGRADES_LIST = [
 
 
 def maybe_upgrade_globaldb(
-        connection: 'DBConnection',
+        connection: 'DBConnectionPool',
         global_dir: Path,
         db_filename: str,
         msg_aggregator: 'MessagesAggregator',
@@ -158,7 +158,7 @@ def maybe_upgrade_globaldb(
 
 def _perform_single_upgrade(
         upgrade: UpgradeRecord,
-        connection: 'DBConnection',
+        connection: 'DBConnectionPool',
         global_dir: Path,
         db_filename: str,
         progress_handler: DBUpgradeProgressHandler,
@@ -212,7 +212,7 @@ def _perform_single_upgrade(
 def configure_globaldb(
         global_dir: Path,
         db_filename: str,
-        connection: 'DBConnection',
+        connection: 'DBConnectionPool',
         msg_aggregator: 'MessagesAggregator',
         globaldb: 'GlobalDBHandler | None' = None,
 ) -> None:

@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.gevent import DBConnectionPool
 
 
 class MigrationRecord(NamedTuple):
     version: int
-    function: Callable[['DBConnection'], None]
+    function: Callable[['DBConnectionPool'], None]
 
 
 MIGRATIONS_LIST = [
@@ -29,7 +29,7 @@ MIGRATIONS_LIST = [
 LAST_DATA_MIGRATION = len(MIGRATIONS_LIST)
 
 
-def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
+def maybe_apply_globaldb_migrations(connection: 'DBConnectionPool') -> None:
     """Maybe apply global DB data migrations"""
     try:
         with connection.read_ctx() as cursor:

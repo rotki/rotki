@@ -4,11 +4,11 @@ but heavily modified"""
 
 import random
 import sqlite3
+import weakref
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from pathlib import Path
-from queue import Empty, Queue
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
 from uuid import uuid4
@@ -244,10 +244,9 @@ CALLBACK_MAP = {
 
 
 class DBConnectionPool:
-    """Connection pool that manages multiple SQLite connections for a single database.
+    """Connection pool where each greenlet gets its own connection.
 
-    Each connection is dedicated to a single greenlet to avoid the complex synchronization
-    issues that occur when sharing connections between greenlets with progress handlers.
+    Connections are created on-demand and automatically cleaned up when greenlets die.
     """
 
     def __init__(
@@ -265,57 +264,91 @@ class DBConnectionPool:
         self.db_pool_size = db_pool_size
         self.password = password
         self.sqlcipher_version = sqlcipher_version
-        self._pool: Queue[DBConnection] = Queue(maxsize=db_pool_size)
+        self._pool_lock = gevent.lock.RLock()
+        self._write_lock = gevent.lock.Semaphore()  # only one writer allowed (WAL mode)
+        # weak reference here so it is garbage collected.
+        self._in_use: weakref.WeakKeyDictionary[Any, DBConnection] = weakref.WeakKeyDictionary()
 
-        # Initialize the pool with connections
-        self._initialize_pool()
+    def _create_connection(self) -> 'DBConnection':
+        """Create a new database connection."""
+        if __debug__:
+            logger.trace(f'DBConnectionPool: Creating new connection for {self.connection_type.name} database')  # noqa: E501
 
-    def _initialize_pool(self) -> None:
-        """Initialize the connection pool with the specified number of connections."""
-        for _ in range(self.db_pool_size):
-            conn = DBConnection(
-                path=self.path,
-                connection_type=self.connection_type,
-                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+        conn = DBConnection(
+            path=self.path,
+            connection_type=self.connection_type,
+            sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+        )
+
+        # unlock the connection if password is provided (i.e. sqlcipher)
+        if self.password is not None and self.sqlcipher_version is not None:
+            if __debug__:
+                logger.trace(f'DBConnectionPool: Unlocking connection {id(conn)} with SQLCipher')
+            unlock_database(
+                db_connection=conn,
+                password=self.password,
+                sqlcipher_version=self.sqlcipher_version,
             )
 
-            # Unlock the connection if password is provided (for SQLCipher)
-            if self.password is not None and self.sqlcipher_version is not None:
-                unlock_database(
-                    db_connection=conn,
-                    password=self.password,
-                    sqlcipher_version=self.sqlcipher_version,
-                )
+        if __debug__:
+            logger.trace(f'DBConnectionPool: Created connection {id(conn)}')
 
-            self._pool.put(conn)
+        return conn
 
     def _get_connection(self) -> 'DBConnection':
-        """Get a connection from the pool (blocking if none available)."""
-        return self._pool.get()
+        """Get a connection from the pool, ensuring each greenlet gets the same connection."""
+        current_greenlet = gevent.getcurrent()
+        greenlet_name = get_greenlet_name(current_greenlet)
 
-    def _release_connection(self, conn: 'DBConnection') -> None:
-        """Return a connection back to the pool."""
-        self._pool.put(conn)
+        if __debug__:
+            logger.trace(f'DBConnectionPool: Getting connection for greenlet {greenlet_name}')
+
+        while True:
+            with self._pool_lock:
+                if current_greenlet in self._in_use:
+                    conn = self._in_use[current_greenlet]
+                    if __debug__:
+                        logger.trace(f'DBConnectionPool: Reusing existing connection {id(conn)} for greenlet {greenlet_name}')  # noqa: E501
+                    return conn
+
+                if len(self._in_use) < self.db_pool_size:
+                    conn = self._create_connection()
+                    self._in_use[current_greenlet] = conn
+                    if __debug__:
+                        logger.trace(f'DBConnectionPool: Created new connection {id(conn)} for greenlet {greenlet_name} (pool size: {len(self._in_use)}/{self.db_pool_size})')  # noqa: E501
+                    return conn
+
+            # pool is full, yield control and try again
+            if __debug__:
+                logger.trace(f'DBConnectionPool: Pool full ({len(self._in_use)}/{self.db_pool_size}), greenlet {greenlet_name} waiting')  # noqa: E501
+
+            gevent.sleep(CONTEXT_SWITCH_WAIT)
 
     @contextmanager
     def read_ctx(self) -> Generator[DBCursor, None, None]:
         """Get a read context using a connection from the pool."""
         conn = self._get_connection()
-        try:
-            with conn.read_ctx() as cursor:
-                yield cursor
-        finally:
-            self._release_connection(conn)
+        with conn.read_ctx() as cursor:
+            yield cursor
 
     @contextmanager
     def write_ctx(self, commit_ts: bool = False) -> Generator[DBCursor, None, None]:
         """Get a write context using a connection from the pool."""
         conn = self._get_connection()
-        try:
+        greenlet_name = get_greenlet_name(gevent.getcurrent())
+
+        if __debug__:
+            logger.trace(f'DBConnectionPool: Write context starting for greenlet {greenlet_name}, connection {id(conn)}')  # noqa: E501
+
+        with self._write_lock:  # Ensure only one writer in WAL mode
+            if __debug__:
+                logger.trace(f'DBConnectionPool: Acquired write lock for greenlet {greenlet_name}')
+
             with conn.write_ctx(commit_ts=commit_ts) as cursor:
                 yield cursor
-        finally:
-            self._release_connection(conn)
+
+            if __debug__:
+                logger.trace(f'DBConnectionPool: Releasing write lock for greenlet {greenlet_name}')  # noqa: E501
 
     @contextmanager
     def savepoint_ctx(
@@ -324,63 +357,62 @@ class DBConnectionPool:
     ) -> Generator[DBCursor, None, None]:
         """Get a savepoint context using a connection from the pool."""
         conn = self._get_connection()
-        try:
-            with conn.savepoint_ctx(savepoint_name=savepoint_name) as cursor:
-                yield cursor
-        finally:
-            self._release_connection(conn)
+        with conn.savepoint_ctx(savepoint_name=savepoint_name) as cursor:
+            yield cursor
 
     def close(self) -> None:
         """Close all connections in the pool."""
-        # Close all connections in the pool
-        while not self._pool.empty():
-            try:
-                conn = self._pool.get_nowait()
+        if __debug__:
+            logger.trace(f'DBConnectionPool: Closing pool with {len(self._in_use)} connections in use')  # noqa: E501
+
+        with self._pool_lock:
+            for conn in self._in_use.values():
+                if __debug__:
+                    logger.trace(f'DBConnectionPool: Closing connection {id(conn)}')
                 conn.close()
-            except Empty:
-                break
+            self._in_use.clear()
+
+        if __debug__:
+            logger.trace('DBConnectionPool: Pool closed')
 
     def schema_sanity_check(self) -> None:
         """Perform schema sanity check using a connection from the pool."""
         conn = self._get_connection()
-        try:
-            conn.schema_sanity_check()
-        finally:
-            self._release_connection(conn)
+        conn.schema_sanity_check()
 
-    def executescript(self, script: str) -> None:
+    def executescript(self, script: str) -> 'DBCursor':
         """Execute a script using a connection from the pool."""
         conn = self._get_connection()
-        try:
-            conn.executescript(script)
-        finally:
-            self._release_connection(conn)
+        return conn.executescript(script)
 
-    def execute(self, statement: str, *bindings: Sequence) -> None:
+    def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
         """Execute a statement using a connection from the pool."""
         conn = self._get_connection()
-        try:
-            conn.execute(statement, *bindings)
-        finally:
-            self._release_connection(conn)
+        return conn.execute(statement, *bindings)
 
     def commit(self) -> None:
         """Commit using a connection from the pool."""
         conn = self._get_connection()
-        try:
-            conn.commit()
-        finally:
-            self._release_connection(conn)
+        conn.commit()
+
+    def rollback(self) -> None:
+        """Rollback using a connection from the pool."""
+        conn = self._get_connection()
+        conn.rollback()
 
     @contextmanager
     def critical_section(self) -> Generator[None, None, None]:
         """Get a critical section using a connection from the pool."""
         conn = self._get_connection()
-        try:
-            with conn.critical_section():
-                yield
-        finally:
-            self._release_connection(conn)
+        with conn.critical_section():
+            yield
+
+    @contextmanager
+    def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
+        """Get a critical section and transaction lock using a connection from the pool."""
+        conn = self._get_connection()
+        with conn.critical_section_and_transaction_lock():
+            yield
 
 
 class DBConnection:
