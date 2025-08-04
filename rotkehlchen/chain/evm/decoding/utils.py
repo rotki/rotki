@@ -9,7 +9,12 @@ from rotkehlchen.assets.utils import get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    InputError,
+    NotERC20Conformant,
+    NotERC721Conformant,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -190,7 +195,7 @@ def update_cached_vaults(
     for vault in vault_list:
         try:
             process_vault(database, vault)
-        except (NotERC20Conformant, NotERC721Conformant, DeserializationError, KeyError) as e:
+        except (NotERC20Conformant, NotERC721Conformant, DeserializationError, KeyError, InputError) as e:  # noqa: E501
             error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
             log.error(
                 f'Failed to store token information for {display_name} vault '

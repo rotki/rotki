@@ -48,6 +48,8 @@ def _process_beefy_vault(
     - NotERC20Conformant
     - DeserializationError
     - KeyError
+    - InputError if there is an error while editing a token (if the underlying token is the same
+      as the vault token for example)
     """
     underlying_token = get_or_create_evm_token(
         userdb=database,

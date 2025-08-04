@@ -122,6 +122,8 @@ def edit_token_and_clean_cache(
     """
     Update information regarding name and decimals for an ethereum token.
     If name is missing in the database and is not provided then query the blockchain for it
+    May raise:
+        - InputError if there is an error while editing the token
     """
     updated_fields = False
 
@@ -275,6 +277,7 @@ def get_or_create_evm_token(
     and the given address does not have any of symbol, decimals and name
     - NotERC721Conformant exception if an ethereum manager is given to query
     and the given address does not conform to ERC721 spec
+    - InputError if there is an error while editing the token
     """
     identifier = evm_address_to_identifier(
         address=evm_address,
