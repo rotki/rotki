@@ -48,7 +48,7 @@ class DBCursor:
 
     def __iter__(self) -> 'DBCursor':
         if __debug__:
-            logger.trace(f'Getting iterator for cursor {self._cursor}')
+            logger.trace(f'Getting iterator for cursor {id(self)}')
         return self
 
     def __next__(self) -> Any:
@@ -58,15 +58,15 @@ class DBCursor:
         https://github.com/python/typeshed/blob/a750a42c65b77963ff097b6cbb6d36cef5912eb7/stdlib/sqlite3/dbapi2.pyi#L397
         """
         if __debug__:
-            logger.trace(f'Get next item for cursor {self._cursor}')
+            logger.trace(f'Get next item for cursor {id(self)}')
         result = next(self._cursor, None)
         if result is None:
             if __debug__:
-                logger.trace(f'Stopping iteration for cursor {self._cursor}')
+                logger.trace(f'Stopping iteration for cursor {id(self)}')
             raise StopIteration
 
         if __debug__:
-            logger.trace(f'Got next item for cursor {self._cursor}')
+            logger.trace(f'Got next item for cursor {id(self)}')
         return result
 
     def __enter__(self) -> 'DBCursor':
@@ -193,15 +193,10 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     """Needs to be a static function. Cannot be a connection class method
     or sqlite breaks in funny ways. Raises random Operational errors.
     """
-    if __debug__:
-        identifier = random.random()
-        conn_type = connection.connection_type if connection else 'no connection'
-        logger.trace(f'START progress callback for {conn_type} with id {identifier}')
-
     if connection is None:
         return 0
 
-    if connection.in_callback.ready() is False:
+    if connection.in_callback.ready() is False or connection.in_critical_section.ready() is False:
         # This solves the bug described in test_callback_segfault_complex. This works
         # since we are single threaded and if we get here and it's locked we know that
         # we should not wait since this is an edge case that can hit us if the connection gets
@@ -209,10 +204,15 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
         # without any sleep that would lead to context switching
         return 0
 
-    # without this rotkehlchen/tests/db/test_async.py::test_async_segfault fails
+    if __debug__:
+        identifier = random.random()
+        conn_type = connection.connection_type if connection else 'no connection'
+        logger.trace(f'START progress callback for {conn_type} with id {identifier}')
+
     with connection.in_callback:
         if __debug__:
             logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+
         gevent.sleep(0)
         if __debug__:
             logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
@@ -257,6 +257,7 @@ class DBConnection:
         self._conn: UnderlyingConnection
         self.in_callback = gevent.lock.Semaphore()
         self.transaction_lock = gevent.lock.Semaphore()
+        self.in_critical_section = gevent.lock.Semaphore()
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
@@ -494,16 +495,22 @@ class DBConnection:
 
     @contextmanager
     def critical_section(self) -> Generator[None, None, None]:
-        with self.in_callback:
+        with self.in_critical_section:
             if __debug__:
-                logger.trace(f'entering critical section for {self.connection_type}')
-            self._conn.set_progress_handler(None, 0)
-        yield
+                identifier = random.random()
+                logger.trace(f'Got in critical section for {self.connection_type} and id: {identifier}')  # noqa: E501
 
-        with self.in_callback:
-            if __debug__:
-                logger.trace(f'exiting critical section for {self.connection_type}')
-            self._set_progress_handler()
+            with self.in_callback:
+                if __debug__:
+                    logger.trace(f'entering critical section for {self.connection_type} and id: {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+
+                self._conn.set_progress_handler(None, 0)
+            yield
+
+            with self.in_callback:
+                if __debug__:
+                    logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+                self._set_progress_handler()
 
     @contextmanager
     def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:

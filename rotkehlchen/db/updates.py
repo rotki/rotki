@@ -157,10 +157,7 @@ class RotkiDataUpdater:
         locally
         """
         log.info(f'Applying update for spam assets to v{version}. {len(data)} tokens to add')
-        with GlobalDBHandler().conn.critical_section():
-            # Use a critical section to avoid another greenlet adding spam assets at
-            # the same time
-            update_spam_assets(db=self.user_db, assets_info=data)
+        update_spam_assets(db=self.user_db, assets_info=data)
 
     def update_rpc_nodes(self, data: list[dict[str, Any]], version: int) -> None:
         """RPC nodes update code. It also updates the user db with these default nodes."""

@@ -217,16 +217,16 @@ class EvmTransactions(ABC):  # noqa: B024
                             queried_ranges=[(period.from_value, new_transactions[-1].timestamp)],  # type: ignore
                         )
 
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.TRANSACTION_STATUS,
-                    data={
-                        'address': address,
-                        'chain': self.evm_inquirer.blockchain.value,
-                        'subtype': str(TransactionStatusSubType.EVM),
-                        'period': [period.from_value, new_transactions[-1].timestamp],
-                        'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
-                    },
-                )
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'chain': self.evm_inquirer.blockchain.value,
+                    'subtype': str(TransactionStatusSubType.EVM),
+                    'period': [period.from_value, new_transactions[-1].timestamp],
+                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
+                },
+            )
 
     def _get_transactions_for_range(
             self,
@@ -270,9 +270,9 @@ class EvmTransactions(ABC):  # noqa: B024
                 return
 
         log.debug(f'{self.evm_inquirer.chain_name} transactions done for {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as cursor:
+        with self.database.user_write() as write_cursor:
             self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
@@ -327,6 +327,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         transactions=[internal_tx],
                         relevant_address=None,  # no need to re-associate address
                     )
+
                 if isinstance(period_or_hash, TimestampOrBlockRange) and period_or_hash.range_type == 'timestamps':  # noqa: E501
                     assert location_string, 'should always be given for timestamps'
                     log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {period_or_hash.from_value} - {timestamp}')  # noqa: E501
@@ -390,9 +391,9 @@ class EvmTransactions(ABC):  # noqa: B024
                 return
 
         log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for address {address} done. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as cursor:
+        with self.database.user_write() as write_cursor:
             self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )

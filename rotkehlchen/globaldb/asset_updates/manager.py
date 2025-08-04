@@ -56,15 +56,10 @@ def executeall(cursor: DBCursor, statements: str) -> None:
         cursor.execute(statement)
 
 
-def _replace_assets_from_db(
-        connection: 'DBConnection',
+def _replace_assets_from_db_cursor(
+        write_cursor: 'DBCursor',
         sourcedb_path: Path,
 ) -> None:
-    """Replace asset-related tables with data from source database.
-
-    Handles: token_kinds, asset_types, assets, evm_tokens, solana_tokens,
-    underlying_tokens_list, common_asset_details, asset_collections, multiasset_mappings.
-    """
     # First handle token_kinds & asset_types since other tables reference it
     required_tables = [
         'token_kinds',
@@ -77,49 +72,60 @@ def _replace_assets_from_db(
         'multiasset_mappings',
         'settings',
     ]
-
     script_parts = ['PRAGMA foreign_keys = OFF;']
-    with connection.write_ctx() as cursor:
-        cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
-        if (  # add solana_tokens table only if source db version supports it
-            (result := cursor.execute('SELECT value FROM other_db.settings WHERE name=?;', (ASSETS_VERSION_KEY,)).fetchone()) is not None and   # noqa: E501
-            int(result[0]) >= FIRST_VERSION_WITH_SOLANA_TOKENS
-        ):
-            required_tables.append('solana_tokens')
+    write_cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
+    if (  # add solana_tokens table only if source db version supports it
+        (result := write_cursor.execute('SELECT value FROM other_db.settings WHERE name=?;', (ASSETS_VERSION_KEY,)).fetchone()) is not None and   # noqa: E501
+        int(result[0]) >= FIRST_VERSION_WITH_SOLANA_TOKENS
+    ):
+        required_tables.append('solana_tokens')
 
-        cursor.execute(
-            """SELECT COUNT(*) FROM sqlite_master
-            WHERE type='table' AND name IN ({})
-            """.format(','.join('?' * len(required_tables))),
-            required_tables,
-        )
-        if cursor.fetchone()[0] < len(required_tables):
-            schemas = {}
-            for table in required_tables:
-                if (schema := cursor.execute(
-                    "SELECT sql FROM other_db.sqlite_master WHERE type='table' AND name=?",
-                    (table,),
-                ).fetchone()):
-                    raw_schema = schema[0]
-                    schema_def = raw_schema.split('CREATE TABLE')[1].split('(', 1)[1]
-                    schemas[table] = schema_def
-
-            for table, schema in schemas.items():
-                script_parts.append(f'CREATE TABLE IF NOT EXISTS {table} ({schema};')
-
-        # Always do the delete and insert
+    write_cursor.execute(
+        """SELECT COUNT(*) FROM sqlite_master
+        WHERE type='table' AND name IN ({})
+        """.format(','.join('?' * len(required_tables))),
+        required_tables,
+    )
+    if write_cursor.fetchone()[0] < len(required_tables):
+        schemas = {}
         for table in required_tables:
-            script_parts.extend([
-                f'DELETE FROM {table};',
-                f'INSERT INTO {table} SELECT * FROM other_db.{table};',
-            ])
+            if (schema := write_cursor.execute(
+                "SELECT sql FROM other_db.sqlite_master WHERE type='table' AND name=?",
+                (table,),
+            ).fetchone()):
+                raw_schema = schema[0]
+                schema_def = raw_schema.split('CREATE TABLE')[1].split('(', 1)[1]
+                schemas[table] = schema_def
+
+        for table, schema in schemas.items():
+            script_parts.append(f'CREATE TABLE IF NOT EXISTS {table} ({schema};')
+
+    # Always do the delete and insert
+    for table in required_tables:
         script_parts.extend([
-            f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
-            f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));",
-            'PRAGMA foreign_keys = ON;',
-            "DETACH DATABASE 'other_db';",
+            f'DELETE FROM {table};',
+            f'INSERT INTO {table} SELECT * FROM other_db.{table};',
         ])
-        cursor.executescript('\n'.join(script_parts))
+    script_parts.extend([
+        f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
+        f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));",
+        'PRAGMA foreign_keys = ON;',
+        "DETACH DATABASE 'other_db';",
+    ])
+    write_cursor.executescript('\n'.join(script_parts))
+
+
+def _replace_assets_from_db(
+        connection: 'DBConnection',
+        sourcedb_path: Path,
+) -> None:
+    """Replace asset-related tables with data from source database.
+
+    Handles: token_kinds, asset_types, assets, evm_tokens, solana_tokens,
+    underlying_tokens_list, common_asset_details, asset_collections, multiasset_mappings.
+    """
+    with connection.write_ctx() as write_cursor:
+        _replace_assets_from_db_cursor(write_cursor, sourcedb_path)
 
 
 def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
@@ -531,10 +537,10 @@ class AssetsUpdater:
                 sql_vm_instructions_cb=self.globaldb.conn.sql_vm_instructions_cb,
             )
 
-            # use a critical section to avoid modifications in the globaldb during the update
+            # open write_ctx early to avoid modifications in the globaldb during the update
             # process since we ignore any possible change in the user globaldb once we started
             # the update.
-            with self.globaldb.conn.critical_section():
+            with self.globaldb.conn.write_ctx() as globaldb_write_cursor:
                 log.info('Starting assets update. Copying content from the user globaldb')
                 _replace_assets_from_db(temp_db_connection, global_db_path)
 
@@ -555,7 +561,7 @@ class AssetsUpdater:
                 # otherwise we are sure the DB will work without conflicts so let's
                 # now move the data to the actual global DB
                 log.info('Finishing assets update. Replacing users globaldb with the updated information')  # noqa: E501
-                _replace_assets_from_db(self.globaldb.conn, tmpdir / temp_db_name)
+                _replace_assets_from_db_cursor(globaldb_write_cursor, tmpdir / temp_db_name)
 
         return None
 
