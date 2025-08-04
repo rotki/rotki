@@ -8,10 +8,15 @@ from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb):
+def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     """Setups a test database with xpub data"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:

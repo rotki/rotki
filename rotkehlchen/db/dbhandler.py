@@ -184,7 +184,7 @@ class DBHandler:
             initial_settings: ModifiableDBSettings | None,
             sql_vm_instructions_cb: int,
             resume_from_backup: bool,
-            pool_size: int = 5,
+            db_pool_size: int,
     ):
         """Database constructor
 
@@ -199,7 +199,7 @@ class DBHandler:
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
-        self.pool_size = pool_size
+        self.db_pool_size = db_pool_size
         self.sqlcipher_version = detect_sqlcipher_version()
         self.setting_to_default_type = {
             'version': (int, ROTKEHLCHEN_DB_VERSION),
@@ -483,7 +483,7 @@ class DBHandler:
                 path=str(fullpath),
                 connection_type=connection_type,
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
-                pool_size=self.pool_size,
+                db_pool_size=self.db_pool_size,
                 password=self.password if connection_type != DBConnectionType.GLOBAL else None,
                 sqlcipher_version=self.sqlcipher_version if connection_type != DBConnectionType.GLOBAL else None,  # noqa: E501
             )

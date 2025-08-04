@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rotkehlchen.constants import DEFAULT_SQL_VM_INSTRUCTIONS_CB
+from rotkehlchen.constants.misc import DEFAULT_DB_POOL_SIZE, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -38,6 +38,7 @@ with TemporaryDirectory() as temp_data_dir:
         initial_settings=None,
         sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         resume_from_backup=False,
+        pool_size=DEFAULT_DB_POOL_SIZE,
     )
     db.conn.close()
     shutil.move(

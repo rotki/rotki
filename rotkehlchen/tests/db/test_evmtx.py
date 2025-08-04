@@ -22,13 +22,18 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
+def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb, db_pool_size):
     """Test that adding and retrieving evm transactions from the DB works fine.
 
     Also duplicates should be ignored and an error returned
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     tx2_hash = deserialize_evm_tx_hash(b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18')  # noqa: E501
     with data.db.user_write() as cursor:
@@ -129,12 +134,17 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
     data.logout()
 
 
-def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instructions_cb):
+def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instructions_cb, db_pool_size):  # noqa: E501
     """Test that querying transactions for an address also returns the parent
     transaction of any internal transactions the address was involved in.
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=msg_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_pool_size=db_pool_size,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     address_4 = make_evm_address()
 

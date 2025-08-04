@@ -189,6 +189,7 @@ class Rotkehlchen:
             self.data_dir,
             self.msg_aggregator,
             sql_vm_instructions_cb=args.sqlite_instructions,
+            db_pool_size=args.db_pool_size,
         )
         self.cryptocompare = Cryptocompare(database=None)
         self.coingecko = Coingecko(database=None)

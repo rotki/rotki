@@ -255,24 +255,24 @@ class DBConnectionPool:
             path: str | Path,
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
-            pool_size: int = 5,
+            db_pool_size: int,
             password: str | None = None,
             sqlcipher_version: int | None = None,
     ) -> None:
         self.path = path
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
-        self.pool_size = pool_size
+        self.db_pool_size = db_pool_size
         self.password = password
         self.sqlcipher_version = sqlcipher_version
-        self._pool: Queue[DBConnection] = Queue(maxsize=pool_size)
+        self._pool: Queue[DBConnection] = Queue(maxsize=db_pool_size)
 
         # Initialize the pool with connections
         self._initialize_pool()
 
     def _initialize_pool(self) -> None:
         """Initialize the connection pool with the specified number of connections."""
-        for _ in range(self.pool_size):
+        for _ in range(self.db_pool_size):
             conn = DBConnection(
                 path=self.path,
                 connection_type=self.connection_type,
