@@ -386,12 +386,14 @@ def test_evm_transactions_status(
         one_receipt_in_db=True,
         second_receipt_in_db=True,
     )
-    # Run tx query logic to ensure we get the last queried timestamp correctly.
-    rotki.chains_aggregator.ethereum.transactions.single_address_query_transactions(
-        address=ethereum_accounts[0],
-        start_ts=Timestamp(0),
-        end_ts=(last_queried_ts := Timestamp(100)),  # use a small range that doesn't get anything
-    )
+    for address, timestamp in zip(ethereum_accounts, [last_queried_ts := Timestamp(100), Timestamp(50)], strict=False):  # noqa: E501
+        # Run tx query logic to ensure we get the last queried timestamp correctly.
+        rotki.chains_aggregator.ethereum.transactions.single_address_query_transactions(
+            address=address,
+            start_ts=Timestamp(0),
+            end_ts=timestamp,
+        )
+
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'evmtransactionsstatusresource'),
         json={'async_query': async_query},

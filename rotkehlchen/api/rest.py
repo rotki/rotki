@@ -3091,7 +3091,7 @@ class RestAPI:
         ]
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             last_queried_ts = cursor.execute(
-                f'SELECT MIN(end_ts) FROM used_query_ranges WHERE {where_str}',
+                f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {where_str}',
                 bindings,
             ).fetchone()[0] or Timestamp(0)
             has_evm_accounts = cursor.execute(
