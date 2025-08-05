@@ -13,6 +13,7 @@ interface UseNetValueEventHandlersParams {
 
 interface UseNetValueEventHandlersReturn {
   setupChartEventHandlers: () => void;
+  setupZoomToolHandler: () => void;
   tooltipData: Ref<TooltipData>;
 }
 
@@ -213,17 +214,20 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     });
   }
 
-  function setupZoomToolHandler(instance: EChartsType): void {
+  function setupZoomToolHandler(): void {
+    const instance = get(chartInstance)?.chart;
+    if (!instance) {
+      return;
+    }
+
     const activateZoomTool = (): void => {
-      // @ts-expect-error accessing private property
-      if (instance._componentsViews[0]._features.dataZoom._isZoomActive) {
-        return;
-      }
       instance.dispatchAction({
         dataZoomSelectActive: true,
         key: 'dataZoomSelect',
         type: 'takeGlobalCursor',
       });
+
+      instance.off('finished', activateZoomTool);
     };
     setTimeout(activateZoomTool, 300);
     instance.on('finished', activateZoomTool);
@@ -243,11 +247,12 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     setupMoveMoveHandler(instance);
     setupMouseLeaveHandler(instance);
     setupContainerClickHandler(container);
-    setupZoomToolHandler(instance);
+    setupZoomToolHandler();
   }
 
   return {
     setupChartEventHandlers,
+    setupZoomToolHandler,
     tooltipData,
   };
 }

@@ -326,7 +326,7 @@ watch(search, () => setPage(1));
         #body.append
       >
         <RowAppend
-          label-colspan="3"
+          label-colspan="4"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
           :class-name="$style['dashboard-asset-table__body-append']"

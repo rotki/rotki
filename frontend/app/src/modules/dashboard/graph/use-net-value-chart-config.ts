@@ -45,7 +45,7 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     show: true,
     showDetail: false,
     type: 'slider',
-    zoomOnMouseWheel: false,
+    zoomOnMouseWheel: true,
   });
 
   const createInsideDataZoom = (): DataZoomComponentOption => ({
@@ -55,7 +55,7 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     rangeMode: ['value', 'value'],
     showDetail: false,
     type: 'inside',
-    zoomOnMouseWheel: false,
+    zoomOnMouseWheel: true,
   });
 
   const createDataZoomConfig = (): DataZoomComponentOption[] => {
@@ -68,13 +68,18 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     return dataZoomOptions;
   };
 
-  const createGridConfig = (): GridComponentOption => ({
-    bottom: get(showGraphRangeSelector) ? 56 : 16,
-    containLabel: true,
-    left: 16,
-    right: 16,
-    top: 16,
-  });
+  const createGridConfig = (): GridComponentOption => {
+    const bottom = get(showGraphRangeSelector) ? 56 : 16;
+    return {
+      bottom,
+      left: 16,
+      outerBounds: {
+        bottom,
+      },
+      right: 16,
+      top: 16,
+    };
+  };
 
   const createSeriesConfig = (): LineSeriesOption[] => [{
     areaStyle: get(gradient),
