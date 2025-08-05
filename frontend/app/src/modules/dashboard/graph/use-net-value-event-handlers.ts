@@ -24,6 +24,8 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   const isDragging = ref<boolean>(false);
   const dragStartPos = ref({ x: 0, y: 0 });
 
+  let chartEventHandlers: (() => void)[] = [];
+
   const {
     chartContainer,
     chartData,
@@ -157,6 +159,30 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     });
   }
 
+  // Store event handlers for cleanup
+  let containerEventHandlers: {
+    mousedown?: (e: MouseEvent) => void;
+    mousemove?: (e: MouseEvent) => void;
+    mouseup?: () => void;
+    click?: (event: MouseEvent) => void;
+  } = {};
+
+  /**
+   * Removes all container event listeners and clears the handlers
+   */
+  function cleanupContainerEventHandlers(container?: HTMLElement): void {
+    const eventTypes = ['click', 'mousedown', 'mousemove', 'mouseup'] as const;
+
+    eventTypes.forEach((eventType) => {
+      const handler = containerEventHandlers[eventType];
+      if (handler) {
+        container?.removeEventListener(eventType, handler);
+      }
+    });
+
+    containerEventHandlers = {};
+  }
+
   /**
  * Sets up a click event handler on the specified container element. This handler processes single and double-clicks
  * with a timer mechanism, allowing specific actions to be triggered based on the user's click interactions.
@@ -166,12 +192,12 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
  */
   function setupContainerClickHandler(container: HTMLElement): void {
     // Track mouse down/up for drag detection
-    container.addEventListener('mousedown', (e) => {
+    containerEventHandlers.mousedown = (e): void => {
       set(dragStartPos, { x: e.offsetX, y: e.offsetY });
       set(isDragging, false);
-    });
+    };
 
-    container.addEventListener('mousemove', (e) => {
+    containerEventHandlers.mousemove = (e): void => {
       if (e.buttons === 1) { // Left mouse button is pressed
         const startPos = get(dragStartPos);
         const distance = Math.hypot(
@@ -183,16 +209,16 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
           set(isDragging, true);
         }
       }
-    });
+    };
 
-    container.addEventListener('mouseup', () => {
+    containerEventHandlers.mouseup = (): void => {
       // Reset drag flag after a short delay to ensure click event sees the correct state
       setTimeout(() => {
         set(isDragging, false);
       }, 10);
-    });
+    };
 
-    container.addEventListener('click', () => {
+    containerEventHandlers.click = (): void => {
       // Ignore click if it was a drag operation
       if (get(isDragging)) {
         return;
@@ -211,7 +237,12 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
           }
         }, 200));
       }
-    });
+    };
+
+    container.addEventListener('click', containerEventHandlers.click);
+    container.addEventListener('mousedown', containerEventHandlers.mousedown);
+    container.addEventListener('mousemove', containerEventHandlers.mousemove);
+    container.addEventListener('mouseup', containerEventHandlers.mouseup);
   }
 
   function setupZoomToolHandler(): void {
@@ -241,6 +272,10 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
       return;
     }
 
+    // Clear existing handlers
+    chartEventHandlers.forEach(cleanup => cleanup());
+    chartEventHandlers = [];
+
     const instance = currentChart.chart;
     setupAxisPointerHandler(instance);
     setupDoubleClickHandler(instance);
@@ -248,7 +283,27 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     setupMouseLeaveHandler(instance);
     setupContainerClickHandler(container);
     setupZoomToolHandler();
+
+    // Store cleanup functions
+    chartEventHandlers = [
+      (): EChartsType => instance?.off('updateAxisPointer'),
+      (): EChartsType => instance?.off('finished'),
+      (): void => instance?.getZr()?.off('dblclick'),
+      (): void => instance?.getZr()?.off('mousemove'),
+      (): void => instance?.getZr()?.off('globalout'),
+      (): void => cleanupContainerEventHandlers(container),
+    ];
   }
+
+  // Cleanup on unmount
+  onUnmounted(() => {
+    chartEventHandlers.forEach(cleanup => cleanup());
+    const timer = get(clickTimer);
+    if (timer) {
+      clearTimeout(timer);
+      set(clickTimer, undefined);
+    }
+  });
 
   return {
     setupChartEventHandlers,
