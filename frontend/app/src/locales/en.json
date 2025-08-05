@@ -4194,7 +4194,8 @@
     "progress": "{progress} %"
   },
   "protocol_icon": {
-    "contains_manual": "Includes manual balance"
+    "contains_manual": "Includes manual balance",
+    "dot": "•"
   },
   "purge_selector": {
     "centralized_exchange_to_clear": {

@@ -38,7 +38,11 @@ export function toSnakeCase(string: string): string {
   if (!string)
     return '';
 
-  return string.toLowerCase().replace(/ /g, '_');
+  return string
+    .replace(/([A-Z])/g, '_$1')
+    .toLowerCase()
+    .replace(/^_/, '')
+    .replace(/\s+/g, '_');
 }
 
 /**
