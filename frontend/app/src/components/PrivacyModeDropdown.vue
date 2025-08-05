@@ -209,7 +209,7 @@ watch([enabled, multiplier, persistPrivacySettings], setData);
             data-cy="privacy-mode-scramble__multiplier"
             hide-details
             dense
-            @update:model-value="updateMultiplier(Number($event) || 1)"
+            @update:model-value="updateMultiplier(Number($event))"
           >
             <template #append>
               <RuiButton
