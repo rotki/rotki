@@ -197,8 +197,7 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
         return 0
 
     if connection.in_callback.ready() is False or connection.in_critical_section.ready() is False:
-        # This solves the bug described in test_callback_segfault_complex. This works
-        # since we are single threaded and if we get here and it's locked we know that
+        # we are single threaded and if we get here and it's locked or in critical section
         # we should not wait since this is an edge case that can hit us if the connection gets
         # modified before we exit the callback. So we immediately exit the callback
         # without any sleep that would lead to context switching
@@ -288,57 +287,6 @@ class DBConnection:
         elif connection_type == DBConnectionType.GLOBAL:
             self.minimized_schema = MINIMIZED_GLOBAL_DB_SCHEMA
             self.minimized_indexes = MINIMIZED_GLOBAL_DB_INDEXES
-
-    def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTE {statement} with bindings {bindings}')
-        underlying_cursor = self._conn.execute(statement, *bindings)
-        if __debug__:
-            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY with bindings {bindings}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
-
-    def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> DBCursor:
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTEMANY {statement} with bindings {bindings}')
-        underlying_cursor = self._conn.executemany(statement, *bindings)
-        if __debug__:
-            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement} with bindings {bindings}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
-
-    def executescript(self, script: str) -> DBCursor:
-        """Remember this always issues a COMMIT before
-        https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
-        """
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
-        underlying_cursor = self._conn.executescript(script)
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
-
-    def wal_checkpoint(self, mode: Literal['', '(FULL)', '(PASSIVE)'] = '') -> None:
-        """
-        Perform a WAL checkpoint operation.
-
-        Args:
-            mode: Optional checkpoint mode ('PASSIVE', 'FULL', 'RESTART', 'TRUNCATE').
-                 If '', uses default (PASSIVE).
-
-        This method acquires the callback lock to prevent progress callbacks from
-        interfering with the checkpoint operation, which can cause 'database table is locked'
-        errors due to context switches during the checkpoint.
-
-        See issue #5038 for details.
-        """
-        pragma_sql = f'PRAGMA wal_checkpoint{mode};'
-        # Acquire the callback lock to prevent progress callbacks from causing
-        # context switches during the checkpoint operation
-        with self.in_callback:
-            if __debug__:
-                logger.trace(f'DB CONNECTION {pragma_sql}')
-            self._conn.execute(pragma_sql)
-            if __debug__:
-                logger.trace(f'FINISH DB CONNECTION {pragma_sql}')
 
     def commit(self) -> None:
         with self.in_callback:
@@ -492,7 +440,9 @@ class DBConnection:
                 f'Incorrect use of savepoints! Wanted to {rollback_or_release.lower()} savepoint '
                 f'{savepoint_name}, but it is not present in the stack: {list_savepoints}',
             )
-        self.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
+
+        with self.cursor() as cursor:  # this should not be a write_ctx as it's inside savepoint logic and would block  # noqa: E501
+            cursor.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
 
         # Release all savepoints until, and including, the one with name `savepoint_name`.
         # For rollback we don't remove the savepoints since they are not released yet.
@@ -540,6 +490,50 @@ class DBConnection:
     def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
         with self.critical_section(), self.transaction_lock:
             yield
+
+    def vacuum(self) -> None:
+        """Helper function to vacuum the DB. Abstracted into its own function since
+        incorrect usage of the PRAGMA can result in errors. For example should not do it
+        while there is an open transaction"""
+        with self.critical_section(), self.transaction_lock:  # make sure no writing happens while vacuuming  # noqa: E501
+            cursor = self.cursor()
+            cursor.execute('VACUUM')
+            cursor.close()
+
+    def wal_checkpoint(self, mode: Literal['', '(FULL)', '(PASSIVE)'] = '') -> None:
+        """
+        Perform a WAL checkpoint operation.
+        https://www.sqlite.org/pragma.html#pragma_wal_checkpoint
+        Made as part of the connection to control how it's made. Cursors should
+        not execute this if there an open transaction with pending changes as it can
+        also result in database table is locked.
+
+        Args:
+            mode: Optional checkpoint mode ('PASSIVE', 'FULL', 'RESTART', 'TRUNCATE').
+                 If '', uses default (PASSIVE).
+
+        This method acquires the callback lock to prevent progress callbacks from
+        interfering with the checkpoint operation, which can cause 'database table is locked'
+        errors due to context switches during the checkpoint.
+
+        See issue #5038 for details.
+        """
+        pragma_sql = f'PRAGMA wal_checkpoint{mode};'
+        # Acquire the callback lock to prevent progress callbacks from causing
+        # context switches during the checkpoint operation
+        with self.in_callback:
+            if __debug__:
+                logger.trace(f'START {pragma_sql}')
+
+            with self.cursor() as cursor:
+                result = cursor.execute(pragma_sql).fetchone()
+                if __debug__:
+                    if len(result) != 3:  # should never happen, PRAGMA wal checkpoint returns 3 ints # noqa: E501
+                        result_text = ''
+                    else:
+                        result_text = f' with result(Status: {result[0]}, Wal file Pages: {result[1]}, Checkpointed Pages: {result[2]})'  # noqa: E501
+
+                    logger.trace(f'FINISH {pragma_sql}{result_text}')
 
     @property
     def total_changes(self) -> int:

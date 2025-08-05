@@ -1277,7 +1277,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
     with pytest.raises(DBUpgradeError):
         create_globaldb(globaldb._data_directory, 0, messages_aggregator)
 
-    globaldb.conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
+    globaldb.conn.wal_checkpoint()  # flush the wal file
 
     # Add a backup
     backup_path = globaldb._data_directory / GLOBALDIR_NAME / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here

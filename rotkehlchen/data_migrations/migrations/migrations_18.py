@@ -134,7 +134,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         with rotki.data.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(querystr, query_bindings)
 
-        rotki.data.db.conn.execute('VACUUM;')  # also since this cleans up a lot of space vacuum
+        rotki.data.db.conn.vacuum()  # also since this cleans up a lot of space vacuum
 
     @progress_step(description='Whitelisting monerium assets.')
     def whitelist_monerium_assets(rotki: 'Rotkehlchen') -> None:
