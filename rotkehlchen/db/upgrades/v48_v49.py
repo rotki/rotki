@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.upgrades.upgrade_utils import process_solana_asset_migration
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
@@ -17,7 +18,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 @enter_exit_debug_log(name='UserDB v48->v49 upgrade')
 def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    """Upgrades the DB from v48 to v49. This is expected to be in v1.40 release.
+    """Upgrades the DB from v48 to v49. This happened in v1.40 release.
 
     - Fix zksynclite_swaps table schema: change TEXT_NOT NULL to TEXT NOT NULL for to_amount column
     - Migrate solana assets to CAIPS format
@@ -76,5 +77,32 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     def _remove_eth2_daily_staking_details_table(write_cursor: 'DBCursor') -> None:
         """Remove the deprecated eth2_daily_staking_details table and its data"""
         write_cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
+
+    @progress_step(description='Resetting decoded events.')
+    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+        """Reset all decoded evm events except for the customized ones and those in zksync lite.
+        Code taken from previous upgrade
+        """
+        if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+            customized_events = write_cursor.execute(
+                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+                (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+            ).fetchone()[0]
+            querystr = (
+                "DELETE FROM history_events WHERE identifier IN ("
+                "SELECT H.identifier from history_events H INNER JOIN evm_events_info E "
+                "ON H.identifier=E.identifier AND E.tx_hash IN "
+                "(SELECT tx_hash FROM evm_transactions) AND H.location != 'o')"  # location 'o' is zksync lite  # noqa: E501
+            )
+            bindings: tuple = ()
+            if customized_events != 0:
+                querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+                bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+            write_cursor.execute(querystr, bindings)
+            write_cursor.execute(
+                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+                (0,),  # decoded tx state
+            )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=False)
