@@ -41,12 +41,31 @@ const showMore = computed<number>(() => get(protocols).length - get(visible));
         class="-ml-2"
       />
 
-      <div
+      <RuiMenu
         v-if="showMore > 0"
-        class="rounded-full h-8 px-1 min-w-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 font-bold text-xs text-rui-light-text z-[1]"
+        open-on-hover
+        :close-delay="200"
+        :popper="{ placement: 'bottom' }"
       >
-        {{ showMore }}+
-      </div>
+        <template #activator="{ open, attrs }">
+          <div
+            class="rounded-full h-8 px-1 min-w-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 font-bold text-xs text-rui-light-text z-[1] cursor-pointer transition-all"
+            :class="{ 'bg-rui-grey-400 dark:bg-rui-grey-100': open }"
+            v-bind="attrs"
+          >
+            {{ showMore }}+
+          </div>
+        </template>
+        <div class="p-2 px-3 flex flex-col gap-1">
+          <ProtocolMenuItem
+            v-for="protocolBalance in protocols.slice(visible)"
+            :key="protocolBalance.protocol"
+            :protocol-balance="protocolBalance"
+            :asset="asset"
+            :loading="loading"
+          />
+        </div>
+      </RuiMenu>
     </template>
   </div>
 </template>

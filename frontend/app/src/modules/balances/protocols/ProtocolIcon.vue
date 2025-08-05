@@ -14,7 +14,8 @@ defineSlots<{
 }>();
 
 const { protocol, size = 20 } = toRefs(props);
-const { protocolData } = useProtocolData(protocol);
+const { isDark } = useRotkiTheme();
+const { protocolData } = useProtocolData(protocol, isDark);
 </script>
 
 <template>
