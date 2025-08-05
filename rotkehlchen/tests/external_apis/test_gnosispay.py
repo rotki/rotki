@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import gevent
@@ -16,7 +17,10 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def mock_gnosispay_and_run_periodic_task(task_manager, contents):
@@ -47,7 +51,7 @@ def mock_unauthorized_requests_get(url, params=None, **kwargs):
 
 @pytest.mark.parametrize('max_tasks_num', [1])
 def test_gnosispay_periodic_task(task_manager, database, gnosispay_credentials):  # pylint: disable=unused-argument
-    """foo"""
+    """Test that events are properly updated from the api data via the periodic task."""
     dbevents = DBHistoryEvents(database)
     tx_hash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
     gnosis_user_address = '0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da'
@@ -127,6 +131,43 @@ def test_gnosispay_periodic_task(task_manager, database, gnosispay_credentials):
             ),
         )
     assert new_events == [event]
+
+
+def test_gnosis_pay_skip_refund(database: 'DBHandler', gnosispay_credentials: None) -> None:
+    """Test that gnosis pay skips refunds without error, since they are missing data linking
+    them to onchain transactions.
+    """
+    gnosispay = init_gnosis_pay(database)
+    assert gnosispay is not None
+    api_contents = """[{
+        "createdAt": "XX",
+        "clearedAt": "XX",
+        "isPending": false,
+        "transactionAmount": "2300",
+        "transactionCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+        "billingAmount": "2300",
+        "billingCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+        "transactionType": "20",
+        "mcc": "5661",
+        "merchant": {
+            "name": "I-RUN",
+            "city": "CASTELNAU D E",
+            "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"}
+        },
+        "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"},
+        "transactions": [],
+        "kind": "Refund",
+        "refundCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+        "refundAmount": "2300"
+    }]
+    """
+    with (
+        patch.object(gnosispay.session, 'get', return_value=MockResponse(200, api_contents)),
+        patch.object(gnosispay, 'write_txdata_to_db') as mock_write_txdata_to_db,
+    ):
+        gnosispay.get_and_process_transactions(after_ts=Timestamp(0))
+
+    assert mock_write_txdata_to_db.call_count == 0
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
