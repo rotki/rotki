@@ -121,7 +121,6 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
   const createToolboxConfig = (): ToolboxComponentOption => ({
     feature: {
       dataZoom: {
-        icon: undefined,
         yAxisIndex: false,
       },
     },

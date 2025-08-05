@@ -107,8 +107,8 @@ importers:
         specifier: 2.21.4
         version: 2.21.4(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@6.0.5)(zod@3.25.76)
       axios:
-        specifier: 1.10.0
-        version: 1.10.0(debug@4.4.1)
+        specifier: 1.11.0
+        version: 1.11.0(debug@4.4.1)
       bignumber.js:
         specifier: 9.1.2
         version: 9.1.2(patch_hash=2c35359c8347a121958cdaae415acc2ab014f4c2112e5b45239b23e35670aa10)
@@ -125,8 +125,8 @@ importers:
         specifier: 4.0.11
         version: 4.0.11
       echarts:
-        specifier: 5.6.0
-        version: 5.6.0
+        specifier: 6.0.0
+        version: 6.0.0
       electron-updater:
         specifier: 6.6.6
         version: 6.6.6
@@ -168,7 +168,7 @@ importers:
         version: 3.5.17(typescript@5.8.3)
       vue-echarts:
         specifier: 7.0.3
-        version: 7.0.3(@vue/runtime-core@3.5.17)(echarts@5.6.0)(vue@3.5.17(typescript@5.8.3))
+        version: 7.0.3(@vue/runtime-core@3.5.17)(echarts@6.0.0)(vue@3.5.17(typescript@5.8.3))
       vue-i18n:
         specifier: 11.1.10
         version: 11.1.10(vue@3.5.17(typescript@5.8.3))
@@ -2799,8 +2799,8 @@ packages:
   aws4@1.13.2:
     resolution: {integrity: sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==}
 
-  axios@1.10.0:
-    resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
+  axios@1.11.0:
+    resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -3505,8 +3505,8 @@ packages:
   ecc-jsbn@0.1.2:
     resolution: {integrity: sha512-eh9O+hwRHNbG4BLTjEl3nw044CkGm5X6LoaCf7LPp7UU8Qrt47JYNi6nPX8xjW97TKGKm1ouctg0QSpZe9qrnw==}
 
-  echarts@5.6.0:
-    resolution: {integrity: sha512-oTbVTsXfKuEhxftHqL5xprgLoc0k7uScAwtryCgWF6hPYFLRwOUHiFmHGCBKP5NPFNkDVopOieyUqYGH8Fa3kA==}
+  echarts@6.0.0:
+    resolution: {integrity: sha512-Tte/grDQRiETQP4xz3iZWSvoHrkCQtwqd6hs+mifXcjrCuo2iKWbajFObuLJVBlDIJlOzgQPd1hsaKt/3+OMkQ==}
 
   editorconfig@1.0.4:
     resolution: {integrity: sha512-L9Qe08KWTlqYMVvMcTIvMAdl1cDUubzRNYL+WfA4bLDMHe4nemKkpmYzkznE1FwLKu0EEmy6obgQKzMJrg4x9Q==}
@@ -7498,8 +7498,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zrender@5.6.1:
-    resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
+  zrender@6.0.0:
+    resolution: {integrity: sha512-41dFXEEXuJpNecuUQq6JlbybmnHaqqpGlbH1yxnA5V9MMP4SbohSVZsJIwz+zdjQXSSlR1Vc34EgH1zxyTDvhg==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -10986,7 +10986,7 @@ snapshots:
 
   aws4@1.13.2: {}
 
-  axios@1.10.0(debug@4.4.1):
+  axios@1.11.0(debug@4.4.1):
     dependencies:
       follow-redirects: 1.15.9(debug@4.4.1)
       form-data: 4.0.4
@@ -11763,10 +11763,10 @@ snapshots:
       jsbn: 0.1.1
       safer-buffer: 2.1.2
 
-  echarts@5.6.0:
+  echarts@6.0.0:
     dependencies:
       tslib: 2.3.0
-      zrender: 5.6.1
+      zrender: 6.0.0
 
   editorconfig@1.0.4:
     dependencies:
@@ -16037,9 +16037,9 @@ snapshots:
     dependencies:
       vue: 3.5.17(typescript@5.8.3)
 
-  vue-echarts@7.0.3(@vue/runtime-core@3.5.17)(echarts@5.6.0)(vue@3.5.17(typescript@5.8.3)):
+  vue-echarts@7.0.3(@vue/runtime-core@3.5.17)(echarts@6.0.0)(vue@3.5.17(typescript@5.8.3)):
     dependencies:
-      echarts: 5.6.0
+      echarts: 6.0.0
       vue: 3.5.17(typescript@5.8.3)
       vue-demi: 0.13.11(vue@3.5.17(typescript@5.8.3))
     optionalDependencies:
@@ -16095,7 +16095,7 @@ snapshots:
 
   wait-on@8.0.3(debug@4.4.1):
     dependencies:
-      axios: 1.10.0(debug@4.4.1)
+      axios: 1.11.0(debug@4.4.1)
       joi: 17.13.3
       lodash: 4.17.21
       minimist: 1.2.8
@@ -16339,7 +16339,7 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zrender@5.6.1:
+  zrender@6.0.0:
     dependencies:
       tslib: 2.3.0
 

@@ -2,7 +2,6 @@ import type { EChartsType } from 'echarts/core';
 import type { Ref } from 'vue';
 import type VChart from 'vue-echarts';
 import { assert, type BigNumber, type NetValue } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
 
 interface UseNetValueEventHandlersParams {
@@ -216,16 +215,17 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
 
   function setupZoomToolHandler(instance: EChartsType): void {
     const activateZoomTool = (): void => {
-      startPromise(nextTick(() => {
-        instance.dispatchAction({
-          dataZoomSelectActive: true,
-          key: 'dataZoomSelect',
-          type: 'takeGlobalCursor',
-        });
-      }));
+      // @ts-expect-error accessing private property
+      if (instance._componentsViews[0]._features.dataZoom._isZoomActive) {
+        return;
+      }
+      instance.dispatchAction({
+        dataZoomSelectActive: true,
+        key: 'dataZoomSelect',
+        type: 'takeGlobalCursor',
+      });
     };
-
-    setTimeout(activateZoomTool, 200);
+    setTimeout(activateZoomTool, 300);
     instance.on('finished', activateZoomTool);
   }
 
