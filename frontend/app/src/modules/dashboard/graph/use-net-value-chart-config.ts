@@ -1,5 +1,12 @@
 import type { NetValue } from '@rotki/common';
-import type { EChartsOption, LineSeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts';
+import type {
+  BrushComponentOption,
+  EChartsOption,
+  LineSeriesOption,
+  ToolboxComponentOption,
+  XAXisComponentOption,
+  YAXisComponentOption,
+} from 'echarts';
 import type { DataZoomComponentOption, GridComponentOption } from 'echarts/components';
 import type { ComputedRef, Ref } from 'vue';
 import { useGraph } from '@/composables/graphs';
@@ -38,13 +45,17 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     show: true,
     showDetail: false,
     type: 'slider',
-    zoomOnMouseWheel: false,
+    zoomOnMouseWheel: true,
   });
 
   const createInsideDataZoom = (): DataZoomComponentOption => ({
+    moveOnMouseMove: false,
+    moveOnMouseWheel: false,
+    preventDefaultMouseMove: false,
     rangeMode: ['value', 'value'],
     showDetail: false,
     type: 'inside',
+    zoomOnMouseWheel: true,
   });
 
   const createDataZoomConfig = (): DataZoomComponentOption[] => {
@@ -57,13 +68,18 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     return dataZoomOptions;
   };
 
-  const createGridConfig = (): GridComponentOption => ({
-    bottom: get(showGraphRangeSelector) ? 56 : 16,
-    containLabel: true,
-    left: 16,
-    right: 16,
-    top: 16,
-  });
+  const createGridConfig = (): GridComponentOption => {
+    const bottom = get(showGraphRangeSelector) ? 56 : 16;
+    return {
+      bottom,
+      left: 16,
+      outerBounds: {
+        bottom,
+      },
+      right: 16,
+      top: 16,
+    };
+  };
 
   const createSeriesConfig = (): LineSeriesOption[] => [{
     areaStyle: get(gradient),
@@ -100,11 +116,29 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     },
   });
 
+  const createBrushConfig = (): BrushComponentOption => ({
+    brushLink: 'all',
+    throttleDelay: 300,
+    throttleType: 'debounce',
+    xAxisIndex: 0,
+  });
+
+  const createToolboxConfig = (): ToolboxComponentOption => ({
+    feature: {
+      dataZoom: {
+        yAxisIndex: false,
+      },
+    },
+    top: -100,
+  });
+
   const chartOption = computed<EChartsOption>(() => ({
     backgroundColor: 'transparent',
+    brush: createBrushConfig(),
     dataZoom: createDataZoomConfig(),
     grid: createGridConfig(),
     series: createSeriesConfig(),
+    toolbox: createToolboxConfig(),
     tooltip: {
       trigger: 'axis',
     },

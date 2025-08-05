@@ -1,7 +1,14 @@
 import type { Ref } from 'vue';
 import { type BigNumber, type GradientArea, type NewGraphApi, Zero } from '@rotki/common';
 import { LineChart, PieChart } from 'echarts/charts';
-import { DataZoomComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
+import {
+  BrushComponent,
+  DataZoomComponent,
+  GridComponent,
+  LegendComponent,
+  ToolboxComponent,
+  TooltipComponent,
+} from 'echarts/components';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { THEME_KEY } from 'vue-echarts';
@@ -16,6 +23,8 @@ export function initGraph(): void {
     DataZoomComponent,
     PieChart,
     LegendComponent,
+    BrushComponent,
+    ToolboxComponent,
   ]);
 }
 

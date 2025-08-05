@@ -28,7 +28,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { isDark } = useRotkiTheme();
 
 const { chartOption } = useNetValueChartConfig(chartData);
-const { setupChartEventHandlers, tooltipData } = useNetValueEventHandlers({
+const { setupChartEventHandlers, setupZoomToolHandler, tooltipData } = useNetValueEventHandlers({
   chartContainer,
   chartData,
   chartInstance,
@@ -40,9 +40,11 @@ const { setupChartEventHandlers, tooltipData } = useNetValueEventHandlers({
 });
 
 watchImmediate(isDark, () => {
-  nextTick(() => {
-    setupChartEventHandlers();
-  });
+  nextTick(setupChartEventHandlers);
+});
+
+watchImmediate(chartOption, () => {
+  setupZoomToolHandler();
 });
 </script>
 
