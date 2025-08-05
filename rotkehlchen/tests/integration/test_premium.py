@@ -642,8 +642,9 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         the plaintext DB is not attached. Which is also the fix. To make that
         export occur under a critical section
         """
-        result = db.conn.execute('SELECT * FROM pragma_database_list;')
-        assert len(result.fetchall()) == 1, 'the plaintext DB should not be attached here'
+        with db.conn.read_ctx() as cursor:
+            result = cursor.execute('SELECT * FROM pragma_database_list;')
+            assert len(result.fetchall()) == 1, 'the plaintext DB should not be attached here'
 
     with db.user_write() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(

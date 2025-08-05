@@ -104,7 +104,7 @@ def perform_userdb_upgrade_steps(
 
     if should_vacuum:  # TODO: Probably can generalize this to a given post-transaction step
         progress_handler.new_step('Vacuuming database.')
-        db.conn.execute('VACUUM;')
+        db.conn.vacuum()
 
 
 def perform_globaldb_upgrade_steps(
@@ -126,7 +126,7 @@ def perform_globaldb_upgrade_steps(
 
     if should_vacuum:  # TODO: Probably can generalize this to a given post-transaction step
         progress_handler.new_step('Vacuuming database.')
-        connection.execute('VACUUM;')
+        connection.vacuum()
 
 
 def perform_userdb_migration_steps(
@@ -146,4 +146,4 @@ def perform_userdb_migration_steps(
 
     if should_vacuum:  # TODO: Probably can generalize this to a given post-transaction step
         progress_handler.new_step('Vacuuming database.')
-        rotki.data.db.conn.execute('VACUUM;')
+        rotki.data.db.conn.vacuum()

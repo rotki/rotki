@@ -329,12 +329,12 @@ class DBHandler:
         # Run upgrades if needed -- only for user DB
         fresh_db = DBUpgradeManager(self).run_upgrades()
         if fresh_db:  # create tables during the first run and add the DB version
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-            cursor = self.conn.cursor()
-            cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(ROTKEHLCHEN_DB_VERSION)),
-            )
+            with self.conn.write_ctx() as write_cursor:
+                write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                    ('version', str(ROTKEHLCHEN_DB_VERSION)),
+                )
 
         # run checks on the database
         self.conn.schema_sanity_check()
@@ -343,24 +343,23 @@ class DBHandler:
         # This logic executes only for the transient db
         self._connect(conn_attribute='conn_transient')
         transient_version = 0
-        cursor = self.conn_transient.cursor()
-        with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
+        with self.conn_transient.read_ctx() as cursor, suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
             result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
             if result is not None:
                 transient_version = int(result[0])
 
-        if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
-            # "upgrade" transient DB
-            tables = list(cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))
-            cursor.executescript('PRAGMA foreign_keys = OFF;')
-            cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
-            cursor.executescript('PRAGMA foreign_keys = ON;')
-        self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
-        cursor.execute(
-            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
-        )
-        self.conn_transient.commit()
+        with self.conn_transient.write_ctx() as write_cursor:
+            if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
+                # "upgrade" transient DB
+                tables = list(write_cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))  # noqa: E501
+                write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+                write_cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
+                write_cursor.executescript('PRAGMA foreign_keys = ON;')
+            write_cursor.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+            )
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -506,7 +505,8 @@ class DBHandler:
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            conn.executescript(script)
+            with conn.write_ctx() as write_cursor:
+                write_cursor.executescript(script)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             log.error(
                 f'At change password could not re-key the open {conn_attribute} '
@@ -545,10 +545,11 @@ class DBHandler:
         """
         tempdbpath = Path(tempdbfile.name)
         tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
-        with self.conn.critical_section():
-            # flush the wal file to have up to date information when exporting data
-            self.conn.wal_checkpoint()
-            self.conn.executescript(
+
+        # flush the wal file to have up to date information when exporting data
+        self.conn.wal_checkpoint()
+        with self.conn.write_ctx() as write_cursor:
+            write_cursor.executescript(
                 f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
                 "SELECT sqlcipher_export('plaintext');"
                 "DETACH DATABASE plaintext;",
@@ -590,7 +591,8 @@ class DBHandler:
             if self.sqlcipher_version == 3:
                 script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'
             script += "SELECT sqlcipher_export('encrypted');DETACH DATABASE encrypted;"
-            self.conn.executescript(script)
+            with self.conn.write_ctx() as write_cursor:
+                write_cursor.executescript(script)
             self.disconnect()
 
         try:

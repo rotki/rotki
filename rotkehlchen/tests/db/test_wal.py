@@ -3,7 +3,7 @@ import pytest
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [1])
-def test_wal_checkpoint_lock_with_rotki_infrastructure(database):
+def test_wal_checkpoint_lock(database):
     """Test that verifies the fix for issue #5038.
 
     It reproduces the actual scenario where multiple concurrent readers during a WAL checkpoint
@@ -34,8 +34,8 @@ def test_wal_checkpoint_lock_with_rotki_infrastructure(database):
 
             try:
                 # Add some data to ensure WAL has content to checkpoint
-                with database.user_write() as cursor:
-                    cursor.execute(
+                with database.user_write() as write_cursor:
+                    write_cursor.execute(
                         'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
                         (f'test_checkpoint_{attempts}', f'value_{attempts}'),
                     )

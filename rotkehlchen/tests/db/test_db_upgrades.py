@@ -3335,7 +3335,8 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='view'")
     views_after_upgrade = {x[0] for x in result}
     # also add latest tables (this will indicate if DB upgrade missed something
-    db.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+    with db.conn.write_ctx() as write_cursor:
+        write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables_after_creation = {x[0] for x in result}
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='view'")
@@ -3492,8 +3493,8 @@ def test_unfinished_upgrades(user_data_dir):
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=0,
             )
-            backup_connection.executescript("PRAGMA key='123'")  # unlock
             with backup_connection.write_ctx() as write_cursor:
+                write_cursor.executescript("PRAGMA key='123'")  # unlock
                 write_cursor.execute('INSERT INTO settings VALUES(?, ?)', ('is_backup', write_version))  # mark as a backup  # noqa: E501
             backup_connection.close()
 

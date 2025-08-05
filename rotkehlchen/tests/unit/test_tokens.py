@@ -210,12 +210,13 @@ def test_last_queried_ts(tokens, freezer):
             only_cache=False,
             addresses=[address],
         )
-        after_first_query = tokens.db.conn.execute(
-            'SELECT key, value FROM evm_accounts_details',
-        ).fetchall()
-        assert len(after_first_query) == 1
-        assert after_first_query[0][0] == 'last_queried_timestamp'
-        assert int(after_first_query[0][1]) >= beginning
+        with tokens.db.conn.read_ctx() as cursor:
+            after_first_query = cursor.execute(
+                'SELECT key, value FROM evm_accounts_details',
+            ).fetchall()
+            assert len(after_first_query) == 1
+            assert after_first_query[0][0] == 'last_queried_timestamp'
+            assert int(after_first_query[0][1]) >= beginning
 
         continuation = beginning + 10
         freezer.move_to(datetime.datetime.fromtimestamp(continuation, tz=datetime.UTC))
@@ -224,13 +225,15 @@ def test_last_queried_ts(tokens, freezer):
             only_cache=False,
             addresses=['0x4bBa290826C253BD854121346c370a9886d1bC26'],
         )
-        # Check that last_queried_timestamp was updated and that there are no duplicates
-        after_second_query = tokens.db.conn.execute(
-            'SELECT key, value FROM evm_accounts_details',
-        ).fetchall()
-        assert len(after_second_query) == 1
-        assert after_second_query[0][0] == 'last_queried_timestamp'
-        assert int(after_second_query[0][1]) >= continuation
+
+        with tokens.db.conn.read_ctx() as cursor:
+            # Check that last_queried_timestamp was updated and that there are no duplicates
+            after_second_query = cursor.execute(
+                'SELECT key, value FROM evm_accounts_details',
+            ).fetchall()
+            assert len(after_second_query) == 1
+            assert after_second_query[0][0] == 'last_queried_timestamp'
+            assert int(after_second_query[0][1]) >= continuation
 
 
 def test_cache_is_per_token_type(ethereum_inquirer):

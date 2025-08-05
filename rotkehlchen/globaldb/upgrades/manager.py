@@ -174,6 +174,7 @@ def _perform_single_upgrade(
 
     # WAL checkpoint at start to make sure everything is in the file we copy for backup. For more info check comment in the user DB upgrade.  # noqa: E501
     connection.wal_checkpoint('(FULL)')
+
     # Create a backup
     tmp_db_filename = f'{ts_now()}_global_db_v{upgrade.from_version}.backup'
     tmp_db_path = global_dir / tmp_db_filename
@@ -237,15 +238,18 @@ def configure_globaldb(
     )
 
     # its not a fresh database and foreign keys are not turned on by default.
-    connection.executescript('PRAGMA foreign_keys=on;')
-    connection.execute('PRAGMA journal_mode=WAL;')
-    if is_fresh_db is True:
-        connection.executescript(DB_SCRIPT_CREATE_TABLES)
-        with connection.write_ctx() as cursor:
-            cursor.executemany(
+    with connection.write_ctx() as write_cursor:
+        write_cursor.executescript('PRAGMA foreign_keys=on;')
+        write_cursor.execute('PRAGMA journal_mode=WAL;')
+
+        if is_fresh_db is True:
+            write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
+            write_cursor.executemany(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
             )
-    else:
+
+    if is_fresh_db is False:
         maybe_apply_globaldb_migrations(connection)
+
     connection.schema_sanity_check()

@@ -801,8 +801,8 @@ def test_user_login(
         connection_type=DBConnectionType.USER,
         sql_vm_instructions_cb=0,
     )
-    backup_connection.executescript(f"PRAGMA key='{db_password}'")  # unlock
     with backup_connection.write_ctx() as write_cursor:
+        write_cursor.executescript(f"PRAGMA key='{db_password}'")  # unlock
         write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")
     backup_connection.close()
 

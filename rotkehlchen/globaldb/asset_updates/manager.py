@@ -488,10 +488,11 @@ class AssetsUpdater:
             )
 
         # at the very end update the current version in the DB
-        connection.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            (ASSETS_VERSION_KEY, str(version)),
-        )
+        with connection.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                (ASSETS_VERSION_KEY, str(version)),
+            )
 
     def perform_update(
             self,
