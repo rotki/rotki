@@ -143,9 +143,12 @@ class GnosisPay:
     def maybe_deserialize_transaction(self, data: dict[str, Any]) -> GnosisPayTransaction | None:
         try:
             if (
+                (
                     (kind := data['kind']) == 'Payment' and
                     # status is missing for kind == Reversal so None is also valid here
                     data.get('status') not in ('Approved', 'Reversal', 'PartialReversal')
+                ) or
+                kind == 'Refund'  # Refunds are missing transactions data so we can't link them to onchain events  # noqa: E501
             ):
                 log.debug(f'Ignoring gnosis pay data entry {data}')
                 return None  # only use Approved/Reversal for payments
@@ -181,10 +184,9 @@ class GnosisPay:
                 reversal_tx_hash=None,  # atm does not appear in the API
             )
 
-        except KeyError as e:
-            log.error(f'Could not find key {e!s} in Gnosis pay transaction response: {data}')
-        except DeserializationError as e:
-            log.error(f'Failed to read gnosis pay data {data} due to {e!s}')
+        except (DeserializationError, KeyError, IndexError) as e:
+            msg = f'missing key: {e}' if isinstance(e, KeyError) else str(e)
+            log.error(f'Failed to read gnosis pay data {data} due to {msg}')
 
         return None
 
