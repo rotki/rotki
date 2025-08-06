@@ -835,8 +835,11 @@ def test_query_chunked_endpoint_with_offset_pagination(eth2):
 
 
 def test_get_active_validator_indices(database):
-    active_index, exited_index, noevents_index = 1, 575645, 4242
+    active_index, exited_index, noevents_index, consolidated_index = 1, 575645, 4242, 999
     dbeth2 = DBEth2(database)
+    dbevents = DBHistoryEvents(database)
+    user_address = string_to_evm_address('0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b')
+
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, [
             ValidatorDetails(
@@ -853,10 +856,34 @@ def test_get_active_validator_indices(database):
                 validator_index=noevents_index,
                 validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
+            ), ValidatorDetails(
+                validator_index=consolidated_index,
+                validator_type=ValidatorType.DISTRIBUTING,
+                public_key=Eth2PubKey('0xa7d4c301a02b7dc747c0f8ff32579226588c7771e133e9b2817cc7a9a977f0004dbee4f4f7f89451a1f5f761e3bb8c81'),
             ),
         ])
 
+        # Add consolidation event to make consolidated_index consolidated
+        dbevents.add_history_events(write_cursor, [EvmEvent(
+            tx_hash=make_evm_tx_hash(),
+            sequence_index=1,
+            timestamp=TimestampMS(1699801559000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.CONSOLIDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            counterparty=CPT_ETH2,
+            address=CONSOLIDATION_REQUEST_CONTRACT,
+            extra_data={
+                'source_validator_index': consolidated_index,
+                'target_validator_index': active_index,
+            },
+        )])
+
     with database.conn.read_ctx() as cursor:
+        # Consolidated validator should be excluded from active indices
         assert dbeth2.get_active_validator_indices(cursor) == {active_index, noevents_index}
 
 
