@@ -22,7 +22,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 
@@ -32,6 +32,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 MIN_DEFILLAMA_CONFIDENCE = FVal('0.20')
+# manual testing showed the api can handle around 258 tokens in ethereum:0x format,
+# but we're using 150 to stay comfortably under the limit and avoid hitting 413/414 errors
+DEFILLAMA_CHUNK_SIZE = 150
 
 
 class Defillama(
@@ -213,21 +216,30 @@ class Defillama(
         if len(coin_id_mapping) == 0:
             return {}
 
-        usd_prices = self._deserialize_prices(
-            result=self._query(
-                module='prices',
-                subpath=f'current/{",".join(coin_id_mapping.keys())}',
-            ),
-            coin_id_mapping=coin_id_mapping,
-            from_assets=from_assets,
-            to_asset=to_asset,
-        )
+        # Split coin IDs into chunks to avoid "413 content too large" errors
+        all_usd_prices: dict[AssetWithOracles, Price] = {}
+        for chunk_coin_ids in get_chunks(list(coin_id_mapping), DEFILLAMA_CHUNK_SIZE):
+            chunk_mapping = {coin_id: coin_id_mapping[coin_id] for coin_id in chunk_coin_ids}
+
+            try:
+                all_usd_prices.update(self._deserialize_prices(
+                    result=self._query(
+                        module='prices',
+                        subpath=f'current/{",".join(chunk_coin_ids)}',
+                    ),
+                    coin_id_mapping=chunk_mapping,
+                    from_assets=[chunk_mapping[coin_id] for coin_id in chunk_coin_ids],
+                    to_asset=to_asset,
+                ))
+            except RemoteError as e:
+                log.debug(f'Defillama failed to query price chunk {chunk_coin_ids}: {e}. Skipping chunk.')  # noqa: E501
+                continue
 
         # Prices from defillama are usd prices, so get rate from usd to to_asset
         rate_price = Inquirer.find_price(from_asset=A_USD, to_asset=to_asset) if to_asset != A_USD else ONE  # noqa: E501
         return {
             asset: Price(usd_price * rate_price)
-            for asset, usd_price in usd_prices.items() if usd_price != ZERO_PRICE
+            for asset, usd_price in all_usd_prices.items() if usd_price != ZERO_PRICE
         }
 
     def can_query_history(

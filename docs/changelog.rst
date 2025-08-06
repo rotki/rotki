@@ -2,6 +2,7 @@
 Changelog
 =========
 
+
 * :feature:`-` Users will now be able to persist privacy mode and scramble settings through an interface-only setting.
 * :bug:`10347` rotki will prioritize the native token in the asset selector on the on-chain send menu.
 * :bug:`10344` Users will now see the net worth on the tray that respects the scramble setting.
@@ -13,6 +14,7 @@ Changelog
 * :bug:`-` Liquity debts now appear as liabilities in dashboard balances where it was previously missing.
 * :bug:`-` Fix the issue where the prices for the asset group are not displayed and keep loading.
 * :bug:`-` Spark balances on proxy addresses will now be properly detected.
+* :bug:`-` Price queries for tokens should no longer fail when only one token query failed. This sometimes results in zero prices, making tokens look as if they disappeared.
 * :bug:`-` Fix Spark protocol savings transactions decoding across all supported EVM chains.
 * :bug:`-` Fix crash when processing certain L2 transactions with missing or invalid fees.
 * :feature:`-` Monerium and Gnosis Pay events will be properly updated when decoding new transactions or redecoding existing events.
