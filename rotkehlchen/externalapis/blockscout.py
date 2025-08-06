@@ -327,15 +327,14 @@ class Blockscout(ExternalServiceWithApiKey):
             action='getblocknobytime',
             query_args={'timestamp': ts, 'closest': closest},
         )
-        if (blocknumber := response.get('blockNumber')) is None:
-            raise RemoteError(
-                f'Invalid block number response from blockscout for {ts}: {response}',
-            )
         try:
-            return deserialize_int(blocknumber)
+            return deserialize_int(
+                value=response.get('blockNumber'),
+                location='blockscout blocknumber query',
+            )
         except DeserializationError as e:
             raise RemoteError(
-                f'Failed to deserialize timestamp from blockscout response {response}',
+                f'Failed to deserialize blocknumber from blockscout response {response}',
             ) from e
 
     def has_activity(self, account: ChecksumEvmAddress) -> HasChainActivity:

@@ -67,7 +67,10 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         userdb=database,
         evm_address=deserialize_evm_address(vault['assets']['borrowed']['address']),
         chain_id=vault_chain_id,
-        decimals=deserialize_int(vault['assets']['borrowed']['decimals']),
+        decimals=deserialize_int(
+            value=vault['assets']['borrowed']['decimals'],
+            location='curve lending vault borrowed token decimals',
+        ),
         symbol=vault['assets']['borrowed']['symbol'],
         encounter=(encounter := TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False)),  # noqa: E501
     )

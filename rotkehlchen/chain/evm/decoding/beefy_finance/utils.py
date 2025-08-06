@@ -73,7 +73,10 @@ def _process_beefy_vault(
                 evm_inquirer=evm_inquirer,
                 evm_address=deserialize_evm_address(vault['tokenAddress']),
                 chain_id=evm_inquirer.chain_id,
-                decimals=deserialize_int(vault['tokenDecimals']),
+                decimals=deserialize_int(
+                    value=vault['tokenDecimals'],
+                    location='beefy token decimals',
+                ),
                 encounter=encounter,
             ).evm_address,
             token_kind=TokenKind.ERC20,

@@ -260,8 +260,14 @@ class BeaconInquirer:
         details = []
         indices_mapping_to_query_beaconchain = {}
         for idx, entry in enumerate(node_results):
-            activation_epoch = deserialize_int(valuegetter(entry, activation_epoch_key))
-            withdrawable_epoch = deserialize_int(valuegetter(entry, withdrawable_epoch_key))
+            activation_epoch = deserialize_int(
+                value=valuegetter(entry, activation_epoch_key),
+                location='validator activation epoch',
+            )
+            withdrawable_epoch = deserialize_int(
+                value=valuegetter(entry, withdrawable_epoch_key),
+                location='validator withdrawable epoch',
+            )
             activation_ts, withdrawable_ts, exited_ts = None, None, None
             if activation_epoch < BEACONCHAIN_MAX_EPOCH:
                 activation_ts = epoch_to_timestamp(activation_epoch)
@@ -276,14 +282,15 @@ class BeaconInquirer:
                 except DeserializationError:
                     log.error(f'Could not deserialize 0x01/0x02 withdrawal credentials for {entry}')  # noqa: E501
 
+            validator_index = deserialize_int(value=entry[index_key], location='validator index')
             if withdrawable_ts is not None:
                 if queried_beaconchain and (exit_epoch := entry.get('exitepoch', 0)) != 0:
                     exited_ts = epoch_to_timestamp(exit_epoch)
                 else:  # query this index from beaconchain to see if exited
-                    indices_mapping_to_query_beaconchain[deserialize_int(entry[index_key])] = idx
+                    indices_mapping_to_query_beaconchain[validator_index] = idx
 
             details.append(ValidatorDetails(
-                validator_index=deserialize_int(entry[index_key]),
+                validator_index=validator_index,
                 public_key=Eth2PubKey(deserialize_str(valuegetter(entry, 'pubkey'))),
                 withdrawal_address=withdrawal_address,
                 activation_timestamp=activation_ts,

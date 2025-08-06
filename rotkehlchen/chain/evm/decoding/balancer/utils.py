@@ -71,7 +71,7 @@ def query_balancer_pools_count(chain: 'ChainID', version: Literal[1, 2]) -> int:
         },
     )
     try:
-        return deserialize_int(data['poolGetPoolsCount'])
+        return deserialize_int(value=data['poolGetPoolsCount'], location='balancer pool count')
     except (DeserializationError, KeyError) as e:
         msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
         raise RemoteError(f'Balancer v{version} pools count query for {chain} failed due to {msg}') from e  # noqa: E501

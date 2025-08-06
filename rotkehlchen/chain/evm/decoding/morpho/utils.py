@@ -73,7 +73,10 @@ def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
         userdb=database,
         evm_address=deserialize_evm_address(vault['asset']['address']),
         chain_id=vault_chain_id,
-        decimals=deserialize_int(vault['asset']['decimals']),
+        decimals=deserialize_int(
+            value=vault['asset']['decimals'],
+            location='morpho vault underlying token decimals',
+        ),
         name=vault['asset']['name'],
         symbol=vault['asset']['symbol'],
         encounter=(encounter := TokenEncounterInfo(

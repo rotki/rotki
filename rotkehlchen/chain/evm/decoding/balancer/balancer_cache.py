@@ -95,7 +95,10 @@ def query_balancer_data(
                 protocol=protocol,
                 name=pool['name'].strip(),  # API responses sometimes contain trailing/leading whitespace in pool names and symbols  # noqa: E501
                 symbol=pool['symbol'].strip(),
-                decimals=deserialize_int(pool['decimals']),
+                decimals=deserialize_int(
+                    value=pool['decimals'],
+                    location='balancer pool token decimals',
+                ),
                 evm_address=deserialize_evm_address(pool['address']),
                 encounter=token_encounter_info,
                 underlying_tokens=[

@@ -149,7 +149,7 @@ def _query_yearn_vault_count() -> int:
         raise RemoteError(msg)
 
     try:
-        return deserialize_int(data['numberOfVaults'])
+        return deserialize_int(value=data['numberOfVaults'], location='yearn vault count')
     except DeserializationError as e:
         log.error(f'Yearn number of vaults is not an integer {data}')
         raise RemoteError(
