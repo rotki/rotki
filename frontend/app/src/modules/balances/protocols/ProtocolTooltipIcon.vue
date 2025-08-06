@@ -18,6 +18,17 @@ const protocol = useRefMap(protocolBalance, balance => balance.protocol);
 const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 const { t } = useI18n({ useScope: 'global' });
 const { protocolData } = useProtocolData(protocol);
+
+const name = computed<string>(() => {
+  const data = get(protocolData);
+  const name = data?.name ?? toSentenceCase(get(protocol));
+
+  if (name.toLocaleLowerCase() === 'address') {
+    return t('common.blockchain');
+  }
+
+  return name;
+});
 </script>
 
 <template>
@@ -36,7 +47,7 @@ const { protocolData } = useProtocolData(protocol);
 
     <div class="flex flex-col gap-0.5">
       <div class="font-medium text-sm mb-0.5">
-        {{ protocolData?.name ?? toSentenceCase(protocol) }}
+        {{ name }}
         <div
           v-if="protocolBalance.containsManual"
           class="font-normal text-caption"

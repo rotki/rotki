@@ -42,9 +42,15 @@ const BreakdownSchema = BaseAssetBalanceSchema.extend({
 
 export type ProtocolBalance = z.infer<typeof ProtocolBalanceSchema>;
 
+export type ProtocolBalanceWithChains = ProtocolBalance & { chains?: Record<string, Balance> };
+
 const AssetBalanceWithPrice = BaseAssetBalanceSchema.extend({
   breakdown: z.array(BreakdownSchema).optional(),
   perProtocol: z.array(ProtocolBalanceSchema).optional(),
 });
 
 export type AssetBalanceWithPrice = z.infer<typeof AssetBalanceWithPrice>;
+
+export type AssetBalanceWithPriceAndChains = Omit<AssetBalanceWithPrice, 'perProtocol'> & {
+  perProtocol?: ProtocolBalanceWithChains[];
+};

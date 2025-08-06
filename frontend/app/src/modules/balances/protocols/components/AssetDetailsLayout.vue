@@ -10,15 +10,16 @@ const { t } = useI18n({ useScope: 'global' });
 
 const tab = ref(0);
 
-const hasBreakdown = computed<boolean>(() => {
-  const breakdown = props.row.breakdown;
-  return (isEvmNativeToken(props.row.asset) || (breakdown && breakdown.length > 0)) ?? false;
-},
-);
-
 const hasPerProtocol = computed<boolean>(() => {
   const perProtocol = props.row.perProtocol;
   return (perProtocol && perProtocol.length > 1) ?? false;
+});
+
+const hasBreakdown = computed<boolean>(() => {
+  const breakdown = props.row.breakdown;
+  const isNativeToken = isEvmNativeToken(props.row.asset);
+  const hasBreakdown = breakdown && breakdown.length > 0;
+  return ((hasBreakdown && !isNativeToken) || (isNativeToken && hasBreakdown && !get(hasPerProtocol))) ?? false;
 });
 
 const showTabs = logicAnd(hasBreakdown, hasPerProtocol);
