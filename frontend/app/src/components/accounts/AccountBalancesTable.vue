@@ -15,6 +15,7 @@ import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { type AccountManageState, editBlockchainAccount } from '@/composables/accounts/blockchain/use-account-manage';
+import { useAddressBookForm } from '@/composables/address-book/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -23,7 +24,7 @@ import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { sum } from '@/utils/balances';
-import { getAccountAddress, getAccountId, getGroupId } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getAccountId, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
 
 type DataRow = T & { id: string };
 
@@ -204,8 +205,21 @@ function confirmDelete(item: DataRow) {
   });
 }
 
-function edit(row: DataRow) {
-  emit('edit', editBlockchainAccount(row));
+const { showGlobalDialog } = useAddressBookForm();
+
+function edit(group: string, row: DataRow) {
+  if (group === 'evm') {
+    emit('edit', editBlockchainAccount(row));
+  }
+  else if (group === 'xpub') {
+    const blockchain = getChain(row);
+    if (blockchain) {
+      showGlobalDialog({
+        address: getAccountAddress(row),
+        blockchain,
+      });
+    }
+  }
 }
 
 function getCategoryTotal(category: string): BigNumber {
@@ -320,8 +334,7 @@ defineExpose({
           class="account-balance-table__actions"
           :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation"
-          :no-edit="group !== 'evm'"
-          @edit-click="edit(row)"
+          @edit-click="edit(group, row)"
           @delete-click="confirmDelete(row)"
         />
       </div>

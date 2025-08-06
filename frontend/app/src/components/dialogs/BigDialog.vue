@@ -105,7 +105,7 @@ function promptClose() {
       class="!rounded-b-none"
     >
       <template #custom-header>
-        <div class="mx-4 mt-4">
+        <div class="m-4">
           <slot
             name="header"
             :title="title"
