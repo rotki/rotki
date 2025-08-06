@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -6,11 +7,15 @@ from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.types import string_to_btc_address
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.bitcoin import get_decoded_events_of_bitcoin_tx
-from rotkehlchen.types import BTCAddress, Location, TimestampMS
+from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import BTCAddress, Location, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
@@ -538,3 +543,36 @@ def test_p2pk(
     )]
 
     assert expected_event.serialize()['tx_hash'] == tx_id
+
+
+@pytest.mark.parametrize('btc_accounts', [['bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm']])  # noqa: E501
+def test_skip_unconfirmed_blockchain_info_txs(
+        bitcoin_manager: 'BitcoinManager',
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that unconfirmed txs are skipped without affecting the processing of confirmed txs.
+    Unlike the other apis we use, blockchain.info doesn't allow limiting to only confirmed txs.
+    Mocks the api result to return one unconfirmed tx and one confirmed tx.
+    """
+    blockchain_info_response = """{"addresses":[{"address":"bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm","final_balance":29488,"n_tx":14,"total_received":366022,"total_sent":336534}],"wallet":{"final_balance":29488,"n_tx":14,"n_tx_filtered":14,"total_received":366022,"total_sent":336534},
+    "txs":[
+        {"hash":"f6bcea42da69ec935e13c29241f15a72e055219549403ffe1aef251a306581e6","ver":2,"vin_sz":2,"vout_sz":2,"size":312,"weight":846,"fee":423,"relayed_by":"0.0.0.0","lock_time":0,"tx_index":8110189530268861,"double_spend":false,"time":1754493540,"block_index":null,"block_height":null,"inputs":[{"sequence":4294967295,"witness":"01400ecb3c368d33b70b680f051462d9a682a3f293cfe7d6592961094263611ff90ce24778927f861b9b59e381ecce9560c8d51b8e9f524662c85c124715ff5b146b","script":"","index":0,"prev_out":{"type":0,"spent":true,"value":26084,"spending_outpoints":[{"tx_index":8110189530268861,"n":0}],"n":0,"tx_index":228530240517491,"script":"51206cb9e60510b7862a40f6c16fcb007115269ceab4f0144834c59202895ef8d98e","addr":"bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm"}},{"sequence":4294967295,"witness":"0140b40a01cc81b8ac749f4afa18d3bd7854039f498aa24e4584c3ac59ad4b714a36b6ea06b31c8b7df80d764907895336f984c49d3e6460b397a4e95aef50a32da4","script":"","index":1,"prev_out":{"type":0,"spent":true,"value":20000,"spending_outpoints":[{"tx_index":8110189530268861,"n":1}],"n":0,"tx_index":1648502504821630,"script":"51206cb9e60510b7862a40f6c16fcb007115269ceab4f0144834c59202895ef8d98e","addr":"bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm"}}],"out":[{"type":0,"spent":true,"value":44000,"spending_outpoints":[{"tx_index":6739226631653152,"n":0}],"n":0,"tx_index":8110189530268861,"script":"5120dc699bbaa6a0d1cd8a14aec20a27d9c3ade02fa63bff6b709d8db84c59f50c8b","addr":"bc1pm35ehw4x5rgumzs54mpq5f7ecwk7qtax80lkkuya3kuyck04pj9sy3clgm"},{"type":0,"spent":false,"value":1661,"spending_outpoints":[],"n":1,"tx_index":8110189530268861,"script":"51206cb9e60510b7862a40f6c16fcb007115269ceab4f0144834c59202895ef8d98e","addr":"bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm"}],"result":-44423,"balance":27850},
+        {"hash":"821a49c9e315a03c7c7f2ab9f82d38caa622df7d331a11102af09bb0316fda2e","ver":2,"vin_sz":1,"vout_sz":2,"size":234,"weight":609,"fee":612,"relayed_by":"0.0.0.0","lock_time":0,"tx_index":1648502504821630,"double_spend":false,"time":1754493473,"block_index":908880,"block_height":908880,"inputs":[{"sequence":4294967295,"witness":"02473044022071bbf6d314c51c53b24148db9d6f0022a37db519b0a2558455f0564c62741a8e02203e6c0c55076f181f732e4233c354af431953db40867b6c5126e172c38446a4ea012103d785c33d1624ea6113949c58ce4c1d459f16c4d25aeeacf040bd86ed1164d1ab","script":"","index":0,"prev_out":{"type":0,"spent":true,"value":49593,"spending_outpoints":[{"tx_index":1648502504821630,"n":0}],"n":3,"tx_index":920394186050089,"script":"00149f16a0e067f24307f39b373f6c498e71043d0b02","addr":"bc1qnut2pcr87fps0uumxulkcjvwwyzr6zczenmd4r"}}],"out":[{"type":0,"spent":true,"value":20000,"spending_outpoints":[{"tx_index":8110189530268861,"n":1}],"n":0,"tx_index":1648502504821630,"script":"51206cb9e60510b7862a40f6c16fcb007115269ceab4f0144834c59202895ef8d98e","addr":"bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm"}],"result":20000,"balance":72273}
+    ],"info":{"nconnected":4,"conversion":100000000,"symbol_local":{"code":"USD","symbol":"XXX","name":"U.S.dollar","conversion":"+inf","symbolAppearsAfter":false,"local":true},"symbol_btc":{"code":"BTC","symbol":"BTC","name":"Bitcoin","conversion":100000000,"symbolAppearsAfter":true,"local":false},"latest_block":{"hash":"00000000000000000000e97a137c2a12a9f098fb840c2212d1c70ea394ab979b","height":908880,"time":1754493565,"block_index":908880}},"recommend_include_fee":true}
+    """  # noqa: E501
+    with patch('rotkehlchen.chain.bitcoin.manager.requests.get', return_value=MockResponse(200, blockchain_info_response)):  # noqa: E501
+        bitcoin_manager.query_transactions(
+            from_timestamp=Timestamp(0),
+            to_timestamp=ts_now(),
+            addresses=btc_accounts,
+        )
+
+    with bitcoin_manager.database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(bitcoin_manager.database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    # Check that there is only one event present and that it's from the confirmed tx.
+    assert len(events) == 1
+    assert '821a49c9e315a03c7c7f2ab9f82d38caa622df7d331a11102af09bb0316fda2e' in events[0].event_identifier  # noqa: E501

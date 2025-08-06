@@ -421,7 +421,7 @@ def deserialize_int(value: str | int) -> int:
     """
     try:
         result = int(value)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         raise DeserializationError(f'Could not transform to integer the {value=}') from e
 
     return result
