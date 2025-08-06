@@ -53,6 +53,7 @@ const {
   connected,
   connectedAddress,
   connectedChainId,
+  isDisconnecting,
   isWalletConnect,
   preparing,
   supportedChainsForConnectedAccount,
@@ -382,7 +383,7 @@ watch([estimatedGasFee, assetBalance], () => {
   >
     <div class="p-6 flex flex-col gap-6 border-b border-default">
       <RuiAlert
-        v-if="warnUntrackedAddress"
+        v-if="warnUntrackedAddress && !isDisconnecting"
         type="warning"
       >
         {{ t('trade.warning.not_tracked') }}
@@ -462,10 +463,10 @@ watch([estimatedGasFee, assetBalance], () => {
     </div>
     <div class="p-6 border-t border-default">
       <WalletConnectionButton
-        v-if="!connected"
+        v-if="!connected || isDisconnecting"
         size="lg"
         full-width
-        :loading="isConnecting"
+        :loading="isConnecting || isDisconnecting"
         @click="onConnectClicked()"
       />
       <RuiButton
