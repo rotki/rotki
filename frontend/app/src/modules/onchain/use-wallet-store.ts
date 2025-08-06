@@ -29,6 +29,7 @@ export const useWalletStore = defineStore('wallet', () => {
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
   const walletMode = ref<WalletMode>(WALLET_MODES.LOCAL_BRIDGE);
+  const isDisconnecting = ref<boolean>(false);
 
   // Consolidated connection state (no more delegation)
   const connected = ref<boolean>(false);
@@ -142,14 +143,20 @@ export const useWalletStore = defineStore('wallet', () => {
   };
 
   const disconnect = async (): Promise<void> => {
-    if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
-      await injectedWallet.disconnect();
-      unifiedProviders.clearProvider();
+    set(isDisconnecting, true);
+    try {
+      if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
+        await injectedWallet.disconnect();
+        unifiedProviders.clearProvider();
+      }
+      else {
+        await walletConnect.disconnect();
+      }
+      resetState();
     }
-    else {
-      await walletConnect.disconnect();
+    finally {
+      set(isDisconnecting, false);
     }
-    resetState();
   };
 
   const switchNetwork = async (chainId: bigint): Promise<void> => {
@@ -278,6 +285,7 @@ export const useWalletStore = defineStore('wallet', () => {
     connectedChainId,
     disconnect,
     getGasFeeForChain,
+    isDisconnecting,
     isWalletConnect,
     preparing: logicOr(preparing, injectedWallet.isConnecting),
     recentTransactions,

@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { getChainFromChainId } = useWalletHelper();
 
 const walletStore = useWalletStore();
-const { connected, connectedAddress, connectedChainId, isWalletConnect } = storeToRefs(walletStore);
+const { connected, connectedAddress, connectedChainId, isDisconnecting, isWalletConnect } = storeToRefs(walletStore);
 
 const chain = computed<string | undefined>(() => {
   const chainId = get(connectedChainId);
@@ -32,9 +32,9 @@ const chain = computed<string | undefined>(() => {
 
 <template>
   <RuiButton
-    v-if="!connected && !appBar"
+    v-if="(!connected && !appBar) || isDisconnecting"
     color="primary"
-    :loading="loading"
+    :loading="loading || isDisconnecting"
     @click="emit('connect')"
   >
     <template #prepend>
