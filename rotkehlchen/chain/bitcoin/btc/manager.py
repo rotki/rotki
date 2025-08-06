@@ -229,8 +229,8 @@ class BitcoinManager(BitcoinCommonManager):
                 formatstr='iso8601',
                 location='blockcypher bitcoin tx',
             ),
-            block_height=deserialize_int(data['block_height']),
-            fee=satoshis_to_btc(deserialize_int(data['fees'])),
+            block_height=deserialize_int(value=data['block_height'], location='btc tx block height'),  # noqa: E501
+            fee=satoshis_to_btc(deserialize_int(value=data['fees'], location='btc tx fees')),
             inputs=BtcTxIO.deserialize_list(
                 data_list=data['inputs'],
                 direction=BtcTxIODirection.INPUT,
@@ -265,8 +265,8 @@ class BitcoinManager(BitcoinCommonManager):
         return BitcoinTx(
             tx_id=data['hash'],
             timestamp=deserialize_timestamp(data['time']),
-            block_height=deserialize_int(raw_block_height),
-            fee=satoshis_to_btc(deserialize_int(data['fee'])),
+            block_height=deserialize_int(value=raw_block_height, location='btc tx block height'),
+            fee=satoshis_to_btc(deserialize_int(value=data['fee'], location='btc tx fees')),
             inputs=BtcTxIO.deserialize_list(
                 data_list=inputs,
                 direction=BtcTxIODirection.INPUT,
@@ -290,8 +290,8 @@ class BitcoinManager(BitcoinCommonManager):
         """
         return BtcTxIO(
             value=satoshis_to_btc(deserialize_int(
-                data.get('value', 0) if direction == BtcTxIODirection.OUTPUT
-                else data.get('output_value', 0),
+                value=data.get('value' if direction == BtcTxIODirection.OUTPUT else 'output_value', 0),  # noqa: E501
+                location='btc TxIO value',
             )),
             script=bytes.fromhex(script) if (script := data.get('script')) is not None else None,
             address=addresses[0] if (addresses := data['addresses']) is not None else None,
@@ -307,7 +307,7 @@ class BitcoinManager(BitcoinCommonManager):
         May raise DeserializationError, KeyError, ValueError.
         """
         return BtcTxIO(
-            value=satoshis_to_btc(deserialize_int(data['value'])),
+            value=satoshis_to_btc(deserialize_int(value=data['value'], location='btc TxIO value')),
             script=bytes.fromhex(data['script']),
             address=data.get('addr'),
             direction=direction,

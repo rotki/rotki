@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Final, NamedTuple, cast
+from typing import Any, Final, NamedTuple
 
 import polars as pl
 import requests
@@ -475,7 +475,7 @@ def process_airdrop_with_api_data(
             continue
 
         try:
-            amount = deserialize_int(cast('int', token_num))
+            amount = deserialize_int(value=token_num, location='airdrop data processing')
         except DeserializationError as e:
             log.error(f'Failed to read amount from {protocol_name} API: {e}. Skipping')
             continue

@@ -255,7 +255,10 @@ class Opensea(ExternalServiceWithApiKey):
                     )
 
                 amount = asset_normalized_value(
-                    amount=deserialize_int(last_sale['total_price']),
+                    amount=deserialize_int(
+                        value=last_sale['total_price'],
+                        location='opensea last sale price',
+                    ),
                     asset=payment_asset,
                 )
                 eth_price = deserialize_fval(

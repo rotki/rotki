@@ -240,8 +240,8 @@ class BitcoinCashManager(BitcoinCommonManager):
         return BitcoinTx(
             tx_id=data['txid'],
             timestamp=deserialize_timestamp(data['time']),
-            block_height=deserialize_int(data['block']['height']),
-            fee=satoshis_to_btc(deserialize_int(data['fee'])),
+            block_height=deserialize_int(value=data['block']['height'], location='bch tx block height'),  # noqa: E501
+            fee=satoshis_to_btc(deserialize_int(value=data['fee'], location='bch tx fee')),
             inputs=BtcTxIO.deserialize_list(
                 data_list=data['inputs'],
                 direction=BtcTxIODirection.INPUT,
@@ -263,7 +263,7 @@ class BitcoinCashManager(BitcoinCommonManager):
         May raise DeserializationError, KeyError, ValueError.
         """
         return BtcTxIO(
-            value=satoshis_to_btc(deserialize_int(data['value'])),
+            value=satoshis_to_btc(deserialize_int(value=data['value'], location='bch TxIO value')),
             script=bytes.fromhex(data['pkscript']),
             address=data.get('address'),
             direction=direction,
