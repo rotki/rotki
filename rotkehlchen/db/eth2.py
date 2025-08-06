@@ -130,11 +130,12 @@ class DBEth2:
         return result
 
     def get_active_validator_indices(self, cursor: 'DBCursor') -> set[int]:
-        """Returns the indices of the tracked validators that we know have not exited"""
+        """Returns the indices of the tracked validators that we know have not exited and are not consolidated"""  # noqa: E501
+        consolidated_indices = set(self.get_consolidated_validators(cursor))
         cursor.execute(
             'SELECT validator_index from eth2_validators WHERE exited_timestamp IS NULL',
         )
-        return {x[0] for x in cursor}
+        return {x[0] for x in cursor} - consolidated_indices
 
     @staticmethod
     def get_exited_validator_indices(cursor: 'DBCursor', validator_indices: Collection[int] | None) -> set[int]:  # noqa: E501
