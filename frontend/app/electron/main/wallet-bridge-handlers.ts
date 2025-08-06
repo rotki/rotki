@@ -52,27 +52,15 @@ export class WalletBridgeHandlers {
     }
   };
 
-  readonly handleWalletBridgeConnect = async (
+  readonly handleWalletBridgeConnectionStatus = async (
     _event: Electron.IpcMainInvokeEvent,
   ): Promise<boolean> => {
     try {
       return this.wsServer.isConnected();
     }
     catch (error: any) {
-      this.logger.error('Failed to connect wallet bridge:', error);
+      this.logger.error('Failed to check wallet bridge connection status:', error);
       return false;
-    }
-  };
-
-  readonly handleWalletBridgeDisconnect = async (
-    _event: Electron.IpcMainInvokeEvent,
-  ): Promise<void> => {
-    try {
-      this.logger.info('Disabling wallet bridge connection');
-      this.wsServer.disconnect();
-    }
-    catch (error: any) {
-      this.logger.error('Failed to disconnect wallet bridge:', error);
     }
   };
 }

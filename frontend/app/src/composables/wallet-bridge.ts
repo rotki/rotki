@@ -1,10 +1,11 @@
 interface UseWalletBridgeReturn {
   readonly isPackaged: boolean;
   openProxyPageInDefaultBrowser: () => Promise<void>;
-  proxyConnect: () => Promise<boolean>;
-  proxyHttpListening: () => Promise<boolean>;
-  proxyWebSocketListening: () => Promise<boolean>;
-  proxyClientReady: () => Promise<boolean>;
+  isProxyClientConnected: () => Promise<boolean>;
+  isProxyClientReady: () => Promise<boolean>;
+  isProxyHttpListening: () => Promise<boolean>;
+  isProxyWebSocketListening: () => Promise<boolean>;
+  proxyStopServers: () => Promise<void>;
 }
 
 const electronApp = !!window.interop;
@@ -14,34 +15,40 @@ const walletBridge: UseWalletBridgeReturn = {
     return electronApp;
   },
 
+  isProxyClientConnected: async (): Promise<boolean> => {
+    if (!electronApp || !window.walletBridge)
+      return false;
+    return (await window.walletBridge.isWalletBridgeClientConnected()) ?? false;
+  },
+
+  isProxyClientReady: async (): Promise<boolean> => {
+    if (!electronApp || !window.walletBridge)
+      return false;
+    return (await window.walletBridge.isWalletBridgeClientReady()) ?? false;
+  },
+
+  isProxyHttpListening: async (): Promise<boolean> => {
+    if (!electronApp || !window.walletBridge)
+      return false;
+    return (await window.walletBridge.isWalletBridgeHttpListening()) ?? false;
+  },
+
+  isProxyWebSocketListening: async (): Promise<boolean> => {
+    if (!electronApp || !window.walletBridge)
+      return false;
+    return (await window.walletBridge.isWalletBridgeWebSocketListening()) ?? false;
+  },
+
   openProxyPageInDefaultBrowser: async (): Promise<void> => {
     if (electronApp) {
       await window.walletBridge?.openWalletBridge();
     }
   },
 
-  proxyClientReady: async (): Promise<boolean> => {
-    if (!electronApp || !window.walletBridge)
-      return false;
-    return (await window.walletBridge.walletBridgeClientReady()) ?? false;
-  },
-
-  proxyConnect: async (): Promise<boolean> => {
-    if (!electronApp || !window.walletBridge)
-      return false;
-    return (await window.walletBridge.walletBridgeConnect()) ?? false;
-  },
-
-  proxyHttpListening: async (): Promise<boolean> => {
-    if (!electronApp || !window.walletBridge)
-      return false;
-    return (await window.walletBridge.walletBridgeHttpListening()) ?? false;
-  },
-
-  proxyWebSocketListening: async (): Promise<boolean> => {
-    if (!electronApp || !window.walletBridge)
-      return false;
-    return (await window.walletBridge.walletBridgeWebSocketListening()) ?? false;
+  proxyStopServers: async (): Promise<void> => {
+    if (electronApp && window.walletBridge) {
+      await window.walletBridge.walletBridgeStopServers();
+    }
   },
 };
 

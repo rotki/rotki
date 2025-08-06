@@ -9,10 +9,11 @@ interface WalletBridgeApi {
 
   // Bridge server management
   openWalletBridge: () => Promise<void>;
-  walletBridgeConnect: () => Promise<boolean>;
-  walletBridgeHttpListening: () => Promise<boolean>;
-  walletBridgeWebSocketListening: () => Promise<boolean>;
-  walletBridgeClientReady: () => Promise<boolean>;
+  isWalletBridgeClientConnected: () => Promise<boolean>;
+  isWalletBridgeClientReady: () => Promise<boolean>;
+  isWalletBridgeHttpListening: () => Promise<boolean>;
+  isWalletBridgeWebSocketListening: () => Promise<boolean>;
+  walletBridgeStopServers: () => Promise<void>;
 
   // RPC requests
   request: (request: RpcRequest) => Promise<any>;
