@@ -117,8 +117,10 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
     return;
   }
   const filter = `${matcher.key}=`;
-  set(search, filter);
   get(input)?.focus?.();
+  nextTick(() => {
+    set(search, filter);
+  });
 }
 
 function updateMatches(pairs: Suggestion[]) {
