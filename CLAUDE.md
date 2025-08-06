@@ -393,6 +393,31 @@ For each issue identified:
 - Assuming KeyError isn't caught without checking try-except blocks
 - Recommending error handling that exists in called functions
 
+### 6. Systematic Code Review Process
+When reviewing code changes, follow this systematic approach:
+
+1. **Check for pending review comments first** - Look for any unresolved comments from repository maintainers or other reviewers
+2. **Line-by-line examination** - Read every changed line carefully, don't skim or make assumptions
+3. **Error handling verification**:
+   - Check if dictionary/list access handles KeyError/IndexError
+   - Verify API responses handle missing or malformed data
+   - Ensure error paths have appropriate logging
+4. **Code efficiency**:
+   - Look for unnecessary comparisons or redundant operations
+   - Check for optimizable conditions
+   - Verify no unnecessary loops or repeated calculations
+5. **Logging completeness**:
+   - Error conditions should be logged with context
+   - Empty else/except blocks should explain why they're empty
+6. **Style and formatting**:
+   - Check spacing in strings and error messages
+   - Verify consistent formatting with project standards
+7. **Edge case analysis**:
+   - What happens with empty inputs?
+   - How are None/null values handled?
+   - Are array bounds checked?
+8. **Test coverage** - Verify new functionality has appropriate tests
+
 ## Memories
 - EVM addresses MUST be checksummed:
   ✅ CORRECT: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
