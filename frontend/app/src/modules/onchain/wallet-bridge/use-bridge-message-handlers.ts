@@ -103,6 +103,7 @@ export function useBridgeMessageHandlers(sendMessage?: (message: any) => void): 
     }
 
     const success = await selectProvider(uuid);
+    window.focus();
     return createSuccessResponse(message.id, success);
   }
 
