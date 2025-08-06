@@ -96,7 +96,7 @@ export function useTransactionManager(): {
     addRecentTransaction,
     getRecentTransactionByTxHash,
     handleTransactionSuccess,
-    recentTransactions: readonly(recentTransactions) as Readonly<Ref<RecentTransaction[]>>,
+    recentTransactions,
     updateTransactionStatus,
   };
 }
