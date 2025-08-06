@@ -251,7 +251,7 @@ class BitcoinCommonManager:
             self,
             raw_tx_lists: list[list[dict[str, Any]]],
             options: dict[str, Any],
-            processing_fn: Callable[[dict[str, Any]], BitcoinTx],
+            processing_fn: Callable[[dict[str, Any]], BitcoinTx | None],
     ) -> tuple[int, list[BitcoinTx]]:
         """Convert raw txs into BitcoinTxs using the specified deserialize_fn.
         The tx lists must be ordered newest to oldest (the order used by the current APIs).
@@ -274,7 +274,9 @@ class BitcoinCommonManager:
         for raw_tx_list in raw_tx_lists:
             for entry in raw_tx_list:
                 try:
-                    tx = processing_fn(entry)
+                    if (tx := processing_fn(entry)) is None:
+                        log.debug(f'Skipping unconfirmed bitcoin transaction {entry}')
+                        continue
                 except (
                     DeserializationError,  # malformed data encountered when deserializing entry
                     KeyError,  # missing required key when deserializing entry

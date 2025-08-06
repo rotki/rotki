@@ -193,6 +193,8 @@ class BitcoinManager(BitcoinCommonManager):
                 url = f"{BLOCKCYPHER_BASE_URL}/addrs/{';'.join(accounts_chunk)}/full?{limits}"
                 if before_height is not None:
                     url += f'&before={before_height}'
+                else:  # ensure we only get confirmed txs when not specifying a block_height
+                    url += '&confirmations=1'
 
                 response = request_get(
                     url=url,
@@ -241,10 +243,13 @@ class BitcoinManager(BitcoinCommonManager):
             ),
         )
 
-    def deserialize_tx_from_blockchain_info(self, data: dict[str, Any]) -> 'BitcoinTx':
+    def deserialize_tx_from_blockchain_info(self, data: dict[str, Any]) -> BitcoinTx | None:
         """Deserialize a transaction from a blockchain.info.
         May raise DeserializationError, KeyError, ValueError.
         """
+        if (raw_block_height := data['block_height']) is None:
+            return None  # blockchain.info can't be limited to only confirmed txs.
+
         inputs = [vin['prev_out'] for vin in data['inputs']]
         outputs = data['out']
         multi_io = False
@@ -260,7 +265,7 @@ class BitcoinManager(BitcoinCommonManager):
         return BitcoinTx(
             tx_id=data['hash'],
             timestamp=deserialize_timestamp(data['time']),
-            block_height=deserialize_int(data['block_height']),
+            block_height=deserialize_int(raw_block_height),
             fee=satoshis_to_btc(deserialize_int(data['fee'])),
             inputs=BtcTxIO.deserialize_list(
                 data_list=inputs,
