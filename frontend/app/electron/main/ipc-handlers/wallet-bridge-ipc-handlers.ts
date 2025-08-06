@@ -85,6 +85,32 @@ export class WalletBridgeIpcHandlers {
     this.sendCloseSignalAndCleanup();
   };
 
+  handleStopServers = async (): Promise<void> => {
+    try {
+      this.logger.info('Stopping wallet bridge servers');
+
+      // Send close signal to clients if connected
+      const wasConnected = this.walletBridgeWebSocketServer.isConnected();
+      if (wasConnected) {
+        try {
+          this.walletBridgeWebSocketServer.sendNotification({ type: 'close_tab' });
+          // Brief delay to allow message to be sent
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+        catch (error) {
+          this.logger.warn('Failed to send close notification during server stop:', error);
+        }
+      }
+
+      // Stop both servers
+      this.performCleanup();
+    }
+    catch (error: any) {
+      this.logger.error('Failed to stop wallet bridge servers:', error);
+      throw error;
+    }
+  };
+
   private sendCloseSignalAndCleanup(): void {
     const wasConnected = this.walletBridgeWebSocketServer.isConnected();
 

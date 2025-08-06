@@ -23,7 +23,7 @@ interface UseWalletProxyReturn {
 }
 
 export function useWalletProxy(): UseWalletProxyReturn {
-  const { openProxyPageInDefaultBrowser, proxyClientReady, proxyConnect, proxyHttpListening, proxyWebSocketListening } = useWalletBridge();
+  const { isProxyClientConnected, isProxyClientReady, isProxyHttpListening, isProxyWebSocketListening, openProxyPageInDefaultBrowser, proxyStopServers } = useWalletBridge();
   const { cleanupResources: cleanupActiveResources, resources: activeResources } = createResourceManager();
 
   const healthCheckInterval = ref<NodeJS.Timeout>();
@@ -31,9 +31,9 @@ export function useWalletProxy(): UseWalletProxyReturn {
 
   const checkProxyState = async (): Promise<ProxyState> => {
     const [httpListening, wsListening, clientConnected] = await Promise.all([
-      proxyHttpListening(),
-      proxyWebSocketListening(),
-      proxyConnect(),
+      isProxyHttpListening(),
+      isProxyWebSocketListening(),
+      isProxyClientConnected(),
     ]);
 
     const state = { clientConnected, httpListening, wsListening };
@@ -51,7 +51,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
     signal?: AbortSignal,
   ): Promise<void> => {
     await waitForCondition(
-      async () => proxyConnect(),
+      async () => isProxyClientConnected(),
       connected => connected,
       {
         initialDelay: PROXY_CONFIG.BRIDGE_PAGE_DELAY,
@@ -68,7 +68,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
     signal?: AbortSignal,
   ): Promise<void> => {
     await waitForCondition(
-      async () => proxyClientReady(),
+      async () => isProxyClientReady(),
       ready => ready,
       {
         initialDelay: PROXY_CONFIG.BRIDGE_PAGE_DELAY,
@@ -112,7 +112,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
   async function performHealthCheck(isConnected: () => boolean, onDisconnect: () => void): Promise<void> {
     if (get(isHealthCheckActive) && isConnected()) {
       try {
-        const connected = await proxyConnect();
+        const connected = await isProxyClientConnected();
         if (!connected) {
           logger.debug('Health check detected disconnection');
           onDisconnect();
@@ -148,8 +148,8 @@ export function useWalletProxy(): UseWalletProxyReturn {
     await waitForCondition(
       async () => {
         const [httpListening, wsListening] = await Promise.all([
-          proxyHttpListening(),
-          proxyWebSocketListening(),
+          isProxyHttpListening(),
+          isProxyWebSocketListening(),
         ]);
         return { httpListening, wsListening };
       },
@@ -224,7 +224,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
       const isFullyConnected = bridgeState.httpListening && bridgeState.wsListening && bridgeState.clientConnected;
 
       if (isFullyConnected) {
-        const isClientReady = await proxyClientReady();
+        const isClientReady = await isProxyClientReady();
         if (!isClientReady) {
           logger.debug('Bridge is already fully operational, opening bridge page');
           await openProxyPageInDefaultBrowser();
@@ -270,23 +270,18 @@ export function useWalletProxy(): UseWalletProxyReturn {
   };
 
   const disconnectProxy = async (): Promise<void> => {
-    logger.debug('Disconnecting bridge...');
+    logger.debug('Disconnecting bridge and stopping servers...');
 
     cleanupResources();
 
-    const walletBridge = window.walletBridge;
-    if (walletBridge) {
-      try {
-        await walletBridge.disable();
-        logger.debug('Bridge disconnected successfully');
-      }
-      catch (error) {
-        logger.error('Failed to disconnect bridge:', error);
-        throw new Error(`Failed to disconnect bridge: ${(error as Error).message}`);
-      }
+    try {
+      // Use the new proper server stop functionality instead of just disable
+      await proxyStopServers();
+      logger.debug('Bridge servers stopped successfully');
     }
-    else {
-      logger.debug('No wallet bridge to disconnect');
+    catch (error) {
+      logger.error('Failed to stop bridge servers:', error);
+      throw new Error(`Failed to stop bridge servers: ${(error as Error).message}`);
     }
   };
 

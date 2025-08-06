@@ -52,7 +52,7 @@ async function fetchAccounts(): Promise<string[]> {
 
 async function enableWalletBridge(): Promise<void> {
   try {
-    const connected = await ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_CONNECT);
+    const connected = await ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_IS_CLIENT_CONNECTED);
     walletBridgeEnabled = true;
 
     if (connected) {
@@ -66,7 +66,7 @@ async function enableWalletBridge(): Promise<void> {
 
 async function disableWalletBridge(): Promise<void> {
   try {
-    await ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_DISCONNECT);
+    await ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_STOP_SERVERS);
     walletBridgeEnabled = false;
     walletBridgeConnected = false;
   }
@@ -145,10 +145,11 @@ export function initializeWalletBridge(): void {
 
     // Bridge server management
     openWalletBridge: async () => ipcRenderer.invoke(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE),
-    walletBridgeConnect: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_CONNECT),
-    walletBridgeHttpListening: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING),
-    walletBridgeWebSocketListening: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_WS_LISTENING),
-    walletBridgeClientReady: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_CLIENT_READY),
+    isWalletBridgeClientConnected: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_IS_CLIENT_CONNECTED),
+    isWalletBridgeClientReady: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_CLIENT_READY),
+    isWalletBridgeHttpListening: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING),
+    isWalletBridgeWebSocketListening: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_WS_LISTENING),
+    walletBridgeStopServers: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_STOP_SERVERS),
 
     // RPC requests
     request: async (request: WalletBridgeRequest) => {

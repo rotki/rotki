@@ -152,8 +152,8 @@ export class IpcManager {
 
     // Wallet Bridge handlers (from existing handler class)
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_REQUEST, this.walletBridgeHandlers.handleWalletBridgeRequest);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_CONNECT, this.walletBridgeHandlers.handleWalletBridgeConnect);
-    ipcMain.handle(IpcCommands.WALLET_BRIDGE_DISCONNECT, this.walletBridgeHandlers.handleWalletBridgeDisconnect);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_IS_CLIENT_CONNECTED, this.walletBridgeHandlers.handleWalletBridgeConnectionStatus);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_STOP_SERVERS, this.walletBridgeIpcHandlers.handleStopServers);
 
     // EIP-6963 Provider Detection handlers
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_GET_PROVIDERS, this.walletBridgeIpcHandlers.getAvailableProviders);
