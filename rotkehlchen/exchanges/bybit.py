@@ -142,7 +142,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         }
         self.is_unified_account = False
         self.history_events_db = DBHistoryEvents(self.db)
-        self.four_letter_assets = {'USDT', 'USDC', 'USDE', 'USDQ', 'USDR'}  # known quote assets
+        self.four_letter_assets = {'USDT', 'USDC', 'USDE', 'USDQ', 'USDR', 'USD1'}  # known quote assets  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND LENGTH(exchange_symbol) = 4;',  # noqa: E501
