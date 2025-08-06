@@ -307,7 +307,7 @@ def test_uniswap_oracle_query_multiple_handles_exceptions(inquirer_defi):
         name='Uniswap V3: Positions NFT',
         symbol='UNI-V3-POS',
         decimals=18,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     ))
 
     # This should not raise an exception despite containing an NFT

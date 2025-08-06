@@ -2066,7 +2066,7 @@ requires-dist = [
     { name = "regex", specifier = "==2024.11.6" },
     { name = "requests", specifier = "==2.32.4" },
     { name = "rotki-pysqlcipher3", specifier = "==2024.10.1" },
-    { name = "rotki-sqlite", specifier = "==2025.7.4" },
+    { name = "rotki-sqlite", specifier = "==2025.8.1" },
     { name = "scalecodec", specifier = "==1.2.11" },
     { name = "substrate-interface", specifier = "==1.7.11" },
     { name = "urllib3", specifier = "==2.4.0" },
@@ -2158,17 +2158,17 @@ wheels = [
 
 [[package]]
 name = "rotki-sqlite"
-version = "2025.7.4"
+version = "2025.8.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/15/15/392c2cfdb6f34f630da25af175f75ca2b850c3d22bf4246b6e62b9e27a19/rotki_sqlite-2025.7.4.tar.gz", hash = "sha256:2e9ccdce2ab18959565eb068102838d8f7dbfe7d3e50765a5ab4b2dfe0df0086", size = 2188313, upload-time = "2025-08-04T16:49:32.509Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/ac/374b2397b49274bbfac5c2b72e044ea59e634e87c82b8f2aa10e64b982a9/rotki_sqlite-2025.8.1.tar.gz", hash = "sha256:3e65101f7329f1fd9e83a7519bdff4e09bdcea1d86f6a4450c11ad5c6846acd6", size = 2366300, upload-time = "2025-08-06T12:16:17.544Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/6f/4bde22d6a94755cfc2c83c28f9d6ae2f6140f6680711786501b0504f6f49/rotki_sqlite-2025.7.4-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:a8eda2fdf7cfe7ba6cf033283251b5aecbc2171c874f431a660ca8341bd82c55", size = 810114, upload-time = "2025-08-04T16:49:20.964Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/cb/3bb0d53bda4bc3365ae1cca22e2ed2e9849cec1aefe35e2f81bdef7ec31d/rotki_sqlite-2025.7.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:669bddba9b396669e98b57c14f067322ac6e7ec8da9cfec460aa6b967d87daad", size = 759914, upload-time = "2025-08-04T16:49:22.66Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/cb/4d0a1a293e0d2b7518fa6e2e6a4904bbab2ede815534d60ed35360b82c17/rotki_sqlite-2025.7.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1ecbf625dca018bd98f83ce0af8055cc82c4ec87b35eaea8449c3a61ce7114cf", size = 3573453, upload-time = "2025-08-04T16:49:24.572Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/d0/4608671790463029404eae138a6045f37e6e90f350dd738b0f737c3a786d/rotki_sqlite-2025.7.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c6bd304d2cff2ecdda2e7d93a5f229a50c774534eb1e46238ada7d44bb05393d", size = 3629219, upload-time = "2025-08-04T16:49:26.178Z" },
-    { url = "https://files.pythonhosted.org/packages/79/4c/10899337a68f7182ea11f980b408b1abfe2813793befa64f763e8c076a2b/rotki_sqlite-2025.7.4-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6377a684ecda07be0a9dad7f6627339c8349d8acce54979b6a1d1b4925e70263", size = 3543511, upload-time = "2025-08-04T16:49:28.067Z" },
-    { url = "https://files.pythonhosted.org/packages/78/35/632ab047333e32fc6b58ea43096c62f9d1b28d8dbfbd85456184f76f7e7e/rotki_sqlite-2025.7.4-cp311-cp311-win32.whl", hash = "sha256:8ef35457e56361db75bf54e0dc12a6f4b5a5e556c627eb688d9ebdf5fa477aec", size = 597374, upload-time = "2025-08-04T16:49:29.518Z" },
-    { url = "https://files.pythonhosted.org/packages/92/12/8e25100ba1a58de87203816c6d368ce331aac12c2f82121befc7586c4a40/rotki_sqlite-2025.7.4-cp311-cp311-win_amd64.whl", hash = "sha256:99ed266d6132f087c2713d489e5c388a68fd66e9d3d7df6060acd238be57f155", size = 721375, upload-time = "2025-08-04T16:49:31.254Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/9d/c79c9049376655ccdea938b25711ba1b992151c0f570eb6b056479fbd9dd/rotki_sqlite-2025.8.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:49ceb329a17bcc016f5c35a4d060ed13cfa79417b0e1c669e4a940db983ffbb0", size = 892697, upload-time = "2025-08-06T12:16:07.062Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/6c/aed2f40b82fb616e07d113127fe92b0889ec8767e8a49c572d87e7b3bfe4/rotki_sqlite-2025.8.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8c5077dc0f8185a76318931bcb139e49c1676b3c1906bfb7bbe17690bc4167cb", size = 835136, upload-time = "2025-08-06T12:16:08.681Z" },
+    { url = "https://files.pythonhosted.org/packages/24/fc/047114d32005be0ebf4c99c41f39af6d9da3e4d709439848fd9f539dd9b0/rotki_sqlite-2025.8.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4e03a995a77093b3a84a27aa8432db341d3332081f277ff158eae5e8d4f88df5", size = 3879685, upload-time = "2025-08-06T12:16:10Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/2f/809c1920bddff17084672fdb568857d9d08c0b64f8b0c53ec827c30f74e7/rotki_sqlite-2025.8.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6f9d424ebf0922198ed250482db211dcb7787ba810e71321b9053d87b45a759c", size = 3939444, upload-time = "2025-08-06T12:16:11.68Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/a1/9607bdced8dd1c1e1df1d2ad4cd5151ed66b48b36352d4879c1c671086e0/rotki_sqlite-2025.8.1-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e50e404c7de3afc4f11aecf7eb6c3f67dbef611c2c2a0f7c10edd956703b4dc7", size = 3867928, upload-time = "2025-08-06T12:16:13.269Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/5d/b4c4d68d611cf4f7b93cf27a8a551a26f69178095701c3aea5fcb824be89/rotki_sqlite-2025.8.1-cp311-cp311-win32.whl", hash = "sha256:3aa46b0c626b2d1a35c993fe7ac90d72e3a19fc106ba7d8f33696b229b7ccc7a", size = 641923, upload-time = "2025-08-06T12:16:14.613Z" },
+    { url = "https://files.pythonhosted.org/packages/65/1c/6484a44a6813de8369da467f0d9f47d534e5a0391f881fae64cf8c10809b/rotki_sqlite-2025.8.1-cp311-cp311-win_amd64.whl", hash = "sha256:9d03645e1a909a9f4a6157b7d93ce9fb8797afce3011572fdaa6b2e19f3d9f6d", size = 775750, upload-time = "2025-08-06T12:16:16.223Z" },
 ]
 
 [[package]]
