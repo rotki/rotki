@@ -94,6 +94,7 @@ const apiSecretModel = refWithAsterisk(apiSecret);
 
 const passphrase = useRefPropVModel(modelValue, 'passphrase');
 const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
+const binanceMarkets = useRefPropVModel(modelValue, 'binanceMarkets');
 
 const name = computed<string>({
   get() {
@@ -112,6 +113,7 @@ const name = computed<string>({
 useFormStateWatcher({
   apiKey,
   apiSecret,
+  binanceMarkets,
   krakenAccountType,
   name,
   passphrase,
@@ -160,6 +162,12 @@ const v$ = useVuelidate({
       requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret)),
     ),
   },
+  binanceMarkets: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.validation.non_empty'),
+      requiredIf(isBinance),
+    ),
+  },
   name: {
     required: helpers.withMessage(
       t('exchange_keys_form.name.non_empty'),
@@ -181,6 +189,7 @@ const v$ = useVuelidate({
 }, {
   apiKey,
   apiSecret,
+  binanceMarkets,
   name: nameProp,
   newName: newNameProp,
   passphrase,
@@ -342,6 +351,7 @@ defineExpose({
       v-if="isBinance"
       :name="modelValue.name"
       :location="modelValue.location"
+      :error-messages="toMessages(v$.binanceMarkets)"
       @update:selection="modelValue = { ...modelValue, binanceMarkets: $event }"
     />
   </div>

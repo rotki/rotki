@@ -7,21 +7,14 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    label?: string;
-    outlined?: boolean;
-    name: string;
-    location: string;
-  }>(),
-  {
-    label: '',
-    outlined: false,
-  },
-);
+const props = defineProps<{
+  name: string;
+  location: string;
+  errorMessages?: string[];
+}>();
 
 const emit = defineEmits<{ (e: 'update:selection', pairs: string[]): void }>();
-const { location, name } = toRefs(props);
+const { errorMessages, location, name } = toRefs(props);
 
 const updateSelection = (value: string[]) => emit('update:selection', value);
 
@@ -85,12 +78,13 @@ onMounted(async () => {
     :options="allMarkets"
     :loading="loading"
     :disabled="loading"
-    hide-details
+    :error-messages="errorMessages"
     hide-selected
     chips
     clearable
+    auto-select-first
     variant="outlined"
-    :label="label || t('binance_market_selector.default_label')"
+    :label="t('binance_market_selector.default_label')"
     class="binance-market-selector"
     :model-value="selection"
     :item-height="54"
