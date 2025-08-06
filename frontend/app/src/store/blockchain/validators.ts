@@ -41,7 +41,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     const validators: EthereumValidator[] = [];
     for (const account of accountData) {
       assert(account.data.type === 'validator');
-      const accountBalance: Balance = accountBalances[account.data.publicKey]?.assets?.address?.ETH2 ?? {
+      const accountBalance: Balance = accountBalances[account.data.publicKey]?.assets?.ETH2?.address ?? {
         amount: Zero,
         usdValue: Zero,
       };
