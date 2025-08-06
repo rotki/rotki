@@ -16,6 +16,8 @@ const protocol = useRefMap(protocolBalance, balance => balance.protocol);
 
 const { t } = useI18n({ useScope: 'global' });
 const { protocolData } = useProtocolData(protocol);
+
+const dot = '•';
 </script>
 
 <template>
@@ -45,7 +47,7 @@ const { protocolData } = useProtocolData(protocol);
           data-cy="protocol-menu-amount"
         />
         <span class="text-rui-text-secondary">
-          {{ t('protocol_icon.dot') }}
+          {{ dot }}
         </span>
         <AmountDisplay
           :asset-padding="0.1"

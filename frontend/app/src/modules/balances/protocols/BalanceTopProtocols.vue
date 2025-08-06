@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { ProtocolBalance } from '@rotki/common';
+import ProtocolMenuItem from '@/modules/balances/protocols/ProtocolMenuItem.vue';
 import ProtocolTooltipIcon from '@/modules/balances/protocols/ProtocolTooltipIcon.vue';
 
 const props = withDefaults(defineProps<{
