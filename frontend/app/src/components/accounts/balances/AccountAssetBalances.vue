@@ -48,7 +48,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   align: 'end',
   cellClass: 'py-1',
   class: 'text-no-wrap',
-  key: 'price',
+  key: 'usdPrice',
   label: t('common.price_in_symbol', {
     symbol: get(currencySymbol),
   }),
@@ -87,7 +87,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
       {{ title }}
     </template>
     <RuiDataTable
-      v-model:sort.external="sort"
+      v-model:sort="sort"
       :rows="assets"
       :cols="cols"
       :empty="{ description: t('data_table.no_data') }"
@@ -107,7 +107,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
           :asset="row.asset"
         />
       </template>
-      <template #item.price="{ row }">
+      <template #item.usdPrice="{ row }">
         <AmountDisplay
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
           is-asset-price
