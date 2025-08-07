@@ -1,5 +1,6 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { TaskMeta } from '@/types/task';
-import { type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
+import { type AssetBalanceWithPriceAndChains, type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -64,25 +65,39 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { awaitTask } = useTaskStore();
   const { logged } = storeToRefs(useSessionAuthStore());
 
-  const calculateTotalValue = (includeNft = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
+  /**
+   * Calculates the sum of balances, converting to the main currency
+   * If the asset is the main currency, uses the amount directly
+   * Otherwise, converts the USD value to the main currency
+   */
+  function calculateSum(
+    items: AssetBalanceWithPriceAndChains[],
+    mainCurrency: string,
+    rate: BigNumber,
+  ): BigNumber {
+    return items.reduce((sum, value) => {
+      if (value.asset === mainCurrency)
+        return sum.plus(value.amount);
+
+      return sum.plus(value.usdValue.multipliedBy(rate));
+    }, Zero);
+  }
+
+  const calculateTotalValue = (includeNft: MaybeRef<boolean> = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
     const aggregatedBalances = get(balances());
     const totalLiabilities = get(liabilities());
-    const nftTotal = includeNft ? get(nonFungibleTotalValue) : 0;
-    const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.usdValue), Zero);
-    const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.usdValue), Zero);
-
-    return assetValue.plus(nftTotal).minus(liabilityValue);
-  });
-
-  const totalNetWorth = computed<BigNumber>(() => {
+    const nftTotal = get(includeNft) ? get(nonFungibleTotalValue) : Zero;
     const mainCurrency = get(currencySymbol);
     const rate = get(useExchangeRate(mainCurrency)) ?? One;
-    return get(calculateTotalValue(get(nftsInNetValue))).multipliedBy(rate);
+    const assetValue = calculateSum(aggregatedBalances, mainCurrency, rate);
+    const liabilityValue = calculateSum(totalLiabilities, mainCurrency, rate);
+    return assetValue.plus(nftTotal.multipliedBy(rate)).minus(liabilityValue);
   });
+
+  const totalNetWorth = calculateTotalValue(nftsInNetValue);
 
   const overall = computed<Overall>(() => {
     const currency = get(currencySymbol);
-    const rate = get(useExchangeRate(currency)) ?? One;
     const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix());
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
@@ -121,7 +136,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
       up = false;
 
     const floatPrecision = get(floatingPrecision);
-    const delta = balanceDelta.multipliedBy(rate).toFormat(floatPrecision);
+    const delta = balanceDelta.toFormat(floatPrecision);
     const rounding = get(valueRoundingMode);
 
     const netWorth = scrambledNetWorth.toFormat(floatPrecision, rounding);

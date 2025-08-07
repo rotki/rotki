@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import { type AssetBalance, type AssetBalanceWithPrice, type BigNumber, type Nullable, One } from '@rotki/common';
+import { type AssetBalance, type AssetBalanceWithPrice, type BigNumber, type Nullable, Zero } from '@rotki/common';
 import ManualBalanceMissingAssetWarning
   from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
@@ -20,7 +20,6 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { isEvmNativeToken } from '@/types/asset';
-import { CURRENCY_USD } from '@/types/currencies';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { assetFilterByKeyword } from '@/utils/assets';
@@ -57,7 +56,7 @@ const { assetInfo, assetName, assetSymbol } = useAssetInfoRetrieval();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { missingCustomAssets } = useManualBalanceData();
 const statisticsStore = useStatisticsStore();
-const { totalNetWorthUsd } = storeToRefs(statisticsStore);
+const { totalNetWorth } = storeToRefs(statisticsStore);
 const router = useRouter();
 
 function assetFilter(item: Nullable<AssetBalance>) {
@@ -68,20 +67,26 @@ function isAssetMissing(item: AssetBalanceWithPrice) {
   return get(missingCustomAssets).includes(item.asset);
 }
 
-const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
-const total = computed(() => {
-  const mainCurrency = get(currencySymbol);
-  return get(totalInUsd).multipliedBy(get(useExchangeRate(mainCurrency)) ?? One);
+const total = computed<BigNumber>(() => {
+  const currency = get(currencySymbol);
+  const rate = get(useExchangeRate(currency)) ?? Zero;
+  return aggregateTotal(get(balances), currency, rate);
 });
 
-function percentageOfTotalNetValue(value: BigNumber) {
-  const netWorth = get(totalNetWorthUsd);
-  const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
-  return calculatePercentage(value, total);
+function percentageOfTotalNetValue({ amount, asset, usdValue }: AssetBalanceWithPrice) {
+  const currency = get(currencySymbol);
+  const netWorth = get(totalNetWorth);
+  const rate = get(useExchangeRate(currency)) ?? Zero;
+  const value = currency === asset ? amount : usdValue.multipliedBy(rate);
+  const totalWorth = netWorth.lt(0) ? get(total) : netWorth;
+  return calculatePercentage(value, totalWorth);
 }
 
-function percentageOfCurrentGroup(value: BigNumber) {
-  return calculatePercentage(value, get(totalInUsd));
+function percentageOfCurrentGroup({ amount, asset, usdValue }: AssetBalanceWithPrice) {
+  const currency = get(currencySymbol);
+  const rate = get(useExchangeRate(currency)) ?? Zero;
+  const value = currency === asset ? amount : usdValue.multipliedBy(rate);
+  return calculatePercentage(value, get(total));
 }
 
 function setPage(page: number) {
@@ -155,7 +160,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
       cellClass: 'py-0',
       class: 'text-no-wrap',
       key: 'percentageOfTotalNetValue',
-      label: get(totalNetWorthUsd).gt(0)
+      label: get(totalNetWorth).gt(0)
         ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
         : t('dashboard_asset_table.headers.percentage_total'),
     });
@@ -303,13 +308,13 @@ watch(search, () => setPage(1));
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay
-          :value="percentageOfTotalNetValue(row.usdValue)"
+          :value="percentageOfTotalNetValue(row)"
           :asset-padding="0.1"
         />
       </template>
       <template #item.percentageOfTotalCurrentGroup="{ row }">
         <PercentageDisplay
-          :value="percentageOfCurrentGroup(row.usdValue)"
+          :value="percentageOfCurrentGroup(row)"
           :asset-padding="0.1"
         />
       </template>
