@@ -73,7 +73,7 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
         return original_request(url=url, json=json, headers=headers, timeout=timeout)
 
     with patch.object(requests, 'post', wraps=mock_morpho_api):
-        query_morpho_vaults(database=database)
+        query_morpho_vaults(database=database, chain_id=ChainID.BASE)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_unique_cache_value(
@@ -94,7 +94,7 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
 
     check_new_query_updates_timestamp(
         query_patch=patch.object(requests, 'get', wraps=mock_morpho_api),
-        query_func=lambda: query_morpho_vaults(database=database),
+        query_func=lambda: query_morpho_vaults(database=database, chain_id=ChainID.BASE),
         key_parts=(CacheType.MORPHO_VAULTS,),
     )
 

@@ -30,6 +30,7 @@ log = RotkehlchenLogsAdapter(logger)
 def query_aura_pools(evm_inquirer: 'EvmNodeInquirer') -> None:
     update_cached_vaults(
         display_name='Aura Finance',
+        chain=evm_inquirer.chain_id,
         database=evm_inquirer.database,
         query_vaults=lambda: _query_aura_pools(evm_inquirer),
         process_vault=_process_aura_pool,
