@@ -386,6 +386,57 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
+def test_binance_api_without_markets_error(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that adding Binance API key without markets returns a proper error message"""
+    auth_data = {
+        'location': 'binance',
+        'name': 'my_binance',
+        'api_key': 'test_key',
+        'api_secret': 'dGVzdF9zZWNyZXQ=',
+    }
+    # Test Binance without markets
+    with mock_validate_api_key_success(Location.BINANCE):
+        response = requests.put(
+            (endpoint := api_url_for(rotkehlchen_api_server, 'exchangesresource')),
+            json=auth_data,
+        )
+
+    # Check that we get the expected error message
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    data = response.json()
+    assert 'message' in data
+    # The error message should be flat, not nested JSON
+    expected_msg = 'Binance API key requires at least one market pair to be selected. Please choose the trading pairs you want to monitor before adding the API key.'  # noqa: E501
+    assert expected_msg in data['message']
+
+    # Test BinanceUS without markets (same requirement)
+    with mock_validate_api_key_success(Location.BINANCEUS):
+        response = requests.put(endpoint, json=auth_data)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    data = response.json()
+    assert 'message' in data
+    assert expected_msg in data['message']
+
+    # Test that providing empty markets list also triggers the error
+    with mock_validate_api_key_success(Location.BINANCE):
+        response = requests.put(endpoint, json=auth_data | {'binance_markets': []})
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    data = response.json()
+    assert 'message' in data
+    assert expected_msg in data['message']
+
+    # Test that providing markets works correctly
+    with mock_validate_api_key_success(Location.BINANCE):
+        response = requests.put(
+            endpoint,
+            json=auth_data | {'binance_markets': ['BTCUSDT', 'ETHUSDT']},
+        )
+
+    assert_simple_ok_response(response)
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that removing a setup exchange via the api works"""
@@ -904,6 +955,10 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             'api_key': 'invalid',
             'api_secret': 'aW52YWxpZA==' if location == Location.KRAKEN else 'invalid',  # base64 for 'invalid'  # noqa: E501
         }
+
+        if location in (Location.BINANCE, Location.BINANCEUS):
+            data['binance_markets'] = ['ETHBTC']
+
         with mock_validate_api_key_failure(location):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_error_response(
