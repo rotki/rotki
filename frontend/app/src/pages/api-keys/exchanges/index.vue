@@ -155,13 +155,24 @@ onBeforeMount(() => {
   resetNonSyncingExchanges();
 });
 
-onMounted(async () => {
-  const { query } = get(route);
+watch(route, async (route) => {
+  const { query } = route;
+
   if (query.add) {
     addExchange();
     await router.replace({ query: {} });
   }
-});
+  else if (query.location && query.name) {
+    // Find the exchange to edit based on location and name from query params
+    const exchangeToEdit = get(rows).find(
+      ex => ex.location === query.location && ex.name === query.name,
+    );
+    if (exchangeToEdit) {
+      editExchange(exchangeToEdit);
+      await router.replace({ query: {} });
+    }
+  }
+}, { immediate: true });
 </script>
 
 <template>

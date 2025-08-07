@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ValidationErrors } from '@/types/api/errors';
 import { toSentenceCase } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
@@ -17,6 +18,7 @@ import { toMessages } from '@/utils/validation';
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
+const errorMessages = defineModel<ValidationErrors>('errorMessages', { default: () => ({}) });
 
 const editKeys = ref<boolean>(false);
 
@@ -193,7 +195,7 @@ const v$ = useVuelidate({
   name: nameProp,
   newName: newNameProp,
   passphrase,
-}, { $autoDirty: true });
+}, { $autoDirty: true, $externalResults: errorMessages });
 
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';

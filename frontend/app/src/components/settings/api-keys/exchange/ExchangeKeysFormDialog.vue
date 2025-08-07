@@ -5,14 +5,18 @@ import { assert } from '@rotki/common';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useMessageStore } from '@/store/message';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
 
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
+const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<ComponentExposed<typeof ExchangeKeysForm>>('form');
 
 const { setupExchange } = useExchanges();
+const { setMessage } = useMessageStore();
 const { t } = useI18n({ useScope: 'global' });
 
 const title = computed<string>(() => {
@@ -28,17 +32,52 @@ async function save(): Promise<void> {
   if (!await get(form)?.validate()) {
     return;
   }
+
   set(submitting, true);
+  set(errorMessages, {});
+
   const exchange = get(modelValue);
-  const success = await setupExchange({
+  const payload = {
     ...exchange,
     newName: exchange.name === exchange.newName ? undefined : exchange.newName,
-  });
+  };
+
+  let success = false;
+  try {
+    success = await setupExchange(payload);
+  }
+  catch (error: any) {
+    let errors = error.message;
+
+    if (error instanceof ApiValidationError) {
+      errors = error.getValidationErrors(payload);
+    }
+
+    if (typeof errors === 'string') {
+      setMessage({
+        description: t('actions.balances.exchange_setup.description', {
+          error: errors,
+          exchange: payload.location,
+        }),
+        title: t('actions.balances.exchange_setup.title'),
+      });
+    }
+    else {
+      set(errorMessages, errors);
+    }
+  }
 
   set(submitting, false);
-  if (success)
+  if (success) {
     set(modelValue, undefined);
+  }
 }
+
+watch(modelValue, (modelValue) => {
+  if (!modelValue) {
+    set(errorMessages, {});
+  }
+});
 </script>
 
 <template>
@@ -57,6 +96,7 @@ async function save(): Promise<void> {
       ref="form"
       v-model="modelValue"
       v-model:state-updated="stateUpdated"
+      v-model:error-messages="errorMessages"
     />
   </BigDialog>
 </template>

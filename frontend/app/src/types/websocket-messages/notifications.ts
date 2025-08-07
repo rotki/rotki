@@ -53,3 +53,10 @@ export const SolanaTokensMigrationData = z.object({
 });
 
 export type SolanaTokensMigrationData = z.infer<typeof SolanaTokensMigrationData>;
+
+export const BinancePairsMissingData = z.object({
+  location: z.string(),
+  name: z.string(),
+});
+
+export type BinancePairsMissingData = z.infer<typeof BinancePairsMissingData>;

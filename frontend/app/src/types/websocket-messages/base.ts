@@ -22,6 +22,7 @@ export type BalanceSnapshotError = z.infer<typeof BalanceSnapshotError>;
 export const SocketMessageType = {
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
+  BINANCE_PAIRS_MISSING: 'binance_pairs_missing',
   CALENDAR_REMINDER: 'calendar_reminder',
   DATA_MIGRATION_STATUS: 'data_migration_status',
   DATABASE_UPLOAD_PROGRESS: 'database_upload_progress',

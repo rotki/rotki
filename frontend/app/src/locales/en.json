@@ -3539,6 +3539,11 @@
     "backend": {
       "title": "Backend"
     },
+    "binance_pairs_missing": {
+      "action": "Configure pairs",
+      "message": "Your Binance API key \"{name}\" is missing required market pairs configuration. This may cause rate limiting issues. Please configure the pairs you want to track.",
+      "title": "Binance Market Pairs Required"
+    },
     "csv_import_result": {
       "errors": "The following errors occurred during import:",
       "rows": "(Row: {rows}) | (Rows: {rows})",

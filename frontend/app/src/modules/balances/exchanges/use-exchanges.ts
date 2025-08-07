@@ -176,44 +176,32 @@ export function useExchanges(): UseExchangesReturn {
   };
 
   const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
-    try {
-      const success = await callSetupExchange(exchange);
-      const { krakenAccountType, location, mode, name, newName } = exchange;
-      const exchangeEntry: Exchange = {
-        krakenAccountType,
-        location,
-        name,
-      };
+    const success = await callSetupExchange(exchange);
+    const { krakenAccountType, location, mode, name, newName } = exchange;
+    const exchangeEntry: Exchange = {
+      krakenAccountType,
+      location,
+      name,
+    };
 
-      if (mode !== 'edit') {
-        addExchange(exchangeEntry);
-      }
-      else {
-        editExchange({
-          exchange: exchangeEntry,
-          newName,
-        });
-      }
-
-      startPromise(
-        fetchExchangeBalances({
-          ignoreCache: false,
-          location,
-        }),
-      );
-
-      return success;
+    if (mode !== 'edit') {
+      addExchange(exchangeEntry);
     }
-    catch (error: any) {
-      setMessage({
-        description: t('actions.balances.exchange_setup.description', {
-          error: error.message,
-          exchange: exchange.location,
-        }),
-        title: t('actions.balances.exchange_setup.title'),
+    else {
+      editExchange({
+        exchange: exchangeEntry,
+        newName,
       });
-      return false;
     }
+
+    startPromise(
+      fetchExchangeBalances({
+        ignoreCache: false,
+        location,
+      }),
+    );
+
+    return success;
   };
 
   return {
