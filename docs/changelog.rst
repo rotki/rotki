@@ -39,6 +39,7 @@ Changelog
 * :bug:`10150` The history events page will be refreshed automatically when an asset is ignored or marked as spam.
 * :bug:`10199` Independentreserve trades, deposits and withdrawals now use the execution timestamp and not the creation one.
 * :bug:`-` Re-pulling transactions should now automatically refresh and decode the newly detected transactions.
+* :bug:`10377` Fix double conversion for manual balances that are in the user selected currency when they are summed for the total net worth.
 * :feature:`1525` Users will now be able to refresh a single exchange in the exchange balances.
 
 * :release:`1.39.1 <2025-06-13>`
