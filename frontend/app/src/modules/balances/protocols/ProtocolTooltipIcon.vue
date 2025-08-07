@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { type ProtocolBalance, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { type ProtocolBalance, toSentenceCase, transformCase } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
@@ -28,7 +28,7 @@ const { protocolData } = useProtocolData(protocol);
   >
     <template #activator>
       <ProtocolIcon
-        :protocol="toSnakeCase(protocol)"
+        :protocol="transformCase(protocol)"
         :size="20"
         :loading="loading"
       />
