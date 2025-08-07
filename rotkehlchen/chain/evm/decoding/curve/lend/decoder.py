@@ -86,7 +86,10 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 userdb=self.base.database,
                 cache_key=CacheType.CURVE_LENDING_VAULTS,
         ) is True:
-            query_curve_lending_vaults(database=self.evm_inquirer.database)
+            query_curve_lending_vaults(
+                database=self.evm_inquirer.database,
+                chain_id=self.evm_inquirer.chain_id,
+            )
         elif len(self.vaults) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
 

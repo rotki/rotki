@@ -101,12 +101,13 @@ def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
     )
 
 
-def query_morpho_vaults(database: 'DBHandler') -> None:
+def query_morpho_vaults(database: 'DBHandler', chain_id: ChainID) -> None:
     """Query list of Morpho vaults and add the vault tokens to the global database."""
     update_cached_vaults(
         database=database,
         cache_key=(CacheType.MORPHO_VAULTS,),
         display_name='Morpho',
+        chain=chain_id,
         query_vaults=_query_morpho_vaults_api,
         process_vault=_process_morpho_vault,
     )

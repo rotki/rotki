@@ -35,7 +35,7 @@ def test_curve_lend_api(database: 'DBHandler') -> None:
         return original_request(url=url, timeout=timeout)
 
     with patch.object(requests, 'get', wraps=mock_curve_api):
-        query_curve_lending_vaults(database=database)
+        query_curve_lending_vaults(database=database, chain_id=ChainID.ARBITRUM_ONE)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_unique_cache_value(
@@ -71,7 +71,7 @@ def test_curve_lend_api(database: 'DBHandler') -> None:
     # trigger the query again and check that the timestamp was updated
     future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp), patch.object(requests, 'get', wraps=mock_curve_api):
-        query_curve_lending_vaults(database=database)
+        query_curve_lending_vaults(database=database, chain_id=ChainID.ARBITRUM_ONE)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         new_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(

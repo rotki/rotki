@@ -69,7 +69,10 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         """
         updated = False
         if should_update_protocol_cache(self.base.database, CacheType.MORPHO_VAULTS) is True:
-            query_morpho_vaults(database=self.evm_inquirer.database)
+            query_morpho_vaults(
+                database=self.evm_inquirer.database,
+                chain_id=self.evm_inquirer.chain_id,
+            )
             updated = True
         if should_update_protocol_cache(
                 userdb=self.base.database,

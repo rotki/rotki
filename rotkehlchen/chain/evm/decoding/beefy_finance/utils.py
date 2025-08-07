@@ -105,6 +105,7 @@ def query_beefy_vaults(evm_inquirer: 'EvmNodeInquirer') -> None:
         database=evm_inquirer.database,
         cache_key=(CacheType.BEEFY_VAULTS, str(evm_inquirer.chain_id.value)),
         display_name='Beefy finance',
+        chain=evm_inquirer.chain_id,
         query_vaults=lambda: _query_beefy_vaults_api(evm_inquirer.chain_id),
         process_vault=lambda db, entry: _process_beefy_vault(db, entry, evm_inquirer),
     )
