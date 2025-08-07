@@ -90,11 +90,9 @@ class DBCursor:
             logger.trace(f'EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')
         try:
             self._cursor.execute(statement, *bindings)
-        except (sqlcipher.InterfaceError, rsqlite.InterfaceError):  # pylint: disable=no-member
+        except (sqlcipher.InterfaceError, rsqlite.InterfaceError) as e:  # pylint: disable=no-member
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
-            logger.debug(f'{statement} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
-            with suppress(Exception):  # Try to clear any partial results
-                self._cursor.fetchall()
+            logger.debug(f'{statement} with {bindings} failed due to {str(e)}. Probably https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
             self._cursor.execute(statement, *bindings)
 
         if __debug__:
