@@ -1670,24 +1670,9 @@ class ExternalServicesResourceDeleteSchema(Schema):
     services = fields.List(SerializableEnumField(enum_class=ExternalService), required=True)
 
 
-class ExchangesResourceEditSchema(Schema):
-    name = NonEmptyStringField(required=True)
+class BinanceMarketsSchemaMixin(Schema):
+    """Additional logic for adding/editing Binance exchanges credentials"""
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
-    new_name = EmptyAsNoneStringField(load_default=None)
-    api_key = ApiKeyField(load_default=None)
-    api_secret = ApiSecretField(load_default=None)
-    passphrase = EmptyAsNoneStringField(load_default=None)
-    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
-    binance_markets = fields.List(NonEmptyStringField(), load_default=None)
-
-
-class ExchangesResourceAddSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
-    api_key = ApiKeyField(required=True)
-    api_secret = ApiSecretField(load_default=None)
-    passphrase = EmptyAsNoneStringField(load_default=None)
-    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(NonEmptyStringField, load_default=None)
 
     @validates_schema
@@ -1696,6 +1681,40 @@ class ExchangesResourceAddSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
+        if (
+            data['location'] in (Location.BINANCE, Location.BINANCEUS) and
+            (data['binance_markets'] is None or len(data['binance_markets']) == 0)
+        ):
+            raise ValidationError(
+                message='Binance API key requires at least one market pair to be selected. '
+                'Please choose the trading pairs you want to monitor before adding the API key.',
+                field_name='binance_markets',
+            )
+
+
+class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin):
+    name = NonEmptyStringField(required=True)
+    new_name = EmptyAsNoneStringField(load_default=None)
+    api_key = ApiKeyField(load_default=None)
+    api_secret = ApiSecretField(load_default=None)
+    passphrase = EmptyAsNoneStringField(load_default=None)
+    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
+
+
+class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin):
+    name = NonEmptyStringField(required=True)
+    api_key = ApiKeyField(required=True)
+    api_secret = ApiSecretField(load_default=None)
+    passphrase = EmptyAsNoneStringField(load_default=None)
+    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        super().validate_schema(data)
         location = data['location']
         if data['api_secret'] is None and location not in EXCHANGES_WITHOUT_API_SECRET:
             raise ValidationError(
