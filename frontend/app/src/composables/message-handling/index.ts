@@ -4,6 +4,7 @@ import { useSessionApi } from '@/composables/api/session';
 import {
   useAccountingRuleConflictMessageHandler,
 } from '@/composables/message-handling/accounting-rule-conflict-message';
+import { useBinancePairsMissingHandler } from '@/composables/message-handling/binance-pairs-missing';
 import { useCalendarReminderHandler } from '@/composables/message-handling/calendar-reminder';
 import { useCsvImportResultHandler } from '@/composables/message-handling/csv-import-result';
 import { useMissingApiKeyHandler } from '@/composables/message-handling/missing-api-key';
@@ -64,6 +65,7 @@ export function useMessageHandling(): UseMessageHandling {
   const { setStakingQueryStatus: setLiquityStakingQueryStatus } = useLiquityStore();
   const solanaTokenMigrationStore = useSolanaTokenMigrationStore();
   const { handle: handleMissingApiKeyMessage } = useMissingApiKeyHandler(t);
+  const { handle: handleBinancePairsMissingMessage } = useBinancePairsMissingHandler(t);
   const { handle: handleAccountingRuleConflictMessage } = useAccountingRuleConflictMessageHandler(t);
   const { handle: handleCalendarReminder } = useCalendarReminderHandler(t);
   const { handle: handleCsvImportResult } = useCsvImportResultHandler(t);
@@ -274,6 +276,9 @@ export function useMessageHandling(): UseMessageHandling {
     else if (type === SocketMessageType.SOLANA_TOKENS_MIGRATION) {
       solanaTokenMigrationStore.setIdentifiers(message.data.identifiers);
       addNotification(await handleSolanaTokensMigration(message.data));
+    }
+    else if (type === SocketMessageType.BINANCE_PAIRS_MISSING) {
+      addNotification(await handleBinancePairsMissingMessage(message.data));
     }
     else if (type === SocketMessageType.DATABASE_UPLOAD_PROGRESS) {
       handleDatabaseUploadProgress(message.data);

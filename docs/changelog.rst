@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :bug:`10309` Users will now be required to specify the market pairs when adding a Binance API key to avoid rate limiting and getting stuck when querying the historical events.
 * :feature:`-` Users will now be able to persist privacy mode and scramble settings through an interface-only setting.
 * :bug:`10347` rotki will prioritize the native token in the asset selector on the on-chain send menu.
 * :bug:`10344` Users will now see the net worth on the tray that respects the scramble setting.

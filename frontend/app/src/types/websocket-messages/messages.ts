@@ -5,6 +5,7 @@ import { BalanceSnapshotError, LegacyMessageData, SocketMessageType } from './ba
 import { HistoryEventsQueryData } from './history';
 import {
   AccountingRuleConflictData,
+  BinancePairsMissingData,
   ExchangeUnknownAssetData,
   GnosisPaySessionKeyExpiredData,
   MissingApiKey,
@@ -111,6 +112,11 @@ const SolanaTokensMigrationMessage = z.object({
   type: z.literal(SocketMessageType.SOLANA_TOKENS_MIGRATION),
 });
 
+const BinancePairsMissingMessage = z.object({
+  data: BinancePairsMissingData,
+  type: z.literal(SocketMessageType.BINANCE_PAIRS_MISSING),
+});
+
 const DatabaseUploadProgressMessage = z.object({
   data: DatabaseUploadProgress,
   type: z.literal(SocketMessageType.DATABASE_UPLOAD_PROGRESS),
@@ -135,6 +141,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   ProgressUpdatesMessage,
   GnosisPaySessionKeyExpiredMessage,
   SolanaTokensMigrationMessage,
+  BinancePairsMissingMessage,
   DatabaseUploadProgressMessage,
 ]).or(UnknownWebsocketMessage);
 
