@@ -623,6 +623,7 @@ describe('useAggregatedBalances', () => {
         }],
         perProtocol: [{
           amount: bigNumberify(4000),
+          containsManual: true,
           protocol: 'kraken',
           usdValue: bigNumberify(4000),
         }],
