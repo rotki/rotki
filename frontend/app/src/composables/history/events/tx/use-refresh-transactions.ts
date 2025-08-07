@@ -1,17 +1,15 @@
 import type { RefreshTransactionsParams, TransactionSyncParams } from './types';
-import type { Exchange } from '@/types/exchanges';
-import { groupBy, omit } from 'es-toolkit';
+import { groupBy } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useRefreshHandlers } from '@/composables/history/events/tx/refresh-handlers';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useModules } from '@/composables/session/modules';
-import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useStatusUpdater } from '@/composables/status';
 import { useHistoryStore } from '@/store/history';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
 import { useNotificationsStore } from '@/store/notifications';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import {
   type BitcoinChainAddress,
@@ -21,7 +19,6 @@ import {
   type TransactionRequestPayload,
 } from '@/types/history/events';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
-import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -38,13 +35,8 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
   const queue = new LimitedParallelizationQueue(1);
-  const {
-    fetchTransactionsTask,
-    queryExchangeEvents,
-    queryOnlineHistoryEvents,
-  } = useHistoryEventsApi();
+  const { fetchTransactionsTask } = useHistoryEventsApi();
 
-  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
   const { getChain, getChainName, isEvmLikeChains } = useSupportedChains();
@@ -153,61 +145,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     }
   };
 
-  const { isModuleEnabled } = useModules();
-  const isEth2Enabled = isModuleEnabled(Module.ETH2);
-
-  const { apiKey, credential } = useExternalApiKeys(t);
-
-  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
-    const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
-      OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
-      OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
-    ];
-
-    if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
-      return;
-
-    if (!get(apiKey('gnosis_pay')) && queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY) {
-      return;
-    }
-
-    if (!get(credential('monerium')) && queryType === OnlineHistoryEventsQueryType.MONERIUM) {
-      return;
-    }
-
-    logger.debug(`querying for ${queryType} events`);
-    const taskType = TaskType.QUERY_ONLINE_EVENTS;
-    const { taskId } = await queryOnlineHistoryEvents({
-      asyncQuery: true,
-      queryType,
-    });
-
-    const taskMeta = {
-      description: t('actions.online_events.task.description', {
-        queryType,
-      }),
-      queryType,
-      title: t('actions.online_events.task.title'),
-    };
-
-    try {
-      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-    }
-    catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.online_events.error.description', {
-            error,
-            queryType,
-          }),
-          title: t('actions.online_events.error.title'),
-        });
-      }
-    }
-    logger.debug(`finished querying for ${queryType} events`);
-  };
+  const { queryAllExchangeEvents, queryOnlineEvent } = useRefreshHandlers();
 
   const refreshTransactionsHandler = async (
     params: TransactionSyncParams,
@@ -241,63 +179,99 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     logger.debug(`finished refreshing ${type} transactions for ${accounts.length} addresses`);
   };
 
-  const queryExchange = async (payload: Exchange): Promise<void> => {
-    logger.debug(`querying exchange events for ${payload.location} (${payload.name})`);
-    const exchange = omit(payload, ['krakenAccountType']);
-    const taskType = TaskType.QUERY_EXCHANGE_EVENTS;
-    const taskMeta = {
-      description: t('actions.exchange_events.task.description', exchange),
-      exchange,
-      title: t('actions.exchange_events.task.title'),
-    };
-
-    try {
-      const { taskId } = await queryExchangeEvents(exchange);
-      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-    }
-    catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.exchange_events.error.description', {
-            error,
-            ...exchange,
-          }),
-          title: t('actions.exchange_events.error.title'),
-        });
-      }
-    }
-  };
-
-  const queryAllExchangeEvents = async (exchanges?: Exchange[]): Promise<void> => {
-    const selectedExchanges = exchanges ?? get(connectedExchanges);
-    const groupedExchanges = Object.entries(groupBy(selectedExchanges, exchange => exchange.location));
-
-    await awaitParallelExecution(groupedExchanges, ([group]) => group, async ([_group, exchanges]) => {
-      for (const exchange of exchanges) {
-        await queryExchange(exchange);
-      }
-    }, 2);
-  };
+  const {
+    addPendingAccounts,
+    finishRefresh,
+    getNewAccounts,
+    getPendingAccountsForRefresh,
+    hasPendingAccounts,
+    isRefreshing,
+    shouldRefreshAll,
+    startRefresh,
+  } = useHistoryRefreshStateStore();
 
   const refreshTransactions = async (params: RefreshTransactionsParams = {}): Promise<void> => {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
-    if (fetchDisabled(userInitiated)) {
-      logger.info('skipping transaction refresh');
-      return;
-    }
-
     const { accounts, exchanges, queries } = payload;
     const fullRefresh = Object.keys(payload).length === 0;
 
-    const evmAccounts: EvmChainAddress[] = [];
-    const evmLikeAccounts: EvmChainAddress[] = [];
-    const bitcoinAccounts: BitcoinChainAddress[] = [];
+    // Get current accounts first to check if we have new ones
+    let currentEvmAccounts: EvmChainAddress[] = [];
+    let currentEvmLikeAccounts: EvmChainAddress[] = [];
+    let currentBitcoinAccounts: BitcoinChainAddress[] = [];
 
     if (accounts && accounts.length > 0) {
       // Separate accounts by type
       accounts.forEach((account) => {
+        if ('evmChain' in account) {
+          if (isEvmLikeChains(account.evmChain)) {
+            currentEvmLikeAccounts.push(account);
+          }
+          else {
+            currentEvmAccounts.push(account);
+          }
+        }
+        else if ('chain' in account) {
+          currentBitcoinAccounts.push(account);
+        }
+      });
+    }
+    else if (fullRefresh) {
+      // Always get all accounts on full refresh to check for new ones
+      currentEvmAccounts = getEvmAccounts(chains);
+      currentEvmLikeAccounts = getEvmLikeAccounts(chains);
+      currentBitcoinAccounts = getBitcoinAccounts(chains);
+    }
+
+    const allCurrentAccounts = [...currentEvmAccounts, ...currentEvmLikeAccounts, ...currentBitcoinAccounts];
+    const newAccountsList = getNewAccounts(allCurrentAccounts);
+    const hasNewAccounts = newAccountsList.length > 0;
+
+    if (hasNewAccounts) {
+      logger.info(`Found ${newAccountsList.length} new accounts to refresh`, newAccountsList);
+    }
+
+    // Skip refresh only if fetchDisabled returns true AND there are no new accounts
+    if (fetchDisabled(userInitiated) && !hasNewAccounts) {
+      logger.info('skipping transaction refresh - no new accounts');
+      return;
+    }
+
+    if (hasNewAccounts) {
+      logger.info('Proceeding with refresh due to new accounts');
+    }
+
+    // Use the already separated accounts
+    let evmAccounts = currentEvmAccounts;
+    let evmLikeAccounts = currentEvmLikeAccounts;
+    let bitcoinAccounts = currentBitcoinAccounts;
+
+    // Check if we need to refresh based on new accounts
+    const allAccounts = allCurrentAccounts;
+    // If refresh is already running, add new accounts to pending
+    if (get(isRefreshing)) {
+      const newAccounts = getNewAccounts(allAccounts);
+      if (newAccounts.length > 0) {
+        addPendingAccounts(newAccounts);
+        logger.info(`Added ${newAccounts.length} accounts to pending queue`);
+      }
+      return;
+    }
+
+    // Check if we should refresh all accounts (includes new accounts check)
+    if (fullRefresh && shouldRefreshAll(allAccounts)) {
+      // Reset to refresh all accounts including new ones
+      evmAccounts = getEvmAccounts(chains);
+      evmLikeAccounts = getEvmLikeAccounts(chains);
+      bitcoinAccounts = getBitcoinAccounts(chains);
+    }
+    else if (hasNewAccounts) {
+      // If we have new accounts (either full or partial refresh), refresh only those
+      logger.info('Refreshing only new accounts');
+      evmAccounts = [];
+      evmLikeAccounts = [];
+      bitcoinAccounts = [];
+      newAccountsList.forEach((account) => {
         if ('evmChain' in account) {
           if (isEvmLikeChains(account.evmChain)) {
             evmLikeAccounts.push(account);
@@ -311,13 +285,10 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         }
       });
     }
-    else if (fullRefresh && !disableEvmEvents) {
-      evmAccounts.push(...getEvmAccounts(chains));
-      evmLikeAccounts.push(...getEvmLikeAccounts(chains));
-      bitcoinAccounts.push(...getBitcoinAccounts(chains));
-    }
 
-    if (evmAccounts.length + evmLikeAccounts.length + bitcoinAccounts.length > 0) {
+    const accountsToRefresh = [...evmAccounts, ...evmLikeAccounts, ...bitcoinAccounts];
+    if (accountsToRefresh.length > 0) {
+      startRefresh(accountsToRefresh);
       setStatus(Status.REFRESHING);
       initializeQueryStatus(evmAccounts);
       resetUndecodedTransactionsStatus();
@@ -329,15 +300,15 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
       const asyncOperations: Promise<void>[] = [];
 
-      if (fullRefresh || (accounts && accounts.length > 0)) {
+      if (evmAccounts.length > 0) {
         asyncOperations.push(refreshTransactionsHandler({ accounts: evmAccounts, type: TransactionChainType.EVM }));
       }
 
-      if (fullRefresh || (accounts && bitcoinAccounts.length > 0)) {
+      if (bitcoinAccounts.length > 0) {
         asyncOperations.push(refreshTransactionsHandler({ accounts: bitcoinAccounts, type: TransactionChainType.BITCOIN }));
       }
 
-      if (fullRefresh) {
+      if (evmLikeAccounts.length > 0) {
         asyncOperations.push(refreshTransactionsHandler({ accounts: evmLikeAccounts, type: TransactionChainType.EVMLIKE }));
       }
 
@@ -367,6 +338,26 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       logger.error(error);
       resetStatus();
     }
+    finally {
+      finishRefresh();
+    }
+
+    // After refresh is complete, check if there are pending accounts to refresh
+    if (!get(hasPendingAccounts))
+      return;
+
+    logger.info('Processing pending accounts after refresh completion');
+    const pendingAccounts = getPendingAccountsForRefresh();
+    // Recursively call refreshTransactions to handle pending accounts
+    setTimeout(() => {
+      refreshTransactions({
+        ...params,
+        payload: {
+          ...params.payload,
+          accounts: pendingAccounts,
+        },
+      }).catch(error => logger.error('Failed to refresh pending accounts', error));
+    }, 100);
   };
 
   return {
