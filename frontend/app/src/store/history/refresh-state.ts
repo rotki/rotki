@@ -2,28 +2,12 @@ import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/event
 import { get, set } from '@vueuse/core';
 import { logger } from '@/utils/logging';
 
-interface RefreshState {
-  isRefreshing: boolean;
-  lastRefreshTime: number | null;
-  accountsAtLastRefresh: Set<string>;
-  pendingAccounts: Set<string>;
-  accountsBeingRefreshed: Set<string>;
-}
-
 export const useHistoryRefreshStateStore = defineStore('history/refresh-state', () => {
-  const state = ref<RefreshState>({
-    accountsAtLastRefresh: new Set<string>(),
-    accountsBeingRefreshed: new Set<string>(),
-    isRefreshing: false,
-    lastRefreshTime: null,
-    pendingAccounts: new Set<string>(),
-  });
-
-  const isRefreshing = computed<boolean>(() => get(state).isRefreshing);
-  const lastRefreshTime = computed<number | null>(() => get(state).lastRefreshTime);
-  const accountsAtLastRefresh = computed<Set<string>>(() => get(state).accountsAtLastRefresh);
-  const pendingAccounts = computed<Set<string>>(() => get(state).pendingAccounts);
-  const accountsBeingRefreshed = computed<Set<string>>(() => get(state).accountsBeingRefreshed);
+  const isRefreshing = ref<boolean>(false);
+  const lastRefreshTime = ref<number | null>(null);
+  const accountsAtLastRefresh = ref<Set<string>>(new Set<string>());
+  const pendingAccounts = ref<Set<string>>(new Set<string>());
+  const accountsBeingRefreshed = ref<Set<string>>(new Set<string>());
 
   const createAccountKey = (account: EvmChainAddress | BitcoinChainAddress): string => {
     if ('evmChain' in account) {
@@ -33,94 +17,73 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
   };
 
   const startRefresh = (accounts: Array<EvmChainAddress | BitcoinChainAddress>): void => {
-    const currentState = get(state);
     const accountKeys = new Set(accounts.map(createAccountKey));
 
     // Merge with existing accounts if we're refreshing pending accounts
-    const mergedAccountKeys = new Set([...currentState.accountsAtLastRefresh, ...accountKeys]);
+    const mergedAccountKeys = new Set([...get(accountsAtLastRefresh), ...accountKeys]);
 
     // Mark these accounts as being refreshed
-    const newAccountsBeingRefreshed = new Set([...currentState.accountsBeingRefreshed, ...accountKeys]);
+    const newAccountsBeingRefreshed = new Set([...get(accountsBeingRefreshed), ...accountKeys]);
 
     logger.info(`Starting refresh for ${accounts.length} accounts, total tracked: ${mergedAccountKeys.size}`);
 
-    set(state, {
-      accountsAtLastRefresh: mergedAccountKeys,
-      accountsBeingRefreshed: newAccountsBeingRefreshed,
-      isRefreshing: true,
-      lastRefreshTime: Date.now(),
-      pendingAccounts: new Set<string>(),
-    });
+    set(accountsAtLastRefresh, mergedAccountKeys);
+    set(accountsBeingRefreshed, newAccountsBeingRefreshed);
+    set(isRefreshing, true);
+    set(lastRefreshTime, Date.now());
+    set(pendingAccounts, new Set<string>());
   };
 
   const finishRefresh = (): void => {
-    const currentState = get(state);
-    const pendingAccountKeys = currentState.pendingAccounts;
+    // Clear the accounts being refreshed
+    set(accountsBeingRefreshed, new Set<string>());
+    set(isRefreshing, false);
 
-    // If there are pending accounts, move them to be refreshed next
-    if (pendingAccountKeys.size > 0) {
-      set(state, {
-        accountsAtLastRefresh: currentState.accountsAtLastRefresh,
-        accountsBeingRefreshed: new Set<string>(), // Clear the accounts being refreshed
-        isRefreshing: false,
-        lastRefreshTime: currentState.lastRefreshTime,
-        pendingAccounts: pendingAccountKeys,
-      });
-    }
-    else {
-      set(state, {
-        ...currentState,
-        accountsBeingRefreshed: new Set<string>(), // Clear the accounts being refreshed
-        isRefreshing: false,
-      });
-    }
+    // If there are pending accounts, keep them for next refresh
+    // No need to update pendingAccounts as they're already set
   };
 
   const addPendingAccounts = (accounts: Array<EvmChainAddress | BitcoinChainAddress>): void => {
-    const currentState = get(state);
-    const newPendingAccounts = new Set(currentState.pendingAccounts);
+    const currentAccountsAtLastRefresh = get(accountsAtLastRefresh);
+    const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
+    const newPendingAccounts = new Set(get(pendingAccounts));
 
     accounts.forEach((account) => {
       const key = createAccountKey(account);
       // Only add to pending if not already refreshed AND not currently being refreshed
-      if (!currentState.accountsAtLastRefresh.has(key) && !currentState.accountsBeingRefreshed.has(key)) {
+      if (!currentAccountsAtLastRefresh.has(key) && !currentAccountsBeingRefreshed.has(key)) {
         newPendingAccounts.add(key);
       }
     });
 
-    set(state, {
-      ...currentState,
-      pendingAccounts: newPendingAccounts,
-    });
+    set(pendingAccounts, newPendingAccounts);
   };
 
   const getNewAccounts = (
     currentAccounts: Array<EvmChainAddress | BitcoinChainAddress>,
   ): Array<EvmChainAddress | BitcoinChainAddress> => {
-    const currentState = get(state);
-    const lastRefreshedAccounts = currentState.accountsAtLastRefresh;
-    const accountsBeingRefreshed = currentState.accountsBeingRefreshed;
+    const lastRefreshedAccounts = get(accountsAtLastRefresh);
+    const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
 
-    logger.debug(`Checking for new accounts. Current: ${currentAccounts.length}, Last refreshed: ${lastRefreshedAccounts.size}, Being refreshed: ${accountsBeingRefreshed.size}`);
+    logger.debug(`Checking for new accounts. Current: ${currentAccounts.length}, Last refreshed: ${lastRefreshedAccounts.size}, Being refreshed: ${currentAccountsBeingRefreshed.size}`);
 
     const newAccounts = currentAccounts.filter((account) => {
       const key = createAccountKey(account);
       // Exclude accounts that have been refreshed OR are currently being refreshed
-      return !lastRefreshedAccounts.has(key) && !accountsBeingRefreshed.has(key);
+      return !lastRefreshedAccounts.has(key) && !currentAccountsBeingRefreshed.has(key);
     });
 
     if (newAccounts.length > 0) {
-      logger.info(`Found ${newAccounts.length} new accounts (excluding ${accountsBeingRefreshed.size} being refreshed)`, newAccounts.map(createAccountKey));
+      logger.info(`Found ${newAccounts.length} new accounts (excluding ${currentAccountsBeingRefreshed.size} being refreshed)`, newAccounts.map(createAccountKey));
     }
 
     return newAccounts;
   };
 
   const getPendingAccountsForRefresh = (): Array<EvmChainAddress | BitcoinChainAddress> => {
-    const currentState = get(state);
-    const accountsBeingRefreshed = currentState.accountsBeingRefreshed;
+    const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
     // Filter out accounts that are currently being refreshed
-    const pendingKeys = Array.from(currentState.pendingAccounts).filter(key => !accountsBeingRefreshed.has(key));
+    const pendingKeys = Array.from(get(pendingAccounts)).filter(key => !currentAccountsBeingRefreshed.has(key));
     const result: Array<EvmChainAddress | BitcoinChainAddress> = [];
 
     pendingKeys.forEach((key) => {
@@ -137,26 +100,24 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
     });
 
     if (result.length > 0) {
-      logger.info(`Preparing ${result.length} pending accounts for refresh (excluded ${accountsBeingRefreshed.size} being refreshed)`);
+      logger.info(`Preparing ${result.length} pending accounts for refresh (excluded ${currentAccountsBeingRefreshed.size} being refreshed)`);
     }
 
     return result;
   };
 
-  const hasPendingAccounts = computed<boolean>(() => get(state).pendingAccounts.size > 0);
+  const hasPendingAccounts = computed<boolean>(() => get(pendingAccounts).size > 0);
 
   const shouldRefreshAll = (
     currentAccounts: Array<EvmChainAddress | BitcoinChainAddress>,
   ): boolean => {
-    const currentState = get(state);
-
     // If never refreshed, refresh all
-    if (currentState.lastRefreshTime === null) {
+    if (get(lastRefreshTime) === null) {
       return true;
     }
 
     // If not currently refreshing and there are new accounts, refresh all
-    if (!currentState.isRefreshing) {
+    if (!get(isRefreshing)) {
       const newAccounts = getNewAccounts(currentAccounts);
       return newAccounts.length > 0;
     }
@@ -165,13 +126,11 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
   };
 
   const reset = (): void => {
-    set(state, {
-      accountsAtLastRefresh: new Set<string>(),
-      accountsBeingRefreshed: new Set<string>(),
-      isRefreshing: false,
-      lastRefreshTime: null,
-      pendingAccounts: new Set<string>(),
-    });
+    set(accountsAtLastRefresh, new Set<string>());
+    set(accountsBeingRefreshed, new Set<string>());
+    set(isRefreshing, false);
+    set(lastRefreshTime, null);
+    set(pendingAccounts, new Set<string>());
   };
 
   return {

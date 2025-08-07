@@ -340,23 +340,24 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     }
     finally {
       finishRefresh();
-
-      // After refresh is complete, check if there are pending accounts to refresh
-      if (get(hasPendingAccounts)) {
-        logger.info('Processing pending accounts after refresh completion');
-        const pendingAccounts = getPendingAccountsForRefresh();
-        // Recursively call refreshTransactions to handle pending accounts
-        setTimeout(() => {
-          refreshTransactions({
-            ...params,
-            payload: {
-              ...params.payload,
-              accounts: pendingAccounts,
-            },
-          }).catch(error => logger.error('Failed to refresh pending accounts', error));
-        }, 100);
-      }
     }
+
+    // After refresh is complete, check if there are pending accounts to refresh
+    if (!get(hasPendingAccounts))
+      return;
+
+    logger.info('Processing pending accounts after refresh completion');
+    const pendingAccounts = getPendingAccountsForRefresh();
+    // Recursively call refreshTransactions to handle pending accounts
+    setTimeout(() => {
+      refreshTransactions({
+        ...params,
+        payload: {
+          ...params.payload,
+          accounts: pendingAccounts,
+        },
+      }).catch(error => logger.error('Failed to refresh pending accounts', error));
+    }, 100);
   };
 
   return {
