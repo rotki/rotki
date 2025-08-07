@@ -25,7 +25,7 @@ from rotkehlchen.types import (
 )
 
 # Test constants
-TEST_SOLANA_ADDRESS: Final = SolanaAddress('9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk')
+TEST_SOLANA_ADDRESS: Final = SolanaAddress('BENGEso6uSrcCYyRsanYgmDwLi34QSpihU2FX2xvpump')
 TEST_OLD_ASSET_IDENTIFIER: Final = 'old_solana_token_id'
 
 

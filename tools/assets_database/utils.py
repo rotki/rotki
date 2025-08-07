@@ -135,7 +135,9 @@ def prepare_globaldb(args: argparse.Namespace) -> tuple[GlobalDBHandler, Path]:
 def clean_folder(globaldb: GlobalDBHandler, target_directory: Path):
     """Set journal_mode=DELETE in the global db. Move it out of the temporary directory to the
     final location, and clean up the temporary directory."""
-    globaldb.conn.execute('PRAGMA journal_mode=DELETE')
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute('PRAGMA journal_mode=DELETE')
+
     print('Cleaning up...')
     (target_directory / GLOBALDIR_NAME / GLOBALDB_NAME).rename(target_directory / GLOBALDB_NAME)
     shutil.rmtree(target_directory / GLOBALDIR_NAME)

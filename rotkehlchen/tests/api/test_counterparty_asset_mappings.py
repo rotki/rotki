@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
-NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS: Final = 30
+NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS: Final = 31
 
 
 def _get_all_counterparty_mappings(globaldb: 'GlobalDBHandler') -> dict[str, Any]:
