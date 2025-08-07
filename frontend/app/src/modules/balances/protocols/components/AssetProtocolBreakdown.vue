@@ -76,7 +76,7 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
       </div>
       <ChainBalances
         v-if="row.protocol.toLowerCase() === 'address' && row.chains && Object.keys(row.chains).length > 0"
-        class="ms-8 my-1"
+        class="ms-11 my-1"
         :chains="row.chains"
         :asset="asset"
         :loading="loading"
