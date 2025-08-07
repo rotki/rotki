@@ -41,7 +41,7 @@ ASSET_COLLECTIONS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/
 ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
 FIRST_VERSION_WITH_COLLECTIONS: Final = 16
 FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS: Final = 4
-FIRST_VERSION_WITH_SOLANA_TOKENS: Final = 37
+FIRST_GLOBAL_DB_VERSION_WITH_SOLANA_TOKENS: Final = 13
 
 
 def executeall(cursor: DBCursor, statements: str) -> None:
@@ -75,8 +75,8 @@ def _replace_assets_from_db_cursor(
     script_parts = ['PRAGMA foreign_keys = OFF;']
     write_cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
     if (  # add solana_tokens table only if source db version supports it
-        (result := write_cursor.execute('SELECT value FROM other_db.settings WHERE name=?;', (ASSETS_VERSION_KEY,)).fetchone()) is not None and   # noqa: E501
-        int(result[0]) >= FIRST_VERSION_WITH_SOLANA_TOKENS
+        (result := write_cursor.execute("SELECT value FROM other_db.settings WHERE name='version';").fetchone()) is not None and   # noqa: E501
+        int(result[0]) >= FIRST_GLOBAL_DB_VERSION_WITH_SOLANA_TOKENS
     ):
         required_tables.append('solana_tokens')
 

@@ -1244,7 +1244,7 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
     token_identifier = solana_address_to_identifier(
-        address=(token_address := SolanaAddress('9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk')),
+        address=(token_address := SolanaAddress('BENGEso6uSrcCYyRsanYgmDwLi34QSpihU2FX2xvpump')),
         token_type=TokenKind.SPL_TOKEN,
     )
     response = requests.put(
@@ -1255,14 +1255,14 @@ def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
         json=(payload := {
             'asset_type': 'solana token',
             'address': token_address,
-            'name': 'Hosico Cat',
-            'symbol': 'HOSICO',
+            'name': 'TrollBoss',
+            'symbol': 'TROLLBOSS',
             'decimals': 6,
-            'coingecko': 'hosico-cat',
+            'coingecko': None,
             'cryptocompare': None,
             'token_kind': 'spl_token',
             'protocol': '',
-            'started': 1745929399,
+            'started': 1754563797,
         }),
     )
     result = assert_proper_sync_response_with_result(response)
@@ -1284,7 +1284,7 @@ def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
             'address': token_address,
             'identifier': token_identifier,
             'asset_type': payload['asset_type'],
-            'coingecko': payload['coingecko'],
+            'coingecko': None,
             'cryptocompare': None,
             'decimals': payload['decimals'],
             'name': payload['name'],
