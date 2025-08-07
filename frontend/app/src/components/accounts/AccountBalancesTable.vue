@@ -16,6 +16,7 @@ import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { type AccountManageState, editBlockchainAccount } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAddressBookForm } from '@/composables/address-book/form';
+import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -65,6 +66,9 @@ const { useIsTaskRunning } = useTaskStore();
 const { isLoading } = useStatusStore();
 const { supportsTransactions } = useSupportedChains();
 const { showConfirmation } = useAccountDelete();
+
+const { showGlobalDialog } = useAddressBookForm();
+const { getAddressesNames } = useAddressesNamesApi();
 
 const { isSectionLoading } = useBlockchainAccountLoading(category);
 
@@ -205,20 +209,33 @@ function confirmDelete(item: DataRow) {
   });
 }
 
-const { showGlobalDialog } = useAddressBookForm();
+async function handleXpubChildEdit(row: DataRow): Promise<void> {
+  const blockchain = getChain(row);
+  if (!blockchain)
+    return;
 
-function edit(group: string, row: DataRow) {
+  let name = '';
+  const address = getAccountAddress(row);
+  const savedNames = await getAddressesNames([{
+    address,
+    blockchain,
+  }]);
+  if (savedNames.length > 0) {
+    name = savedNames[0].name;
+  }
+  showGlobalDialog({
+    address,
+    blockchain,
+    name,
+  });
+}
+
+async function edit(group: string, row: DataRow) {
   if (group === 'evm') {
     emit('edit', editBlockchainAccount(row));
   }
   else if (group === 'xpub') {
-    const blockchain = getChain(row);
-    if (blockchain) {
-      showGlobalDialog({
-        address: getAccountAddress(row),
-        blockchain,
-      });
-    }
+    await handleXpubChildEdit(row);
   }
 }
 
