@@ -1342,8 +1342,9 @@ class DBHandler:
         last_queried_ts = None
         querystr = (
             "SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? "
-            "AND (key=? OR key=?) AND value NOT IN "
-            "(SELECT value FROM multisettings WHERE name='ignored_asset')"
+            "AND (key=? OR key=?) AND NOT EXISTS "
+            "(SELECT 1 FROM multisettings WHERE name='ignored_asset' AND "
+            "value = evm_accounts_details.value)"
         )
         bindings = (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS)  # noqa: E501
         cursor.execute(querystr, bindings)  # original place https://github.com/rotki/rotki/issues/5432 was seen # noqa: E501

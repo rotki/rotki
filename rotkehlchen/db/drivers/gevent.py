@@ -4,7 +4,7 @@ but heavily modified"""
 
 import random
 from collections.abc import Generator, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
@@ -92,7 +92,7 @@ class DBCursor:
             self._cursor.execute(statement, *bindings)
         except (sqlcipher.InterfaceError, rsqlite.InterfaceError) as e:  # pylint: disable=no-member
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
-            logger.debug(f'{statement} with {bindings} failed due to {str(e)}. Probably https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
+            logger.debug(f'{statement} with {bindings} failed due to {e!s}. Probably https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
             self._cursor.execute(statement, *bindings)
 
         if __debug__:
