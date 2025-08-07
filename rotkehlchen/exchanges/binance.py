@@ -102,7 +102,6 @@ V3_METHODS: Final = (
 )
 PUBLIC_METHODS: Final = ('exchangeInfo', 'time')
 
-RETRY_AFTER_LIMIT: Final = 60
 # Binance api error codes we check for (all below apis seem to have the same)
 # https://binance-docs.github.io/apidocs/spot/en/#error-codes-2
 # https://binance-docs.github.io/apidocs/futures/en/#error-codes-2
@@ -302,7 +301,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
          - BinancePermissionError
         """
         call_options = options.copy() if options else {}
-        timeout = CachedSettings().get_timeout_tuple()
+        timeout = (cached_settings := CachedSettings()).get_timeout_tuple()
+        tries_left = cached_settings.get_query_retry_limit()
         while True:
             if 'signature' in call_options:
                 del call_options['signature']
@@ -381,24 +381,24 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 # will give the number of seconds required to wait, in the case
                 # of a 429, to prevent a ban, or, in the case of a 418, until
                 # the ban is over.
-                # https://binance-docs.github.io/apidocs/spot/en/#limits
-                retry_after = int(response.headers.get('retry-after', '0'))
-                # Spoiler. They actually seem to always return 0 here. So we don't
-                # wait at all. Won't be much of an improvement but force 1 sec wait if 0 returns
-                retry_after = max(1, retry_after)  # wait at least 1 sec even if api says otherwise
+                # https://developers.binance.com/docs/binance-spot-api-docs/rest-api/limits
+                # the Retry-After header is returned but it is always 0. We implement our own
+                # backoff logic.
                 log.debug(
-                    f'Got status code {response.status_code} from {self.name}. Backing off',
-                    seconds=retry_after,
+                    'Rate limited request from binance answered with status code '
+                    f'{response.status_code} and headers {response.headers}. '
+                    f'Retries left: {tries_left}',
                 )
-                if retry_after > RETRY_AFTER_LIMIT:
-                    raise RemoteError(
-                        f'{self.name} API request {response.url} for {method} failed with '
-                        f'HTTP status code: {response.status_code} due to a too long '
-                        f'retry after value ({retry_after} > {RETRY_AFTER_LIMIT})',
-                    )
+                if tries_left >= 1:
+                    backoff_seconds = 10 / tries_left
+                    gevent.sleep(backoff_seconds)
+                    tries_left -= 1
+                    continue
 
-                gevent.sleep(retry_after)
-                continue
+                raise RemoteError(
+                    f'{self.name} API request {response.url} for {method} failed with '
+                    f'HTTP status code: {response.status_code} after exhausting the retries.',
+                )
 
             # else success
             break
