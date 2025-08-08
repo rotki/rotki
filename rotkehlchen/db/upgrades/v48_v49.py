@@ -78,6 +78,11 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """Remove the deprecated eth2_daily_staking_details table and its data"""
         write_cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
 
+    @progress_step(description='Updating global user notes location value.')
+    def _update_user_notes(write_cursor: 'DBCursor') -> None:
+        """Update global user notes location value to 'G' instead of a blank string"""
+        write_cursor.execute("UPDATE user_notes SET location='G' WHERE location = ''")
+
     @progress_step(description='Resetting decoded events.')
     def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.

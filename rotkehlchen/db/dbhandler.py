@@ -3477,7 +3477,9 @@ class DBHandler:
             is_pinned: bool,
             has_premium: bool,
     ) -> int:
-        """Add a user_note entry to the DB"""
+        """Add a user_note entry to the DB
+        Possible location values are hardcoded in frontend/app/src/types/notes.ts
+        """
         with self.user_write() as write_cursor:
             if has_premium is False:
                 num_user_notes = self.get_entries_count(

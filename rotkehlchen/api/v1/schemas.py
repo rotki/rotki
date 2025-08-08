@@ -3373,7 +3373,7 @@ class DetectTokensSchema(
 class UserNotesPutSchema(Schema):
     title = NonEmptyStringField(required=True)
     content = NonEmptyStringField(required=True)  # frontend requires a non empty description
-    location = fields.String(required=True)  # empty string here means that it's a global location. TODO: Change  # noqa: E501
+    location = fields.String(required=True)
     is_pinned = fields.Boolean(required=True)
 
 

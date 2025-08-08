@@ -11501,6 +11501,7 @@ Handling user notes
 
       {"from_timestamp": 12345677, "to_timestamp": 12345679, "title_substring": "#"}
 
+   :reqjson str[optional] location: A string filtering the note location. Possible values are hardcoded here: https://github.com/rotki/rotki/blob/develop/frontend/app/src/types/notes.ts
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson list[string] order_by_attributes: This is the list of attributes of the note by which to order the results. By default we sort using ``last_update_timestamp``.
