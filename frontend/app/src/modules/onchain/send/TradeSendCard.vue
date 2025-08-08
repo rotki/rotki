@@ -139,7 +139,6 @@ function resetMax() {
 }
 
 function resetInput() {
-  set(asset, '');
   set(toAddress, '');
   set(amount, '');
   resetMax();
@@ -404,7 +403,7 @@ watch([estimatedGasFee, assetBalance], () => {
       </RuiAlert>
       <!-- Wallet Mode Selector -->
 
-      <div class="flex items-center">
+      <div class="flex items-end">
         <div class="grow">
           <template v-if="isPackaged && !connected">
             <div class="text-rui-text-secondary text-caption uppercase mb-1">
