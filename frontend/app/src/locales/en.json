@@ -1444,7 +1444,8 @@
     "query_user": {
       "error": "Couldn't get the list of markets selected to be queried for binance.",
       "title": "Query selected Binance markets"
-    }
+    },
+    "refresh_tooltip": "Refresh Binance market pairs"
   },
   "blockchain_account_selector": {
     "all": "all",
@@ -2227,6 +2228,7 @@
     }
   },
   "exchange_keys_form": {
+    "binance_markets_required": "Binance market pairs are required to avoid rate limiting. This limitation comes from the Binance API itself which enforces strict rate limits when querying all trading pairs.",
     "edit": {
       "activate_tooltip": "Edit the api keys for the exchange.",
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."

@@ -352,11 +352,20 @@ defineExpose({
     <BinancePairsSelector
       v-if="isBinance"
       :name="modelValue.name"
+      :edit="editMode"
       :location="modelValue.location"
       :error-messages="toMessages(v$.binanceMarkets)"
       @update:selection="modelValue = { ...modelValue, binanceMarkets: $event }"
     />
   </div>
+
+  <RuiAlert
+    v-if="isBinance"
+    class="mt-4"
+    type="info"
+  >
+    {{ t('exchange_keys_form.binance_markets_required') }}
+  </RuiAlert>
 
   <RuiAlert
     v-if="showKeyWaitingTimeWarning"
