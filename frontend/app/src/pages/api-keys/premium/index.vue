@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkIfDevelopment } from '@shared/utils';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
@@ -24,6 +25,7 @@ const { deletePremium, setup } = store;
 const { t } = useI18n({ useScope: 'global' });
 
 const { premiumUserLoggedIn } = useInterop();
+const isDevelopment = checkIfDevelopment();
 
 const apiKey = ref<string>('');
 const apiSecret = ref<string>('');
@@ -233,7 +235,7 @@ function showDeleteConfirmation() {
         </div>
       </template>
     </RuiCard>
-    <PremiumDeviceList v-if="premium" />
+    <PremiumDeviceList v-if="premium && isDevelopment" />
   </TablePageLayout>
 </template>
 
