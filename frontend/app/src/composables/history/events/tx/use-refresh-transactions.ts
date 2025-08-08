@@ -227,18 +227,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     const newAccountsList = getNewAccounts(allCurrentAccounts);
     const hasNewAccounts = newAccountsList.length > 0;
 
-    if (hasNewAccounts) {
-      logger.info(`Found ${newAccountsList.length} new accounts to refresh`, newAccountsList);
-    }
-
     // Skip refresh only if fetchDisabled returns true AND there are no new accounts
     if (fetchDisabled(userInitiated) && !hasNewAccounts) {
-      logger.info('skipping transaction refresh - no new accounts');
       return;
-    }
-
-    if (hasNewAccounts) {
-      logger.info('Proceeding with refresh due to new accounts');
     }
 
     // Use the already separated accounts
@@ -253,7 +244,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       const newAccounts = getNewAccounts(allAccounts);
       if (newAccounts.length > 0) {
         addPendingAccounts(newAccounts);
-        logger.info(`Added ${newAccounts.length} accounts to pending queue`);
       }
       return;
     }
@@ -267,7 +257,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     }
     else if (hasNewAccounts) {
       // If we have new accounts (either full or partial refresh), refresh only those
-      logger.info('Refreshing only new accounts');
       evmAccounts = [];
       evmLikeAccounts = [];
       bitcoinAccounts = [];
@@ -346,7 +335,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     if (!get(hasPendingAccounts))
       return;
 
-    logger.info('Processing pending accounts after refresh completion');
     const pendingAccounts = getPendingAccountsForRefresh();
     // Recursively call refreshTransactions to handle pending accounts
     setTimeout(() => {
