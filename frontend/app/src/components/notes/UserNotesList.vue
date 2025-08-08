@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
@@ -8,19 +7,20 @@ import { useUserNotesApi } from '@/composables/api/session/user-notes';
 import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { NoteLocation, type UserNote, type UserNotesRequestPayload } from '@/types/notes';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 const open = defineModel<boolean>('open', { required: true });
 
 const props = withDefaults(defineProps<{ location?: string }>(), {
-  location: '',
+  location: NoteLocation.GLOBAL,
 });
 
 function getDefaultForm() {
   return {
     content: '',
     isPinned: false,
-    location: '',
+    location: NoteLocation.GLOBAL,
     title: '',
   };
 }

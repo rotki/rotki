@@ -110,7 +110,7 @@ watch(locationName, (locationName) => {
       v-if="display"
       :key="location + tab"
       v-model:open="openDialog"
-      :location="tab === 0 ? '' : location"
+      :location="tab === 0 ? NoteLocation.GLOBAL : location"
     />
   </RuiNavigationDrawer>
 </template>
