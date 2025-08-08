@@ -123,6 +123,7 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
 
         vault_token = self.base.get_or_create_evm_token(
             address=context.tx_log.address,
+            protocol=CPT_SPARK,
             encounter=(encounter := TokenEncounterInfo(should_notify=False)),
         )
         underlying_token = self.base.get_or_create_evm_token(
