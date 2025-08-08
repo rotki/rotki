@@ -3584,6 +3584,11 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT pl_currency, profit_loss FROM margin_positions WHERE pl_currency IN ("AI16Z", "ACS")').fetchall() == expected_margin_positions_before  # noqa: E501
         # it should not have any CAIPS format assets before upgrade
         assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier LIKE "solana:%" ORDER BY identifier').fetchone()[0] == 0  # noqa: E501
+        # user notes with empty string for global location
+        assert cursor.execute('SELECT * FROM user_notes').fetchall() == [
+            (1, 'Note1', 'Test note 1 contents', 'DASHBOARD', 1754674299, 0),
+            (2, 'Note2', 'Test note 2 contents', '', 1754674299, 0),
+        ]
 
     # Logout and upgrade
     db_v48.logout()
@@ -3623,6 +3628,11 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT pl_currency, profit_loss FROM margin_positions WHERE pl_currency LIKE "solana%"').fetchall() == [  # noqa: E501
             (tokens_mapping[entry[0]], entry[1])
             for entry in expected_margin_positions_before
+        ]
+        # global user note location is now None and the other note is unmodified.
+        assert cursor.execute('SELECT * FROM user_notes').fetchall() == [
+            (1, 'Note1', 'Test note 1 contents', 'DASHBOARD', 1754674299, 0),
+            (2, 'Note2', 'Test note 2 contents', 'G', 1754674299, 0),
         ]
 
     db.logout()
