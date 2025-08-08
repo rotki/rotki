@@ -4,7 +4,6 @@ import type { EnhancedProviderDetail } from '@/modules/onchain/wallet-providers/
 import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
 import ProviderSelectionDialog from '@/components/wallets/ProviderSelectionDialog.vue';
 import WalletConnectionButton from '@/components/wallets/WalletConnectionButton.vue';
-import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import TradeAmountInput from '@/modules/onchain/send/TradeAmountInput.vue';
 import TradeAssetSelector from '@/modules/onchain/send/TradeAssetSelector.vue';
@@ -65,7 +64,6 @@ const { useQueryingBalances, warnUntrackedAddress } = useBalanceQueries(connecte
 
 const { getAssetDetail } = useTradableAsset(connectedAddress);
 const { getAssetBalance, getIsInteractedBefore } = useTradeApi();
-const { isPackaged } = useInterop();
 const router = useRouter();
 
 // Provider selection for wallet connection
@@ -405,7 +403,7 @@ watch([estimatedGasFee, assetBalance], () => {
 
       <div class="flex items-end">
         <div class="grow">
-          <template v-if="isPackaged && !connected">
+          <template v-if="!connected">
             <div class="text-rui-text-secondary text-caption uppercase mb-1">
               {{ t('trade.wallet_mode.label') }}
             </div>
@@ -416,11 +414,11 @@ watch([estimatedGasFee, assetBalance], () => {
               :required="true"
               size="sm"
             >
-              <RuiButton model-value="walletconnect">
-                {{ t('trade.wallet_mode.wallet_connect') }}
-              </RuiButton>
               <RuiButton model-value="local-bridge">
                 {{ t('trade.wallet_mode.local_bridge') }}
+              </RuiButton>
+              <RuiButton model-value="walletconnect">
+                {{ t('trade.wallet_mode.wallet_connect') }}
               </RuiButton>
             </RuiButtonGroup>
           </template>
