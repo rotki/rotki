@@ -94,17 +94,17 @@ watchImmediate(location, async () => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-row flex-wrap items-center justify-end gap-2">
+      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3">
         <ChainSelect
           v-model="selectedChain"
           hide-details
-          class="flex-1 max-w-full md:max-w-[18rem]"
+          class="lg:w-[18rem]"
           clearable
           dense
           exclude-eth-staking
         />
 
-        <div class="w-[20rem] max-w-[30rem]">
+        <div class="lg:w-[26rem]">
           <TableFilter
             v-model:matches="filters"
             :matchers="matchers"
@@ -112,7 +112,7 @@ watchImmediate(location, async () => {
         </div>
       </div>
 
-      <div class="flex flex-row items-center gap-2 mb-3">
+      <div class="flex flex-row items-center gap-2 my-3">
         <RuiTabs
           v-model="tab"
           color="primary"
