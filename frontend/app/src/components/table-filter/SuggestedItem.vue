@@ -165,8 +165,9 @@ watch(search, (value) => {
         <span
           v-else-if="displayValue"
           class="font-normal"
+          :title="displayValue"
         >
-          {{ truncateAddress(displayValue, 10) }}
+          {{ truncateAddress(displayValue, 8) }}
         </span>
       </template>
     </template>
