@@ -23,6 +23,7 @@ export interface UserNotesRequestPayload extends PaginationRequestPayload<UserNo
 }
 
 export enum NoteLocation {
+  GLOBAL = 'G',
   DASHBOARD = 'DASHBOARD',
   ACCOUNTS_EVM = 'ACCOUNTS_EVM',
   ACCOUNTS_BITCOIN = 'ACCOUNTS_BITCOIN',
