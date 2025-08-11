@@ -79,6 +79,20 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
                         "bondable_amount":"0.00",
                         "withdrawable_amount":"0",
                         "fiat_amount":"0.00"
+                    },
+                    {
+                        "symbol":"idonotexist",
+                        "amount":"0.123",
+                        "holds":"0",
+                        "bonded_amount":"0.00",
+                        "reserved_amount":"0.00",
+                        "unbonding_amount":"0.00",
+                        "unvested_amount":"0.00",
+                        "pending_rewards_amount":"0.00",
+                        "past_rewards_amount":"0.00",
+                        "bondable_amount":"0.00",
+                        "withdrawable_amount":"0",
+                        "fiat_amount":"0.00"
                     }
                 ]
             }
@@ -89,6 +103,7 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
     with (
         patch.object(coinbase.session, 'get', side_effect=mock_coinbase_accounts),
         patch.object(coinbase, '_get_portfolio_ids', new=lambda *args, **kwargs: ['fake_id']),
+        patch.object(coinbase.db.msg_aggregator, 'add_message') as mock_msg_aggregator,
     ):
         balances, msg = coinbase.query_balances()
 
@@ -97,6 +112,9 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
     assert balances[A_ENS].amount == FVal('5000')
     assert balances[A_SOL].amount == FVal('150000')
     assert balances[A_USD].amount == FVal('0.0082435113740889')
+    # Confirm the missing asset ws message has a location of coinbase rather than coinbaseprime.
+    assert mock_msg_aggregator.call_count == 1
+    assert mock_msg_aggregator.call_args_list[0].kwargs['data'] == {'location': 'coinbase', 'name': 'coinbaseprime', 'identifier': 'IDONOTEXIST', 'details': 'balance query'}  # noqa: E501
 
 
 def test_process_trade():

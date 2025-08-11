@@ -1170,13 +1170,21 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             ('BALANCER_GAUGES421611',),
             ('BALANCER_GAUGES84532',),
         ]
-        # Check a couple existing coinbaseprime/coinbase mappings that will be affected in the
-        # upgrade and get the coinbase mapping count.
+        # Check several mappings that will be affected and get the existing mapping counts.
         assert cursor.execute(
             "SELECT * FROM location_asset_mappings WHERE exchange_symbol IN ('ABC', 'XYZ')",
         ).fetchall() == [('u', 'XYZ', 'BTC'), ('u', 'ABC', 'ETH'), ('G', 'ABC', 'ETH')]
         existing_coinbase_mapping_count = cursor.execute(
             "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'G'",
+        ).fetchone()[0]
+        assert cursor.execute(
+            "SELECT * FROM location_asset_mappings WHERE location = 'S'",
+        ).fetchall() == [
+            ('S', 'CAKE', 'eip155:56/erc20:0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82'),
+            ('S', 'D', 'eip155:1/erc20:0x33b481CbBF3c24f2B3184Ee7Cb02dAAD1C4F49A8'),
+        ]
+        existing_binance_mapping_count = cursor.execute(
+            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'E'",
         ).fetchone()[0]
 
     with ExitStack() as stack:
@@ -1271,16 +1279,22 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         # `balancer_gauges_count - 1` because a malformed/unexpected balancer gauge cache entry got deleted  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?, ?, ?, ?)', list(balancer_cache_mapping.values())).fetchone()[0] == len(balancer_gauges) - 1  # noqa: E501
         # Check that the coinbaseprime mappings have been combined with the coinbase mappings.
-        # The ABC mapping was already present for both, so there's only one new coinbase mapping.
         assert cursor.execute(
             "SELECT * FROM location_asset_mappings WHERE exchange_symbol IN ('ABC', 'XYZ')",
         ).fetchall() == [('G', 'XYZ', 'BTC'), ('G', 'ABC', 'ETH')]
-        assert cursor.execute(
-            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'G'",
-        ).fetchone()[0] == existing_coinbase_mapping_count + 1
-        assert cursor.execute(
-            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'u'",
-        ).fetchone()[0] == 0
+        # Check the mappings counts
+        for old_location, new_location, expected_new_count in (
+            ('S', 'E', existing_binance_mapping_count),  # both binanceus mappings already exist for binance as well.  # noqa: E501
+            ('u', 'G', existing_coinbase_mapping_count + 1),  # The ABC mapping was already present for both, so there's only one new coinbase mapping.  # noqa: E501
+        ):
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location_asset_mappings WHERE location=?',
+                (new_location,),
+            ).fetchone()[0] == expected_new_count
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location_asset_mappings WHERE location=?',
+                (old_location,),
+            ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
