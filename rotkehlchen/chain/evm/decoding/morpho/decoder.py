@@ -158,7 +158,8 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 (
                     event.amount == assets_amount or
                     (is_weth_vault and event.address in self.bundlers)
-                )
+                ) and
+                self.base.is_tracked(bytes_to_address(context.tx_log.topics[2]))  # owner address should be tracked  # noqa: E501
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
