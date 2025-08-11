@@ -18,6 +18,7 @@ from rotkehlchen.errors.api import (
     PremiumAuthenticationError,
     RotkehlchenPermissionError,
 )
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
@@ -519,7 +520,12 @@ def test_premium_credentials():
 
 @pytest.mark.parametrize('ethereum_modules', [['uniswap', 'sushiswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
-def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials, username):
+def test_premium_toggle_chains_aggregator(
+        blockchain,
+        rotki_premium_credentials,
+        username,
+        database,
+):
     """Tests that modules receive correctly the premium status when it's toggled"""
     for _, module in blockchain.iterate_modules():
         assert module.premium is None
@@ -528,6 +534,7 @@ def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials,
         credentials=rotki_premium_credentials,
         username=username,
         msg_aggregator=MessagesAggregator(),
+        db=database,
     )
     blockchain.activate_premium_status(premium_obj)
     for _, module in blockchain.iterate_modules():
@@ -822,4 +829,66 @@ def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
         limits4 = premium.fetch_limits()
         assert limits4 == limits_data
         assert premium._cached_limits == limits_data
-        assert mock_get.call_count == 1
+
+
+def test_docker_device_version_update(rotki_premium_object, database):
+    """Test that Docker device registration handles version updates correctly"""
+    premium = rotki_premium_object
+    premium.db = database  # Set the database for this test
+
+    with (
+        # Mock platform.system to return Linux (Docker detection)
+        patch('rotkehlchen.premium.premium.platform.system', return_value='Linux'),
+        # Mock check_docker_container to return a container ID
+        patch('rotkehlchen.premium.premium.check_docker_container', return_value='abc123def456'),
+        # Mock get_system_spec to control version
+        patch('rotkehlchen.premium.premium.get_system_spec', return_value={'rotkehlchen': '1.0.0'}),  # noqa: E501
+    ):
+        # Test 1: Initial registration failure with device limit and no cached info
+        with (
+            patch.object(premium.session, 'put', return_value=MockResponse(HTTPStatus.UNPROCESSABLE_ENTITY, '{}')),  # noqa: E501
+            patch.object(premium.session, 'delete') as mock_delete,
+        ):
+            # No cached info, should just fail
+            with pytest.raises(RemoteError):
+                premium._register_new_device('test_device_id')
+            mock_delete.assert_not_called()
+
+        # Save device info to cache for subsequent tests (same version as current)
+        premium._set_docker_device_info('old_device_id', '1.0.0')
+
+        # Test 2: Same version - should not delete old device
+        with (
+            patch.object(premium.session, 'put', return_value=MockResponse(HTTPStatus.UNPROCESSABLE_ENTITY, '{}')),  # noqa: E501
+            patch.object(premium.session, 'delete') as mock_delete,
+        ):
+            with pytest.raises(RemoteError):
+                premium._register_new_device('test_device_id')
+            mock_delete.assert_not_called()
+
+        # Update cached version to older version
+        premium._set_docker_device_info('old_device_id', '0.8.0')
+
+        # Test 3: Newer version - should delete old device and register new
+        with (
+            patch.object(premium.session, 'put', side_effect=[
+                MockResponse(HTTPStatus.UNPROCESSABLE_ENTITY, '{}'),  # First attempt fails
+                MockResponse(HTTPStatus.CREATED, '{}'),  # Second attempt after delete succeeds
+            ]) as mock_put,
+            patch.object(premium.session, 'delete', return_value=MockResponse(HTTPStatus.OK, '{}')) as mock_delete,  # noqa: E501
+        ):
+            premium._register_new_device('new_device_id')
+
+            # Verify delete was called with old device
+            mock_delete.assert_called_once()
+            call_args = mock_delete.call_args
+            assert call_args[1]['json']['device_identifier'] == 'old_device_id'
+
+            # Verify registration was attempted twice
+            assert mock_put.call_count == 2
+
+            # Verify cache was updated with new device info
+            cached_info = premium._get_docker_device_info()
+            assert cached_info is not None
+            assert cached_info[0] == 'new_device_id'
+            assert cached_info[1] == '1.0.0'

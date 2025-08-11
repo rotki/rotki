@@ -367,6 +367,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                     credentials=given_premium_credentials,
                     username=username,
                     msg_aggregator=self.data.msg_aggregator,
+                    db=self.data.db,
                 )
             except (PremiumAuthenticationError, RemoteError) as e:
                 self._abort_new_syncing_premium_user(username=username, original_exception=e)
@@ -381,6 +382,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                     credentials=db_credentials,
                     username=username,
                     msg_aggregator=self.data.msg_aggregator,
+                    db=self.data.db,
                 )
             except (PremiumAuthenticationError, RemoteError) as e:
                 message = (

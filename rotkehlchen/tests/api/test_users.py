@@ -239,6 +239,7 @@ def test_user_creation_with_premium_credentials(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
+        database=None,  # type: ignore  # the user is not logged in
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',
         metadata_data_size=0,
@@ -898,6 +899,7 @@ def test_user_set_premium_credentials(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
+        database=rotki.data.db,
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',
         metadata_data_size=0,
@@ -931,6 +933,7 @@ def test_user_del_premium_credentials(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
+        database=rotki.data.db,
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',
         metadata_data_size=0,

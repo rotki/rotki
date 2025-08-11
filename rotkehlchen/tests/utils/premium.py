@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -93,6 +94,7 @@ def create_patched_premium(
         premium_credentials: PremiumCredentials,
         username: str,
         patch_get: bool,
+        database: DBHandler,
         metadata_last_modify_ts: Timestamp | None = None,
         metadata_data_hash: str | None = None,
         metadata_data_size: int | None = None,
@@ -103,6 +105,7 @@ def create_patched_premium(
         credentials=premium_credentials,
         username=username,
         msg_aggregator=MessagesAggregator(),
+        db=database,
     )
     patched_get = None
     if patch_get:
@@ -211,6 +214,7 @@ def setup_starting_environment(
         premium_credentials=premium_credentials,
         username=username,
         patch_get=True,
+        database=rotkehlchen_instance.data.db,
         metadata_last_modify_ts=Timestamp(metadata_last_modify_ts),
         metadata_data_hash=remote_hash,
         metadata_data_size=len(remote_data) if remote_data else 0,

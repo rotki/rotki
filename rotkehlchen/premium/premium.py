@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import platform
+import re
 import time
 from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
@@ -12,18 +13,21 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypedDict, cast
 from urllib.parse import urlencode
 from uuid import uuid4
 
 import machineid
 import requests
+from packaging.version import InvalidVersion, Version
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumApiError,
@@ -35,12 +39,16 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import is_production, set_user_agent
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.version_check import get_system_spec
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+DOCKER_PLATFORM_KEY: Final = 'docker'
 
 
 class RemoteMetadata(NamedTuple):
@@ -151,6 +159,23 @@ def _process_dict_response(
     return result_dict
 
 
+def check_docker_container() -> str | None:
+    """This function checks if the user is running inside a docker container.
+    Returns the 12 first chars of the container id.
+
+    In case of a bad error this function logs and returns None.
+    """
+    try:
+        data = Path('/proc/self/mountinfo').read_text(encoding='utf-8').strip()
+        if 'docker' in data:
+            match = re.search(r'docker/containers/([a-f0-9]+)/hostname', data)
+            return match.group(1)[:12] if match else None
+    except OSError as e:
+        log.error(f'Failed at open mountinfo file due to {e}')
+
+    return None
+
+
 class SubscriptionStatus(Enum):
     UNKNOWN = 1
     ACTIVE = 2
@@ -226,6 +251,7 @@ class Premium:
             credentials: PremiumCredentials,
             username: str,
             msg_aggregator: 'MessagesAggregator',
+            db: 'DBHandler',
     ) -> None:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = create_session()
@@ -243,6 +269,7 @@ class Premium:
         # Cache user limits to avoid repeated API calls during the session
         self._cached_limits: UserLimits | None = None
         self.msg_aggregator = msg_aggregator
+        self.db = db
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
@@ -325,6 +352,62 @@ class Premium:
                     status_codes=[HTTPStatus.OK],
                 )
 
+    def _maybe_register_docker_device(
+            self,
+            device_id: str,
+            device_name: str,
+            system_platform: str,
+    ) -> bool:
+        """Try to upgrade docker device remotely. This happens when a new container is created
+        with a version newer than the one running before.
+
+        Returns false if the device can't be upgraded and true if it was upgraded
+        """
+        # Device limit reached for Docker. Check if it's a version update
+        if (cached_info := self._get_docker_device_info()) is None:
+            return False  # No cached info, can't auto-update
+
+        cached_device_id, cached_version = cached_info
+        try:  # If current version is not newer, don't auto-delete
+            if Version(current_version := get_system_spec()['rotkehlchen']) <= Version(cached_version):  # noqa: E501
+                return False
+        except (InvalidVersion, TypeError):
+            log.error(f'Invalid docker container version found in the db {cached_version}')
+            return False
+
+        log.info(
+            f'Docker container version update detected. '
+            f'Deleting old device {cached_device_id} and registering new one',
+        )
+        try:
+            # Delete the old device from remote
+            response = self.session.delete(
+                url=f'{self.rotki_nest}devices',
+                json=self.sign(method='devices', device_identifier=cached_device_id),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+            if response.status_code == HTTPStatus.OK:
+                # Try registering again
+                response = self.session.put(
+                    url=f'{self.rotki_nest}devices',
+                    json=self.sign(
+                        method='devices',
+                        device_identifier=device_id,
+                        device_name=device_name,
+                        platform=system_platform,
+                    ),
+                    timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+                )
+                if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
+                    # Update cache with new device info
+                    self._set_docker_device_info(device_id, current_version)
+                    return True
+
+        except requests.exceptions.RequestException as e:
+            log.error(f'Failed to update Docker device registration: {e}')
+
+        return False
+
     def _register_new_device(self, device_id: str) -> None:
         """
         Register a new device at the rotki server using the provided id.
@@ -333,14 +416,23 @@ class Premium:
         - PremiumAuthenticationError: if the queried API returns a 401 error
         """
         log.debug(f'Registering new device {device_id}')
+        if (
+            (system_platform := platform.system()) == 'Linux' and
+            (docker_container := check_docker_container()) is not None
+        ):  # in the case of docker where we always run under linux, get the container id
+            system_platform = DOCKER_PLATFORM_KEY
+            device_name = docker_container
+        else:
+            device_name = str(uuid4())  # can be edited later.
+
         try:
             response = self.session.put(
                 url=f'{self.rotki_nest}{(method := "devices")}',
                 json=self.sign(
                     method=method,
                     device_identifier=device_id,
-                    device_name=str(uuid4()),  # can be edited later.
-                    platform=platform.system(),
+                    device_name=device_name,
+                    platform=system_platform,
                 ),
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
@@ -348,12 +440,24 @@ class Premium:
             raise RemoteError(f'Failed to register device due to: {e}') from e
 
         if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
+            # Cache Docker device info on successful registration
+            if system_platform == DOCKER_PLATFORM_KEY:
+                self._set_docker_device_info(device_id, get_system_spec()['rotkehlchen'])
+
             return None  # device was created or it already exists
 
-        check_response_status_code(
-            response=response,
-            status_codes=[HTTPStatus.CREATED],
-        )
+        if (
+            response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY and
+            system_platform == DOCKER_PLATFORM_KEY and
+            self._maybe_register_docker_device(
+                device_id=device_id,
+                device_name=device_name,
+                system_platform=system_platform,
+            )
+        ):
+            return None  # success upgrading the docker device
+
+        check_response_status_code(response=response, status_codes=[HTTPStatus.CREATED])
 
     def delete_device(self, device_id: str) -> None:
         """Deletes a device for the user from the rotki server
@@ -378,6 +482,35 @@ class Premium:
             raise RemoteError(f'Failed to delete device due to: {e}') from e
 
         check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
+
+    def _get_docker_device_info(self) -> tuple[str, str] | None:
+        """Get cached Docker device ID and version from database.
+
+        Returns:
+            Tuple of (device_id, version) if found, None otherwise
+        """
+        with self.db.conn.read_ctx() as cursor:
+            if (device_info := self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.DOCKER_DEVICE_INFO,
+            )) is None:
+                return None
+
+        # Format is device_id:version
+        if len(parts := device_info.split(':')) != 2:
+            log.error(f'Invalid Docker device info format in cache: {device_info}')
+            return None
+
+        return tuple(parts)  # type: ignore # it has two elements as it is ensured by the if above
+
+    def _set_docker_device_info(self, device_id: str, version: str) -> None:
+        """Save Docker device ID and version to database cache."""
+        with self.db.user_write() as write_cursor:
+            self.db.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.DOCKER_DEVICE_INFO,
+                value=f'{device_id}:{version}',  # Store as device_id:version
+            )
 
     def edit_device(self, device_id: str, device_name: str) -> None:
         """Edit device name for the authenticated user
@@ -679,6 +812,7 @@ def premium_create_and_verify(
         credentials: PremiumCredentials,
         username: str,
         msg_aggregator: 'MessagesAggregator',
+        db: 'DBHandler',
 ) -> Premium:
     """Create a Premium object with the key pairs and verify them.
 
@@ -688,7 +822,12 @@ def premium_create_and_verify(
     - PremiumAuthenticationError if the given key is rejected by the server
     - RemoteError if there are problems reaching the server
     """
-    premium = Premium(credentials=credentials, username=username, msg_aggregator=msg_aggregator)
+    premium = Premium(
+        credentials=credentials,
+        username=username,
+        msg_aggregator=msg_aggregator,
+        db=db,
+    )
     premium.authenticate_device()
     return premium
 

@@ -639,6 +639,7 @@ class Rotkehlchen:
                     credentials=credentials,
                     username=self.data.username,
                     msg_aggregator=self.msg_aggregator,
+                    db=self.data.db,
                 )
             except RemoteError as e:
                 raise PremiumAuthenticationError(str(e)) from e

@@ -885,6 +885,7 @@ def fixture_blockchain(
             credentials=rotki_premium_credentials,
             username=username,
             msg_aggregator=messages_aggregator,
+            db=database,
         )
 
     return ChainsAggregator(

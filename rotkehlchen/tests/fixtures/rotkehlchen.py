@@ -97,6 +97,7 @@ def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium
         credentials=rotki_premium_credentials,
         username=username,
         msg_aggregator=MessagesAggregator(),
+        db=None,  # type: ignore # Since the fixture loads before others it was causing errors with the api fixture since the user folder already exists. Needs a bit of work to be figured out but is only used for the premium devices
     )
     premium.status = SubscriptionStatus.ACTIVE
     premium._cached_limits = {
