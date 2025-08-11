@@ -187,7 +187,26 @@ class Blockscout(ExternalServiceWithApiKey):
         elif message != 'OK':
             raise RemoteError(f'Non ok response from blockscout v1 with {query_args}: {response}')
 
-        return response['result']
+        if (result := response.get('result')) is None:
+            raise RemoteError(f'Missing result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+
+        if module == 'account':
+            if action in ('txlistinternal', 'txlist', 'tokentx'):
+                if not isinstance(result, list):
+                    raise RemoteError(f'Expected a list result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+            elif not isinstance(result, str):
+                raise RemoteError(f'Expected a str result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+            else:  # can only be 'str'` for balance
+                try:
+                    result = int(result)
+                except ValueError as e:
+                    raise RemoteError(f'Expected a stringified int result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+
+
+        elif module == 'block' and not isinstance(result, dict):
+            raise RemoteError(f'Expected a dict result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+
+        return result
 
     def _query_v2(
             self,
@@ -369,7 +388,7 @@ class Blockscout(ExternalServiceWithApiKey):
                 action='balance',
                 query_args={'address': account},
             )
-            if int(balance) != 0:
+            if balance != 0:
                 return HasChainActivity.BALANCE
 
         return HasChainActivity.NONE
