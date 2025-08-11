@@ -1830,6 +1830,7 @@
     },
     "exchange_balances": {
       "add": "Add an exchange",
+      "refresh": "Refresh {exchange} balances",
       "title": "exchange"
     },
     "history_query_indicator": {

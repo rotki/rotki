@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
+import { type AssetBalanceWithPrice, type BigNumber, toHumanReadable, toSentenceCase, Zero } from '@rotki/common';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -242,7 +242,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
                 <template #prepend>
                   <RuiIcon name="lu-refresh-ccw" />
                 </template>
-                {{ t('common.refresh') }}
+                {{ t('dashboard.exchange_balances.refresh', { exchange: toSentenceCase(toHumanReadable(exchange)) }) }}
               </RuiButton>
             </div>
 
