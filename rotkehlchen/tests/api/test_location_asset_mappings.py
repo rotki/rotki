@@ -8,6 +8,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -227,6 +228,23 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
             'Failed to add the location asset mapping of AXS in None because it already exists in the DB.'  # noqa: E501
         ),
     )
+
+    # check that some locations are not allowed since they share mappings with another location.
+    for location, replacement_location in (
+        (Location.BINANCEUS, Location.BINANCE),
+        (Location.COINBASEPRIME, Location.COINBASE),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'locationassetmappingsresource'),
+            json={'entries': [
+                {'asset': 'BTC', 'location': location.serialize(), 'location_symbol': 'XYZ'},
+            ]},
+        )
+        assert_error_response(
+            response=response,
+            status_code=HTTPStatus.BAD_REQUEST,
+            contained_in_msg=f'Mappings for {location.name} should use a location of {replacement_location.name}.',  # noqa: E501
+        )
 
     # delete a mapping that does not exist and expect failure
     response = requests.delete(
