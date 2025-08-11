@@ -152,7 +152,7 @@ class Blockscout(ExternalServiceWithApiKey):
             module: Literal['block'],
             action: Literal['getblocknobytime'],
             query_args: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | int:
         ...
 
     @overload
@@ -200,11 +200,10 @@ class Blockscout(ExternalServiceWithApiKey):
                 try:
                     result = int(result)
                 except ValueError as e:
-                    raise RemoteError(f'Expected a stringified int result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+                    raise RemoteError(f'Expected a stringified int result from blockscout v1 response with {query_args}: {response}') from e  # noqa: E501
 
-
-        elif module == 'block' and not isinstance(result, dict):
-            raise RemoteError(f'Expected a dict result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+        elif module == 'block' and not isinstance(result, (dict, int)):
+            raise RemoteError(f'Expected a dict or int result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
 
         return result
 
@@ -346,10 +345,14 @@ class Blockscout(ExternalServiceWithApiKey):
             action='getblocknobytime',
             query_args={'timestamp': ts, 'closest': closest},
         )
-        if (blocknumber := response.get('blockNumber')) is None:
+
+        if isinstance(response, int):
+            blocknumber = response
+        elif (blocknumber := response.get('blockNumber')) is None:  # type: ignore  # response can only be dict here
             raise RemoteError(
                 f'Invalid block number response from blockscout for {ts}: {response}',
             )
+
         try:
             return deserialize_int(blocknumber)
         except DeserializationError as e:
