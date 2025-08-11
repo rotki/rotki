@@ -1170,6 +1170,14 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             ('BALANCER_GAUGES421611',),
             ('BALANCER_GAUGES84532',),
         ]
+        # Check a couple existing coinbaseprime/coinbase mappings that will be affected in the
+        # upgrade and get the coinbase mapping count.
+        assert cursor.execute(
+            "SELECT * FROM location_asset_mappings WHERE exchange_symbol IN ('ABC', 'XYZ')",
+        ).fetchall() == [('u', 'XYZ', 'BTC'), ('u', 'ABC', 'ETH'), ('G', 'ABC', 'ETH')]
+        existing_coinbase_mapping_count = cursor.execute(
+            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'G'",
+        ).fetchone()[0]
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 13)
@@ -1262,6 +1270,17 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "BALANCER_GAUGES%"').fetchone()[0] == 0  # noqa: E501
         # `balancer_gauges_count - 1` because a malformed/unexpected balancer gauge cache entry got deleted  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?, ?, ?, ?)', list(balancer_cache_mapping.values())).fetchone()[0] == len(balancer_gauges) - 1  # noqa: E501
+        # Check that the coinbaseprime mappings have been combined with the coinbase mappings.
+        # The ABC mapping was already present for both, so there's only one new coinbase mapping.
+        assert cursor.execute(
+            "SELECT * FROM location_asset_mappings WHERE exchange_symbol IN ('ABC', 'XYZ')",
+        ).fetchall() == [('G', 'XYZ', 'BTC'), ('G', 'ABC', 'ETH')]
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'G'",
+        ).fetchone()[0] == existing_coinbase_mapping_count + 1
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'u'",
+        ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
