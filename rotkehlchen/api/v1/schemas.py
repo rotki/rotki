@@ -2565,9 +2565,18 @@ class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
             **_kwargs: Any,
     ) -> LocationAssetMappingUpdateEntry:
         try:
-            return LocationAssetMappingUpdateEntry.deserialize(data)
+            entry = LocationAssetMappingUpdateEntry.deserialize(data)
         except DeserializationError as e:
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
+
+        if entry.location in (Location.COINBASEPRIME, Location.BINANCEUS):
+            replacement_location = Location.BINANCE if entry.location == Location.BINANCEUS else Location.COINBASE  # noqa: E501
+            raise ValidationError(
+                message=f'Mappings for {entry.location.name} should use a location of {replacement_location.name}.',  # noqa: E501
+                field_name='location',
+            )
+
+        return entry
 
 
 class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
