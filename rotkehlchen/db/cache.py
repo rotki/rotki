@@ -27,6 +27,7 @@ class DBCacheStatic(Enum):
     LAST_GNOSISPAY_QUERY_TS: Final = 'last_gnosispay_query_ts'
     LAST_SPARK_ASSETS_UPDATE: Final = 'last_spark_assets_update'
     LAST_DB_UPGRADE: Final = 'last_db_upgrade'
+    DOCKER_DEVICE_INFO: Final = 'docker_device_info'
 
 
 class LabeledLocationArgsType(TypedDict):

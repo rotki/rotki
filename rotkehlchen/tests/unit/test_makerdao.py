@@ -119,6 +119,7 @@ def fixture_makerdao_vaults(
             credentials=rotki_premium_credentials,
             username=username,
             msg_aggregator=function_scope_messages_aggregator,
+            db=database,
         )
 
     with web3_patch:

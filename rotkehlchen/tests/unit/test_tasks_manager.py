@@ -273,6 +273,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         credentials=premium_credentials,
         username=username,
         msg_aggregator=rotki.msg_aggregator,
+        db=rotki.data.db,
     )
     premium.status = SubscriptionStatus.ACTIVE
 

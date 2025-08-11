@@ -180,6 +180,7 @@ def fixture_accountant(
             credentials=rotki_premium_credentials,
             username=username,
             msg_aggregator=function_scope_messages_aggregator,
+            db=database,
         )
 
     # add accounting rules to the database

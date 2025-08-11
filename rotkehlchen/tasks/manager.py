@@ -481,6 +481,7 @@ class TaskManager:
                 credentials=db_credentials,
                 username=self.username,
                 msg_aggregator=self.msg_aggregator,
+                db=self.database,
             )
         except RemoteError:
             if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:

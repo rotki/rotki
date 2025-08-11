@@ -35,6 +35,7 @@ def fixture_eth2(
             credentials=rotki_premium_credentials,
             username=username,
             msg_aggregator=messages_aggregator,
+            db=database,
         )
     eth2 = Eth2(
         ethereum_inquirer=ethereum_inquirer,

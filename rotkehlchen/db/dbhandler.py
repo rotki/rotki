@@ -654,23 +654,71 @@ class DBHandler:
             DBCacheStatic.LAST_DATA_UPLOAD_TS.value: db_cache.get(DBCacheStatic.LAST_DATA_UPLOAD_TS.value, 0),  # noqa: E501
         }
 
+    @overload
+    def get_static_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheStatic.DOCKER_DEVICE_INFO],
+    ) -> str | None:
+        ...
+
+    @overload
+    def get_static_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[
+                DBCacheStatic.LAST_BALANCE_SAVE,
+                DBCacheStatic.LAST_DATA_UPLOAD_TS,
+                DBCacheStatic.LAST_DATA_UPDATES_TS,
+                DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
+                DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
+                DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
+                DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+                DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
+                DBCacheStatic.LAST_WITHDRAWALS_EXIT_QUERY_TS,
+                DBCacheStatic.LAST_MONERIUM_QUERY_TS,
+                DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
+                DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS,
+                DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
+                DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
+                DBCacheStatic.LAST_GNOSISPAY_QUERY_TS,
+                DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
+                DBCacheStatic.LAST_DB_UPGRADE,
+            ],
+    ) -> Timestamp | None:
+        ...
+
+    @overload
     def get_static_cache(
             self,
             cursor: 'DBCursor',
             name: DBCacheStatic,
-    ) -> Timestamp | None:
+    ) -> Timestamp | str | None:
+        ...
+
+    def get_static_cache(
+            self,
+            cursor: 'DBCursor',
+            name: DBCacheStatic,
+    ) -> Timestamp | str | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name`. Defaults to `None` if not found"""
-        value = cursor.execute(
+        if (value := cursor.execute(
             'SELECT value FROM key_value_cache WHERE name=?;', (name.value,),
-        ).fetchone()
-        return None if value is None else Timestamp(int(value[0]))
+        ).fetchone()) is None:
+            return None
+
+        # Return string for DOCKER_DEVICE_INFO, timestamp for all others
+        if name == DBCacheStatic.DOCKER_DEVICE_INFO:
+            return value[0]
+
+        return Timestamp(int(value[0]))
 
     def set_static_cache(
             self,
             write_cursor: 'DBCursor',
             name: DBCacheStatic,
-            value: Timestamp,
+            value: Timestamp | str,
     ) -> None:
         """Save the name-value pair of the cache with constant name
         to the `key_value_cache` table of the DB"""
