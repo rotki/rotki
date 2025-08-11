@@ -37,6 +37,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { balances, tableType, title } = toRefs(props);
 const search = ref('');
+const debouncedSearch = debouncedRef(search, 200);
 
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
@@ -60,7 +61,7 @@ const { totalNetWorth } = storeToRefs(statisticsStore);
 const router = useRouter();
 
 function assetFilter(item: Nullable<AssetBalance>) {
-  return assetFilterByKeyword(item, get(search), assetName, assetSymbol);
+  return assetFilterByKeyword(item, get(debouncedSearch), assetName, assetSymbol);
 }
 
 function isAssetMissing(item: AssetBalanceWithPrice) {
