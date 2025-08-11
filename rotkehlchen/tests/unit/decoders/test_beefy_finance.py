@@ -2,13 +2,15 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_USDC
+from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH_BASE
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -17,11 +19,14 @@ from rotkehlchen.types import (
     FVal,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.fixture(name='beefy_cache')
@@ -264,4 +269,83 @@ def test_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache
         notes=f'Withdraw {withdrawn_amount} USDCfxUSD from a Beefy vault',
         counterparty=CPT_BEEFY_FINANCE,
         address=string_to_evm_address('0xD81eaAE8E6195e67695bE9aC447c9D6214CB717A'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0xf5632CFcD668C10949bA06618D50928ce5841aE3']])
+def test_deposit_to_beefy_morpho_vault(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test a deposit into a Beefy vault that uses a Morpho vault under the hood.
+    Regression test for a problem where the deposit event was decoded as a Morpho deposit instead
+    of a Beefy deposit.
+    """
+    beefy_vault = get_or_create_evm_token(
+        userdb=base_inquirer.database,
+        evm_address=string_to_evm_address('0x0A2Bc5Bd33bac3C34551C67Af3657451911518Fa'),
+        chain_id=ChainID.BASE,
+        name='Moo Morpho Seamless WETH',
+        symbol='mooMorpho-Seamless-WETH',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+    )
+    get_or_create_evm_token(
+        userdb=base_inquirer.database,
+        evm_address=string_to_evm_address('0x27D8c7273fd3fcC6956a0B370cE5Fd4A7fc65c18'),
+        chain_id=ChainID.BASE,
+        symbol='smWETH',
+        name='Seamless WETH Vault',
+        decimals=18,
+        protocol=CPT_MORPHO,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    tx_hash = deserialize_evm_tx_hash('0x9ec67f14375ce96036b23f4b13c38dcee6d74973d4be0ba81c775674450da340')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1754816425000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000003805651040272'),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        location_label=(user_address := base_accounts[0]),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_WETH_BASE,
+        amount=FVal(deposit_amount := '3.31915163308690925'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} WETH in a Beefy vault',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=beefy_vault.evm_address,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:8453/erc20:0x0A2Bc5Bd33bac3C34551C67Af3657451911518Fa'),
+        amount=FVal(receive_amount := '3.256100328058877126'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} mooMorpho-Seamless-WETH after depositing in a Beefy vault',  # noqa: E501
+        counterparty=CPT_BEEFY_FINANCE,
+        address=ZERO_ADDRESS,
     )]
