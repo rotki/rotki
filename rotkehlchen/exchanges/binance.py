@@ -264,6 +264,21 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         self.first_connection()
         return self._symbols_to_pair
 
+    def send_unknown_asset_message(
+            self,
+            asset_identifier: str,
+            details: str,
+            location: Location | None = None,
+    ) -> None:
+        """Override setting the WS message location to Binance for both Binance and BinanceUS
+        since they share mappings.
+        """
+        self._send_unknown_asset_message(
+            asset_identifier=asset_identifier,
+            details=details,
+            location=Location.BINANCE,
+        )
+
     def validate_api_key(self) -> tuple[bool, str]:
         try:
             # We know account endpoint returns a dict

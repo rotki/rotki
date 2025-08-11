@@ -153,12 +153,20 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         """)
         write_cursor.execute("DELETE FROM general_cache WHERE key LIKE 'BALANCER_GAUGES%'")
 
-    @progress_step('Combine coinbaseprime and coinbase asset mappings')
-    def _combine_coinbaseprime_and_coinbase_mappings(write_cursor: 'DBCursor') -> None:
-        """Replace any coinbaseprime mappings with coinbase mappings.
-        Note that coinbase is `G` in the db and coinbaseprime is `u`.
-        """
-        write_cursor.execute("UPDATE OR IGNORE location_asset_mappings SET location='G' where location = 'u'")  # noqa: E501
-        write_cursor.execute("DELETE FROM location_asset_mappings WHERE location = 'u'")
+    @progress_step('Combine exchange asset mappings')
+    def _combine_exchange_asset_mappings(write_cursor: 'DBCursor') -> None:
+        """Combine the mappings for exchanges that have multiple locations but common mappings."""
+        for old_location, new_location in (
+            ('S', 'E'),  # BinanceUS, Binance
+            ('u', 'G'),  # CoinbasePrime, Coinbase
+        ):
+            write_cursor.execute(
+                'UPDATE OR IGNORE location_asset_mappings SET location=? WHERE location=?',
+                (new_location, old_location),
+            )
+            write_cursor.execute(
+                'DELETE FROM location_asset_mappings WHERE location=?',
+                (old_location,),
+            )
 
     perform_globaldb_upgrade_steps(connection, progress_handler)
