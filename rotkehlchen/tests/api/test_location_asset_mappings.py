@@ -233,6 +233,7 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
     for location, replacement_location in (
         (Location.BINANCEUS, Location.BINANCE),
         (Location.COINBASEPRIME, Location.COINBASE),
+        (Location.COINBASEPRO, Location.COINBASE),
     ):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'locationassetmappingsresource'),

@@ -159,6 +159,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         for old_location, new_location in (
             ('S', 'E'),  # BinanceUS, Binance
             ('u', 'G'),  # CoinbasePrime, Coinbase
+            ('K', 'G'),  # CoinbasePro, Coinbase
         ):
             write_cursor.execute(
                 'UPDATE OR IGNORE location_asset_mappings SET location=? WHERE location=?',

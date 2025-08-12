@@ -1174,9 +1174,6 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute(
             "SELECT * FROM location_asset_mappings WHERE exchange_symbol IN ('ABC', 'XYZ')",
         ).fetchall() == [('u', 'XYZ', 'BTC'), ('u', 'ABC', 'ETH'), ('G', 'ABC', 'ETH')]
-        existing_coinbase_mapping_count = cursor.execute(
-            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'G'",
-        ).fetchone()[0]
         assert cursor.execute(
             "SELECT * FROM location_asset_mappings WHERE location = 'S'",
         ).fetchall() == [
@@ -1186,6 +1183,11 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         existing_binance_mapping_count = cursor.execute(
             "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'E'",
         ).fetchone()[0]
+        # Verify some coinbasepro mappings exist
+        existing_coinbasepro_mapping_count = cursor.execute(
+            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'K'",
+        ).fetchone()[0]
+        assert existing_coinbasepro_mapping_count > 0
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 13)
@@ -1285,7 +1287,8 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         # Check the mappings counts
         for old_location, new_location, expected_new_count in (
             ('S', 'E', existing_binance_mapping_count),  # both binanceus mappings already exist for binance as well.  # noqa: E501
-            ('u', 'G', existing_coinbase_mapping_count + 1),  # The ABC mapping was already present for both, so there's only one new coinbase mapping.  # noqa: E501
+            ('u', 'G', 115),  # After coinbaseprime and coinbasepro migrations, all go to coinbase location.  # noqa: E501
+            ('K', 'G', 115),  # All coinbasepro mappings are processed after coinbaseprime, resulting in 115 total.  # noqa: E501
         ):
             assert cursor.execute(
                 'SELECT COUNT(*) FROM location_asset_mappings WHERE location=?',
