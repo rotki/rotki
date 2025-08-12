@@ -69,9 +69,7 @@ export function useHistoryEventFilter(
   },
   entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>,
 ): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({
-    location: 'ethereum',
-  });
+  const filters = ref<Filters>({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();

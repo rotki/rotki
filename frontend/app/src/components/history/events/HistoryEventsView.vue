@@ -511,6 +511,7 @@ onMounted(async () => {
           :processing="processing"
           :matchers="matchers"
           :export-params="pageParams"
+          :hide-redecode-buttons="!mainPage"
           :hide-account-selector="useExternalAccountFilter"
           @update:accounts="onFilterAccountsChanged($event)"
           @redecode="redecode($event)"
