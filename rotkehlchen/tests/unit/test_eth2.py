@@ -947,7 +947,7 @@ def test_staking_performance_division_by_zero_protection(eth2) -> None:
 
     with (
         patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.get_validator_data', return_value=[validator]),  # noqa: E501
-        patch('rotkehlchen.chain.ethereum.modules.eth2.eth2.Eth2._time_weighted_average', return_value=ZERO),  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.modules.eth2.eth2.Eth2._time_weighted_balance_sum', return_value=ZERO),  # noqa: E501
     ):
         result = eth2.get_performance(
             from_ts=Timestamp(1631378127),
