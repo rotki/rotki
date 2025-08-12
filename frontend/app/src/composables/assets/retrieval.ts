@@ -1,17 +1,17 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import type { AssetsWithId } from '@/types/asset';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { EvmChainAddress } from '@/types/history/events';
 import type { TaskMeta } from '@/types/task';
-import { type AssetInfo, getAddressFromEvmIdentifier, isEvmIdentifier, NotificationGroup, Severity } from '@rotki/common';
+import { type AssetInfo, getAddressFromEvmIdentifier, NotificationGroup, Severity } from '@rotki/common';
 import { isCancel } from 'axios';
 import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
+import { getAssociatedAssetIdentifier, processAssetInfo, useAssetAssociationMap } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
-import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 
@@ -47,30 +47,15 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
   const { queueIdentifier, retrieve } = useAssetCacheStore();
-  const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
   const { notify } = useNotificationsStore();
   const { awaitTask } = useTaskStore();
 
   const { getChain } = useSupportedChains();
 
-  const assetAssociationMap = computed<Record<string, string>>(() => {
-    const associationMap: Record<string, string> = {};
-    if (get(treatEth2AsEth))
-      associationMap.ETH2 = 'ETH';
+  const assetAssociationMap = useAssetAssociationMap();
 
-    return associationMap;
-  });
-
-  const getAssociatedAssetIdentifier = (identifier: string): ComputedRef<string> =>
-    computed(() => get(assetAssociationMap)[identifier] ?? identifier);
-
-  const getAssetNameFallback = (id: string): string => {
-    if (isEvmIdentifier(id)) {
-      const address = getAddressFromEvmIdentifier(id);
-      return `EVM Token: ${address}`;
-    }
-    return '';
-  };
+  const getAssociatedAssetIdentifierComputed = (identifier: string): ComputedRef<string> =>
+    computed(() => getAssociatedAssetIdentifier(identifier, get(assetAssociationMap)));
 
   const assetInfo = (
     identifier: MaybeRef<string | undefined>,
@@ -85,34 +70,23 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       collectionParent = true,
     } = get(options);
 
-    const key = associate ? get(getAssociatedAssetIdentifier(id)) : id;
+    const key = associate ? get(getAssociatedAssetIdentifierComputed(id)) : id;
     const data = get(retrieve(key));
 
-    const isCustomAsset = data?.isCustomAsset || data?.assetType === CUSTOM_ASSET;
-
-    if (isCustomAsset) {
-      return {
-        ...data,
-        isCustomAsset,
-        resolved: !!data,
-        symbol: data.name,
-      };
-    }
     const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
     const collectionData = collectionParent && data?.collectionId
       ? get(fetchedAssetCollections)[data.collectionId]
       : null;
 
-    const fallback = getAssetNameFallback(id);
-    const name = collectionData?.name || data?.name || fallback;
-    const symbol = collectionData?.symbol || data?.symbol || fallback;
+    const processedInfo = processAssetInfo(data, id, collectionData);
+
+    if (!processedInfo) {
+      return null;
+    }
 
     return {
-      ...data,
-      isCustomAsset,
-      name,
+      ...processedInfo,
       resolved: !!data,
-      symbol,
     };
   });
 
@@ -155,7 +129,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       if (!id)
         return '';
 
-      const key = get(enableAssociation) ? get(getAssociatedAssetIdentifier(id)) : id;
+      const key = get(enableAssociation) ? get(getAssociatedAssetIdentifierComputed(id)) : id;
       return getAddressFromEvmIdentifier(key);
     });
 
@@ -212,7 +186,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     assetSymbol,
     fetchTokenDetails,
     getAssetSymbol,
-    getAssociatedAssetIdentifier,
+    getAssociatedAssetIdentifier: getAssociatedAssetIdentifierComputed,
     refetchAssetInfo: queueIdentifier,
     tokenAddress,
   };
