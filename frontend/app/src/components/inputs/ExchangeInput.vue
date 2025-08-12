@@ -8,14 +8,21 @@ defineOptions({
 
 const model = defineModel<string | undefined>({ required: true });
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   dense?: boolean;
   showWithKeyOnly?: boolean;
+  excludes?: string[];
 }>(), {
+  excludes: () => [],
   showWithKeyOnly: false,
 });
 
 const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
+
+const options = computed<string[]>(() => {
+  const exchanges = get(props.showWithKeyOnly ? exchangesWithKey : allExchanges);
+  return exchanges.filter(exchange => !props.excludes.includes(exchange));
+});
 </script>
 
 <template>
@@ -23,7 +30,7 @@ const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
     v-model="model"
     variant="outlined"
     v-bind="$attrs"
-    :options="showWithKeyOnly ? exchangesWithKey : allExchanges"
+    :options="options"
     :dense="dense"
     :item-height="52"
     auto-select-first

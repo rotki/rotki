@@ -223,6 +223,9 @@ async function fetchData() {
 - Transitioning from scoped SCSS with BEM to tailwind
 - Follow existing patterns for consistency
 
+#### Localization
+- For the localization files (en.json, es.json, etc.), the keys should be ordered alphabetically.
+
 #### Testing
 - Run tests with `pnpm run test:unit` from `frontend/` directory
 - Use Vitest for unit tests with Vue Test Utils

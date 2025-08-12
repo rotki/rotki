@@ -1080,6 +1080,8 @@
         "location_symbol_non_empty": "The asset symbol field cannot be empty"
       },
       "location_symbol": "Asset symbol in the exchange",
+      "mapping_info_middle": "will also be applied to",
+      "mapping_info_prefix": "This mapping for",
       "recognized_as": "Recognized as",
       "save_for_all": "Save this mapping for all exchanges",
       "subtitle": "You can link asset symbols on a centralized exchange with assets recognized by rotki. This is necessary for rotki to process assets on the exchanges."
