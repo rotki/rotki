@@ -376,7 +376,7 @@ class WindowsPackaging:
             logger.info('WIN_CSC_LINK already set skipping')
             return True
 
-        if certificate is None:
+        if certificate is None or certificate == '':
             logger.info(f'{WIN_CERTIFICATE} is not set skipping signing')
             return False
 
@@ -420,7 +420,7 @@ class MacPackaging:
             logger.info('CSC_LINK already set skipping')
             return True
 
-        if certificate is None:
+        if certificate is None or certificate == '':
             logger.info(f'{MAC_CERTIFICATE} is not set skipping signing')
             return False
 
