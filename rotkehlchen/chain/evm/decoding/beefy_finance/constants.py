@@ -7,6 +7,8 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 CPT_BEEFY_FINANCE: Final = 'beefy_finance'
 TOKEN_RETURNED_TOPIC: Final = b'\xea\xf4I1\x9c\x04,\x9b\xa3GO\xa0\xc52\x9e\xb5\x8c\xd1\xf2;\xe1\x10\xcd\xbf\x9di{\x8d0=\xac\x15'  # noqa: E501
+FULFILLED_ORDER_TOPIC: Final = b'\x1b\xa5\xb6\xedei\x94equpYa\x13\x8c\x96\xbd\x8e\xc13\xc3X\x17\xfa\x85\x90?E\x01)\xe0\xb1'  # noqa: E501
+CHARGED_FEES_TOPIC: Final = b"\xd2U\xb5\x92\xc7\xf2h\xa7>SM\xa5!\x9a`\xff\x91\x1bL\xf6\xda\xae!\xc7\xd2\x05'\xdde{\xd9\x9a"  # noqa: E501
 BEEFY_VAULT_ABI: ABI = [{'inputs': [], 'name': 'getPricePerFullShare', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 BEEFY_CLM_VAULT_ABI: ABI = [{'inputs': [{'name': '_shares', 'type': 'uint256'}], 'name': 'previewWithdraw', 'outputs': [{'name': 'amount0', 'type': 'uint256'}, {'name': 'amount1', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'wants', 'outputs': [{'name': 'token0', 'type': 'address'}, {'name': 'token1', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 

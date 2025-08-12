@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.utils import TokenEncounterInfo
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     should_update_protocol_cache,
@@ -17,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -24,18 +24,20 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
+    CHARGED_FEES_TOPIC,
     CPT_BEEFY_FINANCE,
+    FULFILLED_ORDER_TOPIC,
     SUPPORTED_BEEFY_CHAINS,
     TOKEN_RETURNED_TOPIC,
 )
 from .utils import query_beefy_vaults
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import FVal
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -68,8 +70,7 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             events: list['EvmEvent'],
             transaction: 'EvmTransaction',
             from_address: ChecksumEvmAddress | None = None,
-            expected_amount: 'FVal | None' = None,
-            expected_asset: 'Asset | None' = None,
+            expected_amounts_and_assets: list[tuple['FVal', 'CryptoAsset']] | None = None,
     ) -> list['EvmEvent']:
         """Core logic for processing Beefy finance events.
 
@@ -78,7 +79,7 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         If `expected_amount` or `expected_asset` are provided, only matches receive events
         with those exact values when multiple receives occur in transactions.
         """
-        spend_events, receive_events = [], []
+        spend_events, receive_events, other_receive_events = [], [], []
         is_withdrawal = False
 
         # process spend events and determine transaction type
@@ -106,26 +107,65 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
             elif (
                     event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    (expected_amount is None or event.amount == expected_amount) and
-                    (expected_asset is None or event.asset == expected_asset)
+                    event.event_subtype == HistoryEventSubType.NONE
             ):
-                event.counterparty = CPT_BEEFY_FINANCE
-                asset_symbol = event.asset.resolve_to_asset_with_symbol().symbol
-
-                if is_withdrawal:
-                    event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                    event.notes = f'Withdraw {event.amount} {asset_symbol} from a Beefy vault'
+                if (
+                        expected_amounts_and_assets is None or
+                        (event.amount, event.asset) in expected_amounts_and_assets
+                ):
+                    receive_events.append(event)
                 else:
-                    event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                    event.notes = f'Receive {event.amount} {asset_symbol} after depositing in a Beefy vault'  # noqa: E501
-
-                receive_events.append(event)
+                    other_receive_events.append(event)
 
         if len(spend_events) == 0 or len(receive_events) == 0:
             log.error(f'Unable to find both spend and receive events for Beefy transaction {transaction}')  # noqa: E501
             return events
+
+        # Process the receive events only after all spend events have been processed so that
+        # is_withdrawal is properly set.
+        for event in receive_events:
+            event.counterparty = CPT_BEEFY_FINANCE
+            asset_symbol = event.asset.resolve_to_asset_with_symbol().symbol
+            if is_withdrawal:
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.notes = f'Withdraw {event.amount} {asset_symbol} from a Beefy vault'
+            else:
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.notes = f'Receive {event.amount} {asset_symbol} after depositing in a Beefy vault'  # noqa: E501
+
+        # Also decode any reward event from calling harvest() on a strategy
+        # See https://docs.beefy.finance/developer-documentation/strategy-contract#chargefees
+        if len(other_receive_events) > 0:
+            with self.base.database.conn.read_ctx() as cursor:
+                tx_logs = tx_receipt.logs if (tx_receipt := DBEvmTx(self.base.database).get_receipt(  # noqa: E501
+                    cursor=cursor,
+                    tx_hash=transaction.tx_hash,
+                    chain_id=self.evm_inquirer.chain_id,
+                )) is not None else []
+
+            for tx_log in tx_logs:
+                if tx_log.topics[0] == CHARGED_FEES_TOPIC:
+                    raw_call_fee_amount = int.from_bytes(
+                        bytes=tx_log.topics[1] if len(tx_log.topics) > 1 else tx_log.data[:32],
+                    )  # fee amounts are sometimes in the topics and sometimes in the data depending on the strategy contract  # noqa: E501
+                    for event in other_receive_events:
+                        if (
+                            event.address == tx_log.address and
+                            event.amount == asset_normalized_value(
+                                amount=raw_call_fee_amount,
+                                asset=(resolved_asset := event.asset.resolve_to_crypto_asset()),
+                            )
+                        ):
+                            event.counterparty = CPT_BEEFY_FINANCE
+                            event.event_subtype = HistoryEventSubType.REWARD
+                            event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy strategy harvest call reward'  # noqa: E501
+                            receive_events.append(event)
+                            break
+                    else:
+                        log.error(f'Failed to find beefy strategy harvest call reward event in transaction {transaction}')  # noqa: E501
+
+                    break
 
         maybe_reshuffle_events(
             ordered_events=spend_events + receive_events,
@@ -156,22 +196,29 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         Zap contracts allow users to deposit any token into a vault by automatically
         swapping it for the required LP tokens, or withdraw vault tokens as any desired token.
         """
-        if context.tx_log.topics[0] != TOKEN_RETURNED_TOPIC:
+        if context.tx_log.topics[0] != FULFILLED_ORDER_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
-        amount_returned = asset_normalized_value(
-            amount=int.from_bytes(context.tx_log.data[:32]),
-            asset=(token_returned := self.base.get_token_or_native(
-                address=bytes_to_address(context.tx_log.topics[1]),
-                encounter=TokenEncounterInfo(should_notify=False),
-            )),
-        )
+        amounts_and_assets = []
+        for tx_log in context.all_logs:
+            if (
+                    tx_log.topics[0] == TOKEN_RETURNED_TOPIC and
+                    tx_log.address == self.zap_contract_address and
+                    (amount := int.from_bytes(tx_log.data[:32])) != 0
+            ):
+                token = self.base.get_token_or_native(
+                    address=bytes_to_address(tx_log.topics[1]),
+                )
+                amounts_and_assets.append((
+                    asset_normalized_value(amount=amount, asset=token),
+                    token,
+                ))
+
         self._process_beefy_events(
             events=context.decoded_events,
             transaction=context.transaction,
             from_address=self.zap_contract_address,
-            expected_amount=amount_returned,
-            expected_asset=token_returned,
+            expected_amounts_and_assets=amounts_and_assets,
         )
 
         return DEFAULT_DECODING_OUTPUT
