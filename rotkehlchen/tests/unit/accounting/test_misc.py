@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -23,6 +24,7 @@ from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -271,3 +273,50 @@ def test_process_events_with_duplicate_timestamps(
     assert events[0].event_type == AccountingEventType.MARGIN_POSITION
     for i in range(1, 5):
         assert events[i].event_type == AccountingEventType.TRADE
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
+def test_fiat_income_taxable_pnl(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Check that fiat IN events are properly counted as taxable income.
+    Regression test for https://github.com/rotki/rotki/issues/10419
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                event_identifier='event1',
+                sequence_index=0,
+                timestamp=(event_ts_ms := TimestampMS(1500000000000)),
+                location=Location.EXTERNAL,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_EUR,
+                amount=(event_amount := FVal('100')),
+            )],
+        )
+
+    expected_event = ProcessedAccountingEvent(
+        event_type=AccountingEventType.TRANSACTION_EVENT,
+        notes='',
+        location=Location.EXTERNAL,
+        timestamp=(event_ts := ts_ms_to_sec(event_ts_ms)),
+        asset=A_EUR,
+        free_amount=ZERO,
+        taxable_amount=event_amount,
+        price=Price(ONE),
+        pnl=PNL(taxable=event_amount, free=ZERO),
+        cost_basis=None,
+        index=0,
+    )
+    expected_event.count_cost_basis_pnl = True
+    _, events = accounting_create_and_process_history(
+        rotki=rotki,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(event_ts + 1),
+    )
+    assert events == [expected_event]
