@@ -6,7 +6,7 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAssetSelectInfo } from '@/components/inputs/use-asset-select-info';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
@@ -60,7 +60,9 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   direction: 'desc' as const,
 });
 
-const { assetInfo, assetName, assetSymbol } = useAssetInfoRetrieval();
+const debouncedSearch = debouncedRef(search, 200);
+
+const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
@@ -79,7 +81,7 @@ function expand(item: AssetBalanceWithPrice) {
 }
 
 function assetFilter(item: Nullable<AssetBalance>) {
-  return assetFilterByKeyword(item, get(search), assetName, assetSymbol);
+  return assetFilterByKeyword(item, get(debouncedSearch), assetName, assetSymbol);
 }
 
 const filteredBalances = computed(() => get(balances).filter(assetFilter));
