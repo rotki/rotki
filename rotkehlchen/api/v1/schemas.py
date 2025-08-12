@@ -2569,7 +2569,7 @@ class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
         except DeserializationError as e:
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
-        if entry.location in (Location.COINBASEPRIME, Location.BINANCEUS):
+        if entry.location in (Location.COINBASEPRIME, Location.BINANCEUS, Location.COINBASEPRO):
             replacement_location = Location.BINANCE if entry.location == Location.BINANCEUS else Location.COINBASE  # noqa: E501
             raise ValidationError(
                 message=f'Mappings for {entry.location.name} should use a location of {replacement_location.name}.',  # noqa: E501
