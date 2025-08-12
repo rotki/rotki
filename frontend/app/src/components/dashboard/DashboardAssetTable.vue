@@ -9,7 +9,7 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAssetSelectInfo } from '@/components/inputs/use-asset-select-info';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
@@ -53,7 +53,7 @@ const pagination = ref({
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { useExchangeRate } = usePriceUtils();
-const { assetInfo, assetName, assetSymbol } = useAssetInfoRetrieval();
+const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { missingCustomAssets } = useManualBalanceData();
 const statisticsStore = useStatisticsStore();
