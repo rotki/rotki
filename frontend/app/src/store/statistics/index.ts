@@ -118,6 +118,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
     const starting = startingValue();
     const totalNW = get(totalNetWorth);
+    const balanceDelta = totalNW.minus(starting);
 
     // Apply scrambling to net worth for tray display
     const scrambledNetWorth = get(useNumberScrambler({
@@ -126,7 +127,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
       value: computed(() => totalNW),
     }));
 
-    const balanceDelta = totalNW.minus(starting);
+    const scrambledBalanceDelta = get(useNumberScrambler({
+      enabled: logicOr(scrambleData, logicNot(shouldShowAmount)),
+      multiplier: scrambleMultiplier,
+      value: computed(() => balanceDelta),
+    }));
+
     const percentage = balanceDelta.div(starting).multipliedBy(100);
 
     let up: boolean | undefined;
@@ -136,9 +142,9 @@ export const useStatisticsStore = defineStore('statistics', () => {
       up = false;
 
     const floatPrecision = get(floatingPrecision);
-    const delta = balanceDelta.toFormat(floatPrecision);
     const rounding = get(valueRoundingMode);
 
+    const delta = scrambledBalanceDelta.toFormat(floatPrecision, rounding);
     const netWorth = scrambledNetWorth.toFormat(floatPrecision, rounding);
 
     return {

@@ -3,8 +3,8 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { usePrivacyMode } from '@/composables/privacy';
+import { useScrambleSetting } from '@/composables/scramble-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -27,28 +27,26 @@ const labels = [
 
 const { changePrivacyMode, privacyMode, privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 
-const { persistPrivacySettings, scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useFrontendSettingsStore());
+const { persistPrivacySettings } = storeToRefs(useFrontendSettingsStore());
 
-const scrambleData = ref<boolean>(false);
-const scrambleMultiplier = ref<string>('0');
+const {
+  enabled,
+  handleMultiplierUpdate,
+  randomMultiplier,
+  scrambleData,
+  scrambleMultiplier,
+} = useScrambleSetting();
+
 const persistPrivacy = ref<boolean>(false);
 const settingMenuOpen = ref<boolean>(false);
 
-function randomMultiplier(): string {
-  const value = generateRandomScrambleMultiplier().toString();
-  set(scrambleMultiplier, value);
-  return value;
-}
-
 function setData() {
-  set(scrambleData, get(enabled));
-  set(scrambleMultiplier, (get(multiplier) ?? generateRandomScrambleMultiplier()).toString());
   set(persistPrivacy, get(persistPrivacySettings));
 }
 
 onMounted(setData);
 
-watch([enabled, multiplier, persistPrivacySettings], setData);
+watch(persistPrivacySettings, setData);
 </script>
 
 <template>
@@ -193,39 +191,31 @@ watch([enabled, multiplier, persistPrivacySettings], setData);
           </RuiSwitch>
         </SettingsOption>
 
-        <SettingsOption
-          #default="{ updateImmediate: updateMultiplier }"
-          setting="scrambleMultiplier"
-          frontend-setting
-          :class="$style.scrambler__input"
-          :error-message="t('frontend_settings.scramble.validation.error')"
+        <AmountInput
+          v-model="scrambleMultiplier"
+          :label="t('frontend_settings.scramble.multiplier.label')"
+          :disabled="!scrambleData"
+          variant="outlined"
+          color="secondary"
+          data-cy="privacy-mode-scramble__multiplier"
+          hide-details
+          dense
+          @update:model-value="handleMultiplierUpdate($event)"
         >
-          <AmountInput
-            v-model="scrambleMultiplier"
-            :label="t('frontend_settings.scramble.multiplier.label')"
-            :disabled="!scrambleData"
-            variant="outlined"
-            color="secondary"
-            data-cy="privacy-mode-scramble__multiplier"
-            hide-details
-            dense
-            @update:model-value="updateMultiplier(Number($event))"
-          >
-            <template #append>
-              <RuiButton
-                :disabled="!scrambleData"
-                variant="text"
-                type="button"
-                class="-mr-2 !p-2"
-                data-cy="privacy-mode-scramble__random-multiplier"
-                icon
-                @click="updateMultiplier(Number(randomMultiplier()))"
-              >
-                <RuiIcon name="lu-shuffle" />
-              </RuiButton>
-            </template>
-          </AmountInput>
-        </SettingsOption>
+          <template #append>
+            <RuiButton
+              :disabled="!scrambleData"
+              variant="text"
+              type="button"
+              class="-mr-2 !p-2"
+              data-cy="privacy-mode-scramble__random-multiplier"
+              icon
+              @click="handleMultiplierUpdate(randomMultiplier())"
+            >
+              <RuiIcon name="lu-shuffle" />
+            </RuiButton>
+          </template>
+        </AmountInput>
       </div>
     </RuiMenu>
   </div>
@@ -240,16 +230,6 @@ watch([enabled, multiplier, persistPrivacySettings], setData);
 .scrambler {
   &__toggle {
     @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px];
-
-    svg {
-      @apply text-white;
-    }
-  }
-
-  &__input {
-    fieldset {
-      @apply rounded-l-none #{!important};
-    }
   }
 }
 
