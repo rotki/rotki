@@ -199,37 +199,37 @@ class Eth2(EthereumModule):
         return balances
 
     @staticmethod
-    def _time_weighted_average(
+    def _time_weighted_balance_sum(
             balance_data: dict[TimestampMS, FVal],
             from_ts_ms: TimestampMS,
             to_ts_ms: TimestampMS,
     ) -> FVal:
-        """Calculate the time weighted average balance for a single validator.
-        If the time range specified is too small to contain any entries, the entry closest
-        to the specified to timestamp will be used.
+        """Calculate the sum of (balance * time) for APR calculation.
+        This is the core calculation needed for proper APR with balance changes.
+        Works in milliseconds like the original _time_weighted_average function.
         """
         if len(balance_data) == 0:
             return ZERO
         elif len(balance_data) == 1:
-            return next(iter(balance_data.values()))
+            return next(iter(balance_data.values())) * (to_ts_ms - from_ts_ms)
 
         sorted_times = sorted(balance_data.keys())
         filtered_times = [ts for ts in sorted_times if from_ts_ms <= ts <= to_ts_ms]
         if len(filtered_times) == 0:  # There are no timestamps in the range specified.
             # First try to use the value at the latest timestamp before to_ts_ms
             if len(before_ts_list := [ts for ts in sorted_times if ts <= to_ts_ms]) != 0:
-                return balance_data[before_ts_list[-1]]
+                balance = balance_data[before_ts_list[-1]]
             else:  # If none before to_ts_ms, simply use the earliest ts
-                return balance_data[sorted_times[0]]
+                balance = balance_data[sorted_times[0]]
+            return balance * (to_ts_ms - from_ts_ms)
 
-        total_weighted_sum = ZERO
+        total_balance_time = ZERO
         filtered_times.append(to_ts_ms)
         for idx, current_ts in enumerate(filtered_times[:-1]):
             # sum += balance * duration for which this was the balance
-            total_weighted_sum += balance_data[current_ts] * (filtered_times[idx + 1] - current_ts)
+            total_balance_time += balance_data[current_ts] * (filtered_times[idx + 1] - current_ts)
 
-        # avg = total sum divided by the total duration
-        return total_weighted_sum / (to_ts_ms - filtered_times[0])
+        return total_balance_time
 
     def get_performance(
             self,
@@ -403,14 +403,20 @@ class Eth2(EthereumModule):
 
             profit_from_ts = max(index_to_activation_ts.get(vindex, from_ts), from_ts)
             profit_to_ts = min(index_to_withdrawable_ts.get(vindex, to_ts), to_ts)
-            time_weighted_avg = self._time_weighted_average(
+
+            # Calculate APR for all validators
+            # APR is total_profits * YEAR_IN_SECONDS divided by sum(balance_i * time_i)
+            balance_time_sum_ms = self._time_weighted_balance_sum(
                 balance_data=balances_over_time[vindex],
                 from_ts_ms=ts_sec_to_ms(profit_from_ts),
                 to_ts_ms=ts_sec_to_ms(profit_to_ts),
             )
+            # Convert balance_time_sum from milliseconds to seconds for APR calculation
+            balance_time_sum_seconds = balance_time_sum_ms / 1000
+
             data['apr'] = (
-                ((YEAR_IN_SECONDS * validator_sum) / (profit_to_ts - profit_from_ts)) / time_weighted_avg  # noqa: E501
-                if time_weighted_avg != ZERO else ZERO
+                (validator_sum * YEAR_IN_SECONDS) / balance_time_sum_seconds
+                if balance_time_sum_seconds > ZERO else ZERO
             )
             sum_apr += data['apr']
 
