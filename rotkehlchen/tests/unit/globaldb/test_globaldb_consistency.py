@@ -449,7 +449,7 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         pytest.fail('oracle IDs do not match:\n' + '\n'.join(mismatches))
 
 
-@pytest.mark.parametrize('our_version', ['1.39.0'])  # set latest version so data can be updated
+@pytest.mark.parametrize('our_version', ['1.40.0'])  # set latest version so data can be updated
 def test_remote_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',
