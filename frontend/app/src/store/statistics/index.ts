@@ -19,6 +19,7 @@ import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { millisecondsToSeconds } from '@/utils/date';
 import { logger } from '@/utils/logging';
 
 function defaultNetValue(): NetValue {
@@ -168,7 +169,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
       const { data, times } = get(netValue);
 
-      const now = Math.floor(Date.now() / 1000);
+      const now = millisecondsToSeconds(Date.now());
       const netWorth = get(totalNetWorth);
 
       if (times.length === 0 && data.length === 0) {

@@ -16,6 +16,7 @@ import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { millisecondsToSeconds } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 
 interface HistoryEventAssetPriceFormProps {
@@ -85,7 +86,7 @@ async function fetchHistoricPrices() {
 
   const price: BigNumber = await getHistoricPrice({
     fromAsset: assetVal,
-    timestamp: time,
+    timestamp: millisecondsToSeconds(time),
     toAsset: get(currencySymbol),
   });
 

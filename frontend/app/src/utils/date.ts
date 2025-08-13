@@ -94,3 +94,7 @@ export function setupDayjs(): void {
   dayjs.extend(isSameOrAfter);
   dayjs.extend(relativeTime);
 }
+
+export function millisecondsToSeconds(milliseconds: number): number {
+  return Math.floor(milliseconds / 1000);
+}

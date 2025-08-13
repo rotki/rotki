@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers } from '@vuelidate/validators';
 import dayjs, { type Dayjs } from 'dayjs';
+import { millisecondsToSeconds } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 
 interface DateTimePickerProps {
@@ -34,7 +35,7 @@ function normalizeTimestamp(timestamp: number, multiply = false) {
   if (multiply) {
     return timestamp * 1000;
   }
-  return Math.floor(timestamp / 1000);
+  return millisecondsToSeconds(timestamp);
 }
 
 const maxDate = computed(() => {

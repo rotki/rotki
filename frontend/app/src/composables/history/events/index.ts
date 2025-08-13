@@ -17,6 +17,7 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { useNotificationsStore } from '@/store/notifications';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
+import { millisecondsToSeconds } from '@/utils/date';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 
@@ -179,7 +180,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     if (response.data.length === 1) {
       const firstRow = response.data[0];
       const timestamp = Array.isArray(firstRow) ? firstRow[0].timestamp : firstRow.timestamp;
-      return Math.floor(timestamp / 1000);
+      return millisecondsToSeconds(timestamp);
     }
 
     return undefined;

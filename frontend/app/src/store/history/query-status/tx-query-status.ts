@@ -5,6 +5,7 @@ import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
 } from '@/types/websocket-messages';
+import { millisecondsToSeconds } from '@/utils/date';
 
 interface BaseTxQueryStatusData {
   address: string;
@@ -63,7 +64,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     resetQueryStatus();
 
     const status = { ...get(queryStatus) };
-    const now = Date.now() / 1000;
+    const now = millisecondsToSeconds(Date.now());
     for (const item of data) {
       const chain = getChain(item.evmChain);
       const key = createKey({ address: item.address, chain });
