@@ -4168,7 +4168,7 @@ Uploading custom asset icons
 
       {"result": {"identifier": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"}, "message": ""}
 
-   :resjson strin identifier: The identifier of the asset for which the icon was uploaded.
+   :resjson string identifier: The identifier of the asset for which the icon was uploaded.
    :statuscode 200: Icon successfully uploaded
    :statuscode 500: Internal rotki error
 
