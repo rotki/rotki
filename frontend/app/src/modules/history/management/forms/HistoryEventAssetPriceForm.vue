@@ -133,7 +133,7 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
       await savePrice({
         fromAsset: assetVal,
         price: get(assetToFiatPrice),
-        timestamp: get(timestamp),
+        timestamp: millisecondsToSeconds(get(timestamp)),
         toAsset: currency,
       });
     }
