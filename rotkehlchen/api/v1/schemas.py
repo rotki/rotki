@@ -180,6 +180,7 @@ from .fields import (
     TaxFreeAfterPeriodField,
     TimestampField,
     TimestampMSField,
+    TimestampUntilNowField,
     XpubField,
     validate_and_deserialize_evm_tx_hash,
 )
@@ -2809,7 +2810,10 @@ class CurrentAssetsPriceSchema(AsyncQueryArgumentSchema):
 class HistoricalAssetsPriceSchema(AsyncQueryArgumentSchema):
     assets_timestamp = fields.List(
         fields.Tuple(
-            (AssetField(expected_type=Asset, required=True), TimestampField(required=True)),
+            tuple_fields=(
+                AssetField(expected_type=Asset, required=True),
+                TimestampUntilNowField(required=True),
+            ),
             required=True,
         ),
         required=True,
