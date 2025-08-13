@@ -16,7 +16,7 @@ const premium = usePremium();
 
 <template>
   <div class="container">
-    <RuiCard class="max-w-[820px] mx-auto">
+    <RuiCard class="max-w-[920px] mx-auto">
       <WrappedContainer v-if="premium" />
       <WrappedContainerPlaceholder v-else />
     </RuiCard>
