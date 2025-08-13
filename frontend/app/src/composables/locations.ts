@@ -23,7 +23,7 @@ export const useLocations = createSharedComposable(() => {
     const blockchainId = id.split(' ').join('_');
 
     const chain = matchChain(blockchainId);
-    if (chain && isBlockchain(chain)) {
+    if (chain && isBlockchain(blockchainId) && isBlockchain(chain)) {
       const detailPath = getBlockchainRedirectLink(blockchainId);
       return {
         detailPath,

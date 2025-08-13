@@ -12,6 +12,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
+import { millisecondsToSeconds } from '@/utils/date';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 export interface AmountInputProps {
@@ -119,7 +120,7 @@ const { assetInfo } = useAssetInfoRetrieval();
 
 const timestampToUse = computed(() => {
   const timestampVal = get(timestamp);
-  return get(milliseconds) ? Math.floor(timestampVal / 1000) : timestampVal;
+  return get(milliseconds) ? millisecondsToSeconds(timestampVal) : timestampVal;
 });
 
 const evaluating = or(
