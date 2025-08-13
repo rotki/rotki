@@ -4,8 +4,8 @@ import {
   aggregateSourceBalances,
   createAssetBalanceFromAggregated,
   processCollectionGrouping,
-  sortDesc,
 } from '@/composables/balances/balance-transformations';
+import { sortDesc } from '@/utils/bignumbers';
 
 /**
  * Configuration for asset sources and associations

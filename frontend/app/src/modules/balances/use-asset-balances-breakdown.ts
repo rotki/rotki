@@ -148,6 +148,7 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
       asset,
       liabilities,
       associatedIdentifiers,
+      filters,
     ));
 
     if (!onlyBlockchain) {
