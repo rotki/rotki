@@ -14,7 +14,8 @@ import {
   Zero,
 } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { zeroBalance } from '@/utils/bignumbers';
+import { isEvmNativeToken } from '@/types/asset';
+import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum, perProtocolBalanceSum } from '@/utils/calculation';
 
 type BalanceWithChains = Balance & { chains?: Record<string, Balance> };
@@ -346,6 +347,14 @@ export function processCollectionGrouping(
       const filteredAsset = omit(asset, ['isMain']);
       return {
         ...filteredAsset,
+        breakdown: isEvmNativeToken(asset.asset)
+          ? groupAssets
+              .filter(value => value.amount.gt(0))
+              .map(value => ({
+                ...omit(value, ['isMain']),
+                perProtocol: getSortedProtocolBalances(value.perProtocol),
+              }))
+          : undefined,
         perProtocol: getSortedProtocolBalances(filteredAsset.perProtocol),
       };
     }
@@ -387,12 +396,4 @@ export function processCollectionGrouping(
       usdValue: groupUsdValue,
     };
   });
-}
-
-// Helper function for sorting in descending order
-export function sortDesc(a: BigNumber, b: BigNumber): number {
-  if (a.eq(b)) {
-    return 0;
-  }
-  return a.gt(b) ? -1 : 1;
 }
