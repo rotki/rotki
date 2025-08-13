@@ -6,7 +6,14 @@ import gevent
 import pytest
 import requests
 
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
+from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -15,8 +22,12 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.tests.utils.factories import (
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+    make_btc_tx_hash,
+)
+from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -605,3 +616,73 @@ def test_xpub_addition_errors(
             contained_in_msg='Provided empty list for tags. Use null',
             status_code=HTTPStatus.BAD_REQUEST,
         )
+
+
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+def test_delete_btc_account(
+        rotkehlchen_api_server: 'APIServer',
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test that when a btc account is deleted any related uncustomized events are removed,
+    as well as the cached last queried block number for that account.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        for address in btc_accounts:
+            for mapping_values in (
+                {HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED},
+                None,
+            ):  # Add both a normal event and a customized event for each address
+                dbevents.add_history_event(
+                    write_cursor=write_cursor,
+                    event=HistoryEvent(
+                        event_identifier=make_btc_tx_hash(),
+                        sequence_index=0,
+                        timestamp=TimestampMS(1500000000000),
+                        location=Location.BITCOIN,
+                        event_type=HistoryEventType.RECEIVE,
+                        event_subtype=HistoryEventSubType.NONE,
+                        asset=A_BTC,
+                        amount=ONE,
+                        location_label=address,
+                    ),
+                    mapping_values=mapping_values,
+                )
+
+            rotki.data.db.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+                address=address,
+                value=12345,
+            )
+
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='BTC'),
+        json={'accounts': [btc_accounts[0]]},
+    )
+    assert_proper_response(response)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            entries_limit=None,
+        )
+        assert len(events) == 3  # Events remaining are the customized event from address1 and both events from address2  # noqa: E501
+        assert events[0].location_label == btc_accounts[0]
+        assert events[0].identifier in dbevents.get_customized_event_identifiers(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        )
+        assert events[1].location_label == btc_accounts[1]
+        assert events[2].location_label == btc_accounts[1]
+        for address, expected_value in (
+            (btc_accounts[0], None),
+            (btc_accounts[1], 12345),
+        ):
+            assert rotki.data.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+                address=address,
+            ) == expected_value

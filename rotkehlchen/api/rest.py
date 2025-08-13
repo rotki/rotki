@@ -247,7 +247,7 @@ from rotkehlchen.types import (
     EVM_EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE,
     SOLANA_TOKEN_KINDS,
     SPAM_PROTOCOL,
-    SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -1905,7 +1905,7 @@ class RestAPI:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_BITCOIN_CHAINS,
+            chain: SUPPORTED_BITCOIN_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[BTCAddress]],
     ) -> dict[str, Any]:
         ...

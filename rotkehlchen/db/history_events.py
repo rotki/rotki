@@ -240,16 +240,13 @@ class DBHistoryEvents:
             self.db.delete_dynamic_caches(write_cursor=write_cursor, key_parts=key_parts)
 
     @staticmethod
-    def reset_events_for_redecode(
+    def delete_location_events(
             write_cursor: 'DBCursor',
             location: BLOCKCHAIN_LOCATIONS_TYPE,
+            address: str | None,
     ) -> None:
-        """Reset the given location's events, etc. for re-decoding.
-        Handles different cases depending on the location:
-        * Bitcoin - simply deletes all non-customized bitcoin events.
-        * EVM and EVM-like - deletes non-customized events that also have a corresponding
-          transaction in the evm_transactions table.
-        * EVM - removes the EVMTX_DECODED evm_tx_mappings to enable re-processing.
+        """Delete all uncustomized history events for the given location and optionally address.
+        For EVM locations, only deletes events that also have a corresponding tx in the DB.
         """
         customized_events_num = write_cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
@@ -267,8 +264,29 @@ class DBHistoryEvents:
         if customized_events_num != 0:
             querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
             bindings += (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+        if address is not None:
+            querystr += ' AND location_label = ?'
+            bindings += (address,)
 
         write_cursor.execute(querystr, bindings)
+
+    @staticmethod
+    def reset_events_for_redecode(
+            write_cursor: 'DBCursor',
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+    ) -> None:
+        """Reset the given location's events, etc. for re-decoding.
+        Handles different cases depending on the location:
+        * Bitcoin - simply deletes all non-customized bitcoin events.
+        * EVM and EVM-like - deletes non-customized events that also have a corresponding
+          transaction in the evm_transactions table.
+        * EVM - removes the EVMTX_DECODED evm_tx_mappings to enable re-processing.
+        """
+        DBHistoryEvents.delete_location_events(
+            write_cursor=write_cursor,
+            location=location,
+            address=None,
+        )
 
         # zksynclite's decode status is stored in zksynclite_transactions.is_decoded
         # and btc/bch don't have the individual txs or decoded status in the db

@@ -58,6 +58,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -119,6 +120,7 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
@@ -1366,6 +1368,10 @@ class DBHandler:
             for address in accounts:
                 self.delete_data_for_evmlike_address(write_cursor, address, blockchain)  # type: ignore
 
+        if blockchain in SUPPORTED_BITCOIN_CHAINS:
+            for address in accounts:
+                self.delete_data_for_bitcoin_address(write_cursor, address, blockchain)  # type: ignore  # mypy doesn't understand the blockchain if check
+
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE object_reference = ?;',
             [(account,) for account in accounts],
@@ -1573,7 +1579,7 @@ class DBHandler:
     def get_single_blockchain_addresses(
             self,
             cursor: 'DBCursor',
-            blockchain: SUPPORTED_BITCOIN_CHAINS,
+            blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE,
     ) -> list[BTCAddress]:
         ...
 
@@ -2316,6 +2322,24 @@ class DBHandler:
                 f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
                 hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
             )
+
+    def delete_data_for_bitcoin_address(
+            self,
+            write_cursor: 'DBCursor',
+            address: BTCAddress,
+            blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE,
+    ) -> None:
+        """Deletes all bitcoin related data from the DB for a single bitcoin address"""
+        DBHistoryEvents(database=self).delete_location_events(
+            write_cursor=write_cursor,
+            location=Location.from_chain(blockchain),
+            address=address,
+        )
+        self.delete_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK if blockchain == SupportedBlockchain.BITCOIN else DBCacheDynamic.LAST_BCH_TX_BLOCK,  # noqa: E501
+            address=address,
+        )
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
