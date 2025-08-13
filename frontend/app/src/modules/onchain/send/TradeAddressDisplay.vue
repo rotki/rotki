@@ -14,7 +14,7 @@ const { address, chain, name } = toRefs(props);
 
 const { addressNameSelector } = useAddressesNamesStore();
 
-const aliasName = computed<string | null>(() => {
+const aliasName = computed<string | undefined>(() => {
   const forceName = get(name);
   if (forceName) {
     return forceName;

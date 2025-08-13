@@ -10,6 +10,7 @@ const emit = defineEmits<{
   open: [];
 }>();
 
+const { t } = useI18n();
 const { showGlobalDialog } = useAddressBookForm();
 
 function openAddressBookForm() {
@@ -22,19 +23,27 @@ function openAddressBookForm() {
 </script>
 
 <template>
-  <RuiButton
-    size="sm"
-    variant="text"
-    class="-my-0.5"
-    icon
-    @click="openAddressBookForm()"
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
+    :open-delay="400"
   >
-    <template #prepend>
-      <RuiIcon
-        name="lu-pencil"
-        size="16"
-        class="!text-rui-grey-400"
-      />
+    <template #activator>
+      <RuiButton
+        size="sm"
+        variant="text"
+        class="-my-0.5"
+        icon
+        @click="openAddressBookForm()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-pencil"
+            size="16"
+            class="!text-rui-grey-400"
+          />
+        </template>
+      </RuiButton>
     </template>
-  </RuiButton>
+    {{ t('address_book.actions.edit.tooltip') }}
+  </RuiTooltip>
 </template>

@@ -2,14 +2,11 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import { useAddressBookDeletion } from '@/composables/address-book/use-address-book-deletion';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useConfirmStore } from '@/store/confirm';
-import { useNotificationsStore } from '@/store/notifications';
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
@@ -64,51 +61,7 @@ function setPage(page: number) {
   });
 }
 
-function addressBookDeletion(location: Ref<AddressBookLocation>) {
-  const { show } = useConfirmStore();
-  const { notify } = useNotificationsStore();
-  const { deleteAddressBook: deleteAddressBookCaller } = useAddressesNamesStore();
-
-  const deleteAddressBook = async (address: string, blockchain: string | null) => {
-    try {
-      await deleteAddressBookCaller(get(location), [{ address, blockchain }]);
-      refresh();
-    }
-    catch (error: any) {
-      const notification: NotificationPayload = {
-        category: NotificationCategory.DEFAULT,
-        display: true,
-        message: t('address_book.actions.delete.error.description', {
-          address,
-          chain: blockchain || t('common.multi_chain'),
-          message: error.message,
-        }),
-        severity: Severity.ERROR,
-        title: t('address_book.actions.delete.error.title'),
-      };
-      notify(notification);
-    }
-  };
-
-  const showDeleteConfirmation = (item: AddressBookEntry) => {
-    show(
-      {
-        message: t('address_book.actions.delete.dialog.message', {
-          address: item.address,
-          chain: item.blockchain || t('common.multi_chain'),
-        }),
-        title: t('address_book.actions.delete.dialog.title'),
-      },
-      () => deleteAddressBook(item.address, item.blockchain),
-    );
-  };
-
-  return {
-    showDeleteConfirmation,
-  };
-}
-
-const { showDeleteConfirmation } = addressBookDeletion(location);
+const { showDeleteConfirmation } = useAddressBookDeletion(location, refresh);
 </script>
 
 <template>

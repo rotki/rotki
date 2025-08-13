@@ -22,8 +22,14 @@ export const AddressBookSimplePayload = AddressNameRequestPayload.extend({
 
 export type AddressBookSimplePayload = z.infer<typeof AddressBookSimplePayload>;
 
-export const AddressBookEntry = AddressBookSimplePayload.extend({
+export const AddressBookInfo = z.object({
   name: z.string(),
+  source: z.string().optional(),
+});
+
+export const AddressBookEntry = z.object({
+  ...AddressBookSimplePayload.shape,
+  ...AddressBookInfo.shape,
 });
 
 export type AddressBookEntry = z.infer<typeof AddressBookEntry>;

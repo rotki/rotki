@@ -209,8 +209,8 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
       const secondAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231231');
 
-      expect(get(firstAddressName)).toEqual(null);
-      expect(get(secondAddressName)).toEqual(null);
+      expect(get(firstAddressName)).toEqual(undefined);
+      expect(get(secondAddressName)).toEqual(undefined);
 
       vi.advanceTimersByTime(2500);
       await flushPromises();
@@ -250,8 +250,8 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
       expect(api.getAddressesNames).not.toHaveBeenCalled();
 
-      expect(get(firstAddressName)).toEqual(null);
-      expect(get(secondAddressName)).toEqual(null);
+      expect(get(firstAddressName)).toEqual(undefined);
+      expect(get(secondAddressName)).toEqual(undefined);
     });
   });
 });
