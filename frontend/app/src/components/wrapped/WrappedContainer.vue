@@ -59,6 +59,15 @@ const historyEventsReady = logicAnd(!isFirstLoad(), logicNot(refreshing));
 const debouncedHistoryEventsReady = debouncedRef(historyEventsReady, 500);
 const usedHistoryEventsReady = logicAnd(historyEventsReady, debouncedHistoryEventsReady);
 
+const startModel = computed({
+  get() {
+    return get(start) || undefined;
+  },
+  set(value: number | undefined) {
+    set(start, value || 0);
+  },
+});
+
 watchImmediate(usedHistoryEventsReady, async (curr, old) => {
   if (curr && !old && get(start) === 0) {
     const earliestEventTimestamp = await getEarliestEventTimestamp();
@@ -112,11 +121,12 @@ async function fetchData() {
     return;
 
   try {
-    const endVal = get(end);
+    let endVal = get(end);
     const startVal = get(start);
 
     if (!endVal) {
-      set(end, dayjs().unix());
+      endVal = dayjs().unix();
+      set(end, endVal);
     }
 
     set(loading, true);
@@ -257,11 +267,11 @@ defineExpose({
     </RuiAlert>
 
     <div class="flex flex-col md:flex-row md:grid-cols-4 gap-2 -mb-4 md:items-start">
-      <div class="mr-4 font-semibold">
+      <div class="mr-4 font-semibold my-2 whitespace-nowrap">
         {{ t('wrapped.filter_by_date') }}
       </div>
       <RuiDateTimePicker
-        v-model="start"
+        v-model="startModel"
         dense
         type="epoch"
         :disabled="loading"
