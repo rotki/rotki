@@ -2892,7 +2892,7 @@ class ManualPriceSchema(Schema):
 
 
 class TimedManualPriceSchema(ManualPriceSchema):
-    timestamp = TimestampField(required=True)
+    timestamp = TimestampUntilNowField(required=True)
 
 
 class SnapshotTimestampQuerySchema(Schema):
