@@ -905,14 +905,14 @@
           "description": "Deleting address book for {address} ({chain}) was not successful: {message}",
           "title": "Address book deletion failed"
         },
-        "tooltip": "Delete the address book"
+        "tooltip": "Delete from address book"
       },
       "edit": {
         "error": {
           "description": "Editing address book was not successful: {message}",
           "title": "Address book edit failed"
         },
-        "tooltip": "Edit the address book"
+        "tooltip": "Edit or add to address book"
       },
       "fetch": {
         "error": {

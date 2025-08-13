@@ -955,7 +955,15 @@ class AddressbookEntry(NamedTuple):
         }
 
     def serialize_for_db(self) -> tuple[str, str, str]:
-        return (self.address, self.name, self.blockchain.value if self.blockchain is not None else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE)  # noqa: E501
+        return (
+            self.address,
+            self.name,
+            (
+                self.blockchain.value
+                if self.blockchain is not None
+                else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
+            ),
+        )
 
     @classmethod
     def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
@@ -966,6 +974,48 @@ class AddressbookEntry(NamedTuple):
             address=data['address'],
             name=data['name'],
             blockchain=SupportedBlockchain.deserialize(data['blockchain']) if data['blockchain'] is not None else None,  # noqa: E501
+        )
+
+
+class AddressbookEntryWithSource(NamedTuple):
+    """AddressbookEntry with source information - used for /names/all endpoint"""
+    address: BlockchainAddress
+    name: str
+    blockchain: SupportedBlockchain | None
+    source: 'AddressNameSource'
+
+    def serialize(self) -> dict[str, str | None]:
+        return {
+            'address': self.address,
+            'name': self.name,
+            'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
+            'source': self.source,
+        }
+
+    def serialize_for_db(self) -> tuple[str, str, str]:
+        return (
+            self.address,
+            self.name,
+            (
+                self.blockchain.value
+                if self.blockchain is not None
+                else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
+            ),
+        )
+
+    @classmethod
+    def deserialize(
+            cls: type['AddressbookEntryWithSource'],
+            data: dict[str, Any],
+    ) -> 'AddressbookEntryWithSource':
+        """May raise:
+        -KeyError if required keys are missing
+        """
+        return cls(
+            address=data['address'],
+            name=data['name'],
+            blockchain=SupportedBlockchain.deserialize(data['blockchain']) if data['blockchain'] is not None else None,  # noqa: E501
+            source=data['source'],
         )
 
     def __str__(self) -> str:

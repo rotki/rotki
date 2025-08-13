@@ -16,7 +16,7 @@ from rotkehlchen.errors.misc import BlockchainQueryError, InputError, RemoteErro
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    AddressbookEntry,
+    AddressbookEntryWithSource,
     AddressbookType,
     AddressNameSource,
     ChainAddress,
@@ -83,7 +83,7 @@ def find_ens_mappings(
 def search_for_addresses_names(
         prioritizer: 'NamePrioritizer',
         chain_addresses: list[OptionalChainAddress],
-) -> list[AddressbookEntry]:
+) -> list[AddressbookEntryWithSource]:
     """
     This method searches for all names of provided addresses known to rotki. We can show
     only one name per address, and thus we prioritize known names. Priority is read from settings.
@@ -153,7 +153,7 @@ class NamePrioritizer:
             self,
             prioritized_name_source: Sequence[AddressNameSource],
             chain_addresses: list[OptionalChainAddress],
-    ) -> list[AddressbookEntry]:
+    ) -> list[AddressbookEntryWithSource]:
         """
         Gets the name from the name source with the highest priority.
         Name source ids with lower index have a higher priority.
@@ -171,10 +171,11 @@ class NamePrioritizer:
                 name: str | None = fetcher(self._db, chain_address)
                 if name is None:
                     continue
-                top_prio_names.append(AddressbookEntry(
+                top_prio_names.append(AddressbookEntryWithSource(
                     name=name,
                     address=chain_address.address,
                     blockchain=chain_address.blockchain,
+                    source=name_source,
                 ))
                 break
 

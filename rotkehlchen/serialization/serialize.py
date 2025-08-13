@@ -51,6 +51,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
     AddressbookEntry,
+    AddressbookEntryWithSource,
     ChainID,
     CostBasisMethod,
     ExchangeLocationID,
@@ -101,6 +102,7 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
         }
     if isinstance(entry, (
             AddressbookEntry |
+            AddressbookEntryWithSource |
             AssetBalance |
             DefiProtocol |
             MakerdaoVault |

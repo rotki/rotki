@@ -47,7 +47,7 @@ export function isAccountWithBalanceValidator(
 function filterAccount<T extends BlockchainAccountBalance>(
   account: T,
   filters: { tags?: string[]; label?: string; address?: string; chain?: string[]; category?: string },
-  resolvers: { getLabel: (address: string, chain?: string) => string | null },
+  resolvers: { getLabel: (address: string, chain?: string) => string | undefined },
 ): boolean {
   const chains = account.type === 'group' ? account.chains : [account.chain];
   const { getLabel } = resolvers;
@@ -109,7 +109,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   params: BlockchainAccountRequestPayload,
   resolvers: {
     getAccounts?: (groupId: string) => BlockchainAccountWithBalance[];
-    getLabel: (address: string, chain?: string) => string | null;
+    getLabel: (address: string, chain?: string) => string | undefined;
   },
 ): Collection<T> {
   const {

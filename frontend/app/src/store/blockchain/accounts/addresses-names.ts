@@ -95,7 +95,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       result = [];
     }
 
-    return function* (): Generator<{ key: string; item: string }, void> {
+    return function* (): Generator<{ key: string; item: AddressBookEntry | undefined }, void> {
       for (const entry of payload) {
         const key = createKey(entry.address, entry.blockchain);
 
@@ -103,7 +103,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
           res =>
             res.address === entry.address
             && res.blockchain === entry.blockchain,
-        )?.name || '';
+        );
 
         yield { item, key };
       }
@@ -116,7 +116,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     reset: resetAddressesNames,
     retrieve,
     unknown,
-  } = useItemCache<string>(async keys => fetchAddressesNames(keys));
+  } = useItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys));
 
   const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed<string[]>(() => {
     const chain = get(blockchain);
@@ -126,30 +126,41 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       .filter(uniqueStrings);
   });
 
-  const addressNameSelector = (
+  const addressInfoSelector = <T extends keyof AddressBookEntry>(
     address: MaybeRef<string>,
+    field: T,
     blockchain: MaybeRef<string> = Blockchain.ETH,
-  ): ComputedRef<string | null> => computed<string | null>(() => {
+  ): ComputedRef<AddressBookEntry[T] | undefined> => computed<AddressBookEntry[T] | undefined>(() => {
     const addressVal = get(address);
     if (!get(enableAliasNames) || !addressVal)
-      return null;
+      return undefined;
 
     const chain = get(blockchain);
 
     if (!isBlockchain(chain) || chain === Blockchain.ETH2)
-      return null;
+      return undefined;
 
     const key = createKey(addressVal, chain);
 
-    const cachedName = get(retrieve(key));
+    const cachedInfo = get(retrieve(key));
 
     // We keep track of the pending status to refresh, but if there is already a
     // value in cache we return that instead of null until a new value is presented
-    if (get(isPending(key) && !cachedName))
-      return null;
+    if (get(isPending(key)) && !cachedInfo)
+      return undefined;
 
-    return cachedName || null;
+    return cachedInfo?.[field] || undefined;
   });
+
+  const addressNameSelector = (
+    address: MaybeRef<string>,
+    blockchain: MaybeRef<string> = Blockchain.ETH,
+  ): ComputedRef<string | undefined> => addressInfoSelector(address, 'name', blockchain);
+
+  const addressNameSourceSelector = (
+    address: MaybeRef<string>,
+    blockchain: MaybeRef<string> = Blockchain.ETH,
+  ): ComputedRef<string | undefined> => addressInfoSelector(address, 'source', blockchain);
 
   const getChainsForAddress = (address: string): string[] => {
     // Determine appropriate chains based on address type
@@ -312,7 +323,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   return {
     addAddressBook,
     addressesNames,
+    addressInfoSelector,
     addressNameSelector,
+    addressNameSourceSelector,
     deleteAddressBook,
     ensNames,
     ensNameSelector,
