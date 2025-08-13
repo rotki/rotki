@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix an issue where the selected filter suggestion is sometimes cleared in the combined filter.
 * :bug:`10439` Fix an issue where the ETH breakdown on an account isn't filtered, displaying the ETH breakdown from all chains and accounts.
 * :bug:`10419` Fiat income events will be properly counted as taxable profit.
 * :bug:`10309` Users will now be required to specify the market pairs when adding a Binance API key to avoid rate limiting and getting stuck when querying the historical events.

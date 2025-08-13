@@ -83,9 +83,11 @@ function clickItem(item: Suggestion) {
   }
 }
 
-function cancelEditSuggestion() {
+function cancelEditSuggestion(skipClearSearch = false) {
   set(suggestionBeingEdited, undefined);
-  set(search, '');
+  if (!skipClearSearch) {
+    set(search, '');
+  }
 }
 
 function updateEditSuggestionSearch(value: string) {
@@ -446,7 +448,7 @@ const { t } = useI18n({ useScope: 'global' });
                 chip
                 :edit-mode="isSuggestionBeingEdited(item)"
                 :suggestion="item"
-                @cancel-edit="cancelEditSuggestion()"
+                @cancel-edit="cancelEditSuggestion($event)"
                 @update:search="updateEditSuggestionSearch($event)"
               />
             </RuiChip>

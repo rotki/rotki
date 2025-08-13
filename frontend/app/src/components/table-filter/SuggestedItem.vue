@@ -19,7 +19,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  'cancel-edit': [];
+  'cancel-edit': [skipClearSearch?: boolean];
   'update:search': [value: string];
 }>();
 
@@ -94,8 +94,8 @@ function onKeyDown(e: KeyboardEvent) {
   }
 }
 
-function cancelEdit() {
-  emit('cancel-edit');
+function cancelEdit(skipClearSearch?: boolean) {
+  emit('cancel-edit', skipClearSearch);
 }
 
 watch(editMode, (curr, prev) => {
@@ -113,7 +113,7 @@ onClickOutside(editInput, () => {
 });
 
 onBeforeUnmount(() => {
-  cancelEdit();
+  cancelEdit(true);
 });
 
 watch(search, (value) => {
