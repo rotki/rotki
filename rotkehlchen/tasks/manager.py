@@ -71,7 +71,6 @@ from rotkehlchen.types import (
     Optional,
     SupportedBlockchain,
     Timestamp,
-    get_args,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -314,7 +313,7 @@ class TaskManager:
         greenlets = []
         self.last_xpub_derivation_ts = now
         xpub_manager = XpubManager(chains_aggregator=self.chains_aggregator)
-        for chain in get_args(SUPPORTED_BITCOIN_CHAINS):
+        for chain in SUPPORTED_BITCOIN_CHAINS:
             if should_derive_xpubs[chain] is False:
                 continue
 

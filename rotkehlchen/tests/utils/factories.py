@@ -88,6 +88,10 @@ def make_evm_tx_hash() -> EVMTxHash:
     return deserialize_evm_tx_hash(make_random_bytes(32))
 
 
+def make_btc_tx_hash() -> str:
+    return make_random_bytes(32).hex()
+
+
 def make_ethereum_transaction(
         tx_hash: bytes | None = None,
         timestamp: Timestamp | None = None,

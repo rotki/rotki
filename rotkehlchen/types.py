@@ -423,7 +423,7 @@ class ChainType(SerializableEnumNameMixin):
             return SUPPORTED_EVM_CHAINS + SUPPORTED_EVMLIKE_CHAINS
 
         if self == ChainType.BITCOIN:
-            return get_args(SUPPORTED_BITCOIN_CHAINS)
+            return SUPPORTED_BITCOIN_CHAINS
 
         if self == ChainType.SUBSTRATE:
             return get_args(SUPPORTED_SUBSTRATE_CHAINS)
@@ -475,7 +475,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         return self.is_evm() or self.is_evmlike()
 
     def is_bitcoin(self) -> bool:
-        return self in get_args(SUPPORTED_BITCOIN_CHAINS)
+        return self in SUPPORTED_BITCOIN_CHAINS
 
     def is_substrate(self) -> bool:
         return self in get_args(SUPPORTED_SUBSTRATE_CHAINS)
@@ -662,10 +662,11 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.BINANCE_SC,
 ]
 
-SUPPORTED_BITCOIN_CHAINS = Literal[
+SUPPORTED_BITCOIN_CHAINS_TYPE = Literal[
     SupportedBlockchain.BITCOIN,
     SupportedBlockchain.BITCOIN_CASH,
 ]
+SUPPORTED_BITCOIN_CHAINS: tuple[SUPPORTED_BITCOIN_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_BITCOIN_CHAINS_TYPE)  # noqa: E501
 
 SUPPORTED_SUBSTRATE_CHAINS = Literal[
     SupportedBlockchain.POLKADOT,

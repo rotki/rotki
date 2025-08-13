@@ -10,7 +10,7 @@ from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.types import (
-    SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_NON_BITCOIN_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -56,7 +56,7 @@ class BlockchainBalances:
         ...
 
     @overload
-    def get(self, chain: SUPPORTED_BITCOIN_CHAINS) -> dict[BTCAddress, Balance]:
+    def get(self, chain: SUPPORTED_BITCOIN_CHAINS_TYPE) -> dict[BTCAddress, Balance]:
         ...
 
     @overload

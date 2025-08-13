@@ -103,7 +103,7 @@ from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
-    SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -804,7 +804,7 @@ class Rotkehlchen:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_BITCOIN_CHAINS,
+            chain: SUPPORTED_BITCOIN_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[BTCAddress]],
     ) -> None:
         ...
