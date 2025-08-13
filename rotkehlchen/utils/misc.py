@@ -121,6 +121,7 @@ def timestamp_to_date(
     May raise:
     - OSError: if the ts provided is outside the limits for the system. Happens providing
     close to 0 ts in windows. https://github.com/python/cpython/issues/107078
+    - ValueError if the timestamp is out of range.
     """
     if treat_as_local is False:
         date = datetime.datetime.fromtimestamp(ts, tz=datetime.UTC).strftime(formatstr)
