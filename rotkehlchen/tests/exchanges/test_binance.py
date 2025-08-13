@@ -265,16 +265,21 @@ def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused
             binance_assets.add(symbol)
 
     sorted_assets = sorted(binance_assets)
+    missing_assets = {
+        'OLDSKY',  # no information in the platform about the asset
+    }
+
     for binance_asset in sorted_assets:
         try:
             _ = asset_from_binance(binance_asset)
         except UnsupportedAsset:
             assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, binance_asset)
         except UnknownAsset as e:
-            test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.identifier} with symbol {binance_asset} in binance. '
-                f'Support for it has to be added',
-            ))
+            if binance_asset not in missing_assets:
+                test_warnings.warn(UserWarning(
+                    f'Found unknown asset {e.identifier} with symbol {binance_asset} in binance. '
+                    f'Support for it has to be added',
+                ))
 
     assert assets_starting_with_ld == set(BINANCE_ASSETS_STARTING_WITH_LD)
 

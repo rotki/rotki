@@ -141,6 +141,10 @@ def test_coverage_of_kraken_balances():
         'MATIC04.S': strethaddress_to_identifier('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
         'KSM07.S': A_KSM,
     }
+    missing_assets = {
+        'ZARS',  # doesn't appear yet in the platform
+        'ZMXN',  # not listed yet in the platform
+    }
 
     for kraken_asset in got_assets:
         if kraken_asset in special_assets:
@@ -149,10 +153,11 @@ def test_coverage_of_kraken_balances():
             try:
                 asset_from_kraken(kraken_asset)
             except (DeserializationError, UnknownAsset):
-                test_warnings.warn(UserWarning(
-                    f'Found unknown primary asset {kraken_asset} in kraken. '
-                    f'Support for it has to be added',
-                ))
+                if kraken_asset not in missing_assets:
+                    test_warnings.warn(UserWarning(
+                        f'Found unknown primary asset {kraken_asset} in kraken. '
+                        f'Support for it has to be added',
+                    ))
 
     delisted = expected_assets - got_assets - set(KRAKEN_DELISTED)
     if delisted:

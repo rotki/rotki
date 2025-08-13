@@ -493,6 +493,7 @@ def test_data_import_custom_format(rotkehlchen_api_server: 'APIServer', file_upl
 
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.vcr
 def test_data_import_binance_history(
         rotkehlchen_api_server: 'APIServer',
         websocket_connection: 'WebsocketReader',
