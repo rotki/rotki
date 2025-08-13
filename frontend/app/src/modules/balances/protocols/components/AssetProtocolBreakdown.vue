@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ProtocolBalanceWithChains } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ChainBalances from '@/modules/balances/protocols/components/ChainBalances.vue';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
@@ -57,8 +57,8 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
     <template #item.protocol="{ row }">
       <div class="flex items-center gap-3">
         <ProtocolIcon
-          :protocol="row.protocol"
-          :loading="loading"
+          :protocol="transformCase(row.protocol)"
+          :size="20"
         >
           <template #default="{ protocol }">
             <div class="flex items-center gap-2">

@@ -25,8 +25,6 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
     // Mark these accounts as being refreshed
     const newAccountsBeingRefreshed = new Set([...get(accountsBeingRefreshed), ...accountKeys]);
 
-    logger.info(`Starting refresh for ${accounts.length} accounts, total tracked: ${mergedAccountKeys.size}`);
-
     set(accountsAtLastRefresh, mergedAccountKeys);
     set(accountsBeingRefreshed, newAccountsBeingRefreshed);
     set(isRefreshing, true);
@@ -73,10 +71,6 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
       return !lastRefreshedAccounts.has(key) && !currentAccountsBeingRefreshed.has(key);
     });
 
-    if (newAccounts.length > 0) {
-      logger.info(`Found ${newAccounts.length} new accounts (excluding ${currentAccountsBeingRefreshed.size} being refreshed)`, newAccounts.map(createAccountKey));
-    }
-
     return newAccounts;
   };
 
@@ -98,10 +92,6 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
         }
       }
     });
-
-    if (result.length > 0) {
-      logger.info(`Preparing ${result.length} pending accounts for refresh (excluded ${currentAccountsBeingRefreshed.size} being refreshed)`);
-    }
 
     return result;
   };
