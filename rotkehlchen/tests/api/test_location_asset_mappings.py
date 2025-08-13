@@ -13,7 +13,7 @@ from rotkehlchen.types import Location
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
-NUM_PACKAGED_ASSETS_MAPPINGS: Final = 3351
+NUM_PACKAGED_ASSETS_MAPPINGS: Final = 3274
 
 
 def _get_all_location_mappings(rotkehlchen_api_server: 'APIServer') -> Any:
