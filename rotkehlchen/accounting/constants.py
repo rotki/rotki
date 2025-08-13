@@ -57,7 +57,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
     },
     HistoryEventType.SPEND: {
-        HistoryEventSubType.RETURN_WRAPPED: {DEFAULT: EventCategory.SEND},
+        HistoryEventSubType.RETURN_WRAPPED: {DEFAULT: EventCategory.RETURN},
         HistoryEventSubType.PAYBACK_DEBT: {DEFAULT: EventCategory.REPAY},
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
         HistoryEventSubType.DONATE: {DEFAULT: EventCategory.DONATE},
@@ -328,6 +328,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.LIQUIDITY_PROVISION_LOSS: {DEFAULT: EventCategoryDetails(
         label='liquidity provision loss',
         icon='lu-droplet-trending-down',
+    )}, EventCategory.RETURN: {DEFAULT: EventCategoryDetails(
+        label='return',
+        icon='lu-undo-2',
     )},
 }
 
