@@ -315,6 +315,7 @@ async function toggleWhitelistAsset() {
       <AssetBalances
         :balances="collectionBalance"
         all-breakdown
+        hide-breakdown
       />
     </RuiCard>
   </TablePageLayout>

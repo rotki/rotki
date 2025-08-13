@@ -131,7 +131,14 @@ async function cancelForceSync() {
   await nextTick(() => clearUploadStatus());
 }
 
-const runCounter = computed(() => get(pending) || get(uploadProgress)?.type === 'compressing');
+const runCounter = computed(() => {
+  if (get(pending)) {
+    return true;
+  }
+
+  const type = get(uploadProgress)?.type;
+  return type && ['compressing', 'uploading'].includes(type);
+});
 
 watch(isSyncing, (current, prev) => {
   if (current !== prev && !current)

@@ -347,14 +347,14 @@ export function processCollectionGrouping(
       const filteredAsset = omit(asset, ['isMain']);
       return {
         ...filteredAsset,
-        breakdown: isEvmNativeToken(asset.asset)
-          ? groupAssets
+        ...(isEvmNativeToken(asset.asset)
+          ? { breakdown: groupAssets
               .filter(value => value.amount.gt(0))
               .map(value => ({
                 ...omit(value, ['isMain']),
                 perProtocol: getSortedProtocolBalances(value.perProtocol),
-              }))
-          : undefined,
+              })) }
+          : {}),
         perProtocol: getSortedProtocolBalances(filteredAsset.perProtocol),
       };
     }

@@ -6,7 +6,6 @@ import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data'
 const props = defineProps<{
   protocol: string;
   size?: number;
-  loading?: boolean;
 }>();
 
 defineSlots<{
@@ -30,7 +29,6 @@ const { protocolData } = useProtocolData(protocol);
       class="icon-bg rounded-full overflow-hidden"
       :src="protocolData.image"
       size="24px"
-      :loading="loading"
       contain
     />
     <RuiIcon
