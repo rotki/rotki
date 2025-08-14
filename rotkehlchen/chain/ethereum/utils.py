@@ -26,7 +26,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import UNIQUE_CACHE_KEYS, CacheType, ChecksumEvmAddress
+from rotkehlchen.types import UNIQUE_CACHE_KEYS, CacheType, ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
@@ -145,10 +145,6 @@ def should_update_protocol_cache(
     """
     args = args if args is not None else []
     now = ts_now()
-    with userdb.conn.read_ctx() as cursor:
-        if (last_upgrade_ts := userdb.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DB_UPGRADE)) is not None and (now - last_upgrade_ts) < HOUR_IN_SECONDS * 3:  # noqa: E501
-            return False  # if we had recent DB upgrade don't refresh
-
     with GlobalDBHandler().conn.read_ctx() as cursor:
         if cache_key in UNIQUE_CACHE_KEYS:
             last_update_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
@@ -160,6 +156,20 @@ def should_update_protocol_cache(
                 cursor=cursor,
                 key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here
             )
+
+    if last_update_ts == Timestamp(0):
+        return True  # Update new protocols regardless of whether we just had a db upgrade.
+
+    with userdb.conn.read_ctx() as cursor:
+        if (
+            (last_upgrade_ts := userdb.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.LAST_DB_UPGRADE,
+            )) is not None and
+            (now - last_upgrade_ts) < HOUR_IN_SECONDS * 3
+        ):
+            return False  # if we had recent DB upgrade don't refresh
+
     return now - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
 
 
