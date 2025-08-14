@@ -292,15 +292,20 @@ class GlobalDBHandler:
 
         prepared_filter_query, bindings = filter_query.prepare(with_pagination=False)
         parent_query = """
-        SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol,
-        C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain,
-        B.token_kind, D.notes, D.type AS custom_asset_type, S.protocol, S.token_kind, S.address, S.decimals
+        SELECT A.identifier AS identifier, A.type,
+        COALESCE(B.address, S.address) AS address,
+        COALESCE(B.decimals, S.decimals) AS decimals,
+        A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare,
+        COALESCE(B.protocol, S.protocol) AS protocol,
+        B.chain,
+        COALESCE(B.token_kind, S.token_kind) AS token_kind,
+        D.notes, D.type AS custom_asset_type
         FROM assets as A
         LEFT JOIN common_asset_details AS C ON C.identifier = A.identifier
         LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
         LEFT JOIN custom_assets as D ON D.identifier = A.identifier
         LEFT JOIN solana_tokens as S ON S.identifier = A.identifier
-        """  # noqa: E501
+        """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
         should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
         with userdb.conn.read_ctx() as cursor:
@@ -347,10 +352,10 @@ class GlobalDBHandler:
                     data.update(common_data)
                 elif asset_type == AssetType.SOLANA_TOKEN:
                     data.update({
-                        'protocol': entry[16],
-                        'token_kind': TokenKind.deserialize_solana_from_db(entry[17]).serialize(),
-                        'address': entry[18],
-                        'decimals': entry[19],
+                        'protocol': entry[11],
+                        'token_kind': TokenKind.deserialize_solana_from_db(entry[13]).serialize(),
+                        'address': entry[2],
+                        'decimals': entry[3],
                     })
                     data.update(common_data)
                 elif AssetType.is_crypto_asset(asset_type):

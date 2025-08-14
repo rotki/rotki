@@ -559,6 +559,27 @@ def test_get_all_assets(rotkehlchen_api_server: 'APIServer') -> None:
     assert result['entries'][0]['name'] == 'Multi Collateral Dai'
     assert result['entries'][0]['symbol'] == 'DAI'
 
+    # check that filtering by address for a solana token works.
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'address': '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'},
+    ))
+    assert len(result['entries']) == 1
+    assert result['entries'][0]['address'] == '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'
+    assert result['entries'][0]['asset_type'] == AssetType.SOLANA_TOKEN.serialize()
+    assert result['entries'][0]['name'] == 'Raydium'
+    assert result['entries'][0]['symbol'] == 'RAY'
+
+    # check error when filtering by an invalid address.
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json={'address': 'xxxxxxxxx'},
+        ),
+        contained_in_msg='Given value xxxxxxxxx is not a valid EVM or Solana address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501

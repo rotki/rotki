@@ -1405,7 +1405,7 @@ class AssetsFilterQuery(DBFilterQuery):
             offset: int | None = None,
             name: str | None = None,
             symbol: str | None = None,
-            address: ChecksumEvmAddress | None = None,
+            address: ChecksumEvmAddress | str | None = None,
             substring_search: str | None = None,
             search_column: str | None = None,
             asset_type: AssetType | None = None,
