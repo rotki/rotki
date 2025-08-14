@@ -41,6 +41,7 @@ const ignoredFilter = ref<{
 
 const modelValue = ref<SupportedAsset>();
 const editMode = ref<boolean>(false);
+const assetTypes = ref<string[]>([]);
 
 const { expanded, selected } = useCommonTableProps<SupportedAsset>();
 
@@ -59,6 +60,7 @@ const { deleteAsset, queryAllAssets } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
+const { getAssetTypes } = useAssetManagementApi();
 
 const { deleteCacheKey } = useAssetCacheStore();
 
@@ -86,7 +88,7 @@ const {
     direction: 'asc',
   },
   extraParams,
-  filterSchema: useAssetFilter,
+  filterSchema: () => useAssetFilter(assetTypes),
   history: get(mainPage) ? 'router' : false,
   onUpdateFilters(query) {
     set(ignoredFilter, {
@@ -198,6 +200,19 @@ watch(ignoredFilter, (oldValue, newValue) => {
   if (!isEqual(oldValue, newValue))
     setPage(1);
 });
+
+onBeforeMount(async () => {
+  try {
+    set(assetTypes, await getAssetTypes());
+  }
+  catch (error: any) {
+    setMessage({
+      description: t('asset_form.types.error', {
+        message: error.message,
+      }),
+    });
+  }
+});
 </script>
 
 <template>
@@ -285,6 +300,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
 
       <ManagedAssetFormDialog
         v-model="modelValue"
+        :asset-types="assetTypes"
         :edit-mode="editMode"
         @refresh="fetchData()"
       />

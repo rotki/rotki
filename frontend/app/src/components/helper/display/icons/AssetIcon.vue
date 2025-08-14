@@ -6,7 +6,7 @@ import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCopy } from '@/composables/copy';
 import { useAssetIconStore } from '@/store/assets/icon';
-import { SOLANA_TOKEN } from '@/types/asset';
+import { SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useCurrencies } from '@/types/currencies';
 
@@ -81,7 +81,7 @@ const chain = computed(() => {
   }
 
   if (info.assetType === SOLANA_TOKEN) {
-    return 'solana';
+    return SOLANA_CHAIN;
   }
 
   return undefined;

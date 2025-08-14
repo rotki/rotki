@@ -117,9 +117,11 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
   const getItemText = (item: BaseSuggestion) =>
     typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
 
+  const limit = selectedMatcher.suggestionsToShow || (asset ? 10 : 5);
+
   set(suggested, suggestedItems
     .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
-    .slice(0, asset ? 10 : 5)
+    .slice(0, limit)
     .map((a, index) => ({
       asset: typeof a.value !== 'string',
       exclude,

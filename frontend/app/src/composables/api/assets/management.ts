@@ -15,6 +15,8 @@ import {
   type CustomAsset,
   type CustomAssetRequestPayload,
   CustomAssets,
+  SOLANA_CHAIN,
+  SOLANA_TOKEN,
   SupportedAssets,
 } from '@/types/asset';
 import { mapCollectionResponse } from '@/utils/collection';
@@ -35,9 +37,17 @@ interface UseAssetManagementApiReturn {
 
 export function useAssetManagementApi(): UseAssetManagementApiReturn {
   const queryAllAssets = async (payload: MaybeRef<AssetRequestPayload>): Promise<Collection<SupportedAsset>> => {
+    const payloadValue = get(payload);
+    const transformedPayload = { ...payloadValue };
+
+    if (transformedPayload.evmChain === SOLANA_CHAIN) {
+      delete transformedPayload.evmChain;
+      transformedPayload.assetType = SOLANA_TOKEN;
+    }
+
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
-      snakeCaseTransformer(get(payload)),
+      snakeCaseTransformer(transformedPayload),
       {
         validateStatus: validWithSessionAndExternalService,
       },
