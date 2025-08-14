@@ -12,6 +12,7 @@ const modelValue = defineModel<SupportedAsset | undefined>({ required: true });
 
 const props = defineProps<{
   editMode: boolean;
+  assetTypes: string[];
 }>();
 
 const emit = defineEmits<{
@@ -156,6 +157,7 @@ async function save(): Promise<boolean> {
       v-model="modelValue"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
+      :asset-types="assetTypes"
       :loading="loading"
       :edit-mode="editMode"
     />

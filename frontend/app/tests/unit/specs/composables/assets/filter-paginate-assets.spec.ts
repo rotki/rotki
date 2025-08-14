@@ -58,6 +58,8 @@ describe('composables::assets/filter-paginate', () => {
       set(mainPage, true);
     });
 
+    const assetTypes = ref(['evm token', 'solana token']);
+
     it('initialize composable correctly', async () => {
       const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
         SupportedAsset,
@@ -66,7 +68,7 @@ describe('composables::assets/filter-paginate', () => {
         Matcher
       >(fetchAssets, {
         history: get(mainPage) ? 'router' : false,
-        filterSchema: useAssetFilter,
+        filterSchema: () => useAssetFilter(assetTypes),
         locationOverview,
         defaultSortBy: [{
           column: 'symbol',
@@ -102,7 +104,7 @@ describe('composables::assets/filter-paginate', () => {
         Matcher
       >(fetchAssets, {
         history: get(mainPage) ? 'router' : false,
-        filterSchema: useAssetFilter,
+        filterSchema: () => useAssetFilter(assetTypes),
         locationOverview,
       });
 
@@ -126,7 +128,7 @@ describe('composables::assets/filter-paginate', () => {
         Matcher
       >(fetchAssets, {
         history: get(mainPage) ? 'router' : false,
-        filterSchema: useAssetFilter,
+        filterSchema: () => useAssetFilter(assetTypes),
         locationOverview,
         defaultSortBy: [{
           column: 'symbol',

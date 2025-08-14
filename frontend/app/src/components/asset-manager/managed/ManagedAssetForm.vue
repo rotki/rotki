@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
-import type { SelectOption, SelectOptions } from '@/types/common';
+import type { SelectOption } from '@/types/common';
 import { isValidEthAddress, isValidSolanaAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
@@ -15,7 +15,6 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useMessageStore } from '@/store/message';
 import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/types/asset';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/types/blockchain/chains';
 import { refOptional, useRefPropVModel } from '@/utils/model';
@@ -28,12 +27,12 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 const props = withDefaults(defineProps<{
   editMode?: boolean;
   loading?: boolean;
+  assetTypes: string[];
 }>(), {
   editMode: false,
   loading: false,
 });
 
-const types = ref<SelectOptions>([{ key: EVM_TOKEN, label: toSentenceCase(EVM_TOKEN) }]);
 const fetching = ref<boolean>(false);
 const dontAutoFetch = ref<boolean>(false);
 const underlyingTokens = ref<UnderlyingToken[]>([]);
@@ -73,11 +72,10 @@ const decimalsModel = computed({
   },
 });
 
-const { setMessage } = useMessageStore();
 const { t } = useI18n({ useScope: 'global' });
 const { allEvmChains, txEvmChains } = useSupportedChains();
 const { fetchTokenDetails } = useAssetInfoRetrieval();
-const { addAsset, editAsset, getAssetTypes } = useAssetManagementApi();
+const { addAsset, editAsset } = useAssetManagementApi();
 
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 const isSolanaToken = computed<boolean>(() => get(assetType) === SOLANA_TOKEN);
@@ -214,6 +212,9 @@ function isValidEvmChain(evmChain: string) {
   return get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain);
 }
 
+const types = computed(() => props.assetTypes.filter(item => item !== CUSTOM_ASSET)
+  .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })));
+
 watch([address, evmChain], async ([address, evmChain]) => {
   if (!evmChain)
     return;
@@ -237,25 +238,6 @@ watchImmediate(modelValue, (asset) => {
   }
   else {
     set(underlyingTokens, []);
-  }
-});
-
-onBeforeMount(async () => {
-  try {
-    const queriedTypes = await getAssetTypes();
-    set(
-      types,
-      queriedTypes
-        .filter(item => item !== CUSTOM_ASSET)
-        .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })),
-    );
-  }
-  catch (error: any) {
-    setMessage({
-      description: t('asset_form.types.error', {
-        message: error.message,
-      }),
-    });
   }
 });
 

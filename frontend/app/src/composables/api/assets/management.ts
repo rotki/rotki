@@ -35,9 +35,17 @@ interface UseAssetManagementApiReturn {
 
 export function useAssetManagementApi(): UseAssetManagementApiReturn {
   const queryAllAssets = async (payload: MaybeRef<AssetRequestPayload>): Promise<Collection<SupportedAsset>> => {
+    const payloadValue = get(payload);
+    const transformedPayload = { ...payloadValue };
+
+    if (transformedPayload.evmChain === 'solana') {
+      delete transformedPayload.evmChain;
+      transformedPayload.assetType = 'solana token';
+    }
+
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
-      snakeCaseTransformer(get(payload)),
+      snakeCaseTransformer(transformedPayload),
       {
         validateStatus: validWithSessionAndExternalService,
       },
