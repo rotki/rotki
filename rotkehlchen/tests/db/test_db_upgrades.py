@@ -3590,6 +3590,10 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
             (2, 'Note2', 'Test note 2 contents', '', 1754674299, 0),
         ]
 
+        assert cursor.execute(
+            solana_query := "SELECT COUNT(*) FROM location WHERE location='w' AND seq=55",
+        ).fetchone()[0] == 0
+
     # Logout and upgrade
     db_v48.logout()
 
@@ -3634,5 +3638,6 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
             (1, 'Note1', 'Test note 1 contents', 'DASHBOARD', 1754674299, 0),
             (2, 'Note2', 'Test note 2 contents', 'G', 1754674299, 0),
         ]
+        assert cursor.execute(solana_query).fetchone()[0] == 1
 
     db.logout()
