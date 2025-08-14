@@ -155,6 +155,23 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
             'decimals': 18,
         },
     },
+    'debridge_1': {
+        'file_path': 'airdrops/debridge_1.parquet',
+        'file_hash': 'aea1b729dea8ae1e2b412c5c6d821854cde4dc84ad996e54ba76439e08fabb58',
+        'asset_identifier': 'DBR',
+        'url': 'https://debridge.foundation/',
+        'name': 'DBR',
+        'icon': 'debridge.svg',
+        'icon_path': 'airdrops/icons/debridge.svg',
+        'new_asset_data': {
+            'asset_type': 'SOLANA_TOKEN',
+            'name': 'DeBridge',
+            'address': 'DBRiDgJAMsM95moTzJs7M9LnkGErpbv9v6CUR1DXnUu5',
+            'symbol': 'DBR',
+            'decimals': 6,
+            'coingecko': 'debridge',
+        },
+    },
     'eigen': {
         'asset_identifier': 'EIGEN_TOKEN_PRE_RELEASE',
         'url': 'https://eigenfoundation.org',
@@ -248,7 +265,7 @@ def prepare_airdrop_mock_response(
     'coingecko': 'shutter',
     'cryptocompare': 'SHUTTER',
 }, {
-    'asset_type': 'SOLANA_TOKEN',  # test with non EVM token
+    'asset_type': 'OTHER',  # test with non EVM token
     'name': 'Some Non EVM Token',
     'symbol': 'NONEVM',
     'coingecko': 'nonevm',
@@ -328,6 +345,8 @@ def test_check_airdrops(
             f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
         f'{AIRDROPS_REPO_BASE}/airdrops/poap/poap_aave_v2_pioneers.json':
             f'{{"{TEST_POAP1}": [\n566\n]}}',
+        f'{AIRDROPS_REPO_BASE}/airdrops/debridge_1.parquet':
+            f'address,tokens\n{TEST_ADDR2},1234.5678\n',
         f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season1.parquet':
             f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
         f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season3.parquet':
@@ -388,7 +407,7 @@ def test_check_airdrops(
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ?', ('AIRDROPS_HASH%',),
-        ).fetchone()[0] == 12
+        ).fetchone()[0] == 13
         assert cursor.execute(
             'SELECT value FROM unique_cache WHERE key=?', ('AIRDROPS_HASHdiva.parquet',),
         ).fetchone()[0] == MOCK_AIRDROP_INDEX['airdrops']['diva']['file_hash']
@@ -423,7 +442,7 @@ def test_check_airdrops(
         'has_decoder': True,
     }
 
-    assert len(data[TEST_ADDR2]) == 6
+    assert len(data[TEST_ADDR2]) == 7
     assert data[TEST_ADDR2]['uniswap'] == {
         'amount': '400.050642',
         'asset': A_UNI,
@@ -468,6 +487,15 @@ def test_check_airdrops(
         'has_decoder': True,
         'cutoff_time': 1716940800,
         'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/degen.svg',
+    }
+    assert data[TEST_ADDR2]['debridge_1'] == {
+        'amount': '1234.5678',
+        'asset': Asset('solana/token:DBRiDgJAMsM95moTzJs7M9LnkGErpbv9v6CUR1DXnUu5'),
+        'link': 'https://debridge.foundation/',
+        'claimed': False,
+        'has_decoder': True,
+        'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/debridge.svg',
+        'icon': 'debridge.svg',
     }
     assert data[TEST_ADDR2]['eigen'] == {
         'amount': '10',

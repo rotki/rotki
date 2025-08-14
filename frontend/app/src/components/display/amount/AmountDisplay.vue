@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RoundingMode } from '@/types/settings/frontend-settings';
+import { BigNumber, bigNumberify, One, Zero } from '@rotki/common';
+import { or } from '@vueuse/math';
 import CopyTooltip from '@/components/helper/CopyTooltip.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
@@ -8,11 +10,10 @@ import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { BigNumber, bigNumberify, One, Zero } from '@rotki/common';
-import { or } from '@vueuse/math';
+import { millisecondsToSeconds } from '@/utils/date';
+import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 export interface AmountInputProps {
   value: BigNumber | undefined;
@@ -86,7 +87,15 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { currency, currencySymbol: currentCurrency, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
-const { scrambleData, scrambleMultiplier, shouldShowAmount } = storeToRefs(useSessionSettingsStore());
+const { scrambleData, scrambleMultiplier: scrambleMultiplierRef, shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+
+const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? generateRandomScrambleMultiplier());
+
+watchEffect(() => {
+  const newValue = get(scrambleMultiplierRef);
+  if (newValue !== undefined)
+    set(scrambleMultiplier, newValue);
+});
 
 const { assetPrice, isAssetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
 
@@ -111,7 +120,7 @@ const { assetInfo } = useAssetInfoRetrieval();
 
 const timestampToUse = computed(() => {
   const timestampVal = get(timestamp);
-  return get(milliseconds) ? Math.floor(timestampVal / 1000) : timestampVal;
+  return get(milliseconds) ? millisecondsToSeconds(timestampVal) : timestampVal;
 });
 
 const evaluating = or(
@@ -514,10 +523,10 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
 
 <style module lang="scss">
 .xl {
-  @apply text-[2.4rem] leading-[3rem];
+  @apply text-[2rem] leading-[3rem];
 
   @screen sm {
-    @apply text-[3.5rem] leading-[4rem];
+    @apply text-[3rem] leading-[4rem];
   }
 }
 

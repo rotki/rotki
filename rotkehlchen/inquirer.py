@@ -20,6 +20,11 @@ from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_token_price
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
+from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+    CPT_YEARN_STAKING,
+    CPT_YEARN_V2,
+    CPT_YEARN_V3,
+)
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -27,16 +32,31 @@ from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINAN
 from rotkehlchen.chain.evm.decoding.aura_finance.utils import get_aura_pool_price
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.utils import get_balancer_pool_price
-from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID_TYPE, CURVE_CHAIN_IDS
+from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
+from rotkehlchen.chain.evm.decoding.beefy_finance.utils import query_beefy_vault_price
+from rotkehlchen.chain.evm.decoding.curve.constants import (
+    CPT_CURVE,
+    CURVE_CHAIN_ID_TYPE,
+    CURVE_CHAIN_IDS,
+)
+from rotkehlchen.chain.evm.decoding.curve.lend.constants import CURVE_LEND_VAULT_SYMBOL
 from rotkehlchen.chain.evm.decoding.curve.lend.utils import get_curve_vault_token_price
+from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
     read_gearbox_data_from_cache,
 )
+from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.decoding.morpho.utils import get_morpho_vault_token_price
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.pendle.utils import query_pendle_price
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
+from rotkehlchen.chain.evm.protocol_constants import (
+    EVM_PROTOCOLS_WITH_PRICE_LOGIC,
+    LP_TOKEN_AS_POOL_PROTOCOLS,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
@@ -109,22 +129,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
-    CURVE_LENDING_VAULTS_PROTOCOL,
-    CURVE_POOL_PROTOCOL,
-    GEARBOX_PROTOCOL,
-    HOP_PROTOCOL_LP,
-    LP_TOKEN_AS_POOL_PROTOCOLS,
-    MORPHO_VAULT_PROTOCOL,
-    UNISWAPV3_PROTOCOL,
-    YEARN_STAKING_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Price,
-    ProtocolsWithPriceLogic,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
@@ -198,17 +207,26 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     price, oracle = None, CurrentPriceOracle.BLOCKCHAIN
     if token.protocol in LP_TOKEN_AS_POOL_PROTOCOLS:
         price = Inquirer().find_lp_price_from_uniswaplike_pool(token)
-    elif token.protocol == CURVE_POOL_PROTOCOL:
+    elif (
+            token == 'eip155:1/erc20:0x0655977FEb2f289A4aB78af67BAB0d17aAb84367' or  # scrvUSD
+            (token.protocol == CPT_CURVE and token.symbol == CURVE_LEND_VAULT_SYMBOL)
+    ):
+        price = get_curve_vault_token_price(
+            vault_token=token,
+            inquirer=Inquirer(),  # Initialize here to avoid a circular import
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+        )
+    elif token.protocol == CPT_CURVE:
         price = Inquirer().find_curve_pool_price(token)
-    elif token.protocol == YEARN_VAULTS_V2_PROTOCOL:
+    elif token.protocol == CPT_YEARN_V2:
         price = Inquirer().find_yearn_price(token, 'YEARN_VAULT_V2')
-    elif token.protocol == YEARN_VAULTS_V3_PROTOCOL:
+    elif token.protocol == CPT_YEARN_V3:
         price = Inquirer().find_yearn_price(token, 'YEARN_VAULT_V3')
-    elif token.protocol == GEARBOX_PROTOCOL:
+    elif token.protocol == CPT_GEARBOX:
         price = Inquirer().find_gearbox_price(token)
-    elif token.protocol == HOP_PROTOCOL_LP:
+    elif token.protocol == CPT_HOP:
         price = Inquirer().find_hop_lp_price(token)
-    elif token.protocol == YEARN_STAKING_PROTOCOL:
+    elif token.protocol == CPT_YEARN_STAKING:
         price = Inquirer().find_yearn_staking_price(token)
     elif token.protocol == CPT_UMAMI:
         price = get_umami_vault_token_price(
@@ -216,17 +234,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             inquirer=Inquirer(),  # Initialize here to avoid a circular import
             evm_inquirer=Inquirer.get_evm_manager(chain_id=ChainID.ARBITRUM_ONE).node_inquirer,
         )
-    elif token.protocol == MORPHO_VAULT_PROTOCOL:
+    elif token.protocol == CPT_MORPHO:
         price = get_morpho_vault_token_price(
-            vault_token=token,
-            inquirer=Inquirer(),  # Initialize here to avoid a circular import
-            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
-        )
-    elif (
-            token.protocol == CURVE_LENDING_VAULTS_PROTOCOL or
-            token == 'eip155:1/erc20:0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'  # scrvUSD
-    ):
-        price = get_curve_vault_token_price(
             vault_token=token,
             inquirer=Inquirer(),  # Initialize here to avoid a circular import
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
@@ -241,7 +250,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             inquirer=Inquirer(),
             token=token,
         )
-    elif token.protocol == UNISWAPV3_PROTOCOL:
+    elif token.protocol == CPT_UNISWAP_V3:
         price = get_uniswap_v3_position_price(
             token=token,
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
@@ -249,6 +258,12 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         )
     elif token.protocol == CPT_PENDLE:
         price = query_pendle_price(token)
+    elif token.protocol == CPT_BEEFY_FINANCE:
+        price = query_beefy_vault_price(
+            vault_token=token,
+            inquirer=Inquirer(),
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+        )
 
     if token == A_FARM_DAI:
         price, oracle = Inquirer.find_usd_price_and_oracle(A_DAI)
@@ -654,7 +669,7 @@ class Inquirer:
                 underlying_asset_price=underlying_asset_price,
             )
         elif (
-            asset.protocol in ProtocolsWithPriceLogic or
+            asset.protocol in EVM_PROTOCOLS_WITH_PRICE_LOGIC or
             underlying_tokens is not None
         ):
             price_result, oracle = get_underlying_asset_price(asset)
@@ -788,21 +803,6 @@ class Inquirer:
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
         ).get(from_asset, ZERO_PRICE)
-
-    @staticmethod
-    def find_price_and_oracle(
-            from_asset: Asset,
-            to_asset: Asset,
-            ignore_cache: bool = False,
-            skip_onchain: bool = False,
-    ) -> tuple[Price, CurrentPriceOracle]:
-        """Wrapper for find_prices_and_oracles to get the price and oracle for a single asset."""
-        return Inquirer.find_prices_and_oracles(
-            from_assets=[from_asset],
-            to_asset=to_asset,
-            ignore_cache=ignore_cache,
-            skip_onchain=skip_onchain,
-        ).get(from_asset, (ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN))
 
     @staticmethod
     def find_prices(
@@ -952,7 +952,7 @@ class Inquirer:
                     tokens.append(EvmToken(evm_address_to_identifier(
                         address=token_address,
                         chain_id=chain_id,
-                        token_type=EvmTokenKind.ERC20,
+                        token_type=TokenKind.ERC20,
                     )))
         except UnknownAsset:
             return None
@@ -979,6 +979,8 @@ class Inquirer:
             node_inquirer=evm_manager.node_inquirer,
             method_name='totalSupply',
         )
+        if total_supply == 0:  # pool is empty
+            return ZERO_PRICE  # avoid division by zero below and skip unneeded network calls.
 
         # Query balances for each token in the pool
         contract = EvmContract(
@@ -1081,7 +1083,7 @@ class Inquirer:
                 evm_address_to_identifier(
                     address=maybe_underlying_tokens[0].address,
                     chain_id=token.chain_id,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 ),
             )
 
@@ -1160,7 +1162,7 @@ class Inquirer:
                         underlying_tokens=[
                             UnderlyingToken(
                                 address=underlying_token_address,
-                                token_kind=EvmTokenKind.ERC20,  # this may be a guess here
+                                token_kind=TokenKind.ERC20,  # this may be a guess here
                                 weight=ONE,  # all yearn vaults have single underlying
                             )],
                         chain_id=ChainID.ETHEREUM,
@@ -1193,7 +1195,7 @@ class Inquirer:
         There are 3 types of vaults reported by the API but all of them respect
         the proportion 1:1.
 
-        The tokens representing staked yearn vaults have the protocol `YEARN_STAKING_PROTOCOL`
+        The tokens representing staked yearn vaults have the protocol `CPT_YEARN_STAKING`
         and as underlying token they have a Yearn Vault token. The information is populated
         by calling the yearn API. Until the yearn vault api cache creation runs the price is
         not reliable.
@@ -1201,7 +1203,7 @@ class Inquirer:
         if (
             token.underlying_tokens is None or
             len(token.underlying_tokens) == 0 or
-            token.protocol != YEARN_STAKING_PROTOCOL
+            token.protocol != CPT_YEARN_STAKING
         ):
             log.error(f'Logic to query staked yearn vault price with a malformed token {token}')
             return None
@@ -1250,7 +1252,7 @@ class Inquirer:
                     arguments=[0],
                 )),
                 chain_id=lp_token.chain_id,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             ))) * FVal(contract.call(
                 node_inquirer=evm_manager.node_inquirer,
                 method_name='getVirtualPrice',

@@ -291,6 +291,21 @@ class Coinbaseprime(ExchangeInterface):
             'X-CB-ACCESS-PASSPHRASE': self.api_passphrase,
         })
 
+    def send_unknown_asset_message(
+            self,
+            asset_identifier: str,
+            details: str,
+            location: Location | None = None,
+    ) -> None:
+        """Override setting the WS message location to Coinbase since Coinbase and CoinbasePrime
+        share asset mappings.
+        """
+        self._send_unknown_asset_message(
+            asset_identifier=asset_identifier,
+            details=details,
+            location=Location.COINBASE,
+        )
+
     def validate_api_key(self) -> tuple[bool, str]:
         try:
             self._get_portfolio_ids()

@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
@@ -19,9 +19,14 @@ from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Number of individual tx queries to allow before simply querying all with a single query and
+# reprocessing any events that we already have.
+MAX_INDIVIDUAL_TX_QUERIES: Final = 4
 
 
 class Monerium:
@@ -169,22 +174,21 @@ class Monerium:
 
             # now get the corresponding event
             with self.database.conn.read_ctx() as cursor:
-                events = dbevents.get_history_events(
+                events = dbevents.get_history_events_internal(
                     cursor=cursor,
                     filter_query=EvmEventFilterQuery.make(
                         tx_hashes=[tx_hash],
                         counterparties=[CPT_MONERIUM],
                         location=location,
                     ),
-                    has_premium=True,  # for this function we don't limit anything
                 )
 
             if len(events) != 1:
                 log.error(f'Could not find monerium event corresponding to {location!s} {tx_hash.hex()} in the DB. Skipping.')  # pylint: disable=no-member # noqa: E501
                 continue
 
-            if not events[0].notes.startswith(('Burn', 'Mint')):  # type: ignore  # should have notes
-                continue  # hacky way to detect if event is already edited
+            if self.is_monerium_event_edited(event_notes=(event := events[0]).notes):
+                continue  # skip if the event is already edited
 
             querystr = 'UPDATE history_events SET notes=? '
             bindings: list[Any] = [new_notes]
@@ -192,9 +196,34 @@ class Monerium:
                 querystr = 'UPDATE history_events SET notes=?, type=?, subtype=? '
                 bindings.extend([new_type.serialize(), new_subtype.serialize()])  # type: ignore  # both type/subtype are set
             querystr += 'WHERE identifier=?'
-            bindings.append(events[0].identifier)
+            bindings.append(event.identifier)
             with self.database.user_write() as write_cursor:
                 write_cursor.execute(querystr, bindings)
+
+    def update_events(self, events: list['EvmEvent']) -> None:
+        """Query and update the event txs individually.
+        Skips any events that have already been edited.
+        Falls back to simply querying all orders if there are too many individual queries.
+        """
+        tx_hashes = set()
+        for event in events:
+            if not self.is_monerium_event_edited(event_notes=event.notes):
+                tx_hashes.add(event.tx_hash)
+
+        if len(tx_hashes) <= MAX_INDIVIDUAL_TX_QUERIES:
+            for tx_hash in tx_hashes:
+                self.get_and_process_orders(tx_hash=tx_hash)
+        else:  # query all instead if there are too many to query individually
+            self.get_and_process_orders()
+
+    @staticmethod
+    def is_monerium_event_edited(event_notes: str | None) -> bool:
+        """Check if an event has already been edited.
+        Simply checks whether the notes have been edited to no longer start with Burn or Mint.
+        While this is a bit hacky, it avoids needing to save any special state in the DB when
+        editing these events.
+        """
+        return event_notes is not None and not event_notes.startswith(('Burn', 'Mint'))
 
 
 def init_monerium(database: 'DBHandler') -> Monerium | None:

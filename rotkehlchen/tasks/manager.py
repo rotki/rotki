@@ -35,20 +35,18 @@ from rotkehlchen.constants.timing import (
     SPAM_ASSETS_DETECTION_REFRESH,
 )
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
-from rotkehlchen.db.calendar import CalendarEntry
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
-from rotkehlchen.externalapis.monerium import init_monerium
+from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, has_premium_check, premium_create_and_verify
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.tasks.assets import (
     autodetect_spam_assets_in_db,
     maybe_detect_new_tokens,
@@ -70,11 +68,9 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
-    Location,
     Optional,
     SupportedBlockchain,
     Timestamp,
-    get_args,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -159,6 +155,7 @@ class TaskManager:
         self.query_aura_pools = query_aura_pools
         self.last_premium_status_check = ts_now()
         self.last_calendar_reminder_check = Timestamp(0)
+        self.last_google_calendar_sync = Timestamp(0)
         self.msg_aggregator = msg_aggregator
         self.premium_check_retries = 0
         self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
@@ -185,15 +182,14 @@ class TaskManager:
             self._maybe_run_events_processing,
             self._maybe_detect_withdrawal_exits,
             self._maybe_detect_new_spam_tokens,
-            self._maybe_query_monerium,
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
             self._maybe_update_spark_underlying_assets,
             self._maybe_create_calendar_reminder,
             self._maybe_trigger_calendar_reminder,
             self._maybe_delete_past_calendar_events,
+            self._maybe_sync_google_calendar,
             self._maybe_query_graph_delegated_tokens,
-            self._maybe_query_gnosispay,
             self._maybe_update_pendle_cache,
         ]
         if self.premium_sync_manager is not None:
@@ -224,7 +220,7 @@ class TaskManager:
 
         with self.database.conn.read_ctx() as cursor:
             assets = self.database.query_owned_assets(cursor)
-            main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
+            main_currency = self.database.get_setting(cursor=cursor, name='main_currency').resolve_to_asset_with_oracles()  # noqa: E501
 
         if main_currency.cryptocompare == '':  # main currency not supported
             self.prepared_cryptocompare_query = True
@@ -317,7 +313,7 @@ class TaskManager:
         greenlets = []
         self.last_xpub_derivation_ts = now
         xpub_manager = XpubManager(chains_aggregator=self.chains_aggregator)
-        for chain in get_args(SUPPORTED_BITCOIN_CHAINS):
+        for chain in SUPPORTED_BITCOIN_CHAINS:
             if should_derive_xpubs[chain] is False:
                 continue
 
@@ -409,9 +405,7 @@ class TaskManager:
         queriable_exchanges = []
         with self.database.conn.read_ctx() as cursor:
             for exchange in self.exchange_manager.iterate_exchanges():
-                if exchange.location in (Location.BINANCE, Location.BINANCEUS):
-                    continue  # skip binance due to the way their history is queried
-                queried_range = self.database.get_used_query_range(cursor, f'{exchange.location!s}_trades')  # noqa: E501
+                queried_range = self.database.get_used_query_range(cursor, f'{exchange.location!s}_history_events_{exchange.name}')  # noqa: E501
                 end_ts = queried_range[1] if queried_range else 0
                 if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
                     queriable_exchanges.append(exchange)
@@ -485,6 +479,8 @@ class TaskManager:
             premium = premium_create_and_verify(
                 credentials=db_credentials,
                 username=self.username,
+                msg_aggregator=self.msg_aggregator,
+                db=self.database,
             )
         except RemoteError:
             if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:
@@ -868,47 +864,6 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
-    def _maybe_query_monerium(self) -> Optional[list[gevent.Greenlet]]:
-        if not has_premium_check(self.chains_aggregator.premium):
-            return None  # should not run in free mode
-
-        if (monerium := init_monerium(self.database)) is None:
-            return None
-
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_MONERIUM_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
-            return None
-
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Query monerium',
-            exception_is_error=False,  # don't spam user messages if errors happen
-            method=monerium.get_and_process_orders,
-        )]
-
-    def _maybe_query_gnosispay(self) -> Optional[list[gevent.Greenlet]]:
-        if not has_premium_check(self.chains_aggregator.premium):
-            return None  # should not run in free mode
-
-        if (gnosispay := init_gnosis_pay(self.database)) is None:
-            return None
-
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_GNOSISPAY_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
-            return None
-
-        from_ts = Timestamp(0)
-        with self.database.conn.read_ctx() as cursor:
-            cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (DBCacheStatic.LAST_GNOSISPAY_QUERY_TS.value,))  # noqa: E501
-            if (result := cursor.fetchone()) is not None:
-                from_ts = deserialize_timestamp(result[0])
-
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Query Gnosis Pay transaction',
-            exception_is_error=False,  # don't spam user messages if errors happen
-            method=gnosispay.get_and_process_transactions,
-            after_ts=from_ts,
-        )]
-
     def _maybe_create_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:
         """Create upcoming reminders for specific history events, if not already created."""
         if (
@@ -982,6 +937,46 @@ class TaskManager:
             method=delete_past_calendar_entries,
             database=self.database,
         )]
+
+    def _maybe_sync_google_calendar(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        Periodically sync rotki calendar events to Google Calendar if authenticated.
+        Runs every 2 hours by default.
+        """
+        sync_interval = 2 * HOUR_IN_SECONDS  # Default 2 hours
+        if sync_interval <= 0:  # Disabled if 0 or negative
+            return None
+
+        if (now := ts_now()) - self.last_google_calendar_sync < sync_interval:
+            return None
+
+        # Check if Google Calendar integration is enabled and authenticated
+        google_calendar = GoogleCalendarAPI(self.database)
+        if not google_calendar.is_authenticated():
+            return None
+
+        self.last_google_calendar_sync = now
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Sync Google Calendar',
+            exception_is_error=False,  # Don't error out if sync fails
+            method=self._sync_google_calendar_task,
+        )]
+
+    def _sync_google_calendar_task(self) -> None:
+        """Background task to sync calendar events to Google Calendar."""
+        google_calendar = GoogleCalendarAPI(self.database)
+        db_calendar = DBCalendar(self.database)
+
+        # Get all calendar entries from rotki
+        calendar_result = db_calendar.query_calendar_entry(
+            CalendarFilterQuery.make(),
+        )
+        calendar_entries = calendar_result['entries']
+
+        # Sync to Google Calendar
+        result = google_calendar.sync_events(calendar_entries)
+        log.debug(f'Google Calendar sync completed: {result}')
 
     def _maybe_query_graph_delegated_tokens(self) -> Optional[list[gevent.Greenlet]]:
         """

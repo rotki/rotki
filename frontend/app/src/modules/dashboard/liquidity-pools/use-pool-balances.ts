@@ -1,6 +1,8 @@
+import type { ComputedRef } from 'vue';
 import type { OnError } from '@/types/fetch';
 import type { TaskMeta } from '@/types/task';
-import type { ComputedRef } from 'vue';
+import { type BigNumber, Blockchain, createEvmIdentifierFromAddress, type Writeable } from '@rotki/common';
+import { cloneDeep, isEqual } from 'es-toolkit';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
@@ -12,8 +14,6 @@ import { TaskType } from '@/types/task-type';
 import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum, bigNumberSum } from '@/utils/calculation';
 import { fetchDataAsync } from '@/utils/fetch-async';
-import { type BigNumber, Blockchain, createEvmIdentifierFromAddress, type Writeable } from '@rotki/common';
-import { cloneDeep, isEqual } from 'es-toolkit';
 import { type PoolBalance, PoolBalances, type PoolLiquidityBalance, PoolType } from './types';
 import { usePoolApi } from './use-pool-api';
 import { usePoolBalancesStore } from './use-pool-balances-store';

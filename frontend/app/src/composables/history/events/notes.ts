@@ -1,10 +1,19 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import {
+  type BigNumber,
+  bigNumberify,
+  Blockchain,
+  isEvmIdentifier,
+  isValidBchAddress,
+  isValidBtcAddress,
+  isValidEthAddress,
+  isValidTxHash,
+} from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useScramble } from '@/composables/scramble';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
-import { type BigNumber, bigNumberify, Blockchain, isEvmIdentifier, isValidEthAddress, isValidTxHash } from '@rotki/common';
 
 export const NoteType = {
   ADDRESS: 'address',
@@ -200,10 +209,12 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
         });
       };
 
+      const isValidBch = isValidBchAddress(word);
+
       // Check if the word is ETH address
-      if (isValidEthAddress(word)) {
+      if (isValidEthAddress(word) || isValidBtcAddress(word) || isValidBch) {
         formats.push({
-          address: word,
+          address: isValidBch ? word.replace(/^bitcoincash:/, '') : word,
           showHashLink: true,
           type: NoteType.ADDRESS,
         });

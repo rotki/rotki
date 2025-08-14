@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN, CPT_POLONIEX, CPT_UPHOLD
 from rotkehlchen.chain.ethereum.modules.monerium.constants import V1_TO_V2_MONERIUM_MAPPINGS
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
+from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithProxy
 from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoderWithDSProxy
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -49,6 +50,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             ethereum_inquirer: 'EthereumInquirer',
             transactions: 'EthereumTransactions',
             beacon_chain: 'BeaconChain | None' = None,
+            premium: 'Premium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -78,13 +80,14 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     image='account_delegation.svg',
                 ),
             ],
-            base_tools=BaseDecoderToolsWithDSProxy(
+            base_tools=BaseDecoderToolsWithProxy(
                 database=database,
                 evm_inquirer=ethereum_inquirer,
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
                 exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
             ),
+            premium=premium,
             beacon_chain=beacon_chain,
         )
 

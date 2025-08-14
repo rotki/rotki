@@ -51,12 +51,13 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
     AddressbookEntry,
+    AddressbookEntryWithSource,
     ChainID,
     CostBasisMethod,
-    EvmTokenKind,
     ExchangeLocationID,
     Location,
     SupportedBlockchain,
+    TokenKind,
 )
 from rotkehlchen.utils.version_check import VersionCheckResult
 
@@ -101,6 +102,7 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
         }
     if isinstance(entry, (
             AddressbookEntry |
+            AddressbookEntryWithSource |
             AssetBalance |
             DefiProtocol |
             MakerdaoVault |
@@ -157,7 +159,7 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             HistoricalPriceOracle |
             BalanceType |
             CostBasisMethod |
-            EvmTokenKind |
+            TokenKind |
             HistoryBaseEntryType |
             EventCategory |
             AccountingEventType |

@@ -9,6 +9,8 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     GNOSIS_PAY_SPENDING_COLLECTOR,
 )
 from rotkehlchen.constants.assets import Asset
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -84,14 +86,14 @@ def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0xF4a1fB1689104479De1EcADfA472A9B866D08B16',  # user's gnosis pay safe
 ]])
-def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
+def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object):
     tx_hash = deserialize_evm_tx_hash('0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8')  # noqa: E501
     events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=tx_hash,
     )
     gnosispay_decoder = gnosis_txs_decoder.decoders.get('GnosisPay')
-
+    gnosis_txs_decoder.premium = rotki_premium_object
     amount = '8.5'
     expected_events = [
         EvmEvent(
@@ -176,8 +178,15 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
     ):
         events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
 
-    expected_events[0].notes = 'Pay 8.5 EUR to Lidl sagt Danke in Berlin :country:DE:'
-    assert events == expected_events
+    with gnosis_inquirer.database.conn.read_ctx() as cursor:
+        refreshed_events = DBHistoryEvents(gnosis_inquirer.database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
+        )
+
+        expected_events[0].identifier = 1
+        expected_events[0].notes = 'Pay 8.5 EUR to Lidl sagt Danke in Berlin :country:DE:'
+    assert refreshed_events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -234,11 +243,8 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
         )
         identifier = write_cursor.lastrowid
 
-    with patch.object(
-            gnosis_txs_decoder,  # do not reload data since this overwrites the api object
-            'reload_data',
-            lambda x: None,
-    ):
+    # do not reload data since this overwrites the api object
+    with patch.object(gnosis_txs_decoder, 'reload_data', lambda x: None):
         events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
 
     expected_events[0].notes = 'Receive refund of 2.35 EUR from Acme Inc. in Sevilla :country:ES:'

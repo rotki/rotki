@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import os
 import warnings as test_warnings
-from contextlib import ExitStack
 from typing import TYPE_CHECKING, cast
 from unittest.mock import call, patch
 from urllib.parse import urlencode
@@ -13,7 +12,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
@@ -23,7 +22,6 @@ from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
     BINANCE_ASSETS_STARTING_WITH_LD,
     BINANCE_LAUNCH_TS,
-    RETRY_AFTER_LIMIT,
     Binance,
     trade_from_binance,
 )
@@ -32,7 +30,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
-from rotkehlchen.tests.utils.constants import A_AXS, A_BUSD, A_LUNA, A_RDN
+from rotkehlchen.tests.utils.constants import A_ADA, A_AXS, A_BUSD, A_LUNA, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_FIATBUY_RESPONSE,
@@ -251,6 +249,7 @@ def test_trade_from_binance(function_scope_binance):
     'CI' in os.environ,
     reason='https://twitter.com/LefterisJP/status/1598107187184037888',
 )
+@pytest.mark.asset_test
 def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
     for asset in get_exchange_asset_symbols(Location.BINANCE):
         assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, asset) is False, f'Binance assets {asset} should not be unsupported'  # noqa: E501
@@ -266,16 +265,21 @@ def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused
             binance_assets.add(symbol)
 
     sorted_assets = sorted(binance_assets)
+    missing_assets = {
+        'OLDSKY',  # no information in the platform about the asset
+    }
+
     for binance_asset in sorted_assets:
         try:
             _ = asset_from_binance(binance_asset)
         except UnsupportedAsset:
             assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, binance_asset)
         except UnknownAsset as e:
-            test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.identifier} with symbol {binance_asset} in binance. '
-                f'Support for it has to be added',
-            ))
+            if binance_asset not in missing_assets:
+                test_warnings.warn(UserWarning(
+                    f'Found unknown asset {e.identifier} with symbol {binance_asset} in binance. '
+                    f'Support for it has to be added',
+                ))
 
     assert assets_starting_with_ld == set(BINANCE_ASSETS_STARTING_WITH_LD)
 
@@ -448,6 +452,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     """Test that turning a binance trade that contains unexpected data is handled gracefully"""
     binance = function_scope_binance
     binance.cache_ttl_secs = 0
+    original_selected_pairs = binance.selected_pairs
 
     def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
         if params.get('symbol') == 'BNBBTC' or params.get('symbol') == 'doesnotexist':
@@ -463,7 +468,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
             'rotkehlchen.tests.exchanges.test_binance.BINANCE_MYTRADES_RESPONSE',
             new=input_trade_str,
         )
-        binance.selected_pairs = query_specific_markets
+        binance.selected_pairs = query_specific_markets if query_specific_markets is not None else original_selected_pairs  # noqa: E501
         with patch_get, patch_response:
             events, _ = binance.query_online_history_events(
                 start_ts=Timestamp(0),
@@ -927,14 +932,10 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.UTC))
+@pytest.mark.parametrize('db_settings', [{'query_retry_limit': 2}])
 def test_api_query_retry_on_status_code_429(function_scope_binance):
     """Test when Binance API returns 429 and the request is retried, the
     signature is not polluted by any attribute from the previous call.
-
-    It also tests getting the `retry-after` seconds to backoff from the
-    response header.
-
-    NB: basically remove `call_options['signature']`.
     """
     binance = function_scope_binance
     offset_ms = 1000
@@ -956,28 +957,20 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
     # NB: all calls must have the same signature (time frozen)
     expected_calls = [
         call(method='GET', url=base_url, params=call_options, timeout=(30, 30)),
-        call(method='GET', url=base_url, params=call_options, timeout=(30, 30)),
-        call(method='GET', url=base_url, params=call_options, timeout=(30, 30)),
-    ]
+    ] * 3
 
     def get_mocked_response():
-        responses = [
-            MockResponse(429, '[]', headers={'retry-after': '1'}),
-            MockResponse(418, '[]', headers={'retry-after': '5'}),
-            MockResponse(418, '[]', headers={'retry-after': str(RETRY_AFTER_LIMIT + 1)}),
-        ]
+        responses = [MockResponse(429, '[]'), MockResponse(418, '[]'), MockResponse(418, '[]')]
         yield from responses
 
     def mock_response(url, timeout, *args, **kwargs):  # pylint: disable=unused-argument
         return next(get_response)
 
     get_response = get_mocked_response()
-    offset_ms_patch = patch.object(binance, 'offset_ms', new=1000)
-    binance_patch = patch.object(binance.session, 'request', side_effect=mock_response)
-
-    with ExitStack() as stack:
-        stack.enter_context(offset_ms_patch)
-        binance_mock_get = stack.enter_context(binance_patch)
+    with (
+        patch.object(binance, 'offset_ms', new=1000),
+        patch.object(binance.session, 'request', side_effect=mock_response) as binance_mock_get,
+    ):
         with pytest.raises(RemoteError) as e:
             binance.api_query(
                 api_type='api',
@@ -988,8 +981,9 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
                     'symbol': 'BUSDUSDT',
                 },
             )
-    assert 'myTrades failed with HTTP status code: 418' in str(e.value)
-    assert binance_mock_get.call_args_list == expected_calls
+
+        assert 'myTrades failed with HTTP status code: 418' in str(e.value)
+        assert binance_mock_get.call_args_list == expected_calls
 
 
 def test_binance_query_trade_history_custom_markets(function_scope_binance):

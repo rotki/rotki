@@ -45,13 +45,8 @@ export interface StatisticsApi {
 
 export interface DateUtilities {
   epoch: () => number;
-  format: (date: string, oldFormat: string, newFormat: string) => string;
-  now: (format: string) => string;
   epochToFormat: (epoch: number, format: string) => string;
-  dateToEpoch: (date: string, format: string) => number;
   epochStartSubtract: (amount: number, unit: TimeUnit) => number;
-  toUserSelectedFormat: (timestamp: number) => string;
-  getDateInputISOFormat: (format: string) => string;
   convertToTimestamp: (date: string, dateFormat?: string) => number;
 }
 
@@ -111,21 +106,46 @@ export interface SettingsApi {
   };
 }
 
-export interface GraphApi {
-  getCanvasCtx: () => CanvasRenderingContext2D;
-  baseColor: ComputedRef<string>;
-  gradient: ComputedRef<CanvasGradient>;
-  secondaryColor: ComputedRef<string>;
-  backgroundColor: ComputedRef<string>;
-  fontColor: ComputedRef<string>;
-  gridColor: ComputedRef<string>;
+interface ColorStop {
+  color: string;
+  offset: number;
 }
 
-type GetGraphApi = (canvasId: string) => GraphApi;
+interface GradientColor {
+  colorStops: ColorStop[];
+  type: 'linear';
+  x: number;
+  x2: number;
+  y: number;
+  y2: number;
+}
+
+export interface GradientArea {
+  color: GradientColor;
+}
+
+export interface NewGraphApi {
+  baseColor: ComputedRef<string>;
+  gradient: ComputedRef<GradientArea>;
+  secondaryColor: ComputedRef<string>;
+}
+
+type GetGraphApi = () => NewGraphApi;
+
+export interface LoggerApi {
+  error: (...args: any[]) => void;
+  warn: (...args: any[]) => void;
+  info: (...args: any[]) => void;
+  debug: (...args: any[]) => void;
+  trace: (...args: any[]) => void;
+  success: (...args: any[]) => void;
+  log: (...args: any[]) => void;
+}
 
 export interface PremiumApi {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
   readonly settings: SettingsApi;
   readonly graphs: GetGraphApi;
+  readonly logger: LoggerApi;
 }

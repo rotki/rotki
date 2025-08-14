@@ -1,11 +1,11 @@
-import { BalanceType } from '@/types/balances';
 import { NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
+import { BalanceType } from '@/types/balances';
 
 export const BalanceSnapshot = z.object({
   amount: NumericString,
   assetIdentifier: z.string(),
-  category: z.nativeEnum(BalanceType),
+  category: z.enum(BalanceType),
   timestamp: z.number(),
   usdValue: NumericString,
 });

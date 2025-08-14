@@ -1,3 +1,6 @@
+import { assert, BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
+import { createPinia, type Pinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -5,6 +8,7 @@ import { camelCaseTransformer } from '@/services/axios-transformers';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
+import { PrivacyMode } from '@/types/session';
 import {
   BalanceSource,
   BlockchainRefreshButtonBehaviour,
@@ -14,9 +18,6 @@ import {
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-import { assert, BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
-import { createPinia, type Pinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -86,9 +87,9 @@ describe('settings:frontend', () => {
       versionUpdateCheckFrequency: Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      shouldRefreshValidatorDailyStats: false,
       savedFilters: {},
       balanceUsdValueThreshold: {},
+      persistPrivacySettings: false,
     });
   });
 
@@ -164,7 +165,6 @@ describe('settings:frontend', () => {
       versionUpdateCheckFrequency: 24,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      shouldRefreshValidatorDailyStats: false,
       subscriptDecimals: false,
       savedFilters: {},
       balanceUsdValueThreshold: {
@@ -173,6 +173,12 @@ describe('settings:frontend', () => {
         [BalanceSource.MANUAL]: '0',
       },
       useHistoricalAssetBalances: false,
+      scrambleData: false,
+      scrambleMultiplier: 1,
+      privacyMode: PrivacyMode.NORMAL,
+      persistPrivacySettings: false,
+      evmQueryIndicatorMinOutOfSyncPeriod: 12,
+      evmQueryIndicatorDismissalThreshold: 6,
     };
 
     store.update(state);
@@ -238,5 +244,6 @@ describe('settings:frontend', () => {
     expect(store.enableAliasNames).toBe(true);
     expect(store.blockchainRefreshButtonBehaviour).toBe(BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES);
     expect(store.savedFilters).toMatchObject({});
+    expect(store.persistPrivacySettings).toBe(false);
   });
 });

@@ -14,6 +14,7 @@ from rotkehlchen.api.v1.fields import (
     FloatingPercentageField,
     NonEmptyStringField,
     SerializableEnumField,
+    SolanaAddressField,
     TimestampField,
 )
 from rotkehlchen.assets.asset import (
@@ -22,12 +23,13 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     FiatAsset,
+    SolanaToken,
     UnderlyingToken,
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.types import EvmTokenKind
+from rotkehlchen.types import TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -62,7 +64,11 @@ def _validate_single_oracle_id(
 
 class UnderlyingTokenInfoSchema(Schema):
     address = EvmAddressField(required=True)
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
+    token_kind = SerializableEnumField(
+        enum_class=TokenKind,
+        required=True,
+        allow_only=[TokenKind.ERC20, TokenKind.ERC721],
+    )
     weight = FloatingPercentageField(required=True)
 
 
@@ -179,23 +185,16 @@ class CryptoAssetSchema(CryptoAssetFieldsSchema):
         return {'crypto_asset': crypto_asset}
 
 
-class EvmTokenSchema(CryptoAssetFieldsSchema):
-    address = EvmAddressField(required=True)
-    evm_chain = EvmChainNameField(required=True)
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
+class TokenWithDecimalAndProtocolSchema(CryptoAssetFieldsSchema):
     decimals = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
             min=0,
-            error='Evm token decimals should be greater than or equal to 0',
+            error='Token decimals should be greater than or equal to 0',
         ),
         required=True,
     )
     protocol = EmptyAsNoneStringField(load_default=None)
-    underlying_tokens = DelimitedOrNormalList(
-        fields.Nested(UnderlyingTokenInfoSchema),
-        load_default=None,
-    )
 
     def __init__(
             self,
@@ -216,6 +215,20 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
             # TODO: Fix as part of https://github.com/rotki/rotki/issues/9953
             self.fields['symbol'].allow_none = True
             self.fields['decimals'].allow_none = True
+
+
+class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
+    address = EvmAddressField(required=True)
+    evm_chain = EvmChainNameField(required=True)
+    token_kind = SerializableEnumField(
+        enum_class=TokenKind,
+        required=True,
+        allow_only=[TokenKind.ERC20, TokenKind.ERC721],
+    )
+    underlying_tokens = DelimitedOrNormalList(
+        fields.Nested(UnderlyingTokenInfoSchema),
+        load_default=None,
+    )
 
     @validates_schema
     def validate_schema(
@@ -267,6 +280,35 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
             decimals=data['decimals'],
             protocol=data['protocol'],
             underlying_tokens=underlying_tokens,
+        )
+
+
+class SolanaTokenSchema(TokenWithDecimalAndProtocolSchema):
+    address = SolanaAddressField(required=True)
+    token_kind = SerializableEnumField(
+        enum_class=TokenKind,
+        required=True,
+        allow_only=[TokenKind.SPL_TOKEN, TokenKind.SPL_NFT],
+    )
+
+    @post_load
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> SolanaToken:
+        return SolanaToken.initialize(
+            address=data['address'],
+            token_kind=data['token_kind'],
+            name=data['name'],
+            symbol=data['symbol'],
+            started=data['started'],
+            forked=data['forked'],
+            swapped_for=data['swapped_for'],
+            coingecko=data['coingecko'],
+            cryptocompare=data['cryptocompare'],
+            decimals=data['decimals'],
+            protocol=data['protocol'],
         )
 
 
@@ -362,6 +404,12 @@ class AssetSchema(Schema):
             ).load(data)
         elif asset_type == AssetType.EVM_TOKEN:
             asset = EvmTokenSchema(
+                coingecko=self.coingecko_obj,
+                cryptocompare=self.cryptocompare_obj,
+                is_edit=self.is_edit,
+            ).load(data)
+        elif asset_type == AssetType.SOLANA_TOKEN:
+            asset = SolanaTokenSchema(
                 coingecko=self.coingecko_obj,
                 cryptocompare=self.cryptocompare_obj,
                 is_edit=self.is_edit,

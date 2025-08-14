@@ -8,7 +8,7 @@ import requests
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USD, A_USDC
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_USD, A_USDC
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -19,7 +19,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, His
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
-from rotkehlchen.tests.utils.constants import A_XTZ
+from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TimestampMS
@@ -247,13 +247,12 @@ def query_coinbase_and_test(
         coinbase._query_transactions()
 
     with coinbase.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(coinbase.db).get_history_events(
+        events = DBHistoryEvents(coinbase.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 location=Location.COINBASE,
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
             ),
-            has_premium=True,
         )
 
     errors = coinbase.msg_aggregator.consume_errors()
@@ -393,10 +392,9 @@ def test_coinbase_staking_events(
         coinbase.query_history_events()
 
     with database.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
-            has_premium=True,
         )
 
     assert events == [HistoryEvent(
@@ -426,10 +424,9 @@ def test_coinbase_query_history_events(
         coinbase.query_history_events()
 
     with database.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
-            has_premium=True,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
@@ -1374,14 +1371,13 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         coinbase.query_history_events()
 
     with coinbase.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(coinbase.db).get_history_events(
+        events = DBHistoryEvents(coinbase.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 location=Location.COINBASE,
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
                 order_by_rules=[('timestamp', True), ('event_identifier', False)],
             ),
-            has_premium=True,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
@@ -1704,6 +1700,7 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
     )]
 
 
+@pytest.mark.asset_test
 def test_coverage_of_products():
     """Test that we can process all assets from coinbase"""
     data = requests.get('https://api.exchange.coinbase.com/currencies')

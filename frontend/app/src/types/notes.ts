@@ -1,6 +1,6 @@
 import type { PaginationRequestPayload } from '@/types/common';
+import { z } from 'zod/v4';
 import { CollectionCommonFields } from '@/types/collection';
-import { z } from 'zod';
 
 export const UserNote = z.object({
   content: z.string(),
@@ -23,6 +23,7 @@ export interface UserNotesRequestPayload extends PaginationRequestPayload<UserNo
 }
 
 export enum NoteLocation {
+  GLOBAL = 'G',
   DASHBOARD = 'DASHBOARD',
   ACCOUNTS_EVM = 'ACCOUNTS_EVM',
   ACCOUNTS_BITCOIN = 'ACCOUNTS_BITCOIN',

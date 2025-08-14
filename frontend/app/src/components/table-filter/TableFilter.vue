@@ -6,13 +6,13 @@ import type {
   SearchMatcher,
   Suggestion,
 } from '@/types/filtering';
+import { assert, type AssetInfo, getTextToken } from '@rotki/common';
 import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import SavedFilterManagement from '@/components/table-filter/SavedFilterManagement.vue';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { compareTextByKeyword } from '@/utils/assets';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
-import { assert, type AssetInfo, getTextToken } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,
@@ -83,9 +83,11 @@ function clickItem(item: Suggestion) {
   }
 }
 
-function cancelEditSuggestion() {
+function cancelEditSuggestion(skipClearSearch = false) {
   set(suggestionBeingEdited, undefined);
-  set(search, '');
+  if (!skipClearSearch) {
+    set(search, '');
+  }
 }
 
 function updateEditSuggestionSearch(value: string) {
@@ -117,8 +119,10 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
     return;
   }
   const filter = `${matcher.key}=`;
-  set(search, filter);
   get(input)?.focus?.();
+  nextTick(() => {
+    set(search, filter);
+  });
 }
 
 function updateMatches(pairs: Suggestion[]) {
@@ -420,6 +424,7 @@ const { t } = useI18n({ useScope: 'global' });
           clearable
           hide-details
           custom-value
+          hide-custom-value
           :options="[]"
           return-object
           disable-interaction
@@ -443,7 +448,7 @@ const { t } = useI18n({ useScope: 'global' });
                 chip
                 :edit-mode="isSuggestionBeingEdited(item)"
                 :suggestion="item"
-                @cancel-edit="cancelEditSuggestion()"
+                @cancel-edit="cancelEditSuggestion($event)"
                 @update:search="updateEditSuggestionSearch($event)"
               />
             </RuiChip>

@@ -3,6 +3,7 @@ import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
 import path from 'node:path';
 import { assert } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
 import { Menu, type MenuItem, type MenuItemConstructorOptions, nativeImage, Tray } from 'electron';
 
 interface TrayManagerListener {
@@ -105,7 +106,7 @@ export class TrayManager {
       icon = 'rotki-trayTemplate@5x.png';
 
     if (this.settings.appSettings.showNetWorthOnTray) {
-      if (netWorth) {
+      if (isDefined(netWorth)) {
         title += ` ${netWorth} ${currency}`;
         tooltip.unshift(`Net worth ${netWorth} ${currency}.`);
       }

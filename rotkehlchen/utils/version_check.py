@@ -1,6 +1,7 @@
+import logging
 import platform
 import sys
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from packaging.version import InvalidVersion, Version
@@ -9,6 +10,9 @@ from rotkehlchen.errors.misc import RemoteError
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.github import Github
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_system_spec() -> dict[str, str]:
@@ -23,8 +27,14 @@ def get_system_spec() -> dict[str, str]:
             platform.machine(),
         )
 
+    try:
+        rotki_version = version('rotkehlchen')
+    except (PackageNotFoundError, ValueError) as e:
+        logger.error(f'Failed to retrieve rotki version due to {e}. Defaulting to 0.0.0')
+        rotki_version = '0.0.0'
+
     return {
-        'rotkehlchen': version('rotkehlchen'),
+        'rotkehlchen': rotki_version,
         'python_implementation': platform.python_implementation(),
         'python_version': platform.python_version(),
         'system': system_info,

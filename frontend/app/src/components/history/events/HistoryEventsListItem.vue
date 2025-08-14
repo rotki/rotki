@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { HistoryEventEntry } from '@/types/history/events';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
-import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
-import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
-import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
-
-import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import { useSupportedChains } from '@/composables/info/chains';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 import { pick } from 'es-toolkit';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
+import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
+
+import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
+import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
+import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
+import { useSupportedChains } from '@/composables/info/chains';
 
 const props = defineProps<{
   item: HistoryEventEntry;
@@ -26,6 +26,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'refresh': [];
 }>();
 
 const { getChain } = useSupportedChains();
@@ -108,6 +109,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
           'col-span-10 md:col-span-6 @5xl:!col-span-4': !compact,
           'w-full !py-0': compact,
         }"
+        @refresh="emit('refresh')"
       />
 
       <HistoryEventNote

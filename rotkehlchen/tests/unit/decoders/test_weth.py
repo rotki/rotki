@@ -26,7 +26,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChainID, EvmTokenKind, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, TimestampMS, TokenKind, deserialize_evm_tx_hash
 
 WETH_OP_BASE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000006')
 WMATIC_ADDRESS = string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270')
@@ -205,7 +205,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         userdb=database,
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='343053',
         evm_inquirer=ethereum_inquirer,
     )

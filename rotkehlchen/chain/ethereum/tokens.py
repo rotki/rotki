@@ -1,22 +1,13 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.curve.constants import VOTING_ESCROW
-from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
 from rotkehlchen.chain.ethereum.modules.monerium.constants import (
     ETHEREUM_MONERIUM_LEGACY_ADDRESSES,
 )
-from rotkehlchen.chain.evm.tokens import EvmTokensWithDSProxy
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
+from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
-from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
-
-if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
-
-    from .node_inquirer import EthereumInquirer
+from rotkehlchen.types import ChecksumEvmAddress
 
 ETH_TOKEN_EXCEPTIONS = {
     # Ignore the veCRV balance in token query. It's already detected by
@@ -39,62 +30,7 @@ ETH_TOKEN_EXCEPTIONS = {
 }
 
 
-class EthereumTokens(EvmTokensWithDSProxy):
-
-    def __init__(
-            self,
-            database: 'DBHandler',
-            ethereum_inquirer: 'EthereumInquirer',
-    ) -> None:
-        """
-        TODO:
-        Think if limiting to specific tokens makes sense for proxies. Can miss balances.
-        Also this keeps all tokens in this list in memory in perpetuity. This is not a good idea.
-        """
-        super().__init__(
-            database=database,
-            evm_inquirer=ethereum_inquirer,
-            token_exceptions=None,
-        )
-        dai = A_DAI.resolve_to_evm_token()
-        weth = A_WETH.resolve_to_evm_token()
-        self.tokens_for_proxies = [
-            EvmTokenDetectionData(
-                identifier=dai.identifier,
-                address=dai.evm_address,
-                decimals=dai.decimals,  # type: ignore  # TODO: those tokens have decimals. We need to fix the type in the EVMToken class.
-            ), EvmTokenDetectionData(
-                identifier=weth.identifier,
-                address=weth.evm_address,
-                decimals=weth.decimals,  # type: ignore
-            ),
-        ]
-        # Add aave tokens
-        aave_tokens, _ = GlobalDBHandler.get_token_detection_data(
-            chain_id=ChainID.ETHEREUM,
-            exceptions=set(),
-            protocol='aave',
-        )
-        self.tokens_for_proxies.extend(aave_tokens)
-        aave_v2_tokens, _ = GlobalDBHandler.get_token_detection_data(
-            chain_id=ChainID.ETHEREUM,
-            exceptions=set(),
-            protocol='aave-v2',
-        )
-        self.tokens_for_proxies.extend(aave_v2_tokens)
-
-        # Add Makerdao vault collateral tokens
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            for _, _, asset, _ in ilk_cache_foreach(cursor):
-                if asset == A_ETH:
-                    continue
-
-                token = asset.resolve_to_evm_token()
-                self.tokens_for_proxies.append(EvmTokenDetectionData(
-                    identifier=token.identifier,
-                    address=token.evm_address,
-                    decimals=token.decimals,  # type: ignore
-                ))
+class EthereumTokens(EvmTokensWithProxies):
 
     # -- methods that need to be implemented per chain
     def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
@@ -104,16 +40,12 @@ class EthereumTokens(EvmTokensWithDSProxy):
         """Detect tokens for proxies that are owned by the given addresses"""
         # We ignore A_ETH so all other ones should be tokens
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
-        proxies_to_use = {k: v for k, v in proxies_mapping.items() if k in addresses}
-        detected_tokens = self._detect_tokens(
-            addresses=list(proxies_to_use.values()),
-            tokens_to_check=self.tokens_for_proxies,
-        )
-        with self.db.user_write() as write_cursor:
-            for addr, tokens in detected_tokens.items():
-                self.db.save_tokens_for_address(
-                    write_cursor=write_cursor,
-                    address=addr,
-                    tokens=tokens,
-                    blockchain=self.evm_inquirer.blockchain,
-                )
+        proxy_addresses = set()
+        for proxy_type in ProxyType:
+            proxy_addresses |= {v for k, v in proxies_mapping[proxy_type].items() if k in addresses}  # noqa: E501
+
+        if len(proxy_addresses) == 0:
+            return
+
+        # Call EvmToken's _query_new_tokens to avoid calling maybe_detect_proxies_tokens again.
+        super(EvmTokensWithProxies, self)._query_new_tokens(addresses=list(proxy_addresses))

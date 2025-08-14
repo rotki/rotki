@@ -1,4 +1,6 @@
 import type { ToSnakeCase } from '@/types/common';
+import { NumericString } from '@rotki/common';
+import { z } from 'zod/v4';
 import { Constraints } from '@/data/constraints';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
@@ -6,8 +8,6 @@ import { ModuleEnum } from '@/types/modules';
 import { AddressNamePriorityEnum } from '@/types/settings/address-name-priorities';
 import { parseFrontendSettings } from '@/types/settings/frontend-settings';
 import { PriceOracleEnum } from '@/types/settings/price-oracle';
-import { NumericString } from '@rotki/common';
-import { z } from 'zod';
 
 export const OtherSettings = z.object({
   frontendSettings: z.string().transform(parseFrontendSettings),
@@ -65,7 +65,7 @@ export enum CostBasisMethod {
   ACB = 'acb',
 }
 
-export const CostBasisMethodEnum = z.nativeEnum(CostBasisMethod);
+export const CostBasisMethodEnum = z.enum(CostBasisMethod);
 
 export const BaseAccountingSettings = z.object({
   calculatePastCostBasis: z.boolean(),
@@ -80,24 +80,26 @@ export const BaseAccountingSettings = z.object({
 
 export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
 
-const AccountingSettings = z
-  .object({
-    costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.FIFO),
-    pnlCsvHaveSummary: z.boolean(),
-    pnlCsvWithFormulas: z.boolean(),
-  })
-  .merge(BaseAccountingSettings);
+const AccountingSettings = z.object({
+  ...BaseAccountingSettings.shape,
+  costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.FIFO),
+  pnlCsvHaveSummary: z.boolean(),
+  pnlCsvWithFormulas: z.boolean(),
+});
 
 export type AccountingSettings = z.infer<typeof AccountingSettings>;
 
-const Settings = GeneralSettings.merge(AccountingSettings).merge(OtherSettings);
+const Settings = z.object({
+  ...GeneralSettings.shape,
+  ...AccountingSettings.shape,
+  ...OtherSettings.shape,
+});
 
-const SettingsUpdate = Settings.merge(
-  z.object({
-    frontendSettings: z.string(),
-    mainCurrency: z.string(),
-  }),
-);
+const SettingsUpdate = z.object({
+  ...Settings.shape,
+  frontendSettings: z.string(),
+  mainCurrency: z.string(),
+});
 
 export type SettingsUpdate = Partial<z.infer<typeof SettingsUpdate>>;
 
@@ -110,7 +112,10 @@ const BaseData = z.object({
 
 type BaseData = z.infer<typeof BaseData>;
 
-export const UserSettings = BaseData.merge(Settings);
+export const UserSettings = z.object({
+  ...BaseData.shape,
+  ...Settings.shape,
+});
 
 type UserSettings = z.infer<typeof UserSettings>;
 
@@ -210,7 +215,7 @@ export type Auth = z.infer<typeof Auth>;
 export const ExternalServiceKeys = z.object({
   alchemy: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
-  blockscout: z.record(ApiKey.nullable()).optional(),
+  blockscout: z.record(z.string(), ApiKey.nullable()).optional(),
   coingecko: ApiKey.optional(),
   covalent: ApiKey.optional(),
   cryptocompare: ApiKey.optional(),
@@ -240,6 +245,6 @@ export interface ExternalServicePayloadWithAuth {
 
 export type ExternalServiceKey = ExternalServicePayloadWithApiKey | ExternalServicePayloadWithAuth;
 
-export const ExchangeRates = z.record(NumericString);
+export const ExchangeRates = z.record(z.string(), NumericString);
 
 export type ExchangeRates = z.infer<typeof ExchangeRates>;

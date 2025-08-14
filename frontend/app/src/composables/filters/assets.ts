@@ -1,23 +1,26 @@
+import type { Ref } from 'vue';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import { z } from 'zod/v4';
 import { useSupportedChains } from '@/composables/info/chains';
+import { SOLANA_CHAIN } from '@/types/asset';
 import { arrayify } from '@/utils/array';
-import { isValidEthAddress } from '@rotki/common';
-import { z } from 'zod';
 
 enum AssetFilterKeys {
   IDENTIFIER = 'identifier',
+  ASSET_TYPE = 'type',
   SYMBOL = 'symbol',
   NAME = 'name',
-  EVM_CHAIN = 'chain',
+  CHAIN = 'chain',
   ADDRESS = 'address',
 }
 
 enum AssetFilterValueKeys {
   IDENTIFIER = 'identifiers',
+  ASSET_TYPE = 'assetType',
   SYMBOL = 'symbol',
   NAME = 'name',
-  EVM_CHAIN = 'evmChain',
+  CHAIN = 'evmChain',
   ADDRESS = 'address',
 }
 
@@ -25,7 +28,7 @@ export type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
 
 export type Filters = MatchedKeyword<AssetFilterValueKeys>;
 
-export function useAssetFilter(): FilterSchema<Filters, Matcher> {
+export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
   const { allEvmChains } = useSupportedChains();
@@ -37,11 +40,22 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
       hint: t('assets.filter.identifier_hint'),
       key: AssetFilterKeys.IDENTIFIER,
       keyValue: AssetFilterValueKeys.IDENTIFIER,
-      multiple: true,
+      multiple: false,
       string: true,
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
+    ...(!get(filters).evmChain
+      ? [{
+        description: t('assets.filter.asset_type'),
+        key: AssetFilterKeys.ASSET_TYPE,
+        keyValue: AssetFilterValueKeys.ASSET_TYPE,
+        string: true,
+        suggestions: (): string[] => get(assetTypes),
+        suggestionsToShow: -1,
+        validate: (): true => true,
+      }] satisfies Matcher[]
+      : []),
     {
       description: t('assets.filter.symbol'),
       hint: t('assets.filter.symbol_hint'),
@@ -60,14 +74,16 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
-    {
-      description: t('assets.filter.chain'),
-      key: AssetFilterKeys.EVM_CHAIN,
-      keyValue: AssetFilterValueKeys.EVM_CHAIN,
-      string: true,
-      suggestions: (): string[] => get(allEvmChains).map(x => x.name),
-      validate: (chain: string): boolean => !!chain,
-    },
+    ...(!get(filters).assetType
+      ? [{
+        description: t('assets.filter.chain'),
+        key: AssetFilterKeys.CHAIN,
+        keyValue: AssetFilterValueKeys.CHAIN,
+        string: true,
+        suggestions: (): string[] => [...get(allEvmChains).map(x => x.name), SOLANA_CHAIN],
+        validate: (chain: string): boolean => !!chain,
+      }] satisfies Matcher[]
+      : []),
     {
       description: t('assets.filter.address'),
       hint: t('assets.filter.address_hint'),
@@ -75,7 +91,7 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
       keyValue: AssetFilterValueKeys.ADDRESS,
       string: true,
       suggestions: (): string[] => [],
-      validate: (address: string): boolean => isValidEthAddress(address),
+      validate: (address: string): boolean => !!address,
     },
   ]);
 
@@ -88,7 +104,8 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
 
   const RouteFilterSchema = z.object({
     [AssetFilterValueKeys.ADDRESS]: OptionalString,
-    [AssetFilterValueKeys.EVM_CHAIN]: OptionalString,
+    [AssetFilterValueKeys.ASSET_TYPE]: OptionalString,
+    [AssetFilterValueKeys.CHAIN]: OptionalString,
     [AssetFilterValueKeys.IDENTIFIER]: OptionalMultipleString,
     [AssetFilterValueKeys.NAME]: OptionalString,
     [AssetFilterValueKeys.SYMBOL]: OptionalString,

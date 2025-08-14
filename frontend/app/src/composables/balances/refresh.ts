@@ -1,4 +1,5 @@
 import type { MaybeRef } from '@vueuse/core';
+import { Blockchain } from '@rotki/common';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
@@ -8,11 +9,10 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 import { arrayify } from '@/utils/array';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { Blockchain } from '@rotki/common';
 
 export const useRefresh = createSharedComposable(() => {
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
-  const { fetchConnectedExchangeBalances } = useExchanges();
+  const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
   const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
   const { txEvmChains } = useSupportedChains();
@@ -63,10 +63,15 @@ export const useRefresh = createSharedComposable(() => {
       await fetchConnectedExchangeBalances(true);
   };
 
+  const refreshExchangeBalance = async (exchangeLocation: string): Promise<void> => {
+    await fetchSelectedExchangeBalances(exchangeLocation);
+  };
+
   return {
     handleBlockchainRefresh,
     massDetectTokens,
     refreshBalance,
     refreshBlockchainBalances,
+    refreshExchangeBalance,
   };
 });

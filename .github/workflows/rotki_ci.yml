@@ -48,9 +48,7 @@ jobs:
             colibri
           backend_paths: |
             rotkehlchen
-            requirements.txt
-            requirements_dev.txt
-            requirements_lint.txt
+            pyproject.toml
           frontend_paths: |
             frontend
 
@@ -118,7 +116,7 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           package_json_file: frontend/package.json
 
@@ -178,15 +176,18 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Install dependencies
-        run: |
-          pip install --upgrade uv
-          uv pip install --system -r requirements_docs.txt
-          uv pip install --system -e .
-          git rev-parse HEAD
+        run: uv sync --group docs
 
       - name: Build html docs
-        run: cd docs && make html
+        run: cd docs && uv run make html
 
   code-analyze-backend:
     name: 'Code analyze backend'
@@ -271,19 +272,18 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
-      - name: Set up uv
-        run: |
-          pip install --upgrade pip
-          pip install --no-cache uv=="${UV_VERSION}"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        run: |
-          uv pip install --system -r requirements_lint.txt
-          uv pip install --system -e .
-          git rev-parse HEAD
+        run: uv sync --group lint
 
       - name: Lint
-        run: make lint
+        run: uv run make lint
 
   test-backend:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}

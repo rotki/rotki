@@ -1,13 +1,13 @@
 import type { MigratedAddresses } from '@/types/websocket-messages';
+import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useBlockchains } from '@/composables/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 
 function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {
   return useSessionStorage(`rotki.migrated_addresses.${identifier}`, []);
@@ -17,7 +17,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   let migratedAddresses = ref<MigratedAddresses>([]);
 
   const { canRequestData } = storeToRefs(useSessionAuthStore());
-  const { getChainName, isEvm, txChains } = useSupportedChains();
+  const { evmAndEvmLikeTxChainsInfo, getChainName, isEvm } = useSupportedChains();
   const { fetchAccounts } = useBlockchains();
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
@@ -25,7 +25,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   const { notify } = useNotificationsStore();
 
   const handleMigratedAccounts = (): void => {
-    const txEvmChainsVal = get(txChains);
+    const txEvmChainsVal = get(evmAndEvmLikeTxChainsInfo);
     assert(txEvmChainsVal.length > 0, 'Supported chains is empty');
     const tokenChains: string[] = txEvmChainsVal.map(x => x.id);
     const addresses: Record<string, string[]> = {};

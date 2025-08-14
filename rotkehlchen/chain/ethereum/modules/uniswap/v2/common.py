@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Final, Literal
 
 from eth_utils import to_hex
 from web3 import Web3
@@ -11,7 +11,12 @@ from rotkehlchen.assets.utils import (
     edit_token_and_clean_cache,
     get_or_create_evm_token,
 )
-from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
+from rotkehlchen.chain.ethereum.modules.constants import (
+    AMM_ASSETS_SYMBOLS,
+    SUSHISWAP_LP_SYMBOL,
+    UNISWAP_V2_LP_SYMBOL,
+)
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -35,12 +40,10 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    SUSHISWAP_PROTOCOL,
-    UNISWAP_PROTOCOL,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -51,8 +54,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-UNISWAP_V2_ROUTER = string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D')
-SUSHISWAP_ROUTER = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F')
+UNISWAP_V2_ROUTER: Final = string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D')
+SUSHISWAP_ROUTER: Final = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F')
 
 
 def decode_uniswap_v2_like_swap(
@@ -76,14 +79,14 @@ def decode_uniswap_v2_like_swap(
     get_or_create_evm_token. This call is needed to retrieve the symbol of the pool and determine
     if the pool is from the selected counterparty.
     """
-
-    exclude_amms = dict(AMM_ASSETS_SYMBOLS)
+    # don't mutate the original dictionary since it's shared across function calls
+    exclude_amms = AMM_ASSETS_SYMBOLS.copy()
     exclude_amms.pop(counterparty)
     pool_token = get_or_create_evm_token(
         userdb=database,
         evm_address=tx_log.address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_inquirer=ethereum_inquirer,
         encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
     )
@@ -228,7 +231,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 userdb=database,
                 evm_address=other_log.address,
                 chain_id=ChainID.ETHEREUM,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
@@ -240,7 +243,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 userdb=database,
                 evm_address=other_log.address,
                 chain_id=ChainID.ETHEREUM,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
@@ -263,25 +266,23 @@ def decode_uniswap_like_deposit_and_withdrawals(
     amount0 = asset_normalized_value(amount0_raw, token0)
     amount1 = asset_normalized_value(amount1_raw, token1)
     underlying_tokens = [
-        UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
-        UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
+        UnderlyingToken(address=token0.evm_address, token_kind=TokenKind.ERC20, weight=FVal(0.5)),
+        UnderlyingToken(address=token1.evm_address, token_kind=TokenKind.ERC20, weight=FVal(0.5)),
     ]
 
     try:
-        token_is_uniswap_v2_lp = counterparty == CPT_UNISWAP_V2
         pool_token = get_or_create_evm_token(
             userdb=database,
             evm_address=pool_address,
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             evm_inquirer=ethereum_inquirer,
             encounter=TokenEncounterInfo(tx_hash=tx_hash),
             underlying_tokens=underlying_tokens,
-            protocol=UNISWAP_PROTOCOL if token_is_uniswap_v2_lp else None,
+            protocol=CPT_UNISWAP_V2 if counterparty == CPT_UNISWAP_V2 else None,
         )
 
-        symbol = pool_token.symbol
-        if symbol in {UNISWAP_PROTOCOL, SUSHISWAP_PROTOCOL}:
+        if (symbol := pool_token.symbol) in (UNISWAP_V2_LP_SYMBOL, SUSHISWAP_LP_SYMBOL):
             # uniswap and sushiswap provide the same symbol for all the LP tokens. In order to
             # provide a better UX if the default symbol is used then change the symbol to
             # include the symbols of the underlying tokens.
@@ -332,9 +333,9 @@ def decode_uniswap_like_deposit_and_withdrawals(
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
             event.notes = f'Receive {event.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
-            GlobalDBHandler.set_token_protocol_if_missing(
-                token=event.asset.resolve_to_evm_token(),
-                new_protocol=UNISWAP_PROTOCOL if resolved_asset.symbol.startswith('UNI-V2') else SUSHISWAP_PROTOCOL,  # noqa: E501
+            GlobalDBHandler.set_tokens_protocol_if_missing(
+                tokens=[event.asset.resolve_to_evm_token()],
+                new_protocol=CPT_UNISWAP_V2 if resolved_asset.symbol.startswith('UNI-V2') else CPT_SUSHISWAP_V2,  # noqa: E501
             )
         elif (
             resolved_asset == pool_token and

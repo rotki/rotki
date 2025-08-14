@@ -348,26 +348,40 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         except RemoteError as e:
             fail_callback(str(e))
 
-    def send_unknown_asset_message(
+    def _send_unknown_asset_message(
             self,
             asset_identifier: str,
             details: str,
+            location: Location,
     ) -> None:
         """Log warning and send WS message to notify user of unknown asset found on an exchange.
         Args:
             asset_identifier (str): Asset identifier of the unknown asset.
             details (str): Details about what type of event was being processed
                 when the unknown asset was encountered.
+            location (Location): Location of the exchange where the unknown asset was found.
         """
         log.warning(f'Found unknown {self.location.serialize()} {self.name} asset {asset_identifier} in {details}.')  # noqa: E501
         self.msg_aggregator.add_message(
             message_type=WSMessageType.EXCHANGE_UNKNOWN_ASSET,
             data={
-                'location': self.location.serialize(),
+                'location': location.serialize(),
                 'name': self.name,
                 'identifier': asset_identifier,
                 'details': details,
             },
+        )
+
+    def send_unknown_asset_message(
+            self,
+            asset_identifier: str,
+            details: str,
+    ) -> None:
+        """Wrapper for _send_unknown_asset_message that uses self.location as location."""
+        self._send_unknown_asset_message(
+            asset_identifier=asset_identifier,
+            details=details,
+            location=self.location,
         )
 
 

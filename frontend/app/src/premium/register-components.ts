@@ -1,5 +1,25 @@
-/* eslint-disable import/max-dependencies */
+/* eslint-disable @rotki/max-dependencies */
 import type { App } from 'vue';
+import {
+  RuiAccordion,
+  RuiAccordions,
+  RuiAlert,
+  RuiButton,
+  RuiButtonGroup,
+  RuiCard,
+  RuiChip,
+  RuiColorPicker,
+  RuiDataTable,
+  RuiDateTimePicker,
+  RuiDialog,
+  RuiDivider,
+  RuiIcon,
+  RuiMenu,
+  RuiProgress,
+  RuiSlider,
+  RuiTextField,
+  RuiTooltip,
+} from '@rotki/ui-library';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
@@ -8,8 +28,8 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import MissingDailyPrices from '@/components/graphs/MissingDailyPrices.vue';
+import NewGraphTooltipWrapper from '@/components/graphs/NewGraphTooltipWrapper.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
@@ -29,25 +49,6 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { logger } from '@/utils/logging';
-import {
-  RuiAccordion,
-  RuiAccordions,
-  RuiAlert,
-  RuiButton,
-  RuiButtonGroup,
-  RuiCard,
-  RuiChip,
-  RuiColorPicker,
-  RuiDataTable,
-  RuiDialog,
-  RuiDivider,
-  RuiIcon,
-  RuiMenu,
-  RuiProgress,
-  RuiSlider,
-  RuiTextField,
-  RuiTooltip,
-} from '@rotki/ui-library';
 
 function ruiRegister(app: App): void {
   app.component('RuiAlert', RuiAlert);
@@ -67,6 +68,7 @@ function ruiRegister(app: App): void {
   app.component('RuiProgress', RuiProgress);
   app.component('RuiAccordions', RuiAccordions);
   app.component('RuiAccordion', RuiAccordion);
+  app.component('RuiDateTimePicker', RuiDateTimePicker);
 }
 
 export function registerComponents(app: App): void {
@@ -112,7 +114,7 @@ export function registerComponents(app: App): void {
   app.component('ExportSnapshotDialog', ExportSnapshotDialog);
   // Version 18 - 1.25
   app.component('MenuTooltipButton', MenuTooltipButton);
-  app.component('GraphTooltipWrapper', GraphTooltipWrapper);
+  // 'GraphTooltipWrapper' removed at 1.40
   // Version 19 - 1.26
   // LpPoolIcon was removed at 1.37
   // Version 20 - 1.27
@@ -129,6 +131,8 @@ export function registerComponents(app: App): void {
   app.component('AssetBalanceStatisticSourceSetting', AssetBalanceStatisticSourceSetting);
 
   app.component('MissingDailyPrices', MissingDailyPrices);
+
+  app.component('NewGraphTooltipWrapper', NewGraphTooltipWrapper);
   ruiRegister(app);
   logger.info('Components registered');
 }

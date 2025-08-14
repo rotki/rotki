@@ -1,7 +1,7 @@
+import { wait } from '@shared/utils';
 import { useAssetIconApi } from '@/composables/api/assets/icon';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { logger } from '@/utils/logging';
-import { wait } from '@shared/utils';
 
 interface AssetCheckOptions {
   abortController?: AbortController;

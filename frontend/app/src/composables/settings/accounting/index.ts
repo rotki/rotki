@@ -1,3 +1,5 @@
+import type { Message } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
 import type {
@@ -8,8 +10,6 @@ import type {
   AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
 import type { TaskMeta } from '@/types/task';
-import type { Message } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useInterop } from '@/composables/electron-interop';
 import { jsonTransformer } from '@/services/axios-transformers';

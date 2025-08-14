@@ -19,7 +19,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, Timestamp, TokenKind
 
 VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "ETH");
     *
@@ -29,10 +29,10 @@ VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) 
 VALID_ASSET_COLLECTIONS = """INSERT INTO asset_collections(id, name, symbol, main_asset) VALUES (99999999, "My custom ETH", "ETHS", "ETHS")
     *
 """  # noqa: E501
-VALID_ASSETS = """INSERT INTO assets(identifier, name, type) VALUES("MYBONK", "Bonk", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("MYBONK", "BONK", "bonk", "BONK", NULL, 1672279200, NULL);
-    *
-UPDATE common_asset_details SET coingecko="coingecko-id" where identifier="new-asset";
-INSERT INTO assets(identifier, name, type) VALUES("new-asset", "New Asset", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("new-asset", "NEW", "coingecko-id", "", NULL, 1672279200, NULL);
+VALID_ASSETS = """INSERT INTO assets(identifier, name, type) VALUES('solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 'Bonk', 'Y'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 'BONK', 'bonk', 'BONK', NULL, 1672279200, NULL); INSERT INTO solana_tokens (identifier, token_kind, address, decimals, protocol) VALUES ('solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 'D', 'FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 5, NULL);
+*
+UPDATE common_asset_details SET coingecko="coingecko-id" where identifier="solana/token:4gTPeh9YBmu8ZpJqDQvdsiiKb5Bvy2uoSk48Mvow9TRr";
+INSERT INTO assets(identifier, name, type) VALUES("solana/token:4gTPeh9YBmu8ZpJqDQvdsiiKb5Bvy2uoSk48Mvow9TRr", "New Asset", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("solana/token:4gTPeh9YBmu8ZpJqDQvdsiiKb5Bvy2uoSk48Mvow9TRr", "NEW", "coingecko-id", "", NULL, 1672279200, NULL);  INSERT INTO solana_tokens (identifier, token_kind, address, decimals, protocol) VALUES ('solana/token:4gTPeh9YBmu8ZpJqDQvdsiiKb5Bvy2uoSk48Mvow9TRr', 'D', '4gTPeh9YBmu8ZpJqDQvdsiiKb5Bvy2uoSk48Mvow9TRr', 6, NULL);
 """  # noqa: E501
 
 
@@ -117,7 +117,7 @@ def get_mock_github_assets_response(
             swapped_for=None,
             address=string_to_evm_address('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             decimals=18,
             cryptocompare='AIDU',
             coingecko=None,
@@ -202,7 +202,7 @@ def get_mock_github_assets_response(
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             decimals=18,
             cryptocompare='',
             coingecko='test-token',
@@ -249,7 +249,7 @@ def get_mock_github_assets_response(
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             decimals=18,
             cryptocompare='',
             coingecko='test-token',
@@ -407,16 +407,17 @@ INSERT INTO assets(identifier, name, type) VALUES('NEW-ASSET-2', 'name4', 'B'); 
     )
 
     # Should have stayed unchanged since one of the insertions was incorrect
-    assert connection.execute("SELECT name FROM assets WHERE identifier='ETH'").fetchone()[0] == 'Ethereum'  # noqa: E501
-    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='ETH'").fetchone()[0] == 'ETH'  # noqa: E501
-    # BTC should have been updated since the insertion were correct
-    assert connection.execute("SELECT name FROM assets WHERE identifier='BTC'").fetchone()[0] == 'name2'  # noqa: E501
-    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='BTC'").fetchone()[0] == 'symbol2'  # noqa: E501
-    # NEW-ASSET-1 should have not been added since the insertions were incorrect
-    assert connection.execute("SELECT * FROM assets WHERE identifier='NEW-ASSET-1'").fetchone() is None  # noqa: E501
-    # NEW-ASSET-2 should have been added since the insertions were correct
-    assert connection.execute("SELECT name FROM assets WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'name4'  # noqa: E501
-    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'symbol4'  # noqa: E501
+    with connection.read_ctx() as cursor:
+        assert cursor.execute("SELECT name FROM assets WHERE identifier='ETH'").fetchone()[0] == 'Ethereum'  # noqa: E501
+        assert cursor.execute("SELECT symbol FROM common_asset_details WHERE identifier='ETH'").fetchone()[0] == 'ETH'  # noqa: E501
+        # BTC should have been updated since the insertion were correct
+        assert cursor.execute("SELECT name FROM assets WHERE identifier='BTC'").fetchone()[0] == 'name2'  # noqa: E501
+        assert cursor.execute("SELECT symbol FROM common_asset_details WHERE identifier='BTC'").fetchone()[0] == 'symbol2'  # noqa: E501
+        # NEW-ASSET-1 should have not been added since the insertions were incorrect
+        assert cursor.execute("SELECT * FROM assets WHERE identifier='NEW-ASSET-1'").fetchone() is None  # noqa: E501
+        # NEW-ASSET-2 should have been added since the insertions were correct
+        assert cursor.execute("SELECT name FROM assets WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'name4'  # noqa: E501
+        assert cursor.execute("SELECT symbol FROM common_asset_details WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'symbol4'  # noqa: E501
 
 
 def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
@@ -428,7 +429,7 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     - Try to add to a collection that doesn't exists
     - Add an asset that was newly introduced to a collection
     """
-    update_text_assets = """INSERT INTO assets(identifier, name, type) VALUES('MYBONK', 'Bonk', 'Y'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('MYBONK', 'BONK', 'bonk', 'BONK', NULL, 1672279200, NULL);
+    update_text_assets = """INSERT INTO assets(identifier, name, type) VALUES('solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 'Bonk', 'Y'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 'BONK', 'bonk', 'BONK', NULL, 1672279200, NULL); INSERT INTO solana_tokens (identifier, token_kind, address, decimals, protocol) VALUES ('solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 'D', 'FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 5, NULL);
     *
     """  # noqa: E501
     update_text_collection = """INSERT INTO asset_collections(id, name) VALUES (99999999, 'My custom ETH')
@@ -438,7 +439,7 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     *
     INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84');
     *
-    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, 'MYBONK');
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, 'solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM');
     *
     """  # noqa: E501
 
@@ -499,11 +500,11 @@ def test_asset_update(
         assets_updater.perform_update(up_to_version=999, conflicts={})
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        assert cursor.execute("SELECT * FROM assets WHERE identifier = 'MYBONK'").fetchall() == ([
-            ('MYBONK', 'Bonk', 'Y'),
+        assert cursor.execute("SELECT * FROM assets WHERE identifier = 'solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM'").fetchall() == ([  # noqa: E501
+            ('solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM', 'Bonk', 'Y'),
         ] if update_assets else [])
-        assert cursor.execute("SELECT * FROM assets WHERE identifier = 'new-asset'").fetchall() == ([  # noqa: E501
-            ('new-asset', 'New Asset', 'Y'),
+        assert cursor.execute("SELECT * FROM assets WHERE identifier = 'solana/token:4gTPeh9YBmu8ZpJqDQvdsiiKb5Bvy2uoSk48Mvow9TRr'").fetchall() == ([  # noqa: E501
+            ('solana/token:4gTPeh9YBmu8ZpJqDQvdsiiKb5Bvy2uoSk48Mvow9TRr', 'New Asset', 'Y'),
         ] if update_assets else [])
 
         cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')

@@ -1,11 +1,11 @@
 <script setup lang="ts" generic="T extends string | string[]">
-import type { ChainInfo } from '@/types/api/chains';
 import type { AutoCompleteProps } from '@rotki/ui-library';
+import type { ChainInfo } from '@/types/api/chains';
+import { Blockchain } from '@rotki/common';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useModules } from '@/composables/session/modules';
 import { Module } from '@/types/modules';
-import { Blockchain } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

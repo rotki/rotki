@@ -249,7 +249,7 @@ function isRouteMatch(location: RouteLocationRaw) {
 
 <template>
   <div
-    class="p-2"
+    class="p-3"
     :class="{ '!p-0': isMini }"
   >
     <template

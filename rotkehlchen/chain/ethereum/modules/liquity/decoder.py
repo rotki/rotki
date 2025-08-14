@@ -25,7 +25,9 @@ from .constants import (
     BALANCE_UPDATE,
     BORROWER_OPERATIONS,
     CPT_LIQUITY,
+    DEPOSIT_LQTY_V2,
     LIQUITY_STAKING,
+    LIQUITY_V2_WRAPPER,
     LUSD_BORROWING_FEE_PAID,
     STABILITY_POOL,
     STABILITY_POOL_EVENTS,
@@ -36,6 +38,7 @@ from .constants import (
     STAKING_LQTY_CHANGE,
     STAKING_LQTY_EVENTS,
     STAKING_REWARDS_ASSETS,
+    WITHDRAW_LQTY_V2,
 )
 
 if TYPE_CHECKING:
@@ -174,7 +177,7 @@ class LiquityDecoder(DecoderInterface):
                     counterparty=CPT_LIQUITY,
                     address=context.tx_log.address,
                 )
-                return DecodingOutput(event=event)
+                return DecodingOutput(events=[event])
 
         for event in context.decoded_events:  # modify the send/receive events
             if event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
@@ -258,7 +261,7 @@ class LiquityDecoder(DecoderInterface):
         for decoded_event in context.decoded_events:
             max_seq_index = max(max_seq_index, decoded_event.sequence_index)
         event.sequence_index = max_seq_index + 1
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_lqty_staking_deposits(
             self,
@@ -327,6 +330,120 @@ class LiquityDecoder(DecoderInterface):
         )
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_deposit_v2_staking(
+            self,
+            context: DecoderContext,
+            is_deposit: bool,
+    ) -> DecodingOutput:
+        user = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
+        recipient = self.base.get_address_or_proxy_owner(
+            bytes_to_address(context.tx_log.data[0:32]),
+        )
+        if user is None or recipient is None or not self.base.any_tracked([user, recipient]):
+            return DEFAULT_DECODING_OUTPUT
+
+        if is_deposit:
+            offset = 0
+            verb = 'Stake'
+            preposition = 'in'
+            event_type = HistoryEventType.SPEND
+            event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+        else:
+            offset = 32
+            verb = 'Unstake'
+            preposition = 'from'
+            event_type = HistoryEventType.RECEIVE
+            event_subtype = HistoryEventSubType.REMOVE_ASSET
+
+        lqty_deposit_withdraw_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[32:64]),
+            asset=self.lqty,
+        )
+        lusd_received = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[64 + offset:96 + offset]),
+            asset=self.lusd,
+        )
+        eth_received = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[128 + offset:160 + offset]),
+            asset=A_ETH.resolve_to_crypto_asset(),
+        )
+        deposit_withdraw_event, lusd_reward_event, eth_reward_event, reward_events = None, None, None, []  # noqa: E501
+        for event in context.decoded_events:
+            if (
+                event.asset == self.lqty and
+                event.amount == lqty_deposit_withdraw_amount and
+                event.event_type in (event_type, HistoryEventType.STAKING) and
+                event.event_subtype in (HistoryEventSubType.NONE, event_subtype)
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = event_subtype
+                event.counterparty = CPT_LIQUITY
+                event.notes = f'{verb} {event.amount} LQTY {preposition} the Liquity V2 protocol'
+                deposit_withdraw_event = event
+            elif (
+                event.asset == self.lusd and
+                event.amount == lusd_received and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_LIQUITY
+                event.notes = f"Collect {event.amount} LUSD from Liquity's stability pool"
+                lusd_reward_event = event
+                reward_events.append(event)
+            elif (
+                event.asset == A_ETH and
+                event.amount == eth_received and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_LIQUITY
+                event.notes = f"Collect {event.amount} ETH from Liquity's stability pool"
+                eth_reward_event = event
+                reward_events.append(event)
+
+        new_events = []
+        for amount_received, asset, existing_reward_event in (
+                (lusd_received, self.lqty, lusd_reward_event),
+                (eth_received, A_ETH, eth_reward_event),
+        ):  # Means proxy received it, so create the event manually
+            if amount_received != ZERO and existing_reward_event is None:
+                reward_event = self.base.make_event_next_index(
+                    tx_hash=context.transaction.tx_hash,
+                    timestamp=context.transaction.timestamp,
+                    event_type=HistoryEventType.STAKING,
+                    event_subtype=HistoryEventSubType.REWARD,
+                    asset=asset,
+                    amount=amount_received,
+                    location_label=user,
+                    counterparty=CPT_LIQUITY,
+                    notes=(
+                        f"Collect {amount_received} {asset.resolve_to_crypto_asset().symbol} "
+                        f"from Liquity's stability pool into the user's Liquity proxy"
+                    ),
+                    address=context.tx_log.address,
+                )
+                new_events.append(reward_event)
+                reward_events.append(reward_event)
+
+        maybe_reshuffle_events(
+            ordered_events=[deposit_withdraw_event, *reward_events],
+            events_list=context.decoded_events,
+        )
+        return DecodingOutput(events=new_events)
+
+    def _decode_liquity_v2_wrapper(self, context: DecoderContext) -> DecodingOutput:
+        """Decode Liquity V2 wrapper transactions"""
+        if context.tx_log.topics[0] == DEPOSIT_LQTY_V2:
+            return self._decode_deposit_v2_staking(context, is_deposit=True)
+        elif context.tx_log.topics[0] == WITHDRAW_LQTY_V2:
+            return self._decode_deposit_v2_staking(context, is_deposit=False)
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
@@ -335,6 +452,7 @@ class LiquityDecoder(DecoderInterface):
             STABILITY_POOL: (self._decode_stability_pool_event,),
             LIQUITY_STAKING: (self._decode_lqty_staking_deposits,),
             BORROWER_OPERATIONS: (self._decode_borrower_operations,),
+            LIQUITY_V2_WRAPPER: (self._decode_liquity_v2_wrapper,),
         }
 
     def _handle_post_decoding(
@@ -376,8 +494,8 @@ class LiquityDecoder(DecoderInterface):
                 ),
                 post_decoding=True,
             )
-            if decoding_output.event is not None:
-                decoded_events.append(decoding_output.event)
+            if decoding_output.events is not None:
+                decoded_events.extend(decoding_output.events)
 
         return decoded_events
 

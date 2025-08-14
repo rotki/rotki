@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { type Balance, Zero } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type Balance, Zero } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

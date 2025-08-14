@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { Suggestion } from '@/types/filtering';
+import { useTemplateRef } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { truncateAddress } from '@/utils/truncate';
-import { useTemplateRef } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -19,7 +19,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  'cancel-edit': [];
+  'cancel-edit': [skipClearSearch?: boolean];
   'update:search': [value: string];
 }>();
 
@@ -94,8 +94,8 @@ function onKeyDown(e: KeyboardEvent) {
   }
 }
 
-function cancelEdit() {
-  emit('cancel-edit');
+function cancelEdit(skipClearSearch?: boolean) {
+  emit('cancel-edit', skipClearSearch);
 }
 
 watch(editMode, (curr, prev) => {
@@ -113,7 +113,7 @@ onClickOutside(editInput, () => {
 });
 
 onBeforeUnmount(() => {
-  cancelEdit();
+  cancelEdit(true);
 });
 
 watch(search, (value) => {
@@ -165,8 +165,9 @@ watch(search, (value) => {
         <span
           v-else-if="displayValue"
           class="font-normal"
+          :title="displayValue"
         >
-          {{ truncateAddress(displayValue, 10) }}
+          {{ truncateAddress(displayValue, 8) }}
         </span>
       </template>
     </template>

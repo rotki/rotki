@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.converters import Asset
-from rotkehlchen.constants.assets import A_ENS, A_SOL, A_USDC
+from rotkehlchen.constants.assets import A_ENS, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -22,6 +22,7 @@ from rotkehlchen.history.events.structures.base import (
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import A_ETH, A_USD
+from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import FVal, Location
@@ -78,6 +79,20 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
                         "bondable_amount":"0.00",
                         "withdrawable_amount":"0",
                         "fiat_amount":"0.00"
+                    },
+                    {
+                        "symbol":"idonotexist",
+                        "amount":"0.123",
+                        "holds":"0",
+                        "bonded_amount":"0.00",
+                        "reserved_amount":"0.00",
+                        "unbonding_amount":"0.00",
+                        "unvested_amount":"0.00",
+                        "pending_rewards_amount":"0.00",
+                        "past_rewards_amount":"0.00",
+                        "bondable_amount":"0.00",
+                        "withdrawable_amount":"0",
+                        "fiat_amount":"0.00"
                     }
                 ]
             }
@@ -88,6 +103,7 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
     with (
         patch.object(coinbase.session, 'get', side_effect=mock_coinbase_accounts),
         patch.object(coinbase, '_get_portfolio_ids', new=lambda *args, **kwargs: ['fake_id']),
+        patch.object(coinbase.db.msg_aggregator, 'add_message') as mock_msg_aggregator,
     ):
         balances, msg = coinbase.query_balances()
 
@@ -96,6 +112,9 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
     assert balances[A_ENS].amount == FVal('5000')
     assert balances[A_SOL].amount == FVal('150000')
     assert balances[A_USD].amount == FVal('0.0082435113740889')
+    # Confirm the missing asset ws message has a location of coinbase rather than coinbaseprime.
+    assert mock_msg_aggregator.call_count == 1
+    assert mock_msg_aggregator.call_args_list[0].kwargs['data'] == {'location': 'coinbase', 'name': 'coinbaseprime', 'identifier': 'IDONOTEXIST', 'details': 'balance query'}  # noqa: E501
 
 
 def test_process_trade():
@@ -456,10 +475,9 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
 
     history_events_db = DBHistoryEvents(function_scope_coinbaseprime.db)
     with history_events_db.db.conn.read_ctx() as cursor:
-        new_events = history_events_db.get_history_events(
+        new_events = history_events_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=function_scope_coinbaseprime.location),
-            has_premium=True,
         )
 
     assert new_events == [

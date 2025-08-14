@@ -4,9 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo
-from rotkehlchen.chain.ethereum.utils import (
-    asset_normalized_value,
-)
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.evm.constants import (
     ETH_SPECIAL_ADDRESS,
     ZERO_ADDRESS,
@@ -14,8 +12,10 @@ from rotkehlchen.chain.evm.constants import (
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2, CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
+    ADD_LIQUIDITY_DYNAMIC_ASSETS,
     ADD_LIQUIDITY_EVENTS,
     ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE,
+    ADD_LIQUIDITY_TOKEN_COUNTS,
     CPT_CURVE,
     CURVE_COUNTERPARTY_DETAILS,
     EXCHANGE_MULTIPLE,
@@ -58,7 +58,7 @@ from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -339,6 +339,26 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                         user_or_contract_address in self.curve_deposit_contracts
                     )
                 ):
+                    # Likely the spend event for a deposit, but the matching is not very tight,
+                    # so we need to also check if the amount matches an amount in the tx_log.
+                    if tx_log.topics[0] == ADD_LIQUIDITY_DYNAMIC_ASSETS:  # Token amounts are in a dynamic array  # noqa: E501
+                        offset = int.from_bytes(tx_log.data[0:32])
+                        token_amounts_len = int.from_bytes(tx_log.data[offset:offset + 32])
+                        offset += 32  # move offset after length bytes
+                        token_amounts = [
+                            int.from_bytes(tx_log.data[offset + i * 32:offset + (i + 1) * 32])
+                            for i in range(token_amounts_len)
+                        ]
+                    else:  # Token amounts are in a fixed size array
+                        token_count = ADD_LIQUIDITY_TOKEN_COUNTS.get(tx_log.topics[0], 0)
+                        token_amounts = [
+                            int.from_bytes(tx_log.data[i:i + 32]) for i in
+                            range(0, token_count * 32, 32)
+                        ]
+
+                    if asset_raw_value(amount=event.amount, asset=crypto_asset) not in token_amounts:  # noqa: E501
+                        continue  # Event is not a deposit event.
+
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.counterparty = CPT_CURVE
@@ -601,7 +621,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             Asset(evm_address_to_identifier(
                 address=address,
                 chain_id=self.evm_inquirer.chain_id,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             )) if address != ETH_SPECIAL_ADDRESS else A_ETH for address in pool_addresses
         ]
 

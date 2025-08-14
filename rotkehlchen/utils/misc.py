@@ -9,9 +9,11 @@ import time
 from binascii import unhexlify
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextlib import suppress
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from base58 import b58decode
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
 
@@ -121,6 +123,7 @@ def timestamp_to_date(
     May raise:
     - OSError: if the ts provided is outside the limits for the system. Happens providing
     close to 0 ts in windows. https://github.com/python/cpython/issues/107078
+    - ValueError if the timestamp is out of range.
     """
     if treat_as_local is False:
         date = datetime.datetime.fromtimestamp(ts, tz=datetime.UTC).strftime(formatstr)
@@ -173,6 +176,31 @@ def combine_dicts(
         new_dict.update(b)
     new_dict.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
     return new_dict
+
+
+def combine_nested_dicts_inplace(
+        a: defaultdict[K, defaultdict[Any, V]],
+        b: defaultdict[K, defaultdict[Any, V]],
+        op: Callable = operator.add,
+) -> defaultdict[K, defaultdict[Any, V]]:
+    """Combines nested defaultdicts by modifying `a` in place.
+
+    For each key in `b`, combines the inner dicts using the given operation.
+    Returns the modified `a` for method chaining.
+    """
+    for outer_key, inner_dict_b in b.items():
+        if outer_key not in a:  # create new inner dict with same default factory as b's inner dict  # noqa: E501
+            a[outer_key] = defaultdict(inner_dict_b.default_factory)
+
+        inner_dict_a = a[outer_key]
+        for inner_key, value_b in inner_dict_b.items():  # combine inner dictionaries
+            if inner_key in inner_dict_a:
+                inner_dict_a[inner_key] = op(inner_dict_a[inner_key], value_b)
+            elif op is operator.sub:
+                inner_dict_a[inner_key] = op(inner_dict_a.default_factory(), value_b)  # type: ignore[misc]
+            else:
+                inner_dict_a[inner_key] = value_b
+    return a
 
 
 def convert_to_int(
@@ -266,6 +294,14 @@ def bytes32hexstr_to_address(hexstr: str) -> ChecksumEvmAddress:
         raise DeserializationError(
             f'Invalid ethereum address: {hexstr[24:]}',
         ) from e
+
+
+def is_valid_solana_address(address: str) -> bool:
+    """Check if a string is a valid solana address."""
+    with suppress(ValueError, TypeError):
+        return len(b58decode(address)) == 32
+
+    return False
 
 
 T = TypeVar('T')

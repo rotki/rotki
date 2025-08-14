@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { ConflictResolution } from '@/types/asset';
 import type { ConflictResolutionStrategy } from '@/types/common';
 import type {
@@ -7,7 +8,7 @@ import type {
   AccountingRuleConflictResolution,
   AccountingTreatment,
 } from '@/types/settings/accounting';
-import type { DataTableColumn } from '@rotki/ui-library';
+import { toSentenceCase } from '@rotki/common';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
@@ -20,7 +21,6 @@ import { useAccountingSettings } from '@/composables/settings/accounting';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useMessageStore } from '@/store/message';
 import { getCollectionData } from '@/utils/collection';
-import { toSentenceCase } from '@rotki/common';
 
 const emit = defineEmits<{
   (e: 'close'): void;

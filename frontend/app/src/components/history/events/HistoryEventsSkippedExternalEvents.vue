@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { SkippedHistoryEventsSummary } from '@/types/history/events';
 import type { Message } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { SkippedHistoryEventsSummary } from '@/types/history/events';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';

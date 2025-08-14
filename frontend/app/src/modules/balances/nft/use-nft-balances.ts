@@ -1,3 +1,4 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {
   NonFungibleBalance,
@@ -5,7 +6,6 @@ import type {
   NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
 import type { TaskMeta } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
 import { useNftBalancesApi } from '@/composables/api/balances/nft';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

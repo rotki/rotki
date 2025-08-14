@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCopy } from '@/composables/copy';
 import { useAssetIconStore } from '@/store/assets/icon';
+import { SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useCurrencies } from '@/types/currencies';
-import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 
 interface AssetIconProps {
   identifier: string;
@@ -66,7 +67,25 @@ const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
 
-const chain = computed(() => props.forceChain || get(asset)?.evmChain);
+const chain = computed(() => {
+  if (props.forceChain) {
+    return props.forceChain;
+  }
+
+  const info = get(asset);
+  if (!info) {
+    return undefined;
+  }
+  if (info.evmChain) {
+    return info.evmChain;
+  }
+
+  if (info.assetType === SOLANA_TOKEN) {
+    return SOLANA_CHAIN;
+  }
+
+  return undefined;
+});
 const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);
 

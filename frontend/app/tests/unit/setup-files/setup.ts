@@ -92,9 +92,13 @@ beforeAll(() => {
     }),
   }));
 
-  vi.mock('@/utils/blockie', () => ({
-    createBlockie: vi.fn().mockImplementation(({ seed }) => `${seed.toLowerCase()}face`),
-  }));
+  vi.mock('@rotki/ui-library', async () => {
+    const actual = await vi.importActual<typeof import('@rotki/ui-library')>('@rotki/ui-library');
+    return {
+      ...actual,
+      createBlockie: vi.fn().mockImplementation(({ seed }) => `${seed.toLowerCase()}face`),
+    };
+  });
 
   globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
     observe: vi.fn(),
@@ -106,14 +110,6 @@ beforeAll(() => {
 afterEach(() => server.resetHandlers());
 
 afterAll(() => server.close());
-
-async function delay(ms: number = 200): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-vi.delay = delay;
 
 // Global stub components
 config.global.stubs.RuiIcon = RuiIconStub;

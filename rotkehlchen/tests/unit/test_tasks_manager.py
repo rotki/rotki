@@ -63,13 +63,13 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -269,7 +269,12 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         data_size=9494994,
         data_hash='0x',
     )
-    premium = Premium(credentials=premium_credentials, username=username)
+    premium = Premium(
+        credentials=premium_credentials,
+        username=username,
+        msg_aggregator=rotki.msg_aggregator,
+        db=rotki.data.db,
+    )
     premium.status = SubscriptionStatus.ACTIVE
 
     def mock_check_premium_status():
@@ -283,14 +288,14 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         assert premium.is_active() is True
         assert rotki.premium is not None
 
-        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(side_effect=PremiumAuthenticationError())):  # noqa: E501
+        with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(side_effect=PremiumAuthenticationError())):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is None, (
                 'Premium object is not None and should be'
                 'deactivated after invalid premium credentials'
             )
 
-        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
+        with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is not None, (
                 'Premium object is None and Periodic check'
@@ -298,7 +303,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
             )
 
         with patch(
-            'rotkehlchen.premium.premium.Premium.query_last_data_metadata',
+            'rotkehlchen.premium.premium.Premium.authenticate_device',
             MagicMock(side_effect=RemoteError()),
         ):
             for check_trial in range(3):
@@ -308,7 +313,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
             mock_check_premium_status()
             assert rotki.premium is None, 'Premium object is not None and should be deactivated after the 4th periodic check'  # noqa: E501
 
-        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
+        with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is not None, "Premium object is None and Periodic check didn't reactivate the premium status"  # noqa: E501
 
@@ -332,7 +337,7 @@ def test_premium_status_error_conditions(
     """
     task_manager.database.set_rotkehlchen_premium(rotki_premium_credentials)
     task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
-    with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', side_effect=error_case[0]):  # noqa: E501
+    with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=error_case[0]):  # noqa: E501
         task_manager.premium_check_retries = 3
         task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
         task_manager.schedule()
@@ -707,7 +712,7 @@ def test_maybe_detect_new_spam_tokens(
     token = EvmToken.initialize(  # add a token that will be detected as spam
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         name='$ vanityeth.org ($ vanityeth.org)',
         symbol='VANITYTOKEN',
     )
@@ -760,11 +765,11 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
 @pytest.mark.parametrize('arbitrum_one_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='merkle', endpoint='https://eth.merkle.io', owned=True, blockchain=SupportedBlockchain.ETHEREUM), active=True, weight=ONE),)])  # noqa: E501
-@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='gnosis', endpoint='https://rpc.gnosischain.com', owned=True, blockchain=SupportedBlockchain.GNOSIS), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='gnosis', endpoint='https://1rpc.io/gnosis', owned=True, blockchain=SupportedBlockchain.GNOSIS), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='polygon', endpoint='https://polygon.drpc.org', owned=True, blockchain=SupportedBlockchain.POLYGON_POS), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://base.llamarpc.com', owned=True, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='meow', endpoint='https://arbitrum.meowrpc.com', owned=True, blockchain=SupportedBlockchain.ARBITRUM_ONE), active=True, weight=ONE),)])  # noqa: E501
-@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://optimism.llamarpc.com', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='mainnet-optimism', endpoint='https://mainnet.optimism.io', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('scroll_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='scroll', endpoint='https://rpc.scroll.io', owned=True, blockchain=SupportedBlockchain.SCROLL), active=True, weight=ONE),)])  # noqa: E501
 def test_update_lending_protocol_underlying_assets_task(
         task_manager: TaskManager,
@@ -883,7 +888,7 @@ def test_update_lending_protocol_underlying_assets_task(
 
             assert [UnderlyingToken(
                 address=string_to_evm_address(underlying_token_address),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=ONE,
             )] == db_token.underlying_tokens
 

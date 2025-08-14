@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppImage from '@/components/common/AppImage.vue';
 import { toCapitalCase } from '@rotki/common';
+import AppImage from '@/components/common/AppImage.vue';
 
 interface Props {
   size?: string;

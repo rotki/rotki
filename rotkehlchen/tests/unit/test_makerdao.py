@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     ilk_cache_foreach,
     query_ilk_registry_and_maybe_update_cache,
 )
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault, MakerdaoVaults
 from rotkehlchen.chain.evm.types import Web3Node
 from rotkehlchen.constants import ZERO
@@ -114,7 +115,12 @@ def fixture_makerdao_vaults(
 
     premium = None
     if start_with_valid_premium:
-        premium = Premium(credentials=rotki_premium_credentials, username=username)
+        premium = Premium(
+            credentials=rotki_premium_credentials,
+            username=username,
+            msg_aggregator=function_scope_messages_aggregator,
+            db=database,
+        )
 
     with web3_patch:
         return MakerdaoVaults(
@@ -161,8 +167,8 @@ def test_get_vault_balance(
         stability_fee=ZERO,
     )
     expected_result = BalanceSheet(
-        assets=defaultdict(Balance, {A_ETH: Balance(FVal('100'), FVal('20000'))}),
-        liabilities=defaultdict(Balance, {A_DAI: Balance(FVal('2000'), FVal('2020'))}),
+        assets=defaultdict(Balance, {A_ETH: {CPT_VAULT: Balance(FVal('100'), FVal('20000'))}}),
+        liabilities=defaultdict(Balance, {A_DAI: {CPT_VAULT: Balance(FVal('2000'), FVal('2020'))}}),  # noqa: E501
     )
     assert vault.get_balance() == expected_result
 

@@ -1,7 +1,10 @@
+import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
+import { backoff, startPromise } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
 import {
   useAccountingRuleConflictMessageHandler,
 } from '@/composables/message-handling/accounting-rule-conflict-message';
+import { useBinancePairsMissingHandler } from '@/composables/message-handling/binance-pairs-missing';
 import { useCalendarReminderHandler } from '@/composables/message-handling/calendar-reminder';
 import { useCsvImportResultHandler } from '@/composables/message-handling/csv-import-result';
 import { useMissingApiKeyHandler } from '@/composables/message-handling/missing-api-key';
@@ -11,6 +14,7 @@ import { useSync } from '@/composables/session/sync';
 import {
   useExchangeUnknownAssetHandler,
 } from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
+import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { Routes } from '@/router/routes';
 import { camelCaseTransformer } from '@/services/axios-transformers';
@@ -26,6 +30,7 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import {
   type BalanceSnapshotError,
+  type DatabaseUploadProgress,
   type DbUploadResult,
   type GnosisPaySessionKeyExpiredData,
   MESSAGE_WARNING,
@@ -33,12 +38,11 @@ import {
   type ProgressUpdateResultData,
   SocketMessageProgressUpdateSubType,
   SocketMessageType,
+  type SolanaTokensMigrationData,
   WebsocketMessage,
 } from '@/types/websocket-messages';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { backoff, startPromise } from '@shared/utils';
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;
@@ -46,7 +50,7 @@ interface UseMessageHandling {
 }
 
 export function useMessageHandling(): UseMessageHandling {
-  const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
+  const { setUnifiedTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } = useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
@@ -56,10 +60,12 @@ export function useMessageHandling(): UseMessageHandling {
   const { notify } = notificationsStore;
   const { t } = useI18n({ useScope: 'global' });
   const { consumeMessages } = useSessionApi();
-  const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
+  const { uploadProgress, uploadStatus, uploadStatusAlreadyHandled } = useSync();
   const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
   const { setStakingQueryStatus: setLiquityStakingQueryStatus } = useLiquityStore();
+  const solanaTokenMigrationStore = useSolanaTokenMigrationStore();
   const { handle: handleMissingApiKeyMessage } = useMissingApiKeyHandler(t);
+  const { handle: handleBinancePairsMissingMessage } = useBinancePairsMissingHandler(t);
   const { handle: handleAccountingRuleConflictMessage } = useAccountingRuleConflictMessageHandler(t);
   const { handle: handleCalendarReminder } = useCalendarReminderHandler(t);
   const { handle: handleCsvImportResult } = useCsvImportResultHandler(t);
@@ -122,6 +128,8 @@ export function useMessageHandling(): UseMessageHandling {
 
   const handleDbUploadResult = (data: DbUploadResult): void => {
     const uploaded = data.uploaded;
+    set(uploadProgress, undefined);
+
     if (uploaded) {
       set(uploadStatus, undefined);
       set(uploadStatusAlreadyHandled, false);
@@ -133,6 +141,10 @@ export function useMessageHandling(): UseMessageHandling {
       set(uploadStatus, data);
       set(uploadStatusAlreadyHandled, true);
     }
+  };
+
+  const handleDatabaseUploadProgress = (data: DatabaseUploadProgress): void => {
+    set(uploadProgress, data);
   };
 
   const router = useRouter();
@@ -152,6 +164,19 @@ export function useMessageHandling(): UseMessageHandling {
     message: data.error,
     severity: Severity.WARNING,
     title: t('notification_messages.gnosis_pay_session_key_expired.title'),
+  });
+
+  const handleSolanaTokensMigration = async (data: SolanaTokensMigrationData): Promise<Notification> => ({
+    action: {
+      action: async () => router.push(Routes.ASSET_MANAGER_SOLANA_TOKEN_MIGRATION.toString()),
+      icon: 'lu-arrow-right',
+      label: t('notification_messages.solana_tokens_migration.action'),
+      persist: true,
+    },
+    display: true,
+    message: t('notification_messages.solana_tokens_migration.message', { tokens: data.identifiers.map(item => `- ${item}`).join('\n') }),
+    severity: Severity.WARNING,
+    title: t('notification_messages.solana_tokens_migration.title'),
   });
 
   const handleProgressUpdates = async (rawData: ProgressUpdateResultData): Promise<Notification | null> => {
@@ -203,8 +228,8 @@ export function useMessageHandling(): UseMessageHandling {
       const isWarning = data.verbosity === MESSAGE_WARNING;
       addNotification(handleLegacyMessage(data.value, isWarning));
     }
-    else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
-      setTxQueryStatus(message.data);
+    else if (type === SocketMessageType.TRANSACTION_STATUS) {
+      setUnifiedTxQueryStatus(message.data);
     }
     else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       setEventsQueryStatus(message.data);
@@ -248,6 +273,16 @@ export function useMessageHandling(): UseMessageHandling {
     else if (type === SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED) {
       addNotification(await handleGnosisPaySessionKeyExpired(message.data));
     }
+    else if (type === SocketMessageType.SOLANA_TOKENS_MIGRATION) {
+      solanaTokenMigrationStore.setIdentifiers(message.data.identifiers);
+      addNotification(await handleSolanaTokensMigration(message.data));
+    }
+    else if (type === SocketMessageType.BINANCE_PAIRS_MISSING) {
+      addNotification(await handleBinancePairsMissingMessage(message.data));
+    }
+    else if (type === SocketMessageType.DATABASE_UPLOAD_PROGRESS) {
+      handleDatabaseUploadProgress(message.data);
+    }
     else {
       logger.warn(`Unsupported socket message received: '${type.toString()}'`);
     }
@@ -264,8 +299,8 @@ export function useMessageHandling(): UseMessageHandling {
         notifications.push(handleLegacyMessage(message, isWarning));
       else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR)
         notifications.push(handleSnapshotError(object));
-      else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
-        setTxQueryStatus(object);
+      else if (object.type === SocketMessageType.TRANSACTION_STATUS)
+        setUnifiedTxQueryStatus(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
         updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)

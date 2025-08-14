@@ -11,7 +11,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.types import NodeName, Web3Node, string_to_evm_address
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -77,11 +77,11 @@ def assert_btc_balances_result(
         assert len(totals) == 1
 
     expected_btc_total = sum(satoshis_to_btc(FVal(balance)) for balance in btc_balances)
-    assert FVal(totals['BTC']['amount']) == expected_btc_total
+    assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['amount']) == expected_btc_total
     if expected_btc_total == ZERO:
-        assert FVal(totals['BTC']['usd_value']) == ZERO
+        assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['usd_value']) == ZERO
     else:
-        assert FVal(totals['BTC']['usd_value']) > ZERO
+        assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['usd_value']) > ZERO
 
 
 def assert_eth_balances_result(
@@ -108,8 +108,8 @@ def assert_eth_balances_result(
         assert len(per_account) == len(eth_accounts)
         for idx, account in enumerate(eth_accounts):
             expected_amount = from_wei(FVal(eth_balances[idx]))
-            amount = FVal(per_account[account]['assets'][A_ETH.identifier]['amount'])
-            usd_value = FVal(per_account[account]['assets'][A_ETH.identifier]['usd_value'])
+            amount = FVal(per_account[account]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'])  # noqa: E501
+            usd_value = FVal(per_account[account]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['usd_value'])  # noqa: E501
             assert amount == expected_amount
             if amount == ZERO:
                 assert usd_value == ZERO
@@ -121,9 +121,9 @@ def assert_eth_balances_result(
                     msg = f'{account} should have no entry for {token}'
                     assert token.identifier not in per_account[account], msg
                 else:
-                    token_amount = FVal(per_account[account]['assets'][token.identifier]['amount'])
+                    token_amount = FVal(per_account[account]['assets'][token.identifier][DEFAULT_BALANCE_LABEL]['amount'])  # noqa: E501
                     usd_value = FVal(
-                        per_account[account]['assets'][token.identifier]['usd_value'],
+                        per_account[account]['assets'][token.identifier][DEFAULT_BALANCE_LABEL]['usd_value'],
                     )
                     assert token_amount == from_wei(expected_token_amount)
 
@@ -137,11 +137,11 @@ def assert_eth_balances_result(
         for token, balances in expected_liabilities.items():
             total_amount = ZERO
             for idx, account in enumerate(eth_accounts):
-                amount = FVal(per_account[account]['liabilities'][token.identifier]['amount'])
+                amount = FVal(per_account[account]['liabilities'][token.identifier][DEFAULT_BALANCE_LABEL]['amount'])  # noqa: E501
                 assert amount == FVal(balances[idx])
                 total_amount += amount
 
-            assert FVal(result['totals']['liabilities'][token.identifier]['amount']) == total_amount  # noqa: E501
+            assert FVal(result['totals']['liabilities'][token.identifier][DEFAULT_BALANCE_LABEL]['amount']) == total_amount  # noqa: E501
 
     # Check our owned eth tokens here since the test may have changed their number
     owned_assets = set(rotki.chains_aggregator.totals.assets.keys())
@@ -150,12 +150,12 @@ def assert_eth_balances_result(
     assert len(totals) == len(owned_assets)
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
-    assert FVal(totals[A_ETH.identifier]['amount']) == expected_total_eth
+    assert FVal(totals[A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount']) == expected_total_eth
     for token, balances in token_balances.items():
         symbol = token.identifier
 
         expected_total_token = sum(from_wei(FVal(balance)) for balance in balances)
-        assert FVal(totals[symbol]['amount']) == expected_total_token
+        assert FVal(totals[symbol][DEFAULT_BALANCE_LABEL]['amount']) == expected_total_token
 
 
 def _get_token(value: Any) -> EvmToken | None:
@@ -340,8 +340,12 @@ def mock_etherscan_query(
             web3 = Web3()
             contract = web3.eth.contract(address=eth_multicall.address, abi=eth_multicall.abi)
             data = params.get('data') or ''
-            if 'c2cb1040220768554cf699b0d863a3cd4324ce3' in data:
-                multicall_purpose = 'ds_proxy'
+            if (
+                    'c2cb1040220768554cf699b0d863a3cd4324ce3' in data or  # DSProxy
+                    '4678f0a6958e4d2bc4f1baf7bc52e8f3564f3fe4' in data or  # Sky Proxy
+                    '807def5e7d057df05c796f4bc75c3fe82bd6eee1' in data  # liquity router (for proxies)  # noqa: E501
+            ):
+                multicall_purpose = 'proxy'
             elif '2bdded18e2ca464355091266b7616956944ee7e' in data:
                 multicall_purpose = 'compound_balances'
             elif '5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2' in data:

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
+import useVuelidate from '@vuelidate/core';
+import { between, required, requiredIf } from '@vuelidate/validators';
+import { isEmpty } from 'es-toolkit/compat';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useRefPropVModel, useSimplePropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { between, required, requiredIf } from '@vuelidate/validators';
-import { isEmpty } from 'es-toolkit/compat';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Exchange, ExchangeFormData } from '@/types/exchanges';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
+import type { Exchange, ExchangeFormData } from '@/types/exchanges';
+import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
@@ -16,7 +17,6 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { externalLinks } from '@shared/external-links';
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
 const exchange = ref<ExchangeFormData>();
@@ -155,13 +155,24 @@ onBeforeMount(() => {
   resetNonSyncingExchanges();
 });
 
-onMounted(async () => {
-  const { query } = get(route);
+watch(route, async (route) => {
+  const { query } = route;
+
   if (query.add) {
     addExchange();
     await router.replace({ query: {} });
   }
-});
+  else if (query.location && query.name) {
+    // Find the exchange to edit based on location and name from query params
+    const exchangeToEdit = get(rows).find(
+      ex => ex.location === query.location && ex.name === query.name,
+    );
+    if (exchangeToEdit) {
+      editExchange(exchangeToEdit);
+      await router.replace({ query: {} });
+    }
+  }
+}, { immediate: true });
 </script>
 
 <template>

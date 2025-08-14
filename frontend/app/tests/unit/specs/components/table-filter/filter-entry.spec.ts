@@ -1,7 +1,7 @@
 import type { SearchMatcher } from '@/types/filtering';
-import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it } from 'vitest';
+import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 
 describe('table-filter/FilterEntry.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof FilterEntry>>;

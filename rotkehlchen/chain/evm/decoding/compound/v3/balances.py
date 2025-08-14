@@ -15,7 +15,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 
 from .constants import CPT_COMPOUND_V3
 
@@ -90,7 +90,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                         compound_asset=EvmToken(evm_address_to_identifier(
                             address=compound_token.evm_address,
                             chain_id=self.evm_inquirer.chain_id,
-                            token_type=EvmTokenKind.ERC20,
+                            token_type=TokenKind.ERC20,
                         )),
                     ),
                 )
@@ -117,7 +117,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                     compound_token = EvmToken(evm_address_to_identifier(
                         address=event.address,
                         chain_id=self.evm_inquirer.chain_id,
-                        token_type=EvmTokenKind.ERC20,
+                        token_type=TokenKind.ERC20,
                     ))
                     if (
                         compound_token.underlying_tokens is None or
@@ -129,7 +129,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                     underlying_token = EvmToken(evm_address_to_identifier(
                         address=compound_token.underlying_tokens[0].address,
                         chain_id=self.evm_inquirer.chain_id,
-                        token_type=EvmTokenKind.ERC20,
+                        token_type=TokenKind.ERC20,
                     ))
                 except (UnknownAsset, WrongAssetType) as e:
                     log.error(
@@ -200,7 +200,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                 )
                 continue
 
-            balances[calls_arguments[idx].user_address].assets[collateral_asset] += Balance(
+            balances[calls_arguments[idx].user_address].assets[collateral_asset][self.counterparty] += Balance(  # noqa: E501
                 amount=collateral_balance,
                 usd_value=collateral_balance * asset_price,
             )
@@ -269,7 +269,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                 )
                 continue
 
-            balances[calls_arguments[idx].user_address].liabilities[underlying_token[calls[idx][0]]] += Balance(  # noqa: E501
+            balances[calls_arguments[idx].user_address].liabilities[underlying_token[calls[idx][0]]][self.counterparty] += Balance(  # noqa: E501
                 amount=borrow_balance,
                 usd_value=borrow_balance * asset_price,
             )

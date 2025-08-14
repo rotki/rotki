@@ -1,6 +1,8 @@
 import type { ExchangeBalancePayload } from '@/types/blockchain/accounts';
 import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
 import type { ExchangeMeta } from '@/types/task';
+import { assert, toSentenceCase } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
 import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
@@ -14,11 +16,10 @@ import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { assert, toSentenceCase } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;
+  fetchSelectedExchangeBalances: (exchangeLocation: string) => Promise<void>;
   fetchExchangeBalances: (payload: ExchangeBalancePayload) => Promise<void>;
   addExchange: (exchange: Exchange) => void;
   editExchange: (payload: EditExchange) => void;
@@ -102,6 +103,12 @@ export function useExchanges(): UseExchangesReturn {
     }
   };
 
+  const fetchSelectedExchangeBalances = async (exchangeLocation: string): Promise<void> => {
+    await fetchExchangeBalances({
+      ignoreCache: true,
+      location: exchangeLocation,
+    });
+  };
   const addExchange = (exchange: Exchange): void => {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
   };
@@ -169,44 +176,32 @@ export function useExchanges(): UseExchangesReturn {
   };
 
   const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
-    try {
-      const success = await callSetupExchange(exchange);
-      const { krakenAccountType, location, mode, name, newName } = exchange;
-      const exchangeEntry: Exchange = {
-        krakenAccountType,
-        location,
-        name,
-      };
+    const success = await callSetupExchange(exchange);
+    const { krakenAccountType, location, mode, name, newName } = exchange;
+    const exchangeEntry: Exchange = {
+      krakenAccountType,
+      location,
+      name,
+    };
 
-      if (mode !== 'edit') {
-        addExchange(exchangeEntry);
-      }
-      else {
-        editExchange({
-          exchange: exchangeEntry,
-          newName,
-        });
-      }
-
-      startPromise(
-        fetchExchangeBalances({
-          ignoreCache: false,
-          location,
-        }),
-      );
-
-      return success;
+    if (mode !== 'edit') {
+      addExchange(exchangeEntry);
     }
-    catch (error: any) {
-      setMessage({
-        description: t('actions.balances.exchange_setup.description', {
-          error: error.message,
-          exchange: exchange.location,
-        }),
-        title: t('actions.balances.exchange_setup.title'),
+    else {
+      editExchange({
+        exchange: exchangeEntry,
+        newName,
       });
-      return false;
     }
+
+    startPromise(
+      fetchExchangeBalances({
+        ignoreCache: false,
+        location,
+      }),
+    );
+
+    return success;
   };
 
   return {
@@ -214,6 +209,7 @@ export function useExchanges(): UseExchangesReturn {
     editExchange,
     fetchConnectedExchangeBalances,
     fetchExchangeBalances,
+    fetchSelectedExchangeBalances,
     removeExchange,
     setupExchange,
   };

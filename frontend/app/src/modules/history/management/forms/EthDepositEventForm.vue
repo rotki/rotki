@@ -1,23 +1,21 @@
 <script setup lang="ts">
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import JsonInput from '@/components/inputs/JsonInput.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { DateFormat } from '@/types/date-format';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { toMessages } from '@/utils/validation';
+import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events/schemas';
 import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import JsonInput from '@/components/inputs/JsonInput.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
+import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { toMessages } from '@/utils/validation';
 
 interface EthDepositEventFormProps {
   data: StandaloneEventData<EthDepositEvent>;
@@ -34,7 +32,7 @@ const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPrice
 
 const txHash = ref<string>('');
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const timestamp = ref<number>(0);
 const amount = ref<string>('');
 const sequenceIndex = ref<string>('');
 const validatorIndex = ref<string>('');
@@ -60,13 +58,15 @@ const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { getAddresses } = useAccountAddresses();
+const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
 const states = {
   amount,
   depositor,
   eventIdentifier,
+  extraData,
   sequenceIndex,
-  timestamp: datetime,
+  timestamp,
   txHash,
   validatorIndex,
 };
@@ -88,7 +88,7 @@ function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(txHash, '');
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, dayjs().valueOf());
   set(amount, '0');
   set(validatorIndex, '');
   set(depositor, '');
@@ -102,11 +102,14 @@ function applyEditableData(entry: EthDepositEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel);
   set(extraData, entry.extraData || {});
+
+  // Capture state snapshot for edit mode comparison
+  captureEditModeStateFromRefs(states);
 }
 
 function applyGroupHeaderData(entry: EthDepositEvent) {
@@ -115,7 +118,7 @@ function applyGroupHeaderData(entry: EthDepositEvent) {
   set(txHash, entry.txHash);
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel ?? '');
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
 }
 
 watch(errorMessages, (errors) => {
@@ -127,7 +130,8 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
+  const eventData = get(data);
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
 
   const payload: NewEthDepositEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -136,19 +140,17 @@ async function save(): Promise<boolean> {
     eventIdentifier: get(eventIdentifier) ?? null,
     extraData: get(extraData) || null,
     sequenceIndex: get(sequenceIndex) || '0',
-    timestamp,
+    timestamp: get(timestamp),
     txHash: get(txHash),
     validatorIndex: parseInt(get(validatorIndex)),
   };
 
-  const eventData = get(data);
-  const edit = eventData.type === 'edit' ? eventData.event : undefined;
-
   return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
+    editable ? { ...payload, identifier: editable.identifier } : payload,
     assetPriceForm,
     errorMessages,
     reset,
+    shouldSkipSaveFromRefs(!!editable, states),
   );
 }
 
@@ -179,12 +181,14 @@ defineExpose({
 <template>
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
-      <DateTimePicker
-        v-model="datetime"
+      <RuiDateTimePicker
+        v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
-        limit-now
-        milliseconds
+        max-date="now"
+        color="primary"
+        variant="outlined"
+        accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
         :error-messages="toMessages(v$.timestamp)"
@@ -218,7 +222,7 @@ defineExpose({
       v-model:amount="amount"
       asset="ETH"
       :v$="v$"
-      :datetime="datetime"
+      :timestamp="timestamp"
       location="ethereum"
       disable-asset
     />

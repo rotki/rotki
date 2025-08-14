@@ -176,7 +176,12 @@ def fixture_accountant(
 
     premium = None
     if start_with_valid_premium:
-        premium = Premium(credentials=rotki_premium_credentials, username=username)
+        premium = Premium(
+            credentials=rotki_premium_credentials,
+            username=username,
+            msg_aggregator=function_scope_messages_aggregator,
+            db=database,
+        )
 
     # add accounting rules to the database
     data_updater = RotkiDataUpdater(

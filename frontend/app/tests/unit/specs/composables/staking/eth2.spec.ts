@@ -1,8 +1,8 @@
+import flushPromises from 'flush-promises';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePremium } from '@/composables/premium';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useEth2Staking } from '@/composables/staking/eth2/eth2';
-import flushPromises from 'flush-promises';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('composables::staking/eth2/eth2', () => {
   setActivePinia(createPinia());

@@ -24,6 +24,7 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, STAKED
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -39,7 +40,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.base import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CURVE_POOL_PROTOCOL, CacheType, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -155,7 +156,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                         event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into convex'
                         if (
                             isinstance(crypto_asset, EvmToken) and
-                            crypto_asset.protocol == CURVE_POOL_PROTOCOL
+                            crypto_asset.protocol == CPT_CURVE
                         ):
                             event.product = EvmProduct.GAUGE
                         elif crypto_asset == A_CVX:
@@ -187,7 +188,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                         event.notes = f'Withdraw {event.amount} {crypto_asset.symbol} from convex'
                         if (
                             isinstance(crypto_asset, EvmToken) and
-                            crypto_asset.protocol == CURVE_POOL_PROTOCOL
+                            crypto_asset.protocol == CPT_CURVE
                         ):
                             event.product = EvmProduct.GAUGE
                 elif context.tx_log.topics[0] in REWARD_TOPICS:

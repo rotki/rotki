@@ -31,7 +31,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, EVMTxHash, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             target_token = EvmToken(evm_address_to_identifier(
                 address=target_token_address,
                 chain_id=self.evm_inquirer.chain_id,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             ))
             for event in context.decoded_events:
                 if (
@@ -282,17 +282,6 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
         return trades_events
 
-    def _cowswap_post_decoding(
-            self,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
-        if transaction.to_address == self.settlement_address:
-            return self._aggregator_post_decoding(transaction, decoded_events, all_logs)
-
-        return decoded_events
-
     def _aggregator_post_decoding(
             self,
             transaction: EvmTransaction,
@@ -328,6 +317,18 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
         return decoded_events
 
+    @staticmethod
+    def _match_cowswap_counterparty(context: DecoderContext) -> DecodingOutput:
+        """Sets the CowSwap counterparty for events involving the settlement contract.
+
+        This is needed because not all CowSwap transactions are sent directly
+        to the settlement contract address.
+
+        We don't decode the actual swap here since only one leg (spend or receive)
+        is available at this stage. Full swap decoding happens in post-processing.
+        """
+        return DecodingOutput(matched_counterparty=CPT_COWSWAP)
+
     # -- DecoderInterface methods
 
     @staticmethod
@@ -335,13 +336,16 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         return (COWSWAP_CPT_DETAILS,)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {self.native_asset_flow_address: (self._decode_native_asset_orders,)}
+        return {
+            self.native_asset_flow_address: (self._decode_native_asset_orders,),
+            self.settlement_address:  (self._match_cowswap_counterparty,),
+        }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return {self.settlement_address: CPT_COWSWAP}
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {CPT_COWSWAP: [(0, self._cowswap_post_decoding)]}
+        return {CPT_COWSWAP: [(0, self._aggregator_post_decoding)]}
 
 
 class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
@@ -369,18 +373,17 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
         self.cow_token = cow_token.resolve_to_evm_token()
         self.gno_token = gno_token.resolve_to_evm_token()
 
-    def _cowswap_post_decoding(
+    def _aggregator_post_decoding(
             self,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],
     ) -> list['EvmEvent']:
-        if transaction.to_address == self.settlement_address:
-            return super()._cowswap_post_decoding(
-                transaction=transaction,
-                decoded_events=decoded_events,
-                all_logs=all_logs,
-            )
+        decoded_events = super()._aggregator_post_decoding(
+            transaction=transaction,
+            decoded_events=decoded_events,
+            all_logs=all_logs,
+        )
 
         # else check if it's a vested claim and make sure out event comes first and fix notes
         # notes fixing is needed only in gnosis but for consistency move notes populating here

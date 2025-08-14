@@ -8,6 +8,7 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { BlockchainMetadata } from '@/types/task';
+import { Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -21,7 +22,6 @@ import { isTaskCancelled } from '@/utils';
 import { convertBtcAccounts } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
 import { logger } from '@/utils/logging';
-import { Blockchain } from '@rotki/common';
 
 interface UseBlockchainAccountsReturn {
   addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string>;

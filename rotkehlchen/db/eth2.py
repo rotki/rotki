@@ -9,18 +9,13 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, MIN_EFFECTIVE_BALANCE
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
-    ValidatorDailyStats,
     ValidatorDetails,
     ValidatorDetailsWithStatus,
     ValidatorType,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
-from rotkehlchen.constants import ONE, WEEK_IN_MILLISECONDS, ZERO
+from rotkehlchen.constants import WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.timing import (
-    DAY_IN_SECONDS,
-    HOUR_IN_SECONDS,
-)
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
@@ -55,7 +50,6 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -65,106 +59,6 @@ class DBEth2:
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
-
-    def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> list[tuple[int, Timestamp, Timestamp]]:  # noqa: E501
-        """Gets a list of validators that need to be queried for new daily stats
-
-        Validators need to be queried if last time they are queried was more than 2 days.
-
-        Returns a list of tuples. First entry is validator index, second entry is
-        last queried timestamp for daily stats of that validator and third one is
-        an optional timestamp of the validator's exit.
-        """
-        query_str = """
-            SELECT D.validator_index, D.timestamp FROM eth2_validators V LEFT JOIN
-            eth2_daily_staking_details D ON
-            V.validator_index = D.validator_index AND ? - (SELECT MAX(timestamp) FROM eth2_daily_staking_details WHERE validator_index=V.validator_index) > ? WHERE D.validator_index IS NOT NULL AND D.timestamp==(SELECT MAX(timestamp) FROM eth2_daily_staking_details WHERE validator_index=V.validator_index)
-            UNION
-            SELECT DISTINCT V2.validator_index, 0 FROM eth2_validators V2 WHERE
-            V2.validator_index NOT IN (SELECT validator_index FROM eth2_daily_staking_details)
-        """  # noqa: E501
-        with self.db.conn.read_ctx() as cursor:
-            stats_data = cursor.execute(
-                query_str,
-                # stats page entry only appears once day is over and some times it takes
-                # a longer time to update since it counts beacon chain days.
-                # So we will put two days and more than half to be sure we don't
-                # query too often
-                (up_to_ts, DAY_IN_SECONDS * 2 + HOUR_IN_SECONDS * 18),
-            ).fetchall()
-            exited_data = {}
-            cursor.execute(
-                'SELECT S.validator_index, H.timestamp FROM eth_staking_events_info S '
-                'LEFT JOIN history_events H ON S.identifier=H.identifier '
-                'WHERE S.is_exit_or_blocknumber=1',
-            )
-            for entry in cursor:
-                exited_data[entry[0]] = ts_ms_to_sec(entry[1])
-
-        result = []
-        for data in stats_data:
-            exit_ts = exited_data.get(data[0])
-            if exit_ts is not None and exit_ts <= data[1]:
-                # skip query for validators that exited and last stats is around exit
-                continue
-
-            result.append(data + (exit_ts,))
-
-        return result
-
-    def add_validator_daily_stats(self, stats: list[ValidatorDailyStats]) -> None:
-        """Adds given daily stats for validator in the DB. If an entry exists it's skipped"""
-        for entry in stats:  # not doing executemany to just ignore existing entry
-            try:
-                with self.db.user_write() as write_cursor:
-                    write_cursor.execute(
-                        'INSERT INTO eth2_daily_staking_details(validator_index, timestamp, pnl) '
-                        'VALUES(?,?,?)',
-                        entry.to_db_tuple(),
-                    )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                log.debug(
-                    f'Cant insert Eth2 staking detail entry {entry!s} to the DB '
-                    f'due to {e!s}. Skipping ...',
-                )
-
-    def get_validator_daily_stats_and_limit_info(
-            self,
-            cursor: 'DBCursor',
-            filter_query: 'Eth2DailyStatsFilterQuery',
-    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
-        """Gets all eth2 daily stats for the query from the DB
-
-        Returns a tuple with the following in order:
-         - A list of the daily stats
-         - How many are the total entries found for the filter (ignoring pagination)
-         - Sum of ETH gained/lost for the filter
-        """
-        stats = self.get_validator_daily_stats(cursor, filter_query=filter_query)
-        query, bindings = filter_query.prepare(with_pagination=False)
-        # TODO: A weakness of this query is that it does not take into account the
-        # ownership proportion of the validator in the PnL here
-        query = f'SELECT COUNT(*), SUM(pnl) FROM (SELECT * FROM  eth2_daily_staking_details {query})'  # noqa: E501
-        count, eth_sum_str = cursor.execute(query, bindings).fetchone()
-        return stats, count, FVal(eth_sum_str) if eth_sum_str is not None else ZERO
-
-    def get_validator_daily_stats(
-            self,
-            cursor: 'DBCursor',
-            filter_query: 'Eth2DailyStatsFilterQuery',
-    ) -> list[ValidatorDailyStats]:
-        """Gets all DB entries for validator daily stats according to the given filter"""
-        query, bindings = filter_query.prepare()
-        query = 'SELECT * from eth2_daily_staking_details ' + query
-        cursor.execute(query, bindings)
-        daily_stats = [ValidatorDailyStats.deserialize_from_db(x) for x in cursor]
-        # Take into account the proportion of the validator owned
-        validators_ownership = self.get_index_to_ownership(cursor)
-        for daily_stat in daily_stats:
-            owned_proportion = validators_ownership.get(daily_stat.validator_index, ONE)
-            if owned_proportion != ONE:
-                daily_stat.pnl *= owned_proportion
-        return daily_stats
 
     def validator_exists(
             self,
@@ -236,11 +130,12 @@ class DBEth2:
         return result
 
     def get_active_validator_indices(self, cursor: 'DBCursor') -> set[int]:
-        """Returns the indices of the tracked validators that we know have not exited"""
+        """Returns the indices of the tracked validators that we know have not exited and are not consolidated"""  # noqa: E501
+        consolidated_indices = set(self.get_consolidated_validators(cursor))
         cursor.execute(
             'SELECT validator_index from eth2_validators WHERE exited_timestamp IS NULL',
         )
-        return {x[0] for x in cursor}
+        return {x[0] for x in cursor} - consolidated_indices
 
     @staticmethod
     def get_exited_validator_indices(cursor: 'DBCursor', validator_indices: Collection[int] | None) -> set[int]:  # noqa: E501
@@ -581,15 +476,14 @@ class DBEth2:
                 event_subtypes=[HistoryEventSubType.CONSOLIDATE],
                 counterparties=[CPT_ETH2],
             )):
-                events.extend(events_db.get_history_events(
+                events.extend(events_db.get_history_events_internal(
                     cursor=cursor,
                     filter_query=filter_query,  # type: ignore[arg-type]  # no overload for EthStakingEventFilterQuery
-                    has_premium=True,
                 ))
 
             # Get withdrawal request events for each validator
             withdrawal_request_events = defaultdict(list)
-            for request_event in events_db.get_history_events(
+            for request_event in events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     to_ts=to_ts,
@@ -598,7 +492,6 @@ class DBEth2:
                     counterparties=[CPT_ETH2],
                     order_by_rules=[('timestamp', False)],  # reverse so we get the first request before a withdrawal below  # noqa: E501
                 ),
-                has_premium=True,
             ):
                 if (
                     request_event.extra_data is not None and

@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type BigNumber, Zero } from '@rotki/common';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = defineProps<{ identifier: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { balancesByLocation } = useLocationBalancesBreakdown();
+const { balancesByLocation } = useAggregatedBalances();
 
 const totalValue = computed<BigNumber>(() => {
   const locations = get(balancesByLocation);

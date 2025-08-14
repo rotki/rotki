@@ -1,18 +1,18 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { ActionDataEntry } from '@/types/action';
 import type {
   HistoryEventCategoryDetailWithId,
   HistoryEventCategoryMapping,
   HistoryEventTypeData,
 } from '@/types/history/events/event-type';
-import type { MaybeRef } from '@vueuse/core';
+import { HistoryEventEntryType, toCapitalCase, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { cloneDeep } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
-import { HistoryEventEntryType, toCapitalCase, toSentenceCase, toSnakeCase } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { cloneDeep } from 'es-toolkit';
 
 type Event = MaybeRef<{
   eventType: string;

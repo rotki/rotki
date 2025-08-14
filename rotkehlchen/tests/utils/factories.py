@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE
+from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
@@ -18,16 +19,18 @@ from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
     ApiSecret,
+    BlockchainAddress,
     BTCAddress,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
+    HexColorCode,
     Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -85,6 +88,10 @@ def make_evm_tx_hash() -> EVMTxHash:
     return deserialize_evm_tx_hash(make_random_bytes(32))
 
 
+def make_btc_tx_hash() -> str:
+    return make_random_bytes(32).hex()
+
+
 def make_ethereum_transaction(
         tx_hash: bytes | None = None,
         timestamp: Timestamp | None = None,
@@ -111,7 +118,7 @@ def make_ethereum_transaction(
 CUSTOM_USDT = EvmToken.initialize(
     address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
     chain_id=ChainID.ETHEREUM,
-    token_kind=EvmTokenKind.ERC20,
+    token_kind=TokenKind.ERC20,
     name='Tether',
     symbol='USDT',
     started=Timestamp(1402358400),
@@ -267,3 +274,31 @@ UNIT_BTC_ADDRESS2 = BTCAddress('1CounterpartyXXXXXXXXXXXXXXXUWLpVr')
 UNIT_BTC_ADDRESS3 = BTCAddress('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
 
 ZERO_ETH_ADDRESS = string_to_evm_address('0x' + '0' * 40)
+
+
+def make_google_calendar_entry(
+        identifier: int = 1,
+        name: str = 'Test Event',
+        description: str = 'Test Description',
+        timestamp: Timestamp | None = None,
+        counterparty: str | None = None,
+        address: BlockchainAddress | None = None,
+        blockchain: SupportedBlockchain | None = None,
+        color: HexColorCode | None = None,
+        auto_delete: bool = False,
+) -> CalendarEntry:
+    """Create a test CalendarEntry for Google Calendar sync tests."""
+    if timestamp is None:
+        timestamp = Timestamp(ts_now() + 86400)  # Tomorrow
+
+    return CalendarEntry(
+        name=name,
+        timestamp=timestamp,
+        description=description,
+        counterparty=counterparty,
+        address=address,
+        blockchain=blockchain,
+        color=color,
+        auto_delete=auto_delete,
+        identifier=identifier,
+    )

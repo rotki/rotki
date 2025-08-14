@@ -1,18 +1,18 @@
-import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { Collection } from '@/types/collection';
-import type { HistoryEvent, HistoryEventRow } from '@/types/history/events';
 import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type * as Vue from 'vue';
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import type { Collection } from '@/types/collection';
+import type { HistoryEvent, HistoryEventRow } from '@/types/history/events/schemas';
+import { Blockchain } from '@rotki/common';
+import flushPromises from 'flush-promises';
+import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
 import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
-import { Blockchain } from '@rotki/common';
-import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 vi.mock('vue-router', async () => {
   const { ref } = await import('vue');
@@ -200,7 +200,7 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('add protocols to filters and expect the value to be set', async () => {
-      set(protocols, ['ga s', 'ens']);
+      set(protocols, ['gas', 'ens']);
 
       const query = {
         sortBy: ['timestamp'],

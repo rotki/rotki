@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { between, helpers, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { useMonitorStore } from '@/store/monitor';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { between, helpers, required } from '@vuelidate/validators';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;

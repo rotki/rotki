@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export enum PriceOracle {
   BLOCKCHAIN = 'blockchain',
@@ -12,4 +12,4 @@ export enum PriceOracle {
   ALCHEMY = 'alchemy',
 }
 
-export const PriceOracleEnum = z.nativeEnum(PriceOracle);
+export const PriceOracleEnum = z.enum(PriceOracle);

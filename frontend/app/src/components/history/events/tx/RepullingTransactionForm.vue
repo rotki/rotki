@@ -2,19 +2,17 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { RepullingTransactionPayload } from '@/types/history/events';
+import useVuelidate from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
 
 const modelValue = defineModel<RepullingTransactionPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -27,35 +25,9 @@ const address = useRefPropVModel(modelValue, 'address');
 const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
 const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
 
-const fromTimestampModel = computed({
-  get: () => {
-    const timestamp = get(fromTimestamp);
-    if (!timestamp) {
-      return '';
-    }
-    return convertFromTimestamp(timestamp);
-  },
-  set: (value: string) => {
-    set(fromTimestamp, convertToTimestamp(value));
-  },
-});
-
-const toTimestampModel = computed({
-  get: () => {
-    const timestamp = get(toTimestamp);
-    if (!timestamp) {
-      return '';
-    }
-    return convertFromTimestamp(timestamp);
-  },
-  set: (value: string) => {
-    set(toTimestamp, convertToTimestamp(value));
-  },
-});
-
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { getChain, txEvmChains } = useSupportedChains();
-const txChains = useArrayMap(txEvmChains, x => x.id);
+const { evmAndEvmLikeTxChainsInfo, getChain } = useSupportedChains();
+const txChains = useArrayMap(evmAndEvmLikeTxChainsInfo, x => x.id);
 
 const chainOptions = computed(() => {
   const accountChains = Object.entries(get(accountsPerChain))
@@ -174,19 +146,26 @@ defineExpose({
     </div>
     <div class="w-full flex gap-2">
       <div class="flex-1">
-        <DateTimePicker
-          v-model="fromTimestampModel"
+        <RuiDateTimePicker
+          v-model="fromTimestamp"
           :label="t('generate.labels.start_date')"
-          limit-now
+          :max-date="toTimestamp"
+          type="epoch"
           allow-empty
+          color="primary"
+          variant="outlined"
           :error-messages="toMessages(v$.fromTimestamp)"
         />
       </div>
       <div class="flex-1">
-        <DateTimePicker
-          v-model="toTimestampModel"
+        <RuiDateTimePicker
+          v-model="toTimestamp"
           :label="t('generate.labels.end_date')"
-          limit-now
+          :min-date="fromTimestamp"
+          type="epoch"
+          max-date="now"
+          color="primary"
+          variant="outlined"
           :error-messages="toMessages(v$.toTimestamp)"
         />
       </div>

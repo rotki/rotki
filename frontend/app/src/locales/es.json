@@ -340,16 +340,6 @@
         "title": "Editing ETH staking validator"
       }
     },
-    "eth2_staking_stats": {
-      "error": {
-        "message": "Query failed with the following error: {message}",
-        "title": "Querying ETH staking daily stats"
-      },
-      "task": {
-        "description": "Querying your ETH staking daily stats",
-        "title": "ETH staking daily stats"
-      }
-    },
     "get_accounts": {
       "error": {
         "description": "Failed to query accounts for {blockchain}: {message}",
@@ -598,11 +588,11 @@
     "transactions": {
       "error": {
         "description": "Failed query for {address} ({chain}): {error}",
-        "title": "Evm Transactions Query"
+        "title": "Blockchain Transactions Query"
       },
       "task": {
         "description": "Retrieving txns for {address} ({chain})",
-        "title": "Evm Transactions"
+        "title": "Blockchain Transactions"
       }
     },
     "transactions_redecode": {
@@ -765,7 +755,7 @@
     },
     "underlying_tokens": "Underlying tokens",
     "validation": {
-      "valid_address": "Please input valid ETH address"
+      "valid_address": "Please input valid address"
     }
   },
   "asset_icon": {
@@ -1526,11 +1516,7 @@
     "title": "Date Format"
   },
   "date_time_picker": {
-    "default_format": "Date should be in {dateFormat} [HH:mm:[ss]] format",
-    "limit_now": "Cannot use future date",
-    "timezone_field": {
-      "non_empty": "Timezone should be specified"
-    }
+    "limit_now": "Cannot use future date"
   },
   "ens_names": {
     "task": {
@@ -1906,7 +1892,6 @@
     }
   },
   "global_search": {
-    "menu_tooltip": "Buscar ({modifier} + {key})",
     "no_actions": "No actions found",
     "search_placeholder": "Search anything..."
   },
@@ -3179,7 +3164,7 @@
       "done_end_date": "Done querying all transactions for {address} until {end}",
       "done_group": "Done querying all transactions information for {count} address | Done querying all transactions information for {count} addresses",
       "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying evm transactions information for {count} address | Querying evm transactions information for {count} addresses",
+      "group": "Querying transactions information for {count} address | Querying evm transactions information for {count} addresses",
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
       "statuses": {
@@ -3187,7 +3172,7 @@
         "querying_internal_transactions": "ethereum internal transactions",
         "querying_transactions": "evm transactions"
       },
-      "title": "Estado de la consulta de transacciones Evm"
+      "title": "Estado de la consulta de transacciones"
     },
     "query_status_events": {
       "date_range": "Consulta de eventos para {name} entre {start} y {end}",

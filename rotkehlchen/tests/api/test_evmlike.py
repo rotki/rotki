@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -58,10 +58,9 @@ def test_evmlike_transactions_refresh(
 
     for json_args, expected_count in [
             ({'async_query': False}, 2),
-            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'chain': 'zksync_lite'}]}, 1),  # noqa: E501
-            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'chain': 'zksync_lite'}, {'address': zksync_lite_accounts[1], 'chain': 'zksync_lite'}]}, 2),  # noqa: E501
+            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'blockchain': 'zksync_lite'}]}, 1),  # noqa: E501
+            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'blockchain': 'zksync_lite'}, {'address': zksync_lite_accounts[1], 'blockchain': 'zksync_lite'}]}, 2),  # noqa: E501
             ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0]}, {'address': zksync_lite_accounts[1]}]}, 2),  # noqa: E501
-            ({'async_query': False, 'chain': 'zksync_lite'}, 2),
     ]:
         with patch.object(
                 rotki.chains_aggregator.zksync_lite,
@@ -71,7 +70,7 @@ def test_evmlike_transactions_refresh(
             response = requests.post(
                 api_url_for(
                     rotkehlchen_api_server,
-                    'evmliketransactionsresource',
+                    'blockchaintransactionsresource',
                 ), json=json_args,
             )
             assert_simple_ok_response(response)
@@ -99,7 +98,7 @@ def test_evmlike_blockchain_balances(
     }
 
     def serialize_balances(value: dict[Asset, Balance]) -> dict[str, dict]:
-        return {asset.identifier: balance.serialize() for asset, balance in value.items()}
+        return {asset.identifier: {DEFAULT_BALANCE_LABEL: balance.serialize()} for asset, balance in value.items()}  # noqa: E501
 
     def mocked_get_balances(
             addresses: Sequence[ChecksumEvmAddress],
@@ -137,9 +136,9 @@ def test_evmlike_blockchain_balances(
             },
             'totals': {
                 'assets': {
-                    A_ETH.identifier: (addy_0_balances[A_ETH] + addy_1_balances[A_ETH]).serialize(),  # noqa: E501
-                    A_GNO.identifier: addy_1_balances[A_GNO].serialize(),
-                    A_DAI.identifier: addy_0_balances[A_DAI].serialize(),
+                    A_ETH.identifier: {DEFAULT_BALANCE_LABEL: (addy_0_balances[A_ETH] + addy_1_balances[A_ETH]).serialize()},  # noqa: E501
+                    A_GNO.identifier: {DEFAULT_BALANCE_LABEL: addy_1_balances[A_GNO].serialize()},
+                    A_DAI.identifier: {DEFAULT_BALANCE_LABEL: addy_0_balances[A_DAI].serialize()},
                 },
                 'liabilities': {},
             },
@@ -257,7 +256,7 @@ def test_decode_pending_evmlike(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmliketransactionsresource',
+            'blockchaintransactionsresource',
         ), json={'async_query': False},
     )
     assert_simple_ok_response(response)

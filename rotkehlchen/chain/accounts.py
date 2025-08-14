@@ -56,6 +56,12 @@ class BlockchainAccounts:
         object.__setattr__(self, bkey, tuple(x for x in current_addresses if x != address))
 
 
+class OptionalBlockchainAccount(NamedTuple):
+    """Represents a blockchain account with an optional chain specification."""
+    chain: SupportedBlockchain | None
+    address: BlockchainAddress
+
+
 class BlockchainAccountData(NamedTuple):
     chain: SupportedBlockchain
     address: BlockchainAddress

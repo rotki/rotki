@@ -1,7 +1,8 @@
+import type { ActionResult } from '@rotki/common';
 import type { ActionStatus } from '@/types/action';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
@@ -17,7 +18,6 @@ import {
   Reports,
 } from '@/types/reports';
 import { downloadFileByBlobResponse } from '@/utils/download';
-import { omit } from 'es-toolkit';
 
 interface UseReportsApi {
   generateReport: ({ end, start }: ProfitLossReportPeriod) => Promise<PendingTask>;

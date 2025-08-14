@@ -20,9 +20,9 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -389,7 +389,7 @@ def test_balancer_v1_non_proxy_join(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='BCoW-80QQQ-20WETH',
         name='Balancer CoW AMM 80 QQQ 20 WETH',
         decimals=18,
@@ -397,7 +397,7 @@ def test_balancer_v1_non_proxy_join(
         underlying_tokens=[
             UnderlyingToken(  # including just one of two underlying token.
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=FVal('0.2'),
             ),
         ],
@@ -629,7 +629,7 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
         userdb=gnosis_inquirer.database,
         evm_address=string_to_evm_address('0x71663f74490673706D7b8860B7D02b7c76160bAe'),
         chain_id=ChainID.GNOSIS,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='BCoW-50GNO-50COW',
         name='BCoW AMM 50GNO-50COW',
         decimals=18,
@@ -637,12 +637,12 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
         underlying_tokens=[
             UnderlyingToken(
                 address=string_to_evm_address('0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=FVal('0.5'),
             ),
             UnderlyingToken(
                 address=string_to_evm_address('0x177127622c4A00F3d409B75571e12cB3c8973d3c'),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=FVal('0.5'),
             ),
         ],
@@ -943,7 +943,7 @@ def test_balancer_v2_join_with_gauge_deposit(
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=(CacheType.BALANCER_GAUGES, str(optimism_inquirer.chain_id.value), '2'),
+            key_parts=(CacheType.BALANCER_V2_GAUGES, str(optimism_inquirer.chain_id.value)),
             values=['0xCc2E1CB5d8DeA77F08D19f875F381f34f997d96c'],
         )
     tx_hash = deserialize_evm_tx_hash('0x1e8d94f4d4bb05b8d868bc558293782f4e7ce2eaa87f3f1f6d1377a15ab1a6f0')  # noqa: E501
@@ -1065,7 +1065,7 @@ def test_balancer_gauge_withdrawal(
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=(CacheType.BALANCER_GAUGES, str(ethereum_inquirer.chain_id.value), '2'),
+            key_parts=(CacheType.BALANCER_V2_GAUGES, str(ethereum_inquirer.chain_id.value)),
             values=['0xdf54d2Dd06F8Be3B0c4FfC157bE54EC9cca91F3C'],
         )
     tx_hash = deserialize_evm_tx_hash('0xcbb4179ac94618cd419d4185b5137ce02f5ffaef810a1c209dedab79e837b3af')  # noqa: E501

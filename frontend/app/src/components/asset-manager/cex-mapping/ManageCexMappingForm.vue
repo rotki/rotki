@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import type { CexMapping } from '@/types/asset';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { nullDefined, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
 
 const modelValue = defineModel<CexMapping>({ required: true });
 const forAllExchanges = defineModel<boolean>('forAllExchanges', { required: true });
@@ -23,12 +24,32 @@ withDefaults(
   },
 );
 
+const EXCLUDED_EXCHANGES = [
+  'binanceus',
+  'coinbaseprime',
+  'coinbasepro',
+];
+
 const { t } = useI18n({ useScope: 'global' });
 
 const asset = useRefPropVModel(modelValue, 'asset');
 const locationSymbol = useRefPropVModel(modelValue, 'locationSymbol');
 const location = useRefPropVModel(modelValue, 'location');
 const locationModel = nullDefined(location);
+
+const mappingAlertInfo = computed<{ primary: string; related: string } | undefined>(() => {
+  const currentLocation = get(location);
+  if (!currentLocation || get(forAllExchanges))
+    return undefined;
+
+  if (currentLocation === 'binance')
+    return { primary: 'binance', related: 'binanceus' };
+
+  if (currentLocation === 'coinbase')
+    return { primary: 'coinbase', related: 'coinbaseprime' };
+
+  return undefined;
+});
 
 function checkPassedForm() {
   const data = get(modelValue);
@@ -94,6 +115,7 @@ defineExpose({
       v-model="locationModel"
       :label="t('asset_management.cex_mapping.exchange')"
       :disabled="editMode || forAllExchanges"
+      :excludes="EXCLUDED_EXCHANGES"
       clearable
       :error-messages="toMessages(v$.location)"
     />
@@ -113,5 +135,27 @@ defineExpose({
       outlined
       :error-messages="toMessages(v$.asset)"
     />
+    <RuiAlert
+      v-if="mappingAlertInfo"
+      type="info"
+      class="mt-2"
+    >
+      <div class="flex items-center gap-1 dark:gap-2.5 -mt-0.5">
+        {{ t('asset_management.cex_mapping.mapping_info_prefix') }}
+        <LocationDisplay
+          horizontal
+          :open-details="false"
+          class="[&>div]:gap-0.5 dark:[&>div]:gap-2"
+          :identifier="mappingAlertInfo.primary"
+        />
+        {{ t('asset_management.cex_mapping.mapping_info_middle') }}
+        <LocationDisplay
+          horizontal
+          :open-details="false"
+          class="[&>div]:gap-0.5 dark:[&>div]:gap-2"
+          :identifier="mappingAlertInfo.related"
+        />
+      </div>
+    </RuiAlert>
   </div>
 </template>

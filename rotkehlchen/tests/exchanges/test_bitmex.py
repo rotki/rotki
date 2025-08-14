@@ -70,10 +70,9 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
     sandbox_bitmex.asset_to_decimals = {'XBt': 8, 'USDt': 6}
     sandbox_bitmex.query_history_events()
     with database.conn.read_ctx() as cursor:
-        result = DBHistoryEvents(database).get_history_events(
+        result = DBHistoryEvents(database).get_history_events_internal(
             cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.BITMEX),
-            has_premium=True,
         )
 
     expected_result = [AssetMovement(

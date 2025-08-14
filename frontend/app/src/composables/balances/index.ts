@@ -1,10 +1,12 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';
-import type { MaybeRef } from '@vueuse/core';
+import { startPromise } from '@shared/utils';
 import { useBalancesApi } from '@/composables/api/balances';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useBlockchains } from '@/composables/blockchain';
 import { useStatusUpdater } from '@/composables/status';
+import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
@@ -19,15 +21,16 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { uniqueStrings } from '@/utils/data';
-import { startPromise } from '@shared/utils';
 
 export const useBalances = createSharedComposable(() => {
+  const pendingAssets = ref<string[]>([]);
   const { fetchManualBalances } = useManualBalances();
   const { missingCustomAssets } = useManualBalanceData();
   const { updatePrices } = useBalancesStore();
   const { fetchConnectedExchangeBalances } = useExchanges();
   const { refreshAccounts } = useBlockchains();
-  const { assets } = useAggregatedBalances();
+  const { assets: regularAssets } = useAggregatedBalances();
+  const { collectionMainAssets } = storeToRefs(useCollectionMappingStore());
   const { queryBalancesAsync } = useBalancesApi();
   const { prices } = storeToRefs(useBalancePricesStore());
   const { hasCachedPrice } = usePriceUtils();
@@ -36,6 +39,10 @@ export const useBalances = createSharedComposable(() => {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsStore();
+
+  const assets = computed(() => [...get(regularAssets), ...get(collectionMainAssets)]);
+
+  const noPriceAssets = useArrayFilter(assets, asset => !hasCachedPrice(asset));
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
     updatePrices({ ...get(prices) });
@@ -72,9 +79,6 @@ export const useBalances = createSharedComposable(() => {
     adjustPrices(get(prices));
     setStatus(Status.LOADED);
   };
-
-  const pendingAssets = ref<string[]>([]);
-  const noPriceAssets = useArrayFilter(assets, asset => !hasCachedPrice(asset));
 
   watchDebounced(
     noPriceAssets,

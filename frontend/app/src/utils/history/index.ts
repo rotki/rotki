@@ -1,9 +1,9 @@
 import type { Collection } from '@/types/collection';
 import type { EvmChainAndTxHash } from '@/types/history/events';
 import type { EntryMeta, EntryWithMeta } from '@/types/history/meta';
-import { uniqueStrings } from '@/utils/data';
 import { isValidEthAddress } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
+import { uniqueStrings } from '@/utils/data';
 
 export function mapCollectionEntriesWithMeta<T>(collection: Collection<EntryWithMeta<T>>): Collection<T & EntryMeta> {
   const entries = collection.data.map(data => transformEntryWithMeta<T>(data));

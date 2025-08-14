@@ -14,7 +14,8 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
+from rotkehlchen.constants.resolver import solana_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -48,9 +49,10 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
+    SolanaAddress,
     TimestampMS,
+    TokenKind,
 )
 
 
@@ -73,7 +75,7 @@ def assert_asset_at_top_position(
         max_position_index: int,
         result: list[dict[str, Any]],
 ) -> None:
-    """Aserts that an asset appears at the top of the search results."""
+    """Asserts that an asset appears at the top of the search results."""
     assert any(asset_id == entry['identifier'] for entry in result)
     for index, entry in enumerate(result):
         if entry['identifier'] == asset_id:
@@ -556,6 +558,27 @@ def test_get_all_assets(rotkehlchen_api_server: 'APIServer') -> None:
     assert result['entries'][0]['evm_chain'] == 'ethereum'
     assert result['entries'][0]['name'] == 'Multi Collateral Dai'
     assert result['entries'][0]['symbol'] == 'DAI'
+
+    # check that filtering by address for a solana token works.
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'address': '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'},
+    ))
+    assert len(result['entries']) == 1
+    assert result['entries'][0]['address'] == '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'
+    assert result['entries'][0]['asset_type'] == AssetType.SOLANA_TOKEN.serialize()
+    assert result['entries'][0]['name'] == 'Raydium'
+    assert result['entries'][0]['symbol'] == 'RAY'
+
+    # check error when filtering by an invalid address.
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json={'address': 'xxxxxxxxx'},
+        ),
+        contained_in_msg='Given value xxxxxxxxx is not a valid EVM or Solana address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:
@@ -1163,7 +1186,7 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
         )
 
     eth_address = make_evm_address()
-    rotki.chains_aggregator.balances.eth[eth_address].assets[A_DAI] = Balance(amount=FVal(30))
+    rotki.chains_aggregator.balances.eth[eth_address].assets[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(30))  # noqa: E501
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -1214,7 +1237,7 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
     token = EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         name='Custom 2',
     )
     GlobalDBHandler.add_asset(token)
@@ -1236,3 +1259,61 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
     assert token.name == 'A new name'
     assert token.symbol == ''
     assert token.decimals == 18
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
+    token_identifier = solana_address_to_identifier(
+        address=(token_address := SolanaAddress('BENGEso6uSrcCYyRsanYgmDwLi34QSpihU2FX2xvpump')),
+        token_type=TokenKind.SPL_TOKEN,
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=(payload := {
+            'asset_type': 'solana token',
+            'address': token_address,
+            'name': 'TrollBoss',
+            'symbol': 'TROLLBOSS',
+            'decimals': 6,
+            'coingecko': None,
+            'cryptocompare': None,
+            'token_kind': 'spl_token',
+            'protocol': '',
+            'started': 1754563797,
+        }),
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['identifier'] == token_identifier
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'identifiers': [token_identifier],
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries_found'] == 1
+    assert result['entries'] == [
+        {
+            'address': token_address,
+            'identifier': token_identifier,
+            'asset_type': payload['asset_type'],
+            'coingecko': None,
+            'cryptocompare': None,
+            'decimals': payload['decimals'],
+            'name': payload['name'],
+            'symbol': payload['symbol'],
+            'started': payload['started'],
+            'forked': None,
+            'swapped_for': None,
+            'protocol': None,
+            'token_kind': ' '.join(payload['token_kind'].split('_')),  # type: ignore[attr-defined]  # it is a string
+        },
+    ]

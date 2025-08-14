@@ -1,25 +1,27 @@
 <script setup lang="ts">
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
-import { useInterop } from '@/composables/electron-interop';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 
 defineProps<{
   appBar?: boolean;
-  showWalletBridge?: boolean;
+  loading?: boolean;
+}>();
+
+const emit = defineEmits<{
+  connect: [];
+  disconnect: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const walletStore = useWalletStore();
-const { connected, connectedAddress, connectedChainId } = storeToRefs(walletStore);
-const { disconnect, open } = walletStore;
-
 const { getChainFromChainId } = useWalletHelper();
-const { isPackaged, openWalletConnectBridge } = useInterop();
 
-const chain = computed(() => {
+const walletStore = useWalletStore();
+const { connected, connectedAddress, connectedChainId, isDisconnecting, isWalletConnect } = storeToRefs(walletStore);
+
+const chain = computed<string | undefined>(() => {
   const chainId = get(connectedChainId);
   if (!chainId) {
     return undefined;
@@ -30,9 +32,10 @@ const chain = computed(() => {
 
 <template>
   <RuiButton
-    v-if="!connected && !appBar"
+    v-if="(!connected && !appBar) || isDisconnecting"
     color="primary"
-    @click="open()"
+    :loading="loading || isDisconnecting"
+    @click="emit('connect')"
   >
     <template #prepend>
       <RuiIcon
@@ -76,30 +79,17 @@ const chain = computed(() => {
         :style="{ width: `${width}px` }"
       >
         <RuiButton
+          v-if="isWalletConnect"
           variant="list"
           size="sm"
-          @click="open()"
+          @click="walletStore.connect()"
         >
           {{ t('trade.actions.open_wallet') }}
         </RuiButton>
         <RuiButton
-          v-if="isPackaged"
           variant="list"
           size="sm"
-          @click="openWalletConnectBridge()"
-        >
-          {{ t('trade.bridge.connect_browser_wallet') }}
-          <template #append>
-            <RuiIcon
-              name="lu-arrow-up-right"
-              size="18"
-            />
-          </template>
-        </RuiButton>
-        <RuiButton
-          variant="list"
-          size="sm"
-          @click="disconnect()"
+          @click="emit('disconnect')"
         >
           <template #append>
             <RuiIcon

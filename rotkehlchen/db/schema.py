@@ -112,6 +112,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
 /* Binance Smart Chain */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('v', 54);
+/* Solana */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('w', 55);
 """
 
 # Custom enum table for Balance categories (asset/liability)
@@ -449,7 +451,7 @@ CREATE TABLE IF NOT EXISTS zksynclite_swaps (
     from_asset TEXT NOT NULL,
     from_amount TEXT NOT NULL,
     to_asset TEXT NOT NULL,
-    to_amount TEXT_NOT NULL,
+    to_amount TEXT NOT NULL,
     FOREIGN KEY(tx_id) REFERENCES zksynclite_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
@@ -505,16 +507,6 @@ CREATE TABLE IF NOT EXISTS eth_validators_data_cache (
     exit_pnl TEXT NOT NULL,
     UNIQUE(validator_index, timestamp),
     FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE
-);
-"""  # noqa: E501
-
-DB_CREATE_ETH2_DAILY_STAKING_DETAILS = """
-CREATE TABLE IF NOT EXISTS  eth2_daily_staking_details (
-    validator_index INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
-    pnl TEXT NOT NULL,
-    FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (validator_index, timestamp)
 );
 """  # noqa: E501
 
@@ -746,17 +738,25 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 """
 
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
-# TODO: add before/after times for each index from the big user DB.
-# Before: 5500ms, After: 7ms
-DB_CREATE_ENTRY_TYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_entry_type ON history_events(entry_type);'  # noqa: E501
-DB_CREATE_TIMESTAMP_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_timestamp ON history_events(timestamp);'  # noqa: E501
-DB_CREATE_LOCATION_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_location ON history_events(location);'  # noqa: E501
-DB_CREATE_LOCATION_LABEL_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_location_label ON history_events(location_label);'  # noqa: E501
-DB_CREATE_ASSET_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);'  # noqa: E501
-DB_CREATE_TYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);'  # noqa: E501
-DB_CREATE_SUBTYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);'  # noqa: E501
-# Before: ~7sec, After ~3.8sec
-DB_CREATE_IGNORED_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);'  # noqa: E501
+# Shown below are before/after query speeds we observed for each index:
+# idx_history_events_entry_type: Before: 12951ms, After: 0ms
+# idx_history_events_timestamp: Before: 13001ms, After: 1ms
+# idx_history_events_location: Before: 13436ms, After: 857ms
+# idx_history_events_location_label: Before: 12982ms, After: 57ms
+# idx_history_events_asset: Before: 13114ms, After: 251ms
+# idx_history_events_type: Before: 12995ms, After: 7ms
+# idx_history_events_subtype: Before: 12937ms, After: 2ms
+# idx_history_events_ignored: Before: 14723ms, After: 5184ms
+DB_CREATE_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_history_events_entry_type ON history_events(entry_type);
+CREATE INDEX IF NOT EXISTS idx_history_events_timestamp ON history_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_history_events_location ON history_events(location);
+CREATE INDEX IF NOT EXISTS idx_history_events_location_label ON history_events(location_label);
+CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);
+CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
+CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
+CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
+"""
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
@@ -794,7 +794,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_XPUB_MAPPINGS}
 {DB_CREATE_ETH2_VALIDATORS}
 {DB_CREATE_ETH_VALIDATORS_DATA_CACHE}
-{DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_EVM_EVENTS_INFO}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
@@ -814,14 +813,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
 {DB_CREATE_GNOSISPAY_DATA}
-{DB_CREATE_ENTRY_TYPE_INDEX}
-{DB_CREATE_TIMESTAMP_INDEX}
-{DB_CREATE_LOCATION_INDEX}
-{DB_CREATE_LOCATION_LABEL_INDEX}
-{DB_CREATE_ASSET_INDEX}
-{DB_CREATE_TYPE_INDEX}
-{DB_CREATE_SUBTYPE_INDEX}
-{DB_CREATE_IGNORED_INDEX}
+{DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

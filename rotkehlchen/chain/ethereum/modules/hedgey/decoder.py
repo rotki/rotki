@@ -59,7 +59,7 @@ class HedgeyDecoder(DecoderInterface):
             counterparty=CPT_HEDGEY,
             address=tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_vault_creation(self, context: DecoderContext) -> DecodingOutput:
         vault_address = bytes_to_address(context.tx_log.data[:32])
@@ -164,7 +164,7 @@ class HedgeyDecoder(DecoderInterface):
             CounterpartyDetails(
                 identifier=CPT_HEDGEY,
                 label='Hedgey',
-                image='hedgey_dark.svg',
-                darkmode_image='hedgey_light.svg',
+                image='hedgey_light.svg',
+                darkmode_image='hedgey_dark.svg',
             ),
         )

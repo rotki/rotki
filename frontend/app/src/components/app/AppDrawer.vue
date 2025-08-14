@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import GlobalSearch from '@/components/GlobalSearch.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import { Routes } from '@/router/routes';
 import { useMainStore } from '@/store/main';
@@ -61,6 +62,7 @@ watch(route, () => {
           />
         </RouterLink>
       </div>
+      <GlobalSearch :is-mini="isMini" />
       <NavigationMenu :is-mini="isMini" />
     </div>
     <div

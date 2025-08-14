@@ -1,5 +1,5 @@
 import { Balance, type BigNumber, NumericString } from '@rotki/common';
-import z from 'zod';
+import z from 'zod/v4';
 
 const PoolAsset = z.object({
   asset: z.string(),
@@ -22,7 +22,7 @@ const PoolBalance = z.object({
 
 export type PoolBalance = z.infer<typeof PoolBalance>;
 
-export const PoolBalances = z.record(z.array(PoolBalance));
+export const PoolBalances = z.record(z.string(), z.array(PoolBalance));
 
 export type PoolBalances = z.infer<typeof PoolBalances>;
 

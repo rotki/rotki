@@ -1,5 +1,5 @@
-import type { AddCalendarEventResponse } from '@/types/history/calendar';
 import type { ActionResult } from '@rotki/common';
+import type { AddCalendarEventResponse } from '@/types/history/calendar';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';

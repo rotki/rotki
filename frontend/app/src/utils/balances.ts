@@ -1,6 +1,3 @@
-import type { AssetInfoReturn } from '@/composables/assets/retrieval';
-import type { AssetBalances } from '@/types/balances';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type {
   AssetBalance,
   AssetBalanceWithPrice,
@@ -10,6 +7,9 @@ import type {
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import type { AssetInfoReturn } from '@/composables/assets/retrieval';
+import type { AssetBalances } from '@/types/balances';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import { getSortItems } from '@/utils/assets';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum, bigNumberSum } from '@/utils/calculation';
@@ -73,24 +73,6 @@ export function appendAssetBalance(
     assets[identifier] = { ...value };
   else
     assets[identifier] = { ...balanceSum(ownedAsset, value) };
-}
-
-export function sumAssetBalances(
-  balances: AssetBalances[],
-  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
-): AssetBalances {
-  const summed: AssetBalances = {};
-  for (const balance of balances) {
-    for (const [asset, value] of Object.entries(balance)) {
-      const identifier = getAssociatedAssetIdentifier(asset);
-      const associatedAsset: string = get(identifier);
-
-      if (summed[associatedAsset])
-        summed[associatedAsset] = balanceSum(value, summed[associatedAsset]);
-      else summed[associatedAsset] = { ...value };
-    }
-  }
-  return summed;
 }
 
 export function sum(balances: { usdValue: BigNumber }[]): BigNumber {

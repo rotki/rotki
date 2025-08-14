@@ -19,7 +19,6 @@ from rotkehlchen.constants.assets import (
     A_1INCH,
     A_BSC_BNB,
     A_BTC,
-    A_DOGE,
     A_ETH,
     A_LINK,
     A_OPTIMISM_ETH,
@@ -33,9 +32,10 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChainID, Price, SupportedBlockchain, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
@@ -277,7 +277,7 @@ def test_invalid_token_kind_price_query(inquirer_defi: 'Inquirer'):
         name='Uniswap V3: Positions NFT',
         symbol='UNI-V3-POS',
         decimals=18,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     GlobalDBHandler().add_asset(nft_token)
     ethereum_inquirer = inquirer_defi.get_evm_manager(chain_id=ChainID.ETHEREUM).node_inquirer
@@ -289,3 +289,42 @@ def test_invalid_token_kind_price_query(inquirer_defi: 'Inquirer'):
             from_asset=nft_token,
             to_asset=A_USDC.resolve_to_evm_token(),
         )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_uniswap_oracle_query_multiple_handles_exceptions(inquirer_defi):
+    """
+    Regression test for query_multiple_current_prices to ensure it properly handles
+    exceptions without failing the entire batch. This prevents the issue where
+    a single non-ERC20 token would cause all price queries to fail.
+    """
+    # Create an NFT token that should raise PriceQueryUnsupportedAsset
+    GlobalDBHandler().add_asset(nft_token := EvmToken.initialize(
+        address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        chain_id=ChainID.ETHEREUM,
+        name='Uniswap V3: Positions NFT',
+        symbol='UNI-V3-POS',
+        decimals=18,
+        token_kind=TokenKind.ERC721,
+    ))
+
+    # This should not raise an exception despite containing an NFT
+    # Instead, it should skip the NFT and return prices for valid tokens
+    assert inquirer_defi._uniswapv3 is not None
+    prices = inquirer_defi._uniswapv3.query_multiple_current_prices(
+        from_assets=(from_assets := [
+            A_WETH.resolve_to_evm_token(),
+            A_LINK.resolve_to_evm_token(),
+            nft_token,
+            A_1INCH.resolve_to_evm_token(),
+        ]),
+        to_asset=A_USDC.resolve_to_evm_token(),
+    )
+
+    assert len(prices) > 1
+    assert nft_token not in prices  # NFT should be skipped
+    # At least some valid tokens should have prices (assuming pools exist)
+    valid_erc20_tokens = [asset for asset in from_assets if asset != nft_token]
+    assert any(token in prices for token in valid_erc20_tokens)

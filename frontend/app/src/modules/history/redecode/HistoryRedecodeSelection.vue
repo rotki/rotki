@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { EvmChainInfo } from '@/types/api/chains';
-import { useSupportedChains } from '@/composables/info/chains';
-import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
 import { getTextToken } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
+import { useSupportedChains } from '@/composables/info/chains';
+import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
 
 withDefaults(defineProps<{
   loading: boolean;

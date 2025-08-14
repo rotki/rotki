@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
+import { externalLinks } from '@shared/external-links';
 import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
@@ -12,7 +13,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
 import HashLink from '@/modules/common/links/HashLink.vue';
@@ -21,7 +22,6 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
-import { externalLinks } from '@shared/external-links';
 
 definePage({
   meta: {
@@ -315,6 +315,7 @@ async function toggleWhitelistAsset() {
       <AssetBalances
         :balances="collectionBalance"
         all-breakdown
+        hide-breakdown
       />
     </RuiCard>
   </TablePageLayout>

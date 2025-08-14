@@ -44,7 +44,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, GeneralCacheType
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, GeneralCacheType, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
@@ -76,7 +76,6 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             gauge_fees_cache_type: GeneralCacheType,
             pool_cache_type: CacheType,
             read_fn: Callable[[], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
-            pool_token_protocol: str,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -91,7 +90,6 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             read_data_from_cache_method=read_fn,
         )
         self.counterparty = counterparty
-        self.pool_token_protocol = pool_token_protocol
         self.protocol_addresses = routers  # protocol_addresses are updated with pools in post_cache_update_callback  # noqa: E501
         self.voting_escrow_address = voting_escrow_address
         self.gauge_bribes_cache_type = gauge_bribes_cache_type
@@ -140,9 +138,9 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 event.counterparty = self.counterparty
                 event.notes = f'Receive {event.amount} {crypto_asset.symbol} after depositing in {self.counterparty} pool {tx_log.address}'  # noqa: E501
                 event.product = EvmProduct.POOL
-                GlobalDBHandler.set_token_protocol_if_missing(
-                    token=event.asset.resolve_to_evm_token(),
-                    new_protocol=self.pool_token_protocol,
+                GlobalDBHandler.set_tokens_protocol_if_missing(
+                    tokens=[event.asset.resolve_to_evm_token()],
+                    new_protocol=self.counterparty,
                 )
 
         return DEFAULT_DECODING_OUTPUT
@@ -263,9 +261,9 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into {gauge_address} {self.counterparty} gauge'  # noqa: E501
-                    GlobalDBHandler.set_token_protocol_if_missing(
-                        token=event.asset.resolve_to_evm_token(),
-                        new_protocol=self.pool_token_protocol,
+                    GlobalDBHandler.set_tokens_protocol_if_missing(
+                        tokens=[event.asset.resolve_to_evm_token()],
+                        new_protocol=self.counterparty,
                     )
                 elif context.tx_log.topics[0] == GAUGE_WITHDRAW_V2:
                     event.event_type = HistoryEventType.WITHDRAWAL
@@ -383,7 +381,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             if int.from_bytes(tx_log.topics[3]) != 3:
                 continue
 
-            return DecodingOutput(event=self.base.make_event_from_transaction(
+            return DecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
@@ -396,15 +394,15 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 counterparty=self.counterparty,
                 address=self.voting_escrow_address,
                 location_label=bytes_to_address(tx_log.topics[1]),
-                notes=f'Increase unlock time to {timestamp_to_date(new_unlock_time, "%d/%m/%Y")} for {self.token_symbol} veNFT-{token_id}',  # type: ignore[has-type]  # mypy cannot infer it is a timestamp  # noqa: E501
+                notes=f'Increase unlock time to {timestamp_to_date(new_unlock_time, "%d/%m/%Y")} for {self.token_symbol} veNFT-{token_id}',  # noqa: E501
                 asset=get_or_create_evm_token(
                     userdb=self.base.database,
                     evm_address=self.voting_escrow_address,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_kind=EvmTokenKind.ERC721,
+                    token_kind=TokenKind.ERC721,
                     collectible_id=str(token_id),
-                )),
-            )
+                ),
+            )])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -442,7 +440,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
-        return DecodingOutput(event=self.base.make_event_from_transaction(
+        return DecodingOutput(events=[self.base.make_event_from_transaction(
             tx_log=context.tx_log,
             transaction=context.transaction,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -451,7 +449,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 userdb=self.base.database,
                 evm_address=self.voting_escrow_address,
                 chain_id=self.evm_inquirer.chain_id,
-                token_kind=EvmTokenKind.ERC721,
+                token_kind=TokenKind.ERC721,
                 collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
             ),
             amount=ZERO,
@@ -459,7 +457,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             address=self.voter_address,
             location_label=bytes_to_address(context.tx_log.topics[1]),
             notes=f'Cast {weight} votes for pool {bytes_to_address(context.tx_log.topics[2])}',
-        ))
+        )])
 
     def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         parent_mappings = super().reload_data()

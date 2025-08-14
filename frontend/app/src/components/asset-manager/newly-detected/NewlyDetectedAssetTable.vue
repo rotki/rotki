@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { NewDetectedToken } from '@/types/websocket-messages';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { NewDetectedToken } from '@/types/websocket-messages';
+import { Blockchain, getAddressFromEvmIdentifier } from '@rotki/common';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
@@ -12,7 +13,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
-import { Blockchain, getAddressFromEvmIdentifier } from '@rotki/common';
 
 interface Token extends NewDetectedToken {
   address: string;

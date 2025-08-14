@@ -1,7 +1,4 @@
-import base64
 import datetime
-import hashlib
-import hmac
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
@@ -20,7 +17,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.exchanges.utils import deserialize_asset_movement_address
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, deserialize_asset_movement_address
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -67,7 +64,7 @@ class OkxEndpoint(Enum):
     WITHDRAWALS = '/api/v5/asset/withdrawal-history'
 
 
-class Okx(ExchangeInterface):
+class Okx(ExchangeInterface, SignatureGeneratorMixin):
     """
     OKX exchange API docs: https://www.okx.com/docs-v5
     """
@@ -118,8 +115,7 @@ class Okx(ExchangeInterface):
         https://www.okx.com/docs-v5/en/#rest-api-authentication-signature
         """
         prehash = datestr + method + path + body
-        signature = hmac.new(self.secret, prehash.encode('utf-8'), hashlib.sha256)
-        return base64.b64encode(signature.digest()).decode('utf-8')
+        return self.generate_hmac_b64_signature(prehash)
 
     def _api_query(
             self,

@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_SOL, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
@@ -21,7 +21,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
-from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
+from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO, A_SOL
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -45,6 +45,7 @@ def test_name():
     assert exchange.name == 'kucoin1'
 
 
+@pytest.mark.asset_test
 def test_kucoin_exchange_assets_are_known(mock_kucoin, globaldb):
     request_url = f'{mock_kucoin.base_uri}/api/v1/currencies'
     try:
@@ -67,6 +68,11 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin, globaldb):
     for asset in get_exchange_asset_symbols(Location.KUCOIN):
         assert is_asset_symbol_unsupported(globaldb, Location.KUCOIN, asset) is False, f'Kucoin assets {asset} should not be unsupported'  # noqa: E501
 
+    missing_assets = {
+        'ZEUSCC8',  # no information about this token
+        'SNAKES',  # no information found
+    }
+
     for entry in response_dict['data']:
         symbol = entry['currency']
         try:
@@ -74,10 +80,11 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin, globaldb):
         except UnsupportedAsset:
             assert is_asset_symbol_unsupported(globaldb, Location.KUCOIN, symbol)
         except UnknownAsset as e:
-            test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.identifier} with symbol {symbol} in kucoin. '
-                f'Support for it has to be added',
-            ))
+            if symbol not in missing_assets:
+                test_warnings.warn(UserWarning(
+                    f'Found unknown asset {e.identifier} with symbol {symbol} in kucoin. '
+                    f'Support for it has to be added',
+                ))
 
 
 def test_api_query_retries_request(mock_kucoin):

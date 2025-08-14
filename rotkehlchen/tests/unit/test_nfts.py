@@ -8,7 +8,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, TokenKind
 
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
@@ -103,13 +103,13 @@ def test_duplicate_balances(
         userdb=blockchain.database,
         evm_address=string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     gnosis_pay_nft_token = get_or_create_evm_token(  # gnosis OG NFT
         userdb=blockchain.database,
         evm_address=string_to_evm_address('0x88997988a6A5aAF29BA973d298D276FE75fb69ab'),
         chain_id=ChainID.GNOSIS,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     with blockchain.database.user_write() as write_cursor:
         blockchain.database.save_tokens_for_address(

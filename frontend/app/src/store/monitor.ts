@@ -1,10 +1,14 @@
+import { startPromise } from '@shared/utils';
+import { isEqual } from 'es-toolkit';
 import { useBalances } from '@/composables/balances';
 import { useMessageHandling } from '@/composables/message-handling';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useHistoryStore } from '@/store/history';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -12,12 +16,11 @@ import { useTaskStore } from '@/store/tasks';
 import { useWebsocketStore } from '@/store/websocket';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
-import { startPromise } from '@shared/utils';
-import { isEqual } from 'es-toolkit';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';
 const BALANCES = 'balances';
+const EVM_EVENTS_STATUS = 'evm_events_status';
 
 export const useMonitorStore = defineStore('monitor', () => {
   const monitors = ref<Record<string, any>>({});
@@ -31,6 +34,8 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { fetchConnectedExchangeBalances } = useExchanges();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const { removeIgnoredAssets } = useBalancesStore();
+  const { processing } = useHistoryEventsStatus();
+  const { fetchEvmTransactionStatus } = useHistoryStore();
 
   const frontendStore = useFrontendSettingsStore();
   const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
@@ -88,6 +93,21 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   };
 
+  const startEvmStatusMonitoring = (): void => {
+    const activeMonitors = get(monitors);
+    const period = 10 * 60 * 1000; // fetch every 10 mins
+    if (!activeMonitors[EVM_EVENTS_STATUS]) {
+      if (get(canRequestData))
+        startPromise(fetchEvmTransactionStatus());
+
+      activeMonitors[EVM_EVENTS_STATUS] = setInterval(() => {
+        if (get(canRequestData))
+          startPromise(fetchEvmTransactionStatus());
+      }, period);
+      set(monitors, activeMonitors);
+    }
+  };
+
   /**
    * This function is called periodically, queries some data from the
    * client and updates the UI with the response.
@@ -96,6 +116,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     startPromise(connectWebSocket(restarting));
     startTaskMonitoring(restarting);
     startBalanceRefresh();
+    startEvmStatusMonitoring();
   };
 
   const stop = (): void => {
@@ -138,6 +159,12 @@ export const useMonitorStore = defineStore('monitor', () => {
     const addedAssets = curr.filter(asset => !prev.includes(asset));
     if (addedAssets.length > 0) {
       removeIgnoredAssets(curr);
+    }
+  });
+
+  watch(processing, async (currentProcessing, previousProcessing) => {
+    if (currentProcessing !== previousProcessing) {
+      await fetchEvmTransactionStatus();
     }
   });
 

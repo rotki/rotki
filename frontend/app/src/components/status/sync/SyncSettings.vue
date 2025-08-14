@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
+import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.vue';
 
 const model = defineModel<boolean>({ required: true });
 
@@ -33,6 +34,11 @@ const { isMdAndUp } = useBreakpoint();
           {{ t('sync_indicator.setting.title') }}
         </div>
         <AskUserUponSizeDiscrepancySetting dialog />
+        <AutomaticSyncSetting
+          class="mt-2"
+          size="sm"
+          dense
+        />
       </div>
 
       <div class="flex justify-end">

@@ -1,5 +1,5 @@
 import { BigNumber } from 'bignumber.js';
-import z from 'zod';
+import z from 'zod/v4';
 
 export const Zero = bigNumberify(0);
 

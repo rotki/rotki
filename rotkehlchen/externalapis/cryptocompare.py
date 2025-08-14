@@ -510,12 +510,17 @@ class Cryptocompare(
                 asset for asset in from_assets if asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES
             ]
             for from_asset in special_assets:
-                if (price := self._special_case_handling(
-                    method_name='query_current_price',
-                    from_asset=from_asset,
-                    to_asset=to_asset,
-                )) != ZERO_PRICE:
-                    found_prices[from_asset] = price
+                try:
+                    if (price := self._special_case_handling(
+                        method_name='query_current_price',
+                        from_asset=from_asset,
+                        to_asset=to_asset,
+                    )) != ZERO_PRICE:
+                        found_prices[from_asset] = price
+                except (RemoteError, PriceQueryUnsupportedAsset) as e:
+                    # Skip special case assets that fail but continue processing others
+                    log.debug(f'CryptoCompare special case handling failed for {from_asset}: {e}')
+                    continue
 
             if len(unpriced_assets := [asset for asset in from_assets if asset not in special_assets]) == 0:  # noqa: E501
                 return found_prices
@@ -546,20 +551,25 @@ class Cryptocompare(
             fsyms_chunks.append(current_chunk.rstrip(','))
 
         for fsyms in fsyms_chunks:
-            if ',' in fsyms:
-                result = self._api_query(
-                    url=CCApiUrl.MULTI_PRICE,
-                    params={'fsyms': fsyms, 'tsyms': cc_to_asset_symbol},
-                )
-                for cc_from_symbol, price_result in result.items():
-                    if cc_to_asset_symbol in price_result:
-                        found_prices[symbols_to_assets[cc_from_symbol]] = Price(FVal(price_result[cc_to_asset_symbol]))  # noqa: E501
-            else:
-                result = self._api_query(
-                    url=CCApiUrl.PRICE,
-                    params={'fsym': fsyms, 'tsyms': cc_to_asset_symbol},
-                )
-                found_prices[symbols_to_assets[fsyms]] = Price(FVal(result[cc_to_asset_symbol]))
+            try:
+                if ',' in fsyms:
+                    result = self._api_query(
+                        url=CCApiUrl.MULTI_PRICE,
+                        params={'fsyms': fsyms, 'tsyms': cc_to_asset_symbol},
+                    )
+                    for cc_from_symbol, price_result in result.items():
+                        if cc_to_asset_symbol in price_result:
+                            found_prices[symbols_to_assets[cc_from_symbol]] = Price(FVal(price_result[cc_to_asset_symbol]))  # noqa: E501
+                else:
+                    result = self._api_query(
+                        url=CCApiUrl.PRICE,
+                        params={'fsym': fsyms, 'tsyms': cc_to_asset_symbol},
+                    )
+                    found_prices[symbols_to_assets[fsyms]] = Price(FVal(result[cc_to_asset_symbol]))  # noqa: E501
+            except (RemoteError, ValueError, KeyError) as e:
+                # Skip chunks that fail but continue processing other chunks
+                log.debug(f'CryptoCompare failed to query price chunk {fsyms}: {e}')
+                continue
 
         return found_prices
 

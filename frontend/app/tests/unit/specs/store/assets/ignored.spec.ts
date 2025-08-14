@@ -1,6 +1,6 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/assets/ignore', () => ({
   useAssetIgnoreApi: vi.fn().mockReturnValue({

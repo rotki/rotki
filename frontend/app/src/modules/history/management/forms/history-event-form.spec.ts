@@ -1,11 +1,11 @@
-import type { EvmHistoryEvent } from '@/types/history/events';
-import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import { isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
-import { setupDayjs } from '@/utils/date';
+import type { EvmHistoryEvent } from '@/types/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
+import { isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
+import { setupDayjs } from '@/utils/date';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',

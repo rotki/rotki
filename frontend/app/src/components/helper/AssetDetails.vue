@@ -23,6 +23,10 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  refresh: [];
+}>();
+
 const { asset } = toRefs(props);
 const { assetInfo } = useAssetInfoRetrieval();
 
@@ -49,5 +53,6 @@ const currentAsset = computed<AssetInfoWithId>(() => ({
     :is-collection-parent="isCollectionParent"
     :size="size"
     :force-chain="forceChain"
+    @refresh="emit('refresh')"
   />
 </template>

@@ -81,7 +81,7 @@ def memory_objcount(output, data_list, topn=10):
     # make sure that this class will have all points otherwise the matplotlib
     # call will fail
     alltime_count = sum(len(data) for data in data_list)
-    # extra points points to create the valleys in the graph
+    # extra points to create the valleys in the graph
     alltime_count += len(data_list) * 2
 
     def alltime_factory():

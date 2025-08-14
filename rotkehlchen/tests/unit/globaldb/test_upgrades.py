@@ -2,12 +2,12 @@ import json
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
-from sqlite3 import IntegrityError
 from typing import Final
 
 import pytest
 from eth_utils.address import to_checksum_address
 from freezegun import freeze_time
+from rsqlite import IntegrityError
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
@@ -40,16 +40,15 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
-from rotkehlchen.tests.utils.database import column_exists
+from rotkehlchen.tests.utils.database import column_exists, index_exists
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
-    YEARN_VAULTS_V1_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -138,7 +137,7 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler, messages_aggregator):
         # Check that the properties of LUSD (ethereum token) have been correctly translated
         weth_token_data = cursor.execute("SELECT identifier, token_kind, chain, address, decimals, protocol FROM evm_tokens WHERE address = '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'").fetchone()  # noqa: E501
         assert weth_token_data[0] == 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
-        assert EvmTokenKind.deserialize_from_db(weth_token_data[1]) == EvmTokenKind.ERC20
+        assert TokenKind.deserialize_evm_from_db(weth_token_data[1]) == TokenKind.ERC20
         assert ChainID.deserialize_from_db(weth_token_data[2]) == ChainID.ETHEREUM
         assert weth_token_data[3] == '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
         assert weth_token_data[4] == 18
@@ -315,7 +314,7 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
         # check that yearn tokens got their protocol updated
         cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', ('yearn-v1',))
         assert cursor.fetchone()[0] == 0
-        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', ('yearn_vaults_v1',))
         assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
 
 
@@ -1062,6 +1061,245 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
         ).fetchone()[0] == 0
 
 
+@pytest.mark.parametrize('custom_globaldb', ['v12_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [12])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='solana_tokens') is False
+        assert index_exists(cursor=cursor, name='idx_solana_tokens_identifier') is False
+        assert cursor.execute("SELECT COUNT(*) FROM token_kinds WHERE token_kind IN ('D', 'E')").fetchone()[0] == 0  # noqa: E501
+        assert (solana_tokens_count := cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y'").fetchone()[0]) == 432  # noqa: E501
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' LIMIT 10").fetchall() == [  # noqa: E501
+            ('COPE', 'Cope'),
+            ('FIDA', 'Bonfida'),
+            ('HOLY', 'Holy Trinity'),
+            ('RAY', 'Raydium'),
+            ('MEDIA', 'Media Network'),
+            ('STEP', 'Step Finance'),
+            ('SNY', 'Synthetify Token'),
+            ('MNGO', 'Mango'),
+            ('MER-2', 'Mercurial'),
+            ('ATLAS', 'Star Atlas'),
+        ]
+        assert (tokens_before := cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0]) == 12165  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM common_asset_details').fetchone()[0] == tokens_before  # noqa: E501
+        assert cursor.execute('SELECT main_asset FROM asset_collections WHERE id IN (500, 501, 502) ORDER BY id').fetchall() == [  # noqa: E501
+            ('COPE',),
+            ('RAY',),
+            ('MNGO',),
+        ]
+        assert cursor.execute('SELECT asset FROM multiasset_mappings WHERE collection_id IN (500, 501, 502) ORDER BY collection_id').fetchall() == [  # noqa: E501
+            ('COPE',),
+            ('RAY',),
+            ('MNGO',),
+        ]
+        assert cursor.execute('SELECT * FROM user_owned_assets').fetchall() == [
+            ('COPE',),
+            ('RAY',),
+            ('MNGO',),
+        ]
+        assert cursor.execute('SELECT from_asset, to_asset FROM price_history').fetchall() == [
+            ('COPE', 'USD'),
+            ('MNGO', 'ETH'),
+            ('USD', 'RAY'),
+        ]
+        assert cursor.execute("SELECT exchange_symbol, local_id FROM location_asset_mappings WHERE exchange_symbol IN ('TRISIG', 'TRUMPSOL')").fetchall() == [  # noqa: E501
+            ('TRISIG', 'TRISIG'),
+            ('TRUMPSOL', 'TRUMP'),
+            ('TRISIG', 'TRISIG'),
+        ]
+        assert cursor.execute("SELECT symbol, local_id FROM counterparty_asset_mappings WHERE symbol IN ('BONK', 'WIF', 'POPCAT')").fetchall() == [  # noqa: E501
+            ('BONK', 'BONK'),
+            ('WIF', 'WIF'),
+            ('POPCAT', 'POPCAT'),
+        ]
+        assert cursor.execute('SELECT base_asset, quote_asset FROM binance_pairs').fetchall() == [
+            ('COPE', 'USDT'),
+            ('MNGO', 'USDT'),
+            ('RAY', 'BUSD'),
+        ]
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' AND identifier IN ('HODLER','LAND','LEMON')").fetchall() == (user_added_tokens_before := [  # tokens that were added manually  # noqa: E501
+            ('HODLER', 'The Little Hodler'),
+            ('LAND', 'The Real Goal'),
+            ('LEMON', 'Dog Stolen From Tesla'),
+        ])
+        assert table_exists(cursor=cursor, name='user_added_solana_tokens') is False
+
+        protocol_mapping = {
+            'aerodrome_pool': 'aerodrome',
+            'velodrome_pool': 'velodrome',
+            'pickle_jar': 'pickle finance',
+            'SLP': 'sushiswap-v2',
+            'UNI-V2': 'uniswap-v2',
+            'UNI-V3': 'uniswap-v3',
+            'yearn_vaults_v1': 'yearn-v1',
+            'yearn_vaults_v2': 'yearn-v2',
+            'yearn_vaults_v3': 'yearn-v3',
+            'curve_pool': 'curve',
+            'curve_lending_vaults': 'curve',
+            'pendle': 'pendle',
+            'hop_lp': 'hop',
+            'morpho_vaults': 'morpho',
+        }
+        # Check that protocol names are still in old format before upgrade
+        assert (protocol_tokens_count := cursor.execute(
+            f"SELECT COUNT(*) FROM evm_tokens WHERE protocol IN ({','.join(['?' for _ in protocol_mapping])})",  # noqa: E501
+            tuple(protocol_mapping),
+        ).fetchone()[0]) > 0
+
+        balancer_cache_mapping = {  # define before/after mapping for cache keys
+            'BALANCER_GAUGES11': 'BALANCER_V1_GAUGES1',
+            'BALANCER_GAUGES12': 'BALANCER_V2_GAUGES1',
+            'BALANCER_GAUGES1001': 'BALANCER_V1_GAUGES100',
+            'BALANCER_GAUGES1002': 'BALANCER_V2_GAUGES100',
+            'BALANCER_GAUGES421611': 'BALANCER_V1_GAUGES42161',
+            'BALANCER_GAUGES1372': 'BALANCER_V2_GAUGES137',
+            'BALANCER_GAUGES84532': 'BALANCER_V2_GAUGES8453',
+        }
+        # Count existing balancer cache entries before upgrade
+        assert (balancer_gauges := cursor.execute("SELECT key FROM general_cache WHERE key LIKE 'BALANCER_GAUGES%'").fetchall()) == [  # noqa: E501
+            ('BALANCER_GAUGES1001',),
+            ('BALANCER_GAUGES1002',),
+            ('BALANCER_GAUGES11',),
+            ('BALANCER_GAUGES11',),
+            ('BALANCER_GAUGES12',),
+            ('BALANCER_GAUGES12',),
+            ('BALANCER_GAUGES1372',),
+            ('BALANCER_GAUGES1462',),  # this is a malformed/invalid cache entry(balancer v2 is not on sonic chain)  # noqa: E501
+            ('BALANCER_GAUGES421611',),
+            ('BALANCER_GAUGES84532',),
+        ]
+        # Check several mappings that will be affected and get the existing mapping counts.
+        assert cursor.execute(
+            "SELECT * FROM location_asset_mappings WHERE exchange_symbol IN ('ABC', 'XYZ')",
+        ).fetchall() == [('u', 'XYZ', 'BTC'), ('u', 'ABC', 'ETH'), ('G', 'ABC', 'ETH')]
+        assert cursor.execute(
+            "SELECT * FROM location_asset_mappings WHERE location = 'S'",
+        ).fetchall() == [
+            ('S', 'CAKE', 'eip155:56/erc20:0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82'),
+            ('S', 'D', 'eip155:1/erc20:0x33b481CbBF3c24f2B3184Ee7Cb02dAAD1C4F49A8'),
+        ]
+        existing_binance_mapping_count = cursor.execute(
+            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'E'",
+        ).fetchone()[0]
+        # Verify some coinbasepro mappings exist
+        existing_coinbasepro_mapping_count = cursor.execute(
+            "SELECT COUNT(*) FROM location_asset_mappings WHERE location = 'K'",
+        ).fetchone()[0]
+        assert existing_coinbasepro_mapping_count > 0
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 13)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 13
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='solana_tokens') is True
+        assert index_exists(cursor=cursor, name='idx_solana_tokens_identifier') is True
+        assert cursor.execute("SELECT COUNT(*) FROM token_kinds WHERE token_kind IN ('D', 'E')").fetchone()[0] == 2  # noqa: E501
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' LIMIT 10").fetchall() == [  # noqa: E501
+            (cope_identifier := 'solana/token:8HGyAAB1yoM1ttS7pXjHMa3dukTFGQggnFFH3hJZgzQh', 'Cope'),  # noqa: E501
+            ('solana/token:EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp', 'Bonfida'),
+            ('solana/token:3GECTP7H4Tww3w8jEPJCJtXUtXxiZty31S9szs84CcwQ', 'Holy Trinity'),
+            (raydium_identifier := 'solana/token:4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', 'Raydium'),  # noqa: E501
+            ('solana/token:ETAtLmCmsoiEEKfNrHKJ2kYy3MoABhU6NQvpSfij5tDs', 'Media Network'),
+            ('solana/token:StepAscQoEioFxxWGnh2sLBDFp9d8rvKz2Yp39iDpyT', 'Step Finance'),
+            ('solana/token:4dmKkXNHdgYsXqBHCuMikNQWwVomZURhYvkkX5c4pQ7y', 'Synthetify Token'),
+            (mango_identifier := 'solana/token:MangoCzJ36AjZyKwVj3VnYU4GTonjfVEnJmvvWaxLac', 'Mango'),  # noqa: E501
+            ('solana/token:MERt85fc5boKw3BW1eYdxonEuJNvXbiMbs6hvheau5K', 'Mercurial'),
+            ('solana/token:ATLASXmbPQxBUYbxPsV97usA3fPQYEqzQBUHgiFCUsXx', 'Star Atlas'),
+        ]
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE identifier IN ('HODLSOL','TRISIG')").fetchone()[0] == 0  # noqa: E501
+        # solana_tokens count reduced by 5: 2 duplicates removed + 3 user-added tokens migrated to AssetType.OTHER i.e. 'W'  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM solana_tokens').fetchone()[0] == solana_tokens_count - 5  # noqa: E501
+        # token count reduced by 2 due to removal of duplicate HODLSOL and TRISIG entries
+        assert cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0] == tokens_before - 2
+        assert cursor.execute('SELECT COUNT(*) FROM common_asset_details').fetchone()[0] == tokens_before - 2  # noqa: E501
+        # Ensure all solana tokens have corresponding entries in the assets table
+        assert cursor.execute('SELECT COUNT(*) FROM solana_tokens s LEFT JOIN assets a ON s.identifier = a.identifier WHERE a.identifier IS NULL').fetchone()[0] == 0  # noqa: E501
+        # Ensure all solana tokens have corresponding entries in the common_asset_details table
+        assert cursor.execute('SELECT COUNT(*) FROM solana_tokens s LEFT JOIN common_asset_details c ON s.identifier = c.identifier WHERE c.identifier IS NULL').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y' AND identifier NOT LIKE 'solana%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT main_asset FROM asset_collections WHERE id IN (500, 501, 502) ORDER BY id').fetchall() == [  # noqa: E501
+            (cope_identifier,),
+            (raydium_identifier,),
+            (mango_identifier,),
+        ]
+        assert cursor.execute('SELECT asset FROM multiasset_mappings WHERE collection_id IN (500, 501, 502) ORDER BY collection_id').fetchall() == [  # noqa: E501
+            (cope_identifier,),
+            (raydium_identifier,),
+            (mango_identifier,),
+        ]
+        assert cursor.execute('SELECT * FROM user_owned_assets').fetchall() == [
+            (cope_identifier,),
+            (raydium_identifier,),
+            (mango_identifier,),
+        ]
+        assert cursor.execute('SELECT from_asset, to_asset FROM price_history').fetchall() == [
+            (cope_identifier, 'USD'),
+            (mango_identifier, 'ETH'),
+            ('USD', raydium_identifier),
+        ]
+        assert cursor.execute("SELECT exchange_symbol, local_id FROM location_asset_mappings WHERE exchange_symbol IN ('TRISIG', 'TRUMPSOL')").fetchall() == [  # noqa: E501
+            ('TRISIG', trisig_sol_identifier := 'solana/token:BLDiYcvm3CLcgZ7XUBPgz6idSAkNmWY6MBbm8Xpjpump'),  # noqa: E501
+            ('TRUMPSOL', 'solana/token:6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'),
+            ('TRISIG', trisig_sol_identifier),
+        ]
+        assert cursor.execute("SELECT symbol, local_id FROM counterparty_asset_mappings WHERE symbol IN ('BONK', 'WIF', 'POPCAT')").fetchall() == [  # noqa: E501
+            ('BONK', 'solana/token:DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'),
+            ('WIF', 'solana/token:EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm'),
+            ('POPCAT', 'solana/token:7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr'),
+        ]
+        assert cursor.execute('SELECT base_asset, quote_asset FROM binance_pairs').fetchall() == [
+            (raydium_identifier, 'BUSD'),
+            (cope_identifier, 'USDT'),
+            (mango_identifier, 'USDT'),
+        ]
+        # check that the temporary table was created and the assets' type changed.
+        assert table_exists(cursor=cursor, name='user_added_solana_tokens') is True
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y' AND identifier IN ('HODLER','LAND','LEMON')").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='W' AND identifier IN ('HODLER','LAND','LEMON')").fetchall() == user_added_tokens_before  # noqa: E501
+
+        # verify that old protocol names are gone and new counterparty identifiers are present
+        for protocols, expected_count in (
+            (protocol_mapping, 0),
+            (protocol_mapping.values(), protocol_tokens_count),
+        ):
+            assert cursor.execute(
+                f"SELECT COUNT(*) FROM evm_tokens WHERE protocol IN ({','.join(['?' for _ in protocols])})",  # noqa: E501
+                tuple(protocols),
+            ).fetchone()[0] == expected_count
+
+        # Verify balancer cache migration: old keys gone, new keys exist with same count
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "BALANCER_GAUGES%"').fetchone()[0] == 0  # noqa: E501
+        # `balancer_gauges_count - 1` because a malformed/unexpected balancer gauge cache entry got deleted  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?, ?, ?, ?)', list(balancer_cache_mapping.values())).fetchone()[0] == len(balancer_gauges) - 1  # noqa: E501
+        # Check that the coinbaseprime mappings have been combined with the coinbase mappings.
+        assert cursor.execute(
+            "SELECT * FROM location_asset_mappings WHERE exchange_symbol IN ('ABC', 'XYZ')",
+        ).fetchall() == [('G', 'XYZ', 'BTC'), ('G', 'ABC', 'ETH')]
+        # Check the mappings counts
+        for old_location, new_location, expected_new_count in (
+            ('S', 'E', existing_binance_mapping_count),  # both binanceus mappings already exist for binance as well.  # noqa: E501
+            ('u', 'G', 115),  # After coinbaseprime and coinbasepro migrations, all go to coinbase location.  # noqa: E501
+            ('K', 'G', 115),  # All coinbasepro mappings are processed after coinbaseprime, resulting in 115 total.  # noqa: E501
+        ):
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location_asset_mappings WHERE location=?',
+                (new_location,),
+            ).fetchone()[0] == expected_new_count
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location_asset_mappings WHERE location=?',
+                (old_location,),
+            ).fetchone()[0] == 0
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
@@ -1075,7 +1313,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
     with pytest.raises(DBUpgradeError):
         create_globaldb(globaldb._data_directory, 0, messages_aggregator)
 
-    globaldb.conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
+    globaldb.conn.wal_checkpoint()  # flush the wal file
 
     # Add a backup
     backup_path = globaldb._data_directory / GLOBALDIR_NAME / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here

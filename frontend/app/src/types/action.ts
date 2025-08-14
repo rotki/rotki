@@ -1,5 +1,5 @@
-import type { Section, Status } from '@/types/status';
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
+import type { Section, Status } from '@/types/status';
 
 interface ActionFailure<T = string> {
   readonly message: T;

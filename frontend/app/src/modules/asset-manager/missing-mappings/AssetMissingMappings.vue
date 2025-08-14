@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { MissingMapping } from '@/modules/data/schemas';
 import type { CexMapping } from '@/types/asset';
-import type { DataTableColumn } from '@rotki/ui-library';
+import z from 'zod/v4';
 import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
 import ManageCexMappingFormDialog from '@/components/asset-manager/cex-mapping/ManageCexMappingFormDialog.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -9,7 +10,6 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useMissingMappingsDB } from '@/modules/asset-manager/missing-mappings/use-missing-mappings-db';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import z from 'zod';
 
 const QuerySchema = z.object({
   identifier: z.string().optional().default(''),

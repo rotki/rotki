@@ -37,7 +37,10 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Remove extrainternaltx cache.')
     def _clean_cache(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute("DELETE FROM key_value_cache WHERE name LIKE 'extrainternaltx_%'")
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?',
+            ('extrainternaltx\\_%', '\\'),
+        )
 
     @progress_step(description='Resetting decoded events.')
     def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
@@ -74,7 +77,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """
         # Delete MEV events that were already moved to the block events. They will rerun
         write_cursor.execute(
-            "DELETE FROM history_events WHERE sequence_index > 1 AND event_identifier LIKE 'BP1_%'",  # noqa: E501
+            'DELETE FROM history_events WHERE sequence_index > 1 AND event_identifier LIKE ? ESCAPE ?', ('BP1\\_%', '\\'),  # noqa: E501
         )
         # Modify all MEV relayer events to be informational and properly display new notes
         write_cursor.execute("""

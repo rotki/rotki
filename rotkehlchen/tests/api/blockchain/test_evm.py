@@ -12,7 +12,7 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import RemoteError
@@ -93,13 +93,13 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server: 'APISe
         # Check per account
         account_balances = result['per_account'][chain.serialize()][AVALANCHE_ACC1_AVAX_ADDR]
         assert 'liabilities' in account_balances
-        asset_token = account_balances['assets'][native_token.identifier]
+        asset_token = account_balances['assets'][native_token.identifier][DEFAULT_BALANCE_LABEL]
         assert FVal(asset_token['amount']) >= ZERO
         assert FVal(asset_token['usd_value']) >= ZERO
 
         # Check totals
         assert 'liabilities' in result['totals']
-        total_token = result['totals']['assets'][native_token.identifier]
+        total_token = result['totals']['assets'][native_token.identifier][DEFAULT_BALANCE_LABEL]
         assert FVal(total_token['amount']) >= ZERO
         assert FVal(total_token['usd_value']) >= ZERO
 
@@ -470,11 +470,10 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             response = requests.post(
                 api_url_for(
                     rotkehlchen_api_server,
-                    'evmtransactionsresource',
+                    'blockchaintransactionsresource',
                 ), json={
                     'async_query': True,
-                    'accounts': [{'address': address, 'evm_chain': 'ethereum'}],
-                    'evm_chain': 'ethereum',
+                    'accounts': [{'address': address, 'blockchain': 'eth'}],
                 },
             )
             assert_ok_async_response(response)

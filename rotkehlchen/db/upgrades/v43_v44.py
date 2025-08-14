@@ -201,7 +201,10 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Removing zksynclite used query ranges.')
     def _remove_zksynclite_used_query_ranges(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'zksynclitetxs_%'")
+        write_cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('zksynclitetxs\\_%', '\\'),
+        )
 
     @progress_step(description='Resetting decoded events.')
     def _reset_decoded_events(write_cursor: 'DBCursor') -> None:

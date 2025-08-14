@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_LTC, A_USD
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_USD
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
@@ -22,7 +22,7 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
 )
-from rotkehlchen.tests.utils.constants import A_PAXG, A_ZEC
+from rotkehlchen.tests.utils.constants import A_LTC, A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -69,6 +69,7 @@ def test_gemini_wrong_key(sandbox_gemini):
     assert 'Invalid API Key or API secret' in msg
 
 
+@pytest.mark.asset_test
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
 def test_gemini_all_symbols_are_known(sandbox_gemini, globaldb):
@@ -321,10 +322,9 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         sandbox_gemini.query_history_events()
 
     with sandbox_gemini.db.conn.read_ctx() as cursor:
-        movements = DBHistoryEvents(sandbox_gemini.db).get_history_events(
+        movements = DBHistoryEvents(sandbox_gemini.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.GEMINI),
-            has_premium=True,
         )
 
     assert len(movements) == 6
@@ -403,7 +403,7 @@ def test_gemini_symbol_to_base_quote():
     assert gemini_symbol_to_base_quote('linkbtc') == (A_LINK, A_BTC)
     assert gemini_symbol_to_base_quote('btcgusd') == (A_BTC, A_GUSD)
     assert gemini_symbol_to_base_quote('linkpaxg') == (A_LINK, A_PAXG)
-    assert gemini_symbol_to_base_quote('moodengusd') == (Asset('MOODENG'), A_USD)
+    assert gemini_symbol_to_base_quote('moodengusd') == (Asset('solana/token:ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY'), A_USD)  # noqa: E501
 
     with pytest.raises(UnprocessableTradePair):
         gemini_symbol_to_base_quote('btcusdperp')

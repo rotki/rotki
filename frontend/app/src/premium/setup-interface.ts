@@ -1,36 +1,28 @@
-import type { DateFormat } from '@/types/date-format';
-import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type {
   DataUtilities,
   DateUtilities,
+  NewGraphApi,
   PremiumApi,
   PremiumInterface,
   SettingsApi,
   Themes,
   TimeUnit,
 } from '@rotki/common';
-import { useGraph } from '@/composables/graphs';
-import { displayDateFormatter } from '@/data/date-formatter';
-import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import {
-  assetsApi,
-  balancesApi,
-  statisticsApi,
-  userSettings,
-  utilsApi,
-} from '@/premium/premium-apis';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import type { DateFormat } from '@/types/date-format';
+import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import dayjs from 'dayjs';
+import { useGraph } from '@/composables/graphs';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/premium/premium-apis';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { convertToTimestamp } from '@/utils/date';
+import { logger } from '@/utils/logging';
 
 const date: DateUtilities = {
   convertToTimestamp(date: string, dateFormat?: string): number {
     return convertToTimestamp(date, dateFormat as DateFormat | undefined);
   },
-  dateToEpoch(date: string, format: string): number {
-    return dayjs(date, format).unix();
-  },
+
   epoch(): number {
     return dayjs().unix();
   },
@@ -39,18 +31,6 @@ const date: DateUtilities = {
   },
   epochToFormat(epoch: number, format: string): string {
     return dayjs(epoch * 1000).format(format);
-  },
-  format(date: string, _: string, newFormat: string): string {
-    return dayjs(date).format(newFormat);
-  },
-  getDateInputISOFormat(format: string): string {
-    return getDateInputISOFormat(format as DateFormat);
-  },
-  now(format: string): string {
-    return dayjs().format(format);
-  },
-  toUserSelectedFormat(timestamp: number): string {
-    return displayDateFormatter.format(new Date(timestamp * 1000), useGeneralSettingsStore().dateDisplayFormat);
   },
 };
 
@@ -97,10 +77,13 @@ export function usePremiumApi(): PremiumInterface {
     api: (): PremiumApi => ({
       data: data(),
       date,
-      graphs: useGraph,
+      graphs(): NewGraphApi {
+        return useGraph();
+      },
+      logger,
       settings: settings(),
     }),
     useHostComponents: true,
-    version: 25,
+    version: 26,
   };
 }

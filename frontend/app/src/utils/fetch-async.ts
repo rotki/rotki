@@ -1,6 +1,7 @@
+import type { Ref } from 'vue';
 import type { FetchData } from '@/types/fetch';
 import type { TaskMeta } from '@/types/task';
-import type { Ref } from 'vue';
+import { Severity } from '@rotki/common';
 import { useStatusUpdater } from '@/composables/status';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
@@ -8,7 +9,6 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils/index';
 import { logger } from '@/utils/logging';
-import { Severity } from '@rotki/common';
 
 export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R>, state: Ref<R>): Promise<void> {
   if (

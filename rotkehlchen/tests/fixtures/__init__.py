@@ -5,6 +5,7 @@ from rotkehlchen.tests.fixtures.dataupdates import *  # noqa: F403
 from rotkehlchen.tests.fixtures.db import *  # noqa: F403
 from rotkehlchen.tests.fixtures.eth2 import *  # noqa: F403
 from rotkehlchen.tests.fixtures.exchanges import *  # noqa: F403
+from rotkehlchen.tests.fixtures.external_apis import *  # noqa: F403
 from rotkehlchen.tests.fixtures.globaldb import *  # noqa: F403
 from rotkehlchen.tests.fixtures.google import *  # noqa: F403
 from rotkehlchen.tests.fixtures.greenlets import *  # noqa: F403

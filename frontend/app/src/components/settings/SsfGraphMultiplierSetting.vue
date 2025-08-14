@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, minValue } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, minValue } from '@vuelidate/validators';
 
 const emit = defineEmits<{
   (e: 'updated'): void;

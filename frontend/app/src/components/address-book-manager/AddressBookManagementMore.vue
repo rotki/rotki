@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import { Severity } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
 import { useNotificationsStore } from '@/store/notifications';
-import { Severity } from '@rotki/common';
-import { externalLinks } from '@shared/external-links';
 
 const emit = defineEmits<{
   (e: 'refresh'): void;

@@ -1,5 +1,6 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import { HistoryEventEntryType } from '@rotki/common';
 import {
   type AssetMovementEvent,
   type EthBlockEvent,
@@ -10,8 +11,7 @@ import {
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
   type OnlineHistoryEvent,
-} from '@/types/history/events';
-import { HistoryEventEntryType } from '@rotki/common';
+} from '@/types/history/events/schemas';
 
 export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
   return type === e?.entryType;

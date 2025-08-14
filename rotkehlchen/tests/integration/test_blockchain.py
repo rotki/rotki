@@ -6,7 +6,7 @@ import requests
 
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
 from rotkehlchen.types import SupportedBlockchain
@@ -24,8 +24,8 @@ def test_query_btc_balances(blockchain):
     )
 
     blockchain.query_btc_balances()
-    assert blockchain.totals.assets[A_BTC].usd_value is not None
-    assert blockchain.totals.assets[A_BTC].amount is not None
+    assert blockchain.totals.assets[A_BTC][DEFAULT_BALANCE_LABEL].usd_value is not None
+    assert blockchain.totals.assets[A_BTC][DEFAULT_BALANCE_LABEL].amount is not None
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -72,7 +72,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
             accounts=[addr1, addr2],
             append_or_remove='append',
         )
-        ethtokens = EthereumTokens(database=blockchain.database, ethereum_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
+        ethtokens = EthereumTokens(database=blockchain.database, evm_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
         ethtokens.detect_tokens(
             only_cache=False,
             addresses=[addr1, addr2],
@@ -88,5 +88,5 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         ]
         gevent.joinall(greenlets)
 
-    assert blockchain.totals.assets[A_DAI].amount == ONE
-    assert blockchain.balances.eth[addr1].assets[A_DAI].amount == ONE
+    assert blockchain.totals.assets[A_DAI][DEFAULT_BALANCE_LABEL].amount == ONE
+    assert blockchain.balances.eth[addr1].assets[A_DAI][DEFAULT_BALANCE_LABEL].amount == ONE

@@ -73,7 +73,7 @@ class SafeBalances(ProtocolWithBalance):
                 token_amount=locked_amount_raw[0],
                 token_decimals=DEFAULT_TOKEN_DECIMALS,
             )
-            balances[user_address].assets[asset] += Balance(
+            balances[user_address].assets[asset][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=amount * safe_price,
             )

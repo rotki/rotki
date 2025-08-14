@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import { NumericString } from '../numbers';
 
 export const Balance = z.object({
@@ -12,7 +12,10 @@ export const AssetEntry = z.object({
   asset: z.string().min(1),
 });
 
-export const AssetBalance = Balance.merge(AssetEntry);
+export const AssetBalance = z.object({
+  ...Balance.shape,
+  ...AssetEntry.shape,
+});
 
 export type AssetBalance = z.infer<typeof AssetBalance>;
 
@@ -23,11 +26,31 @@ export const Percentage = z.string().refine((arg) => {
   message: 'Percentage must be between 0 and 100',
 });
 
-const WithPrice = z.object({ usdPrice: NumericString });
+const ProtocolBalanceSchema = Balance.extend({
+  containsManual: z.boolean().optional(),
+  protocol: z.string(),
+});
 
-const AssetBalanceWithPriceBeforeBreakdown = AssetBalance.merge(WithPrice);
-const AssetBalanceWithPrice = AssetBalanceWithPriceBeforeBreakdown.extend({
-  breakdown: z.array(AssetBalanceWithPriceBeforeBreakdown).optional(),
+const BaseAssetBalanceSchema = z.object({
+  ...AssetBalance.shape,
+  usdPrice: NumericString,
+});
+
+const BreakdownSchema = BaseAssetBalanceSchema.extend({
+  perProtocol: z.array(ProtocolBalanceSchema).optional(),
+});
+
+export type ProtocolBalance = z.infer<typeof ProtocolBalanceSchema>;
+
+export type ProtocolBalanceWithChains = ProtocolBalance & { chains?: Record<string, Balance> };
+
+const AssetBalanceWithPrice = BaseAssetBalanceSchema.extend({
+  breakdown: z.array(BreakdownSchema).optional(),
+  perProtocol: z.array(ProtocolBalanceSchema).optional(),
 });
 
 export type AssetBalanceWithPrice = z.infer<typeof AssetBalanceWithPrice>;
+
+export type AssetBalanceWithPriceAndChains = Omit<AssetBalanceWithPrice, 'perProtocol'> & {
+  perProtocol?: ProtocolBalanceWithChains[];
+};

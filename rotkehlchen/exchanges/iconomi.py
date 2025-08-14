@@ -1,6 +1,5 @@
 import base64
 import hashlib
-import hmac
 import json
 import logging
 import time
@@ -19,6 +18,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Iconomi(ExchangeInterface):
+class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -60,13 +60,12 @@ class Iconomi(ExchangeInterface):
         self.aust = A_AUST.resolve_to_asset_with_oracles()
 
     def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> str:
-        signed_data = f'{timestamp}{request_type.upper()}{request_path}'.encode()
-        signature = hmac.new(
-            self.secret,
-            signed_data,
-            hashlib.sha512,
+        signed_data = f'{timestamp}{request_type.upper()}{request_path}'
+        signature_digest = self.generate_hmac_signature(
+            message=signed_data,
+            digest_algorithm=hashlib.sha512,
         )
-        return base64.b64encode(signature.digest()).decode()
+        return base64.b64encode(bytes.fromhex(signature_digest)).decode()
 
     def _api_query(
             self,

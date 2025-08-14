@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 import AppImage from '@/components/common/AppImage.vue';
 import ListItem from '@/components/common/ListItem.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
@@ -7,8 +9,6 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { omit } from 'es-toolkit';
-import { useTemplateRef } from 'vue';
 
 defineOptions({
   inheritAttrs: false,
@@ -40,6 +40,10 @@ const props = withDefaults(
     size: '30px',
   },
 );
+
+const emit = defineEmits<{
+  refresh: [];
+}>();
 
 const { asset, hideMenu, isCollectionParent } = toRefs(props);
 
@@ -132,6 +136,7 @@ function useContextMenu(attrs: Record<string, any>) {
       :icon-only="iconOnly"
       :hide-actions="hideActions"
       :is-collection-parent="isCollectionParent"
+      @refresh="emit('refresh')"
     />
   </RuiMenu>
 </template>

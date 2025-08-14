@@ -8,7 +8,7 @@ import requests
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.evm.decoding.morpho.constants import MORPHO_VAULT_ABI
+from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO, MORPHO_VAULT_ABI
 from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
 from rotkehlchen.constants import EXP18_INT, ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -18,11 +18,10 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
 from rotkehlchen.types import (
-    MORPHO_VAULT_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Price,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -74,7 +73,10 @@ def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
         userdb=database,
         evm_address=deserialize_evm_address(vault['asset']['address']),
         chain_id=vault_chain_id,
-        decimals=deserialize_int(vault['asset']['decimals']),
+        decimals=deserialize_int(
+            value=vault['asset']['decimals'],
+            location='morpho vault underlying token decimals',
+        ),
         name=vault['asset']['name'],
         symbol=vault['asset']['symbol'],
         encounter=(encounter := TokenEncounterInfo(
@@ -86,25 +88,26 @@ def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
         userdb=database,
         evm_address=deserialize_evm_address(vault['address']),
         chain_id=vault_chain_id,
-        protocol=MORPHO_VAULT_PROTOCOL,
+        protocol=CPT_MORPHO,
         decimals=DEFAULT_TOKEN_DECIMALS,  # all morpho vaults have 18 decimals
         name=vault['name'],
         symbol=vault['symbol'],
         underlying_tokens=[UnderlyingToken(
             address=underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
         encounter=encounter,
     )
 
 
-def query_morpho_vaults(database: 'DBHandler') -> None:
+def query_morpho_vaults(database: 'DBHandler', chain_id: ChainID) -> None:
     """Query list of Morpho vaults and add the vault tokens to the global database."""
     update_cached_vaults(
         database=database,
         cache_key=(CacheType.MORPHO_VAULTS,),
         display_name='Morpho',
+        chain=chain_id,
         query_vaults=_query_morpho_vaults_api,
         process_vault=_process_morpho_vault,
     )

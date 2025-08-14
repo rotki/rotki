@@ -1,5 +1,5 @@
-import type { ActionStatus } from '@/types/action';
 import type { MaybeRef } from '@vueuse/core';
+import type { ActionStatus } from '@/types/action';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';

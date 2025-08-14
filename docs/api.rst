@@ -392,6 +392,133 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 500: Internal rotki error
    :statuscode 502: The external premium service could not be reached or returned unexpected response.
 
+Querying premium devices
+========================
+
+.. http:get:: /api/(version)/premium/devices
+
+   By doing a ``GET`` at this endpoint you can query the list of registered devices for your premium account, if your user has a premium subscription.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/premium/devices HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "devices": [
+                  {
+                      "device_name": "MacOS",
+                      "user": "yabirgb",
+                      "device_identifier": "21312312"
+                  }
+              ],
+              "limit": 5,
+              "current_device_id": "abcd1234efgh5678"
+          },
+          "message": ""
+      }
+
+   :resjson object result: Object containing devices list and limit information
+   :resjson list devices: List of registered devices for the premium account
+   :resjson string device_name: Name of the registered device
+   :resjson string user: User associated with the device
+   :resjson string device_identifier: Unique identifier for the device
+   :resjson int limit: Device limit for the premium account
+   :resjson string current_device_id: Identifier of the current device making the request
+   :statuscode 200: Devices successfully queried
+   :statuscode 401: User is not logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: The external premium service could not be reached or returned unexpected response.
+
+Editing premium devices
+========================
+
+.. http:patch:: /api/(version)/premium/devices
+
+   By doing a ``PATCH`` at this endpoint you can edit the name of a particular device for your premium account, if your user has a premium subscription.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/premium/devices HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "device_identifier": "device_123",
+          "device_name": "my laptop"
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :reqjson string device_identifier: The unique identifier of the device to edit.
+   :reqjson string device_name: A new, user-friendly name for the device. Must be a non-empty string.
+   :resjson bool result: True if the device name was successfully updated.
+   :statuscode 200: Device name updated successfully.
+   :statuscode 400: Provided call is in some way malformed.
+   :statuscode 401: User is not logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: The external premium service could not be reached or returned unexpected response.
+
+Deleting premium devices
+========================
+
+.. http:delete:: /api/(version)/premium/devices
+
+   By doing a ``DELETE`` at this endpoint you can delete a specific registered device from your premium account.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/premium/devices HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "device_identifier": "device_123"
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :reqjson string device_identifier: The unique identifier of the device to delete
+   :resjson bool result: Returns true if the device deletion was successful
+   :statuscode 200: Device successfully deleted
+   :statuscode 400: Provided call is in some way malformed.
+   :statuscode 401: User is not logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: The external premium service could not be reached or returned unexpected response.
+
 Modify user password
 ========================
 
@@ -2010,7 +2137,7 @@ Deleting locally saved blockchain transactions
 
 .. http:delete:: /api/(version)/blockchains/transactions
 
-   Doing a DELETE on the blockchain transactions endpoint will either delete locally saved transaction data. If nothing is given all transaction data will be deleted. Can specify the chain to only delete all transactions of that chain. Or even further chain and tx_hash to delete only a specific transaction's data.
+   Doing a DELETE on the blockchain transactions endpoint will delete locally saved transaction data. If nothing is given all transaction data will be deleted. Can specify the chain to only delete all transactions of that chain. Or even further chain and tx_hash to delete only a specific transaction's data (although this is only supported for EVM and EVM-like chains). If chain is Bitcoin or Bitcoin Cash, the cached last queried block will also be deleted to allow all txs to be requeried.
 
    **Example Request**:
 
@@ -2023,7 +2150,7 @@ Deleting locally saved blockchain transactions
       {"chain": "eth", "tx_hash": "0x6826b8646578ff457ba01bfe6a2cc77e3d6e40a849e45a97ca12dfd9150cd901"}
 
    :reqjson string chain: Optional. The name of the chain for which to delete transaction. ``"eth"``, ``"optimism"``, ``"zksync_lite"`` etc. If not given all transactions for all chains are purged. This is using the backend's SupportedBlockchain with the limitation being only chains for which we save transactions.
-   :reqjson string tx_hash: Optional. The transaction to delete. If given only the specific transaction is deleted. This should always be given in combination with the chain argument.
+   :reqjson string tx_hash: Optional. The transaction to delete. If given only the specific transaction is deleted. This should always be given in combination with the chain argument. May only be used for EVM and EVM-like chains.
 
    **Example Response**:
 
@@ -2516,28 +2643,28 @@ Query supported ethereum modules
    :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-Querying evm transactions
+Querying blockchain transactions
 =================================
 
-.. http:post:: /api/(version)/blockchains/evm/transactions/
+.. http:post:: /api/(version)/blockchains/transactions/
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the evm transactions endpoint will query all evm transactions for all the tracked user addresses and save them to the DB. Caller can also specify a chain and/or an address to further filter the query.
+   Doing a POST on the blockchains transactions endpoint will query all transactions for all the tracked user addresses and save them to the DB. Caller can also specify a list of accounts to further filter the query, where each account contains an address and optionally its blockchain.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/evm/transactions HTTP/1.1
+      POST /api/1/blockchains/transactions HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {
           "accounts": [{
               "address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-              "evm_chain": "optimism"
+              "blockchain": "optimism"
           }, {
               "address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238"
           }],
@@ -2545,11 +2672,9 @@ Querying evm transactions
           "to_timestamp": 1572080165
       }
 
-   :reqjson list[string] accounts: List of accounts to filter by. Each account contains an ``"address"`` key which is required and is an evm address. It can also contains an ``"evm_chain"`` field which is the specific chain for which to limit the address.
+   :reqjson list[string] accounts: List of accounts to filter by. Each account contains a required ``address`` field which is a blockchain address and an optional ``blockchain`` field which is the specific chain for which to limit the address.
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
-   :reqjson string evm_chain: Optional. The name of the evm chain by which to filter all transactions. ``"ethereum"``, ``"optimism"`` etc.
-
 
    **Example Response**:
 
@@ -2987,11 +3112,20 @@ Querying onchain balances
                    },
                    "eth": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
-                           "ETH": {"amount": "10", "usd_value": "1650.53"},
-                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
+                           "ETH": {
+                               "address": {"amount": "10", "usd_value": "1650.53"}
+                           },
+                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                               "address": {"amount": "15", "usd_value": "15.21"}
+                           },
+                           "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7": {
+                               "makerdao vault": {"amount": "3", "usd_value": "54"}
+                           }
                        },
                        "liabilities": {
-                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
+                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                               "makerdao vault": {"amount": "20", "usd_value": "20.35"}
+                           }
                        }
                   }},
                    "eth2": { "0x9675faa8d15665e30d31dc10a332828fa15e2c7490f7d1894d9092901b139801ce476810f8e1e0c7658a9abdb9c4412e": {
@@ -3019,7 +3153,7 @@ Querying onchain balances
           "message": ""
       }
 
-   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has a blockchain asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. ETH accounts may have an optional liabilities key. This would be the same as assets. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
+   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has a blockchain asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent USD value as of the request. For EVM accounts, balances are organized by category: ``"address"`` represents tokens held directly in the address and available for use, while protocol-specific labels (like ``"makerdao vault"``, ``"aave"``, ``"morpho"``) show tokens locked in DeFi protocols. ETH accounts may have an optional liabilities key with the same structure. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
    :resjson object total: The blockchain balances in total per asset. Has 2 keys. One for assets and one for liabilities. The liabilities key may be missing if no liabilities exist.
 
    :statuscode 200: Balances successfully queried.
@@ -4034,7 +4168,7 @@ Uploading custom asset icons
 
       {"result": {"identifier": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"}, "message": ""}
 
-   :resjson strin identifier: The identifier of the asset for which the icon was uploaded.
+   :resjson string identifier: The identifier of the asset for which the icon was uploaded.
    :statuscode 200: Icon successfully uploaded
    :statuscode 500: Internal rotki error
 
@@ -4693,92 +4827,6 @@ Statistics rendering code
    :statuscode 403: Logged in user does not have premium.
    :statuscode 409: There is a problem reaching the rotki server.
    :statuscode 500: Internal rotki error.
-
-
-Querying asset movements
-===========================
-
-.. http:get:: /api/(version)/asset_movements
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   Doing a GET on this endpoint will return all asset movements (deposits/withdrawals) from all possible exchanges for the current user. It can be further filtered by a time range of a location. For non premium users there is a limit on the amount of movements returned.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/asset_movements HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken", "only_cache": false}
-
-   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the asset movements table by which to order the results. If none is given 'time' is assumed. Valid values are: ['time', 'location', 'category', 'amount', 'fee'].
-   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
-   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
-   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :reqjson string location: Optionally filter asset movements by location. A valid location name has to be provided. Valid locations are for now only exchanges for deposits/withdrawals.
-   :reqjson string asset: Optionally filter asset movements by asset. A valid asset identifier has to be provided. If missing, movements are not filtered by asset.
-   :reqjson string action: Optionally filter asset movements by action type. A valid action type (deposit, withdrawals) has to be provided. If missing movements are not filtered by type.
-   :reqjson bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
-   :reqjson bool exclude_ignored_assets: Optional. If this is true then the asset movements of ignored assets are not returned, defaults to ``"true"``.
-
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "entries": [{
-                  "entry": {
-                      "identifier": "foo"
-                      "location": "kraken",
-                      "category": "deposit",
-                      "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
-                      "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
-                      "timestamp": 1451706400
-                      "asset": "ETH",
-                      "amount": "500.55",
-                      "fee_asset": "ETH",
-                      "fee": "0.1",
-                      "link": "optional exchange unique id"
-                  },
-                  "ignored_in_accounting": false
-              }],
-              "entries_found": 80,
-              "entries_total": 120,
-              "entries_limit": 100,
-          "message": ""
-      }
-
-   :resjson object entries: An array of deposit/withdrawal objects and their metadata. Each entry is composed of the main movement entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each asset movement.
-   :resjsonarr string identifier: The uniquely identifying identifier for this asset movement
-   :resjsonarr string location: A valid location at which the deposit/withdrawal occurred
-   :resjsonarr string category: Either ``"deposit"`` or ``"withdrawal"``
-   :resjsonarr string address: The source address if this is a deposit or the destination address if this is a withdrawal.
-   :resjsonarr string transaction_id: The transaction id
-   :resjsonarr integer timestamp: The timestamp at which the deposit/withdrawal occurred
-   :resjsonarr string asset: The asset deposited or withdrawn
-   :resjsonarr string amount: The amount of asset deposited or withdrawn
-   :resjsonarr string fee_asset: The asset in which ``fee`` is denominated in
-   :resjsonarr string fee: The fee that was paid, if anything, for this deposit/withdrawal
-   :resjsonarr string link: Optional unique exchange identifier for the deposit/withdrawal
-   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
-   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
-   :resjson int entries_total: The number of total entries ignoring all filters.
-   :statuscode 200: Deposits/withdrawals are successfully returned
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in.
-   :statuscode 500: Internal rotki error
-   :statuscode 502: Error querying the remote for the asset movements
 
 Dealing with History Events
 ============================================
@@ -5637,6 +5685,7 @@ Exporting History Events
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
    :reqjson list location: An optional location name to filter events only for that location.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows you to provide more information about the location. When used in blockchains, it is used to specify the user's address. For exchange events, it's the exchange name assigned by the user.
+   :reqjson string notes_substring: An optional string to filter events by searching for a substring in the notes field. This searches both user notes and auto-generated notes.
    :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
    :reqjson string asset: The asset to optionally filter by.
    :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
@@ -5740,6 +5789,7 @@ Querying online events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Events were queried successfully
    :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 403: Logged in user does not have premium and requested a query type that is only available to premium users.
    :statuscode 409: Module for the given events is not active.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as beaconchain could not be reached or returned an unexpected response.
@@ -5786,7 +5836,7 @@ Querying exchange history events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Events were queried successfully
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: Module for the given events is not active.
+   :statuscode 409: Module for the given events is not active or no market pairs are selected (when querying Binance).
    :statuscode 500: Internal rotki error.
    :statuscode 502: The exchange api could not be reached or returned an unexpected response.
 
@@ -6651,7 +6701,7 @@ Querying periodic data
 
 Getting blockchain account data
 ===============================
-.. http:get:: /api/(version)/blockchains/(name)/accounts
+.. http:get:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -7995,85 +8045,10 @@ Getting eth2 staking performance
 
    :statuscode 200: Eth2 validator performance successfully returned.
    :statuscode 401: User is not logged in.
+   :statuscode 403: Eth staking limit reached. Response should contain the keys ``current_staked`` and ``staking_limit``.
    :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: Error connecting to a remote to query data.
-
-Getting Eth2 Staking daily stats
-=====================================
-
-.. http:post:: /api/(version)/blockchains/eth2/stake/dailystats
-
-   Doing a POST on the ETH2 stake daily stats endpoint will return daily stats for your ETH2 validators filtered and paginated by the given parameters
-
-   .. note::
-      This endpoint is only available for premium users
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      POST /api/1/blockchains/eth2/stake/dailystats HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validator_indices": [0, 15, 23542], "addresses": ["0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"],  "status": "all", "only_cache": false}
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
-   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the eth2_daily_staking_details table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'validator_index', 'pnl'].
-   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
-   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
-   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :reqjson list(string)[optional] validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
-   :reqjson list(string)[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
-   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also filter by ``"active"`` or ``"exited"``.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-        "result": {
-            "entries": [{
-                  "validator_index": 15,
-                  "timestamp": 1613952000,
-                  "pnl": {"amount": "0.007", "usd_value": "70"},
-              }, {
-                  "validator_index": 43567,
-                  "timestamp": 1613865600,
-                  "pnl": {"amount": "-0.0066", "usd_value": "-6.6"},
-              }],
-              "entries_found": 95,
-              "entries_total": 1000,
-              "sum_pnl": "0.0014",
-         },
-        "message": "",
-      }
-
-   :resjson entries : The list of daily stats filtered by the given filter.
-
-   :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
-   :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
-   :resjson pnl object: The amount of ETH gained or lost in that day along with its usd value. Average price of the day is taken.
-   :resjson string sum_pnl: The sum of PnL in ETH for the current filter and current page.
-   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
-   :resjson int entries_total: The number of total entries ignoring all filters.
-
-   :statuscode 200: Eth2 staking details successfully queried
-   :statuscode 401: User is not logged in.
-   :statuscode 403: Logged in user does not have premium.
-   :statuscode 409: eth2 module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
 Adding an Eth2 validator
@@ -8112,7 +8087,7 @@ Adding an Eth2 validator
       }
 
    :statuscode 200: Eth2 validator successfully added.
-   :statuscode 401: Can't add the validator since user is not premium and would go over the limit.
+   :statuscode 403: Can't add the validator since adding it would go over their premium staking limit. Response should contain the keys ``current_staked`` and ``staking_limit``.
    :statuscode 401: User is not logged in.
    :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
@@ -8191,6 +8166,7 @@ Editing an Eth2 validator
 
    :statuscode 200: Eth2 validator successfully edited.
    :statuscode 401: User is not logged in.
+   :statuscode 403: editing the validator exceeded the eth staking limit. Response should contain the keys ``current_staked`` and ``staking_limit``.
    :statuscode 409: eth2 module is not activated or validator doesn't exist.
    :statuscode 500: Internal rotki error.
 
@@ -8654,7 +8630,7 @@ Adding EVM accounts to all EVM chains
 Adding blockchain accounts
 ===========================
 
-.. http:put:: /api/(version)/blockchains/(name)/accounts
+.. http:put:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -8959,7 +8935,7 @@ Deleting BTC/BCH xpubs
 Editing blockchain account data
 =================================
 
-.. http:patch:: /api/(version)/blockchains/(name)/accounts
+.. http:patch:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -9149,7 +9125,7 @@ Account operations by chain type
 Removing blockchain accounts
 ==============================
 
-.. http:delete:: /api/(version)/blockchains/(name)/accounts
+.. http:delete:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -11525,6 +11501,7 @@ Handling user notes
 
       {"from_timestamp": 12345677, "to_timestamp": 12345679, "title_substring": "#"}
 
+   :reqjson str[optional] location: A string filtering the note location. Possible values are hardcoded here: https://github.com/rotki/rotki/blob/develop/frontend/app/src/types/notes.ts
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson list[string] order_by_attributes: This is the list of attributes of the note by which to order the results. By default we sort using ``last_update_timestamp``.
@@ -12001,7 +11978,7 @@ Add EVM Transaction By Hash
 Get Binance Savings Interests History
 =======================================
 
-.. http:post:: /api/(version)/exchange/(location)/savings
+.. http:post:: /api/(version)/exchanges/(location)/savings
 
    Doing a POST on this endpoint will return all history events relating to interest payments for the specified location.
    .. note::
@@ -12012,7 +11989,7 @@ Get Binance Savings Interests History
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/exchange/binance/savings HTTP/1.1
+      POST /api/1/exchanges/binance/savings HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -12493,12 +12470,18 @@ Get all valid locations
                 "is_exchange_with_key": true,
                 "is_exchange_without_api_secret": true
               }
+            "cryptocom": {
+              "image": "crypto_com.svg",
+              "exchange_detail": {
+                "is_exchange_with_key": true,
+                "experimental": true
+              }
             },
             "external": {"icon": "mdi-book"}
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object. If the exchange implementation is experimenta then the experimental key will exist and be set to true.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error
@@ -12537,7 +12520,7 @@ Refresh protocol data
   :statuscode 500: Internal rotki error
 
 
-.. http:post:: /api/(version/protocols/data/refresh
+.. http:post:: /api/(version)/protocols/data/refresh
 
    Doing a POST on this endpoint will refresh the data for the selected protocol.
 
@@ -13890,6 +13873,46 @@ Refetch EVM transactions for a specific time period
    :statuscode 500: Internal rotki error
 
 
+Get EVM transaction status
+===========================
+
+.. http:post:: /api/(version)/blockchains/evm/transactions/status
+
+   Doing a GET on the transactions status endpoint will query status information about how recently all EVM chains
+   have been queried for transactions and how many transactions are waiting to be decoded.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/evm/transactions/status HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": {"last_queried_ts": 1600000000, "undecoded_tx_count": 3, "has_evm_accounts": true}, "message": "" }
+
+   :resjson object result: An object containing the status data
+   :resjson integer last_queried_ts: The last timestamp when transactions for all EVM chains have been queried.
+   :resjson integer undecoded_tx_count: The number of transactions waiting to be decoded.
+   :resjson boolean has_evm_accounts: Whether there are any EVM accounts added to rotki.
+   :statuscode 200: Status successfully queried.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+
+
 Active management
 ==================
 
@@ -14167,4 +14190,56 @@ Ethereum staking events
    :statuscode 200: Redecode operation completed successfully.
    :statuscode 400: Failed to validate the data or invalid entry type provided.
    :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+
+Solana Token Migration
+======================
+
+.. http:post:: /api/(version)/solana/tokens/migrate
+
+   Migrates a user-added Solana token to the proper token type. This endpoint creates a new Solana token with the provided address and metadata, replaces all references in the database, and cleans up the migration table if necessary. This is a temporary endpoint to correct custom user input solana tokens input before release 1.40.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/solana/tokens/migrate HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": false,
+          "old_asset": "RAYDIUMSOL",
+          "address": "So11111111111111111111111111111111111112",
+          "decimals": 9,
+          "token_kind": "spl_token"
+      }
+
+   :reqjson bool async_query: Optional. Whether to process the request asynchronously. Defaults to false.
+   :reqjson string old_asset: The old asset identifier to migrate from. Must exist in the user_added_solana_tokens table.
+   :reqjson string address: The new Solana address (mint address) for the token
+   :reqjson int decimals: The number of decimal places for the token
+   :reqjson string token_kind: The type of Solana token. Must be either "spl_token" or "spl_nft"
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: Boolean denoting success or failure of the migration operation.
+   :statuscode 200: Token migration completed successfully.
+   :statuscode 400: Failed to validate the data or invalid parameters provided.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Token does not exist in user_added_solana_tokens table, or failed to create the new Solana token due to unknown asset or input error.
    :statuscode 500: Internal rotki error.

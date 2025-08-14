@@ -1,16 +1,17 @@
 import type { AssetMap } from '@/types/asset';
-import type { EthWithdrawalEvent } from '@/types/history/events';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useHistoryEvents } from '@/composables/history/events';
-import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { setupDayjs } from '@/utils/date';
+import type { EthWithdrawalEvent } from '@/types/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick } from 'vue';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useHistoryEvents } from '@/composables/history/events';
+import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn(),
@@ -24,10 +25,17 @@ vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),
 }));
 
+vi.mock('@/composables/api/assets/prices', () => ({
+  useAssetPricesApi: vi.fn().mockReturnValue({
+    addHistoricalPrice: vi.fn(),
+  }),
+}));
+
 describe('forms/EthWithdrawalEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EthWithdrawalEventForm>>;
   let addHistoryEventMock: ReturnType<typeof vi.fn>;
   let editHistoryEventMock: ReturnType<typeof vi.fn>;
+  let addHistoricalPriceMock: ReturnType<typeof vi.fn>;
   let pinia: Pinia;
 
   const asset = {
@@ -69,6 +77,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     vi.useFakeTimers();
     addHistoryEventMock = vi.fn();
     editHistoryEventMock = vi.fn();
+    addHistoricalPriceMock = vi.fn();
     const assetMapping = vi.fn().mockResolvedValue(mapping);
     (useBalancePricesStore as unknown as Mock).mockReturnValue({
       getHistoricPrice: vi.fn().mockResolvedValue(One),
@@ -77,6 +86,10 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     (useHistoryEvents as Mock).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
       editHistoryEvent: editHistoryEventMock,
+    });
+
+    (useAssetPricesApi as Mock).mockReturnValue({
+      addHistoricalPrice: addHistoricalPriceMock,
     });
   });
 
@@ -175,6 +188,36 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     });
   });
 
+  it('should not call editHistoryEvent when only updating the historic price', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+    const saveMethod = wrapper.vm.save;
+
+    // click save without changing anything
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce({ success: true });
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+
+    // click save after changing the historic price
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    await wrapper.find('[data-cy=primary] input').setValue('1000');
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
+
   it('should edit an existing deposit event when form is submitted', async () => {
     wrapper = createWrapper({
       props: {
@@ -228,11 +271,16 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       success: false,
     });
 
+    await wrapper.find('[data-cy=amount] input').setValue('4.5');
+
+    await vi.advanceTimersToNextTimerAsync();
+
     const saveMethod = wrapper.vm.save;
 
     const saveResult = await saveMethod();
     await nextTick();
 
+    expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
     expect(wrapper.find('[data-cy=withdrawalAddress] .details').text()).toBe('withdrawal address is required');
   });

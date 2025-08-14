@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events';
+import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import { flatten } from 'es-toolkit';
 import HistoryEventsListItem from '@/components/history/events/HistoryEventsListItem.vue';
 import HistoryEventsListSwap from '@/components/history/events/HistoryEventsListSwap.vue';
-import { flatten } from 'es-toolkit';
 
 interface HistoryEventsListTableProps {
   events: HistoryEventRow[];
@@ -20,6 +20,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'refresh': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -37,6 +38,7 @@ const { t } = useI18n({ useScope: 'global' });
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+          @refresh="emit('refresh')"
         />
         <HistoryEventsListItem
           v-else
@@ -51,6 +53,7 @@ const { t } = useI18n({ useScope: 'global' });
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+          @refresh="emit('refresh')"
         />
       </template>
     </template>

@@ -1,12 +1,28 @@
+from typing import TYPE_CHECKING
+from unittest.mock import patch
+
 import pytest
 from marshmallow import ValidationError
 
+from rotkehlchen.chain.bitcoin.bch.constants import (
+    BLOCKCHAIN_INFO_HASKOIN_BASE_URL,
+    HASKOIN_BASE_URL,
+    MELROY_BASE_URL,
+)
 from rotkehlchen.chain.bitcoin.bch.utils import (
     force_address_to_legacy_address,
     force_addresses_to_legacy_addresses,
     is_valid_bitcoin_cash_address,
+    legacy_to_cash_address,
     validate_bch_address_input,
 )
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils.network import request_get
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
+    from rotkehlchen.types import BTCAddress
 
 
 def test_is_valid_bitcoin_cash_address():
@@ -41,6 +57,14 @@ def test_force_addresses_to_legacy_addresses():
     assert force_addresses_to_legacy_addresses(addresses) == converted_addresses
 
 
+def test_legacy_to_cash_format():
+    """Test that converting a legacy bch address to the CashAddr format works."""
+    assert legacy_to_cash_address('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr') == 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'  # noqa: E501
+    assert legacy_to_cash_address('1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8') == 'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa'  # noqa: E501
+    assert legacy_to_cash_address('bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa') is None
+    assert legacy_to_cash_address('abcdefghijssfs') is None
+
+
 def test_validate_bch_address_input():
     """Test that an address is properly validated for Bitcoin Cash."""
     empty_set = set()
@@ -61,3 +85,41 @@ def test_validate_bch_address_input():
     with pytest.raises(ValidationError) as exc_info:
         validate_bch_address_input('ababkjk', empty_set)
     assert 'not a valid bitcoin cash address' in str(exc_info)
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('bch_accounts', [['38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr']])
+def test_query_bch_has_transactions_and_balances(
+        bitcoin_cash_manager: 'BitcoinCashManager',
+        bch_accounts: list['BTCAddress'],
+) -> None:
+    """Test that the bch have_transactions and get_balances work correctly from all apis."""
+    user_address, expected_balance = bch_accounts[0], FVal('5.33798911')
+    for api in (
+        HASKOIN_BASE_URL,
+        BLOCKCHAIN_INFO_HASKOIN_BASE_URL,
+        MELROY_BASE_URL,
+    ):
+
+        def mock_request_get(url: str, *args, api_url=api, **kwargs):
+            """Mock request_get to fail requests to apis other than the one we want to test."""
+            if api_url not in url:
+                raise RemoteError('Skip to next api')
+            elif 'health' in url:
+                return {'ok': True}
+
+            return request_get(url, *args, **kwargs)
+
+        with patch(
+            'rotkehlchen.utils.network.request_get',
+            side_effect=mock_request_get,
+        ):
+            assert bitcoin_cash_manager.have_transactions(
+                accounts=bch_accounts,
+            ) == {user_address: (True, expected_balance)}
+            assert bitcoin_cash_manager.get_balances(
+                accounts=bch_accounts,
+            ) == {user_address: expected_balance}
+
+        # reset health status so it tries to query health again in the next loop iteration
+        bitcoin_cash_manager.last_haskoin_health = {}

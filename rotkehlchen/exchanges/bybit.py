@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import logging
 import urllib.parse
@@ -24,6 +22,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -99,7 +98,7 @@ def bybit_symbol_to_base_quote(
     return base_asset, quote_asset
 
 
-class Bybit(ExchangeInterface):
+class Bybit(ExchangeInterface, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -143,7 +142,7 @@ class Bybit(ExchangeInterface):
         }
         self.is_unified_account = False
         self.history_events_db = DBHistoryEvents(self.db)
-        self.four_letter_assets = {'USDT', 'USDC', 'USDE', 'USDQ', 'USDR'}  # known quote assets
+        self.four_letter_assets = {'USDT', 'USDC', 'USDE', 'USDQ', 'USDR', 'USD1'}  # known quote assets  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND LENGTH(exchange_symbol) = 4;',  # noqa: E501
@@ -218,12 +217,7 @@ class Bybit(ExchangeInterface):
                         ],
                     )
 
-                signature_hash = hmac.new(
-                    key=self.secret,
-                    msg=param_str.encode('utf-8'),
-                    digestmod=hashlib.sha256,
-                )
-                signature = signature_hash.hexdigest()
+                signature = self.generate_hmac_signature(param_str)
                 headers = {
                     'X-BAPI-TIMESTAMP': str(timestamp),
                     'X-BAPI-SIGN': signature,
@@ -486,7 +480,7 @@ class Bybit(ExchangeInterface):
         Query balances in wallet. It queries the unified and spot accounts.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns the a tuple of balances and None if there wasn't any error or a string
+        Returns a tuple of balances and None if there wasn't any error or a string
         message with a description of what went wrong.
         """
         asset_balances = {}
@@ -515,7 +509,7 @@ class Bybit(ExchangeInterface):
         Query balances in the funding wallet.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns the a tuple of balances and None if there wasn't any error or a string
+        Returns a tuple of balances and None if there wasn't any error or a string
         message with a description of what went wrong.
         """
         asset_balances: dict[AssetWithOracles, Balance] = {}

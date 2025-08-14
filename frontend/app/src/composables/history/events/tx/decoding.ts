@@ -1,4 +1,5 @@
 import type { TaskMeta } from '@/types/task';
+import { groupBy } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
@@ -20,7 +21,6 @@ import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
-import { groupBy } from 'es-toolkit';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
@@ -41,7 +41,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     updateUndecodedTransactionsStatus,
   } = useHistoryStore();
 
-  const { getChain, getChainName, getEvmChainName, isEvmLikeChains, txChains } = useSupportedChains();
+  const { evmAndEvmLikeTxChainsInfo, getChain, getChainName, getEvmChainName, isEvmLikeChains } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY);
 
@@ -180,7 +180,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   };
 
   const redecodeTransactions = async (chains: string[] = []): Promise<void> => {
-    const decodeChains = chains.length > 0 ? chains : get(txChains).map(chain => chain.id);
+    const decodeChains = chains.length > 0 ? chains : get(evmAndEvmLikeTxChainsInfo).map(chain => chain.id);
 
     const chainInfo = decodeChains
       .map((chain) => {

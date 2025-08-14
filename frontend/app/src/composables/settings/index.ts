@@ -1,14 +1,14 @@
+import type { Ref } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { BaseMessage } from '@/types/messages';
 import type { SessionSettings } from '@/types/session';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { SettingsUpdate } from '@/types/user';
-import type { Ref } from 'vue';
+import { promiseTimeout } from '@vueuse/core';
 import { useSettingsStore } from '@/store/settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { logger } from '@/utils/logging';
-import { promiseTimeout } from '@vueuse/core';
 
 export enum SettingLocation {
   FRONTEND,

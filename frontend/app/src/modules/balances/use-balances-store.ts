@@ -1,16 +1,16 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { Balances } from '@/types/blockchain/accounts';
 import type { BlockchainAssetBalances, BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
-import type { MaybeRef } from '@vueuse/core';
-import { updateBalancesPrices, updateBlockchainAssetBalances } from '@/utils/prices';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
+import { updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/utils/prices';
 
-function updatePriceData(data: ManualBalanceWithValue[], prices: MaybeRef<AssetPrices>): ManualBalanceWithValue[] {
+function updatePriceData(data: ManualBalanceWithValue[], prices: AssetPrices): ManualBalanceWithValue[] {
   return data.map((item) => {
-    const assetPrice = get(prices)[item.asset];
+    const assetPrice = prices[item.asset];
     if (!assetPrice)
       return item;
 
@@ -31,15 +31,16 @@ export const useBalancesStore = defineStore('balances', () => {
   const blockchainBalances = ref<Balances>({});
 
   const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
-    set(blockchainBalances, updateBlockchainAssetBalances(blockchainBalances, prices));
+    const latestPrices = get(prices);
+    set(blockchainBalances, updateBlockchainAssetBalances(get(blockchainBalances), latestPrices));
 
     const exchanges = { ...get(exchangeBalances) };
-    for (const exchange in exchanges) exchanges[exchange] = updateBalancesPrices(exchanges[exchange], prices);
+    for (const exchange in exchanges) exchanges[exchange] = updateExchangeBalancesPrices(exchanges[exchange], latestPrices);
 
     set(exchangeBalances, exchanges);
 
-    set(manualBalances, updatePriceData(get(manualBalances), prices));
-    set(manualLiabilities, updatePriceData(get(manualLiabilities), prices));
+    set(manualBalances, updatePriceData(get(manualBalances), latestPrices));
+    set(manualLiabilities, updatePriceData(get(manualLiabilities), latestPrices));
   };
 
   const updateBlockchainBalances = (chain: string, { perAccount }: BlockchainBalances): void => {

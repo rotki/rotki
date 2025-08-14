@@ -3,7 +3,7 @@ import logging
 import re
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import gevent
 from gevent.lock import Semaphore
@@ -24,7 +24,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, has_premium_check
+from rotkehlchen.premium.premium import Premium, UserLimitType, get_user_limit, has_premium_check
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -38,7 +38,6 @@ from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 from .constants import (
     CPT_ETH2,
-    FREE_VALIDATORS_LIMIT,
     MAX_EFFECTIVE_BALANCE,
     MIN_EFFECTIVE_BALANCE,
     UNKNOWN_VALIDATOR_INDEX,
@@ -46,9 +45,10 @@ from .constants import (
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
 )
+
+ETH_STAKED_CACHE_TIME: Final = 7200  # 2 hours in seconds
 from .structures import (
     PerformanceStatusFilter,
-    ValidatorDailyStats,
     ValidatorDetailsWithStatus,
     ValidatorID,
 )
@@ -57,8 +57,6 @@ from .utils import create_profit_filter_queries
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -92,6 +90,9 @@ class Eth2(EthereumModule):
         # This is a cache that is kept only for the last performance cache address, indices args
         self.performance_cache: LRUCacheWithRemove[tuple[Timestamp, Timestamp], dict[str, dict]] = LRUCacheWithRemove(maxsize=3)  # noqa: E501
         self.performance_cache_args: tuple[list[ChecksumEvmAddress] | None, list[int] | None, PerformanceStatusFilter] = (None, None, PerformanceStatusFilter.ALL)  # noqa: E501
+        # Total staked cache variables
+        self._cached_total_staked: FVal
+        self._cached_staked_timestamp = Timestamp(0)
 
     def _get_closest_performance_cache_key(
             self,
@@ -104,6 +105,65 @@ class Eth2(EthereumModule):
                 return key_from_ts, key_to_ts
 
         return from_ts, to_ts
+
+    def _set_staked_cache(self, value: FVal, timestamp: Timestamp) -> None:
+        """Set or reset the cached total staked amount"""
+        self._cached_total_staked = value
+        self._cached_staked_timestamp = timestamp
+
+    def _get_total_eth_staked(self) -> FVal:
+        """Calculate total ETH staked by all tracked validators
+
+        Results are cached for a few hours to avoid expensive repeated calculations.
+        """
+        if (now := ts_now()) - self._cached_staked_timestamp <= ETH_STAKED_CACHE_TIME:
+            return self._cached_total_staked
+
+        dbeth2 = DBEth2(self.database)
+        with self.database.conn.read_ctx() as cursor:
+            pubkey_to_ownership = dbeth2.get_active_pubkeys_to_ownership(cursor)
+
+        if len(pubkey_to_ownership) == 0:
+            self._set_staked_cache(ZERO, now)
+            return ZERO
+
+        balance_mapping = self.beacon_inquirer.get_balances(
+            indices_or_pubkeys=list(pubkey_to_ownership.keys()),
+            has_premium=self.premium is not None,
+        )
+
+        total_staked = ZERO
+        for pubkey, balance in balance_mapping.items():
+            ownership = pubkey_to_ownership.get(pubkey, ONE)
+            total_staked += balance.amount * ownership
+
+        self._set_staked_cache(total_staked, now)
+        return total_staked
+
+    def _check_eth_staking_limit(self, validator_balance: FVal, ownership_proportion: FVal) -> None:  # noqa: E501
+        """Check if adding more stake would exceed ETH staking limit
+
+        May raise:
+        - PremiumPermissionError if the limit would be exceeded
+        - RemoteError if balances could not be queried
+        """
+        current_staked = self._get_total_eth_staked()
+        additional_stake = validator_balance * ownership_proportion
+        new_total = current_staked + additional_stake
+
+        limit, _ = get_user_limit(self.premium, UserLimitType.ETH_STAKED)
+
+        if new_total > limit:
+            raise PremiumPermissionError(
+                f'ETH staking limit exceeded. Current staked: {current_staked} ETH, '
+                f'limit: {limit} ETH. Would be: {new_total} ETH',
+                extra_dict={
+                    'limit_info': {
+                        'current_staked': str(current_staked),
+                        'staking_limit': str(limit),
+                    },
+                },
+            )
 
     def get_balances(
             self,
@@ -139,37 +199,37 @@ class Eth2(EthereumModule):
         return balances
 
     @staticmethod
-    def _time_weighted_average(
+    def _time_weighted_balance_sum(
             balance_data: dict[TimestampMS, FVal],
             from_ts_ms: TimestampMS,
             to_ts_ms: TimestampMS,
     ) -> FVal:
-        """Calculate the time weighted average balance for a single validator.
-        If the time range specified is too small to contain any entries, the entry closest
-        to the specified to timestamp will be used.
+        """Calculate the sum of (balance * time) for APR calculation.
+        This is the core calculation needed for proper APR with balance changes.
+        Works in milliseconds like the original _time_weighted_average function.
         """
         if len(balance_data) == 0:
             return ZERO
         elif len(balance_data) == 1:
-            return next(iter(balance_data.values()))
+            return next(iter(balance_data.values())) * (to_ts_ms - from_ts_ms)
 
         sorted_times = sorted(balance_data.keys())
         filtered_times = [ts for ts in sorted_times if from_ts_ms <= ts <= to_ts_ms]
         if len(filtered_times) == 0:  # There are no timestamps in the range specified.
             # First try to use the value at the latest timestamp before to_ts_ms
             if len(before_ts_list := [ts for ts in sorted_times if ts <= to_ts_ms]) != 0:
-                return balance_data[before_ts_list[-1]]
+                balance = balance_data[before_ts_list[-1]]
             else:  # If none before to_ts_ms, simply use the earliest ts
-                return balance_data[sorted_times[0]]
+                balance = balance_data[sorted_times[0]]
+            return balance * (to_ts_ms - from_ts_ms)
 
-        total_weighted_sum = ZERO
+        total_balance_time = ZERO
         filtered_times.append(to_ts_ms)
         for idx, current_ts in enumerate(filtered_times[:-1]):
             # sum += balance * duration for which this was the balance
-            total_weighted_sum += balance_data[current_ts] * (filtered_times[idx + 1] - current_ts)
+            total_balance_time += balance_data[current_ts] * (filtered_times[idx + 1] - current_ts)
 
-        # avg = total sum divided by the total duration
-        return total_weighted_sum / (to_ts_ms - filtered_times[0])
+        return total_balance_time
 
     def get_performance(
             self,
@@ -187,7 +247,12 @@ class Eth2(EthereumModule):
         Optionally filtered by:
         - execution address/es (associated as either deposit or withdrawal address)
         - validator indices
+
+        May raise:
+        - PremiumPermissionError if ETH staking limit is exceeded for non-premium users
         """
+        # Check ETH staking limit for non-premium users
+        self._check_eth_staking_limit(ZERO, ZERO)
         cache_key = self._get_closest_performance_cache_key(from_ts, to_ts)
         with self.database.conn.read_ctx() as cursor:
             result = cursor.execute('SELECT COUNT(*) FROM eth2_validators').fetchone()
@@ -307,12 +372,12 @@ class Eth2(EthereumModule):
                 has_premium=has_premium_check(self.premium),
             )
             for pubkey, balance in balances.items():
+                if balance.amount == ZERO:
+                    continue
+
                 entry = pnls[v_index := pubkey_to_index[pubkey]]
                 if 'exits' in entry:
                     continue  # no outstanding balance for exits
-
-                if balance.amount == ZERO:
-                    continue
 
                 if v_index in accumulating_validators:
                     if balance.amount < MAX_EFFECTIVE_BALANCE:
@@ -338,14 +403,20 @@ class Eth2(EthereumModule):
 
             profit_from_ts = max(index_to_activation_ts.get(vindex, from_ts), from_ts)
             profit_to_ts = min(index_to_withdrawable_ts.get(vindex, to_ts), to_ts)
-            time_weighted_avg = self._time_weighted_average(
+
+            # Calculate APR for all validators
+            # APR is total_profits * YEAR_IN_SECONDS divided by sum(balance_i * time_i)
+            balance_time_sum_ms = self._time_weighted_balance_sum(
                 balance_data=balances_over_time[vindex],
                 from_ts_ms=ts_sec_to_ms(profit_from_ts),
                 to_ts_ms=ts_sec_to_ms(profit_to_ts),
             )
+            # Convert balance_time_sum from milliseconds to seconds for APR calculation
+            balance_time_sum_seconds = balance_time_sum_ms / 1000
+
             data['apr'] = (
-                ((YEAR_IN_SECONDS * validator_sum) / (profit_to_ts - profit_from_ts)) / time_weighted_avg  # noqa: E501
-                if time_weighted_avg != ZERO else ZERO
+                (validator_sum * YEAR_IN_SECONDS) / balance_time_sum_seconds
+                if balance_time_sum_seconds > ZERO else ZERO
             )
             sum_apr += data['apr']
 
@@ -370,7 +441,7 @@ class Eth2(EthereumModule):
         """
         dbevents = DBHistoryEvents(self.database)
         with self.database.conn.read_ctx() as cursor:
-            deposit_events = dbevents.get_history_events(
+            deposit_events = dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     type_and_subtype_combinations=[
@@ -378,7 +449,6 @@ class Eth2(EthereumModule):
                     ],
                     counterparties=[CPT_ETH2],
                 ),
-                has_premium=True,  # need all events here
             )
 
         result = {}
@@ -417,28 +487,6 @@ class Eth2(EthereumModule):
             )
             self.validator_stats_queried = 0
             gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
-
-    def _query_services_for_validator_daily_stats(
-            self,
-            to_ts: Timestamp,
-    ) -> None:
-        """Goes through all saved validators and sees which need to have their stats requeried"""
-        now = ts_now()
-        dbeth2 = DBEth2(self.database)
-        result = dbeth2.get_validators_to_query_for_stats(up_to_ts=to_ts)
-
-        for validator_index, last_ts, exit_ts in result:
-            self._maybe_backoff_beaconchain(now=now)
-            new_stats = self.beacon_inquirer.query_validator_daily_stats(
-                validator_index=validator_index,
-                last_known_timestamp=last_ts,
-                exit_ts=exit_ts,
-            )
-            self.validator_stats_queried += 1
-            self.last_stats_query_ts = now
-
-            if len(new_stats) != 0:
-                dbeth2.add_validator_daily_stats(stats=new_stats)
 
     def query_services_for_validator_withdrawals(
             self,
@@ -512,27 +560,6 @@ class Eth2(EthereumModule):
                 address=address,
             )
 
-    def get_validator_daily_stats(
-            self,
-            cursor: 'DBCursor',
-            filter_query: 'Eth2DailyStatsFilterQuery',
-            only_cache: bool,
-    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
-        """Gets the daily stats eth2 validators depending on the given filter.
-
-        This won't detect new validators
-
-        Will query for new validator daily stats if only_cache is False.
-
-        May raise:
-        - RemoteError due to problems with beaconcha.in
-        """
-        if only_cache is False:
-            self._query_services_for_validator_daily_stats(to_ts=filter_query.to_ts)
-
-        dbeth2 = DBEth2(self.database)
-        return dbeth2.get_validator_daily_stats_and_limit_info(cursor, filter_query=filter_query)
-
     def detect_and_refresh_validators(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them via deposit along with their details.
@@ -576,6 +603,9 @@ class Eth2(EthereumModule):
                 validators=details,
             )
 
+        # Invalidate cache if any validators were added/updated
+        self._set_staked_cache(ZERO, Timestamp(0))
+
     def get_validators(
             self,
             ignore_cache: bool,
@@ -606,16 +636,9 @@ class Eth2(EthereumModule):
         May raise:
         - RemoteError if there is a problem with querying beaconcha.in or beacon node for more info
         - InputError if the validator is already in the DB
+        - PremiumPermissionError if adding this validator would exceed ETH staking limits
         """
         dbeth2 = DBEth2(self.database)
-        if self.premium is None:
-            with self.database.conn.read_ctx() as cursor:
-                tracked_validators = dbeth2.get_validators(cursor)
-            if len(tracked_validators) >= FREE_VALIDATORS_LIMIT:
-                raise PremiumPermissionError(
-                    f'Adding validator {validator_index} {public_key} would take you '
-                    f'over the free limit of {FREE_VALIDATORS_LIMIT} for tracked validators',
-                )
 
         query_key: int | Eth2PubKey
         field: Literal['validator_index', 'public_key']
@@ -640,10 +663,24 @@ class Eth2(EthereumModule):
         if result[0].validator_index is None:
             raise RemoteError(f'Validator {result[0].public_key} has no index assigned yet')
 
+        # Get the actual validator balance (to check the staking limit)
+        balance_mapping = self.beacon_inquirer.get_balances(
+            indices_or_pubkeys=[result[0].public_key],
+            has_premium=self.premium is not None,
+        )
+        if (validator_balance := balance_mapping.get(result[0].public_key)) is None:
+            raise RemoteError(f'No balance was returned for validator {result[0].public_key}')
+
+        # Check ETH staking limit with actual validator balance
+        self._check_eth_staking_limit(validator_balance.amount, ownership_proportion)
+
         result[0].ownership_proportion = ownership_proportion
         with self.database.user_write() as write_cursor:
             # by now we have a valid index and pubkey. Add to DB
             dbeth2.add_or_update_validators(write_cursor, [result[0]])
+
+        # Invalidate cache since we added a new validator
+        self._set_staked_cache(ZERO, Timestamp(0))
 
     def combine_block_with_tx_events(self) -> None:
         """Get all mev reward block production events and combine them with the
@@ -816,5 +853,4 @@ class Eth2(EthereumModule):
             )
 
     def deactivate(self) -> None:
-        with self.database.user_write() as write_cursor:
-            self.database.delete_eth2_daily_stats(write_cursor)
+        pass

@@ -39,9 +39,9 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -576,7 +576,7 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
     position_token = get_token(
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id=(collectible_id := '401357'),
     )
     assert position_token.name == f'Uniswap V3 Positions #{collectible_id}'

@@ -9,7 +9,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_SOL, A_USDC
+from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_USDC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -18,6 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
@@ -291,6 +292,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
     ]
 
 
+@pytest.mark.asset_test
 @pytest.mark.skipif(
     'CI' in os.environ,
     reason='Cannot connect to server due to cloudflare blocking the github server',
@@ -305,7 +307,7 @@ def test_assets_are_known(bybit_exchange: Bybit):
         try:
             bybit_symbol_to_base_quote(
                 symbol=ticker['symbol'],
-                four_letter_assets={'USDC', 'USDE', 'USDT', 'USDQ', 'USDR'},
+                four_letter_assets={'USDC', 'USDE', 'USDT', 'USDQ', 'USDR', 'USD1'},
             )
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(

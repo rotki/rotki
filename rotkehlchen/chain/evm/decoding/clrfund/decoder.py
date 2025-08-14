@@ -95,7 +95,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
             counterparty=CPT_CLRFUND,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=new_event)
+        return DecodingOutput(events=[new_event])
 
     def _decode_contribution(self, context: DecoderContext, asset: CryptoAsset, name: str) -> DecodingOutput:  # noqa: E501
         if not self.base.any_tracked([sender := bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
@@ -171,7 +171,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                 address=context.tx_log.address,
             )
 
-        return DecodingOutput(event=new_event)
+        return DecodingOutput(events=[new_event] if new_event is not None else None)
 
     # -- DecoderInterface methods
 

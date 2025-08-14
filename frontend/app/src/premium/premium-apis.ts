@@ -1,21 +1,4 @@
 import type { MaybeRef } from '@vueuse/core';
-import { useAssetManagementApi } from '@/composables/api/assets/management';
-import { usePriceApi } from '@/composables/api/balances/price';
-import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
-import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useStatisticsStore } from '@/store/statistics';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isNft } from '@/utils/nft';
-import { truncateAddress } from '@/utils/truncate';
 import {
   type AssetsApi,
   type BalancesApi,
@@ -30,6 +13,21 @@ import {
   type UserSettingsApi,
   type UtilsApi,
 } from '@rotki/common';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { usePriceApi } from '@/composables/api/balances/price';
+import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatisticsStore } from '@/store/statistics';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { isNft } from '@/utils/nft';
+import { truncateAddress } from '@/utils/truncate';
 
 export function assetsApi(): AssetsApi {
   const { assetInfo, assetName, assetSymbol, tokenAddress } = useAssetInfoRetrieval();
@@ -95,23 +93,29 @@ export function statisticsApi(): StatisticsApi {
 
 export function userSettings(): UserSettingsApi {
   const {
-    privacyMode,
-    scrambleData,
-    scrambleMultiplier,
-    shouldShowAmount,
-    shouldShowPercentage,
-  } = storeToRefs(useSessionSettingsStore());
-  const {
     dateInputFormat,
     decimalSeparator,
     graphZeroBased,
+    privacyMode,
+    scrambleData,
+    scrambleMultiplier: scrambleMultiplierRef,
     selectedTheme,
+    shouldShowAmount,
+    shouldShowPercentage,
     showGraphRangeSelector,
     subscriptDecimals,
     thousandSeparator,
     useHistoricalAssetBalances,
   } = storeToRefs(useFrontendSettingsStore());
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
+
+  const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? 1);
+
+  watchEffect(() => {
+    const newValue = get(scrambleMultiplierRef);
+    if (newValue !== undefined)
+      set(scrambleMultiplier, newValue);
+  });
 
   return {
     currencySymbol,
@@ -134,8 +138,7 @@ export function userSettings(): UserSettingsApi {
 
 export function balancesApi(): BalancesApi {
   const { assetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
-  const { balancesByLocation } = useLocationBalancesBreakdown();
-  const { balances } = useAggregatedBalances();
+  const { balances, balancesByLocation } = useAggregatedBalances();
   const { createKey, isPending } = useHistoricCachePriceStore();
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

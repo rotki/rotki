@@ -8,7 +8,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, SolanaAddress, Timestamp, TokenKind
 
 from .types import VersionRange
 
@@ -102,13 +102,17 @@ class AssetParser(BaseAssetParser[AssetData]):
         self._assets_re = re.compile(r'.*INSERT +INTO +assets *\( *identifier *, *name *, *type *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
         self._common_details_re = re.compile(r'.*INSERT +INTO +common_asset_details *\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES *\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self._evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens *\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
+        self._solana_tokens_re = re.compile(r'.*INSERT +INTO +solana_tokens *\( *identifier *, *token_kind *, *address *, *decimals *, *protocol *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self._version_parsers = [
-            (VersionRange(15, None), self._parse),
+            (VersionRange(15, 36), self._parse_legacy_format),
+            (VersionRange(37, None), self._parse_latest_format),
         ]
 
-    def _parse(self, connection: 'DBConnection', insert_text: str) -> AssetData:
+    def _parse_legacy_format(self, connection: 'DBConnection', insert_text: str) -> AssetData:
+        """Parse assets for versions 15-36 (before solana_tokens table support)."""
         asset_data = self._parse_asset_data(insert_text)
-        address = decimals = protocol = chain_id = token_kind = None
+        address: ChecksumEvmAddress | None = None
+        decimals = protocol = chain_id = token_kind = None
         if asset_data.asset_type == AssetType.EVM_TOKEN:
             address, decimals, protocol, chain_id, token_kind = self._parse_evm_token_data(insert_text)  # noqa: E501
 
@@ -128,6 +132,20 @@ class AssetParser(BaseAssetParser[AssetData]):
             coingecko=asset_data.coingecko,
             protocol=protocol,
         )
+
+    def _parse_latest_format(self, connection: 'DBConnection', insert_text: str) -> AssetData:
+        """Parse assets for versions 37+ (with solana_tokens table support)."""
+        asset_data = self._parse_legacy_format(connection, insert_text)
+        if asset_data.asset_type == AssetType.SOLANA_TOKEN:
+            address, decimals, protocol, token_kind = self._parse_solana_token_data(insert_text)
+            return asset_data._replace(
+                address=address,
+                decimals=decimals,
+                protocol=protocol,
+                token_kind=token_kind,
+            )
+
+        return asset_data
 
     def _parse_asset_data(self, insert_text: str) -> AssetData:
         """Parse basic asset data for format"""
@@ -188,7 +206,7 @@ class AssetParser(BaseAssetParser[AssetData]):
     def _parse_evm_token_data(
             self,
             insert_text: str,
-    ) -> tuple[ChecksumEvmAddress, int | None, str | None, ChainID | None, EvmTokenKind | None]:
+    ) -> tuple[ChecksumEvmAddress, int | None, str | None, ChainID | None, TokenKind | None]:
         """Read information related to evm assets from the insert line.
         May raise:
             - DeserializationError: if the regex didn't work or we failed to deserialize any value
@@ -217,7 +235,7 @@ class AssetParser(BaseAssetParser[AssetData]):
             insert_text=insert_text,
         )
         token_kind = (
-            EvmTokenKind.deserialize_from_db(token_kind_value)
+            TokenKind.deserialize_evm_from_db(token_kind_value)
             if token_kind_value is not None
             else None
         )
@@ -226,6 +244,42 @@ class AssetParser(BaseAssetParser[AssetData]):
             self._parse_optional_int(match.group(5), 'decimals', insert_text),
             self._parse_optional_str(match.group(6), 'protocol', insert_text),
             chain_id,
+            token_kind,
+        )
+
+    def _parse_solana_token_data(
+            self,
+            insert_text: str,
+    ) -> tuple[SolanaAddress, int | None, str | None, TokenKind | None]:
+        """Read information related to solana assets from the insert line.
+        May raise:
+            - DeserializationError: if the regex didn't work or we failed to deserialize any value
+        """
+        if (match := self._solana_tokens_re.match(insert_text)) is None:
+            raise DeserializationError(
+                f'At asset DB update could not parse solana token data out '
+                f'of {insert_text}',
+            )
+
+        if len(match.groups()) != 5:
+            raise DeserializationError(
+                f'At asset DB update could not parse solana token data out of {insert_text}',
+            )
+
+        token_kind_value = self._parse_optional_str(
+            value=match.group(2),
+            name='token_kind',
+            insert_text=insert_text,
+        )
+        token_kind = (
+            TokenKind.deserialize_solana_from_db(token_kind_value)
+            if token_kind_value is not None
+            else None
+        )
+        return (
+            SolanaAddress(self._parse_str(match.group(3), 'address', insert_text)),
+            self._parse_optional_int(match.group(4), 'decimals', insert_text),
+            self._parse_optional_str(match.group(5), 'protocol', insert_text),
             token_kind,
         )
 

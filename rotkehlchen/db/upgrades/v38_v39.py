@@ -79,7 +79,8 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 updates.append((f'BP1_{blocknumber}', identifier))
 
         imported_events = write_cursor.execute(
-            "SELECT identifier, event_identifier FROM history_events WHERE event_identifier LIKE 'rotki_events_%'",  # noqa: E501
+            'SELECT identifier, event_identifier FROM history_events WHERE '
+            'event_identifier LIKE ? ESCAPE ?', ('rotki\\_events\\_%', '\\'),
         ).fetchall()
         for identifier, event_identifier in imported_events:
             new_event_identifier = event_identifier.replace('rotki_events_bitcoin_tax_', 'REBTX_').replace('rotki_events_', 'RE_')  # noqa: E501
@@ -298,7 +299,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'DELETE FROM history_events WHERE identifier IN ('
             'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
             'ON H.identifier=E.identifier AND E.tx_hash IN '
-            '(SELECT tx_hash from_evm_transactions))'
+            '(SELECT tx_hash FROM evm_transactions))'
         )
         bindings: tuple = ()
         if customized_events != 0:

@@ -1,7 +1,9 @@
 import type { ApiUrls, Credentials, Interop, Listeners, TrayUpdate } from '@shared/ipc';
+import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
 import { contextBridge, ipcRenderer } from 'electron';
+import { initializeWalletBridge } from './wallet-bridge';
 
 const isDevelopment = checkIfDevelopment();
 
@@ -39,6 +41,13 @@ contextBridge.exposeInMainWorld('interop', {
     ipcRenderer.on(IpcCommands.BACKEND_PROCESS_DETECTED, (_event, pids) => {
       listeners.onProcessDetected(pids);
     });
+
+    const onOAuthCallback = listeners.onOAuthCallback;
+    if (onOAuthCallback) {
+      ipcRenderer.on('oauth-callback', (_event, oAuthResult) => {
+        onOAuthCallback(oAuthResult);
+      });
+    }
   },
   debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
   apiUrls: (): ApiUrls => ipcRenderer.sendSync(IpcCommands.SYNC_API_URL),
@@ -59,10 +68,14 @@ contextBridge.exposeInMainWorld('interop', {
   openPath: async (path: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_PATH, path),
   config: async (defaults: boolean) => ipcRenderer.invoke(IpcCommands.INVOKE_CONFIG, defaults),
   updateTray: (trayUpdate: TrayUpdate) => ipcRenderer.send(IpcCommands.TRAY_UPDATE, trayUpdate),
-  logToFile: (message: string) => {
-    ipcRenderer.send(IpcCommands.LOG_TO_FILE, message);
+  logToFile: (level: LogLevel, message: string) => {
+    ipcRenderer.send(IpcCommands.LOG_TO_FILE, level, message);
   },
   storePassword: async (credentials: Credentials) => ipcRenderer.invoke(IpcCommands.INVOKE_STORE_PASSWORD, credentials),
   getPassword: async (username: string) => ipcRenderer.invoke(IpcCommands.INVOKE_GET_PASSWORD, username),
   clearPassword: async () => ipcRenderer.invoke(IpcCommands.INVOKE_CLEAR_PASSWORD),
+  notifyUserLogout: () => ipcRenderer.send(IpcCommands.USER_LOGOUT),
 } satisfies Interop);
+
+// Initialize wallet bridge
+initializeWalletBridge();

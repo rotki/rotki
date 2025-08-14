@@ -1,23 +1,30 @@
 <script setup lang="ts">
-import type { Exchange } from '@/types/exchanges';
-import type { TradeLocationData } from '@/types/history/trade/location';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
+import type { Exchange } from '@/types/exchanges';
+import type { TradeLocationData } from '@/types/history/trade/location';
+import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useInterop } from '@/composables/electron-interop';
 import { useLocations } from '@/composables/locations';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
 import { useAppRoutes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { startPromise } from '@shared/utils';
+
+withDefaults(
+  defineProps<{
+    isMini?: boolean;
+  }>(),
+  {
+    isMini: false,
+  },
+);
 
 interface SearchItem {
   value: number;
@@ -48,15 +55,13 @@ const search = ref<string>('');
 const loading = ref(false);
 const visibleItems = ref<SearchItem[]>([]);
 
-const modifier = computed<string>(() => (get(isMac) ? 'Cmd' : 'Ctrl'));
 const key = '/';
 
 const router = useRouter();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { balances } = useAggregatedBalances();
-const { balancesByLocation } = useLocationBalancesBreakdown();
+const { balances, balancesByLocation } = useAggregatedBalances();
 const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoRetrieval();
 
@@ -402,17 +407,40 @@ onBeforeMount(async () => {
     content-class="mt-[16rem] !top-0 pb-2"
   >
     <template #activator="{ attrs }">
-      <MenuTooltipButton
-        :tooltip="
-          t('global_search.menu_tooltip', {
-            modifier,
-            key,
-          })
-        "
-        v-bind="attrs"
+      <div
+        class="transition-all"
+        :class="isMini ? 'pl-1' : 'px-3 py-2'"
       >
-        <RuiIcon name="lu-search" />
-      </MenuTooltipButton>
+        <div
+          v-if="!isMini"
+          class="flex items-center gap-2 justify-between rounded-lg px-3 py-2 bg-rui-grey-100 dark:bg-rui-grey-800 cursor-pointer border border-rui-grey-300 hover:border-rui-grey-400 dark:border-rui-grey-700 dark:hover:border-rui-grey-600 text-rui-text-secondary opacity-70"
+          role="button"
+          v-bind="attrs"
+        >
+          <RuiIcon
+            name="lu-search"
+            size="16"
+          />
+          <span class="flex-1 ml-1">{{ t('common.actions.search') }}</span>
+          <RuiIcon
+            name="lu-command"
+            size="14"
+          />
+          {{ key }}
+        </div>
+        <RuiButton
+          v-else
+          variant="text"
+          class="p-2 w-full mb-3 border border-rui-grey-200 dark:border-rui-grey-700 !bg-rui-grey-100 hover:!bg-rui-grey-200 dark:!bg-rui-grey-800 hover:dark:!bg-rui-grey-700 rounded-lg"
+          v-bind="attrs"
+        >
+          <RuiIcon
+            name="lu-search"
+            class="opacity-60"
+            size="18"
+          />
+        </RuiButton>
+      </div>
     </template>
     <RuiCard
       variant="flat"

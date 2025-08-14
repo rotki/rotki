@@ -1,6 +1,6 @@
 import type { DebugSettings } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
-import z from 'zod';
+import z from 'zod/v4';
 
 export const BackendCode = {
   TERMINATED: 0,
@@ -36,7 +36,7 @@ export interface SystemVersion {
 
 export const ActiveLogLevel = z.preprocess(
   s => (typeof s === 'string' ? s.toLowerCase() : s),
-  z.nativeEnum(LogLevel),
+  z.enum(LogLevel),
 );
 
 export const BackendOptions = z.object({
@@ -63,11 +63,39 @@ export interface TrayUpdate {
   readonly period?: string;
 }
 
+export interface OAuthSuccess {
+  readonly success: true;
+  readonly accessToken: string;
+  readonly refreshToken: string;
+}
+
+export interface OAuthFailure {
+  readonly success: false;
+  readonly error: Error;
+}
+
+export type OAuthResult = OAuthFailure | OAuthSuccess;
+
+export interface WalletBridgeRequest {
+  readonly method: string;
+  readonly params?: Array<unknown>;
+}
+
+export interface WalletBridgeResponse {
+  readonly result?: any;
+  readonly error?: {
+    readonly code: number;
+    readonly message: string;
+    readonly data?: any;
+  };
+}
+
 export interface Listeners {
   onError: (backendOutput: string, code: BackendCode) => void;
   onAbout: () => void;
   onRestart: () => void;
   onProcessDetected: (pids: string[]) => void;
+  onOAuthCallback?: (oAuthResult: OAuthResult) => void;
 }
 
 export interface Interop {
@@ -80,7 +108,6 @@ export interface Interop {
   debugSettings?: () => DebugSettings | undefined;
   apiUrls: () => ApiUrls;
   metamaskImport: () => Promise<MetamaskImport>;
-  openWalletConnectBridge: () => Promise<void>;
   checkForUpdates: () => Promise<boolean>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
   installUpdate: () => Promise<boolean | Error>;
@@ -90,8 +117,10 @@ export interface Interop {
   isMac: () => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   updateTray: (trayUpdate: TrayUpdate) => void;
-  logToFile: (message: string) => void;
+  logToFile: (level: LogLevel, message: string) => void;
   storePassword: (credentials: Credentials) => Promise<boolean>;
   getPassword: (username: string) => Promise<string>;
   clearPassword: () => Promise<void>;
+  openWalletConnectBridge: () => Promise<void>;
+  notifyUserLogout: () => void;
 }

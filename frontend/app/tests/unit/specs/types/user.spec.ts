@@ -1,6 +1,9 @@
+import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
+import { describe, expect, it } from 'vitest';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
+import { PrivacyMode } from '@/types/session';
 import {
   BlockchainRefreshButtonBehaviour,
   DashboardTableType,
@@ -10,8 +13,6 @@ import {
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { OtherSettings } from '@/types/user';
-import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
-import { describe, expect, it } from 'vitest';
 
 describe('types/user', () => {
   it('otherSettings parsed correctly', () => {
@@ -79,11 +80,16 @@ describe('types/user', () => {
       versionUpdateCheckFrequency: 24,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      shouldRefreshValidatorDailyStats: false,
       subscriptDecimals: false,
       savedFilters: {},
       balanceUsdValueThreshold: {},
       useHistoricalAssetBalances: false,
+      scrambleData: false,
+      scrambleMultiplier: 1,
+      privacyMode: PrivacyMode.NORMAL,
+      persistPrivacySettings: false,
+      evmQueryIndicatorMinOutOfSyncPeriod: 12,
+      evmQueryIndicatorDismissalThreshold: 6,
     };
 
     const raw = {

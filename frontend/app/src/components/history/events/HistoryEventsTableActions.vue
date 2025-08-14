@@ -25,9 +25,11 @@ withDefaults(defineProps<{
   matchers: SearchMatcher<any, any>[];
   exportParams: HistoryEventRequestPayload;
   hideAccountSelector?: boolean;
+  hideRedecodeButtons?: boolean;
   processing?: boolean;
 }>(), {
   hideAccountSelector: false,
+  hideRedecodeButtons: false,
   processing: false,
 });
 
@@ -41,8 +43,8 @@ const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
-const { txChains } = useSupportedChains();
-const txChainIds = useArrayMap(txChains, x => x.id);
+const { allTxChainsInfo } = useSupportedChains();
+const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 </script>
 
 <template>
@@ -84,6 +86,7 @@ const txChainIds = useArrayMap(txChains, x => x.id);
     </template>
 
     <HistoryRedecodeButton
+      v-if="!hideRedecodeButtons"
       :processing="processing"
       @redecode="emit('redecode', $event)"
     />

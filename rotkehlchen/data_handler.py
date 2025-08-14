@@ -6,6 +6,7 @@ import zlib
 from collections.abc import Sequence
 from pathlib import Path
 
+from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.crypto import decrypt, encrypt
@@ -189,6 +190,10 @@ class DataHandler:
         and then re-encrypt it
 
         Returns a b64 encoded binary blob"""
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
+            data={'type': str(DBUploadStatusStep.COMPRESSING)},
+        )
         compressor = zlib.compressobj(level=9)
         source_data = bytearray()
         compressed_data = bytearray()
@@ -201,13 +206,19 @@ class DataHandler:
 
             compressed_data += compressor.flush()
 
-        original_data_hash = base64.b64encode(
-            hashlib.sha256(source_data).digest(),
-        ).decode()
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
+            data={'type': str(DBUploadStatusStep.ENCRYPTING)},
+        )
         encrypted_data = encrypt(self.db.password.encode(), bytes(compressed_data))
+        # We rehash the data on the server side to check that it was uploaded correctly,
+        # so the hash we send must be of the encrypted data that is actually uploaded.
+        data_hash = base64.b64encode(
+            hashlib.sha256(encrypted_data).digest(),
+        ).decode()
         # cleanup temp file to avoid windows problem (https://github.com/rotki/rotki/issues/5051)
         tempdbpath.unlink()
-        return encrypted_data, original_data_hash
+        return encrypted_data, data_hash
 
     def decompress_and_decrypt_db(self, encrypted_data: bytes) -> None:
         """Decrypt and decompress the encrypted data we receive from the server

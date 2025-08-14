@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import logging
 import uuid
 from collections.abc import Sequence
@@ -23,6 +21,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -121,7 +120,7 @@ class TradePairData(NamedTuple):
     quote_asset: AssetWithOracles
 
 
-class Bitstamp(ExchangeInterface):
+class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
     """Bitstamp exchange api docs:
     https://www.bitstamp.net/api/
 
@@ -526,11 +525,7 @@ class Bitstamp(ExchangeInterface):
             'v2'
             f'{payload_string}'
         )
-        signature = hmac.new(
-            self.secret,
-            msg=message.encode('utf-8'),
-            digestmod=hashlib.sha256,
-        ).hexdigest()
+        signature = self.generate_hmac_signature(message)
 
         self.session.headers.update({
             'X-Auth-Signature': signature,

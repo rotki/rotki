@@ -1,8 +1,8 @@
 import { HistoryEventEntryType } from '@rotki/common';
 import { contextColors, RuiIcons } from '@rotki/ui-library';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
-const HistoryEventTypeMapping = z.record(z.record(z.string()));
+const HistoryEventTypeMapping = z.record(z.string(), z.record(z.string(), z.string()));
 
 const RuiIcon = z.string().transform((icon) => {
   if (Array.prototype.includes.call(RuiIcons, icon))
@@ -12,7 +12,7 @@ const RuiIcon = z.string().transform((icon) => {
   return 'lu-circle-help' satisfies RuiIcons;
 });
 
-const HistoryEventTypeGlobalMapping = z.record(z.record(z.object({
+const HistoryEventTypeGlobalMapping = z.record(z.string(), z.record(z.string(), z.object({
   default: z.string(),
   exchange: z.string().optional(),
 })));
@@ -26,7 +26,7 @@ const HistoryEventCategoryDetail = z.object({
 const HistoryEventCategoryDirection = z.enum(['neutral', 'in', 'out']);
 
 const HistoryEventCategory = z.object({
-  counterpartyMappings: z.record(HistoryEventCategoryDetail),
+  counterpartyMappings: z.record(z.string(), HistoryEventCategoryDetail),
   direction: HistoryEventCategoryDirection,
 });
 
@@ -37,13 +37,13 @@ export const HistoryEventCategoryDetailWithId = HistoryEventCategoryDetail.exten
 
 export type HistoryEventCategoryDetailWithId = z.infer<typeof HistoryEventCategoryDetailWithId>;
 
-export const HistoryEventCategoryMapping = z.record(HistoryEventCategory);
+export const HistoryEventCategoryMapping = z.record(z.string(), HistoryEventCategory);
 
 export type HistoryEventCategoryMapping = z.infer<typeof HistoryEventCategoryMapping>;
 
 export const HistoryEventTypeData = z.object({
-  accountingEventsIcons: z.record(RuiIcon),
-  entryTypeMappings: z.record(z.nativeEnum(HistoryEventEntryType), z.record(HistoryEventTypeMapping)),
+  accountingEventsIcons: z.record(z.string(), RuiIcon),
+  entryTypeMappings: z.partialRecord(z.enum(HistoryEventEntryType), z.record(z.string(), HistoryEventTypeMapping)),
   eventCategoryDetails: HistoryEventCategoryMapping,
   globalMappings: HistoryEventTypeGlobalMapping,
 });
@@ -53,7 +53,7 @@ export type HistoryEventTypeData = z.infer<typeof HistoryEventTypeData>;
 const HistoryEventProductMapping = z.array(z.string());
 
 export const HistoryEventProductData = z.object({
-  mappings: z.record(HistoryEventProductMapping),
+  mappings: z.record(z.string(), HistoryEventProductMapping),
   products: HistoryEventProductMapping,
 });
 

@@ -1,11 +1,11 @@
 import type { Writeable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
 import type { ComputedRef, Ref } from 'vue';
+import { BackendOptions } from '@shared/ipc';
 import { useInterop } from '@/composables/electron-interop';
 import { useMainStore } from '@/store/main';
 import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
-import { BackendOptions } from '@shared/ipc';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 

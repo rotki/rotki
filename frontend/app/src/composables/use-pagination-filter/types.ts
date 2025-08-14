@@ -1,6 +1,6 @@
 import type { DataTableSortColumn } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
-import type { ZodSchema } from 'zod';
+import type { Schema } from 'zod/v4';
 
 export type TableRowKey<T> = keyof T extends string ? keyof T : never;
 
@@ -11,5 +11,5 @@ export type Sorting<T extends NonNullable<unknown>> = SingleColumnSorting<T> | S
 export interface FilterSchema<F, M> {
   filters: Ref<F>;
   matchers: ComputedRef<M[]>;
-  RouteFilterSchema?: ZodSchema;
+  RouteFilterSchema?: Schema;
 }

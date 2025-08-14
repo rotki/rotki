@@ -30,13 +30,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    EVM_TOKEN_KINDS,
     SPAM_PROTOCOL,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EVMTxHash,
     SupportedBlockchain,
     Timestamp,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -75,7 +76,7 @@ def _query_or_get_given_token_info(
         name: str | None,
         symbol: str | None,
         decimals: int | None,
-        token_kind: EvmTokenKind,
+        token_kind: EVM_TOKEN_KINDS,
 ) -> tuple[str | None, str | None, int | None]:
     """
     Query ethereum to retrieve basic contract information for the given address.
@@ -84,7 +85,7 @@ def _query_or_get_given_token_info(
     May raise:
     - NotERC20Conformant
     """
-    if token_kind == EvmTokenKind.ERC20:
+    if token_kind == TokenKind.ERC20:
         info = evm_inquirer.get_erc20_contract_info(evm_address)
         decimals = info['decimals'] if decimals is None else decimals
         symbol = info['symbol'] if symbol is None else symbol
@@ -92,7 +93,7 @@ def _query_or_get_given_token_info(
         if None in (decimals, symbol, name):
             raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # pylint: disable=raise-missing-from
 
-    elif token_kind == EvmTokenKind.ERC721:
+    elif token_kind == TokenKind.ERC721:
         info = evm_inquirer.get_erc721_contract_info(evm_address)
         decimals = 0
         if symbol is None:
@@ -121,6 +122,8 @@ def edit_token_and_clean_cache(
     """
     Update information regarding name and decimals for an ethereum token.
     If name is missing in the database and is not provided then query the blockchain for it
+    May raise:
+        - InputError if there is an error while editing the token
     """
     updated_fields = False
 
@@ -207,7 +210,7 @@ class TokenEncounterInfo(NamedTuple):
 def get_token(
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
-        token_kind: EvmTokenKind = EvmTokenKind.ERC20,
+        token_kind: EVM_TOKEN_KINDS = TokenKind.ERC20,
         collectible_id: str | None = None,
 ) -> EvmToken | None:
     """
@@ -234,7 +237,7 @@ def get_or_create_evm_token(
         userdb: 'DBHandler',
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
-        token_kind: EvmTokenKind = EvmTokenKind.ERC20,
+        token_kind: EVM_TOKEN_KINDS = TokenKind.ERC20,
         symbol: str | None = None,
         name: str | None = None,
         decimals: int | None = None,
@@ -274,6 +277,7 @@ def get_or_create_evm_token(
     and the given address does not have any of symbol, decimals and name
     - NotERC721Conformant exception if an ethereum manager is given to query
     and the given address does not conform to ERC721 spec
+    - InputError if there is an error while editing the token
     """
     identifier = evm_address_to_identifier(
         address=evm_address,
@@ -432,24 +436,6 @@ def symbol_to_asset_or_token(
         asset = maybe_asset
 
     return asset
-
-
-def symbol_to_evm_token(symbol: str) -> EvmToken:
-    """Tries to turn the given symbol to an evm token
-
-    May raise:
-    - UnknownAsset if an evm token can't be found by the symbol or if
-    more than one tokens match this symbol
-    """
-    maybe_asset = get_crypto_asset_by_symbol(
-        symbol=symbol,
-        asset_type=AssetType.EVM_TOKEN,
-        chain_id=ChainID.ETHEREUM,
-    )
-    if maybe_asset is None:
-        raise UnknownAsset(symbol)
-
-    return maybe_asset.resolve_to_evm_token()
 
 
 CHAIN_TO_WRAPPED_TOKEN: Final = {

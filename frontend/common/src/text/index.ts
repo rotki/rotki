@@ -38,7 +38,11 @@ export function toSnakeCase(string: string): string {
   if (!string)
     return '';
 
-  return string.toLowerCase().replace(/ /g, '_');
+  return string
+    .replace(/([A-Z])/g, '_$1')
+    .toLowerCase()
+    .replace(/^_/, '')
+    .replace(/\s+/g, '_');
 }
 
 /**
@@ -214,6 +218,43 @@ export function isValidEthAddress(address?: string): boolean {
     return false;
 
   return /^0x[\dA-Fa-f]{40}$/.test(address);
+}
+
+export function isValidBtcAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  // P2PKH addresses (starts with 1) and P2SH addresses (starts with 3)
+  if (/^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address))
+    return true;
+
+  // Bech32 addresses (starts with bc1)
+  return /^bc1[02-9ac-hj-np-z]{7,87}$/.test(address);
+}
+
+export function isValidBchAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  // Legacy format (same as Bitcoin P2PKH and P2SH)
+  if (/^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address))
+    return true;
+
+  // CashAddr format (starts with bitcoincash:)
+  if (/^bitcoincash:[02-9ac-hj-np-z]{42,}$/.test(address))
+    return true;
+
+  // CashAddr format without prefix
+  return /^[pq][02-9ac-hj-np-z]{41,}$/.test(address);
+}
+
+export function isValidSolanaAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  // Solana addresses are base58 encoded and should be 32-44 characters long
+  // They use the base58 alphabet: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
 }
 
 export function isValidTxHash(address?: string): boolean {

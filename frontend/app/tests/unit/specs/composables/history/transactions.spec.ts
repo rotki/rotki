@@ -3,14 +3,14 @@ import type {
   EditEvmHistoryEventPayload,
   EvmHistoryEvent,
   HistoryEventRow,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
+import { assert, type Blockchain } from '@rotki/common';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { isOfEventType } from '@/utils/history/events';
-import { assert, type Blockchain } from '@rotki/common';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/tasks', async () => {
   const { ref } = await import('vue');
@@ -46,7 +46,7 @@ vi.mock('@/composables/info/chains', async () => {
   const { Blockchain } = await import('@rotki/common');
   return {
     useSupportedChains: vi.fn().mockReturnValue({
-      txChains: computed(() => [
+      evmAndEvmLikeTxChainsInfo: computed(() => [
         {
           evmChainName: 'ethereum',
           id: Blockchain.ETH,

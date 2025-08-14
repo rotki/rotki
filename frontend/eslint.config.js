@@ -1,5 +1,6 @@
 import path from 'node:path';
 import rotki from '@rotki/eslint-config';
+import { translationKeys } from '@rotki/ui-library';
 
 export default rotki({
   vue: true,
@@ -20,8 +21,7 @@ export default rotki({
   },
   imports: {
     overrides: {
-      'import/no-cycle': 'off',
-      'import/max-dependencies': ['warn', { max: 20 }],
+      '@rotki/max-dependencies': ['warn', { max: 20 }],
     },
   },
   vueI18n: {
@@ -33,11 +33,13 @@ export default rotki({
       '/transactions.query_status.*/',
       '/transactions.query_status_events.*/',
       '/transactions.events.headers.*/',
+      ...translationKeys(),
     ],
     overrides: {
       '@intlify/vue-i18n/no-i18n-t-path-prop': 'error',
       '@intlify/vue-i18n/no-deprecated-i18n-component': 'error',
     },
+    enableNoUnusedKeys: 'ci',
   },
 }, {
   files: ['**/src/**/*.@(ts|vue|js)'],
@@ -48,11 +50,6 @@ export default rotki({
   files: ['**/src/**/*.ts'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
-  },
-}, {
-  files: ['**/*'],
-  rules: {
-    'import/no-cycle': 'off',
   },
 }, {
   files: ['**/locales/**/*.json'],

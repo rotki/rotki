@@ -7,6 +7,7 @@ from unittest.mock import patch
 import requests
 from freezegun import freeze_time
 
+from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.decoding.morpho.utils import (
     MORPHO_BLUE_API,
     MORPHO_REWARDS_API,
@@ -23,7 +24,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import MORPHO_VAULT_PROTOCOL, CacheType, ChainID
+from rotkehlchen.types import CacheType, ChainID
 
 if TYPE_CHECKING:
     from unittest.mock import _patch
@@ -72,7 +73,7 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
         return original_request(url=url, json=json, headers=headers, timeout=timeout)
 
     with patch.object(requests, 'post', wraps=mock_morpho_api):
-        query_morpho_vaults(database=database)
+        query_morpho_vaults(database=database, chain_id=ChainID.BASE)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_unique_cache_value(
@@ -87,13 +88,13 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
     )) is not None
     assert token.name == 'Anzen Boosted USDC'
     assert token.symbol == 'AnzenUSDC'
-    assert token.protocol == MORPHO_VAULT_PROTOCOL
+    assert token.protocol == CPT_MORPHO
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 
     check_new_query_updates_timestamp(
         query_patch=patch.object(requests, 'get', wraps=mock_morpho_api),
-        query_func=lambda: query_morpho_vaults(database=database),
+        query_func=lambda: query_morpho_vaults(database=database, chain_id=ChainID.BASE),
         key_parts=(CacheType.MORPHO_VAULTS,),
     )
 

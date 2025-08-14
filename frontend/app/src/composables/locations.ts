@@ -1,5 +1,5 @@
-import type { TradeLocationData } from '@/types/history/trade/location';
 import type { MaybeRef } from '@vueuse/core';
+import type { TradeLocationData } from '@/types/history/trade/location';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocationStore } from '@/store/locations';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -13,7 +13,7 @@ export const useLocations = createSharedComposable(() => {
     return exchange?.name ?? '';
   };
 
-  const { getBlockchainRedirectLink, getChainImageUrl, getChainName } = useSupportedChains();
+  const { getBlockchainRedirectLink, getChainImageUrl, getChainName, matchChain } = useSupportedChains();
 
   const locationData = (identifier: MaybeRef<string | null>): ComputedRef<TradeLocationData | null> => computed(() => {
     const id = get(identifier);
@@ -22,7 +22,8 @@ export const useLocations = createSharedComposable(() => {
 
     const blockchainId = id.split(' ').join('_');
 
-    if (isBlockchain(blockchainId)) {
+    const chain = matchChain(blockchainId);
+    if (chain && isBlockchain(blockchainId) && isBlockchain(chain)) {
       const detailPath = getBlockchainRedirectLink(blockchainId);
       return {
         detailPath,

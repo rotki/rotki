@@ -17,6 +17,11 @@ STABILITY_POOL_LQTY_PAID_TO_FRONTEND: Final = b'\xcd,\xdc\x1aJ\xf7\x10Q9N\x9co\x
 STABILITY_POOL_EVENTS: Final = {STABILITY_POOL_GAIN_WITHDRAW, STABILITY_POOL_LQTY_PAID_TO_DEPOSITOR, STABILITY_POOL_LQTY_PAID_TO_FRONTEND}  # noqa: E501
 STAKING_LQTY_CHANGE: Final = b'9\xdf\x0eR\x86\xa3\xef/B\xa0\xbfR\xf3,\xfe,X\xe5\xb0@_G\xfeQ/,$9\xe4\xcf\xe2\x04'  # noqa: E501
 STAKING_ETH_SENT: Final = b'a\t\xe2U\x9d\xfavj\xae\xc7\x11\x83Q\xd4\x8aR?\nAW\xf4\x9c\x8dht\x9c\x8a\xc4\x13\x18\xad\x12'  # noqa: E501
+
 STAKING_LQTY_EVENTS: Final = {STAKING_LQTY_CHANGE, STAKING_ETH_SENT}
 LUSD_BORROWING_FEE_PAID: Final = b'\xa5\\_H\xfd)H*\xd5_KY\xbf\x07\x0c\xd1\xac\x1aq2\xa3\x1fz\x13n\xbe\x88w\xae7\xe1\xff'  # noqa: E501
 STAKING_REWARDS_ASSETS: Final = {A_ETH, A_LUSD}
+
+LIQUITY_V2_WRAPPER: Final = string_to_evm_address('0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1')
+DEPOSIT_LQTY_V2: Final = b'\\\xd3x\x95\xbb\x92\x87\xe5B\xa4&\xd6\xab\xbc\x93\xd7\xda\xca\ty\xbdC&M2\rO\xd2$\xa5\xfc^'  # noqa: E501
+WITHDRAW_LQTY_V2: Final = b"(p\xfe\x17uR\x97k\r\xbc1f\xde\xd2\x16\x9d]s'_\xc5e\xdf0\x89C \xfd6\x08\xf39"  # noqa: E501

@@ -13,11 +13,10 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    SUSHISWAP_PROTOCOL,
     ChainID,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -163,7 +162,7 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
     lp_token_identifier = evm_address_to_identifier(
         address=pool_address,
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
     expected_events = [
         EvmEvent(
@@ -222,4 +221,4 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
         ),
     ]
     assert events == expected_events
-    assert EvmToken(lp_token_identifier).protocol == SUSHISWAP_PROTOCOL
+    assert EvmToken(lp_token_identifier).protocol == CPT_SUSHISWAP_V2

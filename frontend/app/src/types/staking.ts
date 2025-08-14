@@ -1,5 +1,5 @@
 import { AssetBalance, NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export enum KrakenStakingEventType {
   REWARD = 'reward',
@@ -8,7 +8,7 @@ export enum KrakenStakingEventType {
   REMOVE_ASSET = 'remove asset',
 }
 
-export const KrakenStakingEventTypeEnum = z.nativeEnum(KrakenStakingEventType);
+export const KrakenStakingEventTypeEnum = z.enum(KrakenStakingEventType);
 
 const KrakenStakingEvent = AssetBalance.extend({
   eventType: KrakenStakingEventTypeEnum,

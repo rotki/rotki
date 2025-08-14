@@ -1,8 +1,8 @@
-import { useInterop } from '@/composables/electron-interop';
-import { IndexedDb } from '@/utils/indexed-db';
 import { LogLevel } from '@shared/log-level';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import consola, { type LogLevel as ConsolaLogLevel, LogLevels, type LogObject } from 'consola';
+import { useInterop } from '@/composables/electron-interop';
+import { IndexedDb } from '@/utils/indexed-db';
 
 const isDevelopment = checkIfDevelopment();
 
@@ -40,28 +40,47 @@ function getMessage(logObj: LogObject): string {
   return `${logObj.date.toLocaleString()} :: ${badge} :: ${logObj.args.join(' ')}`;
 }
 
+function getElectronMessage(logObj: LogObject): { level: LogLevel; message: string } {
+  const levelMap = {
+    debug: LogLevel.DEBUG,
+    error: LogLevel.ERROR,
+    fatal: LogLevel.CRITICAL,
+    info: LogLevel.INFO,
+    log: LogLevel.INFO,
+    success: LogLevel.INFO,
+    trace: LogLevel.TRACE,
+    warn: LogLevel.WARNING,
+    warning: LogLevel.WARNING,
+  } as const;
+
+  const level = levelMap[logObj.type as keyof typeof levelMap] ?? LogLevel.INFO;
+  const tag = logObj.tag ? `[${logObj.tag}] ` : '';
+  const message = `[vue] ${tag}${logObj.args.join(' ')}`;
+
+  return { level, message };
+}
+
 // We only need the indexed db in production.
 // In development the plugin messes the line number from where the logs originated
-if (!isDevelopment) {
-  const { isPackaged, logToFile } = useInterop();
+const { isPackaged, logToFile } = useInterop();
 
-  if (isPackaged) {
-    consola.addReporter({
-      log(logObj) {
-        logToFile(getMessage(logObj));
-      },
-    });
-  }
-  else {
-    const loggerDb = new IndexedDb('db', 1, 'logs');
-    consola.addReporter({
-      log(logObj): void {
-        startPromise(loggerDb.add({
-          message: getMessage(logObj),
-        }));
-      },
-    });
-  }
+if (isPackaged) {
+  consola.addReporter({
+    log(logObj) {
+      const { level, message } = getElectronMessage(logObj);
+      logToFile(level, message);
+    },
+  });
+}
+else {
+  const loggerDb = new IndexedDb('db', 1, 'logs');
+  consola.addReporter({
+    log(logObj): void {
+      startPromise(loggerDb.add({
+        message: getMessage(logObj),
+      }));
+    },
+  });
 }
 
 function setLevel(level?: LogLevel): void {

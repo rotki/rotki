@@ -1,3 +1,5 @@
+from typing import Final
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_EUR
@@ -26,7 +28,11 @@ A_CHI = Asset('eip155:1/erc20:0x0000000000004946c0e9F43F4Dee607b0eF1fA1c')
 A_PAN = Asset('eip155:1/erc20:0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44')
 A_LPT = Asset('eip155:1/erc20:0x58b6A8A3302369DAEc383334672404Ee733aB239')
 
+A_SOL = Asset('SOL-2')
+A_XRP = Asset('XRP')
+A_ADA = Asset('ADA')
 A_LUNA = Asset('LUNA-2')
+A_LTC = Asset('LTC')
 A_AIR2 = Asset('AIR-2')
 A_SDC = Asset('SDC')
 A_DOGE = Asset('DOGE')
@@ -99,3 +105,10 @@ TXHASH_HEX_TO_BYTES = {
     '0x6c94a0c25739863fd4cfc40cacf32b5a74d9d4a04b675e72c01dd71e4b3113d1': deserialize_evm_tx_hash('0x6c94a0c25739863fd4cfc40cacf32b5a74d9d4a04b675e72c01dd71e4b3113d1'),  # noqa: E501
     '0x0007999335475071899b18de7226d32b5ff83a182d37485faac0e8050e2fec14': deserialize_evm_tx_hash('0x0007999335475071899b18de7226d32b5ff83a182d37485faac0e8050e2fec14'),  # noqa: E501
 }
+
+TEST_PREMIUM_DEVICE_LIMIT: Final = 100
+TEST_PREMIUM_DB_SIZE_LIMIT: Final = 1024
+TEST_PREMIUM_PNL_EVENTS_LIMIT: Final = 50_000
+TEST_PREMIUM_HISTORY_EVENTS_LIMIT: Final = 500_000
+TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT: Final = 50_000
+TEST_PREMIUM_ETH_STAKED_LIMIT: Final = 128

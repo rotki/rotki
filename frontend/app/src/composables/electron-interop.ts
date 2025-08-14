@@ -1,13 +1,14 @@
-import type { WebVersion } from '@/types';
 import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
-import { getBackendUrl } from '@/utils/account-management';
+import type { LogLevel } from '@shared/log-level';
+import type { WebVersion } from '@/types';
 import { assert, type Theme } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { getBackendUrl } from '@/utils/account-management';
 
 interface UseInteropReturn {
   readonly isPackaged: boolean;
   readonly appSession: boolean;
-  logToFile: (message: string) => void;
+  logToFile: (level: LogLevel, message?: any, ...optionalParams: any[]) => void;
   navigate: (url: string) => Promise<void>;
   navigateToPremium: () => Promise<void>;
   setupListeners: (listeners: Listeners) => void;
@@ -17,7 +18,6 @@ interface UseInteropReturn {
   premiumUserLoggedIn: (premiumUser: boolean) => void;
   closeApp: () => Promise<void>;
   metamaskImport: () => Promise<string[]>;
-  openWalletConnectBridge: () => Promise<void>;
   restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   version: () => Promise<SystemVersion | WebVersion>;
@@ -30,6 +30,7 @@ interface UseInteropReturn {
   checkForUpdates: () => Promise<any>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
   installUpdate: () => Promise<boolean | Error>;
+  notifyUserLogout: () => void;
   /**
    * Electron attaches a path property to {@see File}. In normal DOM inside a browser this property does not exist.
    * The method will return the path if we are in app session and the property exists or it will return undefined.
@@ -101,8 +102,8 @@ const interop: UseInteropReturn = {
     return electronApp;
   },
 
-  logToFile: (message: string): void => {
-    window.interop?.logToFile(message);
+  logToFile: (level: LogLevel, message: string): void => {
+    window.interop?.logToFile(level, message);
   },
 
   metamaskImport: async (): Promise<string[]> => {
@@ -125,6 +126,10 @@ const interop: UseInteropReturn = {
     await window.interop?.openUrl(externalLinks.premium);
   },
 
+  notifyUserLogout: (): void => {
+    window.interop?.notifyUserLogout();
+  },
+
   openDirectory: async (title: string): Promise<string | undefined> =>
     (await window.interop?.openDirectory(title)) ?? undefined,
 
@@ -139,10 +144,6 @@ const interop: UseInteropReturn = {
     else {
       window.open(url, '_blank');
     }
-  },
-
-  openWalletConnectBridge: async (): Promise<void> => {
-    await window.interop?.openWalletConnectBridge();
   },
 
   premiumUserLoggedIn: (premiumUser: boolean): void => {
@@ -174,6 +175,7 @@ const interop: UseInteropReturn = {
   updateTray: (update: TrayUpdate): void => {
     window.interop?.updateTray(update);
   },
+
   version: async (): Promise<SystemVersion | WebVersion> => {
     if (!window.interop) {
       return Promise.resolve({

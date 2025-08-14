@@ -1,3 +1,4 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {
   AddressBookEntries,
@@ -9,7 +10,7 @@ import type {
   EthNames,
 } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
+import { Blockchain, isValidBchAddress, isValidBtcAddress, isValidEthAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useItemCache } from '@/composables/item-cache';
@@ -22,7 +23,6 @@ import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { Blockchain, isValidEthAddress } from '@rotki/common';
 
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
@@ -95,7 +95,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       result = [];
     }
 
-    return function* (): Generator<{ key: string; item: string }, void> {
+    return function* (): Generator<{ key: string; item: AddressBookEntry | undefined }, void> {
       for (const entry of payload) {
         const key = createKey(entry.address, entry.blockchain);
 
@@ -103,7 +103,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
           res =>
             res.address === entry.address
             && res.blockchain === entry.blockchain,
-        )?.name || '';
+        );
 
         yield { item, key };
       }
@@ -116,7 +116,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     reset: resetAddressesNames,
     retrieve,
     unknown,
-  } = useItemCache<string>(async keys => fetchAddressesNames(keys));
+  } = useItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys));
 
   const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed<string[]>(() => {
     const chain = get(blockchain);
@@ -126,38 +126,67 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       .filter(uniqueStrings);
   });
 
-  const addressNameSelector = (
+  const addressInfoSelector = <T extends keyof AddressBookEntry>(
     address: MaybeRef<string>,
+    field: T,
     blockchain: MaybeRef<string> = Blockchain.ETH,
-  ): ComputedRef<string | null> => computed<string | null>(() => {
+  ): ComputedRef<AddressBookEntry[T] | undefined> => computed<AddressBookEntry[T] | undefined>(() => {
     const addressVal = get(address);
     if (!get(enableAliasNames) || !addressVal)
-      return null;
+      return undefined;
 
     const chain = get(blockchain);
 
     if (!isBlockchain(chain) || chain === Blockchain.ETH2)
-      return null;
+      return undefined;
 
     const key = createKey(addressVal, chain);
 
-    const cachedName = get(retrieve(key));
+    const cachedInfo = get(retrieve(key));
 
     // We keep track of the pending status to refresh, but if there is already a
     // value in cache we return that instead of null until a new value is presented
-    if (get(isPending(key) && !cachedName))
-      return null;
+    if (get(isPending(key)) && !cachedInfo)
+      return undefined;
 
-    return cachedName || null;
+    return cachedInfo?.[field] || undefined;
   });
+
+  const addressNameSelector = (
+    address: MaybeRef<string>,
+    blockchain: MaybeRef<string> = Blockchain.ETH,
+  ): ComputedRef<string | undefined> => addressInfoSelector(address, 'name', blockchain);
+
+  const addressNameSourceSelector = (
+    address: MaybeRef<string>,
+    blockchain: MaybeRef<string> = Blockchain.ETH,
+  ): ComputedRef<string | undefined> => addressInfoSelector(address, 'source', blockchain);
+
+  const getChainsForAddress = (address: string): string[] => {
+    // Determine appropriate chains based on address type
+    if (isValidEthAddress(address)) {
+      // ETH address - check EVM and EVM-like chains
+      return get(supportedChains)
+        .filter(chain => ['evm', 'evmlike'].includes(chain.type))
+        .map(chain => chain.id);
+    }
+    else if (isValidBtcAddress(address) || isValidBchAddress(address)) {
+      // Bitcoin address - check Bitcoin chains only
+      return get(supportedChains)
+        .filter(chain => chain.type === 'bitcoin')
+        .map(chain => chain.id);
+    }
+    else {
+      // Unknown address type - check all chains as fallback
+      return get(supportedChains).map(chain => chain.id);
+    }
+  };
 
   const resetAddressNamesData = (items: AddressBookSimplePayload[]): void => {
     items.forEach((item) => {
       const chains: string[] = item.blockchain
         ? [item.blockchain]
-        : get(supportedChains)
-            .filter(chain => !isValidEthAddress(item.address) || ['evm', 'evmlike'].includes(chain.type))
-            .map(chain => chain.id);
+        : getChainsForAddress(item.address);
 
       chains.forEach((chain) => {
         const key = createKey(item.address, chain);
@@ -294,7 +323,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   return {
     addAddressBook,
     addressesNames,
+    addressInfoSelector,
     addressNameSelector,
+    addressNameSourceSelector,
     deleteAddressBook,
     ensNames,
     ensNameSelector,

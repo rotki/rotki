@@ -1,12 +1,12 @@
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import type ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef, Ref } from 'vue';
+import { assert, toCapitalCase, transformCase } from '@rotki/common';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { useConfirmStore } from '@/store/confirm';
 import { logger } from '@/utils/logging';
-import { assert, toCapitalCase, transformCase } from '@rotki/common';
 
 function getName(name: ExternalServiceName, chain?: string): string {
   if (name === 'blockscout') {

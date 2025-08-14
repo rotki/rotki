@@ -4,8 +4,8 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict, cast
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
@@ -17,7 +17,10 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_wei
+
+from .constants import CPT_LIQUITY
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -65,7 +68,7 @@ def default_balance_with_proxy_factory() -> LiquityBalanceWithProxy:
     return cast('LiquityBalanceWithProxy', {'proxies': None, 'balances': None})
 
 
-class Liquity(HasDSProxy):
+class Liquity(EthereumModule):
 
     def __init__(
             self,
@@ -74,12 +77,8 @@ class Liquity(HasDSProxy):
             premium: Premium | None,
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(
-            ethereum_inquirer=ethereum_inquirer,
-            database=database,
-            premium=premium,
-            msg_aggregator=msg_aggregator,
-        )
+        self.ethereum = ethereum_inquirer
+        self.msg_aggregator = msg_aggregator
         self.trove_manager_contract = self.ethereum.contracts.contract(string_to_evm_address('0xA39739EF8b0231DbFA0DcdA07d7e29faAbCf4bb2'))  # noqa: E501
         self.stability_pool_contract = self.ethereum.contracts.contract(string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'))  # noqa: E501
         self.staking_contract = self.ethereum.contracts.contract(string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'))  # noqa: E501
@@ -107,7 +106,7 @@ class Liquity(HasDSProxy):
         """Query liquity contract to detect open troves and
         query total collateral ratio of the protocol"""
         addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
-        proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
+        proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # At least v1 had only DS proxy # noqa: E501
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
         addresses += proxied_addresses.values()
 
@@ -203,8 +202,8 @@ class Liquity(HasDSProxy):
         - assets: the asset associated with each method called
         """
         addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
-        proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
-        addresses += proxied_addresses.values()
+        for proxy_mappings in self.ethereum.proxies_inquirer.get_accounts_having_proxy().values():
+            addresses += proxy_mappings.values()
 
         # Build the calls that need to be made in order to get the status in the SP
         calls = [
@@ -249,7 +248,12 @@ class Liquity(HasDSProxy):
             amount = deserialize_fval(
                 token_normalized_value_decimals(gain_info, 18),
             )
-            proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address.get(current_address)
+
+            proxy_owner = None
+            for proxy_type in ProxyType:
+                if (proxy_owner := self.ethereum.proxies_inquirer.proxy_to_address[proxy_type].get(current_address)):  # noqa: E501
+                    break
+
             if proxy_owner is not None:
                 if data[proxy_owner]['proxies'] is None:
                     data[proxy_owner]['proxies'] = defaultdict(dict)
@@ -322,13 +326,13 @@ class Liquity(HasDSProxy):
             if staked_info['balances'] is not None:
                 pool_balance = staked_info['balances'][key].balance
                 if pool_balance.amount > ZERO:
-                    balances[address].assets[token] += pool_balance
+                    balances[address].assets[token][CPT_LIQUITY] += pool_balance
 
             if staked_info['proxies'] is not None:
                 for proxy_balance in staked_info['proxies'].values():
                     pool_balance = proxy_balance[key].balance
                     if pool_balance.amount > ZERO:
-                        balances[address].assets[token] += pool_balance
+                        balances[address].assets[token][CPT_LIQUITY] += pool_balance
 
     def enrich_staking_balances(
             self,
@@ -350,3 +354,13 @@ class Liquity(HasDSProxy):
             token=A_LUSD,
             key='deposited',
         )
+
+    # -- Methods following the EthereumModule interface -- #
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
+        ...
+
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
+        ...
+
+    def deactivate(self) -> None:
+        ...

@@ -127,7 +127,7 @@ class Eth2Decoder(DecoderInterface):
                     return DEFAULT_DECODING_OUTPUT
                 else:  # If amount is less, subtract the amount from the event and return new event
                     event.amount -= amount
-                    return DecodingOutput(event=eth_deposit_event)
+                    return DecodingOutput(events=[eth_deposit_event])
 
         log.error(
             f'While decoding ETH deposit event {context.transaction.tx_hash.hex()} for public key '
@@ -224,7 +224,7 @@ class Eth2Decoder(DecoderInterface):
 
         if fee_event:
             fee_event.notes = f'Spend {fee_event.amount} ETH as validator consolidation fee'
-        return DecodingOutput(event=info_event)
+        return DecodingOutput(events=[info_event])
 
     def _decode_eth2_withdrawal_request(self, context: DecoderContext) -> DecodingOutput:
         """Decode a withdrawal/exit request.
@@ -258,7 +258,7 @@ class Eth2Decoder(DecoderInterface):
 
         if fee_event:
             fee_event.notes = f'Spend {fee_event.amount} ETH as {request_description} request fee'
-        return DecodingOutput(event=info_event)
+        return DecodingOutput(events=[info_event])
 
     # -- DecoderInterface methods
 

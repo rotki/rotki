@@ -1,5 +1,5 @@
-import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
+import type { PendingTask } from '@/types/task';
 import { setupTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validAccountOperationStatus, validAuthorizedStatus, validStatus } from '@/services/utils';

@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from flask import Blueprint, Request, Response, request as flask_request
-from marshmallow import Schema, ValidationError
+from marshmallow import Schema, ValidationError, fields
 from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
@@ -70,13 +70,14 @@ from rotkehlchen.api.v1.schemas import (
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
+    DeletePremiumDeviceSchema,
     DetectTokensSchema,
     EditAccountingRuleSchema,
     EditHistoryEventSchema,
+    EditPremiumDeviceSchema,
     EditSettingsSchema,
     EnsAvatarsSchema,
     ERC20InfoSchema,
-    Eth2DailyStatsSchema,
     Eth2StakePerformanceSchema,
     Eth2StakingEventsDecodingSchema,
     Eth2StakingEventsResetSchema,
@@ -89,11 +90,9 @@ from rotkehlchen.api.v1.schemas import (
     EvmAccountsPutSchema,
     EvmlikePendingTransactionDecodingSchema,
     EvmlikeTransactionDecodingSchema,
-    EvmlikeTransactionQuerySchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
-    EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeRatesSchema,
@@ -162,6 +161,7 @@ from rotkehlchen.api.v1.schemas import (
     SnapshotImportingSchema,
     SnapshotQuerySchema,
     SnapshotTimestampQuerySchema,
+    SolanaTokenMigrationSchema,
     SpamTokenListSchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
@@ -171,6 +171,7 @@ from rotkehlchen.api.v1.schemas import (
     TagSchema,
     TimedManualPriceSchema,
     TimestampRangeSchema,
+    TransactionQuerySchema,
     UpdateCalendarReminderSchema,
     UpdateCalendarSchema,
     UserActionLoginSchema,
@@ -191,12 +192,13 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
+    CryptoAsset,
     CustomAsset,
     EvmToken,
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.accounts import SingleBlockchainAccountData
+from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
@@ -215,8 +217,6 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
-    Eth2DailyStatsFilterQuery,
-    EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
@@ -238,14 +238,16 @@ from rotkehlchen.serialization.schemas import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    CHAINS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    SOLANA_TOKEN_KINDS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
-    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
     ApiSecret,
+    BTCTxHash,
     ChainType,
     ChecksumEvmAddress,
     CounterpartyAssetMappingDeleteEntry,
@@ -265,6 +267,7 @@ from rotkehlchen.types import (
     OptionalChainAddress,
     Price,
     ProtocolsWithCache,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     UserNote,
@@ -607,31 +610,39 @@ class AssociatedLocations(BaseMethodView):
 class BlockchainTransactionsResource(BaseMethodView):
     delete_schema = BlockchainTransactionDeletionSchema()
 
+    def make_post_schema(self) -> TransactionQuerySchema:
+        return TransactionQuerySchema(
+            database=self.rest_api.rotkehlchen.data.db,
+        )
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            accounts: list[OptionalBlockchainAccount] | None,
+    ) -> Response:
+        return self.rest_api.refresh_transactions(
+            async_query=async_query,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            accounts=accounts,
+        )
+
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
     def delete(
             self,
-            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
-            tx_hash: EVMTxHash | None,
+            chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
+            tx_hash: EVMTxHash | BTCTxHash | None,
     ) -> Response:
-        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)
+        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)  # type: ignore[arg-type] # schema ensures chain is included when tx_hash is present.
 
 
 class EvmTransactionsResource(BaseMethodView):
-    post_schema = EvmTransactionQuerySchema()
     put_schema = EvmTransactionDecodingSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            async_query: bool,
-            filter_query: EvmTransactionsFilterQuery,
-    ) -> Response:
-        return self.rest_api.refresh_evm_transactions(
-            async_query=async_query,
-            filter_query=filter_query,
-        )
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
@@ -648,27 +659,17 @@ class EvmTransactionsResource(BaseMethodView):
         )
 
 
-class EvmlikeTransactionsResource(BaseMethodView):
-    post_schema = EvmlikeTransactionQuerySchema()
-    put_schema = EvmlikeTransactionDecodingSchema()
+class EvmTransactionsStatusResource(BaseMethodView):
+    get_schema = AsyncQueryArgumentSchema()
 
     @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            async_query: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            accounts: list[ChecksumEvmAddress] | None,
-            chain: EvmlikeChain | None,
-    ) -> Response:
-        return self.rest_api.refresh_evmlike_transactions(
-            async_query=async_query,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            accounts=accounts,
-            chain=chain,
-        )
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_evm_transactions_status(async_query=async_query)
+
+
+class EvmlikeTransactionsResource(BaseMethodView):
+    put_schema = EvmlikeTransactionDecodingSchema()
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
@@ -1901,28 +1902,6 @@ class DataImportResource(BaseMethodView):
             filepath=file,
             async_query=async_query,
             **kwargs,
-        )
-
-
-class Eth2DailyStatsResource(BaseMethodView):
-
-    def make_post_schema(self) -> Eth2DailyStatsSchema:
-        return Eth2DailyStatsSchema(
-            dbhandler=self.rest_api.rotkehlchen.data.db,
-        )
-
-    @require_premium_user(active_check=False)
-    @resource_parser.use_kwargs(make_post_schema, location='json_and_query')
-    def post(
-            self,
-            filter_query: Eth2DailyStatsFilterQuery,
-            async_query: bool,
-            only_cache: bool,
-    ) -> Response:
-        return self.rest_api.get_eth2_daily_stats(
-            filter_query=filter_query,
-            async_query=async_query,
-            only_cache=only_cache,
         )
 
 
@@ -3297,6 +3276,36 @@ class CalendarRemindersResource(BaseMethodView):
         return self.rest_api.query_reminders(event_id=identifier)
 
 
+class GoogleCalendarResource(BaseMethodView):
+    """Endpoint for Google Calendar integration."""
+
+    put_schema = Schema.from_dict({
+        'access_token': fields.String(required=True),
+        'refresh_token': fields.String(required=True),
+    })
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        """Get Google Calendar authentication status."""
+        return self.rest_api.get_google_calendar_status()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, access_token: str, refresh_token: str) -> Response:
+        """Complete OAuth2 flow with access token from external flow."""
+        return self.rest_api.complete_google_calendar_oauth(access_token, refresh_token)
+
+    @require_loggedin_user()
+    def post(self) -> Response:
+        """Manually sync rotki calendar events to Google Calendar."""
+        return self.rest_api.sync_google_calendar()
+
+    @require_loggedin_user()
+    def delete(self) -> Response:
+        """Disconnect Google Calendar integration."""
+        return self.rest_api.disconnect_google_calendar()
+
+
 class StatsWrapResource(BaseMethodView):
     """Endpoint for the wrap stats. It is temporary and will be removed."""
 
@@ -3419,3 +3428,50 @@ class RefetchEvmTransactionsResource(BaseMethodView):
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+
+
+class SolanaTokenMigrationResource(BaseMethodView):
+    """This is a temporary endpoint to correct custom user
+    input solana tokens input before release 1.40.
+    """
+    post_schema = SolanaTokenMigrationSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            old_asset: 'CryptoAsset',
+            address: 'SolanaAddress',
+            decimals: int,
+            token_kind: SOLANA_TOKEN_KINDS,
+    ) -> Response:
+        return self.rest_api.migrate_solana_token(
+            old_asset=old_asset,
+            address=address,
+            decimals=decimals,
+            token_kind=token_kind,
+        )
+
+
+class PremiumDevicesResource(BaseMethodView):
+
+    edit_schema = EditPremiumDeviceSchema()
+    delete_schema = DeletePremiumDeviceSchema()
+
+    @require_premium_user(active_check=False)
+    def get(self) -> Response:
+        return self.rest_api.get_premium_registered_devices()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(edit_schema, location='json')
+    def patch(self, device_identifier: str, device_name: str) -> Response:
+        return self.rest_api.edit_premium_registered_device(
+            device_identifier=device_identifier,
+            device_name=device_name,
+        )
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, device_identifier: str) -> Response:
+        return self.rest_api.delete_premium_registered_device(device_identifier=device_identifier)

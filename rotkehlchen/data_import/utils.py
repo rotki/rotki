@@ -13,6 +13,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -107,7 +108,17 @@ class BaseExchangeImporter(ABC):
 
     def flush_all(self, write_cursor: 'DBCursor') -> None:
         self.db.add_margin_positions(write_cursor, margin_positions=self._margin_trades)
-        self.history_db.add_history_events(write_cursor, history=self._history_events)
+        for event in self._history_events:
+            if self.history_db.add_history_event(write_cursor=write_cursor, event=event) is None:
+                self.append_msg(
+                    row_index=-1,  # we don't know the row index.
+                    msg=(
+                        f'Skipped duplicate {event.entry_type}: {event.event_type.serialize()}/{event.event_subtype.serialize()} '  # noqa: E501
+                        f'of {event.amount} {event.asset.symbol_or_name()} at {timestamp_to_date(ts_ms_to_sec(event.timestamp), "%Y/%m/%d %H:%M:%S")}'  # noqa: E501
+                    ),
+                    is_error=False,
+                )
+
         self._margin_trades = []
         self._history_events = []
 

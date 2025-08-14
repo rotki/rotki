@@ -1,6 +1,7 @@
 import type { ActionStatus } from '@/types/action';
 import type { FetchPricePayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
+import { type BigNumber, One } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatusUpdater } from '@/composables/status';
 import { useCollectionIdentifiers } from '@/modules/assets/use-collection-identifiers';
@@ -17,7 +18,6 @@ import { isTaskCancelled } from '@/utils';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
-import { assert, type BigNumber, One } from '@rotki/common';
 
 interface UsePriceTaskManagerReturn {
   createOracleCache: (payload: OracleCachePayload) => Promise<ActionStatus>;
@@ -129,7 +129,9 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   };
 
   const getHistoricPrice = async ({ fromAsset, timestamp, toAsset }: HistoricPricePayload): Promise<BigNumber> => {
-    assert(fromAsset !== toAsset);
+    if (fromAsset === toAsset) {
+      return One;
+    }
     const taskType = TaskType.FETCH_HISTORIC_PRICE;
 
     try {

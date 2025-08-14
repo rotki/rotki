@@ -10,10 +10,17 @@ const props = withDefaults(defineProps<{
 
 const locationLimited = ref<boolean>(true);
 
-const { matchChain } = useSupportedChains();
+const { isEvm, matchChain } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 
-const isDisabled = computed<boolean>(() => props.disabled || props.location === undefined || !matchChain(props.location));
+const isDisabled = computed<boolean>(() => {
+  if (props.disabled || props.location === undefined) {
+    return true;
+  }
+
+  const chain = matchChain(props.location);
+  return !chain || !get(isEvm(chain));
+});
 
 const tooltipText = computed<string>(() => {
   if (get(isDisabled)) {
@@ -27,12 +34,12 @@ const tooltipText = computed<string>(() => {
 
 function updateModel() {
   const location = props.location;
-  if (!get(locationLimited) || location === undefined || !matchChain(location)) {
+  if (!get(locationLimited) || !isDefined(location) || get(isDisabled)) {
     set(modelValue, undefined);
+    return;
   }
-  else {
-    set(modelValue, location.replace(' ', '_'));
-  }
+
+  set(modelValue, location.replace(' ', '_'));
 }
 
 watch(locationLimited, () => {
@@ -46,7 +53,10 @@ watchImmediate(() => props.location, () => {
 
 <template>
   <div class="pt-1">
-    <RuiTooltip :disabled="disabled">
+    <RuiTooltip
+      :disabled="disabled"
+      :popper="{ placement: 'top-end' }"
+    >
       <template #activator>
         <RuiButton
           variant="text"

@@ -1,5 +1,5 @@
-import type { TaskType } from '@/types/task-type';
 import type { AxiosResponseTransformer } from 'axios';
+import type { TaskType } from '@/types/task-type';
 
 export interface Task<T extends TaskMeta> {
   readonly id: number;

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { assert } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
 import AccountForm from '@/components/accounts/management/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
-import { assert } from '@rotki/common';
-import { isEqual } from 'es-toolkit';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 

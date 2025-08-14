@@ -3,7 +3,6 @@
 but heavily modified"""
 
 import random
-import sqlite3
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from enum import Enum, auto
@@ -13,19 +12,23 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
 from uuid import uuid4
 
 import gevent
+import rsqlite
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
-from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
-from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
+from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_INDEXES, MINIMIZED_USER_DB_SCHEMA
+from rotkehlchen.globaldb.minimized_schema import (
+    MINIMIZED_GLOBAL_DB_INDEXES,
+    MINIMIZED_GLOBAL_DB_SCHEMA,
+)
 from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.logging import RotkehlchenLogger
 
-UnderlyingCursor: TypeAlias = sqlite3.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
-UnderlyingConnection: TypeAlias = sqlite3.Connection | sqlcipher.Connection  # pylint: disable=no-member
+UnderlyingCursor: TypeAlias = rsqlite.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
+UnderlyingConnection: TypeAlias = rsqlite.Connection | sqlcipher.Connection  # pylint: disable=no-member
 
 CONTEXT_SWITCH_WAIT = 1  # seconds to wait for a status change in a DB context switch
 import logging
@@ -45,7 +48,7 @@ class DBCursor:
 
     def __iter__(self) -> 'DBCursor':
         if __debug__:
-            logger.trace(f'Getting iterator for cursor {self._cursor}')
+            logger.trace(f'Getting iterator for cursor {id(self)}')
         return self
 
     def __next__(self) -> Any:
@@ -55,15 +58,15 @@ class DBCursor:
         https://github.com/python/typeshed/blob/a750a42c65b77963ff097b6cbb6d36cef5912eb7/stdlib/sqlite3/dbapi2.pyi#L397
         """
         if __debug__:
-            logger.trace(f'Get next item for cursor {self._cursor}')
+            logger.trace(f'Get next item for cursor {id(self)}')
         result = next(self._cursor, None)
         if result is None:
             if __debug__:
-                logger.trace(f'Stopping iteration for cursor {self._cursor}')
+                logger.trace(f'Stopping iteration for cursor {id(self)}')
             raise StopIteration
 
         if __debug__:
-            logger.trace(f'Got next item for cursor {self._cursor}')
+            logger.trace(f'Got next item for cursor {id(self)}')
         return result
 
     def __enter__(self) -> 'DBCursor':
@@ -84,16 +87,16 @@ class DBCursor:
 
     def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
         if __debug__:
-            logger.trace(f'EXECUTE {statement}')
+            logger.trace(f'EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')
         try:
             self._cursor.execute(statement, *bindings)
-        except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
+        except (sqlcipher.InterfaceError, rsqlite.InterfaceError) as e:  # pylint: disable=no-member
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
-            logger.debug(f'{statement} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
+            logger.debug(f'{statement} with {bindings} failed due to {e!s}. Probably https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
             self._cursor.execute(statement, *bindings)
 
         if __debug__:
-            logger.trace(f'FINISH EXECUTE {statement}')
+            logger.trace(f'FINISH EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
         return self
 
     def executemany(
@@ -102,10 +105,10 @@ class DBCursor:
             *bindings: Sequence[Sequence] | Generator[Sequence, None, None],
     ) -> 'DBCursor':
         if __debug__:
-            logger.trace(f'EXECUTEMANY {statement}')
+            logger.trace(f'EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')
         self._cursor.executemany(statement, *bindings)
         if __debug__:
-            logger.trace(f'FINISH EXECUTEMANY {statement}')
+            logger.trace(f'FINISH EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
         return self
 
     def executescript(self, script: str) -> 'DBCursor':
@@ -113,10 +116,10 @@ class DBCursor:
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
         """
         if __debug__:
-            logger.trace(f'EXECUTESCRIPT {script}')
+            logger.trace(f'EXECUTESCRIPT {script} for cursor {id(self)}')
         self._cursor.executescript(script)
         if __debug__:
-            logger.trace(f'FINISH EXECUTESCRIPT {script}')
+            logger.trace(f'FINISH EXECUTESCRIPT {script} for cursor {id(self)}')
         return self
 
     def switch_foreign_keys(
@@ -135,28 +138,28 @@ class DBCursor:
 
     def fetchone(self) -> Any:
         if __debug__:
-            logger.trace('CURSOR FETCHONE')
+            logger.trace(f'CURSOR FETCHONE  for cursor {id(self)}')
         result = self._cursor.fetchone()
         if __debug__:
-            logger.trace('FINISH CURSOR FETCHONE')
+            logger.trace(f'FINISH CURSOR FETCHONE for cursor {id(self)}')
         return result
 
     def fetchmany(self, size: int | None = None) -> list[Any]:
         if __debug__:
-            logger.trace(f'CURSOR FETCHMANY with {size=}')
+            logger.trace(f'CURSOR FETCHMANY with {size=} for cursor {id(self)}')
         if size is None:
             size = self._cursor.arraysize
         result = self._cursor.fetchmany(size)
         if __debug__:
-            logger.trace('FINISH CURSOR FETCHMANY')
+            logger.trace(f'FINISH CURSOR FETCHMANY for cursor {id(self)}')
         return result
 
     def fetchall(self) -> list[Any]:
         if __debug__:
-            logger.trace('CURSOR FETCHALL')
+            logger.trace(f'CURSOR FETCHALL for cursor {id(self)}')
         result = self._cursor.fetchall()
         if __debug__:
-            logger.trace('FINISH CURSOR FETCHALL')
+            logger.trace(f'FINISH CURSOR FETCHALL for cursor {id(self)}')
         return result
 
     @property
@@ -165,7 +168,7 @@ class DBCursor:
 
     @property
     def lastrowid(self) -> int:
-        return self._cursor.lastrowid  # type: ignore
+        return self._cursor.lastrowid
 
     def close(self) -> None:
         self._cursor.close()
@@ -188,26 +191,25 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     """Needs to be a static function. Cannot be a connection class method
     or sqlite breaks in funny ways. Raises random Operational errors.
     """
-    if __debug__:
-        identifier = random.random()
-        conn_type = connection.connection_type if connection else 'no connection'
-        logger.trace(f'START progress callback for {conn_type} with id {identifier}')
-
     if connection is None:
         return 0
 
-    if connection.in_callback.ready() is False:
-        # This solves the bug described in test_callback_segfault_complex. This works
-        # since we are single threaded and if we get here and it's locked we know that
+    if connection.in_callback.ready() is False or connection.in_critical_section.ready() is False:
+        # we are single threaded and if we get here and it's locked or in critical section
         # we should not wait since this is an edge case that can hit us if the connection gets
         # modified before we exit the callback. So we immediately exit the callback
         # without any sleep that would lead to context switching
         return 0
 
-    # without this rotkehlchen/tests/db/test_async.py::test_async_segfault fails
+    if __debug__:
+        identifier = random.random()
+        conn_type = connection.connection_type if connection else 'no connection'
+        logger.trace(f'START progress callback for {conn_type} with id {identifier}')
+
     with connection.in_callback:
         if __debug__:
             logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+
         gevent.sleep(0)
         if __debug__:
             logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
@@ -252,6 +254,7 @@ class DBConnection:
         self._conn: UnderlyingConnection
         self.in_callback = gevent.lock.Semaphore()
         self.transaction_lock = gevent.lock.Semaphore()
+        self.in_critical_section = gevent.lock.Semaphore()
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
@@ -262,7 +265,7 @@ class DBConnection:
         self.savepoint_greenlet_id: str | None = None
         self.write_greenlet_id: str | None = None
         if connection_type == DBConnectionType.GLOBAL:
-            self._conn = sqlite3.connect(
+            self._conn = rsqlite.connect(
                 database=path,
                 check_same_thread=False,
                 isolation_level=None,
@@ -275,37 +278,13 @@ class DBConnection:
             )
         self._set_progress_handler()
         self.minimized_schema = None
+        self.minimized_indexes = None
         if connection_type == DBConnectionType.USER:
             self.minimized_schema = MINIMIZED_USER_DB_SCHEMA
+            self.minimized_indexes = MINIMIZED_USER_DB_INDEXES
         elif connection_type == DBConnectionType.GLOBAL:
             self.minimized_schema = MINIMIZED_GLOBAL_DB_SCHEMA
-
-    def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTE {statement}')
-        underlying_cursor = self._conn.execute(statement, *bindings)
-        if __debug__:
-            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
-
-    def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> DBCursor:
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTEMANY {statement}')
-        underlying_cursor = self._conn.executemany(statement, *bindings)
-        if __debug__:
-            logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
-
-    def executescript(self, script: str) -> DBCursor:
-        """Remember this always issues a COMMIT before
-        https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
-        """
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
-        underlying_cursor = self._conn.executescript(script)
-        if __debug__:
-            logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
+            self.minimized_indexes = MINIMIZED_GLOBAL_DB_INDEXES
 
     def commit(self) -> None:
         with self.in_callback:
@@ -459,7 +438,9 @@ class DBConnection:
                 f'Incorrect use of savepoints! Wanted to {rollback_or_release.lower()} savepoint '
                 f'{savepoint_name}, but it is not present in the stack: {list_savepoints}',
             )
-        self.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
+
+        with self.cursor() as cursor:  # this should not be a write_ctx as it's inside savepoint logic and would block  # noqa: E501
+            cursor.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
 
         # Release all savepoints until, and including, the one with name `savepoint_name`.
         # For rollback we don't remove the savepoints since they are not released yet.
@@ -486,21 +467,71 @@ class DBConnection:
 
     @contextmanager
     def critical_section(self) -> Generator[None, None, None]:
-        with self.in_callback:
+        with self.in_critical_section:
             if __debug__:
-                logger.trace(f'entering critical section for {self.connection_type}')
-            self._conn.set_progress_handler(None, 0)
-        yield
+                identifier = random.random()
+                logger.trace(f'Got in critical section for {self.connection_type} and id: {identifier}')  # noqa: E501
 
-        with self.in_callback:
-            if __debug__:
-                logger.trace(f'exiting critical section for {self.connection_type}')
-            self._set_progress_handler()
+            with self.in_callback:
+                if __debug__:
+                    logger.trace(f'entering critical section for {self.connection_type} and id: {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+
+                self._conn.set_progress_handler(None, 0)
+            yield
+
+            with self.in_callback:
+                if __debug__:
+                    logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+                self._set_progress_handler()
 
     @contextmanager
     def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
         with self.critical_section(), self.transaction_lock:
             yield
+
+    def vacuum(self) -> None:
+        """Helper function to vacuum the DB. Abstracted into its own function since
+        incorrect usage of the PRAGMA can result in errors. For example should not do it
+        while there is an open transaction"""
+        with self.critical_section(), self.transaction_lock:  # make sure no writing happens while vacuuming  # noqa: E501
+            cursor = self.cursor()
+            cursor.execute('VACUUM')
+            cursor.close()
+
+    def wal_checkpoint(self, mode: Literal['', '(FULL)', '(PASSIVE)'] = '') -> None:
+        """
+        Perform a WAL checkpoint operation.
+        https://www.sqlite.org/pragma.html#pragma_wal_checkpoint
+        Made as part of the connection to control how it's made. Cursors should
+        not execute this if there an open transaction with pending changes as it can
+        also result in database table is locked.
+
+        Args:
+            mode: Optional checkpoint mode ('PASSIVE', 'FULL', 'RESTART', 'TRUNCATE').
+                 If '', uses default (PASSIVE).
+
+        This method acquires the callback lock to prevent progress callbacks from
+        interfering with the checkpoint operation, which can cause 'database table is locked'
+        errors due to context switches during the checkpoint.
+
+        See issue #5038 for details.
+        """
+        pragma_sql = f'PRAGMA wal_checkpoint{mode};'
+        # Acquire the callback lock to prevent progress callbacks from causing
+        # context switches during the checkpoint operation
+        with self.in_callback:
+            if __debug__:
+                logger.trace(f'START {pragma_sql}')
+
+            with self.cursor() as cursor:
+                result = cursor.execute(pragma_sql).fetchone()
+                if __debug__:
+                    if len(result) != 3:  # should never happen, PRAGMA wal checkpoint returns 3 ints # noqa: E501
+                        result_text = ''
+                    else:
+                        result_text = f' with result(Status: {result[0]}, Wal file Pages: {result[1]}, Checkpointed Pages: {result[2]})'  # noqa: E501
+
+                    logger.trace(f'FINISH {pragma_sql}{result_text}')
 
     @property
     def total_changes(self) -> int:
@@ -518,7 +549,8 @@ class DBConnection:
         """
         assert (
             self.connection_type != DBConnectionType.TRANSIENT and
-            self.minimized_schema is not None
+            self.minimized_schema is not None and
+            self.minimized_indexes is not None
         )
 
         with self.read_ctx() as cursor:
@@ -526,4 +558,5 @@ class DBConnection:
                 cursor=cursor,
                 db_name=self.connection_type.name.lower(),
                 minimized_schema=self.minimized_schema,
+                minimized_indexes=self.minimized_indexes,
             )

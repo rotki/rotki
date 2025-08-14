@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
+import { One } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalances } from '@/composables/balances';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
-import { One } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

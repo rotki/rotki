@@ -18,7 +18,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTokenKind
+from rotkehlchen.types import TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import EFP_LIST_REGISTRY
@@ -60,7 +60,7 @@ class EfpDecoder(EfpCommonDecoder):
         if (context.tx_log.data[96:128].rstrip(b'\x00').decode()) != 'primary-list':
             return DEFAULT_DECODING_OUTPUT
 
-        return DecodingOutput(event=self.base.make_event_from_transaction(
+        return DecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -70,7 +70,7 @@ class EfpDecoder(EfpCommonDecoder):
             location_label=(user_address := bytes_to_address(context.tx_log.topics[1])),
             notes=f'Create EFP primary list for {user_address}',
             counterparty=CPT_EFP,
-        ))
+        )])
 
     def _decode_list_registry_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events from the EFPListRegistry contract, currently only deployed on Base.
@@ -90,7 +90,7 @@ class EfpDecoder(EfpCommonDecoder):
             asset=Asset(evm_address_to_identifier(  # EFP List NFT
                 address=EFP_LIST_REGISTRY,
                 chain_id=self.evm_inquirer.chain_id,
-                token_type=EvmTokenKind.ERC721,
+                token_type=TokenKind.ERC721,
                 collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
             )),
             address=ZERO_ADDRESS,

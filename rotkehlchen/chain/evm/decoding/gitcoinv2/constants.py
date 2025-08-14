@@ -18,6 +18,7 @@ ALLOCATED: Final = b'\xdc\x9d@v\x03\x08U}\x13w\xc2\xfe|\x98J\xce\x9e\xb0-#\xb6\n
 REGISTERED: Final = b'\xa1\x970n=\xd5IJa\xa6\x958\x1a\xa8\t\xa5;\x8e7zh^\x84\xe4\x04\xa8]Z\x8d\xa6\xccb'  # noqa: E501
 PROFILE_CREATED: Final = b'\x1e(5/\xf0\rgGKY\xb8~h\x17\xd6\xbae\xda\xa0\x13\x04F&m\xb8d\x02\x14\xd8\xb8\x06\t'  # noqa: E501
 PROFILE_METADATA_UPDATED: Final = b'\xa3f\x05JWNO\x86\x1c\xb2\x95\xfd#\xb5D\x0cQ\x19\xc1\xba2\x9c6\xf5\xdf\xebVCS|\xb0\xf3'  # noqa: E501
+DIRECT_ALLOCATED: Final = b'JY\xcd\x11\x83q5\r.\xef\x14\x93\xd8f\xa5=#\xaa\x0e!\xb6\xdf\x99\xc6m\xdd\xaa>\xd7\x98\x01\x9b'  # noqa: E501
 
 
 GET_RECIPIENT_ABI: Final[ABI] = [{'inputs': [{'name': '_recipientId', 'type': 'address'}], 'name': 'getRecipient', 'outputs': [{'components': [{'name': 'useRegistryAnchor', 'type': 'bool'}, {'name': 'recipientAddress', 'type': 'address'}, {'components': [{'name': 'protocol', 'type': 'uint256'}, {'name': 'pointer', 'type': 'string'}], 'name': 'metadata', 'type': 'tuple'}], 'name': 'recipient', 'type': 'tuple'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

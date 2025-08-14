@@ -1,5 +1,6 @@
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import { useHistoryApi } from '@/composables/api/history';
+import { type EvmTransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
@@ -11,11 +12,13 @@ export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = ref<string[]>([]);
   const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
   const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
+  const evmTransactionStatus = ref<EvmTransactionStatus>();
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
 
   const { useIsTaskRunning } = useTaskStore();
   const { getChain, isEvmLikeChains } = useSupportedChains();
+  const { getEvmTransactionStatus } = useHistoryEventsApi();
 
   const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
     Object.values(get(undecodedTransactionsStatus)).filter(status => status.total > 0),
@@ -115,6 +118,16 @@ export const useHistoryStore = defineStore('history', () => {
     }
   };
 
+  const fetchEvmTransactionStatus = async (): Promise<void> => {
+    try {
+      const result = await getEvmTransactionStatus();
+      set(evmTransactionStatus, result);
+    }
+    catch (error: any) {
+      logger.error(error);
+    }
+  };
+
   watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
     if (!curr && prev) {
       resetProtocolCacheUpdatesStatus();
@@ -125,7 +138,9 @@ export const useHistoryStore = defineStore('history', () => {
     associatedLocations,
     clearUndecodedTransactionsNumbers,
     decodingStatus,
+    evmTransactionStatus,
     fetchAssociatedLocations,
+    fetchEvmTransactionStatus,
     getUndecodedTransactionStatus,
     protocolCacheStatus,
     receivingProtocolCacheStatus,

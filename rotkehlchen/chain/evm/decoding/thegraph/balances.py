@@ -51,10 +51,9 @@ class ThegraphCommonBalances(ProtocolWithBalance):
             location=location,
         )
         with self.event_db.db.conn.read_ctx() as cursor:
-            if len(events := self.event_db.get_history_events(
+            if len(events := self.event_db.get_history_events_internal(
                     cursor=cursor,
                     filter_query=db_filter,
-                    has_premium=True,
             )) == 0:
                 return None
         return events
@@ -171,7 +170,7 @@ class ThegraphCommonBalances(ProtocolWithBalance):
             balance = FVal(shares_amount * pool_total_tokens / pool_total_shares)
             balance_norm = asset_normalized_value(balance.to_int(exact=False), self.token)
             if balance_norm > ZERO:
-                balances[user_address].assets[self.token] += Balance(
+                balances[user_address].assets[self.token][self.counterparty] += Balance(
                     amount=balance_norm,
                     usd_value=grt_price * balance_norm,
                 )

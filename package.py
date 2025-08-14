@@ -376,7 +376,7 @@ class WindowsPackaging:
             logger.info('WIN_CSC_LINK already set skipping')
             return True
 
-        if certificate is None:
+        if certificate is None or certificate == '':
             logger.info(f'{WIN_CERTIFICATE} is not set skipping signing')
             return False
 
@@ -420,7 +420,7 @@ class MacPackaging:
             logger.info('CSC_LINK already set skipping')
             return True
 
-        if certificate is None:
+        if certificate is None or certificate == '':
             logger.info(f'{MAC_CERTIFICATE} is not set skipping signing')
             return False
 
@@ -554,11 +554,11 @@ class BackendBuilder:
     @log_group('pip install')
     def pip_install(self, what: str, use_pep_517: bool = True) -> None:
         """
-        Calls pip install using subprocess.
+        Calls uv pip install using subprocess.
 
-        :param what: anything that goes after pip install
+        :param what: anything that goes after uv pip install
         """
-        base_command = 'pip install '
+        base_command = 'uv pip install '
         if use_pep_517 is False:
             base_command += '--no-use-pep517 '
 
@@ -568,7 +568,7 @@ class BackendBuilder:
             cwd=self.__storage.working_directory,
         )
         if ret_code != 0:
-            logger.error(f'could not run "pip install {what}"')
+            logger.error(f'could not run "uv pip install {what}"')
             sys.exit(1)
 
     def __build_pyinstaller_bootloader(self, tag_version: str) -> None:
@@ -612,7 +612,7 @@ class BackendBuilder:
             sys.exit(1)
 
         os.chdir(pyinstaller_directory)
-        install_ret_code = subprocess.call('pip install .', shell=True)
+        install_ret_code = subprocess.call('uv pip install "pyinstaller @ ."', shell=True)
         if install_ret_code != 0:
             logger.error('failed to install pyinstaller')
             sys.exit(1)

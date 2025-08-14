@@ -69,9 +69,9 @@ export function useLogin(): UseLoginReturn {
     return { message, success: false };
   };
 
-  const unlock = ({ exchanges, fetchData, settings, username: user }: UnlockPayload): ActionStatus => {
+  const unlock = async ({ exchanges, fetchData, settings, username: user }: UnlockPayload): Promise<ActionStatus> => {
     try {
-      initialize(settings, exchanges);
+      await initialize(settings, exchanges);
       set(username, user);
       set(logged, true);
       if (fetchData)
@@ -100,7 +100,7 @@ export function useLogin(): UseLoginReturn {
         settings,
         username: payload.credentials.username,
       };
-      return unlock(data);
+      return await unlock(data);
     }
     catch (error: any) {
       logger.error(error);
@@ -159,7 +159,7 @@ export function useLogin(): UseLoginReturn {
         ({ exchanges, settings } = account);
       }
 
-      return unlock({
+      return await unlock({
         exchanges,
         fetchData: true,
         settings,

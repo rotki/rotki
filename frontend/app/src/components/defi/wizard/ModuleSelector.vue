@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { CamelCase } from '@/types/common';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
+import type { CamelCase } from '@/types/common';
+import { transformCase, Zero } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
@@ -13,7 +14,6 @@ import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
 import { Section } from '@/types/status';
-import { transformCase, Zero } from '@rotki/common';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 

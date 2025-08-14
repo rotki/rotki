@@ -24,7 +24,7 @@ from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .utils import get_compound_underlying_token
@@ -234,7 +234,7 @@ class Compoundv2Decoder(DecoderInterface):
             userdb=self.base.database,
             evm_address=collateral_ctoken_address,
             chain_id=self.base.evm_inquirer.chain_id,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             evm_inquirer=self.base.evm_inquirer,
             protocol=CPT_COMPOUND,
         )
@@ -263,7 +263,7 @@ class Compoundv2Decoder(DecoderInterface):
                         userdb=self.base.database,
                         evm_address=repaying_token_address,
                         chain_id=self.base.evm_inquirer.chain_id,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         evm_inquirer=self.base.evm_inquirer,
                     )
                     break

@@ -1,25 +1,30 @@
 <script setup lang="ts">
+import type { ValidationErrors } from '@/types/api/errors';
+import { toSentenceCase } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { toSentenceCase } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
+const errorMessages = defineModel<ValidationErrors>('errorMessages', { default: () => ({}) });
 
 const editKeys = ref<boolean>(false);
 
-const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(useLocationStore());
+const locationStore = useLocationStore();
+const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(locationStore);
+const { useIsExperimentalExchange } = locationStore;
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { getLocationData } = useLocations();
 const { t, te } = useI18n({ useScope: 'global' });
@@ -53,6 +58,9 @@ const isCoinbasePro = computed(() => {
   const { location } = get(modelValue);
   return ['coinbaseprime'].includes(location);
 });
+
+const location = useRefMap(modelValue, item => item.location);
+const experimental = useIsExperimentalExchange(location);
 
 const showKeyWaitingTimeWarning = logicOr(isKraken, isCoinbase, isCoinbasePro);
 
@@ -88,6 +96,7 @@ const apiSecretModel = refWithAsterisk(apiSecret);
 
 const passphrase = useRefPropVModel(modelValue, 'passphrase');
 const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
+const binanceMarkets = useRefPropVModel(modelValue, 'binanceMarkets');
 
 const name = computed<string>({
   get() {
@@ -106,6 +115,7 @@ const name = computed<string>({
 useFormStateWatcher({
   apiKey,
   apiSecret,
+  binanceMarkets,
   krakenAccountType,
   name,
   passphrase,
@@ -154,6 +164,12 @@ const v$ = useVuelidate({
       requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret)),
     ),
   },
+  binanceMarkets: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.validation.non_empty'),
+      requiredIf(isBinance),
+    ),
+  },
   name: {
     required: helpers.withMessage(
       t('exchange_keys_form.name.non_empty'),
@@ -175,10 +191,11 @@ const v$ = useVuelidate({
 }, {
   apiKey,
   apiSecret,
+  binanceMarkets,
   name: nameProp,
   newName: newNameProp,
   passphrase,
-}, { $autoDirty: true });
+}, { $autoDirty: true, $externalResults: errorMessages });
 
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
@@ -335,10 +352,20 @@ defineExpose({
     <BinancePairsSelector
       v-if="isBinance"
       :name="modelValue.name"
+      :edit="editMode"
       :location="modelValue.location"
+      :error-messages="toMessages(v$.binanceMarkets)"
       @update:selection="modelValue = { ...modelValue, binanceMarkets: $event }"
     />
   </div>
+
+  <RuiAlert
+    v-if="isBinance"
+    class="mt-4"
+    type="info"
+  >
+    {{ t('exchange_keys_form.binance_markets_required') }}
+  </RuiAlert>
 
   <RuiAlert
     v-if="showKeyWaitingTimeWarning"
@@ -346,5 +373,13 @@ defineExpose({
     type="info"
   >
     {{ t('exchange_keys_form.waiting_time_warning') }}
+  </RuiAlert>
+
+  <RuiAlert
+    v-if="experimental"
+    type="info"
+    class="mt-4"
+  >
+    {{ t('exchange_settings.inputs.experimental') }}
   </RuiAlert>
 </template>

@@ -1,5 +1,16 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import {
+  type AssetBalance,
+  type Balance,
+  Blockchain,
+  HistoryEventEntryType,
+  type LiquityPoolDetailEntry,
+  type LiquityPoolDetails,
+  type LiquityStakingDetailEntry,
+  type LiquityStakingDetails,
+  type LiquityStatisticDetails,
+} from '@rotki/common';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
@@ -15,17 +26,6 @@ import { zeroBalance } from '@/utils/bignumbers';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
-import {
-  type AssetBalance,
-  type Balance,
-  Blockchain,
-  HistoryEventEntryType,
-  type LiquityPoolDetailEntry,
-  type LiquityPoolDetails,
-  type LiquityStakingDetailEntry,
-  type LiquityStakingDetails,
-  type LiquityStatisticDetails,
-} from '@rotki/common';
 
 const emit = defineEmits<{
   (e: 'refresh', refresh: boolean): void;

@@ -20,7 +20,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int,
     deserialize_str,
 )
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey
 from rotkehlchen.utils.misc import from_gwei
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -28,9 +28,8 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 from .constants import (
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
-    FREE_VALIDATORS_LIMIT,
 )
-from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID, ValidatorType
+from .structures import ValidatorDetails, ValidatorID, ValidatorType
 from .utils import calculate_query_chunks, epoch_to_timestamp
 
 if TYPE_CHECKING:
@@ -194,10 +193,6 @@ class BeaconInquirer:
         May Raise:
         - RemoteError
         """
-        if not has_premium and len(indices_or_pubkeys) > FREE_VALIDATORS_LIMIT:
-            # Limit number of validators queried for balances for non-premium users
-            indices_or_pubkeys = indices_or_pubkeys[:FREE_VALIDATORS_LIMIT]
-
         usd_price = Inquirer.find_usd_price(A_ETH)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
         if self.node is not None:
@@ -265,8 +260,14 @@ class BeaconInquirer:
         details = []
         indices_mapping_to_query_beaconchain = {}
         for idx, entry in enumerate(node_results):
-            activation_epoch = deserialize_int(valuegetter(entry, activation_epoch_key))
-            withdrawable_epoch = deserialize_int(valuegetter(entry, withdrawable_epoch_key))
+            activation_epoch = deserialize_int(
+                value=valuegetter(entry, activation_epoch_key),
+                location='validator activation epoch',
+            )
+            withdrawable_epoch = deserialize_int(
+                value=valuegetter(entry, withdrawable_epoch_key),
+                location='validator withdrawable epoch',
+            )
             activation_ts, withdrawable_ts, exited_ts = None, None, None
             if activation_epoch < BEACONCHAIN_MAX_EPOCH:
                 activation_ts = epoch_to_timestamp(activation_epoch)
@@ -281,14 +282,15 @@ class BeaconInquirer:
                 except DeserializationError:
                     log.error(f'Could not deserialize 0x01/0x02 withdrawal credentials for {entry}')  # noqa: E501
 
+            validator_index = deserialize_int(value=entry[index_key], location='validator index')
             if withdrawable_ts is not None:
                 if queried_beaconchain and (exit_epoch := entry.get('exitepoch', 0)) != 0:
                     exited_ts = epoch_to_timestamp(exit_epoch)
                 else:  # query this index from beaconchain to see if exited
-                    indices_mapping_to_query_beaconchain[deserialize_int(entry[index_key])] = idx
+                    indices_mapping_to_query_beaconchain[validator_index] = idx
 
             details.append(ValidatorDetails(
-                validator_index=deserialize_int(entry[index_key]),
+                validator_index=validator_index,
                 public_key=Eth2PubKey(deserialize_str(valuegetter(entry, 'pubkey'))),
                 withdrawal_address=withdrawal_address,
                 activation_timestamp=activation_ts,
@@ -310,19 +312,3 @@ class BeaconInquirer:
         and withdrawal address setting as part of https://github.com/rotki/rotki/issues/6816
         """
         return self.beaconchain.get_eth1_address_validators(address)
-
-    def query_validator_daily_stats(
-            self,
-            validator_index: int,
-            last_known_timestamp: Timestamp,
-            exit_ts: Timestamp | None,
-    ) -> list[ValidatorDailyStats]:
-        """
-        May raise:
-        - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
-        """
-        return self.beaconchain.query_validator_daily_stats(
-            validator_index=validator_index,
-            last_known_timestamp=last_known_timestamp,
-            exit_ts=exit_ts,
-        )

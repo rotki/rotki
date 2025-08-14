@@ -1,13 +1,13 @@
 import type { PaginationRequestPayload } from '@/types/common';
-import { CollectionCommonFields } from '@/types/collection';
 import { Blockchain } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
+import { CollectionCommonFields } from '@/types/collection';
 
-export const EthNames = z.record(z.string().nullable());
+export const EthNames = z.record(z.string(), z.string().nullable());
 
 export type EthNames = z.infer<typeof EthNames>;
 
-const BlockchainEnum = z.nativeEnum(Blockchain);
+const BlockchainEnum = z.enum(Blockchain);
 
 export const AddressNameRequestPayload = z.object({
   address: z.string(),
@@ -22,8 +22,14 @@ export const AddressBookSimplePayload = AddressNameRequestPayload.extend({
 
 export type AddressBookSimplePayload = z.infer<typeof AddressBookSimplePayload>;
 
-export const AddressBookEntry = AddressBookSimplePayload.extend({
+export const AddressBookInfo = z.object({
   name: z.string(),
+  source: z.string().optional(),
+});
+
+export const AddressBookEntry = z.object({
+  ...AddressBookSimplePayload.shape,
+  ...AddressBookInfo.shape,
 });
 
 export type AddressBookEntry = z.infer<typeof AddressBookEntry>;

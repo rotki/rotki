@@ -1,9 +1,9 @@
 import type { PaginationRequestPayload } from '@/types/common';
 import type { Quarter } from '@/types/settings/frontend-settings';
+import { NumericString } from '@rotki/common';
+import { z } from 'zod/v4';
 import { CollectionCommonFields } from '@/types/collection';
 import { BaseAccountingSettings } from '@/types/user';
-import { NumericString } from '@rotki/common';
-import { z } from 'zod';
 
 export const ProfitLossOverviewItem = z.object({
   free: NumericString,
@@ -12,7 +12,7 @@ export const ProfitLossOverviewItem = z.object({
 
 export type ProfitLossOverviewItem = z.infer<typeof ProfitLossOverviewItem>;
 
-export const ProfitLossOverview = z.record(ProfitLossOverviewItem);
+export const ProfitLossOverview = z.record(z.string(), ProfitLossOverviewItem);
 
 export type ProfitLossOverview = z.infer<typeof ProfitLossOverview>;
 
@@ -156,8 +156,8 @@ export const ReportActionableItem = z.object({
 export type ReportActionableItem = z.infer<typeof ReportActionableItem>;
 
 export interface PeriodChangedEvent {
-  start: string;
-  end: string;
+  start: number;
+  end: number;
 }
 
 export interface SelectionChangedEvent {

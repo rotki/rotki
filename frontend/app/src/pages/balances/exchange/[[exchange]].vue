@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type AssetBalanceWithPrice, type BigNumber, toHumanReadable, toSentenceCase, Zero } from '@rotki/common';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -8,8 +9,8 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { useRefresh } from '@/composables/balances/refresh';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
-import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { Routes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
@@ -17,7 +18,6 @@ import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
-import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
 
 definePage({
   meta: {
@@ -34,16 +34,22 @@ const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
 const { useIsTaskRunning } = useTaskStore();
-const { getBalances } = useExchangeData();
+const { useExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
-const { refreshBalance } = useRefresh();
+const { refreshBalance, refreshExchangeBalance } = useRefresh();
 
 async function refreshExchangeBalances() {
   await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
 }
 
+async function refreshSelectedExchangeBalances(exchangeLocation: string) {
+  if (isBinance(exchangeLocation))
+    await Promise.all([refreshExchangeBalance(exchangeLocation), refreshExchangeSavings(true)]);
+  else
+    await refreshExchangeBalance(exchangeLocation);
+}
 const selectedExchange = ref<string>('');
 const usedExchanges = computed<string[]>(() =>
   get(connectedExchanges)
@@ -69,7 +75,7 @@ watch(route, () => {
 });
 
 function exchangeBalance(exchange: string): BigNumber {
-  const balances = get(getBalances(exchange));
+  const balances = get(useExchangeBalances(exchange));
   return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue), Zero);
 }
 
@@ -91,7 +97,7 @@ const balances = computed(() => {
   if (!currentExchange)
     return [];
 
-  return get(getBalances(currentExchange));
+  return get(useExchangeBalances(currentExchange));
 });
 
 const vueRouter = useRouter();
@@ -214,15 +220,31 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         </div>
         <div class="flex-1">
           <div v-if="exchange">
-            <RuiTabs
-              v-model="exchangeDetailTabs"
-              color="primary"
-            >
-              <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
-              <RuiTab v-if="isBinance(exchange)">
-                {{ t('exchange_balances.tabs.savings_interest_history') }}
-              </RuiTab>
-            </RuiTabs>
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <RuiTabs
+                v-model="exchangeDetailTabs"
+                color="primary"
+              >
+                <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
+                <RuiTab v-if="isBinance(exchange)">
+                  {{ t('exchange_balances.tabs.savings_interest_history') }}
+                </RuiTab>
+              </RuiTabs>
+
+              <RuiButton
+                color="primary"
+                variant="outlined"
+                class="exchange-balances__refresh shrink-0"
+                :disabled="exchangeDetailTabs !== 0"
+                :loading="isExchangeLoading"
+                @click="refreshSelectedExchangeBalances(exchange)"
+              >
+                <template #prepend>
+                  <RuiIcon name="lu-refresh-ccw" />
+                </template>
+                {{ t('dashboard.exchange_balances.refresh', { exchange: toSentenceCase(toHumanReadable(exchange)) }) }}
+              </RuiButton>
+            </div>
 
             <RuiDivider />
 

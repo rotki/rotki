@@ -1,9 +1,9 @@
 import type { RecentTransaction } from '@/modules/onchain/types';
+import { assert, type Blockchain } from '@rotki/common';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { assert, type Blockchain } from '@rotki/common';
-import { EIP155 } from './use-wallet-store';
+import { EIP155 } from './wallet-connect/use-wallet-connect';
 
 interface UseWalletHelperReturn {
   getEvmChainNameFromChainId: (chainId: number | bigint) => string;

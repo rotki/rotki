@@ -11,20 +11,18 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
+from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V1, CPT_YEARN_V2
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import (
-    AERODROME_POOL_PROTOCOL,
-    CURVE_POOL_PROTOCOL,
-    GEARBOX_PROTOCOL,
-    PICKLE_JAR_PROTOCOL,
     SPAM_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
-    YEARN_VAULTS_V1_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
     ChainID,
     Location,
     Timestamp,
@@ -41,14 +39,14 @@ ASSET_MAPPING: Final = 'INSERT INTO multiasset_mappings(collection_id, asset) VA
 ASSET_UPDATE: Final = "[('{address}', Chain.{chain_name}, '{coingecko}', '{cryptocompare}', {field_updates}, '{protocol}', {underlying_token_addresses})],"  # noqa: E501
 NON_EVM_ASSET_INSERT = "INSERT INTO assets(identifier, name, type) VALUES('{identifier}', '{name}', '{type}'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('{identifier}', '{symbol}', '{coingecko}', '{cryptocompare}', {forked}, {started}, {swapped_for});"  # noqa: E501
 IGNORED_PROTOCOLS: Final = {
-    CURVE_POOL_PROTOCOL,
-    YEARN_VAULTS_V1_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
-    AERODROME_POOL_PROTOCOL,
-    PICKLE_JAR_PROTOCOL,
+    CPT_CURVE,
+    CPT_YEARN_V1,
+    CPT_YEARN_V2,
+    CPT_VELODROME,
+    CPT_AERODROME,
+    CPT_PICKLE,
     SPAM_PROTOCOL,
-    GEARBOX_PROTOCOL,
+    CPT_GEARBOX,
 }
 
 
@@ -114,14 +112,15 @@ def test_asset_updates_consistency_with_packaged_db(
     )
 
     with (
-        globaldb.conn.read_ctx() as old_db_cursor,
+        globaldb.conn.read_ctx() as old_globaldb_cursor,
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
-        # Assets version here is 32 because:
-        # - Global DB v9->v10 includes breaking schema changes
-        # - Before such changes, we pull all compatible asset updates up to v32 (max compatible)
-        assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '32'  # noqa: E501
-        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '36'  # noqa: E501
+        # Assets version here is 36 because:
+        # - Global DB v9->v10 & v12 -> v13 includes breaking schema changes
+        # - `apply_pending_compatible_updates` runs during create_globaldb() and pulls all compatible asset updates up to v32 and then v36 (max compatible)  # noqa: E501
+        # - At this point we are sure that assets updates up until 36 are applied
+        assert old_globaldb_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '36'  # noqa: E501
+        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '37'  # noqa: E501
 
     assets_updater = AssetsUpdater(
         globaldb=globaldb,
@@ -450,7 +449,7 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         pytest.fail('oracle IDs do not match:\n' + '\n'.join(mismatches))
 
 
-@pytest.mark.parametrize('our_version', ['1.39.0'])  # set latest version so data can be updated
+@pytest.mark.parametrize('our_version', ['1.40.0'])  # set latest version so data can be updated
 def test_remote_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',

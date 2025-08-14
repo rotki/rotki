@@ -1,14 +1,14 @@
 <script lang="ts" setup>
-import type { ChainData } from '@/modules/history/refresh/types';
-import type { EvmChainAddress } from '@/types/history/events';
+import type { ChainData, RefreshChainAddress } from '@/modules/history/refresh/types';
+import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import { getTextToken } from '@rotki/common';
+import { cloneDeep, isEqual } from 'es-toolkit';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryRefreshAddressSelection from '@/modules/history/refresh/HistoryRefreshAddressSelection.vue';
 import HistoryRefreshChainItem from '@/modules/history/refresh/HistoryRefreshChainItem.vue';
-import { getTextToken } from '@rotki/common';
-import { cloneDeep, isEqual } from 'es-toolkit';
 
-const modelValue = defineModel<EvmChainAddress[]>({ required: true });
+const modelValue = defineModel<RefreshChainAddress[]>({ required: true });
 const selectedChain = defineModel<string | undefined>('chain', { required: true });
 const search = defineModel<string>('search', { required: true });
 
@@ -20,7 +20,7 @@ const emit = defineEmits<{ 'update:all-selected': [allSelected: boolean] }>();
 
 const selection = ref<Record<string, string[]>>({});
 
-const { evmLikeChainsData, txEvmChains } = useSupportedChains();
+const { bitcoinChainsData, evmLikeChainsData, txEvmChains } = useSupportedChains();
 const { getAddresses } = useAccountAddresses();
 const { t } = useI18n({ useScope: 'global' });
 
@@ -36,6 +36,12 @@ const refreshChains = computed<ChainData[]>(() => [
     id: item.id,
     name: item.name,
     type: 'evmlike',
+  }) satisfies ChainData),
+  ...get(bitcoinChainsData).map(item => ({
+    evmChain: item.id,
+    id: item.id,
+    name: item.name,
+    type: 'bitcoin',
   }) satisfies ChainData),
 ]);
 
@@ -59,11 +65,26 @@ const chainAddresses = computed<Record<string, string[]>>(() => {
 
 const selected = computed<number>(() => getAccounts(get(selection)).length);
 
-function getAccounts(record: Record<string, string[]>): EvmChainAddress[] {
-  return Object.entries(record).flatMap(([evmChain, addresses]) => addresses.map(address => ({
-    address,
-    evmChain,
-  }) satisfies EvmChainAddress));
+function getAccounts(record: Record<string, string[]>): RefreshChainAddress[] {
+  const chains = get(refreshChains);
+  return Object.entries(record).flatMap(([chainKey, addresses]) => {
+    const chainData = chains.find(chain => chain.evmChain === chainKey);
+
+    return addresses.map((address): RefreshChainAddress => {
+      if (chainData?.type === 'bitcoin') {
+        return {
+          address,
+          chain: chainKey,
+        } satisfies BitcoinChainAddress;
+      }
+      else {
+        return {
+          address,
+          evmChain: chainKey,
+        } satisfies EvmChainAddress;
+      }
+    });
+  });
 }
 
 function emptySelection(): Record<string, string[]> {

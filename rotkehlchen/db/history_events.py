@@ -8,9 +8,10 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import (
     ETH_STAKING_EVENT_FIELDS,
@@ -55,7 +56,8 @@ from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
-    EVM_EVMLIKE_LOCATIONS_TYPE,
+    BLOCKCHAIN_LOCATIONS_TYPE,
+    BTCTxHash,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -238,32 +240,57 @@ class DBHistoryEvents:
             self.db.delete_dynamic_caches(write_cursor=write_cursor, key_parts=key_parts)
 
     @staticmethod
-    def reset_evm_events_for_redecode(
+    def delete_location_events(
             write_cursor: 'DBCursor',
-            location: EVM_EVMLIKE_LOCATIONS_TYPE,
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            address: str | None,
     ) -> None:
-        """Reset EVM events and transaction decode status for the given location.
-
-        Deletes all non-customized EVM events and marks their transactions
-        as not decoded to enable re-processing.
+        """Delete all uncustomized history events for the given location and optionally address.
+        For EVM locations, only deletes events that also have a corresponding tx in the DB.
         """
         customized_events_num = write_cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0]
+        join_or_where = (
+            'INNER JOIN evm_events_info E ON H.identifier=E.identifier '
+            'AND E.tx_hash IN (SELECT tx_hash FROM evm_transactions) AND'
+        ) if not location.is_bitcoin() else 'WHERE'
         querystr = (
             'DELETE FROM history_events WHERE identifier IN ('
-            'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
-            'ON H.identifier=E.identifier AND E.tx_hash IN '
-            '(SELECT tx_hash FROM evm_transactions) AND H.location = ?)'
+            f'SELECT H.identifier from history_events H {join_or_where} H.location = ?)'
         )
         bindings: tuple = (location.serialize_for_db(),)
         if customized_events_num != 0:
             querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
             bindings += (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+        if address is not None:
+            querystr += ' AND location_label = ?'
+            bindings += (address,)
 
         write_cursor.execute(querystr, bindings)
-        if location != Location.ZKSYNC_LITE:  # the decode status is stored in zksynclite_transactions.is_decoded  # noqa: E501
+
+    @staticmethod
+    def reset_events_for_redecode(
+            write_cursor: 'DBCursor',
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+    ) -> None:
+        """Reset the given location's events, etc. for re-decoding.
+        Handles different cases depending on the location:
+        * Bitcoin - simply deletes all non-customized bitcoin events.
+        * EVM and EVM-like - deletes non-customized events that also have a corresponding
+          transaction in the evm_transactions table.
+        * EVM - removes the EVMTX_DECODED evm_tx_mappings to enable re-processing.
+        """
+        DBHistoryEvents.delete_location_events(
+            write_cursor=write_cursor,
+            location=location,
+            address=None,
+        )
+
+        # zksynclite's decode status is stored in zksynclite_transactions.is_decoded
+        # and btc/bch don't have the individual txs or decoded status in the db
+        if location.is_evm():  # so only delete mappings here for evm locations
             write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
                 (EVMTX_DECODED,),
@@ -272,8 +299,8 @@ class DBHistoryEvents:
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
-            tx_hashes: list[EVMTxHash],
-            location: EVM_EVMLIKE_LOCATIONS_TYPE,
+            tx_hashes: Sequence[EVMTxHash | BTCTxHash],
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
             delete_customized: bool = False,
     ) -> None:
         """Delete all relevant (by transaction hash) history events except those that
@@ -284,17 +311,29 @@ class DBHistoryEvents:
         code in v37 -> v38 upgrade as that is not limited to the number of transactions
         and won't potentially raise a too many sql variables error
         """
-        customized_event_ids = []
-        if not delete_customized:
-            customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
-        querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
-        if (length := len(customized_event_ids)) != 0:
-            querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-            bindings = [*tx_hashes, *customized_event_ids]
+        placeholders = ', '.join(['?'] * len(tx_hashes))
+        if location.is_bitcoin():
+            where_str = f'WHERE event_identifier IN ({placeholders})'
+            id_prefix = BTC_EVENT_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_EVENT_IDENTIFIER_PREFIX  # noqa: E501
+            bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_hashes]  # type: ignore  # tx_hashes will be strings for bitcoin
         else:
-            bindings = tx_hashes  # type: ignore  # different type of elements in the list
+            where_str = (
+                f'WHERE identifier IN (SELECT identifier FROM evm_events_info '
+                f'WHERE tx_hash IN ({placeholders}))'
+            )
+            bindings = list(tx_hashes)  # type: ignore  # different type of elements in the list
 
-        write_cursor.execute(querystr, bindings)
+        if (
+            delete_customized is False and
+            (length := len(customized_event_ids := self.get_customized_event_identifiers(
+                cursor=write_cursor,
+                location=location,
+            ))) != 0
+        ):
+            where_str += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+            bindings.extend(customized_event_ids)  # type: ignore  # different type of elements in the list
+
+        write_cursor.execute(f'DELETE FROM history_events {where_str}', bindings)
 
     def get_customized_event_identifiers(
             self,
@@ -343,11 +382,10 @@ class DBHistoryEvents:
 
         return deserialized
 
+    @staticmethod
     def _create_history_events_query(
-            self,
             filter_query: HistoryBaseEntryFilterQuery,
-            entries_limit: int,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: bool = False,
             match_exact_events: bool = True,
     ) -> tuple[str, list]:
@@ -368,13 +406,13 @@ class DBHistoryEvents:
             )
             prefix = 'SELECT *'
 
-        if has_premium:
+        if entries_limit is None:
             suffix, limit = base_suffix, []
         else:
             suffix, limit = (
                 f'* FROM (SELECT {base_suffix}) WHERE event_identifier IN ('
                 'SELECT DISTINCT event_identifier FROM history_events '
-                'ORDER BY timestamp DESC, sequence_index ASC LIMIT ?)'  # free query only select the last LIMIT groups  # noqa: E501
+                'ORDER BY timestamp DESC, sequence_index ASC LIMIT ?)'  # only select the last LIMIT groups  # noqa: E501
             ), [entries_limit]
 
         if match_exact_events is False:  # return all group events instead of just the filtered ones.  # noqa: E501
@@ -396,7 +434,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[True],
             match_exact_events: bool = ...,
     ) -> list[tuple[int, HistoryBaseEntry]]:
@@ -407,7 +445,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[HistoryBaseEntry]:
@@ -418,7 +456,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, EthDepositEvent]]:
@@ -429,7 +467,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EthDepositEvent]:
@@ -440,7 +478,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EthWithdrawalFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EthWithdrawalEvent]:
@@ -451,7 +489,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, EvmEvent]]:
@@ -462,17 +500,36 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EvmEvent]:
         ...
 
+    @overload
     def get_history_events(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
-            has_premium: bool,
+            entries_limit: int | None,
+            group_by_event_ids: bool = ...,
+            match_exact_events: bool = ...,
+    ) -> (
+        list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
+        list[tuple[int, EvmEvent]] | list[EvmEvent] |
+        list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
+        list[tuple[int, EthWithdrawalEvent]] | list[EthWithdrawalEvent]
+    ):
+        """
+        This fallback is needed for runtime boolean values that can't be resolved
+        to literal types at type checking time.
+        """
+
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
+            entries_limit: int | None,
             group_by_event_ids: bool = False,
             match_exact_events: bool = True,
     ) -> (
@@ -487,11 +544,10 @@ class DBHistoryEvents:
         peek on the entry type of the filter and adjust the SELECT fields accordingly?
         """
         base_query, filters_bindings = self._create_history_events_query(
-            has_premium=has_premium,
             filter_query=filter_query,
             group_by_event_ids=group_by_event_ids,
             match_exact_events=match_exact_events,
-            entries_limit=FREE_HISTORY_EVENTS_LIMIT,
+            entries_limit=entries_limit,
         )
         if filter_query.pagination is not None:
             base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
@@ -575,14 +631,126 @@ class DBHistoryEvents:
         return output
 
     @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery,
+            group_by_event_ids: Literal[True],
+            match_exact_events: bool = ...,
+    ) -> list[tuple[int, HistoryBaseEntry]]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery,
+            group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
+    ) -> list[HistoryBaseEntry]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EthDepositEventFilterQuery,
+            group_by_event_ids: Literal[True],
+            match_exact_events: bool,
+    ) -> list[tuple[int, EthDepositEvent]]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EthDepositEventFilterQuery,
+            group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
+    ) -> list[EthDepositEvent]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EthWithdrawalFilterQuery,
+            group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
+    ) -> list[EthWithdrawalEvent]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EvmEventFilterQuery,
+            group_by_event_ids: Literal[True],
+            match_exact_events: bool,
+    ) -> list[tuple[int, EvmEvent]]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EvmEventFilterQuery,
+            group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
+    ) -> list[EvmEvent]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
+            group_by_event_ids: bool = ...,
+            match_exact_events: bool = ...,
+    ) -> (
+        list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
+        list[tuple[int, EvmEvent]] | list[EvmEvent] |
+        list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
+        list[tuple[int, EthWithdrawalEvent]] | list[EthWithdrawalEvent]
+    ):
+        """
+        This fallback is needed for runtime boolean values that can't be resolved
+        to literal types at type checking time.
+        """
+
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
+            group_by_event_ids: bool = False,
+            match_exact_events: bool = True,
+    ) -> (
+        list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
+        list[tuple[int, EvmEvent]] | list[EvmEvent] |
+        list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
+        list[tuple[int, EthWithdrawalEvent]] | list[EthWithdrawalEvent]
+    ):
+        """Internal method that gets all events from the DB without limit restrictions.
+
+        This method is used internally by the system and in tests where we need
+        to retrieve all events without applying premium tier limits.
+        """
+        return self.get_history_events(
+            cursor=cursor,
+            filter_query=filter_query,
+            entries_limit=None,
+            group_by_event_ids=group_by_event_ids,
+            match_exact_events=match_exact_events,
+        )
+
+    @overload
     def get_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[True],
             match_exact_events: bool,
-            entries_limit: int | None = None,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]], int, int]:
         ...
 
@@ -591,10 +759,9 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
-            entries_limit: int | None = None,
     ) -> tuple[list[HistoryBaseEntry], int, int]:
         ...
 
@@ -603,10 +770,9 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: bool = False,
             match_exact_events: bool = ...,
-            entries_limit: int | None = None,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry], int, int]:
         """
         This fallback is needed due to
@@ -617,10 +783,9 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: 'HistoryBaseEntryFilterQuery',
-            has_premium: bool,
+            entries_limit: int | None,
             group_by_event_ids: bool = False,
             match_exact_events: bool = False,
-            entries_limit: int | None = None,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry], int, int]:
         """Gets all history events for all types, based on the filter query.
 
@@ -630,15 +795,15 @@ class DBHistoryEvents:
         events = self.get_history_events(  # type: ignore  # is due to HistoryBaseEntryFilterQuery not possible to be overloaded in get_history_events
             cursor=cursor,
             filter_query=filter_query,
-            has_premium=has_premium,
+            entries_limit=entries_limit,
             group_by_event_ids=group_by_event_ids,
             match_exact_events=match_exact_events,
         )
         count_without_limit, count_with_limit = self.get_history_events_count(
             cursor=cursor,
             query_filter=filter_query,
-            group_by_event_ids=group_by_event_ids,
             entries_limit=entries_limit,
+            group_by_event_ids=group_by_event_ids,
         )
         return events, count_without_limit, count_with_limit
 
@@ -714,36 +879,30 @@ class DBHistoryEvents:
         the number of events if any limit is applied, otherwise the second value matches
         the first.
         """
-        free_limit = FREE_HISTORY_EVENTS_LIMIT if entries_limit is None else entries_limit
-        premium_query, premium_bindings = self._create_history_events_query(
-            has_premium=True,
+        query_without_limit, query_without_limit_bindings = self._create_history_events_query(
             filter_query=query_filter,
             group_by_event_ids=group_by_event_ids,
-            entries_limit=free_limit,
+            entries_limit=None,
         )
         count_without_limit = cursor.execute(
-            f'SELECT COUNT(*) FROM ({premium_query})',
-            premium_bindings,
+            f'SELECT COUNT(*) FROM ({query_without_limit})',
+            query_without_limit_bindings,
         ).fetchone()[0]
-
-        if entries_limit is None:
-            return count_without_limit, count_without_limit
 
         # When we have a limit but the total is already smaller or equal,
         # just return the total for both counts
-        if count_without_limit <= entries_limit:
+        if entries_limit is None or count_without_limit <= entries_limit:
             return count_without_limit, count_without_limit
 
         # Otherwise, get the limited count
-        free_query, free_bindings = self._create_history_events_query(
-            has_premium=False,
+        query_with_limit, query_with_limit_bindings = self._create_history_events_query(
             filter_query=query_filter,
             group_by_event_ids=group_by_event_ids,
-            entries_limit=free_limit,
+            entries_limit=entries_limit,
         )
         count_with_limit = cursor.execute(
-            f'SELECT COUNT(*) FROM ({free_query})',
-            free_bindings,
+            f'SELECT COUNT(*) FROM ({query_with_limit})',
+            query_with_limit_bindings,
         ).fetchone()[0]
 
         # If we're grouping by event IDs and got 0 results but should have some,

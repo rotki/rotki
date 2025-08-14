@@ -85,6 +85,23 @@ def test_get_historical_assets_price(
         }
 
 
+@pytest.mark.freeze_time('2025-08-13 08:00:00 GMT')
+def test_historical_assets_price_future_ts_error(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Test error when setting or querying historical asset price with an invalid timestamp."""
+    url = api_url_for(rotkehlchen_api_server, 'historicalassetspriceresource')
+    for request_fnc, json in (
+        (requests.put, {'from_asset': 'ETH', 'to_asset': 'USD', 'price': '1234', 'timestamp': 10000000000}),  # noqa: E501
+        (requests.post, {'assets_timestamp': [['BTC', 10000000000]], 'target_asset': 'USD'}),
+    ):
+        assert_error_response(
+            response=request_fnc(url=url, json=json),
+            contained_in_msg='Given date cannot be in the future',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+
 def _assert_expected_prices(
         data: list[dict[str, Any]],
         after_deletion: bool,

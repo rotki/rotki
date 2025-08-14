@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { invertColor, randomColor } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag, type Tag } from '@/types/tags';
-import { invertColor, randomColor } from '@rotki/common';
 
 const modelValue = defineModel<string[]>({ required: true });
 
@@ -97,6 +97,7 @@ watch(tags, () => {
       return-object
       custom-value
       clearable
+      hide-custom-value
       :item-height="54"
       @update:model-value="onUpdateModelValue($event)"
     >

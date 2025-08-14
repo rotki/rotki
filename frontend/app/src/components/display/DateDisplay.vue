@@ -3,7 +3,6 @@ import CopyTooltip from '@/components/helper/CopyTooltip.vue';
 import { useScramble } from '@/composables/scramble';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const props = withDefaults(
   defineProps<{
@@ -23,7 +22,6 @@ const props = withDefaults(
 
 const { milliseconds, noTime, showTimezone, timestamp } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
-const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
 const dateFormat = computed<string>(() => {
   const display = get(showTimezone)
@@ -36,7 +34,7 @@ const dateFormat = computed<string>(() => {
   return display;
 });
 
-const { scrambleTimestamp } = useScramble();
+const { scrambleTimestamp, shouldShowAmount } = useScramble();
 
 const numericTimestamp = useToNumber(timestamp);
 const reactiveScramble = reactify(scrambleTimestamp);

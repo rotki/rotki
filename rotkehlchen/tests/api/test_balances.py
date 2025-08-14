@@ -12,10 +12,10 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
-from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
     A_BTC,
@@ -23,6 +23,7 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_EUR,
     A_KSM,
+    A_LUSD,
     A_USD,
     A_USDC,
     A_USDT,
@@ -627,8 +628,8 @@ def test_multiple_balance_queries_not_concurrent(
         wraps=rotki.chains_aggregator.ethereum.node_inquirer.get_multi_balance,
     )
     btc_balances_patch = patch(
-        'rotkehlchen.chain.aggregator.get_bitcoin_addresses_balances',
-        wraps=get_bitcoin_addresses_balances,
+        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager.get_balances',
+        wraps=rotki.chains_aggregator.bitcoin.get_balances,
     )
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
     assert binance is not None
@@ -775,11 +776,11 @@ def test_balances_caching_mixup(
             task_id=task_id_eth,
             timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
-        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_ETH.identifier]['amount'] == '1'  # noqa: E501
-        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
-        assert result_eth['totals']['assets'][A_ETH.identifier]['amount'] == '1'
-        assert result_eth['totals']['assets'][A_RDN.identifier]['amount'] == '2'
-        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '1'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '2'  # noqa: E501
+        assert result_eth['totals']['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '1'  # noqa: E501
+        assert result_eth['totals']['assets'][A_RDN.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '2'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '2'  # noqa: E501
         assert result_btc['per_account'] == {}
         assert result_btc['totals']['assets'] == {}
         assert result_btc['totals']['liabilities'] == {}
@@ -808,19 +809,19 @@ def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer', ksm_accounts: l
     # Check per account
     account_1_balances = result['per_account'][ksm_chain_key][ksm_accounts[0]]
     assert 'liabilities' in account_1_balances
-    asset_ksm = account_1_balances['assets'][A_KSM.identifier]
+    asset_ksm = account_1_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     account_2_balances = result['per_account'][ksm_chain_key][ksm_accounts[1]]
     assert 'liabilities' in account_2_balances
-    asset_ksm = account_2_balances['assets'][A_KSM.identifier]
+    asset_ksm = account_2_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_ksm = result['totals']['assets'][A_KSM.identifier]
+    total_ksm = result['totals']['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
 
@@ -860,25 +861,25 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
     # Check per account
     account_1_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_1_balances
-    asset_avax = account_1_balances['assets'][A_AVAX.identifier]
+    asset_avax = account_1_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     account_2_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC2_AVAX_ADDR]
     assert 'liabilities' in account_2_balances
-    asset_avax = account_2_balances['assets'][A_AVAX.identifier]
+    asset_avax = account_2_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_avax = result['totals']['assets'][A_AVAX.identifier]
+    total_avax = result['totals']['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.freeze_time('2024-03-29 13:00:00 GMT')
+@pytest.mark.freeze_time('2025-06-23 08:00:00 GMT')
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_ethereum_tokens_detection(
         rotkehlchen_api_server: 'APIServer',
@@ -982,9 +983,9 @@ def test_blockchain_balances_refresh(
     a_usdc = A_USDC.resolve_to_evm_token()
     a_dai = A_DAI.resolve_to_evm_token()
     account_balance = {ethereum_accounts[0]: BalanceSheet(
-        assets=defaultdict(Balance, {
-            a_usdc: Balance(ONE, FVal(24)),
-            a_dai: Balance(FVal(2), FVal(42)),
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            a_usdc: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(ONE, FVal(24))}),
+            a_dai: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(FVal(2), FVal(42))}),
         }),
     )}
     account_balance_patch = patch.object(chains_aggregator.balances, 'eth', account_balance)
@@ -1016,9 +1017,9 @@ def test_blockchain_balances_refresh(
 
         one_time_query_result = query_blockchain_balance(1)
         assert one_time_query_result['per_account']['eth'][ethereum_accounts[0]]['assets'] == {
-            A_USDC.identifier: {'amount': '23', 'usd_value': '230'},
-            A_DAI.identifier: {'amount': '3', 'usd_value': '33'},
-            A_USDT.identifier: {'amount': '3', 'usd_value': '54'},
+            A_USDC.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '23', 'usd_value': '230'}},
+            A_DAI.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '3', 'usd_value': '33'}},
+            A_USDT.identifier: {'makerdao vault': {'amount': '3', 'usd_value': '54'}},
         }
         assert one_time_query_result == query_blockchain_balance(4)
 
@@ -1128,3 +1129,29 @@ def test_query_balances_with_threshold(
         assert len(manual_result['balances']) != 0
         for balance in manual_result['balances']:
             assert FVal(balance['usd_value']) > threshold
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x136f6A2b398eaeED4a33a58B26E52FA7056FD4e7']])
+@pytest.mark.parametrize('ethereum_modules', [['liquity']])
+def test_query_liquity_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts: list[str]) -> None:  # noqa: E501
+    """Test querying Liquity balances works correctly.
+    Regression test to ensure Liquity liabilities are shown in dashboard balances.
+    """
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'named_blockchain_balances_resource',
+            blockchain=(eth_chain_key := SupportedBlockchain.ETHEREUM.serialize()),
+        ),
+        json={'async_query': True},
+    )
+    task_id = assert_ok_async_response(response)
+    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+
+    account_balances = result['per_account'][eth_chain_key][ethereum_accounts[0]]
+    assert account_balances['assets'] == {A_ETH: {
+        DEFAULT_BALANCE_LABEL: {'amount': '0.068955497233628915', 'usd_value': '0.1034332458504433725'},  # noqa: E501
+        CPT_LIQUITY: {'amount': '4.08915844880891399', 'usd_value': '6.133737673213370985'},
+    }}
+    assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'usd_value': '3283.0103582835479670825'}}}  # noqa: E501

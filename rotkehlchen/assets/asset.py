@@ -11,12 +11,23 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import DEBT_TOKEN_SYMBOL_REGEX
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
+from rotkehlchen.constants.resolver import (
+    ChainID,
+    evm_address_to_identifier,
+    solana_address_to_identifier,
+)
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.types import (
+    EVM_TOKEN_KINDS,
+    SOLANA_TOKEN_KINDS,
+    ChecksumEvmAddress,
+    SolanaAddress,
+    Timestamp,
+    TokenKind,
+)
 
 from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, NON_CRYPTO_ASSETS, AssetType
 
@@ -32,7 +43,7 @@ class UnderlyingToken(NamedTuple):
     Is used for pool tokens, tokensets etc.
     """
     address: ChecksumEvmAddress
-    token_kind: EvmTokenKind
+    token_kind: EVM_TOKEN_KINDS
     weight: FVal  # Floating percentage from 0 to 1
 
     def serialize(self) -> dict[str, Any]:
@@ -46,7 +57,7 @@ class UnderlyingToken(NamedTuple):
     def deserialize_from_db(cls, entry: UnderlyingTokenDBTuple) -> 'UnderlyingToken':
         return UnderlyingToken(
             address=entry[0],  # type: ignore
-            token_kind=EvmTokenKind.deserialize_from_db(entry[1]),
+            token_kind=TokenKind.deserialize_evm_from_db(entry[1]),
             weight=FVal(entry[2]),
         )
 
@@ -64,6 +75,11 @@ class Asset:
     """Base class for all assets"""
     identifier: str
     direct_field_initialization: InitVar[bool] = field(default=False)
+
+    def _set_attributes(self, **kwargs: Any) -> None:
+        """Helper method to set multiple attributes on frozen dataclass using object.__setattr__"""
+        for field_name, value in kwargs.items():
+            object.__setattr__(self, field_name, value)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:  # pylint: disable=unused-argument
         if not isinstance(self.identifier, str):
@@ -122,6 +138,9 @@ class Asset:
     def is_evm_token(self) -> bool:
         return self.get_asset_type() == AssetType.EVM_TOKEN
 
+    def is_solana_token(self) -> bool:
+        return self.get_asset_type() == AssetType.SOLANA_TOKEN
+
     def is_crypto(self) -> bool:
         return self.get_asset_type() not in NON_CRYPTO_ASSETS
 
@@ -165,6 +184,12 @@ class Asset:
         return AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
+        )
+
+    def resolve_to_solana_token(self) -> 'SolanaToken':
+        return AssetResolver.resolve_asset_to_class(
+            identifier=self.identifier,
+            expected_type=SolanaToken,
         )
 
     def resolve_to_asset_with_oracles(self) -> 'AssetWithOracles':
@@ -299,12 +324,14 @@ class FiatAsset(AssetWithOracles):
             return
 
         resolved = AssetResolver().resolve_asset_to_class(self.identifier, FiatAsset)
-        object.__setattr__(self, 'identifier', resolved.identifier)
-        object.__setattr__(self, 'asset_type', resolved.asset_type)
-        object.__setattr__(self, 'name', resolved.name)
-        object.__setattr__(self, 'symbol', resolved.symbol)
-        object.__setattr__(self, 'cryptocompare', resolved.cryptocompare)
-        object.__setattr__(self, 'coingecko', resolved.coingecko)
+        self._set_attributes(
+            identifier=resolved.identifier,
+            asset_type=resolved.asset_type,
+            name=resolved.name,
+            symbol=resolved.symbol,
+            cryptocompare=resolved.cryptocompare,
+            coingecko=resolved.coingecko,
+        )
 
     @classmethod
     def initialize(
@@ -316,11 +343,13 @@ class FiatAsset(AssetWithOracles):
             cryptocompare: str | None = '',
     ) -> 'FiatAsset':
         asset = FiatAsset(identifier=identifier, direct_field_initialization=True)
-        object.__setattr__(asset, 'asset_type', AssetType.FIAT)
-        object.__setattr__(asset, 'name', name)
-        object.__setattr__(asset, 'symbol', symbol)
-        object.__setattr__(asset, 'cryptocompare', cryptocompare)
-        object.__setattr__(asset, 'coingecko', coingecko)
+        asset._set_attributes(
+            asset_type=AssetType.FIAT,
+            name=name,
+            symbol=symbol,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
+        )
         return asset
 
 
@@ -339,15 +368,17 @@ class CryptoAsset(AssetWithOracles):
             identifier=self.identifier,
             expected_type=CryptoAsset,
         )
-        object.__setattr__(self, 'identifier', resolved.identifier)
-        object.__setattr__(self, 'asset_type', resolved.asset_type)
-        object.__setattr__(self, 'name', resolved.name)
-        object.__setattr__(self, 'symbol', resolved.symbol)
-        object.__setattr__(self, 'cryptocompare', resolved.cryptocompare)
-        object.__setattr__(self, 'coingecko', resolved.coingecko)
-        object.__setattr__(self, 'started', resolved.started)
-        object.__setattr__(self, 'forked', resolved.forked)
-        object.__setattr__(self, 'swapped_for', resolved.swapped_for)
+        self._set_attributes(
+            identifier=resolved.identifier,
+            asset_type=resolved.asset_type,
+            name=resolved.name,
+            symbol=resolved.symbol,
+            cryptocompare=resolved.cryptocompare,
+            coingecko=resolved.coingecko,
+            started=resolved.started,
+            forked=resolved.forked,
+            swapped_for=resolved.swapped_for,
+        )
 
     @classmethod
     def initialize(
@@ -363,14 +394,16 @@ class CryptoAsset(AssetWithOracles):
             swapped_for: Optional['CryptoAsset'] = None,
     ) -> 'CryptoAsset':
         asset = CryptoAsset(identifier=identifier, direct_field_initialization=True)
-        object.__setattr__(asset, 'asset_type', asset_type)
-        object.__setattr__(asset, 'name', name)
-        object.__setattr__(asset, 'symbol', symbol)
-        object.__setattr__(asset, 'cryptocompare', cryptocompare)
-        object.__setattr__(asset, 'coingecko', coingecko)
-        object.__setattr__(asset, 'started', started)
-        object.__setattr__(asset, 'forked', forked)
-        object.__setattr__(asset, 'swapped_for', swapped_for)
+        asset._set_attributes(
+            asset_type=asset_type,
+            name=name,
+            symbol=symbol,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
+            started=started,
+            forked=forked,
+            swapped_for=swapped_for,
+        )
         return asset
 
     def to_dict(self) -> dict[str, Any]:
@@ -405,10 +438,12 @@ class CustomAsset(AssetWithNameAndType):
             notes: str | None = None,
     ) -> 'CustomAsset':
         asset = CustomAsset(identifier=identifier)
-        object.__setattr__(asset, 'asset_type', AssetType.CUSTOM_ASSET)
-        object.__setattr__(asset, 'name', name)
-        object.__setattr__(asset, 'custom_asset_type', custom_asset_type)
-        object.__setattr__(asset, 'notes', notes)
+        asset._set_attributes(
+            asset_type=AssetType.CUSTOM_ASSET,
+            name=name,
+            custom_asset_type=custom_asset_type,
+            notes=notes,
+        )
         return asset
 
     @classmethod
@@ -462,12 +497,26 @@ EthereumTokenDBTuple = tuple[
     str | None,        # protocol
 ]
 
+SolanaTokenDBTuple = tuple[
+    str,                  # identifier
+    str,                  # address
+    str,                  # token type
+    int | None,        # decimals
+    str | None,        # name
+    str | None,        # symbol
+    int | None,        # started
+    str | None,        # swapped_for
+    str | None,        # coingecko
+    str | None,        # cryptocompare
+    str | None,        # protocol
+]
+
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EvmToken(CryptoAsset):
     evm_address: ChecksumEvmAddress = field(init=False)
     chain_id: ChainID = field(init=False)
-    token_kind: EvmTokenKind = field(init=False)
+    token_kind: EVM_TOKEN_KINDS = field(init=False)
     decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
     underlying_tokens: list[UnderlyingToken] = field(init=False)
@@ -481,20 +530,22 @@ class EvmToken(CryptoAsset):
             identifier=self.identifier,
             expected_type=EvmToken,
         )
-        object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
-        object.__setattr__(self, 'evm_address', resolved.evm_address)
-        object.__setattr__(self, 'chain_id', resolved.chain_id)
-        object.__setattr__(self, 'token_kind', resolved.token_kind)
-        object.__setattr__(self, 'decimals', resolved.decimals)
-        object.__setattr__(self, 'protocol', resolved.protocol)
-        object.__setattr__(self, 'underlying_tokens', resolved.underlying_tokens)
+        self._set_attributes(
+            asset_type=AssetType.EVM_TOKEN,
+            evm_address=resolved.evm_address,
+            chain_id=resolved.chain_id,
+            token_kind=resolved.token_kind,
+            decimals=resolved.decimals,
+            protocol=resolved.protocol,
+            underlying_tokens=resolved.underlying_tokens,
+        )
 
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
             cls: type['EvmToken'],
             address: ChecksumEvmAddress,
             chain_id: ChainID,
-            token_kind: EvmTokenKind,
+            token_kind: EVM_TOKEN_KINDS,
             name: str | None = None,
             symbol: str | None = None,
             started: Timestamp | None = None,
@@ -514,20 +565,22 @@ class EvmToken(CryptoAsset):
             collectible_id=collectible_id,
         )
         asset = EvmToken(identifier=identifier, direct_field_initialization=True)
-        object.__setattr__(asset, 'asset_type', AssetType.EVM_TOKEN)
-        object.__setattr__(asset, 'name', name)
-        object.__setattr__(asset, 'symbol', symbol)
-        object.__setattr__(asset, 'cryptocompare', cryptocompare)
-        object.__setattr__(asset, 'coingecko', coingecko)
-        object.__setattr__(asset, 'started', started)
-        object.__setattr__(asset, 'forked', forked)
-        object.__setattr__(asset, 'swapped_for', swapped_for)
-        object.__setattr__(asset, 'evm_address', address)
-        object.__setattr__(asset, 'chain_id', chain_id)
-        object.__setattr__(asset, 'token_kind', token_kind)
-        object.__setattr__(asset, 'decimals', decimals)
-        object.__setattr__(asset, 'protocol', protocol)
-        object.__setattr__(asset, 'underlying_tokens', underlying_tokens)
+        asset._set_attributes(
+            asset_type=AssetType.EVM_TOKEN,
+            name=name,
+            symbol=symbol,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
+            started=started,
+            forked=forked,
+            swapped_for=swapped_for,
+            evm_address=address,
+            chain_id=chain_id,
+            token_kind=token_kind,
+            decimals=decimals,
+            protocol=protocol,
+            underlying_tokens=underlying_tokens,
+        )
         return asset
 
     @classmethod
@@ -543,7 +596,7 @@ class EvmToken(CryptoAsset):
         return EvmToken.initialize(
             address=entry[1],  # type: ignore
             chain_id=ChainID(entry[2]),
-            token_kind=EvmTokenKind.deserialize_from_db(entry[3]),
+            token_kind=TokenKind.deserialize_evm_from_db(entry[3]),
             decimals=entry[4],
             name=entry[5],
             symbol=entry[6] if entry[6] is not None else '',
@@ -587,20 +640,22 @@ class Nft(EvmToken):
         if len(identifier_parts) == 0 or len(identifier_parts[0]) == 0:
             raise UnknownAsset(self.identifier)
         address = to_checksum_address(identifier_parts[0])
-        object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
-        object.__setattr__(self, 'name', f'nft with id {self.identifier}')
-        object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
-        object.__setattr__(self, 'cryptocompare', None)
-        object.__setattr__(self, 'coingecko', None)
-        object.__setattr__(self, 'started', None)
-        object.__setattr__(self, 'forked', None)
-        object.__setattr__(self, 'swapped_for', None)
-        object.__setattr__(self, 'evm_address', address)
-        object.__setattr__(self, 'chain_id', ChainID.ETHEREUM)
-        object.__setattr__(self, 'token_kind', EvmTokenKind.ERC721)
-        object.__setattr__(self, 'decimals', 0)
-        object.__setattr__(self, 'protocol', None)
-        object.__setattr__(self, 'underlying_tokens', None)
+        self._set_attributes(
+            asset_type=AssetType.EVM_TOKEN,
+            name=f'nft with id {self.identifier}',
+            symbol=self.identifier[len(NFT_DIRECTIVE):],
+            cryptocompare=None,
+            coingecko=None,
+            started=None,
+            forked=None,
+            swapped_for=None,
+            evm_address=address,
+            chain_id=ChainID.ETHEREUM,
+            token_kind=TokenKind.ERC721,
+            decimals=0,
+            protocol=None,
+            underlying_tokens=None,
+        )
 
     @classmethod
     def initialize(  # type: ignore  # signature is incompatible with super type
@@ -619,18 +674,113 @@ class Nft(EvmToken):
 
         nft_name = f'nft with id {identifier}' if name is None else name
         nft_symbol = identifier[len(NFT_DIRECTIVE):] if symbol is None else symbol
-        object.__setattr__(asset, 'asset_type', AssetType.EVM_TOKEN)
-        object.__setattr__(asset, 'name', nft_name)
-        object.__setattr__(asset, 'symbol', nft_symbol)
-        object.__setattr__(asset, 'cryptocompare', None)
-        object.__setattr__(asset, 'coingecko', None)
-        object.__setattr__(asset, 'started', None)
-        object.__setattr__(asset, 'forked', None)
-        object.__setattr__(asset, 'swapped_for', None)
-        object.__setattr__(asset, 'evm_address', address)
-        object.__setattr__(asset, 'chain_id', chain_id)
-        object.__setattr__(asset, 'token_kind', EvmTokenKind.ERC721)
-        object.__setattr__(asset, 'decimals', 0)
-        object.__setattr__(asset, 'protocol', None)
-        object.__setattr__(asset, 'underlying_tokens', None)
+        asset._set_attributes(
+            asset_type=AssetType.EVM_TOKEN,
+            name=nft_name,
+            symbol=nft_symbol,
+            cryptocompare=None,
+            coingecko=None,
+            started=None,
+            forked=None,
+            swapped_for=None,
+            evm_address=address,
+            chain_id=chain_id,
+            token_kind=TokenKind.ERC721,
+            decimals=0,
+            protocol=None,
+            underlying_tokens=None,
+        )
         return asset
+
+
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
+class SolanaToken(CryptoAsset):
+    mint_address: SolanaAddress = field(init=False)
+    token_kind: SOLANA_TOKEN_KINDS = field(init=False)
+    decimals: int | None = field(init=False)
+    protocol: str | None = field(init=False)
+
+    def __post_init__(self, direct_field_initialization: bool) -> None:
+        super().__post_init__(direct_field_initialization)
+        if direct_field_initialization is True:
+            return
+
+        resolved = AssetResolver().resolve_asset_to_class(
+            identifier=self.identifier,
+            expected_type=SolanaToken,
+        )
+        self._set_attributes(
+            asset_type=AssetType.SOLANA_TOKEN,
+            mint_address=resolved.mint_address,
+            token_kind=resolved.token_kind,
+            decimals=resolved.decimals,
+            protocol=resolved.protocol,
+        )
+
+    @classmethod
+    def initialize(  # type: ignore  # signature is incompatible with super type
+            cls: type['SolanaToken'],
+            address: SolanaAddress,
+            token_kind: SOLANA_TOKEN_KINDS,
+            name: str | None = None,
+            symbol: str | None = None,
+            started: Timestamp | None = None,
+            forked: CryptoAsset | None = None,
+            swapped_for: CryptoAsset | None = None,
+            coingecko: str | None = None,
+            cryptocompare: str | None = '',
+            decimals: int | None = None,
+            protocol: str | None = None,
+    ) -> 'SolanaToken':
+        identifier = solana_address_to_identifier(
+            address=address,
+            token_type=token_kind,
+        )
+        asset = SolanaToken(identifier=identifier, direct_field_initialization=True)
+        asset._set_attributes(
+            asset_type=AssetType.SOLANA_TOKEN,
+            name=name,
+            symbol=symbol,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
+            started=started,
+            forked=forked,
+            swapped_for=swapped_for,
+            mint_address=address,
+            token_kind=token_kind,
+            decimals=decimals,
+            protocol=protocol,
+        )
+        return asset
+
+    @classmethod
+    def deserialize_from_db(
+            cls: type['SolanaToken'],
+            entry: SolanaTokenDBTuple,
+    ) -> 'SolanaToken':
+        """May raise:
+        - UnknownAsset if the swapped for asset can't be recognized
+
+        That error would be bad because it would mean somehow an unknown id made it into the DB
+        """
+        swapped_for = CryptoAsset(entry[7]) if entry[7] is not None else None
+        return SolanaToken.initialize(
+            address=SolanaAddress(entry[1]),
+            token_kind=TokenKind.deserialize_solana_from_db(entry[2]),
+            decimals=entry[3],
+            name=entry[4],
+            symbol=entry[5] if entry[5] is not None else '',
+            started=Timestamp(entry[6]),  # type: ignore
+            swapped_for=swapped_for,
+            coingecko=entry[8],
+            cryptocompare=entry[9],
+            protocol=entry[10],
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return super().to_dict() | {
+            'address': self.mint_address,
+            'token_kind': self.token_kind.serialize(),
+            'decimals': self.decimals,
+            'protocol': self.protocol,
+        }

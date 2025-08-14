@@ -30,7 +30,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -83,7 +83,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             asset_identifier=evm_address_to_identifier(
                 address=queried_address,
                 chain_id=self.evm_inquirer.chain_id,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             ),
         ) == self.counterparty
 
@@ -359,13 +359,16 @@ class Commonv2v3LikeDecoder(DecoderInterface):
 
         token = EvmToken(evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[1]),
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
             chain_id=self.evm_inquirer.chain_id,
         ))
 
         if context.tx_log.topics[0] in (ENABLE_COLLATERAL, DISABLE_COLLATERAL):
             event = self._decode_collateral_events(token, context.transaction, context.tx_log)
-            return DecodingOutput(event=event, matched_counterparty=self.counterparty)
+            return DecodingOutput(
+                events=[event] if event is not None else None,
+                matched_counterparty=self.counterparty,
+            )
 
         if context.tx_log.topics[0] == self.deposit_signature:
             paired_events = self._decode_deposit(token, context.tx_log, context.decoded_events)

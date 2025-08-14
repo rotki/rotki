@@ -1,11 +1,12 @@
+import { libraryDefaults } from '@test/utils/provide-defaults';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises/index';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremium } from '@/composables/premium';
 import PremiumSettings from '@/pages/api-keys/premium/index.vue';
 import { useConfirmStore } from '@/store/confirm';
-import { mount, type VueWrapper } from '@vue/test-utils';
-import flushPromises from 'flush-promises/index';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {
@@ -32,6 +33,7 @@ describe('premiumSettings.vue', () => {
       global: {
         plugins: [pinia],
         stubs: ['i18n-t', 'card-title'],
+        provide: libraryDefaults,
       },
     });
   }
@@ -72,6 +74,7 @@ describe('premiumSettings.vue', () => {
 
     await wrapper.find('[data-cy=premium__delete]').trigger('click');
     await nextTick();
+    await flushPromises();
     await flushPromises();
 
     const { confirm } = useConfirmStore();

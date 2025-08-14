@@ -141,6 +141,17 @@ class DecoderInterface(ABC):
         """
         return {}
 
+    def post_processing_rules(self) -> dict[str, tuple[Callable]]:
+        """
+        Subclasses may implement this to add post processing of the decoded events that runs
+        once after the entire batch of transactions is decoded. Useful for querying more remote
+        data with which to enrich the decoded events.
+
+        This function should return a dict where values are tuples with the functions to run.
+        The keys of the dictionary are counterparties.
+        """
+        return {}
+
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         """
         Map addresses to counterparties so they can be filtered in the post
@@ -307,7 +318,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             address=context.tx_log.address,
             counterparty=self.protocol,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     @staticmethod
     def _decode_raw_vote(vote_raw: int) -> VoteChoice:
@@ -378,7 +389,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             address=context.tx_log.address,
             counterparty=self.protocol,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_governance(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == VOTE_CAST:

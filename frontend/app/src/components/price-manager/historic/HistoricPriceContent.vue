@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
+import dayjs from 'dayjs';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -12,7 +13,6 @@ import { useHistoricPrices } from '@/composables/price-manager/historic';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useRefPropVModel } from '@/utils/model';
-import dayjs from 'dayjs';
 
 const { t } = useI18n({ useScope: 'global' });
 

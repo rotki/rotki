@@ -16,7 +16,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import PICKLE_JAR_PROTOCOL, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CORN_TOKEN_ID, CORNICHON_CLAIM, CPT_PICKLE
@@ -46,7 +46,7 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
         )
         self.pickle_contracts = set(GlobalDBHandler.get_addresses_by_protocol(
             chain_id=ethereum_inquirer.chain_id,
-            protocol=PICKLE_JAR_PROTOCOL,
+            protocol=CPT_PICKLE,
         ))
 
     def _maybe_enrich_pickle_transfers(

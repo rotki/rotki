@@ -1,16 +1,17 @@
-import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import type { Ref } from 'vue';
+import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
+import { wait } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumReminder } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useLogin } from '@/modules/account/use-login';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
+import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useWebsocketStore } from '@/store/websocket';
 import { setLastLogin } from '@/utils/account-management';
-import { wait } from '@shared/utils';
 
 interface UseAccountManagementReturn {
   loading: Ref<boolean>;
@@ -35,7 +36,8 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
-  const { resetWalletConnection } = useWalletStore();
+  const { disconnect: disconnectWallet } = useWalletStore();
+  const { fetchEvmTransactionStatus } = useHistoryStore();
 
   const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
     set(loading, true);
@@ -57,6 +59,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
         clearUpgradeMessages();
         showGetPremiumButton();
         set(canRequestData, true);
+        await fetchEvmTransactionStatus();
         await navigateToDashboard();
       }
     }
@@ -89,7 +92,8 @@ export function useAccountManagement(): UseAccountManagementReturn {
       setLastLogin(username);
       showGetPremiumButton();
       set(checkForAssetUpdate, true);
-      await resetWalletConnection();
+      await fetchEvmTransactionStatus();
+      await disconnectWallet();
     }
   };
 

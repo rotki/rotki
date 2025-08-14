@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { KrakenStakingDateFilter } from '@/types/staking';
+import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import KrakenDateFilter from '@/components/staking/kraken/KrakenDateFilter.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
@@ -7,7 +8,6 @@ import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingRece
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
@@ -17,6 +17,8 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const selection = ref<'current' | 'historical'>('current');
+
 const { events } = toRefs(useKrakenStakingStore());
 const { assetPrice } = usePriceUtils();
 
@@ -25,6 +27,10 @@ const krakenHistoricPriceStatus = getProtocolStatsPriceQueryStatus('kraken');
 
 const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
   const earned = get(events).received;
+
+  if (get(selection) === 'historical') {
+    return [false, earned];
+  }
 
   let loading = false;
 
@@ -74,6 +80,7 @@ const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
         :earned="earnedAssetsData[1]"
       />
       <KrakenStakingReceived
+        v-model="selection"
         :loading="earnedAssetsData[0]"
         :received="earnedAssetsData[1]"
       />

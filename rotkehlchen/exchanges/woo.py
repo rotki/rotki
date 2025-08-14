@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import logging
 import urllib
 from collections import defaultdict
@@ -20,6 +18,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -77,7 +76,7 @@ class TradePairData(NamedTuple):
     quote_asset: AssetWithOracles
 
 
-class Woo(ExchangeInterface):
+class Woo(ExchangeInterface, SignatureGeneratorMixin):
     """Woo exchange api docs: https://docs.woo.org/#general-information"""
     def __init__(
             self,
@@ -259,11 +258,7 @@ class Woo(ExchangeInterface):
         timestamp = str(ts_now_in_ms())
         parameters = urllib.parse.urlencode(call_options)
         normalized_content = f'{timestamp}{method}/{endpoint}{parameters}' if endpoint.startswith('v3') else f'{parameters}|{timestamp}'  # noqa: E501
-        signature = hmac.new(
-            self.secret,
-            msg=normalized_content.encode('utf-8'),
-            digestmod=hashlib.sha256,
-        ).hexdigest()
+        signature = self.generate_hmac_signature(normalized_content)
         self.session.headers.update({
             'x-api-signature': signature,
             'x-api-timestamp': timestamp,

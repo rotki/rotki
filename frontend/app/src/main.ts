@@ -1,3 +1,6 @@
+import { createRuiI8nPlugin } from '@rotki/ui-library';
+import { checkIfDevelopment } from '@shared/utils';
+import { createPinia } from 'pinia';
 import App from '@/App.vue';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { i18n } from '@/i18n';
@@ -10,8 +13,6 @@ import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
 import { attemptPolyfillResizeObserver } from '@/utils/cypress';
 import { setupDayjs } from '@/utils/date';
 import { setupFormatter } from '@/utils/setup-formatter';
-import { checkIfDevelopment } from '@shared/utils';
-import { createPinia } from 'pinia';
 
 /* istanbul ignore file */
 import './main.scss';
@@ -63,6 +64,7 @@ app.provide('premium', usePremiumApi());
 app.use(rui);
 app.use(pinia);
 app.use(i18n);
+app.use(createRuiI8nPlugin(i18n));
 app.use(router);
 app.mount('#app');
 

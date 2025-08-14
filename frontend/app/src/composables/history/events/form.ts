@@ -1,6 +1,6 @@
-import type HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events';
 import type { ShallowRef } from 'vue';
+import type HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
+import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events/schemas';
 import { useHistoryEvents } from '@/composables/history/events/index';
 import { useMessageStore } from '@/store/message';
 
@@ -13,6 +13,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
     assetPriceForm: Readonly<ShallowRef<InstanceType<typeof HistoryEventAssetPriceForm> | null>>,
     errorMessages: Ref<Record<string, string[]>>,
     reset: () => any,
+    shouldSkipEdit: boolean,
   ): Promise<boolean> => {
     const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
 
@@ -22,6 +23,11 @@ export const useHistoryEventsForm = createSharedComposable(() => {
     }
 
     const edit = 'identifier' in payload;
+
+    if (edit && shouldSkipEdit) {
+      reset();
+      return true;
+    }
 
     const result = !edit ? await addHistoryEvent(payload) : await editHistoryEvent(payload);
 

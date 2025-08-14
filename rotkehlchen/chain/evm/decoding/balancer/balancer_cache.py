@@ -22,7 +22,7 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -50,8 +50,7 @@ def query_balancer_data(
         chain=inquirer.chain_id,
         version=version,
     )
-    gauge_key_parts = ((str_chain_id := str(inquirer.chain_id.value)), str(version))
-    pool_key_parts = (str_chain_id,)
+    pool_key_parts = ((str_chain_id := str(inquirer.chain_id.value)),)
     if reload_all is False:
         with globaldb.conn.read_ctx() as cursor:
             existing_pools = {
@@ -61,11 +60,12 @@ def query_balancer_data(
                     key_parts=(cache_type, *pool_key_parts),
                 )
             }
+            gauge_cache_type: Literal[CacheType.BALANCER_V1_GAUGES, CacheType.BALANCER_V2_GAUGES] = CacheType.BALANCER_V1_GAUGES if version == 1 else CacheType.BALANCER_V2_GAUGES  # noqa: E501
             existing_gauges = {
                 string_to_evm_address(address)
                 for address in globaldb_get_general_cache_values(
                     cursor=cursor,
-                    key_parts=(CacheType.BALANCER_GAUGES, *gauge_key_parts),
+                    key_parts=(gauge_cache_type, str_chain_id),
                 )
             }
 
@@ -80,6 +80,7 @@ def query_balancer_data(
             return existing_pools, existing_gauges
 
     pools, gauges = set(), set()
+    pool_tokens_to_update = []
     token_encounter_info = TokenEncounterInfo(
         description=f'Querying {inquirer.chain_name} {protocol} balances',
         should_notify=False,
@@ -94,7 +95,10 @@ def query_balancer_data(
                 protocol=protocol,
                 name=pool['name'].strip(),  # API responses sometimes contain trailing/leading whitespace in pool names and symbols  # noqa: E501
                 symbol=pool['symbol'].strip(),
-                decimals=deserialize_int(pool['decimals']),
+                decimals=deserialize_int(
+                    value=pool['decimals'],
+                    location='balancer pool token decimals',
+                ),
                 evm_address=deserialize_evm_address(pool['address']),
                 encounter=token_encounter_info,
                 underlying_tokens=[
@@ -105,7 +109,7 @@ def query_balancer_data(
                             evm_address=deserialize_evm_address(token['address']),
                             encounter=token_encounter_info,
                         ).evm_address,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         weight=FVal(token['weight']) if token.get('weight') is not None else default_weight,  # noqa: E501
                     )
                     for token in underlying_tokens
@@ -114,6 +118,9 @@ def query_balancer_data(
             pools.add(pool_token.evm_address)
             if (gauge_address := ((pool.get('staking') or {}).get('gauge') or {}).get('gaugeAddress')) is not None:  # noqa: E501
                 gauges.add(deserialize_evm_address(gauge_address))
+
+            if pool_token.protocol != CPT_BALANCER_V1:
+                pool_tokens_to_update.append(pool_token)
         except (KeyError, ValueError, TypeError, DeserializationError) as e:
             msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
             log.error(
@@ -122,12 +129,12 @@ def query_balancer_data(
             )
             continue
 
-        if pool_token.protocol != CPT_BALANCER_V1:
-            log.debug(f'Updating protocol for {inquirer.chain_name} {protocol} asset {pool_token}')
-            globaldb.set_token_protocol_if_missing(
-                token=pool_token,
-                new_protocol=CPT_BALANCER_V1,
-            )
+    if pool_tokens_to_update:
+        log.debug(f'Updating protocol for {len(pool_tokens_to_update)} {inquirer.chain_name} {protocol} assets')  # noqa: E501
+        globaldb.set_tokens_protocol_if_missing(
+            tokens=pool_tokens_to_update,
+            new_protocol=CPT_BALANCER_V1,
+        )
 
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
@@ -136,9 +143,10 @@ def query_balancer_data(
             values=pools,
         )
         if len(gauges) > 0:
+            gauge_cache_type = CacheType.BALANCER_V1_GAUGES if version == 1 else CacheType.BALANCER_V2_GAUGES  # noqa: E501
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
-                key_parts=(CacheType.BALANCER_GAUGES, *gauge_key_parts),
+                key_parts=(gauge_cache_type, str_chain_id),
                 values=gauges,
             )
 
@@ -171,11 +179,12 @@ def read_balancer_pools_and_gauges_from_cache(
             )
         }
 
+        gauge_cache_type: Literal[CacheType.BALANCER_V1_GAUGES, CacheType.BALANCER_V2_GAUGES] = CacheType.BALANCER_V1_GAUGES if version == '1' else CacheType.BALANCER_V2_GAUGES  # noqa: E501
         gauge_addresses = {
             string_to_evm_address(gauge_address)
             for gauge_address in globaldb_get_general_cache_values(
                 cursor=cursor,
-                key_parts=(CacheType.BALANCER_GAUGES, str(chain_id.value), version),
+                key_parts=(gauge_cache_type, str(chain_id.value)),
             )
         }
 

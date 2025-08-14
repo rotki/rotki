@@ -31,6 +31,7 @@ from rotkehlchen.db.upgrades.v44_v45 import upgrade_v44_to_v45
 from rotkehlchen.db.upgrades.v45_v46 import upgrade_v45_to_v46
 from rotkehlchen.db.upgrades.v46_v47 import upgrade_v46_to_v47
 from rotkehlchen.db.upgrades.v47_v48 import upgrade_v47_to_v48
+from rotkehlchen.db.upgrades.v48_v49 import upgrade_v48_to_v49
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -134,6 +135,10 @@ UPGRADES_LIST = [
         from_version=47,
         function=upgrade_v47_to_v48,
     ),
+    UpgradeRecord(
+        from_version=48,
+        function=upgrade_v48_to_v49,
+    ),
 ]
 
 
@@ -210,7 +215,7 @@ class DBUpgradeManager:
         Reason for this is to make sure the .db file is the only thing needed for the DB
         backup as we only copy that file.
         """
-        self.db.conn.execute('PRAGMA wal_checkpoint(FULL);')
+        self.db.conn.wal_checkpoint('(FULL)')
         with self.db.conn.read_ctx() as cursor:
             current_version = self.db.get_setting(cursor, 'version')
         if current_version != upgrade.from_version:

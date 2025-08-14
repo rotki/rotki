@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { some } from 'es-toolkit/compat';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
+import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -15,7 +17,6 @@ import { TableColumn } from '@/types/table-column';
 import { assetFilterByKeyword } from '@/utils/assets';
 import { sortAssetBalances } from '@/utils/balances';
 import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
-import { some } from 'es-toolkit/compat';
 
 defineOptions({
   name: 'AssetBalances',
@@ -23,32 +24,31 @@ defineOptions({
 
 const search = defineModel<string>('search', { default: '', required: false });
 
-const props = withDefaults(
-  defineProps<{
-    balances: AssetBalanceWithPrice[];
-    details?: {
-      groupId?: string;
-      chains?: string[];
-    };
-    loading?: boolean;
-    hideTotal?: boolean;
-    hideBreakdown?: boolean;
-    stickyHeader?: boolean;
-    isLiability?: boolean;
-    allBreakdown?: boolean;
-    visibleColumns?: TableColumn[];
-  }>(),
-  {
-    allBreakdown: false,
-    details: undefined,
-    hideBreakdown: false,
-    hideTotal: false,
-    isLiability: false,
-    loading: false,
-    stickyHeader: false,
-    visibleColumns: () => [],
-  },
-);
+const props = withDefaults(defineProps<{
+  balances: AssetBalanceWithPrice[];
+  details?: {
+    groupId?: string;
+    chains?: string[];
+  };
+  loading?: boolean;
+  hideTotal?: boolean;
+  hideBreakdown?: boolean;
+  stickyHeader?: boolean;
+  isLiability?: boolean;
+  allBreakdown?: boolean;
+  visibleColumns?: TableColumn[];
+  showPerProtocol?: boolean;
+}>(), {
+  allBreakdown: false,
+  details: undefined,
+  hideBreakdown: false,
+  hideTotal: false,
+  isLiability: false,
+  loading: false,
+  showPerProtocol: false,
+  stickyHeader: false,
+  visibleColumns: () => [],
+});
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -67,12 +67,15 @@ const { totalNetWorthUsd } = storeToRefs(statistics);
 
 const isExpanded = (asset: string) => some(get(expanded), { asset });
 
-function expand(item: AssetBalanceWithPrice) {
-  set(expanded, isExpanded(item.asset) ? [] : [item]);
+function shouldShowRowExpander(row: AssetBalanceWithPrice): boolean {
+  const hasBreakdown = Boolean(row.breakdown);
+  const shouldShowNativeBreakdown = (!props.hideBreakdown && isEvmNativeToken(row.asset)) ?? false;
+  const hasPerProtocolDetails = (row.perProtocol && row.perProtocol.length > 1) ?? false;
+  return hasBreakdown || shouldShowNativeBreakdown || hasPerProtocolDetails;
 }
 
-function getAssets(item: AssetBalanceWithPrice): string[] {
-  return item.breakdown?.map(entry => entry.asset) ?? [];
+function expand(item: AssetBalanceWithPrice) {
+  set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
 
 function assetFilter(item: Nullable<AssetBalance>) {
@@ -92,41 +95,47 @@ function percentageOfCurrentGroup(value: BigNumber) {
 }
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
-  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
-    {
-      cellClass: 'py-0',
-      class: 'text-no-wrap w-full',
-      key: 'asset',
-      label: t('common.asset'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-0',
-      key: 'usdPrice',
-      label: t('common.price_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-0',
-      key: 'amount',
-      label: t('common.amount'),
-      sortable: true,
-    },
-    {
+  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [{
+    cellClass: 'py-0',
+    class: 'text-no-wrap w-full',
+    key: 'asset',
+    label: t('common.asset'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    key: 'usdPrice',
+    label: t('common.price_in_symbol', {
+      symbol: get(currencySymbol),
+    }),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    key: 'amount',
+    label: t('common.amount'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    class: 'text-no-wrap',
+    key: 'usdValue',
+    label: t('common.value_in_symbol', {
+      symbol: get(currencySymbol),
+    }),
+    sortable: true,
+  }];
+
+  if (props.showPerProtocol) {
+    headers.splice(1, 0, {
       align: 'end',
       cellClass: 'py-0',
       class: 'text-no-wrap',
-      key: 'usdValue',
-      label: t('common.value_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
-      sortable: true,
-    },
-  ];
+      key: 'perProtocol',
+      label: t('common.location'),
+      sortable: false,
+    });
+  }
 
   if (props.visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
@@ -177,6 +186,14 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       <AssetDetails
         :asset="row.asset"
         :is-collection-parent="!!row.breakdown"
+      />
+    </template>
+    <template #item.perProtocol="{ row }">
+      <BalanceTopProtocols
+        v-if="row.perProtocol"
+        :protocols="row.perProtocol"
+        :loading="!row.usdPrice || row.usdPrice.lt(0)"
+        :asset="row.asset"
       />
     </template>
     <template #item.usdPrice="{ row }">
@@ -234,30 +251,18 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       </RowAppend>
     </template>
     <template #expanded-item="{ row }">
-      <EvmNativeTokenBreakdown
-        v-if="!hideBreakdown && isEvmNativeToken(row.asset)"
-        :blockchain-only="!allBreakdown"
-        :assets="getAssets(row)"
+      <AssetRowDetails
+        :row="row"
         :details="details"
-        :identifier="row.asset"
-        :is-liability="isLiability"
-        class="bg-white dark:bg-[#1E1E1E] my-2"
-      />
-      <AssetBalances
-        v-else
-        v-bind="props"
-        :visible-columns="[]"
-        hide-total
-        :balances="row.breakdown ?? []"
-        :sticky-header="false"
+        :loading="loading"
         :is-liability="isLiability"
         :all-breakdown="allBreakdown"
-        class="bg-white dark:bg-[#1E1E1E] my-2"
+        :hide-breakdown="hideBreakdown"
       />
     </template>
     <template #item.expand="{ row }">
       <RuiTableRowExpander
-        v-if="row.breakdown || (!hideBreakdown && isEvmNativeToken(row.asset))"
+        v-if="shouldShowRowExpander(row)"
         :expanded="isExpanded(row.asset)"
         @click="expand(row)"
       />

@@ -38,12 +38,12 @@ def test_query_db_info(
 
     if start_with_logged_in_user:
         db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
-        db.conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
+        db.conn.wal_checkpoint()  # flush the wal file
 
     response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
     result = assert_proper_sync_response_with_result(response)
     assert len(result) == 2
-    assert result['globaldb'] == {'globaldb_assets_version': 36, 'globaldb_schema_version': 12}
+    assert result['globaldb'] == {'globaldb_assets_version': 37, 'globaldb_schema_version': 13}
 
     if start_with_logged_in_user:
         userdb = result['userdb']

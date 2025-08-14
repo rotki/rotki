@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
-from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.types import ChainID, TokenKind
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
-    from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+    from rotkehlchen.types import ChecksumEvmAddress, SolanaAddress, Timestamp
 
 
 class AssetType(DBCharEnumMixIn):
@@ -59,9 +59,9 @@ class AssetData(NamedTuple):
     started: Optional['Timestamp']
     forked: str | None
     swapped_for: str | None
-    address: Optional['ChecksumEvmAddress']
+    address: 'ChecksumEvmAddress | SolanaAddress | None'
     chain_id: ChainID | None
-    token_kind: EvmTokenKind | None
+    token_kind: TokenKind | None
     decimals: int | None
     # None means, no special mapping. '' means not supported
     cryptocompare: str | None

@@ -4,14 +4,14 @@ import type { BlockchainAccount } from '@/types/blockchain/accounts';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { BalanceType } from '@/types/balances';
 import { bigNumberify, type Blockchain } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { BalanceType } from '@/types/balances';
 import { libraryDefaults } from '../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
@@ -137,8 +137,10 @@ const testEthereumBalances: BlockchainBalances = {
       '0xaddress1': {
         assets: {
           ETH: {
-            amount: bigNumberify(400),
-            usdValue: bigNumberify(400),
+            address: {
+              amount: bigNumberify(400),
+              usdValue: bigNumberify(400),
+            },
           },
         },
         liabilities: {},
@@ -146,8 +148,11 @@ const testEthereumBalances: BlockchainBalances = {
       '0xaddress2': {
         assets: {
           ETH: {
-            amount: bigNumberify(800),
-            usdValue: bigNumberify(800),
+            address: {
+              amount: bigNumberify(800),
+              usdValue: bigNumberify(800),
+            },
+
           },
         },
         liabilities: {},
@@ -175,8 +180,10 @@ const testOptimismBalances: BlockchainBalances = {
       '0xaddress1': {
         assets: {
           ETH: {
-            amount: bigNumberify(123),
-            usdValue: bigNumberify(123),
+            address: {
+              amount: bigNumberify(123),
+              usdValue: bigNumberify(123),
+            },
           },
         },
         liabilities: {},

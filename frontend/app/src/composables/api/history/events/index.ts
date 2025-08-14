@@ -1,9 +1,11 @@
+import type { ActionResult } from '@rotki/common';
+import type { AxiosRequestConfig } from 'axios';
 import type { HistoryEventExportPayload, HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { ActionDataEntry, ActionStatus } from '@/types/action';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common';
-import type { AxiosRequestConfig } from 'axios';
+import { omit } from 'es-toolkit';
+import { z } from 'zod/v4';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -14,13 +16,8 @@ import {
   validWithParamsSessionAndExternalService,
 } from '@/services/utils';
 import {
-  type AddHistoryEventPayload,
   type AddTransactionHashPayload,
-  type HistoryEventCollectionRow,
   HistoryEventDetail,
-  HistoryEventsCollectionResponse,
-  type ModifyHistoryEventPayload,
-  type OnlineHistoryEventsRequestPayload,
   type PullEthBlockEventPayload,
   type PullTransactionPayload,
   type RepullingTransactionPayload,
@@ -28,15 +25,29 @@ import {
   type TransactionRequestPayload,
 } from '@/types/history/events';
 import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
+import {
+  type AddHistoryEventPayload,
+  type HistoryEventCollectionRow,
+  HistoryEventsCollectionResponse,
+  type ModifyHistoryEventPayload,
+  type OnlineHistoryEventsRequestPayload,
+} from '@/types/history/events/schemas';
 import { nonEmptyProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
 import { getFilename } from '@/utils/file';
-import { omit } from 'es-toolkit';
 
 interface QueryExchangePayload { name: string; location: string }
 
+const EvmTransactionStatusSchema = z.object({
+  hasEvmAccounts: z.boolean(),
+  lastQueriedTs: z.number(),
+  undecodedTxCount: z.number(),
+});
+
+export type EvmTransactionStatus = z.infer<typeof EvmTransactionStatusSchema>;
+
 interface UseHistoryEventsApiReturn {
-  fetchTransactionsTask: (payload: TransactionRequestPayload, type?: TransactionChainType) => Promise<PendingTask>;
+  fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txHash?: string) => Promise<boolean>;
   pullAndRecodeTransactionRequest: (payload: PullTransactionPayload, type?: TransactionChainType) => Promise<PendingTask>;
   getUndecodedTransactionsBreakdown: (type?: TransactionChainType) => Promise<PendingTask>;
@@ -57,23 +68,19 @@ interface UseHistoryEventsApiReturn {
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
+  getEvmTransactionStatus: () => Promise<EvmTransactionStatus>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   const internalTransactions = async <T>(
     payload: TransactionRequestPayload,
     asyncQuery: boolean,
-    type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<T> => {
-    const accounts
-      = type === TransactionChainType.EVM
-        ? payload.accounts
-        : payload.accounts.map(({ address, evmChain }) => ({ address, chain: evmChain }));
     const response = await api.instance.post<ActionResult<T>>(
-      `/blockchains/${type}/transactions`,
+      '/blockchains/transactions',
       snakeCaseTransformer(
         nonEmptyProperties({
-          accounts,
+          accounts: payload.accounts,
           asyncQuery,
         }),
       ),
@@ -88,8 +95,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const fetchTransactionsTask = async (
     payload: TransactionRequestPayload,
-    type: TransactionChainType = TransactionChainType.EVM,
-  ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true, type);
+  ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true);
 
   const deleteTransactions = async (chain: string, txHash?: string): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/transactions', {
@@ -329,6 +335,17 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
+  const getEvmTransactionStatus = async (): Promise<EvmTransactionStatus> => {
+    const response = await api.instance.get<ActionResult<any>>(
+      '/blockchains/evm/transactions/status',
+      {
+        validateStatus: validStatus,
+      },
+    );
+
+    return EvmTransactionStatusSchema.parse(handleResponse(response));
+  };
+
   return {
     addHistoryEvent,
     addTransactionHash,
@@ -342,6 +359,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     fetchHistoryEvents,
     fetchTransactionsTask,
     getEventDetails,
+    getEvmTransactionStatus,
     getHistoryEventCounterpartiesData,
     getHistoryEventProductsData,
     getTransactionTypeMappings,

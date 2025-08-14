@@ -1,5 +1,6 @@
-import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
+import type { Collection } from '@/types/collection';
+import { type ActionResult, OwnedAssets, type SupportedAsset } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -14,10 +15,11 @@ import {
   type CustomAsset,
   type CustomAssetRequestPayload,
   CustomAssets,
+  SOLANA_CHAIN,
+  SOLANA_TOKEN,
   SupportedAssets,
 } from '@/types/asset';
 import { mapCollectionResponse } from '@/utils/collection';
-import { type ActionResult, OwnedAssets, type SupportedAsset } from '@rotki/common';
 
 interface UseAssetManagementApiReturn {
   queryAllAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;
@@ -35,9 +37,17 @@ interface UseAssetManagementApiReturn {
 
 export function useAssetManagementApi(): UseAssetManagementApiReturn {
   const queryAllAssets = async (payload: MaybeRef<AssetRequestPayload>): Promise<Collection<SupportedAsset>> => {
+    const payloadValue = get(payload);
+    const transformedPayload = { ...payloadValue };
+
+    if (transformedPayload.evmChain === SOLANA_CHAIN) {
+      delete transformedPayload.evmChain;
+      transformedPayload.assetType = SOLANA_TOKEN;
+    }
+
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
-      snakeCaseTransformer(get(payload)),
+      snakeCaseTransformer(transformedPayload),
       {
         validateStatus: validWithSessionAndExternalService,
       },

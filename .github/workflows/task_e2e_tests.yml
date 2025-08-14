@@ -48,7 +48,7 @@ jobs:
           cache-on-failure: true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           package_json_file: frontend/package.json
 
@@ -76,11 +76,16 @@ jobs:
             ./frontend/app/.e2e/data/global_data
           key: ${{ runner.os }}-e2e-data-${{ hashFiles('rotkehlchen/data/global.db') }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Setup backend
         run: |
-          pip install --upgrade uv wheel
-          uv pip install --system -r requirements.txt
-          uv pip install --system -e .
+          uv sync
 
       - name: Restore dependencies
         working-directory: ./frontend
@@ -96,7 +101,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           flags: frontend_integration
           env_vars: GROUP

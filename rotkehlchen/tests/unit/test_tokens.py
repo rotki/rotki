@@ -1,18 +1,18 @@
 import datetime
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, get_args
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import gevent
 import pytest
 
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
-from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
+from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies, generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_OMG, A_WETH
+from rotkehlchen.constants.assets import A_CRV, A_DAI, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -28,10 +28,10 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
     SupportedBlockchain,
     TimestampMS,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -60,7 +60,9 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
     '0xc32cac63823B556E6Ebf61bB74149f08Bf1AAb34',
 ]])
 @pytest.mark.parametrize('mocked_proxies', [{
-    '0xc32cac63823B556E6Ebf61bB74149f08Bf1AAb34': '0x394C1D68498DEB24AC9F5502DD5450a0353e17dc',
+    'dsr': {
+        '0xc32cac63823B556E6Ebf61bB74149f08Bf1AAb34': '0x394C1D68498DEB24AC9F5502DD5450a0353e17dc',
+    },
 }])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -83,31 +85,58 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
-    with patch(
-        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
-        side_effect=lambda *args, **kwargs: ([  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
-            EvmTokenDetectionData(
-                identifier=A_WETH.identifier,
-                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                decimals=18,
-            ), EvmTokenDetectionData(
-                identifier=A_LPT.identifier,
-                address=string_to_evm_address('0x58b6A8A3302369DAEc383334672404Ee733aB239'),
-                decimals=18,
-            ), EvmTokenDetectionData(
-                identifier=A_OMG.identifier,
-                address=string_to_evm_address('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
-                decimals=18,
-            ), EvmTokenDetectionData(
-                identifier=A_DAI.identifier,
-                address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
-                decimals=18,
-            ),
-        ], []),
+    Inquirer.find_usd_prices = MagicMock(side_effect=Inquirer.find_usd_prices)
+    with (
+        patch(
+            target='rotkehlchen.chain.evm.tokens.EvmTokens._query_new_tokens',
+            wraps=super(EvmTokensWithProxies, tokens)._query_new_tokens,
+        ) as query_new_tokens_patch,
+        patch(
+            target='rotkehlchen.chain.ethereum.tokens.EthereumTokens.maybe_detect_proxies_tokens',
+            wraps=tokens.maybe_detect_proxies_tokens,
+        ) as maybe_detect_proxies_tokens_patch,
+        patch(
+            target='rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
+            side_effect=lambda *args, **kwargs: ([  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
+                EvmTokenDetectionData(
+                    identifier=A_WETH.identifier,
+                    address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                    decimals=18,
+                ), EvmTokenDetectionData(
+                    identifier=A_LPT.identifier,
+                    address=string_to_evm_address('0x58b6A8A3302369DAEc383334672404Ee733aB239'),
+                    decimals=18,
+                ), EvmTokenDetectionData(
+                    identifier=A_OMG.identifier,
+                    address=string_to_evm_address('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
+                    decimals=18,
+                ), EvmTokenDetectionData(
+                    identifier=A_DAI.identifier,
+                    address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+                    decimals=18,
+                ),
+            ], []),
+        ),
     ):
         detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
+
+    assert query_new_tokens_patch.call_count == 2  # once for normal addresses, once for the proxy
+    assert query_new_tokens_patch.call_args_list == [
+        call([addr1, addr2, addr3]),  # first called for normal addresses (uses positional arg)
+        call(addresses=[addr3_proxy]),  # then called for the proxy address
+    ]
+    assert maybe_detect_proxies_tokens_patch.call_count == 1  # ensure this isn't called again when detecting tokens for the proxy.  # noqa: E501
+
     assert A_WETH in detection_result[addr3][0], 'WETH is owned by the proxy, but should be returned in the proxy owner address'  # noqa: E501
     assert tokens.evm_inquirer.multicall.call_count == 0, 'multicall should not be used for tokens detection'  # noqa: E501
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(  # Add a token that there are no actual balances for
+            'INSERT OR REPLACE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
+            (addr1, ChainID.ETHEREUM.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS, A_CRV.identifier),  # noqa: E501
+        )
+
     result, token_usd_prices = tokens.query_tokens_for_addresses(
         [addr1, addr2, addr3, addr3_proxy],
     )
@@ -122,7 +151,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     assert A_WETH in result[addr3_proxy], 'WETH (which is owned by the proxy) is in the result of the proxy'  # noqa: E501
     assert A_WETH not in result[addr3], 'WETH is not in the result of the proxy owner address'
 
-    # test that  ignored assets are not queried
+    # test that ignored assets are not queried
     assert A_LPT not in result[addr1] and A_LPT not in result[addr2]
     found_tokens = set(result[addr1].keys()).union(
         set(result[addr2].keys()),
@@ -132,6 +161,10 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
         set(result[addr3_proxy].keys()),
     )
     assert len(token_usd_prices) == len(found_tokens)
+
+    # Confirm that prices were not queried for a token in evm_accounts_details that has no balance.
+    assert A_CRV not in found_tokens
+    assert all(asset in found_tokens for asset in Inquirer.find_usd_prices.call_args_list[0][0][0])
 
 
 def test_generate_chunks():
@@ -177,12 +210,13 @@ def test_last_queried_ts(tokens, freezer):
             only_cache=False,
             addresses=[address],
         )
-        after_first_query = tokens.db.conn.execute(
-            'SELECT key, value FROM evm_accounts_details',
-        ).fetchall()
-        assert len(after_first_query) == 1
-        assert after_first_query[0][0] == 'last_queried_timestamp'
-        assert int(after_first_query[0][1]) >= beginning
+        with tokens.db.conn.read_ctx() as cursor:
+            after_first_query = cursor.execute(
+                'SELECT key, value FROM evm_accounts_details',
+            ).fetchall()
+            assert len(after_first_query) == 1
+            assert after_first_query[0][0] == 'last_queried_timestamp'
+            assert int(after_first_query[0][1]) >= beginning
 
         continuation = beginning + 10
         freezer.move_to(datetime.datetime.fromtimestamp(continuation, tz=datetime.UTC))
@@ -191,13 +225,15 @@ def test_last_queried_ts(tokens, freezer):
             only_cache=False,
             addresses=['0x4bBa290826C253BD854121346c370a9886d1bC26'],
         )
-        # Check that last_queried_timestamp was updated and that there are no duplicates
-        after_second_query = tokens.db.conn.execute(
-            'SELECT key, value FROM evm_accounts_details',
-        ).fetchall()
-        assert len(after_second_query) == 1
-        assert after_second_query[0][0] == 'last_queried_timestamp'
-        assert int(after_second_query[0][1]) >= continuation
+
+        with tokens.db.conn.read_ctx() as cursor:
+            # Check that last_queried_timestamp was updated and that there are no duplicates
+            after_second_query = cursor.execute(
+                'SELECT key, value FROM evm_accounts_details',
+            ).fetchall()
+            assert len(after_second_query) == 1
+            assert after_second_query[0][0] == 'last_queried_timestamp'
+            assert int(after_second_query[0][1]) >= continuation
 
 
 def test_cache_is_per_token_type(ethereum_inquirer):
@@ -230,18 +266,18 @@ def test_cache_is_per_token_type(ethereum_inquirer):
         )
 
     with patch_multicall_2(ERC20_INFO_RESPONSE):
-        erc20_token_data = query_token_info(EvmTokenKind.ERC20)
+        erc20_token_data = query_token_info(TokenKind.ERC20)
 
     with patch_multicall_2(ERC721_INFO_RESPONSE):
-        erc721_token_data = query_token_info(EvmTokenKind.ERC721)
+        erc721_token_data = query_token_info(TokenKind.ERC721)
 
     with patch.object(  # disable chain calls
         ethereum_inquirer,
         'multicall_2',
         new=MagicMock(side_effect=AssertionError('Chain calls should not be made')),
     ):
-        erc20_cached_data = query_token_info(EvmTokenKind.ERC20)
-        erc721_cached_data = query_token_info(EvmTokenKind.ERC721)
+        erc20_cached_data = query_token_info(TokenKind.ERC20)
+        erc721_cached_data = query_token_info(TokenKind.ERC721)
 
     assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6)
     assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0)
@@ -462,7 +498,7 @@ def test_erc721_token_ownership_verification(
         evm_inquirer=ethereum_inquirer,
         evm_address=(collection_address := string_to_evm_address('0xD3D9ddd0CF0A5F0BFB8f7fcEAe075DF687eAEBaB')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='7776',
     )
     token_7809 = get_or_create_evm_token(
@@ -470,7 +506,7 @@ def test_erc721_token_ownership_verification(
         evm_inquirer=ethereum_inquirer,
         evm_address=collection_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='7809',
     )
     # regression test: broken erc721 implementations to ensure token detection
@@ -479,7 +515,7 @@ def test_erc721_token_ownership_verification(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0x0E3A2A1f2146d86A604adc220b4967A898D7Fe07'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='1',
         name='BROKEN #1',
         symbol='BROKEN',
@@ -488,7 +524,7 @@ def test_erc721_token_ownership_verification(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0xFaC7BEA255a6990f749363002136aF6556b31e04'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='2',
         name='BROKEN #2',
         symbol='BROKEN',
@@ -602,7 +638,7 @@ def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
                 userdb=blockchain.database,
                 evm_address=token,
                 chain_id=chain_id,
-                token_kind=EvmTokenKind.ERC721,
+                token_kind=TokenKind.ERC721,
                 symbol='xxx',
                 name='yyy',
                 decimals=18,

@@ -279,7 +279,9 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
         write_cursor.execute('DROP TABLE trades')
         write_cursor.execute('DROP TABLE trade_type')
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "%_trades_%"')
+        write_cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('%\\_trades\\_%', '\\'),
+        )
 
     @progress_step(description='Replacing specific history note locations with HISTORY')
     def _replace_history_note_locations(write_cursor: 'DBCursor') -> None:

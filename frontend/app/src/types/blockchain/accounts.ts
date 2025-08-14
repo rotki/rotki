@@ -1,8 +1,8 @@
+import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { Module } from '@/types/modules';
-import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export interface AddressData {
   readonly type: 'address';

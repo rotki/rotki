@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export interface ActionResult<T> {
   readonly result: T;
@@ -10,7 +10,16 @@ export enum EvmTokenKind {
   ERC721 = 'erc721',
 }
 
-const EvmTokenKindEnum = z.nativeEnum(EvmTokenKind);
+const EvmTokenKindEnum = z.enum(EvmTokenKind);
+
+export enum SolanaTokenKind {
+  SPL_TOKEN = 'spl token',
+  SPL_NFT = 'spl nft',
+}
+
+const SolanaTokenKindEnum = z.enum(SolanaTokenKind);
+
+const TokenKind = z.union([EvmTokenKindEnum, SolanaTokenKindEnum]);
 
 const UnderlyingToken = z.object({
   address: z.string(),
@@ -29,7 +38,7 @@ const BaseAsset = z.object({
   started: z.number().nullish(),
   swappedFor: z.string().nullish(),
   symbol: z.string().nullish(),
-  tokenKind: EvmTokenKindEnum.nullish(),
+  tokenKind: TokenKind.nullish(),
 });
 
 export const SupportedAsset = BaseAsset.extend({

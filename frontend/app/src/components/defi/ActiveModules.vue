@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { assert, type Nullable } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { useConfirmStore } from '@/store/confirm';
@@ -6,7 +7,6 @@ import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import { assert, type Nullable } from '@rotki/common';
 
 interface ModuleWithStatus {
   readonly identifier: Module;

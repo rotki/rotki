@@ -1,18 +1,18 @@
-import type { GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { AddSwapEventPayload, EditSwapEventPayload, SwapEvent } from '@/types/history/events';
-import type { TradeLocationData } from '@/types/history/trade/location';
 import type { Pinia } from 'pinia';
+import type { GroupEventData } from '@/modules/history/management/forms/form-types';
+import type { AddSwapEventPayload, EditSwapEventPayload, SwapEvent } from '@/types/history/events/schemas';
+import type { TradeLocationData } from '@/types/history/trade/location';
+import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import dayjs from 'dayjs';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 import { useMessageStore } from '@/store/message';
 import { setupDayjs } from '@/utils/date';
-import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
-import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
-import dayjs from 'dayjs';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { nextTick } from 'vue';
 
 vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),
@@ -292,11 +292,16 @@ describe('forms/SwapEventForm', () => {
       success: false,
     });
 
+    await wrapper.find('[data-cy=spend-amount] input').setValue('4.5');
+
+    await vi.advanceTimersToNextTimerAsync();
+
     const saveMethod = wrapper.vm.save;
 
     const saveResult = await saveMethod();
     await nextTick();
 
+    expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
     expect(wrapper.find('[data-cy=location] .details').text()).toBe('Location is required');
   });

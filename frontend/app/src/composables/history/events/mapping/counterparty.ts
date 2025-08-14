@@ -1,10 +1,15 @@
-import type { ActionDataEntry } from '@/types/action';
 import type { MaybeRef } from '@vueuse/core';
+import type { ActionDataEntry } from '@/types/action';
+import { isValidEthAddress, toHumanReadable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useScramble } from '@/composables/scramble';
 import { useNotificationsStore } from '@/store/notifications';
-import { isValidEthAddress, toHumanReadable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
+
+interface Counterparty {
+  image: string;
+  label: string;
+}
 
 export const useHistoryEventCounterpartyMappings = createSharedComposable(() => {
   const { getHistoryEventCounterpartiesData } = useHistoryEventsApi();
@@ -36,6 +41,28 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
       });
     }
   };
+
+  function getBaseCounterpartyData(counterparty: string, isDark?: boolean): Counterparty | undefined {
+    const baseImagePath = '/assets/images/protocols/';
+    const excludedCounterparty = ['gas'];
+    if (excludedCounterparty.includes(counterparty))
+      return undefined;
+
+    if (counterparty && !isValidEthAddress(counterparty)) {
+      const data = get(dataEntries).find(({ identifier, matcher }: ActionDataEntry) => matcher
+        ? matcher(counterparty)
+        : identifier.toLowerCase() === counterparty.toLowerCase());
+
+      if (data) {
+        const imageFile = data.darkmodeImage && isDark ? data.darkmodeImage : data.image;
+        return {
+          image: baseImagePath + imageFile,
+          label: data.label || toHumanReadable(counterparty, 'capitalize'),
+        };
+      }
+    }
+    return undefined;
+  }
 
   const getEventCounterpartyData = (
     event: MaybeRef<{ counterparty: string | null; address?: string | null }>,
@@ -111,6 +138,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
   return {
     counterparties,
     fetchCounterparties,
+    getBaseCounterpartyData,
     getCounterpartyData,
     getEventCounterpartyData,
   };

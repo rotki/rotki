@@ -3,6 +3,7 @@ import type {
   EthereumValidator,
   XpubData,
 } from '@/types/blockchain/accounts';
+import { Blockchain } from '@rotki/common';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -13,7 +14,6 @@ import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';
-import { Blockchain } from '@rotki/common';
 
 type ShowConfirmationParams = {
   type: 'account';

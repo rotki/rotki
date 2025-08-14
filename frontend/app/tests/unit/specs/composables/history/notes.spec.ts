@@ -1,7 +1,7 @@
-import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { bigNumberify, Blockchain, isEvmIdentifier } from '@rotki/common';
 import { describe, expect, it, vi } from 'vitest';
+import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
@@ -20,7 +20,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
 describe('composables::history/notes', () => {
   setActivePinia(createPinia());
   const { formatNotes } = useHistoryEventNote();
-  const store = useSessionSettingsStore();
+  const store = useFrontendSettingsStore();
 
   it('normal text', () => {
     const notes = 'Normal text';
@@ -159,6 +159,40 @@ describe('composables::history/notes', () => {
       {
         type: NoteType.ADDRESS,
         address,
+        showHashLink: true,
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
+  it('with BTC or BCH addresses', () => {
+    const address1 = 'bc1qdf3av8da4up78shctfual6j6cv3kyvcw6qk3fz';
+    const address2 = 'qz5hccuhr036drq7m3mah3qf5x3f5phv05v5rtu5z2';
+    const rawAddress3 = 'qq0mjr27zmddcyclnsmuyj4cg5s846vtaycstug867';
+    const address3 = `bitcoincash:${rawAddress3}`;
+    const notes = `Address ${address1},${address2},${address3}`;
+
+    const formatted = get(formatNotes({ notes }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Address',
+      },
+      {
+        type: NoteType.ADDRESS,
+        address: address1,
+        showHashLink: true,
+      },
+      {
+        type: NoteType.ADDRESS,
+        address: address2,
+        showHashLink: true,
+      },
+      {
+        type: NoteType.ADDRESS,
+        address: rawAddress3,
         showHashLink: true,
       },
     ];
@@ -375,8 +409,8 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  it('scramble IBAN', () => {
-    store.update({ scrambleData: false });
+  it('scramble IBAN', async () => {
+    await store.updateSetting({ scrambleData: false });
     const iban = 'DE88 5678 9012 1234 345 67';
     const notes = `Send 8,325.00 EURe via bank transfer to Rotki Solutions GmbH (${iban}) with memo "for salaries and insurance"`;
 
@@ -389,7 +423,7 @@ describe('composables::history/notes', () => {
 
     expect(notesToString).toContain(iban);
 
-    store.update({ scrambleData: true });
+    await store.updateSetting({ scrambleData: true });
     formatted = get(notesData);
     notesToString = formatted
       .filter(item => item.type === NoteType.WORD)

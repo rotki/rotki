@@ -9,12 +9,14 @@ from .tokens import GnosisTokens
 from .transactions import GnosisTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.premium.premium import Premium
+
     from .node_inquirer import GnosisInquirer
 
 
 class GnosisManager(EvmManager, CurveManagerMixin):
 
-    def __init__(self, node_inquirer: 'GnosisInquirer') -> None:
+    def __init__(self, node_inquirer: 'GnosisInquirer', premium: 'Premium | None' = None) -> None:
         transactions = GnosisTransactions(
             gnosis_inquirer=node_inquirer,
             database=node_inquirer.database,
@@ -34,6 +36,7 @@ class GnosisManager(EvmManager, CurveManagerMixin):
                 database=node_inquirer.database,
                 gnosis_inquirer=node_inquirer,
                 transactions=transactions,
+                premium=premium,
             ),
             accounting_aggregator=GnosisAccountingAggregator(
                 node_inquirer=node_inquirer,

@@ -1,11 +1,11 @@
+import type { TimeFramePeriod } from '@rotki/common';
 import type { CamelCase } from '@/types/common';
 import type { Module } from '@/types/modules';
-import type { TimeFramePeriod } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const PeriodicClientQueryResult = z.object({
-  connectedNodes: z.record(z.array(z.string())),
-  failedToConnect: z.record(z.array(z.string())).optional(),
+  connectedNodes: z.record(z.string(), z.array(z.string())),
+  failedToConnect: z.record(z.string(), z.array(z.string())).optional(),
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
 });
@@ -42,9 +42,6 @@ export interface ChangePasswordPayload {
 }
 
 export interface SessionSettings {
-  privacyMode: PrivacyMode;
-  scrambleData: boolean;
-  scrambleMultiplier: number;
   timeframe: TimeFramePeriod;
   animationsEnabled: boolean;
 }

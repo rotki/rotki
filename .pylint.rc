@@ -5,6 +5,7 @@ suggestion-mode=yes
 unsafe-load-any-extension=no
 init-hook="import sys; sys.path.append('.')"
 load-plugins=tools.pylint.log_checker,tools.pylint.not_checker,pylint.extensions.comparison_placement, pylint.extensions.consider_refactoring_into_while_condition
+ignored-modules=rsqlite
 
 # Blacklist files or directories (basenames, not paths)
 ignore=
@@ -126,5 +127,3 @@ contextmanager-decorators=contextlib.contextmanager
 # List of class names for which member attributes should not be checked
 ignored-classes=
 
-# List of module names for which member attributes should not be checked
-ignored-modules=

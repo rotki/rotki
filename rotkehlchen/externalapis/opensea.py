@@ -30,7 +30,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int,
     deserialize_optional_to_optional_fval,
 )
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, ExternalService
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, ExternalService, TokenKind
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.network import create_session
 
@@ -250,12 +250,15 @@ class Opensea(ExternalServiceWithApiKey):
                         userdb=self.db,
                         evm_address=deserialize_evm_address(last_sale['payment_token']['address']),
                         chain_id=ChainID.ETHEREUM,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         evm_inquirer=self.ethereum_inquirer,
                     )
 
                 amount = asset_normalized_value(
-                    amount=deserialize_int(last_sale['total_price']),
+                    amount=deserialize_int(
+                        value=last_sale['total_price'],
+                        location='opensea last sale price',
+                    ),
                     asset=payment_asset,
                 )
                 eth_price = deserialize_fval(

@@ -104,7 +104,10 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Removing gitcoin.')
     def _remove_gitcoin(cursor: 'DBCursor') -> None:
         cursor.execute('DELETE from ledger_actions WHERE identifier IN (SELECT parent_id FROM ledger_actions_gitcoin_data)')  # noqa: E501
-        cursor.execute("DELETE from used_query_ranges WHERE name LIKE 'gitcoingrants_%'")
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('gitcoingrants\\_%', '\\'),
+        )
         cursor.execute('DROP TABLE IF exists gitcoin_grant_metadata')
         cursor.execute('DROP TABLE IF exists ledger_actions_gitcoin_data')
         cursor.execute('DROP TABLE IF exists gitcoin_tx_type')

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;

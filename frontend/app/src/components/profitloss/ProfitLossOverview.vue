@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { ProfitLossOverviewItem, Report } from '@/types/reports';
+import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { calculateTotalProfitLoss } from '@/utils/report';
-import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

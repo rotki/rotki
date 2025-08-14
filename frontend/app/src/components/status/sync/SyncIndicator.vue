@@ -14,9 +14,15 @@ import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 import { TaskType } from '@/types/task-type';
 
+const syncSettingMenuOpen = ref<boolean>(false);
+const pending = ref<boolean>(false);
+const visible = ref<boolean>(false);
+
 const { t } = useI18n({ useScope: 'global' });
-const { logout } = useLogout();
+
+const { premium, premiumSync } = storeToRefs(usePremiumStore());
 const { lastDataUpload } = storeToRefs(usePeriodicStore());
+
 const {
   cancelSync,
   clearUploadStatus,
@@ -25,17 +31,19 @@ const {
   forceSync,
   showSyncConfirmation,
   syncAction,
+  uploadProgress,
   uploadStatus,
 } = useSync();
+const { cancelTaskByTaskType, useIsTaskRunning } = useTaskStore();
+const { logout } = useLogout();
 const { href, onLinkClick } = useLinks();
 
-const { premium, premiumSync } = storeToRefs(usePremiumStore());
-
-const pending = ref<boolean>(false);
-const visible = ref<boolean>(false);
+const isSyncing = useIsTaskRunning(TaskType.FORCE_SYNC);
 
 const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
+
 const textChoice = computed<number>(() => (get(syncAction) === SYNC_UPLOAD ? 1 : 2));
+
 const message = computed<string>(() =>
   get(syncAction) === SYNC_UPLOAD
     ? t('sync_indicator.upload_confirmation.message_upload')
@@ -55,6 +63,26 @@ const icon = computed(() => {
   return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
 });
 
+const uploadProgressIcon = computed<string>(() => {
+  const progress = get(uploadProgress);
+  if (!progress)
+    return 'lu-cloud-fill';
+
+  const tick = get(counter) % 2 === 0;
+
+  switch (progress.type) {
+    case 'compressing':
+      return tick ? 'lu-folder-shrink-1' : 'lu-folder-shrink-2';
+    case 'encrypting':
+      return 'lu-shield';
+    case 'uploading': {
+      return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
+    }
+    default:
+      return 'lu-cloud-fill';
+  }
+});
+
 const tooltip = computed<string>(() => {
   if (get(uploadStatus)) {
     const title = t('sync_indicator.db_upload_result.title');
@@ -66,6 +94,24 @@ const tooltip = computed<string>(() => {
   return t('sync_indicator.menu_tooltip');
 });
 
+const currentProgressText = computed<string>(() => {
+  if (!isDefined(uploadProgress)) {
+    return '';
+  }
+
+  const type = get(uploadProgress).type;
+  switch (type) {
+    case 'compressing':
+      return t('sync_indicator.upload_progress.compressing');
+    case 'encrypting':
+      return t('sync_indicator.upload_progress.encrypting');
+    case 'uploading':
+      return t('sync_indicator.upload_progress.uploading');
+    default:
+      return '';
+  }
+});
+
 function showConfirmation(action: SyncAction) {
   set(visible, false);
   showSyncConfirmation(action);
@@ -75,22 +121,38 @@ async function performSync() {
   if (get(syncAction) === SYNC_UPLOAD)
     clearUploadStatus();
 
-  resume();
   set(pending, true);
   await forceSync(logout);
   set(pending, false);
-  pause();
 }
 
-const { useIsTaskRunning } = useTaskStore();
-const isSyncing = useIsTaskRunning(TaskType.FORCE_SYNC);
+async function cancelForceSync() {
+  await cancelTaskByTaskType(TaskType.FORCE_SYNC);
+  await nextTick(() => clearUploadStatus());
+}
+
+const runCounter = computed(() => {
+  if (get(pending)) {
+    return true;
+  }
+
+  const type = get(uploadProgress)?.type;
+  return type && ['compressing', 'uploading'].includes(type);
+});
 
 watch(isSyncing, (current, prev) => {
   if (current !== prev && !current)
     cancelSync();
 });
 
-const syncSettingMenuOpen = ref<boolean>(false);
+watchImmediate(runCounter, (runCounter) => {
+  if (runCounter) {
+    resume();
+  }
+  else {
+    pause();
+  }
+});
 </script>
 
 <template>
@@ -121,13 +183,18 @@ const syncSettingMenuOpen = ref<boolean>(false);
               color="warning"
             />
             <RuiIcon
-              v-else-if="!premiumSync"
-              name="lu-cloud-off-fill"
+              v-else-if="uploadProgress"
+              :name="uploadProgressIcon"
+              color="primary"
             />
             <RuiIcon
               v-else-if="isSyncing"
               :name="icon"
               color="primary"
+            />
+            <RuiIcon
+              v-else-if="premiumSync"
+              name="lu-cloud-sync-fill"
             />
             <RuiIcon
               v-else
@@ -155,7 +222,48 @@ const syncSettingMenuOpen = ref<boolean>(false);
           <SyncSettings v-model="syncSettingMenuOpen" />
         </div>
         <RuiAlert
-          v-if="uploadStatus"
+          v-if="uploadProgress"
+          type="info"
+          outlined
+          class="border border-rui-info"
+        >
+          <div class="flex flex-col gap-2">
+            <div class="font-medium leading-5">
+              {{ currentProgressText }}
+            </div>
+            <RuiProgress
+              v-if="uploadProgress.type === 'uploading'"
+              color="primary"
+              :value="(uploadProgress.currentChunk / uploadProgress.totalChunks) * 100"
+              show-label
+            />
+            <div
+              v-if="uploadProgress.type === 'uploading'"
+              class="text-rui-text-secondary text-sm"
+            >
+              {{
+                t('sync_indicator.upload_progress.chunk', {
+                  current: uploadProgress.currentChunk,
+                  total: uploadProgress.totalChunks,
+                })
+              }}
+            </div>
+          </div>
+          <div
+            v-if="pending && uploadProgress"
+            class="flex flex-row-reverse -mb-1"
+          >
+            <RuiButton
+              variant="text"
+              color="primary"
+              @click="cancelForceSync()"
+            >
+              {{ t('common.actions.cancel') }}
+            </RuiButton>
+          </div>
+        </RuiAlert>
+        <RuiAlert
+          v-else-if="uploadStatus"
           type="warning"
           outlined
           class="border border-rui-warning"

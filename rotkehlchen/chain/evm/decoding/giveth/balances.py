@@ -95,7 +95,7 @@ class GivethCommonBalances(ProtocolWithBalance):
                 token_amount=raw_amount,
                 token_decimals=DEFAULT_TOKEN_DECIMALS,  # GIV has 18 decimals
             )
-            balances[arguments[idx]].assets[giv_asset] += Balance(
+            balances[arguments[idx]].assets[giv_asset][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=amount * asset_price,
             )

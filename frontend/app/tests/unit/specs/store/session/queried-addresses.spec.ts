@@ -1,9 +1,9 @@
 import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
 import { useMessageStore } from '@/store/message';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Module } from '@/types/modules';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('session:queried addresses store', () => {
   setActivePinia(createPinia());

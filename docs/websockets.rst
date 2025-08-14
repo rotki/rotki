@@ -207,6 +207,54 @@ Having API keys for some services (such as etherscan) is crucial for rotki to wo
 - ``location``: For services like etherscan that require different API keys for different locations this is the location for which the API key is needed. If a service does not require a location then this key will be missing.
 
 
+Query transactions
+=========================
+
+While querying transactions the backend sends ws messages giving status updates. There are different schemas depending on the type of transactions being queried. This is specified by the `subtype` key which can have a value of either `evm` or `bitcoin`.
+
+For EVM transactions:
+
+::
+
+    {
+        "type": "transaction_status",
+        "data": {
+            "address": "0x123...",
+            "chain": "optimism",
+            "subtype": "evm",
+            "period": [1600000000, 1700000000],
+            "status": "querying_transactions"
+        }
+    }
+
+
+- ``address``: The EVM address being queried for transactions.
+- ``chain``: The EVM chain for which transactions are being queried.
+- ``subtype``: Labels which type of transaction status message this is. Will be `evm` for EVM transactions.
+- ``period``: The time range that is being queried.
+- ``status``: Either `querying_transactions_started`, `querying_transactions`, `querying_internal_transactions`, `querying_evm_tokens_transactions`, or `querying_transactions_finished`.
+
+For Bitcoin transactions:
+
+::
+
+    {
+        "type": "transaction_status",
+        "data": {
+            "addresses": ["bc1q...", "bc1q..."],
+            "chain": "btc",
+            "subtype": "bitcoin",
+            "status": "querying_transactions_started"
+        }
+    }
+
+
+- ``addresses``: The list of Bitcoin addresses being queried for transactions.
+- ``chain``: The chain for which transactions are being queried. Will be `btc` for Bitcoin transactions.
+- ``subtype``: Labels which type of transaction status message this is. Will be `bitcoin` for Bitcoin transactions.
+- ``status``: Either `querying_transactions_started`, `querying_transactions_finished`, `decoding_transactions_started`, or `decoding_transactions_finished`.
+
+
 Query new history events
 =========================
 
@@ -215,7 +263,7 @@ In addition to history from evm transactions we need to query events from exchan
 ::
 
     {
-        "type": "querying_events_status",
+        "type": "history_events_status",
         "data": {
             "status": "querying_events_started",
             "location": "kraken",
@@ -235,9 +283,9 @@ Finally the backend provides more granular information to know what interval of 
 ::
 
     {
-        "type": "querying_events_status",
+        "type": "history_events_status",
         "data": {
-            "status": "history_event_status",
+            "status": "querying_events_status_update",
             "location": "kraken",
             "event_type": "history_query",
             "name": "My kraken exchange",
@@ -270,6 +318,28 @@ If at some point backend detects that balances need to be refreshed, it will sen
 
 - ``type``: Balances section that needs a refresh. Valid values are: ``blockchain_balances``.
 - ``blockchain``: Returned only for section: ``blockchain_balances``. The blockchain for which balances need to be refreshed. Valid values are: ``optimism``, ``eth``.
+
+
+Premium Database Upload Progress
+========================================
+
+When the backend uploads a premium user DB messages of this type are sent to notify the frontend of the progress.
+
+::
+
+    {
+        "type": "database_upload_progress",
+        "data": {
+            "type": "uploading",
+            "current_chunk": 1,
+            "total_chunks": 4,
+        }
+    }
+
+
+- ``type``: Which part of the upload process is currently in progress. Valid values are: ``compressing``, ``encrypting``, and ``uploading``. Only ``uploading`` has any other data included.
+- ``current_chunk``: The index of the current chunk being uploaded.
+- ``total_chunks``: The total number of chunks to be uploaded.
 
 
 Premium Database Upload result
@@ -529,3 +599,41 @@ Track the progress for when we need to query prices at multiple timestamps.
 - ``total``: Total number of combinations asset-price that will be queried.
 - ``processed``: Number of prices queried.
 - ``subtype``: Set to "multiple_prices_query_status" to identify prices queries.
+
+
+Solana Tokens Manual Migration
+=================================
+
+Solana tokens that require manual migration by the user.
+
+::
+
+    {
+        "type": "progress_updates",
+        "data": {
+            "identifiers": ['HODL', 'TRUMP']
+        }
+    }
+
+
+- ``identifiers``: Asset identifiers that need to manually migrated to solana tokens.
+
+
+Binance Missing Market Pairs
+=================================
+
+Trades were queried from a binance exchange, but no market pairs are selected to query.
+
+::
+
+    {
+        "type": "binance_pairs_missing",
+        "data": {
+            "location": "binance",
+            "name": "Binance 1"
+        }
+    }
+
+
+- ``location``: Location of the binance exchange. Either ``binance`` or ``binanceus``
+- ``name``: Name of the exchange.

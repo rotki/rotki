@@ -199,7 +199,8 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """Delete the table with balancer events"""
         write_cursor.execute('DROP TABLE yearn_vaults_events')
         write_cursor.execute(
-            "DELETE FROM used_query_ranges WHERE name LIKE 'yearn_vaults%'",
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('yearn\\_vaults%', '\\'),
         )
 
     @progress_step(description='Deleting orphan events.')

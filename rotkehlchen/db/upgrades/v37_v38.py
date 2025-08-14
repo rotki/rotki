@@ -69,7 +69,10 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         Delete aave events from the database since we don't need them anymore
         """
         write_cursor.execute('DROP TABLE IF EXISTS aave_events;')
-        write_cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'aave_events%';")
+        write_cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('aave\\_events%', '\\'),
+        )
 
     @progress_step(description='Deleting Uniswap/Sushiswap events.')
     def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
@@ -78,12 +81,12 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """
         write_cursor.execute('DROP TABLE IF EXISTS amm_events;')
         write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            ('uniswap_events_%',),
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('uniswap\\_events\\_%', '\\'),
         )
         write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            ('sushiswap_events_%',),
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('sushiswap\\_events\\_%', '\\'),
         )
 
     @progress_step(description='Resetting decoded events.')

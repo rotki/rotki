@@ -6,7 +6,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind
+from rotkehlchen.types import SPAM_PROTOCOL, ChainID, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -42,7 +42,7 @@ def _save_or_update_spam_assets(
         evm_token = EvmToken.initialize(
             address=info['address'],
             chain_id=chain,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             name=info.get('name', MISSING_NAME_SPAM_TOKEN),
             decimals=info.get('decimals', 18),
             symbol=info.get('symbol', MISSING_SYMBOL_SPAM_TOKEN),

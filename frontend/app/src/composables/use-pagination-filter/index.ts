@@ -1,12 +1,15 @@
 /* eslint-disable max-lines */
-import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
-import type { Collection } from '@/types/collection';
-import type { PaginationRequestPayload } from '@/types/common';
-import type { LocationQuery, RawLocationQuery } from '@/types/route';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
+import type { Collection } from '@/types/collection';
+import type { PaginationRequestPayload } from '@/types/common';
+import type { LocationQuery, RawLocationQuery } from '@/types/route';
+import { Severity } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import {
   applyPaginationDefaults,
@@ -21,9 +24,6 @@ import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher }
 import { defaultCollectionState } from '@/utils/collection';
 import { nonEmptyProperties } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { Severity } from '@rotki/common';
-import { isEqual } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 
 type Params<
   TItem extends NonNullable<unknown>,

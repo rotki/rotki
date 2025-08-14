@@ -69,7 +69,7 @@ class HedgeyBalances(ProtocolWithBalance):
         )
         for idx, entry in enumerate(result):
             token = args[idx][1]
-            balances[args[idx][0]].assets[token] += Balance(
+            balances[args[idx][0]].assets[token][self.counterparty] += Balance(
                 amount=(amount := token_normalized_value(token_amount=entry[0], token=token)),
                 usd_value=amount * Inquirer.find_usd_price(token),
             )

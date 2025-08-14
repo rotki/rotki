@@ -2,21 +2,23 @@
 import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swap-event-form';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent, SwapSubEventModel } from '@/types/history/events';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { useHistoryEvents } from '@/composables/history/events';
-import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
-import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { toSubEvent, useDateTime } from '@/modules/history/management/forms/utils';
-import { useMessageStore } from '@/store/message';
-import { toMessages } from '@/utils/validation';
+import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { useHistoryEvents } from '@/composables/history/events';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
+import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
+import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import { toSubEvent } from '@/modules/history/management/forms/utils';
+import { useMessageStore } from '@/store/message';
+import { useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
@@ -49,7 +51,11 @@ const hasFee = ref<boolean>(false);
 const identifiers = ref<number[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
 
-const datetime = useDateTime(states);
+const spendListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('spendListRef');
+const receiveListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('receiveListRef');
+const feeListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('feeListRef');
+
+const timestamp = useRefPropVModel(states, 'timestamp');
 
 const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
@@ -79,6 +85,7 @@ const v$ = useVuelidate(
 useFormStateWatcher(states, stateUpdated);
 const { setMessage } = useMessageStore();
 const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
+const { captureEditModeState, shouldSkipSave } = useEditModeStateTracker();
 
 function handleValidationErrors(message: ValidationErrors | string) {
   if (typeof message === 'string') {
@@ -91,9 +98,44 @@ function handleValidationErrors(message: ValidationErrors | string) {
   }
 }
 
+async function submitAllPrices(): Promise<boolean> {
+  const lists = [
+    get(spendListRef),
+    get(receiveListRef),
+    get(feeListRef),
+  ].filter(Boolean);
+
+  for (const list of lists) {
+    if (!list)
+      continue;
+    const subEvents = list.getSubEventRefs();
+    for (const subEvent of subEvents) {
+      const result = await subEvent.submitPrice();
+      if (result && !result.success) {
+        handleValidationErrors(result.message || t('transactions.events.form.asset_price.failed'));
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
     return false;
+  }
+
+  const isEditMode = get(identifiers).length > 0;
+
+  // Submit prices from all nested HistoryEventAssetPriceForm components
+  const pricesSubmitted = await submitAllPrices();
+  if (!pricesSubmitted) {
+    return false;
+  }
+
+  if (shouldSkipSave(isEditMode, get(states))) {
+    return true;
   }
 
   const payload: AddEvmSwapEventPayload = { ...get(states) };
@@ -106,13 +148,13 @@ async function save(): Promise<boolean> {
     payload.address = undefined;
   }
 
-  const result = get(identifiers).length > 0
+  const result = isEditMode
     ? await editHistoryEvent({
-      ...payload,
-      ...{
-        identifiers: get(identifiers),
-      },
-    })
+        ...payload,
+        ...{
+          identifiers: get(identifiers),
+        },
+      })
     : await addHistoryEvent(payload);
 
   if (result.success) {
@@ -166,6 +208,8 @@ watchImmediate(() => props.data, (data) => {
       timestamp: firstSpend.timestamp,
       txHash: firstSpend.txHash,
     });
+
+    captureEditModeState(get(states));
   }
 });
 
@@ -186,12 +230,12 @@ defineExpose({
 <template>
   <div>
     <EventDateLocation
-      v-model:datetime="datetime"
+      v-model:timestamp="timestamp"
       v-model:location="states.location"
       location-disabled
       :error-messages="{
         location: toMessages(v$.location),
-        datetime: toMessages(v$.timestamp),
+        timestamp: toMessages(v$.timestamp),
       }"
       @blur="v$[$event].$touch()"
     />
@@ -212,18 +256,22 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
+      ref="spendListRef"
       v-model="states.spend"
       data-cy="spend"
       :location="states.location"
+      :timestamp="timestamp"
       type="spend"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
+      ref="receiveListRef"
       v-model="states.receive"
       data-cy="receive"
       :location="states.location"
+      :timestamp="timestamp"
       type="receive"
     />
 
@@ -237,10 +285,12 @@ defineExpose({
     />
 
     <SwapSubEventList
+      ref="feeListRef"
       v-model="states.fee"
       data-cy="fee"
       :location="states.location"
       :disabled="!hasFee"
+      :timestamp="timestamp"
       type="fee"
     />
 
@@ -252,7 +302,7 @@ defineExpose({
       variant="outlined"
       data-cy="address"
       :label="t('transactions.events.form.contract_address.label')"
-      :error-messages="errorMessages.address"
+      :error-messages="toMessages(v$.address)"
       @blur="v$.address.$touch()"
     />
 

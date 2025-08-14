@@ -13,6 +13,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.constants.misc import USERDB_NAME
+from rotkehlchen.db.checks import db_script_normalizer
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import InputError
@@ -203,3 +204,13 @@ def clean_ignored_assets(database: DBHandler):
 def column_exists(cursor: 'DBCursor', table_name: str, column_name: str) -> bool:
     columns = [row[1] for row in cursor.execute(f'PRAGMA table_info({table_name})')]
     return column_name in columns
+
+
+def index_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bool:
+    exists: bool = cursor.execute(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?", (name,),
+    ).fetchone()[0] == 1
+    if exists and schema is not None:
+        cursor.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name=?", (name,))
+        return db_script_normalizer(cursor.fetchone()[0].lower()) == db_script_normalizer(schema.lower())  # noqa: E501
+    return exists

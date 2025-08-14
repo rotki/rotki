@@ -2,6 +2,7 @@ import logging
 import subprocess  # noqa: S404  # is only used to execute rotki code here
 
 import gevent
+import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
@@ -48,6 +49,7 @@ def get_identifier_from_stdout(stdout: str) -> str | None:
     return None
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_db_persistence_after_search(messages_aggregator):
     """Test that manual prices of a newly added asset are saved in the global database,
     when doing an asset search before the price is added.

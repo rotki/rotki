@@ -3,8 +3,8 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { usePrivacyMode } from '@/composables/privacy';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { generateRandomScrambleMultiplier } from '@/utils/session';
+import { useScrambleSetting } from '@/composables/scramble-settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -27,21 +27,26 @@ const labels = [
 
 const { changePrivacyMode, privacyMode, privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 
-const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
+const { persistPrivacySettings } = storeToRefs(useFrontendSettingsStore());
 
-const scrambleData = ref<boolean>(false);
-const scrambleMultiplier = ref<string>('0');
+const {
+  enabled,
+  handleMultiplierUpdate,
+  randomMultiplier,
+  scrambleData,
+  scrambleMultiplier,
+} = useScrambleSetting();
 
-const randomMultiplier = () => generateRandomScrambleMultiplier().toString();
+const persistPrivacy = ref<boolean>(false);
+const settingMenuOpen = ref<boolean>(false);
 
 function setData() {
-  set(scrambleData, get(enabled));
-  set(scrambleMultiplier, get(multiplier).toString());
+  set(persistPrivacy, get(persistPrivacySettings));
 }
 
 onMounted(setData);
 
-watch([enabled, multiplier], setData);
+watch(persistPrivacySettings, setData);
 </script>
 
 <template>
@@ -50,6 +55,7 @@ watch([enabled, multiplier], setData);
       data-cy="privacy-menu-content"
       menu-class="w-[22rem]"
       :popper="{ placement: 'bottom-end' }"
+      :persistent="settingMenuOpen"
     >
       <template #activator="{ attrs }">
         <MenuTooltipButton
@@ -82,99 +88,134 @@ watch([enabled, multiplier], setData);
           />
         </RuiButton>
       </template>
-      <div>
-        <label
-          class="px-4 py-8 flex"
-          for="privacy-mode-slider"
+      <div class="absolute right-4 top-4">
+        <RuiMenu
+          v-model="settingMenuOpen"
+          menu-class="w-[20rem]"
+          :popper="{ placement: 'bottom-end' }"
+          :close-on-content-click="false"
         >
-          <RuiSlider
-            id="privacy-mode-slider"
-            :model-value="privacyMode"
-            class="h-40 w-8"
-            data-cy="privacy-mode-dropdown__input"
-            :step="1"
-            :max="2"
-            :min="0"
-            show-ticks
-            hide-details
-            :tick-size="12"
-            slider-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
-            tick-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
-            vertical
-            @update:model-value="changePrivacyMode($event)"
-          />
-          <div class="flex-1 flex flex-col-reverse justify-stretch -my-7 select-none">
-            <div
-              v-for="(label, index) in labels"
-              :key="label.title"
-              class="flex flex-col flex-1 justify-center gap-0.5 pl-4 cursor-pointer text-rui-grey-500 dark:text-rui-grey-600"
-              :class="{ '!text-rui-primary dark:!text-rui-primary-lighter': privacyMode >= index }"
-              @click="changePrivacyMode(index)"
+          <template #activator="{ attrs }">
+            <RuiButton
+              variant="text"
+              icon
+              v-bind="attrs"
+              data-cy="privacy-settings-menu"
             >
-              <div class="uppercase text-sm font-bold">
-                {{ label.title }}
-              </div>
-              <div class="text-xs">
-                {{ label.description }}
-              </div>
+              <RuiIcon
+                size="16"
+                name="lu-settings"
+              />
+            </RuiButton>
+          </template>
+          <div class="p-4">
+            <SettingsOption
+              #default="{ updateImmediate: updatePersist }"
+              setting="persistPrivacySettings"
+              frontend-setting
+            >
+              <RuiSwitch
+                v-model="persistPrivacy"
+                color="primary"
+                hide-details
+                @update:model-value="updatePersist($event)"
+              >
+                <div class="flex flex-col gap-1">
+                  <span class="text-sm">
+                    {{ t('frontend_settings.persist_privacy.label') }}
+                  </span>
+                  <span class="text-xs text-rui-text-secondary">
+                    {{ t('frontend_settings.persist_privacy.hint') }}
+                  </span>
+                </div>
+              </RuiSwitch>
+            </SettingsOption>
+          </div>
+        </RuiMenu>
+      </div>
+      <label
+        class="px-4 py-8 flex"
+        for="privacy-mode-slider"
+      >
+        <RuiSlider
+          id="privacy-mode-slider"
+          :model-value="privacyMode"
+          class="h-40 w-8"
+          data-cy="privacy-mode-dropdown__input"
+          :step="1"
+          :max="2"
+          :min="0"
+          show-ticks
+          hide-details
+          :tick-size="12"
+          slider-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
+          tick-class="!bg-rui-grey-200 dark:!bg-rui-grey-800"
+          vertical
+          @update:model-value="changePrivacyMode($event)"
+        />
+        <div class="flex-1 flex flex-col-reverse justify-stretch -my-7 select-none">
+          <div
+            v-for="(label, index) in labels"
+            :key="label.title"
+            class="flex flex-col flex-1 justify-center gap-0.5 pl-4 cursor-pointer text-rui-grey-500 dark:text-rui-grey-600"
+            :class="{ '!text-rui-primary dark:!text-rui-primary-lighter': privacyMode >= index }"
+            @click="changePrivacyMode(index)"
+          >
+            <div class="uppercase text-sm font-bold">
+              {{ label.title }}
+            </div>
+            <div class="text-xs">
+              {{ label.description }}
             </div>
           </div>
-        </label>
-        <div class="border-t border-default p-4 flex flex-col gap-4">
-          <SettingsOption
-            #default="{ updateImmediate: updateScramble }"
-            :class="$style.scrambler__toggle"
-            setting="scrambleData"
-            session-setting
-          >
-            <RuiSwitch
-              v-model="scrambleData"
-              color="secondary"
-              size="sm"
-              data-cy="privacy-mode-scramble__toggle"
-              hide-details
-              @update:model-value="updateScramble($event)"
-            >
-              <span class="text-sm">
-                {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
-              </span>
-            </RuiSwitch>
-          </SettingsOption>
-
-          <SettingsOption
-            #default="{ updateImmediate: updateMultiplier }"
-            setting="scrambleMultiplier"
-            :class="$style.scrambler__input"
-            :error-message="t('frontend_settings.scramble.validation.error')"
-            session-setting
-          >
-            <AmountInput
-              v-model="scrambleMultiplier"
-              :label="t('frontend_settings.scramble.multiplier.label')"
-              :disabled="!scrambleData"
-              variant="outlined"
-              color="secondary"
-              data-cy="privacy-mode-scramble__multiplier"
-              hide-details
-              dense
-              @update:model-value="updateMultiplier($event || 1)"
-            >
-              <template #append>
-                <RuiButton
-                  :disabled="!scrambleData"
-                  variant="text"
-                  type="button"
-                  class="-mr-2 !p-2"
-                  data-cy="privacy-mode-scramble__random-multiplier"
-                  icon
-                  @click="updateMultiplier(randomMultiplier())"
-                >
-                  <RuiIcon name="lu-shuffle" />
-                </RuiButton>
-              </template>
-            </AmountInput>
-          </SettingsOption>
         </div>
+      </label>
+      <div class="border-t border-default p-4 flex flex-col gap-4">
+        <SettingsOption
+          #default="{ updateImmediate: updateScramble }"
+          :class="$style.scrambler__toggle"
+          setting="scrambleData"
+          frontend-setting
+        >
+          <RuiSwitch
+            v-model="scrambleData"
+            color="secondary"
+            size="sm"
+            data-cy="privacy-mode-scramble__toggle"
+            hide-details
+            @update:model-value="updateScramble($event)"
+          >
+            <span class="text-sm">
+              {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
+            </span>
+          </RuiSwitch>
+        </SettingsOption>
+
+        <AmountInput
+          v-model="scrambleMultiplier"
+          :label="t('frontend_settings.scramble.multiplier.label')"
+          :disabled="!scrambleData"
+          variant="outlined"
+          color="secondary"
+          data-cy="privacy-mode-scramble__multiplier"
+          hide-details
+          dense
+          @update:model-value="handleMultiplierUpdate($event)"
+        >
+          <template #append>
+            <RuiButton
+              :disabled="!scrambleData"
+              variant="text"
+              type="button"
+              class="-mr-2 !p-2"
+              data-cy="privacy-mode-scramble__random-multiplier"
+              icon
+              @click="handleMultiplierUpdate(randomMultiplier())"
+            >
+              <RuiIcon name="lu-shuffle" />
+            </RuiButton>
+          </template>
+        </AmountInput>
       </div>
     </RuiMenu>
   </div>
@@ -189,16 +230,6 @@ watch([enabled, multiplier], setData);
 .scrambler {
   &__toggle {
     @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px];
-
-    svg {
-      @apply text-white;
-    }
-  }
-
-  &__input {
-    fieldset {
-      @apply rounded-l-none #{!important};
-    }
   }
 }
 

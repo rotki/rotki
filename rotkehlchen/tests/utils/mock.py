@@ -260,16 +260,26 @@ def patch_eth2_requests(eth2, mock_data):
 
 
 def mock_proxies(stack, mocked_proxies):
+    dsr_proxies = mocked_proxies.get('dsr', {})
+    liquity_proxies = mocked_proxies.get('liquity', {})
     stack.enter_context(patch(
-        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_account_proxy',
-        lambda _, address: mocked_proxies.get(address),
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_account_ds_proxy',
+        lambda _, address: dsr_proxies.get(address),
     ))
     stack.enter_context(patch(
-        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_proxy',
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_or_query_ds_proxy',
         lambda _, addresses: {
-            address: mocked_proxies.get(address)
+            address: dsr_proxies.get(address)
             for address in addresses
-            if mocked_proxies.get(address) is not None
+            if dsr_proxies.get(address) is not None
+        },
+    ))
+    stack.enter_context(patch(
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_or_query_liquity_proxy',
+        lambda _, addresses: {
+            address: liquity_proxies.get(address)
+            for address in addresses
+            if liquity_proxies.get(address) is not None
         },
     ))
 

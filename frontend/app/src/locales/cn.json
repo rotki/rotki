@@ -345,16 +345,6 @@
         "title": "編輯 ETH 質押驗證器"
       }
     },
-    "eth2_staking_stats": {
-      "error": {
-        "message": "查询失败，出现以下错误：{message}",
-        "title": "查詢 ETH 質押每日統計數據"
-      },
-      "task": {
-        "description": "查詢您的 ETH 質押每日統計數據",
-        "title": "ETH 質押每日統計數據"
-      }
-    },
     "get_accounts": {
       "error": {
         "description": "查询{blockchain}账户失败：{message}",
@@ -603,11 +593,11 @@
     "transactions": {
       "error": {
         "description": "{address} ({chain}) 查询失败：{error}",
-        "title": "EVM交易查询"
+        "title": "Blockchain交易查询"
       },
       "task": {
         "description": "正在检索 {address} ({chain}) 的交易",
-        "title": "EVM 交易"
+        "title": "Blockchain 交易"
       }
     },
     "transactions_redecode": {
@@ -773,7 +763,7 @@
     },
     "underlying_tokens": "底层代币",
     "validation": {
-      "valid_address": "请输入有效的ETH地址"
+      "valid_address": "请输入有效的地址"
     }
   },
   "asset_icon": {
@@ -1571,11 +1561,7 @@
     "title": "日期格式"
   },
   "date_time_picker": {
-    "default_format": "日期应采用 {dateFormat} [HH:MM:[ss]] 格式",
-    "limit_now": "不能使用未来日期",
-    "timezone_field": {
-      "non_empty": "应指定时区"
-    }
+    "limit_now": "不能使用未来日期"
   },
   "docker_warning": {
     "action": "是的，我明白了",
@@ -1961,7 +1947,6 @@
     }
   },
   "global_search": {
-    "menu_tooltip": "搜索 ({modifier} + {key})",
     "no_actions": "没有找到动作",
     "search_placeholder": "搜索任何内容..."
   },
@@ -3325,7 +3310,7 @@
       "done_end_date": "完成查询 {address} 的所有交易直到 {end}",
       "done_group": "完成查询 {count} 地址的所有交易信息 | 完成查询 {count} 地址的所有交易信息",
       "end_date": "查询 {address} 的 {status} 直到 {end}",
-      "group": "查询 {count} 地址的 evm 事务信息 | 查询 {count} 地址的 evm 事务信息",
+      "group": "查询 {count} 地址的事务信息 | 查询 {count} 地址的 evm 事务信息",
       "latest_period_date_range": "最近成功查询的时间段在 {start} 和 {end} 之间",
       "latest_period_end_date": "最近成功查询的时间段到 {end}",
       "statuses": {
@@ -3333,7 +3318,7 @@
         "querying_internal_transactions": "evm 内部交易",
         "querying_transactions": "evm 交易"
       },
-      "title": "Evm 交易查询状态"
+      "title": "交易查询状态"
     },
     "query_status_events": {
       "date_range": "查询 {start} 和 {end} 之间 {name} 的事件",

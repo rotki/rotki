@@ -7,6 +7,9 @@ from typing import Any, Final
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.errors.defi import DefiPoolError
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_value,
@@ -71,11 +74,18 @@ class CurrentPriceOracleInterface(abc.ABC):
         # simply call query_current_price for each from_asset.
         prices: dict[AssetWithOracles, Price] = {}
         for from_asset in from_assets:
-            if (price := self.query_current_price(
+            try:
+                if (price := self.query_current_price(
                     from_asset=from_asset,
                     to_asset=to_asset,
-            )) != ZERO_PRICE:
-                prices[from_asset] = price
+                )) != ZERO_PRICE:
+                    prices[from_asset] = price
+            except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
+                log.debug(
+                    f'{self.name} failed to query price for {from_asset!s} to {to_asset!s} '
+                    f'due to: {e!s}. Skipping asset.',
+                )
+                continue
 
         return prices
 

@@ -61,10 +61,9 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
         eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EthWithdrawalFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
 
@@ -184,10 +183,9 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(to_ts=Timestamp(1682370000)),
-            has_premium=True,
             group_by_event_ids=False,
         )
 
@@ -379,10 +377,9 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
 
     eth2.detect_exited_validators()
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EthWithdrawalFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
 
@@ -547,13 +544,12 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
     eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex])
     eth2.combine_block_with_tx_events()
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 from_ts=Timestamp(1738537200),  # 03/02/2025
                 to_ts=Timestamp(1738655703),  # 04/02/2025 08:55 UTC
             ),
-            has_premium=True,
             group_by_event_ids=False,
         )
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ManualPriceFormPayload } from '@/types/prices';
+import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
 import { useLatestPrices } from '@/composables/price-manager/latest';
-import { useTemplateRef } from 'vue';
 
 const open = defineModel<boolean>('open', { required: true });
 

@@ -14,7 +14,7 @@ from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import (
@@ -58,6 +58,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -119,6 +120,7 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
@@ -129,6 +131,7 @@ from rotkehlchen.types import (
     AnyBlockchainAddress,
     ApiKey,
     ApiSecret,
+    BlockchainAddress,
     BTCAddress,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
@@ -198,7 +201,7 @@ class DBHandler:
             'version': (int, ROTKEHLCHEN_DB_VERSION),
             'last_write_ts': (int, Timestamp(0)),
             'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
-            'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
+            'main_currency': (Asset, A_USD),
             'ongoing_upgrade_from_version': (int, None),
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
             'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
@@ -328,12 +331,12 @@ class DBHandler:
         # Run upgrades if needed -- only for user DB
         fresh_db = DBUpgradeManager(self).run_upgrades()
         if fresh_db:  # create tables during the first run and add the DB version
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-            cursor = self.conn.cursor()
-            cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(ROTKEHLCHEN_DB_VERSION)),
-            )
+            with self.conn.write_ctx() as write_cursor:
+                write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                    ('version', str(ROTKEHLCHEN_DB_VERSION)),
+                )
 
         # run checks on the database
         self.conn.schema_sanity_check()
@@ -342,24 +345,23 @@ class DBHandler:
         # This logic executes only for the transient db
         self._connect(conn_attribute='conn_transient')
         transient_version = 0
-        cursor = self.conn_transient.cursor()
-        with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
+        with self.conn_transient.read_ctx() as cursor, suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
             result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
             if result is not None:
                 transient_version = int(result[0])
 
-        if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
-            # "upgrade" transient DB
-            tables = list(cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))
-            cursor.executescript('PRAGMA foreign_keys = OFF;')
-            cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
-            cursor.executescript('PRAGMA foreign_keys = ON;')
-        self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
-        cursor.execute(
-            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
-        )
-        self.conn_transient.commit()
+        with self.conn_transient.write_ctx() as write_cursor:
+            if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
+                # "upgrade" transient DB
+                tables = list(write_cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))  # noqa: E501
+                write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+                write_cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
+                write_cursor.executescript('PRAGMA foreign_keys = ON;')
+            write_cursor.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+            )
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -385,7 +387,7 @@ class DBHandler:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> AssetWithOracles:
+    def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> Asset:
         ...
 
     @overload
@@ -422,13 +424,9 @@ class DBHandler:
                 'beacon_rpc_endpoint',
                 'ask_user_upon_size_discrepancy',
             ],
-    ) -> int | Timestamp | bool | AssetWithOracles | list['ExchangeLocationID'] | str | None:
+    ) -> int | Timestamp | bool | Asset | list['ExchangeLocationID'] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
-        cursor.execute(
-            'SELECT value FROM settings WHERE name=?;', (name,),
-        )
-        result = cursor.fetchone()
-        if result is not None:
+        if (result := cursor.execute('SELECT value FROM settings WHERE name=?;', (name,)).fetchone()) is not None:  # noqa: E501
             return deserializer(result[0])  # type: ignore
 
         return default_value  # type: ignore
@@ -509,7 +507,8 @@ class DBHandler:
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            conn.executescript(script)
+            with conn.write_ctx() as write_cursor:
+                write_cursor.executescript(script)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             log.error(
                 f'At change password could not re-key the open {conn_attribute} '
@@ -548,10 +547,11 @@ class DBHandler:
         """
         tempdbpath = Path(tempdbfile.name)
         tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
-        with self.conn.critical_section():
-            # flush the wal file to have up to date information when exporting data
-            self.conn.execute('PRAGMA wal_checkpoint;')
-            self.conn.executescript(
+
+        # flush the wal file to have up to date information when exporting data
+        self.conn.wal_checkpoint()
+        with self.conn.write_ctx() as write_cursor:
+            write_cursor.executescript(
                 f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
                 "SELECT sqlcipher_export('plaintext');"
                 "DETACH DATABASE plaintext;",
@@ -567,7 +567,7 @@ class DBHandler:
         than the one supported.
         - AuthenticationError if the wrong password is given
         """
-        self.conn.execute('PRAGMA wal_checkpoint;')
+        self.conn.wal_checkpoint()
         self.disconnect()
         rdbpath = self.user_data_dir / USERDB_NAME
         # Make copy of existing encrypted DB before removing it
@@ -593,7 +593,8 @@ class DBHandler:
             if self.sqlcipher_version == 3:
                 script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'
             script += "SELECT sqlcipher_export('encrypted');DETACH DATABASE encrypted;"
-            self.conn.executescript(script)
+            with self.conn.write_ctx() as write_cursor:
+                write_cursor.executescript(script)
             self.disconnect()
 
         try:
@@ -655,23 +656,71 @@ class DBHandler:
             DBCacheStatic.LAST_DATA_UPLOAD_TS.value: db_cache.get(DBCacheStatic.LAST_DATA_UPLOAD_TS.value, 0),  # noqa: E501
         }
 
+    @overload
+    def get_static_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheStatic.DOCKER_DEVICE_INFO],
+    ) -> str | None:
+        ...
+
+    @overload
+    def get_static_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[
+                DBCacheStatic.LAST_BALANCE_SAVE,
+                DBCacheStatic.LAST_DATA_UPLOAD_TS,
+                DBCacheStatic.LAST_DATA_UPDATES_TS,
+                DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
+                DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
+                DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
+                DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
+                DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
+                DBCacheStatic.LAST_WITHDRAWALS_EXIT_QUERY_TS,
+                DBCacheStatic.LAST_MONERIUM_QUERY_TS,
+                DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
+                DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS,
+                DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
+                DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
+                DBCacheStatic.LAST_GNOSISPAY_QUERY_TS,
+                DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
+                DBCacheStatic.LAST_DB_UPGRADE,
+            ],
+    ) -> Timestamp | None:
+        ...
+
+    @overload
     def get_static_cache(
             self,
             cursor: 'DBCursor',
             name: DBCacheStatic,
-    ) -> Timestamp | None:
+    ) -> Timestamp | str | None:
+        ...
+
+    def get_static_cache(
+            self,
+            cursor: 'DBCursor',
+            name: DBCacheStatic,
+    ) -> Timestamp | str | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name`. Defaults to `None` if not found"""
-        value = cursor.execute(
+        if (value := cursor.execute(
             'SELECT value FROM key_value_cache WHERE name=?;', (name.value,),
-        ).fetchone()
-        return None if value is None else Timestamp(int(value[0]))
+        ).fetchone()) is None:
+            return None
+
+        # Return string for DOCKER_DEVICE_INFO, timestamp for all others
+        if name == DBCacheStatic.DOCKER_DEVICE_INFO:
+            return value[0]
+
+        return Timestamp(int(value[0]))
 
     def set_static_cache(
             self,
             write_cursor: 'DBCursor',
             name: DBCacheStatic,
-            value: Timestamp,
+            value: Timestamp | str,
     ) -> None:
         """Save the name-value pair of the cache with constant name
         to the `key_value_cache` table of the DB"""
@@ -759,6 +808,15 @@ class DBHandler:
             name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
             **kwargs: Unpack[IndexArgType],
     ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
         ...
 
     def get_dynamic_cache(
@@ -888,11 +946,21 @@ class DBHandler:
     ) -> None:
         ...
 
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
+            value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
             name: DBCacheDynamic,
-            value: int | Timestamp | ChecksumEvmAddress,
+            value: int | Timestamp | ChecksumEvmAddress | str,
             **kwargs: Any,
     ) -> None:
         """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501
@@ -1067,10 +1135,6 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical ETH2 eth2_daily_staking_details data"""
-        write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
-
     def delete_cowswap_trade_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all cowswap trade/orders data from the DB"""
         write_cursor.execute('DELETE FROM cowswap_orders;')
@@ -1087,15 +1151,12 @@ class DBHandler:
         with self.user_write() as cursor:
             if module_name is None:
                 self.delete_loopring_data(cursor)
-                self.delete_eth2_daily_stats(cursor)
                 self.delete_cowswap_trade_data(cursor)
                 self.delete_gnosispay_data(cursor)
                 log.debug('Purged all module data from the DB')
                 return
             elif module_name == 'loopring':
                 self.delete_loopring_data(cursor)
-            elif module_name == 'eth2':
-                self.delete_eth2_daily_stats(cursor)
             elif module_name == 'cowswap':
                 self.delete_cowswap_trade_data(cursor)
             elif module_name == 'gnosis_pay':
@@ -1108,7 +1169,10 @@ class DBHandler:
 
     def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all loopring related data"""
-        write_cursor.execute("DELETE FROM multisettings WHERE name LIKE 'loopring_%';")
+        write_cursor.execute(
+            'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ?',
+            ('loopring\\_%', '\\'),
+        )
 
     def get_used_query_range(self, cursor: 'DBCursor', name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
@@ -1304,6 +1368,10 @@ class DBHandler:
             for address in accounts:
                 self.delete_data_for_evmlike_address(write_cursor, address, blockchain)  # type: ignore
 
+        if blockchain in SUPPORTED_BITCOIN_CHAINS:
+            for address in accounts:
+                self.delete_data_for_bitcoin_address(write_cursor, address, blockchain)  # type: ignore  # mypy doesn't understand the blockchain if check
+
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE object_reference = ?;',
             [(account,) for account in accounts],
@@ -1328,8 +1396,9 @@ class DBHandler:
         last_queried_ts = None
         querystr = (
             "SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? "
-            "AND (key=? OR key=?) AND value NOT IN "
-            "(SELECT value FROM multisettings WHERE name='ignored_asset')"
+            "AND (key=? OR key=?) AND NOT EXISTS "
+            "(SELECT 1 FROM multisettings WHERE name='ignored_asset' AND "
+            "value = evm_accounts_details.value)"
         )
         bindings = (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS)  # noqa: E501
         cursor.execute(querystr, bindings)  # original place https://github.com/rotki/rotki/issues/5432 was seen # noqa: E501
@@ -1402,6 +1471,49 @@ class DBHandler:
             insert_rows,
         )
 
+    def _deserialize_account_blockchain_from_db(
+            self,
+            chain_str: str,
+            account: str,
+    ) -> SupportedBlockchain | None:
+        try:
+            blockchain = SupportedBlockchain.deserialize(chain_str)
+        except DeserializationError:
+            log.warning(f'Unsupported blockchain {chain_str} found in DB. Ignoring...')
+            return None
+
+        if blockchain is None or is_valid_db_blockchain_account(blockchain=blockchain, account=account) is False:  # noqa: E501
+            self.msg_aggregator.add_warning(
+                f'Invalid {chain_str} account in DB: {account}. '
+                f'This should not happen unless the DB was manually modified. '
+                f'Skipping entry. This needs to be fixed manually. If you '
+                f'can not do that alone ask for help in the issue tracker',
+            )
+            return None
+
+        return blockchain
+
+    def get_blockchains_for_accounts(
+            self,
+            cursor: 'DBCursor',
+            accounts: list[BlockchainAddress],
+    ) -> list[tuple[BlockchainAddress, SupportedBlockchain]]:
+        """Gets all blockchains for the specified accounts.
+        Returns a list of tuples containing the address and blockchain entries.
+        """
+        return [
+            (account, blockchain)
+            for entry in cursor.execute(
+                'SELECT blockchain, account FROM blockchain_accounts '
+                f"WHERE account IN ({','.join(['?'] * len(accounts))});",
+                accounts,
+            )
+            if (blockchain := self._deserialize_account_blockchain_from_db(
+                chain_str=entry[0],
+                account=(account := entry[1]),
+            )) is not None
+        ]
+
     def get_evm_accounts(self, cursor: 'DBCursor') -> list[ChecksumEvmAddress]:
         """Returns a list of unique EVM accounts from all EVM chains."""
         placeholders = ','.join('?' * len(SUPPORTED_EVM_CHAINS))
@@ -1418,22 +1530,11 @@ class DBHandler:
         )
         accounts_lists = defaultdict(list)
         for entry in cursor:
-            try:
-                blockchain = SupportedBlockchain.deserialize(entry[0])
-            except DeserializationError:
-                log.warning(f'Unsupported blockchain {entry[0]} found in DB. Ignoring...')
-                continue
-
-            if blockchain is None or is_valid_db_blockchain_account(blockchain=blockchain, account=entry[1]) is False:  # noqa: E501
-                self.msg_aggregator.add_warning(
-                    f'Invalid {entry[0]} account in DB: {entry[1]}. '
-                    f'This should not happen unless the DB was manually modified. '
-                    f'Skipping entry. This needs to be fixed manually. If you '
-                    f'can not do that alone ask for help in the issue tracker',
-                )
-                continue
-
-            accounts_lists[blockchain.get_key()].append(entry[1])
+            if (blockchain := self._deserialize_account_blockchain_from_db(
+                chain_str=entry[0],
+                account=(account := entry[1]),
+            )) is not None:
+                accounts_lists[blockchain.get_key()].append(account)
 
         return BlockchainAccounts(**{x: tuple(y) for x, y in accounts_lists.items()})
 
@@ -1478,7 +1579,7 @@ class DBHandler:
     def get_single_blockchain_addresses(
             self,
             cursor: 'DBCursor',
-            blockchain: SUPPORTED_BITCOIN_CHAINS,
+            blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE,
     ) -> list[BTCAddress]:
         ...
 
@@ -2117,7 +2218,6 @@ class DBHandler:
             entries_table: Literal[
                 'address_book',
                 'evm_transactions',
-                'eth2_daily_staking_details',
                 'entries_notes',
                 'user_notes',
                 'assets',
@@ -2156,8 +2256,8 @@ class DBHandler:
         if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
             write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
             write_cursor.execute(  # queried addresses per module
-                "DELETE FROM multisettings WHERE name LIKE 'queried_address_%' AND value = ?",
-                (address,),
+                'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ? AND value = ?',
+                ('queried\\_address\\_%', '\\', address),
             )
             loopring = DBLoopring(self)
             loopring.remove_accountid_mapping(write_cursor, address)
@@ -2171,8 +2271,8 @@ class DBHandler:
         )
 
         write_cursor.execute(
-            f"DELETE FROM key_value_cache WHERE name LIKE '{EXTRAINTERNALTXPREFIX}_{blockchain.to_chain_id().value}%' AND value = ?",  # noqa: E501
-            (address,),
+            'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ? AND value = ?',
+            (f'{EXTRAINTERNALTXPREFIX}\\_{blockchain.to_chain_id().value}%', '\\', address),
         )
 
         dbtx = DBEvmTx(self)
@@ -2222,6 +2322,24 @@ class DBHandler:
                 f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
                 hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
             )
+
+    def delete_data_for_bitcoin_address(
+            self,
+            write_cursor: 'DBCursor',
+            address: BTCAddress,
+            blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE,
+    ) -> None:
+        """Deletes all bitcoin related data from the DB for a single bitcoin address"""
+        DBHistoryEvents(database=self).delete_location_events(
+            write_cursor=write_cursor,
+            location=Location.from_chain(blockchain),
+            address=address,
+        )
+        self.delete_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK if blockchain == SupportedBlockchain.BITCOIN else DBCacheDynamic.LAST_BCH_TX_BLOCK,  # noqa: E501
+            address=address,
+        )
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
@@ -3431,7 +3549,9 @@ class DBHandler:
             is_pinned: bool,
             has_premium: bool,
     ) -> int:
-        """Add a user_note entry to the DB"""
+        """Add a user_note entry to the DB
+        Possible location values are hardcoded in frontend/app/src/types/notes.ts
+        """
         with self.user_write() as write_cursor:
             if has_premium is False:
                 num_user_notes = self.get_entries_count(

@@ -25,9 +25,9 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     AddressbookEntry,
     ChainID,
-    EvmTokenKind,
     Location,
     SupportedBlockchain,
+    TokenKind,
 )
 from rotkehlchen.utils.version_check import VersionCheckResult
 
@@ -341,8 +341,8 @@ def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
     data_updater.msg_aggregator.consume_warnings()
 
     # check that spam assets don't exist before
-    eth_spam_token_id = evm_address_to_identifier(ETHEREUM_SPAM_ASSET_ADDRESS, ChainID.ETHEREUM, EvmTokenKind.ERC20)  # noqa: E501
-    op_spam_token_id = evm_address_to_identifier(OPTIMISM_SPAM_ASSET_ADDRESS, ChainID.OPTIMISM, EvmTokenKind.ERC20)  # noqa: E501
+    eth_spam_token_id = evm_address_to_identifier(ETHEREUM_SPAM_ASSET_ADDRESS, ChainID.ETHEREUM, TokenKind.ERC20)  # noqa: E501
+    op_spam_token_id = evm_address_to_identifier(OPTIMISM_SPAM_ASSET_ADDRESS, ChainID.OPTIMISM, TokenKind.ERC20)  # noqa: E501
     with pytest.raises(UnknownAsset):
         EvmToken(eth_spam_token_id)
     with pytest.raises(UnknownAsset):
@@ -696,7 +696,7 @@ def _check_counterparty_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) 
 
     for addition, is_present_count in zip(
         COUNTERPARTY_ASSET_MAPPINGS_DATA['counterparty_asset_mappings']['additions'],
-        (0, 0),
+        (1, 1),
         strict=True,
     ):
         result = cursor.execute(

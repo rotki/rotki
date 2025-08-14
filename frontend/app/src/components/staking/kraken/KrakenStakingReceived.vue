@@ -4,12 +4,13 @@ import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 
+const selection = defineModel<'current' | 'historical'>({ required: true });
+
 defineProps<{
   loading: boolean;
   received: AssetBalance[];
 }>();
 
-const selection = ref<'current' | 'historical'>('current');
 const { t } = useI18n({ useScope: 'global' });
 </script>
 

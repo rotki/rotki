@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import type {
-  EthBlockEvent,
   EvmChainAndTxHash,
+  PullEventPayload,
+} from '@/types/history/events';
+import type {
+  EthBlockEvent,
   EvmHistoryEvent,
   EvmSwapEvent,
   HistoryEvent,
   HistoryEventEntry,
-  PullEventPayload,
   StandaloneEditableEvents,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEthBlockEvent, isEthBlockEventRef, isEvmEvent } from '@/utils/history/events';
+import { isEthBlockEvent, isEthBlockEventRef, isEvmEvent, isOnlineHistoryEvent } from '@/utils/history/events';
 
 interface EventInfo { txHash: string; location: string }
 
@@ -41,6 +43,21 @@ const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
   if (isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) {
     return currentEvent;
   }
+  return undefined;
+});
+
+const eventWithTxHash = computed<{ location: string; txHash: string } | undefined>(() => {
+  const currentEvent = get(event);
+  if (get(evmEvent)) {
+    return get(evmEvent);
+  }
+  if (isOnlineHistoryEvent(currentEvent) && 'txHash' in currentEvent && currentEvent.txHash) {
+    return {
+      location: currentEvent.location,
+      txHash: currentEvent.txHash,
+    };
+  }
+
   return undefined;
 });
 
@@ -146,18 +163,19 @@ function hideAddAction(item: HistoryEvent): boolean {
             </template>
             {{ t('transactions.actions.redecode_events') }}
           </RuiButton>
-          <RuiButton
-            variant="list"
-            color="error"
-            :disabled="loading"
-            @click="deleteTxAndEvents(evmEvent)"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-trash-2" />
-            </template>
-            {{ t('transactions.actions.delete_transaction') }}
-          </RuiButton>
         </template>
+        <RuiButton
+          v-if="eventWithTxHash"
+          variant="list"
+          color="error"
+          :disabled="loading"
+          @click="deleteTxAndEvents(eventWithTxHash)"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-trash-2" />
+          </template>
+          {{ t('transactions.actions.delete_transaction') }}
+        </RuiButton>
       </div>
     </RuiMenu>
   </div>

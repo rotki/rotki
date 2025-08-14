@@ -1,12 +1,12 @@
 import type { Collection } from '@/types/collection';
 import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';
+import { Blockchain } from '@rotki/common';
+import flushPromises from 'flush-promises';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
-import { Blockchain } from '@rotki/common';
-import flushPromises from 'flush-promises';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/blockchain/addresses-names', async () => {
   const { defaultCollectionState } = await import('@/utils/collection');
@@ -209,8 +209,8 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
       const secondAddressName = store.addressNameSelector('0x4585FE77225b41b697C938B01232131231231231');
 
-      expect(get(firstAddressName)).toEqual(null);
-      expect(get(secondAddressName)).toEqual(null);
+      expect(get(firstAddressName)).toEqual(undefined);
+      expect(get(secondAddressName)).toEqual(undefined);
 
       vi.advanceTimersByTime(2500);
       await flushPromises();
@@ -250,8 +250,8 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
       expect(api.getAddressesNames).not.toHaveBeenCalled();
 
-      expect(get(firstAddressName)).toEqual(null);
-      expect(get(secondAddressName)).toEqual(null);
+      expect(get(firstAddressName)).toEqual(undefined);
+      expect(get(secondAddressName)).toEqual(undefined);
     });
   });
 });

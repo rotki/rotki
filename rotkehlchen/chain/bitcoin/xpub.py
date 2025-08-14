@@ -5,8 +5,6 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
-from rotkehlchen.chain.bitcoin.bch import have_bch_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.utils import replace_tag_mappings
@@ -72,108 +70,107 @@ class XpubDerivedAddressData(NamedTuple):
     balance: FVal
 
 
-def _derive_addresses_loop(
-        account_index: int,
-        start_index: int,
-        root: HDKey,
-        gap_limit: int,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-) -> list[XpubDerivedAddressData]:
-    """May raise:
-    - RemoteError: if blockstream/blockchain.info can't be reached
-    """
-    step_index = start_index
-    addresses: list[XpubDerivedAddressData] = []
-    should_continue = True
-    while should_continue:
-        batch_addresses: list[tuple[int, BTCAddress]] = []
-        for idx in range(step_index, step_index + gap_limit):
-            child = root.derive_child(idx)
-            batch_addresses.append((idx, child.address()))
-
-        if blockchain == SupportedBlockchain.BITCOIN:
-            have_tx_mapping = have_bitcoin_transactions([x[1] for x in batch_addresses])
-        else:
-            have_tx_mapping = have_bch_transactions([x[1] for x in batch_addresses])
-        should_continue = False
-        for idx, address in batch_addresses:
-            have_tx, balance = have_tx_mapping[address]
-            if have_tx:
-                addresses.append(XpubDerivedAddressData(
-                    account_index=account_index,
-                    derived_index=idx,
-                    address=address,
-                    balance=balance,
-                ))
-                should_continue = True
-
-        # do one more pass and add any addresses with no transactions before the max index
-        # this is so we can start new address generation from the max index later
-        if len(addresses) != 0:
-            max_index = max(x[0] for x in addresses)
-            for idx, address in batch_addresses[:max_index]:
-                have_tx, balance = have_tx_mapping[address]
-                if not have_tx:
-                    addresses.append(XpubDerivedAddressData(
-                        account_index=account_index,
-                        derived_index=idx,
-                        address=address,
-                        balance=balance,
-                    ))
-
-        step_index += gap_limit
-
-    return addresses
-
-
-def _derive_addresses_from_xpub_data(
-        xpub_data: XpubData,
-        start_receiving_index: int,
-        start_change_index: int,
-        gap_limit: int,
-) -> list[XpubDerivedAddressData]:
-    """Derive all addresses from the xpub that have had transactions. Also includes
-    any addresses until the biggest index derived addresses that have had no transactions.
-    This is to make it easier to later derive and check more addresses
-
-    May raise:
-    - RemoteError: if blockstream/blockchain.info/haskoin and others can't be reached
-    """
-    if xpub_data.derivation_path is not None:
-        account_xpub = xpub_data.xpub.derive_path(xpub_data.derivation_path)
-    else:
-        account_xpub = xpub_data.xpub
-
-    addresses = []
-    receiving_xpub = account_xpub.derive_child(0)
-    addresses.extend(
-        _derive_addresses_loop(
-            account_index=0,
-            start_index=start_receiving_index,
-            root=receiving_xpub,
-            gap_limit=gap_limit,
-            blockchain=xpub_data.blockchain,
-        ),
-    )
-    change_xpub = account_xpub.derive_child(1)
-    addresses.extend(
-        _derive_addresses_loop(
-            account_index=1,
-            start_index=start_change_index,
-            root=change_xpub,
-            gap_limit=gap_limit,
-            blockchain=xpub_data.blockchain,
-        ),
-    )
-    return addresses
-
-
 class XpubManager:
 
     def __init__(self, chains_aggregator: 'ChainsAggregator'):
         self.chains_aggregator = chains_aggregator
         self.db = chains_aggregator.database
         self.lock = Semaphore()
+
+    def _derive_addresses_loop(
+            self,
+            account_index: int,
+            start_index: int,
+            root: HDKey,
+            gap_limit: int,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> list[XpubDerivedAddressData]:
+        """May raise:
+        - RemoteError: if blockstream/blockchain.info can't be reached
+        """
+        step_index = start_index
+        addresses: list[XpubDerivedAddressData] = []
+        should_continue = True
+        while should_continue:
+            batch_addresses: list[tuple[int, BTCAddress]] = []
+            for idx in range(step_index, step_index + gap_limit):
+                child = root.derive_child(idx)
+                batch_addresses.append((idx, child.address()))
+
+            have_tx_mapping = self.chains_aggregator.get_chain_manager(
+                blockchain=blockchain,
+            ).have_transactions(accounts=[x[1] for x in batch_addresses])
+            should_continue = False
+            for idx, address in batch_addresses:
+                have_tx, balance = have_tx_mapping[address]
+                if have_tx:
+                    addresses.append(XpubDerivedAddressData(
+                        account_index=account_index,
+                        derived_index=idx,
+                        address=address,
+                        balance=balance,
+                    ))
+                    should_continue = True
+
+            # do one more pass and add any addresses with no transactions before the max index
+            # this is so we can start new address generation from the max index later
+            if len(addresses) != 0:
+                max_index = max(x[0] for x in addresses)
+                for idx, address in batch_addresses[:max_index]:
+                    have_tx, balance = have_tx_mapping[address]
+                    if not have_tx:
+                        addresses.append(XpubDerivedAddressData(
+                            account_index=account_index,
+                            derived_index=idx,
+                            address=address,
+                            balance=balance,
+                        ))
+
+            step_index += gap_limit
+
+        return addresses
+
+    def _derive_addresses_from_xpub_data(
+            self,
+            xpub_data: XpubData,
+            start_receiving_index: int,
+            start_change_index: int,
+            gap_limit: int,
+    ) -> list[XpubDerivedAddressData]:
+        """Derive all addresses from the xpub that have had transactions. Also includes
+        any addresses until the biggest index derived addresses that have had no transactions.
+        This is to make it easier to later derive and check more addresses
+
+        May raise:
+        - RemoteError: if blockstream/blockchain.info/haskoin and others can't be reached
+        """
+        if xpub_data.derivation_path is not None:
+            account_xpub = xpub_data.xpub.derive_path(xpub_data.derivation_path)
+        else:
+            account_xpub = xpub_data.xpub
+
+        addresses = []
+        receiving_xpub = account_xpub.derive_child(0)
+        addresses.extend(
+            self._derive_addresses_loop(
+                account_index=0,
+                start_index=start_receiving_index,
+                root=receiving_xpub,
+                gap_limit=gap_limit,
+                blockchain=xpub_data.blockchain,
+            ),
+        )
+        change_xpub = account_xpub.derive_child(1)
+        addresses.extend(
+            self._derive_addresses_loop(
+                account_index=1,
+                start_index=start_change_index,
+                root=change_xpub,
+                gap_limit=gap_limit,
+                blockchain=xpub_data.blockchain,
+            ),
+        )
+        return addresses
 
     def _derive_xpub_addresses(
             self,
@@ -190,7 +187,7 @@ class XpubManager:
         """
         with self.db.conn.read_ctx() as cursor:
             last_receiving_idx, last_change_idx = self.db.get_last_consecutive_xpub_derived_indices(cursor, xpub_data)  # noqa: E501
-            derived_addresses_data = _derive_addresses_from_xpub_data(
+            derived_addresses_data = self._derive_addresses_from_xpub_data(
                 xpub_data=xpub_data,
                 start_receiving_index=last_receiving_idx,
                 start_change_index=last_change_idx,

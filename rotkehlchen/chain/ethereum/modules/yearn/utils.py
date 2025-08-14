@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from http import HTTPStatus
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
@@ -7,6 +8,11 @@ import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+    CPT_YEARN_STAKING,
+    CPT_YEARN_V2,
+    CPT_YEARN_V3,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -20,12 +26,9 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int
 from rotkehlchen.types import (
-    YEARN_STAKING_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -146,7 +149,7 @@ def _query_yearn_vault_count() -> int:
         raise RemoteError(msg)
 
     try:
-        return deserialize_int(data['numberOfVaults'])
+        return deserialize_int(value=data['numberOfVaults'], location='yearn vault count')
     except DeserializationError as e:
         log.error(f'Yearn number of vaults is not an integer {data}')
         raise RemoteError(
@@ -179,15 +182,17 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         )
 
     assert data is not None, 'data exists. Checked by _maybe_reset_yearn_cache_timestamp'
+    tokens_to_update_by_protocol = defaultdict(list)
+
     for vault in data:
         if (version := vault.get('version')) is None:
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
             continue
 
         if version.startswith('0.'):  # version '0.x.x' happens in ydaemon and is always a v2 vault
-            vault_type = YEARN_VAULTS_V2_PROTOCOL
+            vault_type = CPT_YEARN_V2
         elif version.startswith(('3.', '~3.')):  # '~' indicates it has basically the same functionality as a yearn vault but is not deployed by yearn  # noqa: E501
-            vault_type = YEARN_VAULTS_V3_PROTOCOL
+            vault_type = CPT_YEARN_V3
         else:
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
             continue
@@ -216,7 +221,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                 symbol=vault['symbol'],
                 underlying_tokens=[UnderlyingToken(
                     address=underlying_token.evm_address,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                     weight=ONE,
                 )],
                 encounter=encounter,
@@ -227,10 +232,10 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     evm_address=staking_address,
                     evm_inquirer=ethereum_inquirer,
                     chain_id=ChainID.ETHEREUM,
-                    protocol=YEARN_STAKING_PROTOCOL,
+                    protocol=CPT_YEARN_STAKING,
                     underlying_tokens=[UnderlyingToken(
                         address=vault_token.evm_address,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         weight=ONE,
                     )],
                     fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
@@ -249,11 +254,14 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         # if it existed but the protocol is not correct edit it. Can happen if it was auto added
         # before this logic existed or executed.
         if vault_token.protocol != vault_type:
-            log.debug(f'Editing yearn asset {vault_token}')
-            GlobalDBHandler.set_token_protocol_if_missing(
-                token=vault_token,
-                new_protocol=vault_type,
-            )
+            tokens_to_update_by_protocol[vault_type].append(vault_token)
+
+    for protocol, tokens in tokens_to_update_by_protocol.items():
+        log.debug(f'Updating protocol for {len(tokens)} ethereum {protocol} assets')
+        GlobalDBHandler.set_tokens_protocol_if_missing(
+            tokens=tokens,
+            new_protocol=protocol,
+        )
 
     # Store in the globaldb cache the number of vaults processed from this call to the API
     with GlobalDBHandler().conn.write_ctx() as write_cursor:

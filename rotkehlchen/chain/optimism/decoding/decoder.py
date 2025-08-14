@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
+from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithProxy
 from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.decoder import L2WithL1FeesTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.optimism.transactions import OptimismTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -24,6 +25,7 @@ class OptimismTransactionDecoder(L2WithL1FeesTransactionDecoder):
             database: 'DBHandler',
             optimism_inquirer: 'OptimismInquirer',
             transactions: 'OptimismTransactions',
+            premium: 'Premium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -32,12 +34,13 @@ class OptimismTransactionDecoder(L2WithL1FeesTransactionDecoder):
             value_asset=A_ETH.resolve_to_asset_with_oracles(),
             event_rules=[],
             misc_counterparties=[],
-            base_tools=BaseDecoderToolsWithDSProxy(
+            base_tools=BaseDecoderToolsWithProxy(
                 database=database,
                 evm_inquirer=optimism_inquirer,
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            premium=premium,
             dbevmtx_class=DBL2WithL1FeesTx,
         )
 

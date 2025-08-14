@@ -1,15 +1,15 @@
-import { useScramble } from '@/composables/scramble';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { consistOfNumbers, isValidEthAddress } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { useScramble } from '@/composables/scramble';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 describe('composables::message-handling', () => {
-  let store: ReturnType<typeof useSessionSettingsStore>;
+  let store: ReturnType<typeof useFrontendSettingsStore>;
 
   beforeAll(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
-    store = useSessionSettingsStore();
+    store = useFrontendSettingsStore();
   });
 
   it('should not scramble when the state is off', () => {
@@ -22,8 +22,8 @@ describe('composables::message-handling', () => {
     expect(scrambleIdentifier(numbers)).toEqual(numbers);
   });
 
-  it('should scramble hex', () => {
-    store.update({ scrambleData: true });
+  it('should scramble hex', async () => {
+    await store.updateSetting({ scrambleData: true });
     const { scrambleAddress } = useScramble();
 
     const address = '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1';
@@ -33,8 +33,8 @@ describe('composables::message-handling', () => {
     expect(isValidEthAddress(result)).toBeTruthy();
   });
 
-  it('should scramble identifier', () => {
-    store.update({ scrambleData: true });
+  it('should scramble identifier', async () => {
+    await store.updateSetting({ scrambleData: true });
     const { scrambleIdentifier } = useScramble();
 
     const identifier = '123456';

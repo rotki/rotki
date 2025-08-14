@@ -9,13 +9,14 @@ from .tokens import BinanceSCTokens
 from .transactions import BinanceSCTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.premium.premium import Premium
 
     from .node_inquirer import BinanceSCInquirer
 
 
 class BinanceSCManager(EvmManager, CurveManagerMixin):
 
-    def __init__(self, node_inquirer: 'BinanceSCInquirer') -> None:
+    def __init__(self, node_inquirer: 'BinanceSCInquirer', premium: 'Premium | None' = None) -> None:  # noqa: E501
         super().__init__(
             node_inquirer=node_inquirer,
             transactions=(transactions := BinanceSCTransactions(
@@ -34,6 +35,7 @@ class BinanceSCManager(EvmManager, CurveManagerMixin):
                 database=node_inquirer.database,
                 binance_sc_inquirer=node_inquirer,
                 transactions=transactions,
+                premium=premium,
             ),
             accounting_aggregator=BinanceSCAccountingAggregator(
                 node_inquirer=node_inquirer,

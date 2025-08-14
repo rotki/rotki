@@ -1,52 +1,18 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-import gevent
 import pytest
 from requests.models import Response
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
-from rotkehlchen.db.filtering import EvmEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
-from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
-from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp
 
-
-@pytest.fixture(name='gnosispay_credentials')
-def _fixture_gnosispay_credentials(database):
-    """Input mock monerium credentials to the DB for testing"""
-    with database.user_write() as write_cursor:
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
-            'VALUES(?, ?, ?)',
-            (ExternalService.GNOSIS_PAY.name.lower(), 'token', None),
-        )
-
-
-def mock_gnosispay_and_run_periodic_task(task_manager, contents):
-    def mock_gnosispay(url, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(200, contents)
-
-    class MockPremium:
-        def is_active(self):
-            return True
-
-    timeout = 4
-    task_manager.chains_aggregator.premium = MockPremium()
-    task_manager.potential_tasks = [task_manager._maybe_query_gnosispay]
-    with gevent.Timeout(timeout), patch('requests.Session.get', side_effect=mock_gnosispay):
-        try:
-            task_manager.schedule()
-            gevent.sleep(.5)
-        except gevent.Timeout as e:
-            raise AssertionError(f'gnosispay query was not scheduled within {timeout} seconds') from e  # noqa: E501
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def mock_unauthorized_requests_get(url, params=None, **kwargs):
@@ -56,89 +22,41 @@ def mock_unauthorized_requests_get(url, params=None, **kwargs):
     return response
 
 
-@pytest.mark.parametrize('max_tasks_num', [1])
-def test_gnosispay_periodic_task(task_manager, database, gnosispay_credentials):  # pylint: disable=unused-argument
-    """foo"""
-    dbevents = DBHistoryEvents(database)
-    tx_hash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
-    gnosis_user_address = '0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da'
-    timestamp = TimestampMS(1718287227000)
-    amount = '25.9'
-    event = EvmEvent(
-        tx_hash=tx_hash,
-        sequence_index=113,
-        timestamp=timestamp,
-        location=Location.GNOSIS,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.PAYMENT,
-        asset=A_GNOSIS_EURE,
-        amount=FVal(amount),
-        location_label=gnosis_user_address,
-        notes=f'Spend {amount} via Gnosis Pay',
-        counterparty=CPT_GNOSIS_PAY,
-    )
-    with database.user_write() as write_cursor:
-        dbevents.add_history_events(write_cursor=write_cursor, history=[event])
-
-    mock_gnosispay_and_run_periodic_task(
-        task_manager=task_manager,
-        contents="""[{
-        "createdAt": "2024-06-03T16:00:27.161Z",
-        "transactionAmount": "350000",
-        "transactionCurrency": {
-            "symbol": "RSD",
-            "code": "941",
-            "decimals": 2,
-            "name": "Serbian dinar"
-        },
-        "billingAmount": "2590",
-        "billingCurrency": {
-            "symbol": "EUR",
-            "code": "978",
-            "decimals": 2,
-            "name": "Euro"
-        },
-        "mcc": "6011",
+def test_gnosis_pay_skip_refund(database: 'DBHandler', gnosispay_credentials: None) -> None:
+    """Test that gnosis pay skips refunds without error, since they are missing data linking
+    them to onchain transactions.
+    """
+    gnosispay = init_gnosis_pay(database)
+    assert gnosispay is not None
+    api_contents = """[{
+        "createdAt": "XX",
+        "clearedAt": "XX",
+        "isPending": false,
+        "transactionAmount": "2300",
+        "transactionCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+        "billingAmount": "2300",
+        "billingCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+        "transactionType": "20",
+        "mcc": "5661",
         "merchant": {
-            "name": "ATM OTP TRG N PASICA 5   ",
-            "city": "BEOGRAD      ",
-            "country": {
-                "name": "Serbia",
-                "numeric": "688",
-                "alpha2": "RS",
-                "alpha3": "SRB"
-            }
+            "name": "I-RUN",
+            "city": "CASTELNAU D E",
+            "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"}
         },
-        "country": {
-            "name": "Serbia",
-            "numeric": "688",
-            "alpha2": "RS",
-            "alpha3": "SRB"
-        },
-        "transactions": [
-            {
-                "status": "ExecSuccess",
-                "to": "0xfooo",
-                "value": "0",
-                "data": "0xfoo",
-                "hash": "0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354"
-            }
-        ],
-        "kind": "Payment",
-        "status": "Approved"
-        }]""",
-    )
-    event.notes = 'Withdraw 3500 RSD (25.9 EUR) from ATM OTP TRG N PASICA 5 in BEOGRAD :country:RS:'  # noqa: E501
-    event.identifier = 1
-    with database.conn.read_ctx() as cursor:
-        new_events = dbevents.get_history_events(
-            cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(
-                tx_hashes=[tx_hash],
-            ),
-            has_premium=True,
-        )
-    assert new_events == [event]
+        "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"},
+        "transactions": [],
+        "kind": "Refund",
+        "refundCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+        "refundAmount": "2300"
+    }]
+    """
+    with (
+        patch.object(gnosispay.session, 'get', return_value=MockResponse(200, api_contents)),
+        patch.object(gnosispay, 'write_txdata_to_db') as mock_write_txdata_to_db,
+    ):
+        gnosispay.get_and_process_transactions(after_ts=Timestamp(0))
+
+    assert mock_write_txdata_to_db.call_count == 0
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])

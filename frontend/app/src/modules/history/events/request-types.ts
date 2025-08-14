@@ -19,6 +19,7 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly customizedEventsOnly?: boolean;
   readonly excludeIgnoredAssets?: boolean;
   readonly identifiers?: string[];
+  readonly notesSubstring?: string;
 }
 
 export interface HistoryEventExportPayload extends Omit<HistoryEventRequestPayload, 'groupByEventIds' | 'limit' | 'offset'> {

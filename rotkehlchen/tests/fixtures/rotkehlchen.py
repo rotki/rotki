@@ -22,6 +22,14 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
+from rotkehlchen.tests.utils.constants import (
+    TEST_PREMIUM_DB_SIZE_LIMIT,
+    TEST_PREMIUM_DEVICE_LIMIT,
+    TEST_PREMIUM_ETH_STAKED_LIMIT,
+    TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
+    TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+)
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -47,6 +55,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -84,8 +93,21 @@ def fixture_rotki_premium_credentials() -> PremiumCredentials:
 @pytest.fixture(name='rotki_premium_object')
 def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium:
     """Create an active rotki premium object with valid credentials"""
-    premium = Premium(credentials=rotki_premium_credentials, username=username)
+    premium = Premium(
+        credentials=rotki_premium_credentials,
+        username=username,
+        msg_aggregator=MessagesAggregator(),
+        db=None,  # type: ignore # Since the fixture loads before others it was causing errors with the api fixture since the user folder already exists. Needs a bit of work to be figured out but is only used for the premium devices
+    )
     premium.status = SubscriptionStatus.ACTIVE
+    premium._cached_limits = {
+        'limit_of_devices': TEST_PREMIUM_DEVICE_LIMIT,
+        'max_backup_size_mb': TEST_PREMIUM_DB_SIZE_LIMIT,
+        'pnl_events_limit': TEST_PREMIUM_PNL_EVENTS_LIMIT,
+        'history_events_limit': TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
+        'reports_lookup_limit': TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+        'eth_staked_limit': TEST_PREMIUM_ETH_STAKED_LIMIT,
+    }
     return premium
 
 
@@ -410,6 +432,7 @@ def initialize_mock_rotkehlchen_instance(
 
     if start_with_valid_premium:
         rotki.premium = rotki_premium_object
+        rotki.premium.msg_aggregator = rotki.msg_aggregator
         rotki.premium_sync_manager.premium = rotki.premium
         rotki.chains_aggregator.premium = rotki.premium
         # Add premium to all the modules

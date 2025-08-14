@@ -34,7 +34,7 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -158,7 +158,7 @@ def register_token(
         protocol=CPT_GEARBOX,
         evm_inquirer=evm_inquirer,
         underlying_tokens=(
-            [UnderlyingToken(address=pool.underlying_token, token_kind=EvmTokenKind.ERC20, weight=ONE)]  # noqa: E501
+            [UnderlyingToken(address=pool.underlying_token, token_kind=TokenKind.ERC20, weight=ONE)]  # noqa: E501
             if pool.underlying_token is not None else []
         ),
         encounter=encounter,
@@ -271,7 +271,7 @@ def ensure_gearbox_lp_underlying_tokens(
                 underlying_tokens=[
                     UnderlyingToken(
                         address=underlying_token_address,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         weight=ONE,  # all gearbox vaults have single underlying
                     ),
                 ],

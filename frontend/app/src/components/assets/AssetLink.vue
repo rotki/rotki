@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { getAddressFromEvmIdentifier } from '@rotki/common';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { getAddressFromEvmIdentifier } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

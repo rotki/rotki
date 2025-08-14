@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
+import { assert, Blockchain } from '@rotki/common';
 import AccountFormEtherscanAlert from '@/components/accounts/management/AccountFormEtherscanAlert.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
@@ -19,7 +20,6 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { logger } from '@/utils/logging';
 import { useRefPropVModel } from '@/utils/model';
-import { assert, Blockchain } from '@rotki/common';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import BlockchainBalanceRefreshBehaviourMenu
@@ -15,12 +16,11 @@ import {
 } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { useRefresh } from '@/composables/balances/refresh';
-import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource, DashboardTableType } from '@/types/settings/frontend-settings';
-import { startPromise } from '@shared/utils';
 
 definePage({
   meta: {
@@ -38,7 +38,7 @@ const chainsFilter = ref<string[]>([]);
 const { t } = useI18n({ useScope: 'global' });
 const route = useRoute('balances-blockchain');
 
-const { useBlockchainAssets } = useBlockchainAggregatedBalances();
+const { useBlockchainBalances } = useAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 
@@ -46,7 +46,7 @@ const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
 
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
-const aggregatedBalances = useBlockchainAssets(chainsFilter);
+const aggregatedBalances = useBlockchainBalances(chainsFilter);
 
 onMounted(() => {
   const { query } = get(route);
@@ -131,6 +131,7 @@ const { handleBlockchainRefresh } = useRefresh();
             chains: chainsFilter,
           }"
           :visible-columns="dashboardTablesVisibleColumns[tableType]"
+          show-per-protocol
           sticky-header
         />
       </RuiCard>

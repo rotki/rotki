@@ -1,8 +1,12 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { TaskMeta } from '@/types/task';
+import { type AssetBalanceWithPriceAndChains, type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
+import dayjs from 'dayjs';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePremium } from '@/composables/premium';
+import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useNotificationsStore } from '@/store/notifications';
@@ -15,9 +19,8 @@ import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { millisecondsToSeconds } from '@/utils/date';
 import { logger } from '@/utils/logging';
-import { type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
-import dayjs from 'dayjs';
 
 function defaultNetValue(): NetValue {
   return {
@@ -40,13 +43,21 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { nftsInNetValue } = storeToRefs(useFrontendSettingsStore());
+  const { nftsInNetValue, scrambleData, scrambleMultiplier: scrambleMultiplierRef, shouldShowAmount, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
   const { notify } = useNotificationsStore();
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { useExchangeRate } = usePriceUtils();
   const { assetName } = useAssetInfoRetrieval();
+
+  const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? 1);
+
+  watchEffect(() => {
+    const newValue = get(scrambleMultiplierRef);
+    if (newValue !== undefined)
+      set(scrambleMultiplier, newValue);
+  });
   const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
   const premium = usePremium();
 
@@ -55,25 +66,39 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { awaitTask } = useTaskStore();
   const { logged } = storeToRefs(useSessionAuthStore());
 
-  const calculateTotalValue = (includeNft = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
+  /**
+   * Calculates the sum of balances, converting to the main currency
+   * If the asset is the main currency, uses the amount directly
+   * Otherwise, converts the USD value to the main currency
+   */
+  function calculateSum(
+    items: AssetBalanceWithPriceAndChains[],
+    mainCurrency: string,
+    rate: BigNumber,
+  ): BigNumber {
+    return items.reduce((sum, value) => {
+      if (value.asset === mainCurrency)
+        return sum.plus(value.amount);
+
+      return sum.plus(value.usdValue.multipliedBy(rate));
+    }, Zero);
+  }
+
+  const calculateTotalValue = (includeNft: MaybeRef<boolean> = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
     const aggregatedBalances = get(balances());
     const totalLiabilities = get(liabilities());
-    const nftTotal = includeNft ? get(nonFungibleTotalValue) : 0;
-    const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.usdValue), Zero);
-    const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.usdValue), Zero);
-
-    return assetValue.plus(nftTotal).minus(liabilityValue);
-  });
-
-  const totalNetWorth = computed<BigNumber>(() => {
+    const nftTotal = get(includeNft) ? get(nonFungibleTotalValue) : Zero;
     const mainCurrency = get(currencySymbol);
     const rate = get(useExchangeRate(mainCurrency)) ?? One;
-    return get(calculateTotalValue(get(nftsInNetValue))).multipliedBy(rate);
+    const assetValue = calculateSum(aggregatedBalances, mainCurrency, rate);
+    const liabilityValue = calculateSum(totalLiabilities, mainCurrency, rate);
+    return assetValue.plus(nftTotal.multipliedBy(rate)).minus(liabilityValue);
   });
+
+  const totalNetWorth = calculateTotalValue(nftsInNetValue);
 
   const overall = computed<Overall>(() => {
     const currency = get(currencySymbol);
-    const rate = get(useExchangeRate(currency)) ?? One;
     const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix());
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
@@ -95,6 +120,20 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const starting = startingValue();
     const totalNW = get(totalNetWorth);
     const balanceDelta = totalNW.minus(starting);
+
+    // Apply scrambling to net worth for tray display
+    const scrambledNetWorth = get(useNumberScrambler({
+      enabled: logicOr(scrambleData, logicNot(shouldShowAmount)),
+      multiplier: scrambleMultiplier,
+      value: computed(() => totalNW),
+    }));
+
+    const scrambledBalanceDelta = get(useNumberScrambler({
+      enabled: logicOr(scrambleData, logicNot(shouldShowAmount)),
+      multiplier: scrambleMultiplier,
+      value: computed(() => balanceDelta),
+    }));
+
     const percentage = balanceDelta.div(starting).multipliedBy(100);
 
     let up: boolean | undefined;
@@ -104,12 +143,15 @@ export const useStatisticsStore = defineStore('statistics', () => {
       up = false;
 
     const floatPrecision = get(floatingPrecision);
-    const delta = balanceDelta.multipliedBy(rate).toFormat(floatPrecision);
+    const rounding = get(valueRoundingMode);
+
+    const delta = scrambledBalanceDelta.toFormat(floatPrecision, rounding);
+    const netWorth = scrambledNetWorth.toFormat(floatPrecision, rounding);
 
     return {
       currency,
       delta,
-      netWorth: totalNW.toFormat(floatPrecision),
+      netWorth,
       percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
       period: selectedTimeframe,
       up,
@@ -127,7 +169,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
       const { data, times } = get(netValue);
 
-      const now = Math.floor(Date.now() / 1000);
+      const now = millisecondsToSeconds(Date.now());
       const netWorth = get(totalNetWorth);
 
       if (times.length === 0 && data.length === 0) {

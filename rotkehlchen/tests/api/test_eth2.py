@@ -1,4 +1,5 @@
 import random
+from collections.abc import Sequence
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Final, Literal
@@ -9,7 +10,6 @@ import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
-from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDetailsWithStatus,
     ValidatorStatus,
@@ -18,9 +18,8 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -57,7 +56,6 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -100,156 +98,6 @@ def _prepare_clean_validators(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr(
     filter_query_parameters=['apikey'],
-    match_on=['beaconchain_matcher'],
-)
-@pytest.mark.freeze_time('2024-06-20 18:18:00 GMT')
-@pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('default_mock_price_value', [ONE])
-@pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.parametrize('ethereum_accounts', [[
-    CLEAN_HISTORY_WITHDRAWAL1, CLEAN_HISTORY_WITHDRAWAL2, CLEAN_HISTORY_WITHDRAWAL3,
-]])
-def test_eth2_daily_stats(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test eth2 daily stats api endpoint along with filtering by various arguments"""
-    # Patching here since I can't re-record this test and for some reason
-    # 1118011 was not returned as active validator in the previous test.
-    # TODO: Perhaps this should be re-recorded in a simpler way as daily stats
-    # are not used much anymore. Or left as is ... for the same reason
-    with patch('rotkehlchen.db.eth2.DBEth2.get_active_validator_indices', side_effect=lambda x: {1118010}):  # noqa: E501
-        _prepare_clean_validators(rotkehlchen_api_server)
-    # query daily stats, first without cache -- requesting all
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2dailystatsresource',
-        ), json={'only_cache': False},
-    )
-    result = assert_proper_sync_response_with_result(response)
-    total_stats = len(result['entries'])
-    assert total_stats == result['entries_total']
-    assert total_stats == result['entries_found']
-    full_sum_pnl = FVal(result['sum_pnl'])
-    calculated_sum_pnl = ZERO
-    for entry in result['entries']:
-        calculated_sum_pnl += FVal(entry['pnl']['amount'])
-    assert full_sum_pnl.is_close(calculated_sum_pnl)
-
-    # filter by validator index
-    validator1_and_3_stats = 466
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2dailystatsresource',
-        ), json={'only_cache': True, 'validator_indices': [CLEAN_HISTORY_VALIDATOR1, CLEAN_HISTORY_VALIDATOR3]},  # noqa: E501
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_total'] == total_stats
-    assert result['entries_found'] == validator1_and_3_stats
-    assert len(result['entries']) == validator1_and_3_stats
-
-    # filter by address
-    validator_2_stats = total_stats - validator1_and_3_stats
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2dailystatsresource',
-        ), json={'only_cache': True, 'addresses': [CLEAN_HISTORY_WITHDRAWAL2]},
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_total'] == total_stats
-    assert result['entries_found'] == validator_2_stats
-    assert len(result['entries']) == validator_2_stats
-
-    # filter by status
-    validator_3_stats = 303
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2dailystatsresource',
-        ), json={'only_cache': True, 'status': 'exited'},
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_total'] == total_stats
-    assert result['entries_found'] == validator_3_stats
-    assert len(result['entries']) == validator_3_stats
-
-    # filter by validator_index and timestamp
-    queried_validators = [CLEAN_HISTORY_VALIDATOR1, CLEAN_HISTORY_VALIDATOR3]
-    from_ts, to_ts = 1704397571, 1706211971
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2dailystatsresource',
-        ), json={'only_cache': True, 'validator_indices': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts},  # noqa: E501
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_total'] == total_stats
-    assert result['entries_found'] <= total_stats
-    assert len(result['entries']) == result['entries_found']
-    full_sum_pnl = FVal(result['sum_pnl'])
-    calculated_sum_pnl = ZERO
-    next_page_times = []
-    for idx, entry in enumerate(result['entries']):
-        calculated_sum_pnl += FVal(entry['pnl']['amount'])
-        assert entry['validator_index'] in queried_validators
-        time = entry['timestamp']
-        assert time >= from_ts
-        assert time <= to_ts
-
-        if 5 <= idx <= 9:
-            next_page_times.append(time)
-
-        if idx >= result['entries_found'] - 1:
-            continue
-        assert entry['timestamp'] >= result['entries'][idx + 1]['timestamp']
-    assert full_sum_pnl.is_close(calculated_sum_pnl)
-
-    # filter by validator_index and timestamp and add pagination
-    json = {'only_cache': True, 'validator_indices': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2dailystatsresource',
-        ), json=json,
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_total'] == total_stats
-    assert result['entries_found'] <= total_stats
-    assert len(result['entries']) == 5
-    # Check sum pnl values here and see that they include more values than just the current page
-    full_sum_pnl = FVal(result['sum_pnl'])
-    calculated_sum_pnl = ZERO
-    for idx, entry in enumerate(result['entries']):
-        calculated_sum_pnl += FVal(entry['pnl']['amount'])
-        assert entry['validator_index'] in queried_validators
-        time = entry['timestamp']
-        assert time >= from_ts
-        assert time <= to_ts
-
-        if idx <= 4:
-            assert time == next_page_times[idx]
-    assert full_sum_pnl > calculated_sum_pnl
-
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2dailystatsresource',
-        ), json={'only_cache': False},
-    )
-    result = assert_proper_sync_response_with_result(response)
-    total_stats = len(result['entries'])
-    assert total_stats == result['entries_total']
-    assert total_stats == result['entries_found']
-    full_sum_pnl = FVal(result['sum_pnl'])
-    calculated_sum_pnl = ZERO
-    for entry in result['entries']:
-        calculated_sum_pnl += FVal(entry['pnl']['amount'])
-    assert full_sum_pnl.is_close(calculated_sum_pnl)
-
-
-@pytest.mark.vcr(
-    filter_query_parameters=['apikey'],
     allow_playback_repeats=True,
     match_on=['beaconchain_matcher'],
 )
@@ -258,7 +106,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server: 'APIServer') -> None:
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.freeze_time('2025-02-07 13:00:00 GMT')
+@pytest.mark.freeze_time('2025-06-23 08:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 def test_staking_performance(
         rotkehlchen_api_server: 'APIServer',
@@ -330,10 +178,10 @@ def test_staking_performance(
             ]},
     )
     result = assert_proper_sync_response_with_result(response)
-    expected_withdrawals_str, expected_outstanding_consensus_str = '0.931083313', '0.004313006'
+    expected_withdrawals_str, expected_outstanding_consensus_str = '1.189032694', '0.006663847'
     # we don't compare directly the dict values because they come from the database and sqlite
     # handles REAL SUM in a non-accurate way to the decimal point, plus it differs between OSes.
-    expected_execution_blocks, expected_withdrawals, expected_outstanding_consensus, expected_apr = FVal('0.050711686670683926'), FVal(expected_withdrawals_str), FVal(expected_outstanding_consensus_str), FVal('0.035473696762025140316173838831466687839186696867031144007246316068503435499705')  # noqa: E501
+    expected_execution_blocks, expected_withdrawals, expected_outstanding_consensus, expected_apr = FVal('0.050711686670683926'), FVal(expected_withdrawals_str), FVal(expected_outstanding_consensus_str), FVal('0.0317901546184659628556739358605425843229450299631762824021434188231567579763669')  # noqa: E501
     expected_sum = expected_execution_blocks + expected_withdrawals + expected_execution_mev + expected_outstanding_consensus  # noqa: E501
     assert FVal(result['sums'].pop('execution_blocks')).is_close(expected_execution_blocks)
     assert FVal(result['sums'].pop('execution_mev')).is_close(expected_execution_mev)
@@ -361,7 +209,7 @@ def test_staking_performance(
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.freeze_time('2024-09-15 09:00:00 GMT')
+@pytest.mark.freeze_time('2025-07-25 10:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 def test_staking_performance_filtering_pagination(
         rotkehlchen_api_server: 'APIServer',
@@ -420,7 +268,7 @@ def test_staking_performance_filtering_pagination(
 
             page += 10
 
-        assert get_balances.call_count == 1  # make sure cache works
+        assert get_balances.call_count == 2  # make sure cache works (2 is 1 for all for staking limit and 1 more for the new validator at addition)  # noqa: E501
 
     # now filter by validator state
     active_validators, exited_validators = 1, 401
@@ -485,17 +333,17 @@ def test_staking_performance_filtering_pagination(
                 'apr': '0.0391436464587952914253981459740635046779612036267745547809124733591012534768631',  # noqa: E501
             },
             '624729': {
-                'withdrawals': '1.289917788',
-                'sum': '1.289917788',
-                'apr': '0.0300134962463827842665562028528326637310648429119334799442187646271982041209314',  # noqa: E501
+                'withdrawals': '1.927096145',
+                'sum': '1.927096145',
+                'apr': '0.0273647114181319738631178888020432398154824939415974096830265089919828153681593',  # noqa: E501
             },
         },
         'sums': {
-            'withdrawals': '2.881513659',
-            'sum': '2.97883756041534547',
+            'withdrawals': '3.518692016',
+            'sum': '3.61601591741534547',
             'exits': '0.001414388',
             'execution_blocks': '0.09590951341534547',
-            'apr': '0.0345785713525890378459771744134480842045130232693540173625656189931497287988972',  # noqa: E501
+            'apr': '0.0332541789384636326442580173880533722467218487841859822319694911755420344225112',  # noqa: E501
         },
         'entries_total': 402,
         'entries_found': 2,
@@ -539,7 +387,7 @@ def test_query_eth2_inactive(
     filter_query_parameters=['apikey'],
     match_on=['beaconchain_matcher'],
 )
-@pytest.mark.freeze_time('2024-02-03 23:44:00 GMT')
+@pytest.mark.freeze_time('2025-07-25 16:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -554,9 +402,8 @@ def test_add_get_edit_delete_eth2_validators(
             'eth2validatorsresource',
         ),
     )
-    expected_limit = -1 if start_with_valid_premium else FREE_VALIDATORS_LIMIT
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [], 'entries_limit': expected_limit, 'entries_found': 0}
+    assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1606824023),
@@ -625,19 +472,19 @@ def test_add_get_edit_delete_eth2_validators(
         ), json={'ignore_cache': True},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': expected_limit, 'entries_found': 4}  # noqa: E501
+    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': -1, 'entries_found': 4}  # noqa: E501
 
     if start_with_valid_premium is False:
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
                 'eth2validatorsresource',
-            ), json={'validator_index': 545},
+            ), json={'validator_index': 460424},
         )
         assert_error_response(
             response=response,
-            contained_in_msg='Adding validator 545 None would take you over the free',
-            status_code=HTTPStatus.UNAUTHORIZED,
+            contained_in_msg='ETH staking limit exceeded. Current staked: 64.007394748 ETH, limit: 128 ETH. Would be: 2112.097368850 ETH',  # noqa: E501
+            status_code=HTTPStatus.FORBIDDEN,
         )
 
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -679,10 +526,9 @@ def test_add_get_edit_delete_eth2_validators(
         )
 
     with database.conn.read_ctx() as cursor:  # assert events are in the DB
-        assert events == dbevents.get_history_events(
+        assert events == dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )
 
     response = requests.delete(
@@ -702,10 +548,9 @@ def test_add_get_edit_delete_eth2_validators(
 
     # after deleting validator indices, make sure their events are also gone
     with database.conn.read_ctx() as cursor:
-        assert [events[0]] == dbevents.get_history_events(
+        assert [events[0]] == dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )
         # Also confirm that the associated cached timestamp is removed
         assert database.get_dynamic_cache(
@@ -721,7 +566,7 @@ def test_add_get_edit_delete_eth2_validators(
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
+    assert result == {'entries': [validators[1].serialize()], 'entries_limit': -1, 'entries_found': 1}  # noqa: E501
 
     # Try to add validator with a custom ownership percentage
     custom_percentage_validators = [ValidatorDetailsWithStatus(
@@ -772,7 +617,7 @@ def test_add_get_edit_delete_eth2_validators(
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validators], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
+    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validators], 'entries_limit': -1, 'entries_found': 2}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -906,7 +751,7 @@ def test_add_delete_validator_errors(
     filter_query_parameters=['apikey'],
     match_on=['beaconchain_matcher'],
 )
-@pytest.mark.freeze_time('2024-02-04 00:00:00 GMT')
+@pytest.mark.freeze_time('2025-07-25 16:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -992,12 +837,12 @@ def test_query_eth2_balances(
     assert len(per_acc) == 2
     # hope they don't get slashed ;(
     amount_proportion = base_amount * ownership_proportion
-    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
-    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount  # noqa: E501
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= amount_proportion  # noqa: E501
     totals = outcome['totals']
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
-    assert FVal(totals['assets']['ETH2']['amount']) >= base_amount + amount_proportion
+    assert FVal(totals['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount + amount_proportion  # noqa: E501
 
     # now add 1 more validator and query ETH2 balances again to see it's included
     # the reason for this is to see the cache is properly invalidated at addition
@@ -1020,40 +865,13 @@ def test_query_eth2_balances(
     per_acc = outcome['per_account']['eth2']
     assert len(per_acc) == 3
     amount_proportion = base_amount * ownership_proportion
-    assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= base_amount
-    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
-    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
+    assert FVal(per_acc[v0_pubkey]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount  # noqa: E501
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount  # noqa: E501
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= amount_proportion  # noqa: E501
     totals = outcome['totals']
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
-    assert FVal(totals['assets']['ETH2']['amount']) >= 2 * base_amount + amount_proportion
-
-
-@pytest.mark.vcr(match_on=['beaconchain_matcher'])
-@pytest.mark.freeze_time('2024-09-13 00:00:00 GMT')
-@pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('ethereum_modules', [['eth2']])
-def test_query_eth2_balances_without_premium(
-        rotkehlchen_api_server: 'APIServer',
-        eth2: 'Eth2',
-) -> None:
-    """Check that without premium the number of validators queried for balances
-    is limited to FREE_VALIDATORS_LIMIT.
-    """
-    dbeth2 = DBEth2(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
-    for i in range(FREE_VALIDATORS_LIMIT + 1):
-        result = eth2.beacon_inquirer.get_validator_data(indices_or_pubkeys=[i])
-        result[0].ownership_proportion = FVal(0.25)
-        with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            dbeth2.add_or_update_validators(write_cursor, [result[0]])
-
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        'blockchainbalancesresource',
-    ))
-    balances_result = assert_proper_sync_response_with_result(response)
-    assert len(balances_result['per_account']['eth2']) == FREE_VALIDATORS_LIMIT
+    assert FVal(totals['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= 2 * base_amount + amount_proportion  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1062,11 +880,10 @@ def test_query_eth2_balances_without_premium(
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
-@pytest.mark.freeze_time('2023-04-26 12:38:23 GMT')
+@pytest.mark.freeze_time('2025-07-25 16:00:00 GMT')
 def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
     """Tests that combining mev rewards with block production events is seen by the API"""
-    vindex1 = 45555
-    vindex2 = 54333
+    vindex1, vindex2 = 45555, 54333
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     tx_hash, block_number, mev_reward, mevbot_address = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804'), 15824493, '0.126458404824519798', string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990')  # noqa: E501
 
@@ -1111,8 +928,8 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         json={'group_by_event_ids': True},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == result['entries_found'] == 7
-    assert result['entries_total'] == 21
+    assert len(result['entries']) == result['entries_found'] == 23
+    assert result['entries_total'] == 23
     event_identifier = None
     for entry in result['entries']:
         entry_block_number = entry['entry']['event_identifier'][4:]
@@ -1135,11 +952,10 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 3
-    assert result['entries_total'] == 34
+    assert result['entries_total'] == 38
     for outer_entry in result['entries']:
         entry = outer_entry['entry']
         if entry['sequence_index'] == 0:
-            assert entry['identifier'] == 32
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'informational'  # fee recipient not tracked
@@ -1147,7 +963,6 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['validator_index'] == vindex1
             assert entry['amount'] == '0.126419309459217215'
         elif entry['sequence_index'] == 1:
-            assert entry['identifier'] == 33
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'informational'
@@ -1155,7 +970,6 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['validator_index'] == vindex1
             assert entry['amount'] == mev_reward
         elif entry['sequence_index'] == 2:
-            assert entry['identifier'] == 1
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'evm event'
             assert entry['amount'] == mev_reward
@@ -1174,7 +988,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         json={'validator_indices': [vindex1, 42]},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == 8
+    assert len(result['entries']) == 28
     for entry in result['entries']:
         assert entry['entry']['entry_type'] == 'eth block event'
         assert entry['entry']['validator_index'] == vindex1
@@ -1189,7 +1003,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         json={'counterparties': [CPT_ETH2]},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == 11
+    assert len(result['entries']) == 37
     for entry in result['entries']:
         assert entry['entry']['entry_type'] == 'eth block event'
 
@@ -1207,7 +1021,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         json={'entry_types': entry_types_include_arg},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == 11
+    assert len(result['entries']) == 37
     for outer_entry in result['entries']:
         entry = outer_entry['entry']
         assert entry['entry_type'] == 'eth block event'
@@ -1236,33 +1050,45 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     filter_query_parameters=['apikey'],
     match_on=['beaconchain_matcher'],
 )
-@pytest.mark.freeze_time('2024-02-11 15:06:00 GMT')
+@pytest.mark.freeze_time('2025-07-25 16:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('ethereum_accounts', [[
-    CLEAN_HISTORY_WITHDRAWAL1, CLEAN_HISTORY_WITHDRAWAL2, CLEAN_HISTORY_WITHDRAWAL3,
+    CLEAN_HISTORY_WITHDRAWAL1, CLEAN_HISTORY_WITHDRAWAL2, CLEAN_HISTORY_WITHDRAWAL3, '0x2B78035514401eD1592Eb691b8673a93Edf97470',  # noqa: E501
 ]])
-def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_validators(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: Sequence['ChecksumEvmAddress'],
+) -> None:
     """Test getting validators works for all filters"""
     _prepare_clean_validators(rotkehlchen_api_server)
+    response = requests.put(  # also add an active one since by the redecoding time all are exited
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': (active_index := 2019737)},
+    )
+    assert_simple_ok_response(response)
     # Check they are returned fine
     validator1_data = {
         'activation_timestamp': 1704906839,
         'index': CLEAN_HISTORY_VALIDATOR1,
         'public_key': '0xb324c5869db5a524f9c3e2f3b82a786e7baa6ea150dc8f5c86a5342e6a7a5b4719ee1749c2f79e9e49d18a00f006118b',  # noqa: E501
-        'status': 'active',
+        'status': 'exited',
         'validator_type': 'distributing',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL1,
+        'withdrawable_timestamp': 1745759831,
     }
     validator2_data = {
         'activation_timestamp': 1704906839,
         'index': CLEAN_HISTORY_VALIDATOR2,
         'public_key': '0x874df4549e48da22326e3f5c59a2e4e2096861236c8fd9314068f9e142812c216d440ed022371cdc5c3fcc2afac11693',  # noqa: E501
-        'status': 'active',
+        'status': 'exited',
         'validator_type': 'distributing',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL2,
+        'withdrawable_timestamp': 1745759831,
     }
     validator3_data = {
         'activation_timestamp': 1680814295,
@@ -1273,6 +1099,14 @@ def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL3,
         'withdrawable_timestamp': 1706912087,
     }
+    validator4_data = {
+        'activation_timestamp': 1752965591,
+        'index': active_index,
+        'public_key': '0x80000d30002732d5afb4133447221259f956c35e6700e45d54e19d0321aae5efff41dcea57e181b7dba05d820e99f269',  # noqa: E501
+        'status': 'active',
+        'validator_type': 'distributing',
+        'withdrawal_address': ethereum_accounts[3],
+    }
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -1280,7 +1114,7 @@ def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['entries'] == [validator1_data, validator2_data, validator3_data]
+    assert result['entries'] == [validator1_data, validator2_data, validator3_data, validator4_data]  # noqa: E501
 
     response = requests.get(  # Check filtering by index works
         api_url_for(
@@ -1304,10 +1138,10 @@ def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'status': 'exited'},
+        ), json={'status': 'active'},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['entries'] == [validator3_data]
+    assert result['entries'] == [validator4_data]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1320,7 +1154,7 @@ def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server: 'A
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': 10000},
+        ), json={'validator_index': (active_index := 2019737)},
     )
     assert_proper_sync_response_with_result(response)
 
@@ -1330,13 +1164,13 @@ def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server: 'A
         blockchain='ETH2',
     ), json={'async_query': False})
     result = assert_proper_sync_response_with_result(response)
-    assert FVal(result['totals']['assets']['ETH2']['amount']) >= FVal(32)
+    assert FVal(result['totals']['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= FVal(32)
 
     response = requests.delete(  # delete validator
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validators': [10000]},
+        ), json={'validators': [active_index]},
     )
     assert_simple_ok_response(response)
 

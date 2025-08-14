@@ -14,9 +14,10 @@ export class RotkiCoreConfigBuilder {
 
   withCorsUrl(url: string): this {
     assert(this.cmd !== '', 'Command must be set first');
-    this.args.push('--api-cors', url.endsWith('/')
+    const primaryCorsUrl = url.endsWith('/')
       ? url.slice(0, Math.max(0, url.length - 1))
-      : url);
+      : url;
+    this.args.push('--api-cors', `${primaryCorsUrl},http://localhost:*`);
     return this;
   }
 

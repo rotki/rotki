@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
-import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';

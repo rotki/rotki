@@ -1,6 +1,8 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
+import pytest
+
 from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_REP
 from rotkehlchen.errors.asset import UnknownAsset
@@ -118,6 +120,7 @@ def test_query_trade_history(function_scope_iconomi):
     )]
 
 
+@pytest.mark.asset_test
 def test_iconomi_assets_are_known(
         database,
         inquirer,  # pylint: disable=unused-argument

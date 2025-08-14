@@ -2,22 +2,20 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CalendarEvent } from '@/types/history/calendar';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
+import { useTemplateRef } from 'vue';
 import CalendarColorInput from '@/components/calendar/CalendarColorInput.vue';
 import CalendarReminder from '@/components/calendar/CalendarReminder.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -35,13 +33,6 @@ const counterparty = useRefPropVModel(modelValue, 'counterparty');
 const color = useRefPropVModel(modelValue, 'color');
 const autoDelete = useRefPropVModel(modelValue, 'autoDelete');
 const timestamp = useRefPropVModel(modelValue, 'timestamp');
-
-const datetime = computed({
-  get: () => convertFromTimestamp(get(timestamp)),
-  set: (value: string) => {
-    set(timestamp, convertToTimestamp(value));
-  },
-});
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 
@@ -97,7 +88,7 @@ const states = {
   counterparty,
   description,
   name,
-  timestamp: datetime,
+  timestamp,
 };
 
 const v$ = useVuelidate(
@@ -121,11 +112,14 @@ defineExpose({
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <DateTimePicker
-        v-model="datetime"
+      <RuiDateTimePicker
+        v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
+        color="primary"
+        variant="outlined"
         data-cy="datetime"
+        type="epoch"
         :error-messages="toMessages(v$.timestamp)"
         @blur="v$.timestamp.$touch()"
       />

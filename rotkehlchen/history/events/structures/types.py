@@ -187,6 +187,7 @@ class EventCategory(Enum):
     DELEGATE = 52, EventDirection.NEUTRAL
     LOSS = 53, EventDirection.OUT
     LIQUIDITY_PROVISION_LOSS = 54, EventDirection.OUT
+    RETURN = 55, EventDirection.OUT
 
     @property
     def direction(self) -> EventDirection:

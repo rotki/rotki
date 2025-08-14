@@ -1,10 +1,9 @@
-import type * as Chart from 'chart.js';
 import type { Component } from 'vue';
+import { checkIfDevelopment } from '@shared/utils';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { app } from '@/main';
 import { setupPremium } from '@/premium/setup-premium';
 import { logger } from '@/utils/logging';
-import { checkIfDevelopment } from '@shared/utils';
 
 class AsyncLock {
   promise: Promise<void>;
@@ -128,13 +127,13 @@ export const ThemeManager = createFactory('ThemeManager');
 
 declare global {
   interface Window {
-    'Vue': any;
-    'Chart': typeof Chart;
-    'VueUse': any;
-    'VueUseShared': any;
-    'chartjs-plugin-zoom': any;
-    'zod': any;
-    'bn': any;
-    'VueRouter': any;
+    Vue: any;
+    VueEcharts: any;
+    VueUse: any;
+    VueUseShared: any;
+    ECharts: any;
+    zod: any;
+    bn: any;
+    VueRouter: any;
   }
 }

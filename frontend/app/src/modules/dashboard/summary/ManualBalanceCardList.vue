@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { type BigNumber, toCapitalCase } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useLocations } from '@/composables/locations';
 import { Routes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type BigNumber, toCapitalCase } from '@rotki/common';
 
 const props = defineProps<{
   name: string;

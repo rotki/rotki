@@ -48,6 +48,8 @@
   },
   "minimumDigitToBeAbbreviated": 4,
   "nftsInNetValue": true,
+  "notifyNewNfts": false,
+  "persistTableSorting": false,
   "profitLossReportPeriod": {
     "quarter": "ALL",
     "year": "2025"
@@ -57,7 +59,6 @@
   "renderAllNftImages": true,
   "savedFilters": {},
   "selectedTheme": 1,
-  "shouldRefreshValidatorDailyStats": false,
   "showGraphRangeSelector": true,
   "subscriptDecimals": false,
   "thousandSeparator": ",",

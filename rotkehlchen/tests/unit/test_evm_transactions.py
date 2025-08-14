@@ -1,52 +1,21 @@
 from typing import TYPE_CHECKING
-from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, Location, SupportedBlockchain, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, SupportedBlockchain, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
 
 
 ADDR_1, ADDR_2, ADDR_3 = make_evm_address(), make_evm_address(), make_evm_address()
 YAB_ADDRESS = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
-
-
-def test_query_transactions_single_chain(eth_transactions: 'EthereumTransactions'):
-    """
-    Test that when querying transactions for a single chain, addresses only for that chain are
-    queried. This tests passes several addresses for different chains to `EthereumTransactions`
-    and checks that only ethereum addresses are queried.
-    """
-    queried_addresses = []
-
-    def mock_single_address_query_transactions(address, **kwargs):  # pylint: disable=unused-argument
-        queried_addresses.append(address)
-
-    query_patch = patch.object(
-        eth_transactions,
-        'single_address_query_transactions',
-        wraps=mock_single_address_query_transactions,
-    )
-
-    with query_patch:
-        eth_transactions.query_chain(filter_query=EvmTransactionsFilterQuery.make(
-            accounts=[
-                EvmAccount(address=ADDR_1, chain_id=ChainID.OPTIMISM),
-                EvmAccount(address=ADDR_2, chain_id=ChainID.ETHEREUM),
-                EvmAccount(address=ADDR_3, chain_id=ChainID.ETHEREUM),
-            ],
-        ))
-
-    assert queried_addresses == [ADDR_2, ADDR_3]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -75,11 +44,10 @@ def test_delete_transactions_by_chain(
     ethereum_events, gnosis_events = 3, 2
     dbevmtx = DBEvmTx(database)
     with database.user_write() as write_cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor=write_cursor,
             filter_query=EvmEventFilterQuery.make(),
-            has_premium=True,
-            group_by_event_ids=False,
+                        group_by_event_ids=False,
         )
         assert len(events) == ethereum_events + gnosis_events
 
@@ -91,11 +59,10 @@ def test_delete_transactions_by_chain(
         )
 
     with database.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            has_premium=True,
-            group_by_event_ids=False,
+                        group_by_event_ids=False,
         )
         assert len(events) == ethereum_events
         assert all(event.location == Location.ETHEREUM for event in events)

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { assert } from '../assertions';
 import { TimeUnit } from './frontend';
 
@@ -17,11 +17,11 @@ export enum TimeFramePersist {
   REMEMBER = 'REMEMBER',
 }
 
-export const TimeFramePeriodEnum = z.nativeEnum(TimeFramePeriod);
+export const TimeFramePeriodEnum = z.enum(TimeFramePeriod);
 
 export type TimeFramePeriodEnum = z.infer<typeof TimeFramePeriodEnum>;
 
-const TimeFramePersistEnum = z.nativeEnum(TimeFramePersist);
+const TimeFramePersistEnum = z.enum(TimeFramePersist);
 
 export const TimeFrameSetting = z.union([TimeFramePeriodEnum, TimeFramePersistEnum]);
 
@@ -36,7 +36,7 @@ export interface Timeframe {
   readonly timestampRange: number;
 }
 
-export type Timeframes = Record<TimeFramePeriod, Timeframe>;
+type Timeframes = Record<TimeFramePeriod, Timeframe>;
 
 type TimeframeDefaults = Pick<Timeframe, 'xAxisLabelDisplayFormat' | 'xAxisTimeUnit'>;
 
@@ -165,48 +165,3 @@ export const customTimeframe: Timeframe = {
   timestampRange: -1,
   xAxisStepSize: 1,
 };
-
-const definedTimeframes = timeframes(() => 0);
-const sortedByRange = Object.values(definedTimeframes).sort((a, b) => a.timestampRange - b.timestampRange);
-
-export function getTimeframeByRange(startDate: number, endDate: number): Timeframe {
-  const range = endDate - startDate;
-  const current = Math.abs(endDate - Date.now()) < dayTimestamp;
-
-  let usedTimeframe: Timeframe = sortedByRange[0];
-  let skip = false;
-
-  sortedByRange.forEach((timeframe) => {
-    if (skip)
-      return;
-
-    if (timeframe.timestampRange >= range) {
-      usedTimeframe = timeframe;
-      skip = true;
-    }
-  });
-
-  if (range < dayTimestamp) {
-    return {
-      ...usedTimeframe,
-    };
-  }
-
-  if (usedTimeframe.xAxisTimeUnit === TimeUnit.DAY && !current) {
-    return {
-      ...usedTimeframe,
-      xAxisLabelDisplayFormat: 'MMM D',
-    };
-  }
-
-  return usedTimeframe;
-}
-
-export interface TooltipDisplayOption {
-  visible: boolean;
-  id: string;
-  left: number;
-  top: number;
-  xAlign: string;
-  yAlign: string;
-}

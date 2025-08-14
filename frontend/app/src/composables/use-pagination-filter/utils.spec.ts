@@ -1,6 +1,6 @@
 import type { Sorting } from '@/composables/use-pagination-filter/types';
-import { getApiSortingParams } from '@/composables/use-pagination-filter/utils';
 import { describe, expect, it } from 'vitest';
+import { getApiSortingParams } from '@/composables/use-pagination-filter/utils';
 
 interface EventDetails {
   date: string;

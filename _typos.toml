@@ -13,6 +13,7 @@ extend-ignore-re = [
     "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on",  # spellchecker:<on|off>
     "(?m)^.*MockResponse\\(HTTPStatus\\.OK,\\s*\\\"\\\"\\\".*$",  # Mock responses
     "(?m)^.*mIneR.*$",  # miner misspelling in test to check case-sensitivity
+    "bitcoincash:.*",  # ignore bitcoincash addresses
 ]
 extend-ignore-identifiers-re = [
     "^0x.+$",  # hexstrings
@@ -27,6 +28,8 @@ extend-ignore-identifiers-re = [
     "^NEXO_.+$",  # NEXO prefixed words
     "^A3Np3RQbaBA6oKJgiwDJeo5T3zrYfGHPWFYayMwtNDum$",  # uniswap subgraph id
     "^10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007",  # event identifier in test
+    "qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z",  # bitcoin cash address used in test
+    "BENGEso6uSrcCYyRsanYgmDwLi34QSpihU2FX2xvpump",  # solana address used in test
     "^astroid$",  # astroid library
 ]
 locale = "en"
@@ -56,7 +59,7 @@ Axe = "Axe"
 Plian = "Plian"
 MOR = "MOR"
 BOOE = "BOOE"
-
+ZARS = "ZARS"
 
 # DeFi Terms
 allo = "allo"

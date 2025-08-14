@@ -1,12 +1,12 @@
+import { type ActionResult, NumericString } from '@rotki/common';
+import { z } from 'zod/v4';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { nonEmptyProperties } from '@/utils/data';
-import { type ActionResult, NumericString } from '@rotki/common';
-import { z } from 'zod';
 
 export const WrapStatisticsSchema = z.object({
   ethOnGas: NumericString,
-  ethOnGasPerAddress: z.record(NumericString),
+  ethOnGasPerAddress: z.record(z.string(), NumericString),
   gnosisMaxPaymentsByCurrency: z.array(
     z.object({
       amount: NumericString,
@@ -20,8 +20,8 @@ export const WrapStatisticsSchema = z.object({
       timestamp: z.number(),
     }),
   ),
-  tradesByExchange: z.record(NumericString),
-  transactionsPerChain: z.record(NumericString),
+  tradesByExchange: z.record(z.string(), NumericString),
+  transactionsPerChain: z.record(z.string(), NumericString),
   transactionsPerProtocol: z.array(
     z.object({
       protocol: z.string(),

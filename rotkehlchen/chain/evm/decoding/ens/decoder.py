@@ -29,7 +29,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -76,7 +76,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             userdb=self.database,
             evm_address=context.tx_log.address,
             chain_id=self.evm_inquirer.chain_id,
-            token_kind=EvmTokenKind.ERC721,
+            token_kind=TokenKind.ERC721,
             symbol=symbol,
             name=name,
             collectible_id=str(collectible_id := int.from_bytes(context.tx_log.topics[3])),
@@ -116,7 +116,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
 
         transfer_event.counterparty = self.counterparty
         transfer_event.notes = f'{verb} {self.display_name} name {name_to_show}{from_text}{to_text}'  # noqa: E501
-        return DecodingOutput(event=transfer_event, refresh_balances=False)
+        return DecodingOutput(events=[transfer_event], refresh_balances=False)
 
     def _decode_new_resolver(self, context: DecoderContext) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
@@ -170,7 +170,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             address=context.tx_log.address,
             counterparty=self.counterparty,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
@@ -250,7 +250,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             address=context.tx_log.address,
             counterparty=self.counterparty,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_ens_public_resolver_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events that modify the ENS resolver.

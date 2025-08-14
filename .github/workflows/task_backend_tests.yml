@@ -89,8 +89,11 @@ jobs:
           cache: 'pip'
 
       - name: Install uv
-        run: |
-          pip install --upgrade uv=="${UV_VERSION}"
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
 
       - name: Cache rotkehlchen test directory
         uses: actions/cache@v4
@@ -122,13 +125,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install --system --upgrade wheel pytest-cov
-          uv pip install --system -r requirements_dev.txt
-          uv pip install --system -e .
-
-      - name: Install pytest annotation plugin
-        run: |
-          uv pip install --system pytest-github-actions-annotate-failures
+          uv sync --group dev --group lint --group ci
 
       - name: Run tests
         env:
@@ -147,19 +144,19 @@ jobs:
 
           if [ "${{ matrix.test-group }}" == 'api' ]
           then
-            python pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" rotkehlchen/tests/api
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" rotkehlchen/tests/api
           elif [ "${{ matrix.test-group }}" == 'decoders' ]
           then
-            python pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" -n 6 rotkehlchen/tests/unit/decoders -v
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" -n 6 rotkehlchen/tests/unit/decoders -v
           else
-            python pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders rotkehlchen/tests/
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders rotkehlchen/tests/
           fi
 
-          python pytestgeventwrapper.py --dead-fixtures
+          uv run pytestgeventwrapper.py --dead-fixtures
         shell: bash
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           flags: backend
           token: ${{ secrets.CODECOV_TOKEN }}

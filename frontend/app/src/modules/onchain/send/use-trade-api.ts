@@ -1,3 +1,4 @@
+import { type ActionResult, type BigNumber, NumericString, Zero } from '@rotki/common';
 import {
   type GetAssetBalancePayload,
   type PrepareERC20TransferPayload,
@@ -8,7 +9,6 @@ import {
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { type ActionResult, type BigNumber, NumericString, Zero } from '@rotki/common';
 
 interface UseTradeApiReturn {
   prepareERC20Transfer: (payload: PrepareERC20TransferPayload) => Promise<PrepareERC20TransferResponse>;

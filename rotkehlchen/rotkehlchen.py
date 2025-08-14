@@ -22,7 +22,7 @@ from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
-from rotkehlchen.chain.accounts import SingleBlockchainAccountData
+from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -31,6 +31,8 @@ from rotkehlchen.chain.base.manager import BaseManager
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
 from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
+from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -61,7 +63,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
-from rotkehlchen.db.utils import replace_tag_mappings
+from rotkehlchen.db.utils import replace_tag_mappings, table_exists
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
@@ -101,7 +103,7 @@ from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
-    SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -126,7 +128,7 @@ from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -224,18 +226,18 @@ class Rotkehlchen:
         assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
 
         for address in addresses:
-            account_tuple = (address, blockchain.to_chain_id())
+            account_data = OptionalBlockchainAccount(address=address, chain=blockchain)
             for greenlet in self.api_task_greenlets:
                 is_evm_tx_greenlet = (
                     greenlet.dead is False and
                     len(greenlet.args) >= 1 and
                     isinstance(greenlet.args[0], FunctionType) and
-                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_evm_transactions'
+                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_transactions'
                 )
                 if (
                         is_evm_tx_greenlet and
                         greenlet.kwargs.get('only_cache', False) is False and
-                        account_tuple in greenlet.kwargs['filter_query'].accounts
+                        account_data in greenlet.kwargs['accounts']
                 ):
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 
@@ -383,43 +385,65 @@ class Rotkehlchen:
                     database=self.data.db,
                     etherscan=etherscan,
                 )),
+                premium=self.premium,
                 beacon_chain=self.beaconchain,
             ),
-            optimism_manager=OptimismManager(OptimismInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-                etherscan=etherscan,
-            )),
-            polygon_pos_manager=PolygonPOSManager(PolygonPOSInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-                etherscan=etherscan,
-            )),
-            arbitrum_one_manager=ArbitrumOneManager(ArbitrumOneInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-                etherscan=etherscan,
-            )),
-            base_manager=BaseManager(BaseInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-                etherscan=etherscan,
-            )),
-            gnosis_manager=GnosisManager(GnosisInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-                etherscan=etherscan,
-            )),
-            scroll_manager=ScrollManager(ScrollInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-                etherscan=etherscan,
-            )),
-            binance_sc_manager=BinanceSCManager(BinanceSCInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-                etherscan=etherscan,
-            )),
+            optimism_manager=OptimismManager(
+                node_inquirer=OptimismInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                ),
+                premium=self.premium,
+            ),
+            polygon_pos_manager=PolygonPOSManager(
+                node_inquirer=PolygonPOSInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                ),
+                premium=self.premium,
+            ),
+            arbitrum_one_manager=ArbitrumOneManager(
+                node_inquirer=ArbitrumOneInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                ),
+                premium=self.premium,
+            ),
+            base_manager=BaseManager(
+                node_inquirer=BaseInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                ),
+                premium=self.premium,
+            ),
+            gnosis_manager=GnosisManager(
+                node_inquirer=GnosisInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                ),
+                premium=self.premium,
+            ),
+            scroll_manager=ScrollManager(
+                node_inquirer=ScrollInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                ),
+                premium=self.premium,
+            ),
+            binance_sc_manager=BinanceSCManager(
+                node_inquirer=BinanceSCInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                ),
+                premium=self.premium,
+            ),
             kusama_manager=SubstrateManager(
                 chain=SupportedBlockchain.KUSAMA,
                 msg_aggregator=self.msg_aggregator,
@@ -444,6 +468,8 @@ class Rotkehlchen:
                 ethereum_inquirer=ethereum_inquirer,
                 database=self.data.db,
             ),
+            bitcoin_manager=BitcoinManager(database=self.data.db),
+            bitcoin_cash_manager=BitcoinCashManager(database=self.data.db),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,
@@ -528,12 +554,28 @@ class Rotkehlchen:
         # Send a notification to the user if data associated with
         # old erc721 tokens has been saved during the db upgrade.
         # TODO: Remove this after a couple versions (added in version 1.38).
-        with self.data.db.conn.read_ctx() as cursor:
-            if cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='temp_erc721_data'").fetchone()[0] != 0:  # noqa: E501
-                self.msg_aggregator.add_warning(
-                    'Data associated with invalid ERC721 assets is present in your database. '
-                    'Please contact rotki support via our discord to resolve this issue.',
-                )
+        self._check_migration_table_and_notify(
+            conn=self.data.db.conn,
+            table_name='temp_erc721_data',
+            notification_callback=lambda: self.msg_aggregator.add_warning(
+                'Data associated with invalid ERC721 assets is present in your database. '
+                'Please contact rotki support via our discord to resolve this issue.',
+            ),
+        )
+
+        # Send a notification to the user if custom Solana tokens were previously
+        # added and need to be migrated manually in the app.
+        # TODO: Remove this after a couple versions (added in version 1.40).
+        with (global_conn := GlobalDBHandler().conn).cursor() as cursor:
+            self._check_migration_table_and_notify(
+                conn=global_conn,
+                table_name='user_added_solana_tokens',
+                notification_callback=lambda: self.msg_aggregator.add_message(
+                    message_type=WSMessageType.SOLANA_TOKENS_MIGRATION,
+                    data={'identifiers': [i[0] for i in cursor.execute('SELECT identifier FROM user_added_solana_tokens')]},  # noqa: E501
+                ),
+                extra_check_callback=lambda: cursor.execute('SELECT COUNT(*) FROM user_added_solana_tokens').fetchone()[0] > 0,  # noqa: E501
+            )
 
     def _logout(self) -> None:
         if not self.user_is_logged_in:
@@ -596,6 +638,8 @@ class Rotkehlchen:
                 self.premium = premium_create_and_verify(
                     credentials=credentials,
                     username=self.data.username,
+                    msg_aggregator=self.msg_aggregator,
+                    db=self.data.db,
                 )
             except RemoteError as e:
                 raise PremiumAuthenticationError(str(e)) from e
@@ -760,7 +804,7 @@ class Rotkehlchen:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_BITCOIN_CHAINS,
+            chain: SUPPORTED_BITCOIN_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[BTCAddress]],
     ) -> None:
         ...
@@ -1035,9 +1079,26 @@ class Rotkehlchen:
                 blockchain=None,
                 ignore_cache=ignore_cache,
             )  # copies below since if cache is used we end up modifying the balance sheet object
-            if len(blockchain_result.totals.assets) != 0:
-                balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets.copy()
-            liabilities = blockchain_result.totals.liabilities.copy()
+
+            blockchain_assets: dict[Asset, Balance] = {}
+            for asset, asset_balances in blockchain_result.totals.assets.items():
+                total_balance = Balance()
+                for balance in asset_balances.values():
+                    total_balance += balance
+                if total_balance.amount != ZERO:
+                    blockchain_assets[asset] = total_balance
+
+            if len(blockchain_assets) != 0:
+                balances[str(Location.BLOCKCHAIN)] = blockchain_assets
+
+            liabilities = {}
+            for asset, asset_balances in blockchain_result.totals.liabilities.items():
+                total_balance = Balance()
+                for balance in asset_balances.values():
+                    total_balance += balance
+                if total_balance.amount != ZERO:
+                    liabilities[asset] = total_balance
+
         except (RemoteError, EthSyncError) as e:
             problem_free = False
             liabilities = {}
@@ -1342,3 +1403,17 @@ class Rotkehlchen:
                 to_asset=to_asset,
                 purge_old=purge_old,
             )
+
+    @staticmethod
+    def _check_migration_table_and_notify(
+            conn: 'DBConnection',
+            table_name: str,
+            notification_callback: Callable,
+            extra_check_callback: Callable | None = None,
+    ) -> None:
+        """Helper function to check if a migration table
+        exists and send notification if it does.
+        """
+        with conn.read_ctx() as cursor:
+            if table_exists(cursor, table_name) and (extra_check_callback is None or extra_check_callback()):  # noqa: E501
+                notification_callback()

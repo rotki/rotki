@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.substrate.types import KusamaNodeName
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -96,13 +96,13 @@ def test_add_ksm_blockchain_account(
     # Check per account
     account_balances = result['per_account'][kusama_chain_key][SUBSTRATE_ACC1_KSM_ADDR]
     assert 'liabilities' in account_balances
-    asset_ksm = account_balances['assets'][A_KSM.identifier]
+    asset_ksm = account_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_ksm = result['totals']['assets'][A_KSM.identifier]
+    total_ksm = result['totals']['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
 
@@ -140,13 +140,13 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server: 'APIServer') -> N
     assert SUBSTRATE_ACC2_KSM_ADDR not in result['per_account'][kusama_chain_key]
     account_balances = result['per_account'][kusama_chain_key][SUBSTRATE_ACC1_KSM_ADDR]
     assert 'liabilities' in account_balances
-    asset_ksm = account_balances['assets'][A_KSM.identifier]
+    asset_ksm = account_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_ksm = result['totals']['assets'][A_KSM.identifier]
+    total_ksm = result['totals']['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
 

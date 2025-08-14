@@ -46,7 +46,7 @@ class OptimismDecoder(DecoderInterface):
             counterparty=CPT_OPTIMISM,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

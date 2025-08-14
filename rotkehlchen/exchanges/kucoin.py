@@ -1,6 +1,3 @@
-import base64
-import hashlib
-import hmac
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
@@ -27,6 +24,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -147,7 +145,7 @@ def deserialize_trade_pair(trade_pair_symbol: str) -> tuple[AssetWithOracles, As
     return base_asset, quote_asset
 
 
-class Kucoin(ExchangeInterface):
+class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
     """Resources:
     https://docs.kucoin.com
     https://github.com/Kucoin/kucoin-python-sdk
@@ -236,18 +234,8 @@ class Kucoin(ExchangeInterface):
                 request_url = f'{request_url}?{urlencoded_options}'
                 message = f'{message}?{urlencoded_options}'
 
-            signature = base64.b64encode(
-                hmac.new(
-                    self.secret,
-                    msg=message.encode('utf-8'),
-                    digestmod=hashlib.sha256,
-                ).digest(),
-            ).decode('utf-8')
-            passphrase = base64.b64encode(hmac.new(
-                self.secret,
-                self.api_passphrase.encode('utf-8'),
-                hashlib.sha256,
-            ).digest()).decode('utf-8')
+            signature = self.generate_hmac_b64_signature(message)
+            passphrase = self.generate_hmac_b64_signature(self.api_passphrase)
             self.session.headers.update({
                 'KC-API-SIGN': signature,
                 'KC-API-TIMESTAMP': timestamp,

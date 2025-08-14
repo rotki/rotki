@@ -33,13 +33,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    YEARN_VAULTS_V1_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    YEARN_VAULTS_V3_PROTOCOL,
-    CacheType,
-    ChainID,
-)
+from rotkehlchen.types import CacheType, ChainID
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -59,11 +53,6 @@ YEARN_V2_DEPOSIT_TOPIC: Final = b'\x90\x89\x08\t\xc6T\xf1\x1dnr\xa2\x8f\xa6\x01I
 YEARN_V3_DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
 YEARN_V3_WITHDRAW_TOPIC: Final = b'\xfb\xdey} \x1ch\x1b\x91\x05e)\x11\x9e\x0b\x02@|{\xb9jJ,u\xc0\x1f\xc9fr2\xc8\xdb'  # noqa: E501
 YEARN_V2_INCREASE_DEPOSIT_TOPIC: Final = b"\xdb\x11\x01&'\xbc\xb8W\xec\x91^\x92\xe4\xc5\xa6\\\x80\t\x8e\xa7r\x90\xa7\xb3-Y\xa8\xef+>\xa4\x1b"  # noqa: E501
-PROTOCOL_CPT_MAPPING: Final = {
-    YEARN_VAULTS_V1_PROTOCOL: CPT_YEARN_V1,
-    YEARN_VAULTS_V2_PROTOCOL: CPT_YEARN_V2,
-    YEARN_VAULTS_V3_PROTOCOL: CPT_YEARN_V3,
-}
 YEARN_COUNTERPARTIES: TypeAlias = Literal['yearn-v1', 'yearn-v2', 'yearn-v3']
 
 
@@ -110,9 +99,9 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
         with GlobalDBHandler().conn.read_ctx() as cursor:
             query_body = 'FROM evm_tokens WHERE protocol IN (?, ?, ?) AND chain=?'
             bindings = (
-                YEARN_VAULTS_V1_PROTOCOL,
-                YEARN_VAULTS_V2_PROTOCOL,
-                YEARN_VAULTS_V3_PROTOCOL,
+                CPT_YEARN_V1,
+                CPT_YEARN_V2,
+                CPT_YEARN_V3,
                 ChainID.ETHEREUM.serialize_for_db(),
             )
             cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
@@ -122,7 +111,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             # we are missing new vaults. Populate the cache
             cursor.execute(f'SELECT protocol, address {query_body}', bindings)
             for row in cursor:
-                self.vaults[PROTOCOL_CPT_MAPPING[row[0]]].add(string_to_evm_address(row[1]))
+                self.vaults[row[0]].add(string_to_evm_address(row[1]))
 
         return self.addresses_to_decoders()
 

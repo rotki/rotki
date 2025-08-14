@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events';
-import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
-import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
+import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import { get, set } from '@vueuse/core';
 import { flatten } from 'es-toolkit';
 import { computed, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
+import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
 
 const props = withDefaults(defineProps<{
   eventGroup: HistoryEventEntry;
@@ -23,6 +23,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'refresh': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -131,6 +132,7 @@ watch(() => get(eventGroup), () => {
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
       @edit-event="emit('edit-event', $event)"
+      @refresh="emit('refresh')"
     />
 
     <RuiButton

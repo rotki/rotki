@@ -72,7 +72,7 @@ class GolemDecoder(DecoderInterface):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(event=out_event, refresh_balances=False)
+        return DecodingOutput(events=[out_event], refresh_balances=False)
 
     # -- DecoderInterface methods
 

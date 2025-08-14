@@ -5,9 +5,9 @@ import type {
   ManualBalanceWithPrice,
   ManualBalanceWithValue,
 } from '@/types/manual-balances';
-import { includes } from '@/utils/blockchain/accounts/common';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
+import { includes } from '@/utils/blockchain/accounts/common';
 
 interface Filters {
   readonly tags?: string[];

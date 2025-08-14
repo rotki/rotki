@@ -1,14 +1,14 @@
 import logging
 import os
-import sqlite3
 from collections import defaultdict
 from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
+import rsqlite
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -35,12 +35,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-ASSETS_VERSION_KEY = 'assets_version'
-ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'
-ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'
-ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
-FIRST_VERSION_WITH_COLLECTIONS = 16
-FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS = 4
+ASSETS_VERSION_KEY: Final = 'assets_version'
+ASSETS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'
+ASSET_COLLECTIONS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'
+ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
+FIRST_VERSION_WITH_COLLECTIONS: Final = 16
+FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS: Final = 4
+FIRST_GLOBAL_DB_VERSION_WITH_SOLANA_TOKENS: Final = 13
 
 
 def executeall(cursor: DBCursor, statements: str) -> None:
@@ -55,15 +56,10 @@ def executeall(cursor: DBCursor, statements: str) -> None:
         cursor.execute(statement)
 
 
-def _replace_assets_from_db(
-        connection: 'DBConnection',
+def _replace_assets_from_db_cursor(
+        write_cursor: 'DBCursor',
         sourcedb_path: Path,
 ) -> None:
-    """Replace asset-related tables with data from source database.
-
-    Handles: token_kinds, asset_types, assets, evm_tokens, underlying_tokens_list,
-    common_asset_details, asset_collections, multiasset_mappings.
-    """
     # First handle token_kinds & asset_types since other tables reference it
     required_tables = [
         'token_kinds',
@@ -76,43 +72,60 @@ def _replace_assets_from_db(
         'multiasset_mappings',
         'settings',
     ]
-
     script_parts = ['PRAGMA foreign_keys = OFF;']
-    with connection.write_ctx() as cursor:
-        cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
-        cursor.execute(
-            """SELECT COUNT(*) FROM sqlite_master
-            WHERE type='table' AND name IN ({})
-            """.format(','.join('?' * len(required_tables))),
-            required_tables,
-        )
-        if cursor.fetchone()[0] < len(required_tables):
-            schemas = {}
-            for table in required_tables:
-                if (schema := cursor.execute(
-                    "SELECT sql FROM other_db.sqlite_master WHERE type='table' AND name=?",
-                    (table,),
-                ).fetchone()):
-                    raw_schema = schema[0]
-                    schema_def = raw_schema.split('CREATE TABLE')[1].split('(', 1)[1]
-                    schemas[table] = schema_def
+    write_cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
+    if (  # add solana_tokens table only if source db version supports it
+        (result := write_cursor.execute("SELECT value FROM other_db.settings WHERE name='version';").fetchone()) is not None and   # noqa: E501
+        int(result[0]) >= FIRST_GLOBAL_DB_VERSION_WITH_SOLANA_TOKENS
+    ):
+        required_tables.append('solana_tokens')
 
-            for table, schema in schemas.items():
-                script_parts.append(f'CREATE TABLE IF NOT EXISTS {table} ({schema};')
-
-        # Always do the delete and insert
+    write_cursor.execute(
+        """SELECT COUNT(*) FROM sqlite_master
+        WHERE type='table' AND name IN ({})
+        """.format(','.join('?' * len(required_tables))),
+        required_tables,
+    )
+    if write_cursor.fetchone()[0] < len(required_tables):
+        schemas = {}
         for table in required_tables:
-            script_parts.extend([
-                f'DELETE FROM {table};',
-                f'INSERT INTO {table} SELECT * FROM other_db.{table};',
-            ])
+            if (schema := write_cursor.execute(
+                "SELECT sql FROM other_db.sqlite_master WHERE type='table' AND name=?",
+                (table,),
+            ).fetchone()):
+                raw_schema = schema[0]
+                schema_def = raw_schema.split('CREATE TABLE')[1].split('(', 1)[1]
+                schemas[table] = schema_def
+
+        for table, schema in schemas.items():
+            script_parts.append(f'CREATE TABLE IF NOT EXISTS {table} ({schema};')
+
+    # Always do the delete and insert
+    for table in required_tables:
         script_parts.extend([
-            f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
-            f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));",
-            'PRAGMA foreign_keys = ON;',
-            "DETACH DATABASE 'other_db';",
+            f'DELETE FROM {table};',
+            f'INSERT INTO {table} SELECT * FROM other_db.{table};',
         ])
-        cursor.executescript('\n'.join(script_parts))
+    script_parts.extend([
+        f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
+        f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));",
+        'PRAGMA foreign_keys = ON;',
+        "DETACH DATABASE 'other_db';",
+    ])
+    write_cursor.executescript('\n'.join(script_parts))
+
+
+def _replace_assets_from_db(
+        connection: 'DBConnection',
+        sourcedb_path: Path,
+) -> None:
+    """Replace asset-related tables with data from source database.
+
+    Handles: token_kinds, asset_types, assets, evm_tokens, solana_tokens,
+    underlying_tokens_list, common_asset_details, asset_collections, multiasset_mappings.
+    """
+    with connection.write_ctx() as write_cursor:
+        _replace_assets_from_db_cursor(write_cursor, sourcedb_path)
 
 
 def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
@@ -137,7 +150,7 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
             'SELECT * FROM asset_collections WHERE main_asset=?;',
             (local_asset.identifier,),
         ).fetchone()
-    except sqlite3.Error:
+    except rsqlite.Error:
         # If query fails due to missing main_asset
         # column (pre-v10 schema), set collection to None
         collection = None
@@ -246,11 +259,11 @@ class AssetsUpdater:
         try:
             with connection.savepoint_ctx() as cursor:
                 executeall(cursor, action)
-        except sqlite3.Error:
+        except rsqlite.Error:
             try:
                 with connection.savepoint_ctx() as cursor:
                     executeall(cursor, full_insert)
-            except sqlite3.Error as e:
+            except rsqlite.Error as e:
                 log.error(
                     f'Failed to edit or add asset collection with values {result}. '
                     f'{action}. Error: {e!s}',
@@ -277,11 +290,11 @@ class AssetsUpdater:
         try:
             with connection.savepoint_ctx() as cursor:
                 executeall(cursor, action)
-        except sqlite3.Error:
+        except rsqlite.Error:
             try:
                 with connection.savepoint_ctx() as cursor:
                     executeall(cursor, full_insert)
-            except sqlite3.Error as e:
+            except rsqlite.Error as e:
                 log.error(
                     f'Failed to edit asset collection mapping with values {result}. '
                     f'{action}. Error: {e!s}',
@@ -318,12 +331,12 @@ class AssetsUpdater:
 
                 if local_asset is not None:
                     AssetResolver().clean_memory_cache(identifier=local_asset.identifier)
-        except sqlite3.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
+        except rsqlite.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
             if local_asset is None:
                 try:  # if asset is not known then simply do an insertion
                     with connection.savepoint_ctx() as cursor:
                         executeall(cursor, full_insert)
-                except sqlite3.Error as e:
+                except rsqlite.Error as e:
                     self.msg_aggregator.add_warning(
                         f'Failed to add asset {remote_asset_data.identifier} in the '
                         f'DB during the v{version} assets update. Skipping entry. '
@@ -347,7 +360,7 @@ class AssetsUpdater:
                 try:
                     with connection.savepoint_ctx() as cursor:
                         _force_remote_asset(cursor, local_asset, full_insert)
-                except sqlite3.Error as e:
+                except rsqlite.Error as e:
                     self.msg_aggregator.add_warning(
                         f'Failed to resolve conflict for {remote_asset_data.identifier} in '
                         f'the DB during the v{version} assets update. Skipping entry. '
@@ -405,7 +418,7 @@ class AssetsUpdater:
                     try:
                         with connection.write_ctx() as write_cursor:
                             executeall(write_cursor, action)
-                    except sqlite3.Error as e:
+                    except rsqlite.Error as e:
                         log.error(
                             f'Failed to apply update/delete statement {action} from '
                             f'{update_file_type} update v{version} due to {e}. Skipping... ',
@@ -475,10 +488,11 @@ class AssetsUpdater:
             )
 
         # at the very end update the current version in the DB
-        connection.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            (ASSETS_VERSION_KEY, str(version)),
-        )
+        with connection.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                (ASSETS_VERSION_KEY, str(version)),
+            )
 
     def perform_update(
             self,
@@ -524,10 +538,10 @@ class AssetsUpdater:
                 sql_vm_instructions_cb=self.globaldb.conn.sql_vm_instructions_cb,
             )
 
-            # use a critical section to avoid modifications in the globaldb during the update
+            # open write_ctx early to avoid modifications in the globaldb during the update
             # process since we ignore any possible change in the user globaldb once we started
             # the update.
-            with self.globaldb.conn.critical_section():
+            with self.globaldb.conn.write_ctx() as globaldb_write_cursor:
                 log.info('Starting assets update. Copying content from the user globaldb')
                 _replace_assets_from_db(temp_db_connection, global_db_path)
 
@@ -548,7 +562,7 @@ class AssetsUpdater:
                 # otherwise we are sure the DB will work without conflicts so let's
                 # now move the data to the actual global DB
                 log.info('Finishing assets update. Replacing users globaldb with the updated information')  # noqa: E501
-                _replace_assets_from_db(self.globaldb.conn, tmpdir / temp_db_name)
+                _replace_assets_from_db_cursor(globaldb_write_cursor, tmpdir / temp_db_name)
 
         return None
 

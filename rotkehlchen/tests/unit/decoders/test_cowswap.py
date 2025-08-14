@@ -1085,3 +1085,64 @@ def test_gnosis_eure_v2(
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_accounts):
+    """Test CowSwap transaction that is not sent directly to the settlement contract."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(evmhash := deserialize_evm_tx_hash('0x8f234b8c646a06cbafc7657525ed1d86a06c018827568618de33ae2099b92c5d')),  # noqa: E501
+    )
+    gpv2_vault_relayer_address = string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110')  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=36,
+        timestamp=(timestamp := TimestampMS(1753698947000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=(cvx_asset := Asset('eip155:1/erc20:0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B')),
+        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564038889.796956635951924877'),  # noqa: E501
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Set CVX spending approval of {user_address} by {gpv2_vault_relayer_address} to {approval_amount}',  # noqa: E501
+        address=gpv2_vault_relayer_address,
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=37,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=cvx_asset,
+        amount=FVal(out_amount := '5.705558859092411421'),
+        location_label=user_address,
+        notes=f'Swap {out_amount} CVX in a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=38,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(in_amount := '0.0081706173415831'),
+        location_label=user_address,
+        notes=f'Receive {in_amount} ETH as the result of a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=39,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=cvx_asset,
+        amount=FVal(fee_amount := '0.032282810854031814'),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} CVX as a cowswap fee',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    )]
+    assert events == expected_events

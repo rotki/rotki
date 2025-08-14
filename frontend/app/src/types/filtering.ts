@@ -1,5 +1,5 @@
+import { z } from 'zod/v4';
 import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';
-import { z } from 'zod';
 
 export enum FilterBehaviour {
   INCLUDE = 'include',
@@ -21,6 +21,8 @@ interface BaseMatcher<K, KV = void> {
   readonly description: string;
   readonly hint?: string;
   readonly multiple?: boolean;
+  // Suggestions to show in the table filter. Default is 5. Set to -1 to show all.
+  readonly suggestionsToShow?: number;
 }
 
 export interface StringSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {

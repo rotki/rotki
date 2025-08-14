@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/types/snapshots';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/types/snapshots';
+import { type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import EditLocationDataSnapshotForm from '@/components/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -11,7 +12,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
-import { type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 
 const props = defineProps<{
   modelValue: LocationDataSnapshot[];

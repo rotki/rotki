@@ -1,9 +1,10 @@
 import logging
 import shutil
-import sqlite3
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import rsqlite
 
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.migrations.manager import (
@@ -12,7 +13,7 @@ from rotkehlchen.globaldb.migrations.manager import (
 )
 from rotkehlchen.globaldb.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.globaldb.utils import (
-    GLOBAL_DB_SCHEMA_BREAKING_CHANGES,
+    GLOBAL_DB_ASSETS_BREAKING_VERSIONS,
     GLOBAL_DB_VERSION,
     MIN_SUPPORTED_GLOBAL_DB_VERSION,
     globaldb_get_setting_value,
@@ -31,6 +32,7 @@ from .v8_v9 import migrate_to_v9
 from .v9_v10 import migrate_to_v10
 from .v10_v11 import migrate_to_v11
 from .v11_v12 import migrate_to_v12
+from .v12_v13 import migrate_to_v13
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
@@ -83,6 +85,10 @@ UPGRADES_LIST = [
         from_version=11,
         function=migrate_to_v12,
     ),
+    UpgradeRecord(
+        from_version=12,
+        function=migrate_to_v13,
+    ),
 ]
 
 
@@ -105,7 +111,7 @@ def maybe_upgrade_globaldb(
     try:
         with connection.read_ctx() as cursor:
             db_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
-    except sqlite3.OperationalError:  # pylint: disable=no-member
+    except rsqlite.OperationalError:  # pylint: disable=no-member
         return True  # fresh DB -- nothing to upgrade
 
     if db_version < MIN_SUPPORTED_GLOBAL_DB_VERSION:
@@ -127,7 +133,7 @@ def maybe_upgrade_globaldb(
             target_version=GLOBAL_DB_VERSION,
         )
         for upgrade in UPGRADES_LIST:
-            if globaldb is not None and upgrade.from_version in GLOBAL_DB_SCHEMA_BREAKING_CHANGES:
+            if globaldb is not None and upgrade.from_version in GLOBAL_DB_ASSETS_BREAKING_VERSIONS:
                 AssetsUpdater(
                     globaldb=globaldb,
                     msg_aggregator=msg_aggregator,
@@ -167,7 +173,8 @@ def _perform_single_upgrade(
     progress_handler.new_round(version=to_version)
 
     # WAL checkpoint at start to make sure everything is in the file we copy for backup. For more info check comment in the user DB upgrade.  # noqa: E501
-    connection.execute('PRAGMA wal_checkpoint(FULL);')
+    connection.wal_checkpoint('(FULL)')
+
     # Create a backup
     tmp_db_filename = f'{ts_now()}_global_db_v{upgrade.from_version}.backup'
     tmp_db_path = global_dir / tmp_db_filename
@@ -231,15 +238,18 @@ def configure_globaldb(
     )
 
     # its not a fresh database and foreign keys are not turned on by default.
-    connection.executescript('PRAGMA foreign_keys=on;')
-    connection.execute('PRAGMA journal_mode=WAL;')
-    if is_fresh_db is True:
-        connection.executescript(DB_SCRIPT_CREATE_TABLES)
-        with connection.write_ctx() as cursor:
-            cursor.executemany(
+    with connection.write_ctx() as write_cursor:
+        write_cursor.executescript('PRAGMA foreign_keys=on;')
+        write_cursor.execute('PRAGMA journal_mode=WAL;')
+
+        if is_fresh_db is True:
+            write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
+            write_cursor.executemany(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
             )
-    else:
+
+    if is_fresh_db is False:
         maybe_apply_globaldb_migrations(connection)
+
     connection.schema_sanity_check()

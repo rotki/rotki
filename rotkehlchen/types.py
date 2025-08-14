@@ -71,46 +71,7 @@ AVAILABLE_MODULES_MAP = {
 
 DEFAULT_OFF_MODULES = {'makerdao_dsr'}
 
-
-UNISWAP_PROTOCOL: Final = 'UNI-V2'
-UNISWAPV3_PROTOCOL: Final = 'UNI-V3'
-SUSHISWAP_PROTOCOL: Final = 'SLP'
-# this variable is used in the decoders and maps to the protocol field used in the database
-# for yearn vaults v1
-YEARN_VAULTS_V1_PROTOCOL = 'yearn_vaults_v1'
-YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
-YEARN_VAULTS_V3_PROTOCOL = 'yearn_vaults_v3'
-YEARN_STAKING_PROTOCOL = 'yearn_staking'
-CURVE_POOL_PROTOCOL = 'curve_pool'
-VELODROME_POOL_PROTOCOL = 'velodrome_pool'
-AERODROME_POOL_PROTOCOL = 'aerodrome_pool'
-PICKLE_JAR_PROTOCOL = 'pickle_jar'
 SPAM_PROTOCOL = 'spam'
-GEARBOX_PROTOCOL = 'gearbox'
-HOP_PROTOCOL_LP = 'hop_lp'
-MORPHO_VAULT_PROTOCOL: Final = 'morpho_vaults'
-CURVE_LENDING_VAULTS_PROTOCOL = 'curve_lending_vaults'
-PENDLE_PROTOCOL = 'pendle'
-
-
-# The protocols for which we know how to calculate their prices
-ProtocolsWithPriceLogic = (
-    UNISWAP_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    CURVE_POOL_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
-    HOP_PROTOCOL_LP,
-    UNISWAPV3_PROTOCOL,
-    AERODROME_POOL_PROTOCOL,
-    PENDLE_PROTOCOL,
-)
-
-LP_TOKEN_AS_POOL_PROTOCOLS = (  # In these protocols the LP token of a pool and the pool itself are the same contract  # noqa: E501
-    UNISWAP_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
-    AERODROME_POOL_PROTOCOL,
-)
-LP_TOKEN_AS_POOL_CONTRACT_ABIS = Literal['VELO_V2_LP', 'UNISWAP_V2_LP']  # These contract are both the pool and the LP token of the pool  # noqa: E501
 
 T_Timestamp = int
 Timestamp = NewType('Timestamp', T_Timestamp)
@@ -134,7 +95,6 @@ class ExternalService(SerializableEnumNameMixin):
     BEACONCHAIN = auto()
     LOOPRING = auto()
     OPENSEA = auto()
-    BINANCE_SC_ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     MONERIUM = auto()
     THEGRAPH = auto()
@@ -203,8 +163,14 @@ def deserialize_evm_tx_hash(val: Web3HexBytes | (bytearray | (bytes | str))) -> 
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
+T_BTCTxHash = str
+BTCTxHash = NewType('BTCTxHash', T_BTCTxHash)
+
 T_Eth2PubKey = str
 Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
+
+T_SolanaAddress = str
+SolanaAddress = NewType('SolanaAddress', T_SolanaAddress)
 
 BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress
 AnyBlockchainAddress = TypeVar(
@@ -219,9 +185,6 @@ TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress,
 
 T_Price = FVal
 Price = NewType('Price', T_Price)
-
-T_TradeID = str
-TradeID = NewType('TradeID', T_TradeID)
 
 
 class AssetAmount(NamedTuple):
@@ -460,7 +423,7 @@ class ChainType(SerializableEnumNameMixin):
             return SUPPORTED_EVM_CHAINS + SUPPORTED_EVMLIKE_CHAINS
 
         if self == ChainType.BITCOIN:
-            return get_args(SUPPORTED_BITCOIN_CHAINS)
+            return SUPPORTED_BITCOIN_CHAINS
 
         if self == ChainType.SUBSTRATE:
             return get_args(SUPPORTED_SUBSTRATE_CHAINS)
@@ -512,7 +475,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         return self.is_evm() or self.is_evmlike()
 
     def is_bitcoin(self) -> bool:
-        return self in get_args(SUPPORTED_BITCOIN_CHAINS)
+        return self in SUPPORTED_BITCOIN_CHAINS
 
     def is_substrate(self) -> bool:
         return self in get_args(SUPPORTED_SUBSTRATE_CHAINS)
@@ -626,8 +589,19 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.BINANCE_SC,
 ]
-
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
+
+EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[SupportedBlockchain.ZKSYNC_LITE]
+EVMLIKE_CHAINS_WITH_TRANSACTIONS: tuple[EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
+
+EVM_EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE = EVM_CHAINS_WITH_TRANSACTIONS_TYPE | EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE  # noqa: E501
+EVM_EVMLIKE_CHAINS_WITH_TRANSACTIONS: tuple[EVM_EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = EVM_CHAINS_WITH_TRANSACTIONS + EVMLIKE_CHAINS_WITH_TRANSACTIONS  # noqa: E501
+
+OTHER_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH]  # noqa: E501
+OTHER_CHAINS_WITH_TRANSACTIONS: tuple[OTHER_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(OTHER_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
+
+CHAINS_WITH_TRANSACTIONS_TYPE = EVM_CHAINS_WITH_TRANSACTIONS_TYPE | EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE | OTHER_CHAINS_WITH_TRANSACTIONS_TYPE  # noqa: E501
+CHAINS_WITH_TRANSACTIONS: tuple[CHAINS_WITH_TRANSACTIONS_TYPE, ...] = EVM_CHAINS_WITH_TRANSACTIONS + EVMLIKE_CHAINS_WITH_TRANSACTIONS + OTHER_CHAINS_WITH_TRANSACTIONS  # noqa: E501
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.ETHEREUM,
@@ -688,10 +662,11 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.BINANCE_SC,
 ]
 
-SUPPORTED_BITCOIN_CHAINS = Literal[
+SUPPORTED_BITCOIN_CHAINS_TYPE = Literal[
     SupportedBlockchain.BITCOIN,
     SupportedBlockchain.BITCOIN_CASH,
 ]
+SUPPORTED_BITCOIN_CHAINS: tuple[SUPPORTED_BITCOIN_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_BITCOIN_CHAINS_TYPE)  # noqa: E501
 
 SUPPORTED_SUBSTRATE_CHAINS = Literal[
     SupportedBlockchain.POLKADOT,
@@ -715,7 +690,7 @@ CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
 }
 NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
 
-CHAINS_WITH_CHAIN_MANAGER = Literal[
+EVM_CHAINS_WITH_CHAIN_MANAGER = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.POLYGON_POS,
@@ -728,6 +703,11 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.ZKSYNC_LITE,
     SupportedBlockchain.BINANCE_SC,
+]
+
+CHAINS_WITH_CHAIN_MANAGER = EVM_CHAINS_WITH_CHAIN_MANAGER | Literal[
+    SupportedBlockchain.BITCOIN,
+    SupportedBlockchain.BITCOIN_CASH,
 ]
 
 
@@ -787,6 +767,7 @@ class Location(DBCharEnumMixIn):
     KUSAMA = 52
     COINBASEPRIME = 53
     BINANCE_SC = 54  # on-chain Binance Smart Chain events
+    SOLANA = 55
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
@@ -838,8 +819,8 @@ class Location(DBCharEnumMixIn):
         return ChainID.POLYGON_POS.value
 
     @staticmethod
-    def from_chain(chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> 'BLOCKCHAIN_LOCATIONS_TYPE':
-        assert chain in SUPPORTED_EVM_EVMLIKE_CHAINS
+    def from_chain(chain: CHAINS_WITH_TRANSACTIONS_TYPE) -> 'BLOCKCHAIN_LOCATIONS_TYPE':
+        assert chain in CHAINS_WITH_TRANSACTIONS
         match chain:
             case SupportedBlockchain.ETHEREUM:
                 return Location.ETHEREUM
@@ -859,8 +840,24 @@ class Location(DBCharEnumMixIn):
                 return Location.BINANCE_SC
             case SupportedBlockchain.ZKSYNC_LITE:
                 return Location.ZKSYNC_LITE
+            case SupportedBlockchain.BITCOIN:
+                return Location.BITCOIN
+            case SupportedBlockchain.BITCOIN_CASH:
+                return Location.BITCOIN_CASH
             case _:  # should never happen
                 raise AssertionError(f'Got in Location.from_chain for {chain}')
+
+    def is_evm(self) -> bool:
+        return self in EVM_LOCATIONS
+
+    def is_evmlike(self) -> bool:
+        return self in EVMLIKE_LOCATIONS
+
+    def is_evm_or_evmlike(self) -> bool:
+        return self in EVM_EVMLIKE_LOCATIONS
+
+    def is_bitcoin(self) -> bool:
+        return self in BITCOIN_LOCATIONS
 
 
 EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC]  # noqa: E501
@@ -869,10 +866,10 @@ EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
 EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
 EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
 EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
-
-# For now Location enum has only evmlike chains. This will change so keep separate variable
-BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE
-BLOCKCHAIN_LOCATIONS: Final = EVM_EVMLIKE_LOCATIONS
+BITCOIN_LOCATIONS_TYPE = Literal[Location.BITCOIN, Location.BITCOIN_CASH]
+BITCOIN_LOCATIONS: tuple[BITCOIN_LOCATIONS_TYPE, ...] = typing.get_args(BITCOIN_LOCATIONS_TYPE)
+BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE | BITCOIN_LOCATIONS_TYPE
+BLOCKCHAIN_LOCATIONS: tuple[BLOCKCHAIN_LOCATIONS_TYPE, ...] = EVM_EVMLIKE_LOCATIONS + BITCOIN_LOCATIONS  # noqa: E501
 
 
 class ExchangeAuthCredentials(NamedTuple):
@@ -960,7 +957,15 @@ class AddressbookEntry(NamedTuple):
         }
 
     def serialize_for_db(self) -> tuple[str, str, str]:
-        return (self.address, self.name, self.blockchain.value if self.blockchain is not None else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE)  # noqa: E501
+        return (
+            self.address,
+            self.name,
+            (
+                self.blockchain.value
+                if self.blockchain is not None
+                else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
+            ),
+        )
 
     @classmethod
     def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
@@ -971,6 +976,48 @@ class AddressbookEntry(NamedTuple):
             address=data['address'],
             name=data['name'],
             blockchain=SupportedBlockchain.deserialize(data['blockchain']) if data['blockchain'] is not None else None,  # noqa: E501
+        )
+
+
+class AddressbookEntryWithSource(NamedTuple):
+    """AddressbookEntry with source information - used for /names/all endpoint"""
+    address: BlockchainAddress
+    name: str
+    blockchain: SupportedBlockchain | None
+    source: 'AddressNameSource'
+
+    def serialize(self) -> dict[str, str | None]:
+        return {
+            'address': self.address,
+            'name': self.name,
+            'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
+            'source': self.source,
+        }
+
+    def serialize_for_db(self) -> tuple[str, str, str]:
+        return (
+            self.address,
+            self.name,
+            (
+                self.blockchain.value
+                if self.blockchain is not None
+                else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
+            ),
+        )
+
+    @classmethod
+    def deserialize(
+            cls: type['AddressbookEntryWithSource'],
+            data: dict[str, Any],
+    ) -> 'AddressbookEntryWithSource':
+        """May raise:
+        -KeyError if required keys are missing
+        """
+        return cls(
+            address=data['address'],
+            name=data['name'],
+            blockchain=SupportedBlockchain.deserialize(data['blockchain']) if data['blockchain'] is not None else None,  # noqa: E501
+            source=data['source'],
         )
 
     def __str__(self) -> str:
@@ -1149,10 +1196,34 @@ class FValWithTolerance(NamedTuple):
     tolerance: FVal = ZERO
 
 
-class EvmTokenKind(DBCharEnumMixIn):
+class TokenKind(DBCharEnumMixIn):
     ERC20 = auto()
     ERC721 = auto()
     UNKNOWN = auto()
+
+    # Solana tokens
+    SPL_TOKEN = auto()  # fungible tokens on solana - https://spl.solana.com/token
+    SPL_NFT = auto()  # nfts on solana - https://developers.metaplex.com/token-metadata
+
+    @classmethod
+    def deserialize_evm_from_db(cls, value: Any) -> 'EVM_TOKEN_KINDS':
+        """Deserialize specifically for EVM token kinds"""
+        if (result := cls.deserialize_from_db(value)) not in (TokenKind.ERC20, TokenKind.ERC721):
+            raise DeserializationError(f'Expected EVM token kind, got {result}')
+
+        return result  # type: ignore[return-value]  # the check above ensures it's an evm token kind.
+
+    @classmethod
+    def deserialize_solana_from_db(cls, value: Any) -> 'SOLANA_TOKEN_KINDS':
+        """Deserialize specifically for Solana token kinds"""
+        if (result := cls.deserialize_from_db(value)) not in (TokenKind.SPL_TOKEN, TokenKind.SPL_NFT):  # noqa: E501
+            raise DeserializationError(f'Expected solana token kind, got {result}')
+
+        return result  # type: ignore[return-value]  # the check above ensures it's solana token kind.
+
+
+EVM_TOKEN_KINDS = Literal[TokenKind.ERC20, TokenKind.ERC721]
+SOLANA_TOKEN_KINDS = Literal[TokenKind.SPL_TOKEN, TokenKind.SPL_NFT]
 
 
 class CacheType(Enum):
@@ -1196,7 +1267,8 @@ class CacheType(Enum):
     CURVE_LENDING_VAULT_CONTROLLER = auto()
     CURVE_LENDING_VAULT_BORROWED_TOKEN = auto()
     AURA_POOLS = auto()  # stores count of pools in db + chain_id (stringified)
-    BALANCER_GAUGES = auto()  # stores gauges + chain_id + version
+    BALANCER_V1_GAUGES = auto()  # stores gauges + chain_id
+    BALANCER_V2_GAUGES = auto()  # stores gauges + chain_id
     VELODROME_GAUGE_FEE_ADDRESS = auto()
     VELODROME_GAUGE_BRIBE_ADDRESS = auto()
     AERODROME_GAUGE_FEE_ADDRESS = auto()
@@ -1209,6 +1281,8 @@ class CacheType(Enum):
     PENDLE_POOLS = auto()
     PENDLE_SY_TOKENS = auto()
     PENDLE_YIELD_TOKENS = auto()  # store the count of all SYs, PTs, YTs & LP tokens per chain
+    BEEFY_VAULTS = auto()
+    MERKL_REWARD_PROTOCOLS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1235,6 +1309,9 @@ class ProtocolsWithCache(SerializableEnumNameMixin):
     CONVEX = auto()
     GEARBOX = auto()
     SPARK = auto()
+    BALANCER_V1 = auto()
+    BALANCER_V2 = auto()
+    MERKL = auto()
     # TODO: ETH_WITHDRAWALS and ETH_BLOCKS should be removed
     #  once https://github.com/rotki/rotki/issues/9302 is implemented
     ETH_WITHDRAWALS = auto()
@@ -1269,6 +1346,8 @@ UniqueCacheType = Literal[
     CacheType.CURVE_CRVUSD_COLLATERAL_TOKEN,
     CacheType.CURVE_CRVUSD_AMM,
     CacheType.PENDLE_YIELD_TOKENS,
+    CacheType.BEEFY_VAULTS,
+    CacheType.MERKL_REWARD_PROTOCOLS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
@@ -1291,7 +1370,8 @@ GeneralCacheType = Literal[
     CacheType.EXTRAFI_REWARD_CONTRACTS,
     CacheType.BALANCER_V1_POOLS,
     CacheType.BALANCER_V2_POOLS,
-    CacheType.BALANCER_GAUGES,
+    CacheType.BALANCER_V1_GAUGES,
+    CacheType.BALANCER_V2_GAUGES,
     CacheType.MORPHO_REWARD_DISTRIBUTORS,
     CacheType.CURVE_CRVUSD_CONTROLLERS,
     CacheType.STAKEDAO_GAUGES,
@@ -1327,6 +1407,8 @@ DEFAULT_ADDRESS_NAME_PRIORITY: Sequence[AddressNameSource] = (
 
 
 class HistoryEventQueryType(SerializableEnumNameMixin):
-    """Locations to query for history events"""
+    """Locations to query for history event data"""
     ETH_WITHDRAWALS = auto()
     BLOCK_PRODUCTIONS = auto()
+    MONERIUM = auto()
+    GNOSIS_PAY = auto()

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { ManualPriceFormPayload } from '@/types/prices';
-import type { DataTableColumn } from '@rotki/ui-library';
 import NonFungibleBalancesFilter from '@/components/accounts/balances/NonFungibleBalancesFilter.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';

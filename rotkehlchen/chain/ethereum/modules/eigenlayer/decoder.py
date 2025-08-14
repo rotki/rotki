@@ -223,7 +223,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def decode_eigenpod_creation(self, context: DecoderContext) -> DecodingOutput:
         if not self.base.is_tracked(owner := bytes_to_address(context.tx_log.topics[2])):
@@ -244,7 +244,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             address=context.tx_log.address,
             extra_data={'eigenpod_owner': owner, 'eigenpod_address': eigenpod_address},
         )
-        return DecodingOutput(event=event, reload_decoders={'Eigenlayer'})
+        return DecodingOutput(events=[event], reload_decoders={'Eigenlayer'})
 
     def decode_eigenpod_delayed_withdrawals(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CREATED:
@@ -283,7 +283,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def decode_eigenpod_delayed_withdrawals_claimed(self, context: DecoderContext) -> DecodingOutput:  # noqa: E501
         if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.data[0:32])):
@@ -331,10 +331,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         )
         dbevents = DBHistoryEvents(self.base.database)
         with self.base.database.conn.read_ctx() as cursor:
-            events = dbevents.get_history_events(
+            events = dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=db_filter,
-                has_premium=True,
             )
 
         withdrawal_root = '0x' + context.tx_log.data.hex()
@@ -395,7 +394,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 address=context.tx_log.address,
             )
 
-        return DecodingOutput(event=new_event)
+        return DecodingOutput(events=[new_event])
 
     def _decode_withdrawal_queued(self, context: DecoderContext) -> DecodingOutput:
         """Creates and adds a queued withdrawal for each withdrawal in the event"""
@@ -529,7 +528,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             extra_data={'amount': str(underlying_amounts[0])},
         )
 
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_start_checkpoint(self, context: DecoderContext) -> DecodingOutput:
         beacon_blockroot = '0x' + context.tx_log.topics[2].hex()
@@ -546,7 +545,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_finalize_checkpoint(self, context: DecoderContext) -> DecodingOutput:
         total_shares_delta = from_wei(int.from_bytes(context.tx_log.data))
@@ -566,7 +565,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_validator_balance_updated(self, context: DecoderContext) -> DecodingOutput:
         validator_index = int.from_bytes(context.tx_log.data[0:32])
@@ -584,7 +583,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def decode_eigenpod_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == CHECKPOINT_CREATED:

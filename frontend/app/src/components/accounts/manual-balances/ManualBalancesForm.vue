@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
@@ -16,8 +18,6 @@ import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balan
 import { useLocationStore } from '@/store/locations';
 import { useBigNumberModel, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

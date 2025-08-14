@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { UserNote } from '@/types/notes';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/composables/form';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 const modelValue = defineModel<Partial<UserNote>>({ required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

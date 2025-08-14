@@ -1,8 +1,7 @@
 # Good kraken and python resource:
-# https://github.com/zertrin/clikraken/tree/master/clikraken
+# https://github.com/zertrin/clikraken/tree/master/src/clikraken
 import base64
 import hashlib
-import hmac
 import itertools
 import json
 import logging
@@ -33,6 +32,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeQueryBalances,
     ExchangeWithExtras,
 )
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
@@ -165,7 +165,7 @@ class KrakenAccountType(SerializableEnumNameMixin):
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 
 
-class Kraken(ExchangeInterface, ExchangeWithExtras):
+class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -183,6 +183,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             database=database,
             msg_aggregator=msg_aggregator,
         )
+        # Kraken provides base64-encoded secrets, decode it for use with mixin methods
+        self.secret = ApiSecret(base64.b64decode(self.secret))
         self.session.headers.update({'API-Key': self.api_key})
         self.set_account_type(kraken_account_type)
         self.call_counter = 0
@@ -208,6 +210,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         changed = super().edit_exchange_credentials(credentials)
         if credentials.api_key is not None:
             self.session.headers.update({'API-Key': self.api_key})
+        if changed and credentials.api_secret is not None:
+            # Decode the new base64 secret
+            self.secret = ApiSecret(base64.b64decode(self.secret))
 
         return changed
 
@@ -350,13 +355,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         # any unicode strings must be turned to bytes
         hashable = (str(req['nonce']) + post_data).encode()
         message = urlpath.encode() + hashlib.sha256(hashable).digest()
-        signature = hmac.new(
-            base64.b64decode(self.secret),
-            message,
-            hashlib.sha512,
+        signature = self.generate_hmac_b64_signature(
+            message=message,
+            digest_algorithm=hashlib.sha512,
         )
         self.session.headers.update({
-            'API-Sign': base64.b64encode(signature.digest()),
+            'API-Sign': signature,
         })
         try:
             response = self.session.post(

@@ -50,17 +50,19 @@ def read_single_event_frequently(database, num, limit, sleep_between_reads):
     dbevents = DBHistoryEvents(database)
     for _ in range(num):
         with database.conn.read_ctx() as cursor:
-            dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(limit=limit), has_premium=True)  # noqa: E501
+            dbevents.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(limit=limit),
+            )
         gevent.sleep(sleep_between_reads)
 
 
 def read_events(database, limit):
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
-        dbevents.get_history_events(
+        dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(limit=limit),
-            has_premium=True,
         )
 
 

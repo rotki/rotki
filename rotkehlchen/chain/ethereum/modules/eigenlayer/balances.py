@@ -116,7 +116,7 @@ class EigenlayerBalances(ProtocolWithBalance):
                 continue
 
             token_price = Inquirer.find_usd_price(token)
-            balances[depositor].assets[token] += Balance(
+            balances[depositor].assets[token][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=token_price * amount,
             )
@@ -135,10 +135,9 @@ class EigenlayerBalances(ProtocolWithBalance):
             event_subtypes=[HistoryEventSubType.NONE],
         )
         with self.event_db.db.conn.read_ctx() as cursor:
-            completed_withdrawal_events = self.event_db.get_history_events(
+            completed_withdrawal_events = self.event_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=db_filter,
-                has_premium=True,
             )
 
         for completed_withdrawal in completed_withdrawal_events:
@@ -179,7 +178,7 @@ class EigenlayerBalances(ProtocolWithBalance):
                     continue
 
                 token_price = Inquirer.find_usd_price(event.asset)
-                balances[withdrawer].assets[event.asset] += Balance(
+                balances[withdrawer].assets[event.asset][self.counterparty] += Balance(
                     amount=(amount := FVal(str_amount)),
                     usd_value=token_price * amount,
                 )
@@ -194,7 +193,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         eth_price = Inquirer.find_usd_price(A_ETH)  # now query all eigenpod balances and add it
         for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(eigenpod_to_owner.keys())).items():  # noqa: E501
             if amount > ZERO:
-                balances[eigenpod_to_owner[eigenpod_address]].assets[A_ETH] += Balance(
+                balances[eigenpod_to_owner[eigenpod_address]].assets[A_ETH][self.counterparty] += Balance(  # noqa: E501
                     amount=amount,
                     usd_value=eth_price * amount,
                 )

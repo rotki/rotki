@@ -35,7 +35,7 @@ from rotkehlchen.tests.utils.globaldb import (
     underlying_address4,
     user_token_address1,
 )
-from rotkehlchen.types import ChainID, EvmTokenKind, Location
+from rotkehlchen.types import ChainID, Location, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -139,7 +139,7 @@ def test_adding_user_tokens(
         EvmToken.initialize(
             address=underlying_address4,
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
         ),
     ]
     expected_result = [x.to_dict() for x in expected_tokens]
@@ -183,13 +183,13 @@ def test_adding_user_tokens(
     bad_token: EvmToken = EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='foo',
         symbol='BBB',
         underlying_tokens=[
-            UnderlyingToken(address=make_evm_address(), weight=FVal('0.5055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
-            UnderlyingToken(address=make_evm_address(), weight=FVal('0.7055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.5055'), token_kind=TokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.7055'), token_kind=TokenKind.ERC20),  # noqa: E501
         ],
     )
     serialized_token = bad_token.to_dict()
@@ -215,13 +215,13 @@ def test_adding_user_tokens(
     bad_token = EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='foo',
         symbol='BBB',
         underlying_tokens=[
-            UnderlyingToken(address=make_evm_address(), weight=FVal('0.1055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
-            UnderlyingToken(address=make_evm_address(), weight=FVal('0.2055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.1055'), token_kind=TokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_evm_address(), weight=FVal('0.2055'), token_kind=TokenKind.ERC20),  # noqa: E501
         ],
     )
     serialized_token = bad_token.to_dict()
@@ -247,7 +247,7 @@ def test_adding_user_tokens(
     bad_token = EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='foo',
         symbol='BBB',
@@ -469,7 +469,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
     non_existent_identifier = evm_address_to_identifier(
         address=non_existent_address,
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
     response = requests.delete(
         api_url_for(
@@ -498,7 +498,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
         json={'identifier': evm_address_to_identifier(
             address=underlying_address1,
             chain_id=ChainID.ETHEREUM,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
         )},
     )
     assert_proper_response(response)
@@ -643,12 +643,12 @@ def test_adding_evm_token_with_underlying_token(
     token_identifier = evm_address_to_identifier(
         address=token_address,
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
     swapped_for = evm_address_to_identifier(
         address='0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
     payload = {
         'asset_type': 'evm token',
@@ -685,17 +685,17 @@ def test_adding_evm_token_with_underlying_token(
         symbol='BPT',
         address=new_token_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         underlying_tokens=[
             UnderlyingToken(
                 address=underlying_token_1,
                 weight=FVal('0.5'),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
             ),
             UnderlyingToken(
                 address=underlying_token_2,
                 weight=FVal('0.5'),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
             ),
         ],
     )

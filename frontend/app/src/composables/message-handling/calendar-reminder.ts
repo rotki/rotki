@@ -1,12 +1,12 @@
 import type { CalendarEventWithReminder } from '@/types/history/calendar';
 import type { CommonMessageHandler } from '@/types/websocket-messages';
+import { type Notification, NotificationCategory, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import dayjs from 'dayjs';
 import { useCalendarReminderApi } from '@/composables/history/calendar/reminder';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
-import { type Notification, NotificationCategory, Severity } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import dayjs from 'dayjs';
 
 export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CalendarEventWithReminder> {
   const { getChainName } = useSupportedChains();
@@ -31,7 +31,7 @@ export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): 
 
     let message = '';
     if (data.address && data.blockchain) {
-      const address = get(addressNameSelector(data.address)) || data.address;
+      const address = get(addressNameSelector(data.address, data.blockchain)) || data.address;
       message += `${t('common.account')}: ${address} (${get(getChainName(data.blockchain))}) \n`;
     }
 

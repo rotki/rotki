@@ -16,7 +16,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.types import ChainID, TokenKind
 from rotkehlchen.utils.misc import get_chunks
 
 from .constants import CPT_GMX, GMX_READER, GMX_STAKING_REWARD, GMX_USD_DECIMALS, GMX_VAULT_ADDRESS
@@ -137,7 +137,7 @@ class GmxBalances(ProtocolWithBalance):
                         evm_address_to_identifier(
                             address=collaterals_used[position_idx],
                             chain_id=ChainID.ARBITRUM_ONE,
-                            token_type=EvmTokenKind.ERC20,
+                            token_type=TokenKind.ERC20,
                         ),
                     )
                 except (UnknownAsset, WrongAssetType):
@@ -159,7 +159,7 @@ class GmxBalances(ProtocolWithBalance):
                     number=position_collateral_value / asset_price,
                     ndigits=collateral_asset.decimals or 18,
                 )
-                balances[user_address].assets[collateral_asset] += Balance(
+                balances[user_address].assets[collateral_asset][self.counterparty] += Balance(
                     amount=asset_amount,
                     usd_value=position_collateral_value,  # it is already given in USD
                 )
@@ -194,7 +194,7 @@ class GmxBalances(ProtocolWithBalance):
                 token_amount=staked_amount_raw,
                 token_decimals=18,  # GMX has 18 decimals
             )
-            balances[user_address].assets[self.gmx] += Balance(
+            balances[user_address].assets[self.gmx][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=amount * gmx_price,
             )

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
+import { type BigNumber, Blockchain, toSentenceCase } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
@@ -9,7 +10,7 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
@@ -20,7 +21,6 @@ import { useStatusStore } from '@/store/status';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { CURRENCY_USD } from '@/types/currencies';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { type BigNumber, Blockchain, toSentenceCase } from '@rotki/common';
 
 type AssetLocations = AssetLocation[];
 

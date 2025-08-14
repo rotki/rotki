@@ -18,6 +18,8 @@ from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.base.transactions import BaseTransactions
 from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
 from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
+from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -814,6 +816,16 @@ def fixture_zksync_lite_manager(ethereum_inquirer, database):
     )
 
 
+@pytest.fixture(name='bitcoin_manager')
+def fixture_bitcoin_manager(database):
+    return BitcoinManager(database=database)
+
+
+@pytest.fixture(name='bitcoin_cash_manager')
+def fixture_bitcoin_cash_manager(database):
+    return BitcoinCashManager(database=database)
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> list[str]:
     return []
@@ -852,6 +864,8 @@ def fixture_blockchain(
         polkadot_manager,
         avalanche_manager,
         zksync_lite_manager,
+        bitcoin_manager,
+        bitcoin_cash_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -867,7 +881,12 @@ def fixture_blockchain(
 ):
     premium = None
     if start_with_valid_premium:
-        premium = Premium(credentials=rotki_premium_credentials, username=username)
+        premium = Premium(
+            credentials=rotki_premium_credentials,
+            username=username,
+            msg_aggregator=messages_aggregator,
+            db=database,
+        )
 
     return ChainsAggregator(
         blockchain_accounts=blockchain_accounts,
@@ -883,6 +902,8 @@ def fixture_blockchain(
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,
         zksync_lite_manager=zksync_lite_manager,
+        bitcoin_manager=bitcoin_manager,
+        bitcoin_cash_manager=bitcoin_cash_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,

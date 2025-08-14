@@ -34,7 +34,7 @@ from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
-from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
+from rotkehlchen.db.schema import DB_CREATE_USER_NOTES
 from rotkehlchen.db.settings import (
     DEFAULT_ACTIVE_MODULES,
     DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
@@ -138,7 +138,6 @@ TABLES_AT_INIT = [
     'tags',
     'xpubs',
     'xpub_mappings',
-    'eth2_daily_staking_details',
     'eth2_validators',
     'eth_validators_data_cache',
     'ignored_actions',
@@ -218,9 +217,9 @@ def test_add_remove_exchange(database: DBHandler) -> None:
         assert len(credentials) == 0
 
         kraken_api_key1 = ApiKey('kraken_api_key')
-        kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
+        kraken_api_secret1 = ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQ=')
         kraken_api_key2 = ApiKey('kraken_api_key2')
-        kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
+        kraken_api_secret2 = ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQy')
         binance_api_key = ApiKey('binance_api_key')
         binance_api_secret = ApiSecret(b'binance_api_secret')
 
@@ -1741,10 +1740,10 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
-    # verify that a the difference in text being upper or lower case doesn't affect the check
+    # verify that the difference in text being upper or lower case doesn't affect the check
     with database.user_write() as write_cursor:
-        write_cursor.execute('DROP TABLE eth2_daily_staking_details')
-        write_cursor.execute(DB_CREATE_ETH2_DAILY_STAKING_DETAILS.lower())
+        write_cursor.execute('DROP TABLE user_notes')
+        write_cursor.execute(DB_CREATE_USER_NOTES.lower())
     connection.schema_sanity_check()
 
     assert 'Your user database has the following unexpected tables' not in caplog.text, 'Found unexpected table in clean DB'  # noqa: E501

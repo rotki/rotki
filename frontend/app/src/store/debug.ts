@@ -1,6 +1,6 @@
 import type { PiniaPluginContext } from 'pinia';
-import { logger } from '@/utils/logging';
 import { BigNumber, bigNumberify } from '@rotki/common';
+import { logger } from '@/utils/logging';
 
 const PREFIX = 'pinia.store.';
 

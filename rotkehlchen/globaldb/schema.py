@@ -83,7 +83,7 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
 """
 
-# Custom enum table for token kindss
+# Custom enum table for token kinds
 DB_CREATE_TOKEN_KINDS = """
 CREATE TABLE IF NOT EXISTS token_kinds (
   token_kind    CHAR(1)       PRIMARY KEY NOT NULL,
@@ -95,6 +95,10 @@ INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('A', 1);
 INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('B', 2);
 /* UNKNOWN */
 INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3);
+/* SPL TOKEN */
+INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('D', 4);
+/* SPL NFT */
+INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('E', 5);
 """
 
 # The common_asset_details contains information common for all the crypto-assets
@@ -153,6 +157,16 @@ CREATE TABLE IF NOT EXISTS evm_tokens (
     FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """
+
+DB_CREATE_SOLANA_TOKENS = """
+CREATE TABLE IF NOT EXISTS solana_tokens (
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    token_kind CHAR(1) NOT NULL DEFAULT('D') REFERENCES token_kinds(token_kind),
+    address VARCHAR[44] NOT NULL,
+    decimals INTEGER,
+    protocol TEXT,
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);"""
 
 # The multiassets_mappings table and asset_collections table work together. This table allows to
 # create a relation between the representation of the same asset in different chains. For example
@@ -352,6 +366,7 @@ CREATE INDEX IF NOT EXISTS idx_location_mappings_identifier ON location_asset_ma
 CREATE INDEX IF NOT EXISTS idx_underlying_tokens_lists_identifier ON underlying_tokens_list (identifier, parent_token_entry);
 CREATE INDEX IF NOT EXISTS idx_binance_pairs_identifier ON binance_pairs (base_asset, quote_asset);
 CREATE INDEX IF NOT EXISTS idx_multiasset_mappings_identifier ON multiasset_mappings (asset);
+CREATE INDEX IF NOT EXISTS idx_solana_tokens_identifier ON solana_tokens (identifier, protocol);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
@@ -380,6 +395,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_LOCATION_ASSET_MAPPINGS}
 {DB_CREATE_LOCATION_UNSUPPORTED_ASSETS}
 {DB_CREATE_COUNTERPARTY_ASSET_MAPPINGS}
+{DB_CREATE_SOLANA_TOKENS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

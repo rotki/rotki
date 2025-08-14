@@ -7,18 +7,21 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
-from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from ..constants import CPT_AAVE_V3, MINT
-from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED
+from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED, SWAPPED
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -42,6 +45,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
             native_gateways: 'tuple[ChecksumEvmAddress, ...]',
             treasury: 'ChecksumEvmAddress',
             incentives: 'ChecksumEvmAddress',
+            collateral_swap_address: 'ChecksumEvmAddress | None' = None,
             label: Literal['AAVE v3', 'Spark'] = 'AAVE v3',
             counterparty: Literal['aave-v3', 'spark'] = CPT_AAVE_V3,
     ):
@@ -60,6 +64,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         )
         self.treasury = treasury
         self.incentives = incentives
+        self.collateral_swap_address = collateral_swap_address
 
     def decode_liquidation(self, context: 'DecoderContext') -> None:
         """
@@ -75,7 +80,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 amount=int.from_bytes(tx_log.data[:32]),
                 asset=EvmToken(evm_address_to_identifier(
                     address=tx_log.address,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                     chain_id=self.evm_inquirer.chain_id,
                 )),
             ) for tx_log in context.all_logs
@@ -140,6 +145,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
         Returns the final list of the decoded events."""
         supply_event, withdraw_event, return_event, receive_event, migrateout_event, migratein_event, maybe_earned_event = None, None, None, None, None, None, None  # noqa: E501
+        swap_event = swap_receive_event = None
         for event in decoded_events:  # identify the events decoded till now
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
@@ -169,6 +175,12 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
             ):
                 migrateout_event = event
             elif (
+                event.counterparty == CPT_AAVE_V3 and
+                event.event_type == HistoryEventType.TRADE and
+                event.extra_data is not None
+            ):
+                swap_event = event
+            elif (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.address == ZERO_ADDRESS and
@@ -180,12 +192,38 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} from migrating an AAVE v2 position to v3'  # noqa: E501
                     event.address = None  # no need to have zero address
                     migratein_event = event
+                elif swap_event is not None and swap_event.extra_data is not None:  # logic for collateral swap  # noqa: E501
+                    if (
+                        received_addr := swap_event.extra_data.get('received_addr')
+                    ) is None:
+                        log.error(
+                            f'Aave V3 swap event in {transaction} missing extradata. Skipping',
+                        )
+                        continue
+
+                    received_token = event.asset.resolve_to_evm_token()
+                    if not any(received_addr == x.address for x in received_token.underlying_tokens or []):  # noqa: E501
+                        log.error(f'{received_addr} is not in the underlying tokens for {received_token}: {received_token.underlying_tokens=}')  # noqa: E501
+                        continue
+
+                    event.event_type = HistoryEventType.TRADE
+                    event.event_subtype = HistoryEventSubType.RECEIVE
+                    event.notes = f'Receive {event.amount} {received_token.symbol} as the result of collateral swap in AAVE v3'  # noqa: E501
+                    swap_event.extra_data = None
+                    swap_receive_event = event
+
                 else:
                     event.event_subtype = HistoryEventSubType.INTEREST
                     event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
                     maybe_earned_event = event  # this may also be the mint transfer event which was already decoded (for some chains and assets) -- remember it to check it down later  # noqa: E501
 
                 event.counterparty = self.counterparty
+
+        if swap_event and swap_receive_event:
+            maybe_reshuffle_events(  # groups together the receive/interest event and then the collateral swap  # noqa: E501
+                ordered_events=[e for e in decoded_events if e.event_subtype == HistoryEventSubType.INTEREST and e.asset == swap_event.asset] + [swap_event, swap_receive_event],  # noqa: E501
+                events_list=decoded_events,
+            )
 
         if migrateout_event and migratein_event:
             maybe_reshuffle_events(
@@ -300,12 +338,50 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         )
         return decoded_events
 
+    def _collateral_swap(self, context: 'DecoderContext') -> DecodingOutput:
+        """Decode a collateral swap event from aave.
+
+        This swapped event logs the underlying token swapped. At this point we have decoded
+        only the spend event and not the receive events. Since what the user receives is
+        the wrapped aave token we can't use the action item because we don't know which
+        aave token we will receive. The receive event is decoded in _decode_interest that happens
+        in the post decoding.
+        """
+        if context.tx_log.topics[0] != SWAPPED:
+            return DEFAULT_DECODING_OUTPUT
+
+        swapped_addr = bytes_to_address(context.tx_log.topics[1])
+        for event in context.decoded_events:
+            if (
+                event.asset.is_evm_token() and
+                event.amount == asset_normalized_value(
+                    amount=int.from_bytes(context.tx_log.data[0:32]),  # swapped amount
+                    asset=(resolved_token := event.asset.resolve_to_evm_token()),
+                ) and
+                any(token.address == swapped_addr for token in resolved_token.underlying_tokens or [])  # noqa: E501
+            ):
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.SPEND
+                event.counterparty = CPT_AAVE_V3
+                event.notes = f'Swap {event.amount} {resolved_token.symbol} AAVE v3 collateral'
+                event.extra_data = {'received_addr': bytes_to_address(context.tx_log.topics[2])}  # used to decode the other leg of the trade. Is removed before saving the event in the db.  # noqa: E501
+                break
+        else:
+            log.error(f'Failed to find aave v3 collateral swap in {context.transaction}')
+
+        return DEFAULT_DECODING_OUTPUT
+
     # DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return super().addresses_to_decoders() | {
+        addresses = super().addresses_to_decoders() | {
             self.incentives: (self._decode_incentives,),
         }
+
+        if self.collateral_swap_address:
+            addresses |= {self.collateral_swap_address: (self._collateral_swap,)}
+
+        return addresses
 
     @staticmethod  # DecoderInterface method
     def counterparties() -> tuple[CounterpartyDetails, ...]:

@@ -58,7 +58,7 @@ class SafemultisigDecoder(DecoderInterface):
             counterparty=CPT_SAFE_MULTISIG,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_removed_owner(self, context: DecoderContext) -> DecodingOutput:
         if (address := _get_maybe_indexed_address(context, details='safe owner addition')) is None:
@@ -79,7 +79,7 @@ class SafemultisigDecoder(DecoderInterface):
             counterparty=CPT_SAFE_MULTISIG,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_changed_threshold(self, context: DecoderContext) -> DecodingOutput:
         threshold = int.from_bytes(context.tx_log.data[:32])
@@ -98,7 +98,7 @@ class SafemultisigDecoder(DecoderInterface):
             counterparty=CPT_SAFE_MULTISIG,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_execution_success(self, context: DecoderContext) -> DecodingOutput:
         """Decodes the execution success message. We only add an event only if other
@@ -124,7 +124,7 @@ class SafemultisigDecoder(DecoderInterface):
             counterparty=CPT_SAFE_MULTISIG,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def decode_safe_creation(self, context: DecoderContext) -> DecodingOutput:
         if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
@@ -155,7 +155,7 @@ class SafemultisigDecoder(DecoderInterface):
             counterparty=CPT_SAFE_MULTISIG,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_execution_failure(self, context: DecoderContext) -> DecodingOutput:
         if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
@@ -174,7 +174,7 @@ class SafemultisigDecoder(DecoderInterface):
             counterparty=CPT_SAFE_MULTISIG,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

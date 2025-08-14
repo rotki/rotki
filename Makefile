@@ -8,11 +8,13 @@ lint:
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
 	PYRIGHT_PYTHON_IGNORE_WARNINGS=1 pyright $(COMMON_LINT_PATHS)
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
+	python tools/lint_checksum_addresses.py
 
 
 format:
 	ruff check $(ALL_LINT_PATHS) --fix
 	double-indent $(ALL_LINT_PATHS)
+	python tools/lint_checksum_addresses.py --fix
 
 
 clean:
@@ -24,30 +26,13 @@ docker-image:
 
 
 test-assets:
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_binance.py::test_binance_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_binance_us.py::test_binance_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bitfinex.py::test_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bitstamp.py::test_bitstamp_exchange_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_coinbase.py::test_coverage_of_products
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_kraken.py::test_coverage_of_kraken_balances
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_iconomi.py::test_iconomi_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_kucoin.py::test_kucoin_exchange_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_poloniex.py::test_poloniex_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_gemini.py::test_gemini_all_symbols_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_okx.py::test_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_assets.py::test_coingecko_identifiers_are_reachable
-	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_assets.py::test_cryptocompare_asset_support
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_independentreserve.py::test_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_zerionsdk.py::test_protocol_names_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_zerionsdk.py::test_query_all_protocol_balances_for_account
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_woo.py::test_woo_assets_are_known
-	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_bybit.py::test_assets_are_known
+	uv run pytestgeventwrapper.py -m asset_test rotkehlchen/tests
 
 create-cassettes:
-	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr rotkehlchen/tests
+	RECORD_CASSETTES=true uv run pytestgeventwrapper.py -m vcr rotkehlchen/tests
 
 create-cassette:
-	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr $(filter-out $@,$(MAKECMDGOALS))
+	RECORD_CASSETTES=true uv run pytestgeventwrapper.py -m vcr $(filter-out $@,$(MAKECMDGOALS))
 
 
 

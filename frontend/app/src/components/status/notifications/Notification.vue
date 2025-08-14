@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import MissingKeyNotification from '@/components/status/notifications/MissingKeyNotification.vue';
-import { arrayify } from '@/utils/array';
 import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
 import dayjs from 'dayjs';
+import MissingKeyNotification from '@/components/status/notifications/MissingKeyNotification.vue';
+import { arrayify } from '@/utils/array';
 
 const props = withDefaults(
   defineProps<{

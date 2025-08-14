@@ -1,5 +1,6 @@
 import hashlib
 import platform
+from collections.abc import Sequence
 from enum import Enum, auto
 from typing import Any
 
@@ -8,7 +9,11 @@ import bech32
 from bip_utils import Bech32ChecksumError, P2TRAddrEncoder, P2WPKHAddrEncoder, SegwitBech32Decoder
 
 from rotkehlchen.errors.serialization import EncodingError
+from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import ensure_type
 from rotkehlchen.types import BTCAddress
+from rotkehlchen.utils.misc import satoshis_to_btc
+from rotkehlchen.utils.network import request_get_dict
 
 BIP32_HARDEN: int = 0x80000000
 
@@ -19,15 +24,28 @@ class WitnessVersion(Enum):
     BECH32M = auto()  # version byte of 1
 
 
-class OpCodes:
-    op_0 = b'\x00'
-    op_1 = b'\x51'
-    op_16 = b'\x60'
-    op_dup = b'\x76'
-    op_equal = b'\x87'
-    op_equalverify = b'\x88'
-    op_hash160 = b'\xa9'
-    op_checksig = b'\xac'
+class OpCodes(bytes, Enum):
+    """Bitcoin script opcodes.
+    Only those used in our code are included here.
+    See https://learnmeabitcoin.com/technical/script/#opcodes for a complete list.
+    """
+    # Push data
+    OP_0 = b'\x00'
+    OP_1 = b'\x51'
+    OP_16 = b'\x60'
+    OP_PUSHDATA1 = b'\x4c'
+    OP_PUSHDATA2 = b'\x4d'
+    OP_PUSHDATA4 = b'\x4e'
+    # Control flow
+    OP_RETURN = b'\x6a'
+    # Stack operators
+    OP_DUP = b'\x76'
+    # Bitwise logic
+    OP_EQUAL = b'\x87'
+    OP_EQUALVERIFY = b'\x88'
+    # Cryptography
+    OP_HASH160 = b'\xa9'
+    OP_CHECKSIG = b'\xac'
 
 
 def is_valid_btc_address(value: str) -> bool:
@@ -207,10 +225,10 @@ def scriptpubkey_to_p2pkh_address(data: bytes) -> BTCAddress:
     P2PKH: OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
     """
     if (
-        data[0:1] != OpCodes.op_dup or
-        data[1:2] != OpCodes.op_hash160 or
-        data[-2:-1] != OpCodes.op_equalverify or
-        data[-1:] != OpCodes.op_checksig
+        data[0:1] != OpCodes.OP_DUP or
+        data[1:2] != OpCodes.OP_HASH160 or
+        data[-2:-1] != OpCodes.OP_EQUALVERIFY or
+        data[-1:] != OpCodes.OP_CHECKSIG
     ):
         raise EncodingError(f'Invalid P2PKH scriptpubkey: {data.hex()}')
 
@@ -225,7 +243,7 @@ def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
 
     P2SH: OP_HASH160 <scriptHash> OP_EQUAL
     """
-    if data[0:1] != OpCodes.op_hash160 or data[-1:] != OpCodes.op_equal:
+    if data[0:1] != OpCodes.OP_HASH160 or data[-1:] != OpCodes.OP_EQUAL:
         raise EncodingError(f'Invalid P2SH scriptpubkey: {data.hex()}')
 
     prefixed_hash = bytes.fromhex('05') + data[2:22]  # 20 byte pubkey hash
@@ -237,9 +255,9 @@ def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
 def scriptpubkey_to_bech32_address(data: bytes) -> BTCAddress:
     """Return a native SegWit (bech32) address given a scriptpubkey"""
     version = data[0]
-    if OpCodes.op_1 <= data[0:1] <= OpCodes.op_16:
+    if OpCodes.OP_1 <= data[0:1] <= OpCodes.OP_16:
         version -= 0x50
-    elif data[0:1] != OpCodes.op_0:
+    elif data[0:1] != OpCodes.OP_0:
         raise EncodingError(f'Invalid bech32 scriptpubkey: {data.hex()}')
 
     address = bech32.encode('bc', version, data[2:])
@@ -257,10 +275,65 @@ def scriptpubkey_to_btc_address(data: bytes) -> BTCAddress:
     """
     first_op_code = data[0:1]
 
-    if first_op_code == OpCodes.op_dup:
+    if first_op_code == OpCodes.OP_DUP:
         return scriptpubkey_to_p2pkh_address(data)
 
-    if first_op_code == OpCodes.op_hash160:
+    if first_op_code == OpCodes.OP_HASH160:
         return scriptpubkey_to_p2sh_address(data)
 
     return scriptpubkey_to_bech32_address(data)
+
+
+def query_blockstream_like_account_info(
+        base_url: str,
+        account: BTCAddress,
+) -> tuple[FVal, int]:
+    """Query account info from APIs similar to blockstream.info
+    Returns the account balance and tx count in a tuple.
+    May raise:
+    - RemoteError if got problems with querying the API
+    - UnableToDecryptRemoteData if unable to load json in request_get
+    - KeyError if got unexpected json structure
+    - DeserializationError if got unexpected json values
+    """
+    response_data = request_get_dict(
+        url=f'{base_url}/address/{account}',
+        handle_429=True,
+        backoff_in_seconds=4,
+    )
+    stats = response_data['chain_stats']
+    funded_txo_sum = satoshis_to_btc(ensure_type(
+        symbol=stats['funded_txo_sum'],
+        expected_type=int,
+        location='blockstream-like API funded_txo_sum',
+    ))
+    spent_txo_sum = satoshis_to_btc(ensure_type(
+        symbol=stats['spent_txo_sum'],
+        expected_type=int,
+        location='blockstream-like API spent_txo_sum',
+    ))
+    return funded_txo_sum - spent_txo_sum, stats['tx_count']
+
+
+def query_blockstream_like_balances(
+        base_url: str,
+        accounts: Sequence[BTCAddress],
+) -> dict[BTCAddress, FVal]:
+    """Query balances from APIs similar to blockstream.info"""
+    balances = {}
+    for account in accounts:
+        balance, _ = query_blockstream_like_account_info(base_url, account)
+        balances[account] = balance
+    return balances
+
+
+def query_blockstream_like_has_transactions(
+        base_url: str,
+        accounts: Sequence[BTCAddress],
+) -> dict[BTCAddress, tuple[bool, FVal]]:
+    """Query if accounts have transactions from APIs similar to blockstream.info"""
+    have_transactions = {}
+    for account in accounts:
+        balance, tx_count = query_blockstream_like_account_info(base_url, account)
+        have_transactions[account] = ((tx_count != 0), balance)
+    return have_transactions

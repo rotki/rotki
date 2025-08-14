@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { OnlineHistoryEventsQueryType } from '@/types/history/events';
 import { getTextToken, toHumanReadable } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
+import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
 const search = defineModel<string>('search', { required: true });
@@ -12,7 +12,10 @@ defineProps<{
 
 const emit = defineEmits<{ 'update:all-selected': [allSelected: boolean] }>();
 
-const queries: OnlineHistoryEventsQueryType[] = Object.values(OnlineHistoryEventsQueryType).sort() as unknown as OnlineHistoryEventsQueryType[];
+const queries: OnlineHistoryEventsQueryType[] = [
+  OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+  OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
+];
 
 const filteredQueries = computed<OnlineHistoryEventsQueryType[]>(() => {
   const query = getTextToken(get(search));

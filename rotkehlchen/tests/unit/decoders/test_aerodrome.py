@@ -15,11 +15,10 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    AERODROME_POOL_PROTOCOL,
     ChainID,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -30,22 +29,22 @@ WSTETH_GAUGE_ADDRESS = string_to_evm_address('0xDf7c8F17Ab7D47702A4a4b6D951d2A4c
 VELO_V2_TOKEN = evm_address_to_identifier(
     address=string_to_evm_address('0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
     chain_id=ChainID.OPTIMISM,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 )
 VELO_V1_TOKEN = evm_address_to_identifier(
     address=string_to_evm_address('0x3c8B650257cFb5f272f799F5e2b4e65093a11a05'),
     chain_id=ChainID.OPTIMISM,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 )
 WSTETH_TOKEN = Asset(evm_address_to_identifier(
     address=string_to_evm_address('0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452'),
     chain_id=ChainID.BASE,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 ))
 WETH_BASE = Asset(evm_address_to_identifier(
     address=WETH_BASE_ADDRESS,
     chain_id=ChainID.BASE,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 ))
 
 
@@ -133,7 +132,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
         ),
     ]
     assert events == expected_events
-    assert EvmToken(pool_token.identifier).protocol == AERODROME_POOL_PROTOCOL
+    assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
 @pytest.mark.vcr
@@ -192,7 +191,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
         ),
     ]
     assert events == expected_events
-    assert EvmToken(pool_token.identifier).protocol == AERODROME_POOL_PROTOCOL
+    assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
 @pytest.mark.vcr
@@ -212,7 +211,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
     pool_token = Asset(evm_address_to_identifier(
         address=pool_address,
         chain_id=ChainID.BASE,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     ))
     expected_events = [
         EvmEvent(

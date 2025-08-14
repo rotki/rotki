@@ -1,7 +1,7 @@
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, Union
 
 from eth_utils import is_checksum_address
 
@@ -397,7 +397,10 @@ def update_table_schema(
     return False
 
 
-def get_query_chunks(data: Sequence[int | str]) -> list[tuple[Sequence[int | str], str]]:
+T = TypeVar('T')
+
+
+def get_query_chunks(data: Sequence[T]) -> list[tuple[Sequence[T], str]]:
     """Chunk data to be included in a query as placeholder variables.
     Returns a list of tuples containing the bindings and string of placeholders for each chunk.
     """
@@ -430,14 +433,15 @@ def unlock_database(
     if sqlcipher_version == 3:
         script += f'PRAGMA kdf_iter={KDF_ITER};'
 
-    db_connection.executescript(script)
-    # the following will fail with DatabaseError in case of wrong password.
-    # If this goes away at any point it needs to be replaced by something
-    # that checks the password is correct at this same point in the code
-    db_connection.execute('PRAGMA schema_version')
-    db_connection.execute('PRAGMA foreign_keys=ON')
-    if apply_optimizations:
-        # Optimizations for the combined trades view
-        db_connection.execute('PRAGMA cache_size = -32768')
-        # switch to WAL mode: https://www.sqlite.org/wal.html
-        db_connection.execute('PRAGMA journal_mode=WAL;')
+    with db_connection.write_ctx() as write_cursor:
+        write_cursor.executescript(script)
+        # the following will fail with DatabaseError in case of wrong password.
+        # If this goes away at any point it needs to be replaced by something
+        # that checks the password is correct at this same point in the code
+        write_cursor.execute('PRAGMA schema_version')
+        write_cursor.execute('PRAGMA foreign_keys=ON')
+        if apply_optimizations:
+            # Optimizations for the combined trades view
+            write_cursor.execute('PRAGMA cache_size = -32768')
+            # switch to WAL mode: https://www.sqlite.org/wal.html
+            write_cursor.execute('PRAGMA journal_mode=WAL;')

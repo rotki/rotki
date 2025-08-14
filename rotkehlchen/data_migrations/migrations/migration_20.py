@@ -154,10 +154,18 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         # Apply all updates in a single transaction
         if updates_to_apply:
             with db.user_write() as write_cursor:
-                write_cursor.executemany(
-                    'UPDATE history_events SET event_identifier = ? WHERE identifier = ?',
-                    updates_to_apply,
-                )
+                for update in updates_to_apply:
+                    try:
+                        write_cursor.execute(
+                            'UPDATE history_events SET event_identifier = ? WHERE identifier = ?',
+                            update,
+                        )
+                    except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                        rotki.msg_aggregator.add_error(
+                            f'Failed to fix swap with event identifier {update[0]}. '
+                            'Skipping it, check logs for more details',
+                        )
+                        log.error(f'During _fix_swap_event_identifiers found a conflict while applying update {update}. error: {e}. Skipping')  # noqa: E501
 
     @progress_step(description='Recovering lost trades from v1.39.0 upgrade')
     def _recover_lost_trades_from_v139_upgrade(rotki: 'Rotkehlchen') -> None:

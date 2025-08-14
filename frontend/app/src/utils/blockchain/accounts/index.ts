@@ -1,3 +1,4 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { AssetBalances } from '@/types/balances';
 import type {
   AddressData,
@@ -10,6 +11,7 @@ import type {
   ValidatorData,
 } from '@/types/blockchain/accounts';
 import type {
+  AssetProtocolBalances,
   BlockchainAssetBalances,
   BlockchainBalances,
   BlockchainTotals,
@@ -17,16 +19,15 @@ import type {
   EthBalance,
 } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import type { MaybeRef } from '@vueuse/core';
+import { type Balance, Zero } from '@rotki/common';
+import { camelCase, omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { sum } from '@/utils/balances';
 import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
 import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/create';
 import { getAccountAddress, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
-import { type Balance, Zero } from '@rotki/common';
-import { camelCase, omit } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 
 interface AccountBalance {
   balance: Balance;
@@ -46,7 +47,7 @@ export function isAccountWithBalanceValidator(
 function filterAccount<T extends BlockchainAccountBalance>(
   account: T,
   filters: { tags?: string[]; label?: string; address?: string; chain?: string[]; category?: string },
-  resolvers: { getLabel: (address: string, chain?: string) => string | null },
+  resolvers: { getLabel: (address: string, chain?: string) => string | undefined },
 ): boolean {
   const chains = account.type === 'group' ? account.chains : [account.chain];
   const { getLabel } = resolvers;
@@ -108,7 +109,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   params: BlockchainAccountRequestPayload,
   resolvers: {
     getAccounts?: (groupId: string) => BlockchainAccountWithBalance[];
-    getLabel: (address: string, chain?: string) => string | null;
+    getLabel: (address: string, chain?: string) => string | undefined;
   },
 ): Collection<T> {
   const {
@@ -254,7 +255,7 @@ export function convertBtcBalances(
       ...currentValue,
     }), {}),
   }).map(([address, value]) => [address, {
-    assets: { [chain.toUpperCase()]: value },
+    assets: { [chain.toUpperCase()]: { address: value } },
     liabilities: {},
   } satisfies EthBalance]));
   return {
@@ -289,11 +290,18 @@ export function* iterateAssets(
       if (!account[key])
         continue;
 
-      for (const [identifier, balance] of Object.entries(account[key])) {
+      for (const [identifier, protocolBalances] of Object.entries(account[key])) {
         if (skipIdentifier(identifier))
           continue;
 
         const assetIdentifier = assetAssociationMap[identifier] ?? identifier;
+        const balance = Object.values(protocolBalances).reduce((previousValue, currentValue) => ({
+          amount: previousValue.amount.plus(currentValue.amount),
+          usdValue: previousValue.usdValue.plus(currentValue.usdValue),
+        }), {
+          amount: Zero,
+          usdValue: Zero,
+        });
         yield [assetIdentifier, balance] as const;
       }
     }
@@ -316,7 +324,7 @@ export function aggregateTotals(
   return aggregated;
 }
 
-export function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): boolean {
+export function hasTokens(nativeAsset: string, assetBalances?: AssetProtocolBalances): boolean {
   if (!assetBalances || isEmpty(assetBalances))
     return false;
 
@@ -330,7 +338,9 @@ export function getAccountBalance(account: BlockchainAccount, chainBalances: Blo
   const nativeAsset = account.nativeAsset;
   const balance = assets
     ? {
-        amount: assets[nativeAsset]?.amount ?? Zero,
+        amount: assets[nativeAsset] && !isEmpty(assets[nativeAsset])
+          ? Object.values(assets[nativeAsset]).reduce((previousValue, currentValue) => previousValue.plus(currentValue.amount), Zero)
+          : Zero,
         usdValue: assetSum(accountBalances.assets),
       }
     : {

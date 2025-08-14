@@ -90,7 +90,7 @@ class WalletconnectDecoder(DecoderInterface, CustomizableDateMixin):
         # according to the contract `transferred_amount` is either equal to amount
         # or zero. If zero then no transfer has occurred, but just lock time has changed
         if transferred_amount == ZERO:
-            return DecodingOutput(self.base.make_event_from_transaction(
+            return DecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
@@ -102,7 +102,7 @@ class WalletconnectDecoder(DecoderInterface, CustomizableDateMixin):
                 address=context.tx_log.address,
                 counterparty=CPT_WALLETCONNECT,
                 extra_data={'until': locktime},
-        ))
+        )])
 
         for event in context.decoded_events:
             if (

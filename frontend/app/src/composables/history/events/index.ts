@@ -1,3 +1,4 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
@@ -8,17 +9,17 @@ import type {
   HistoryEventRow,
   HistoryEventsCollectionResponse,
   ModifyHistoryEventPayload,
-} from '@/types/history/events';
-import type { MaybeRef } from '@vueuse/core';
+} from '@/types/history/events/schemas';
+import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
+import { millisecondsToSeconds } from '@/utils/date';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
-import { startPromise } from '@shared/utils';
 
 interface UseHistoryEventsReturn {
   fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventRow>>;
@@ -179,7 +180,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     if (response.data.length === 1) {
       const firstRow = response.data[0];
       const timestamp = Array.isArray(firstRow) ? firstRow[0].timestamp : firstRow.timestamp;
-      return Math.floor(timestamp / 1000);
+      return millisecondsToSeconds(timestamp);
     }
 
     return undefined;

@@ -38,13 +38,12 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
-    CURVE_POOL_PROTOCOL,
     AddressbookEntry,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.network import request_get_dict
 
@@ -175,7 +174,7 @@ def _ensure_single_pool_curve_tokens_existence(
                     evm_inquirer=evm_inquirer,
                     underlying_tokens=[UnderlyingToken(
                         address=underlying_token_address,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         weight=ONE,
                     )],
                     encounter=encounter,
@@ -219,7 +218,7 @@ def _ensure_single_pool_curve_tokens_existence(
             evm_address=pool.lp_token_address,
             chain_id=evm_inquirer.chain_id,
             evm_inquirer=evm_inquirer,
-            protocol=CURVE_POOL_PROTOCOL,
+            protocol=CPT_CURVE,
             encounter=encounter,
         )
     except NotERC20Conformant as e:
@@ -243,7 +242,7 @@ def _ensure_single_pool_curve_tokens_existence(
                 encounter=encounter,
                 underlying_tokens=[UnderlyingToken(
                     address=pool.lp_token_address,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                     weight=ONE,
                 )],
                 fallback_decimals=18,  # all gauges have 18 decimals https://t.me/curvefi/654915  # noqa: E501

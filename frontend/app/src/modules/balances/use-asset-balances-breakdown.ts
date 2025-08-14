@@ -1,13 +1,15 @@
+import type { ComputedRef } from 'vue';
 import type { Accounts, AssetBreakdown, Balances } from '@/types/blockchain/accounts';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import type { ComputedRef } from 'vue';
+import { Zero } from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { perProtocolBalanceSum } from '@/utils/calculation';
 
 interface BreakdownFilters {
   chains?: string[];
@@ -107,10 +109,15 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
           if (!assetBalance)
             continue;
 
+          const summedBalance = perProtocolBalanceSum({
+            amount: Zero,
+            usdValue: Zero,
+          }, assetBalance);
+
           breakdown.push({
             address,
             location: getEvmChainName(chain) ?? chain,
-            ...assetBalance,
+            ...summedBalance,
             tags: chainAccounts.find(account => getAccountAddress(account) === address && account.chain === chain)
               ?.tags,
           });
@@ -141,6 +148,7 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
       asset,
       liabilities,
       associatedIdentifiers,
+      filters,
     ));
 
     if (!onlyBlockchain) {

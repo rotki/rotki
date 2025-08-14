@@ -1,9 +1,9 @@
-import type { BlockchainTotal } from '@/types/blockchain';
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
+import type { BlockchainTotal } from '@/types/blockchain';
+import { isEmpty } from 'es-toolkit/compat';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/utils/bignumbers';
-import { isEmpty } from 'es-toolkit/compat';
 
 interface UseBlockchainTotalsSummaryReturn { blockchainTotals: ComputedRef<BlockchainTotal[]> }
 
@@ -23,12 +23,14 @@ export function useBlockchainTotalSummary(): UseBlockchainTotalsSummaryReturn {
         if (!assets || isEmpty(assets))
           continue;
 
-        for (const { usdValue } of Object.values(assets)) {
-          if (!sums[chain]) {
-            sums[chain] = usdValue;
-          }
-          else {
-            sums[chain] = sums[chain].plus(usdValue);
+        for (const protocol of Object.values(assets)) {
+          for (const { usdValue } of Object.values(protocol)) {
+            if (!sums[chain]) {
+              sums[chain] = usdValue;
+            }
+            else {
+              sums[chain] = sums[chain].plus(usdValue);
+            }
           }
         }
       }

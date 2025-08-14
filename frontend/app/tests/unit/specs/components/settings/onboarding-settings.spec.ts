@@ -1,8 +1,8 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
-import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
-import { useMainStore } from '@/store/main';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
+import { useMainStore } from '@/store/main';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({

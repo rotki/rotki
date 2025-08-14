@@ -14,7 +14,7 @@ export const useAddressBookForm = createSharedComposable(() => {
 
   const globalPayload = ref<AddressBookPayload>(defaultPayload());
 
-  const showGlobalDialog = (newPayload: AddressBookSimplePayload): void => {
+  const showGlobalDialog = (newPayload: AddressBookSimplePayload & { name?: string }): void => {
     set(globalPayload, {
       ...get(globalPayload),
       ...newPayload,

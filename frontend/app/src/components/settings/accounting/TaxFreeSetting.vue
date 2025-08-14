@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 
 const taxFreeAfterPeriod = ref<string>('');
 const taxFreePeriod = ref(false);

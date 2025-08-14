@@ -8,7 +8,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
@@ -21,14 +21,16 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
+from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import (
     ts_now,
 )
 
 from .cache import collateral_type_to_underlying_asset
-from .constants import MAKERDAO_REQUERY_PERIOD, WAD
+from .constants import CPT_VAULT, MAKERDAO_REQUERY_PERIOD, WAD
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
@@ -114,15 +116,21 @@ class MakerdaoVault(NamedTuple):
         return self.collateral_type.encode('utf-8').ljust(32, b'\x00')
 
     def get_balance(self) -> BalanceSheet:
-        starting_assets = {self.collateral_asset: self.collateral} if self.collateral.amount != ZERO else {}  # noqa: E501
-        starting_liabilities = {A_DAI: self.debt} if self.debt.amount != ZERO else {}
+        starting_assets: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+        starting_liabilities: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+        if self.collateral.amount != ZERO:
+            starting_assets[self.collateral_asset][CPT_VAULT] = self.collateral
+
+        if self.debt.amount != ZERO:
+            starting_liabilities[A_DAI][CPT_VAULT] = self.debt
+
         return BalanceSheet(
-            assets=defaultdict(Balance, starting_assets),  # type: ignore # Doesn't recognize that the defaultdict CryptoAsset is an Asset
-            liabilities=defaultdict(Balance, starting_liabilities),
+            assets=starting_assets,
+            liabilities=starting_liabilities,
         )
 
 
-class MakerdaoVaults(HasDSProxy):
+class MakerdaoVaults(EthereumModule):
 
     def __init__(
             self,
@@ -131,13 +139,8 @@ class MakerdaoVaults(HasDSProxy):
             premium: Premium | None,
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-
-        super().__init__(
-            ethereum_inquirer=ethereum_inquirer,
-            database=database,
-            premium=premium,
-            msg_aggregator=msg_aggregator,
-        )
+        self.ethereum = ethereum_inquirer
+        self.msg_aggregator = msg_aggregator
         self.reset_last_query_ts()
         self.lock = Semaphore()
         self.usd_price: dict[str, FVal] = defaultdict(FVal)
@@ -285,7 +288,7 @@ class MakerdaoVaults(HasDSProxy):
 
         with self.lock:
             self.vault_mappings = defaultdict(list)
-            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
+            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # noqa: E501
             vaults = []
             for user_address, proxy in proxy_mappings.items():
                 vaults.extend(
@@ -308,13 +311,14 @@ class MakerdaoVaults(HasDSProxy):
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return
-        super().on_account_addition(address)
         # Check if it has been added to the mapping
-        proxy_address = self.ethereum.proxies_inquirer.address_to_proxy.get(address)
+        proxy_address = self.ethereum.proxies_inquirer.address_to_proxy[ProxyType.DS].get(address)
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
-        super().on_account_removal(address)
         self.vault_mappings.pop(address, None)
+
+    def deactivate(self) -> None:
+        ...

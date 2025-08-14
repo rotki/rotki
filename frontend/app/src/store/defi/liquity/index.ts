@@ -1,5 +1,12 @@
 import type { OnError } from '@/types/fetch';
 import type { TaskMeta } from '@/types/task';
+import {
+  type CommonQueryStatusData,
+  LiquityBalancesWithCollateralInfo,
+  LiquityPoolDetails,
+  LiquityStakingDetails,
+  LiquityStatistics,
+} from '@rotki/common';
 import { useLiquityApi } from '@/composables/api/defi/liquity';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
@@ -8,13 +15,6 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { fetchDataAsync } from '@/utils/fetch-async';
-import {
-  type CommonQueryStatusData,
-  LiquityBalancesWithCollateralInfo,
-  LiquityPoolDetails,
-  LiquityStakingDetails,
-  LiquityStatistics,
-} from '@rotki/common';
 
 const defaultBalances = (): LiquityBalancesWithCollateralInfo => ({ balances: {}, totalCollateralRatio: null });
 

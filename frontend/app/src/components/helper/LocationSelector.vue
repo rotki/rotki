@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { TradeLocationData } from '@/types/history/trade/location';
+import { isEqual } from 'es-toolkit';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useLocations } from '@/composables/locations';
-import { isEqual } from 'es-toolkit';
 
 defineOptions({
   inheritAttrs: false,

@@ -34,13 +34,23 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            deposit_topic: bytes,
+            deposit_topics: tuple[bytes, ...],
             withdrawal_topic: bytes | None,  # withdrawal is currently unsupported on gnosis
             bridge_address: ChecksumEvmAddress,
             bridged_asset: 'Asset',
             source_chain: ChainID,
             target_chain: ChainID,
+            peripheral_addresses: tuple[ChecksumEvmAddress, ...] | None = None,
     ) -> None:
+        """Common decoder for the xDAI bridge.
+
+        `bridge_address` - address of the bridge contract on this chain
+        `bridged_asset` - the asset used on this chain's side of the bridge
+        `source_chain` - the chain this instance of the decoder is on
+        `target_chain` - the chain on the other side of the bridge
+        `peripheral_addresses` - addresses of contracts used in connection with the bridge
+           (used to convert assets before bridging for instance)
+        """
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -48,15 +58,16 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
         )
         self.bridge_address = bridge_address
         self.bridged_asset = bridged_asset.resolve_to_crypto_asset()
-        self.deposit_topic = deposit_topic
+        self.deposit_topics = deposit_topics
         self.withdrawal_topic = withdrawal_topic
         self.source_chain = source_chain
         self.target_chain = target_chain
+        self.peripheral_addresses = peripheral_addresses or ()
 
     def _decode_bridged_asset(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a bridging event for the `bridged_asset`, either a deposit or a withdrawal."""
         create_event = False
-        if context.tx_log.topics[0] == self.deposit_topic:
+        if context.tx_log.topics[0] in self.deposit_topics:
             from_address = context.transaction.from_address
             to_address = self.bridge_address
         elif context.tx_log.topics[0] == self.withdrawal_topic:
@@ -74,7 +85,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
         )
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501
             tx_log=context.tx_log,
-            deposit_topics=(self.deposit_topic,),
+            deposit_topics=self.deposit_topics,
             source_chain=self.source_chain,
             target_chain=self.target_chain,
             from_address=from_address,
@@ -106,13 +117,13 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
                 new_event_type=new_event_type,
                 counterparty=GNOSIS_CPT_DETAILS,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         for event in context.decoded_events:
             if (
                 event.event_type == expected_event_type and
                 event.location_label == expected_location_label and
-                event.address == self.bridge_address and
+                (event.address == self.bridge_address or event.address in self.peripheral_addresses) and  # noqa: E501
                 event.asset == self.bridged_asset and
                 event.amount == amount
             ):

@@ -14,7 +14,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -81,7 +81,7 @@ class SuperchainL1SideCommonBridgeDecoder(DecoderInterface, ABC):
             asset = EvmToken(evm_address_to_identifier(
                 address=ethereum_token_address,
                 chain_id=ChainID.ETHEREUM,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             ))
             raw_amount = int.from_bytes(context.tx_log.data[32:64])
             amount = asset_normalized_value(raw_amount, asset)
@@ -139,7 +139,7 @@ class SuperchainL1SideCommonBridgeDecoder(DecoderInterface, ABC):
             counterparty=self.counterparty.identifier,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(self.bride_addresses, (self._decode_bridge,))

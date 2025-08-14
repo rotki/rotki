@@ -3,7 +3,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Generic, Literal, NamedTuple, Self, TypeVar
+from typing import Any, Final, Generic, Literal, NamedTuple, Self, TypeVar
+
+from eth_utils import is_hex_address
 
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -36,6 +38,7 @@ from rotkehlchen.types import (
     Location,
     OptionalBlockchainAddress,
     OptionalChainAddress,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
 )
@@ -50,19 +53,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ALL_EVENTS_DATA_JOIN = """FROM history_events
+ALL_EVENTS_DATA_JOIN: Final = """FROM history_events
 LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier
 LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
-EVM_EVENT_JOIN = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
-ETH_STAKING_EVENT_JOIN = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
+EVM_EVENT_JOIN: Final = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
+ETH_STAKING_EVENT_JOIN: Final = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
 ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
 
 T = TypeVar('T')
 V = TypeVar('V')
-T_FilterQ = TypeVar('T_FilterQ', bound='DBFilterQuery')
-T_HistoryBaseEntryFilterQ = TypeVar('T_HistoryBaseEntryFilterQ', bound='HistoryBaseEntryFilterQuery')  # noqa: E501
-T_EthSTakingFilterQ = TypeVar('T_EthSTakingFilterQ', bound='EthStakingEventFilterQuery')
 
 
 class DBFilterOrder(NamedTuple):
@@ -536,18 +536,6 @@ class DBIgnoreValuesFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBEth2ValidatorIndicesFilter(DBFilter):
-    """A filter for Eth2 validator indices"""
-    validators: set[int] | None
-
-    def prepare(self) -> tuple[list[str], list[Any]]:
-        if self.validators is None:
-            return [], []
-        questionmarks = '?' * len(self.validators)
-        return [f'validator_index IN ({",".join(questionmarks)})'], list(self.validators)
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBNotEqualFilter(DBFilter):
     """Filter a column by comparing its column to its value for inequality"""
     column: str
@@ -630,42 +618,6 @@ class DBOptionalChainAddressesFilter(DBFilter):
                     bindings.append(optional_chain_address.blockchain.value)
                 query_filters.append(query_part)
         return query_filters, bindings
-
-
-class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
-
-    @classmethod
-    def make(
-            cls: type['Eth2DailyStatsFilterQuery'],
-            and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
-            limit: int | None = None,
-            offset: int | None = None,
-            from_ts: Timestamp | None = None,
-            to_ts: Timestamp | None = None,
-            validator_indices: set[int] | None = None,
-    ) -> 'Eth2DailyStatsFilterQuery':
-        if order_by_rules is None:
-            order_by_rules = [('timestamp', True)]
-
-        filter_query = cls.create(
-            and_op=and_op,
-            limit=limit,
-            offset=offset,
-            order_by_rules=order_by_rules,
-        )
-        filters: list[DBFilter] = []
-
-        filter_query.timestamp_filter = DBTimestampFilter(
-            and_op=True,
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        filters.extend((
-            filter_query.timestamp_filter,
-            DBEth2ValidatorIndicesFilter(and_op=True, validators=validator_indices)))
-        filter_query.filters = filters
-        return filter_query
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -782,6 +734,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
     ) -> Self:
         """May raise:
         - InvalidFilter for invalid combination of filters
@@ -909,6 +862,14 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                     values=identifiers,
                 ),
             )
+        if notes_substring is not None:
+            filters.append(
+                DBSubStringFilter(
+                    and_op=True,
+                    field='notes',
+                    search_string=notes_substring,
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -982,6 +943,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
             tx_hashes: list[EVMTxHash] | None = None,
             counterparties: list[str] | None = None,
             products: list[EvmProduct] | None = None,
@@ -1013,6 +975,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
         )
         if counterparties is not None:
             filter_query.filters.append(DBMultiStringFilter(
@@ -1104,6 +1067,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
             validator_indices: list[int] | None = None,
     ) -> Self:
         if entry_types is None:
@@ -1132,6 +1096,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
@@ -1184,6 +1149,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
             validator_indices: list[int] | None = None,
             withdrawal_types_filter: WithdrawalTypesFilter = WithdrawalTypesFilter.ALL,
     ) -> 'EthWithdrawalFilterQuery':
@@ -1213,6 +1179,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
             validator_indices=validator_indices,
         )
         if withdrawal_types_filter != WithdrawalTypesFilter.ALL:
@@ -1438,7 +1405,7 @@ class AssetsFilterQuery(DBFilterQuery):
             offset: int | None = None,
             name: str | None = None,
             symbol: str | None = None,
-            address: ChecksumEvmAddress | None = None,
+            address: ChecksumEvmAddress | str | None = None,
             substring_search: str | None = None,
             search_column: str | None = None,
             asset_type: AssetType | None = None,
@@ -1788,7 +1755,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             and_op: bool = True,
             substring_search: str | None = None,
             chain_id: ChainID | None = None,
-            address: ChecksumEvmAddress | None = None,
+            address: ChecksumEvmAddress | SolanaAddress | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'LevenshteinFilterQuery':
         assert substring_search is not None or address is not None  # substring search and address can't be none at the same time  # noqa: E501
@@ -1846,9 +1813,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             filters.append((nested_filter, 'assets'))
 
         if address is not None:
-            filters.append(
-                (DBEqualsFilter(and_op=True, column='address', value=address), 'assets'),
-            )
+            filters.append((DBEqualsFilter(and_op=True, column='evm_tokens.address' if is_hex_address(address) else 'solana_tokens.address', value=address), 'assets'))  # noqa: E501
 
         filter_query.filters = filters
         return filter_query

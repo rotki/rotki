@@ -1,9 +1,11 @@
 import base64
 import hashlib
 import hmac
+import json
 import logging
 import os
 import platform
+import re
 import time
 from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
@@ -11,28 +13,42 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Literal, NamedTuple, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypedDict, cast
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import machineid
 import requests
+from packaging.version import InvalidVersion, Version
 
+from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumApiError,
     PremiumAuthenticationError,
 )
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import is_production, set_user_agent
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.version_check import get_system_spec
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+DOCKER_PLATFORM_KEY: Final = 'docker'
 
 
 class RemoteMetadata(NamedTuple):
@@ -46,8 +62,57 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
-DEFAULT_ERROR_MSG = 'Failed to contact rotki server. Check logs for more details'
-DEFAULT_OK_CODES = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
+class UserLimits(TypedDict):
+    """User limits for rotki premium subscription."""
+    # Maximum number of devices that can be registered with the premium account
+    limit_of_devices: int
+    # Maximum number of profit and loss events that can be processed
+    pnl_events_limit: int
+    # Maximum size in megabytes for database backups stored on rotki servers
+    max_backup_size_mb: int
+    # Maximum number of history events that can be stored and processed
+    history_events_limit: int
+    # Maximum number of report lookups that can be performed
+    reports_lookup_limit: int
+    # Maximum amount of ETH that can be staked (validator balance limit)
+    eth_staked_limit: int
+
+
+class UserLimitType(Enum):
+    """Enum of the different limits enforced by tiers"""
+    HISTORY_EVENTS = 'history_events_limit'
+    PNL_EVENTS = 'pnl_events_limit'
+    PNL_REPORTS_LOOKUP = 'reports_lookup_limit'
+    ETH_STAKED = 'eth_staked_limit'
+
+    def get_free_limit(self) -> int:
+        """Get the free limit for a specific limit type
+        May raise:
+        - NotImplementedError if the type is not yet supported.
+        """
+        if self == UserLimitType.HISTORY_EVENTS:
+            return FREE_HISTORY_EVENTS_LIMIT
+        if self == UserLimitType.PNL_EVENTS:
+            return FREE_PNL_EVENTS_LIMIT
+        if self == UserLimitType.PNL_REPORTS_LOOKUP:
+            return FREE_REPORTS_LOOKUP_LIMIT
+        if self == UserLimitType.ETH_STAKED:
+            return 128  # 128 ETH limit for free users (4 validators * 32 ETH each)
+
+        raise NotImplementedError(f'Unknown limit type: {self}. This indicates a bug in the code.')
+
+
+COMPONENTS_VERSION: Final = 14
+DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
+KNOWN_STATUS_CODES: Final = (
+    HTTPStatus.OK,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.CREATED,
+)
+NEST_API_ENDPOINTS: Final = ('backup', 'backup/range', 'devices', 'limits')
+UPLOAD_CHUNK_SIZE: Final = 10_000_000  # 10 MB
+MAX_UPLOAD_CHUNK_RETRIES: Final = 1
 
 
 def check_response_status_code(
@@ -69,7 +134,7 @@ def check_response_status_code(
 
 def _process_dict_response(
         response: requests.Response,
-        status_codes: Sequence[HTTPStatus] = DEFAULT_OK_CODES,
+        status_codes: Sequence[HTTPStatus] = KNOWN_STATUS_CODES,
         user_msg: str = DEFAULT_ERROR_MSG,
 ) -> dict:
     """Processes a dict response returned from the Rotkehlchen server and returns
@@ -92,6 +157,23 @@ def _process_dict_response(
         raise RemoteError(result_dict['error'])
 
     return result_dict
+
+
+def check_docker_container() -> str | None:
+    """This function checks if the user is running inside a docker container.
+    Returns the 12 first chars of the container id.
+
+    In case of a bad error this function logs and returns None.
+    """
+    try:
+        data = Path('/proc/self/mountinfo').read_text(encoding='utf-8').strip()
+        if 'docker' in data:
+            match = re.search(r'docker/containers/([a-f0-9]+)/hostname', data)
+            return match.group(1)[:12] if match else None
+    except OSError as e:
+        log.error(f'Failed at open mountinfo file due to {e}')
+
+    return None
 
 
 class SubscriptionStatus(Enum):
@@ -164,12 +246,19 @@ def _decode_premium_json(response: requests.Response) -> Any:
 
 class Premium:
 
-    def __init__(self, credentials: PremiumCredentials, username: str):
+    def __init__(
+            self,
+            credentials: PremiumCredentials,
+            username: str,
+            msg_aggregator: 'MessagesAggregator',
+            db: 'DBHandler',
+    ) -> None:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = create_session()
         self.apiversion = '1'
         rotki_base_url = 'rotki.com'
-        if is_production() is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
+        self.is_production = is_production()
+        if self.is_production is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
             rotki_base_url = 'staging.rotki.com'
 
         self.rotki_api = f'https://{rotki_base_url}/api/{self.apiversion}/'
@@ -177,11 +266,17 @@ class Premium:
         self.rotki_nest = f'https://{rotki_base_url}/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
         self.username = username
+        # Cache user limits to avoid repeated API calls during the session
+        self._cached_limits: UserLimits | None = None
+        self.msg_aggregator = msg_aggregator
+        self.db = db
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
         self.session.headers.update({'API-KEY': self.credentials.serialize_key()})
         set_user_agent(self.session)
+        # Clear cached limits when credentials change
+        self._cached_limits = None
 
     def set_credentials(self, credentials: PremiumCredentials) -> None:
         """Try to set the credentials for a premium rotkehlchen subscription
@@ -206,16 +301,10 @@ class Premium:
 
     def get_remote_devices_information(self) -> dict:
         """Get the list of devices for the current user"""
-        method = 'manage/premium/devices'
-        data = self.sign(
-            method=method,
-            api_endpoint='webapi',
-        )
-
         try:
             response = self.session.get(
-                f'{self.rotki_web}{method}',
-                data=data,
+                f'{self.rotki_nest}{(method := "devices")}',
+                params=self.sign(method=method),
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
@@ -223,7 +312,9 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
-        return _process_dict_response(response)
+        result = _process_dict_response(response)
+        result['current_device_id'] = machineid.hashed_id(self.username)
+        return result
 
     def authenticate_device(self) -> None:
         """
@@ -232,33 +323,92 @@ class Premium:
         - RemoteError
         - PremiumAuthenticationError: when the device can't be registered
         """
-        device_data = self.get_remote_devices_information()
-        try:
-            num_devices, devices_limit = len(device_data['devices']), device_data['limit']
-        except KeyError as e:
-            raise RemoteError(
-                f'Could not fetch the list of devices due to missing key {e}',
-            ) from e
-
         device_id = machineid.hashed_id(self.username)
 
-        for device in device_data['devices']:
-            device = cast('dict[str, str]', device)
-            if (remote_id := device.get('device_identifier')) == device_id:
-                break
-            if remote_id is None:
-                log.error(f'Remote device {device} has no identifier in the server response')
-        else:  # device not found
-            if num_devices < devices_limit:
-                # try to register the device
-                self._register_new_device(device_id)
-            else:
-                # user has to edit his devices
-                raise PremiumAuthenticationError(
-                    f'The limit of {devices_limit} devices has been reached',
+        # Check if device is already registered
+        try:
+            response = self.session.post(
+                url=f'{self.rotki_nest}devices/check',
+                json=self.sign(
+                    method='devices',
+                    device_identifier=device_id,
+                ),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to check device registration due to: {e}') from e
+
+        match response.status_code:
+            case HTTPStatus.OK:
+                return None  # Device is already registered
+            case HTTPStatus.FORBIDDEN:
+                raise PremiumAuthenticationError('Premium credentials not valid')
+            case HTTPStatus.NOT_FOUND:
+                # Device is not registered, try to register it
+                return self._register_new_device(device_id)
+            case _:
+                return check_response_status_code(
+                    response=response,
+                    status_codes=[HTTPStatus.OK],
                 )
 
-    def _register_new_device(self, device_id: str) -> dict:
+    def _maybe_register_docker_device(
+            self,
+            device_id: str,
+            device_name: str,
+            system_platform: str,
+    ) -> bool:
+        """Try to upgrade docker device remotely. This happens when a new container is created
+        with a version newer than the one running before.
+
+        Returns false if the device can't be upgraded and true if it was upgraded
+        """
+        # Device limit reached for Docker. Check if it's a version update
+        if (cached_info := self._get_docker_device_info()) is None:
+            return False  # No cached info, can't auto-update
+
+        cached_device_id, cached_version = cached_info
+        try:  # If current version is not newer, don't auto-delete
+            if Version(current_version := get_system_spec()['rotkehlchen']) <= Version(cached_version):  # noqa: E501
+                return False
+        except (InvalidVersion, TypeError):
+            log.error(f'Invalid docker container version found in the db {cached_version}')
+            return False
+
+        log.info(
+            f'Docker container version update detected. '
+            f'Deleting old device {cached_device_id} and registering new one',
+        )
+        try:
+            # Delete the old device from remote
+            response = self.session.delete(
+                url=f'{self.rotki_nest}devices',
+                json=self.sign(method='devices', device_identifier=cached_device_id),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+            if response.status_code == HTTPStatus.OK:
+                # Try registering again
+                response = self.session.put(
+                    url=f'{self.rotki_nest}devices',
+                    json=self.sign(
+                        method='devices',
+                        device_identifier=device_id,
+                        device_name=device_name,
+                        platform=system_platform,
+                    ),
+                    timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+                )
+                if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
+                    # Update cache with new device info
+                    self._set_docker_device_info(device_id, current_version)
+                    return True
+
+        except requests.exceptions.RequestException as e:
+            log.error(f'Failed to update Docker device registration: {e}')
+
+        return False
+
+    def _register_new_device(self, device_id: str) -> None:
         """
         Register a new device at the rotki server using the provided id.
         May raise:
@@ -266,23 +416,122 @@ class Premium:
         - PremiumAuthenticationError: if the queried API returns a 401 error
         """
         log.debug(f'Registering new device {device_id}')
-        method = 'devices'
-        device_name = platform.system()
-        data = self.sign(
-            method=method,
-            device_identifier=device_id,
-            device_name=device_name,
-        )
+        if (
+            (system_platform := platform.system()) == 'Linux' and
+            (docker_container := check_docker_container()) is not None
+        ):  # in the case of docker where we always run under linux, get the container id
+            system_platform = DOCKER_PLATFORM_KEY
+            device_name = docker_container
+        else:
+            device_name = str(uuid4())  # can be edited later.
 
         try:
             response = self.session.put(
-                url=f'{self.rotki_api}{method}',
-                data=data,
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                json=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                    device_name=device_name,
+                    platform=system_platform,
+                ),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
 
-        return _process_dict_response(response)
+        if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
+            # Cache Docker device info on successful registration
+            if system_platform == DOCKER_PLATFORM_KEY:
+                self._set_docker_device_info(device_id, get_system_spec()['rotkehlchen'])
+
+            return None  # device was created or it already exists
+
+        if (
+            response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY and
+            system_platform == DOCKER_PLATFORM_KEY and
+            self._maybe_register_docker_device(
+                device_id=device_id,
+                device_name=device_name,
+                system_platform=system_platform,
+            )
+        ):
+            return None  # success upgrading the docker device
+
+        check_response_status_code(response=response, status_codes=[HTTPStatus.CREATED])
+
+    def delete_device(self, device_id: str) -> None:
+        """Deletes a device for the user from the rotki server
+        May raise:
+        - InputError
+        - RemoteError
+        """
+        if device_id == machineid.hashed_id(self.username):
+            raise InputError('Cannot delete the current device')
+
+        log.debug(f'Deleting premium registered {device_id=}')
+        try:
+            response = self.session.delete(
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                json=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                ),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to delete device due to: {e}') from e
+
+        check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
+
+    def _get_docker_device_info(self) -> tuple[str, str] | None:
+        """Get cached Docker device ID and version from database.
+
+        Returns:
+            Tuple of (device_id, version) if found, None otherwise
+        """
+        with self.db.conn.read_ctx() as cursor:
+            if (device_info := self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.DOCKER_DEVICE_INFO,
+            )) is None:
+                return None
+
+        # Format is device_id:version
+        if len(parts := device_info.split(':')) != 2:
+            log.error(f'Invalid Docker device info format in cache: {device_info}')
+            return None
+
+        return tuple(parts)  # type: ignore # it has two elements as it is ensured by the if above
+
+    def _set_docker_device_info(self, device_id: str, version: str) -> None:
+        """Save Docker device ID and version to database cache."""
+        with self.db.user_write() as write_cursor:
+            self.db.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.DOCKER_DEVICE_INFO,
+                value=f'{device_id}:{version}',  # Store as device_id:version
+            )
+
+    def edit_device(self, device_id: str, device_name: str) -> None:
+        """Edit device name for the authenticated user
+        May raise:
+        - RemoteError
+        """
+        log.debug(f'Editing premium registered {device_id=} to name {device_name}')
+        try:
+            response = self.session.patch(
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                json=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                    device_name=device_name,
+                ),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to edit device due to: {e}') from e
+
+        check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
 
     def is_active(self) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
@@ -303,14 +552,13 @@ class Premium:
     def sign(
             self,
             method: str,
-            api_endpoint: str = '/api/',
             **kwargs: Any,
     ) -> dict:
         """
         Create payload for signed requests. It sets the signature headers
         for the current session
         """
-        urlpath = f'{api_endpoint}{self.apiversion}/{method}'
+        urlpath = f'/api/{self.apiversion}/{method}'
 
         req = kwargs
         if method != 'watchers':
@@ -319,7 +567,7 @@ class Premium:
             req['nonce'] = int(1000 * time.time())
         post_data = urlencode(req)
         hashable = post_data.encode()
-        if method == 'backup':
+        if method in NEST_API_ENDPOINTS:
             # nest uses hex for generating the signature since digest returns a string with the \x
             # format in python.
             message = urlpath.encode() + hashlib.sha256(hashable).hexdigest().encode()
@@ -339,41 +587,71 @@ class Premium:
             our_hash: str,
             last_modify_ts: Timestamp,
             compression_type: Literal['zlib'],
-    ) -> dict:
-        """Uploads data to the server and returns the response dict. We upload the encrypted
-        database as a file in an http form.
+    ) -> None:
+        """Uploads data to the server. We upload the encrypted database in chunks via an http form.
 
         May raise:
         - RemoteError if there are problems reaching the server or if
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        data = self.sign(
-            'backup',
-            original_hash=our_hash,
-            last_modify_ts=last_modify_ts,
-            index=0,
-            length=len(data_blob),
-            compression=compression_type,
-        )
-
-        try:
-            response = self.session.post(
-                self.rotki_nest + 'backup',
-                data=data,
-                files={'db_file': data_blob},
-                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
+        total_size, upload_id = len(data_blob), None
+        chunk_count = (total_size + UPLOAD_CHUNK_SIZE - 1) // UPLOAD_CHUNK_SIZE
+        for chunk_idx, offset in enumerate(range(0, total_size, UPLOAD_CHUNK_SIZE)):
+            chunk_end = min(offset + UPLOAD_CHUNK_SIZE, total_size)
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
+                data={
+                    'type': str(DBUploadStatusStep.UPLOADING),
+                    'current_chunk': chunk_idx + 1,
+                    'total_chunks': chunk_count,
+                },
             )
-        except requests.exceptions.RequestException as e:
-            msg = f'Could not connect to rotki server due to {e!s}'
-            log.error(msg)
-            raise RemoteError(msg) from e
 
-        return _process_dict_response(
-            response=response,
-            status_codes=(HTTPStatus.OK,),
-            user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
-        )
+            form_kwargs: Any = {
+                'file_hash': our_hash,
+                'last_modify_ts': last_modify_ts,
+                'compression': compression_type,
+                'total_size': total_size,
+            }
+            if upload_id is not None:  # add upload_id if present
+                form_kwargs['upload_id'] = upload_id
+
+            retry_count, is_last_chunk = 0, (chunk_end == total_size)
+            while True:
+                try:
+                    response = self.session.post(
+                        self.rotki_nest + 'backup/range',
+                        files={'chunk_data': ('chunk', data_blob[offset:chunk_end])},
+                        data=self.sign(method='backup/range', **form_kwargs),
+                        headers={'Content-Range': f'bytes {offset}-{chunk_end - 1}/{total_size}'},
+                        timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
+                    )
+                except requests.exceptions.RequestException as e:
+                    log.error(msg := f'Could not connect to rotki server due to {e!s}')
+                    raise RemoteError(msg) from e
+
+                expected_status = HTTPStatus.OK if is_last_chunk else HTTPStatus.PARTIAL_CONTENT
+                if response.status_code != expected_status:
+                    if response.status_code != HTTPStatus.REQUEST_ENTITY_TOO_LARGE and retry_count < MAX_UPLOAD_CHUNK_RETRIES:  # noqa: E501
+                        retry_count += 1
+                        continue  # retry chunk upload
+
+                    _process_dict_response(
+                        response=response,
+                        status_codes=(expected_status,),
+                        user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
+                    )
+                    return
+
+                break  # chunk upload was successful, leave retry loop.
+
+            if not is_last_chunk and upload_id is None:
+                try:  # Get upload_id from response for subsequent chunks
+                    upload_id = response.json()['upload_id']
+                except (json.JSONDecodeError, KeyError) as e:
+                    log.error(msg := f'Invalid response from server during chunked upload: {e!s}')
+                    raise RemoteError(msg) from e
 
     def pull_data(self) -> bytes | None:
         """Pulls data from the server and returns the binary file with the database encrypted
@@ -449,12 +727,16 @@ class Premium:
         there is an error returned by the server
         - Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        data = self.sign('statistics_rendererv2', version=13)
+        data = self.sign(
+            'statistics_rendererv2',
+            version=COMPONENTS_VERSION if self.is_production else int(os.environ.get('ROTKI_COMPONENTS_VERSION', COMPONENTS_VERSION)),  # noqa: E501
+        )
 
         try:
             response = self.session.get(
                 self.rotki_api + 'statistics_rendererv2',
                 data=data,
+                headers={} if self.is_production else {'ROTKI_DEV': 'true'},
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
@@ -469,6 +751,34 @@ class Premium:
             raise RemoteError(msg)
 
         return result['data']
+
+    def fetch_limits(self) -> UserLimits:
+        """Fetch user limits from the rotki server.
+
+        Retrieves the current limits for the premium subscription from the server.
+        The limits are cached during the session to avoid repeated API calls.
+
+        May raise:
+        - RemoteError: If there are problems connecting to the server
+        - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        if self._cached_limits is not None:
+            return self._cached_limits
+
+        try:
+            response = self.session.get(
+                f'{self.rotki_nest}{(method := "limits")}',
+                params=self.sign(method=method),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        self._cached_limits = cast('UserLimits', _process_dict_response(response))
+        log.debug(f'Fetched user limits from server: {self._cached_limits}')
+        return self._cached_limits
 
     def watcher_query(
             self,
@@ -498,7 +808,12 @@ class Premium:
         return _decode_premium_json(response)
 
 
-def premium_create_and_verify(credentials: PremiumCredentials, username: str) -> Premium:
+def premium_create_and_verify(
+        credentials: PremiumCredentials,
+        username: str,
+        msg_aggregator: 'MessagesAggregator',
+        db: 'DBHandler',
+) -> Premium:
     """Create a Premium object with the key pairs and verify them.
 
     Returns the created premium object
@@ -507,11 +822,39 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
     - PremiumAuthenticationError if the given key is rejected by the server
     - RemoteError if there are problems reaching the server
     """
-    premium = Premium(credentials=credentials, username=username)
-    premium.query_last_data_metadata()
+    premium = Premium(
+        credentials=credentials,
+        username=username,
+        msg_aggregator=msg_aggregator,
+        db=db,
+    )
+    premium.authenticate_device()
     return premium
 
 
 def has_premium_check(premium: Premium | None) -> bool:
     """Helper function to check if we have premium"""
     return premium is not None and premium.is_active()
+
+
+def get_user_limit(premium: Premium | None, limit_type: UserLimitType) -> tuple[int, bool]:
+    """Helper function to get a specific user limit and premium status
+
+    Returns:
+        tuple[int, bool]: (limit_value, has_premium)
+    """
+    if premium is None or premium.is_active() is False:
+        log.debug(f'No premium subscription or inactive, returning free limit for {limit_type}')
+        return limit_type.get_free_limit(), False
+
+    try:
+        limits = premium.fetch_limits()
+        return limits[limit_type.value], True
+    except (RemoteError, PremiumAuthenticationError, KeyError) as e:
+        msg = str(e)
+        if isinstance(e, KeyError):  # that's a bad error that needs action on our side
+            msg = f'missing key {msg} from the premium limits response. Report this to rotki devs.'
+            premium.msg_aggregator.add_error(msg)  # make sure users see this error
+
+        log.error(f'Failed to fetch limits from server: {e}. Falling back to free limits')
+        return limit_type.get_free_limit(), False

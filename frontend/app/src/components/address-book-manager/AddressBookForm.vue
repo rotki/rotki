@@ -2,6 +2,10 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { SelectOptions } from '@/types/common';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
+import { Blockchain } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { each } from 'es-toolkit/compat';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import AppImage from '@/components/common/AppImage.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -11,10 +15,6 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { nullDefined, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { Blockchain } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { each } from 'es-toolkit/compat';
 
 const modelValue = defineModel<AddressBookPayload>({ required: true });
 const forAllChains = defineModel<boolean>('forAllChains', { required: true });

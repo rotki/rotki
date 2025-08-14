@@ -1,7 +1,7 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
-import { isValidEthAddress } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
+import { arrayify } from '@/utils/array';
 
 enum AddressBookFilterKeys {
   NAME = 'name',
@@ -37,12 +37,18 @@ export function useAddressBookFilter(): FilterSchema<Filters, Matcher> {
     multiple: true,
     string: true,
     suggestions: (): string[] => [],
-    validate: (address: string): boolean => isValidEthAddress(address),
+    validate: (): boolean => true,
   }]);
 
   const OptionalString = z.string().optional();
+  const OptionalMultipleString = z
+    .array(z.string())
+    .or(z.string())
+    .transform(arrayify)
+    .optional();
+
   const RouteFilterSchema = z.object({
-    [AddressBookFilterValueKeys.ADDRESS]: OptionalString,
+    [AddressBookFilterValueKeys.ADDRESS]: OptionalMultipleString,
     [AddressBookFilterValueKeys.NAME]: OptionalString,
   });
 

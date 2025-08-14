@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RuiTooltip } from '@rotki/ui-library';
+import { Blockchain, consistOfNumbers } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -10,7 +11,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { truncateAddress } from '@/utils/truncate';
-import { Blockchain, consistOfNumbers } from '@rotki/common';
+import AddressDeleteButton from './AddressDeleteButton.vue';
 import AddressEditButton from './AddressEditButton.vue';
 import CopyButton from './CopyButton.vue';
 import LinkButton from './LinkButton.vue';
@@ -57,7 +58,7 @@ interface HashLinkProps {
    */
   truncateLength?: number;
   /**
-   * Determines the type of the explorer link that will be used it the `location` is a valid blockchain.
+   * Determines the type of the explorer link that will be used if the `location` is a valid blockchain.
    * @default address
    */
   type?: keyof ExplorerUrls;
@@ -78,7 +79,7 @@ const tooltip = useTemplateRef<InstanceType<typeof RuiTooltip>>('tooltip');
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { useAccountTags } = useBlockchainAccountData();
-const { addressNameSelector } = useAddressesNamesStore();
+const { addressNameSelector, addressNameSourceSelector } = useAddressesNamesStore();
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 const { matchChain } = useSupportedChains();
 
@@ -101,7 +102,7 @@ const showCopy = computed<boolean>(() => props.displayMode !== 'link');
  * Icons will only be displayed for non-numerical blockchain addresses when the text is visible.
  */
 const showIcon = computed<boolean>(() => {
-  if (props.type !== 'address' || !get(blockchain) || props.hideText) {
+  if (props.type !== 'address' || props.hideText) {
     return false;
   }
 
@@ -120,15 +121,27 @@ const addressBookChain = computed<string | undefined>(() => {
   return undefined;
 });
 
-const aliasName = computed<string | null>(() => {
-  if (get(scrambleData) || props.type !== 'address' || !isDefined(blockchain))
-    return null;
+const canShowAddressInfo = computed<boolean>(() => {
+  const isLocationNotBlockchain = props.location && !isDefined(blockchain);
+  return !get(scrambleData) && props.type === 'address' && !isLocationNotBlockchain;
+});
+
+const aliasName = computed<string | undefined>(() => {
+  if (!get(canShowAddressInfo))
+    return undefined;
 
   return get(addressNameSelector(props.text, get(blockchain)));
 });
 
+const addressSource = computed<string | undefined>(() => {
+  if (!get(canShowAddressInfo))
+    return undefined;
+
+  return get(addressNameSourceSelector(props.text, get(blockchain)));
+});
+
 const displayText = computed<string>(() => {
-  if (!isDefined(blockchain))
+  if (props.type !== 'address' && !isDefined(blockchain))
     return props.text;
 
   const linkText = props.text;
@@ -226,6 +239,12 @@ const tags = useAccountTags(text);
           :blockchain="addressBookChain"
           class="m-1"
           @open="tooltip?.onClose(true)"
+        />
+
+        <AddressDeleteButton
+          v-if="aliasName && addressSource"
+          :text="text"
+          :source="addressSource"
         />
       </div>
     </RuiTooltip>

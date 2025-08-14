@@ -8,8 +8,14 @@ from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    InputError,
+    NotERC20Conformant,
+    NotERC721Conformant,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -19,7 +25,7 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, UniqueCacheType
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, Timestamp, UniqueCacheType
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -147,6 +153,7 @@ def _update_cache_vault_count(
 def update_cached_vaults(
         database: 'DBHandler',
         display_name: str,
+        chain: ChainID,
         cache_key: Iterable[str | UniqueCacheType],
         query_vaults: Callable[..., list[dict[str, Any]] | None],
         process_vault: Callable[['DBHandler', dict[str, Any]], None],
@@ -187,15 +194,25 @@ def update_cached_vaults(
         )
         return
 
-    for vault in vault_list:
+    last_notified_ts = Timestamp(0)
+    for idx, vault in enumerate(vault_list):
         try:
             process_vault(database, vault)
-        except (NotERC20Conformant, NotERC721Conformant, DeserializationError, KeyError) as e:
+        except (NotERC20Conformant, NotERC721Conformant, DeserializationError, KeyError, InputError) as e:  # noqa: E501
             error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
             log.error(
                 f'Failed to store token information for {display_name} vault '
                 f'due to {error}. Vault: {vault}. Skipping...',
             )
+
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=database.msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=display_name,
+            chain=chain,
+            processed=idx + 1,
+            total=len(vault_list),
+        )
 
 
 def get_vault_price(
@@ -204,7 +221,7 @@ def get_vault_price(
         evm_inquirer: 'EvmNodeInquirer',
         display_name: str,
         vault_abi: ABI,
-        pps_method: Literal['pricePerShare', 'convertToAssets'],
+        pps_method: Literal['pricePerShare', 'convertToAssets', 'getPricePerFullShare'],
         pps_method_args: list | None = None,
 ) -> Price:
     """Gets vault token price by multiplying price per share by the underlying token's USD price.

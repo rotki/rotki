@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { HistoricalPriceFormPayload } from '@/types/prices';
 import type { BigNumber } from '@rotki/common';
+import type { HistoricalPriceFormPayload } from '@/types/prices';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
@@ -13,8 +15,6 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 const amount = defineModel<string>('amount', { required: true });
 

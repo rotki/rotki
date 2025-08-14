@@ -1,3 +1,5 @@
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 import type {
   Accounts,
   Balances,
@@ -6,9 +8,11 @@ import type {
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
+import type { ProtocolBalances } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef, Ref } from 'vue';
+import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
+import { omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -20,9 +24,6 @@ import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-acc
 import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
-import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
-import { omit } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 
 interface AccountBalances {
   assets: AssetBalance[];
@@ -36,12 +37,11 @@ interface UseBlockchainAccountDataReturn {
   getAccountDetails: (chain: string, address: string) => AccountBalances;
   getBlockchainAccounts: (chain: string) => BlockchainAccountWithBalance[];
   useAccountTags: (address: MaybeRef<string>) => ComputedRef<string[]>;
-  useAccountDetails: (chain: Ref<string>, address: Ref<string>) => ComputedRef<AccountBalances>;
   getAccountList: (accountData: Accounts, balanceData: Balances) => BlockchainAccountWithBalance[];
 }
 
 function toAssetBalances(
-  balances: Record<string, Balance>,
+  balances: Record<string, ProtocolBalances>,
   isIgnored: (asset: string) => boolean,
   assetAssociationMap: Record<string, string>,
 ): AssetBalance[] {
@@ -51,11 +51,16 @@ function toAssetBalances(
     if (isIgnored(identifier))
       continue;
 
-    if (!intermediate[identifier]) {
-      intermediate[identifier] = balance;
-    }
-    else {
-      intermediate[identifier] = balanceSum(intermediate[identifier], balance);
+    for (const protocol in balance) {
+      if (balance[protocol].amount.isZero())
+        continue;
+
+      if (!intermediate[identifier]) {
+        intermediate[identifier] = balance[protocol];
+      }
+      else {
+        intermediate[identifier] = balanceSum(intermediate[identifier], balance[protocol]);
+      }
     }
   }
   return Object.entries(intermediate).map(([asset, balance]) => ({ asset, ...balance } satisfies AssetBalance));
@@ -92,16 +97,6 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
       liabilities: [],
     };
   };
-
-  const useAccountDetails = (
-    chain: Ref<string>,
-    address: Ref<string>,
-  ): ComputedRef<AccountBalances> => computed<AccountBalances>(() => getAccountBalances(
-    get(balances),
-    get(chain),
-    get(address),
-    get(assetAssociationMap),
-  ));
 
   const getAccountDetails = (
     chain: string,
@@ -269,7 +264,6 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     getAccountList,
     getAccounts,
     getBlockchainAccounts,
-    useAccountDetails,
     useAccountTags,
   };
 }

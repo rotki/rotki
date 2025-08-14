@@ -1,19 +1,20 @@
 import type { AssetMap } from '@/types/asset';
-import type { OnlineHistoryEvent } from '@/types/history/events';
+import type { OnlineHistoryEvent } from '@/types/history/events/schemas';
 import type { TradeLocationData } from '@/types/history/trade/location';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { useLocations } from '@/composables/locations';
-import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
-import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
-import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick } from 'vue';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useHistoryEvents } from '@/composables/history/events';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useLocations } from '@/composables/locations';
+import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/modules/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({
@@ -29,10 +30,17 @@ vi.mock('@/composables/locations', () => ({
   useLocations: vi.fn(),
 }));
 
+vi.mock('@/composables/api/assets/prices', () => ({
+  useAssetPricesApi: vi.fn().mockReturnValue({
+    addHistoricalPrice: vi.fn(),
+  }),
+}));
+
 describe('forms/OnlineHistoryEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof OnlineHistoryEventForm>>;
   let addHistoryEventMock: ReturnType<typeof vi.fn>;
   let editHistoryEventMock: ReturnType<typeof vi.fn>;
+  let addHistoricalPriceMock: ReturnType<typeof vi.fn>;
   let pinia: Pinia;
 
   const asset = {
@@ -72,6 +80,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     vi.useFakeTimers();
     addHistoryEventMock = vi.fn();
     editHistoryEventMock = vi.fn();
+    addHistoricalPriceMock = vi.fn();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(usePriceTaskManager().getHistoricPrice).mockResolvedValue(One);
     (useHistoryEvents as Mock).mockReturnValue({
@@ -83,6 +92,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
         identifier: 'kraken',
         name: 'Kraken',
       }]),
+    });
+    (useAssetPricesApi as Mock).mockReturnValue({
+      addHistoricalPrice: addHistoricalPriceMock,
     });
   });
 
@@ -239,6 +251,32 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     });
   });
 
+  it('should not call editHistoryEvent when only updating the historic price', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: { event, nextSequenceId: '1', type: 'edit' },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+    const saveMethod = wrapper.vm.save;
+
+    // click save without changing anything
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce({ success: true });
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+
+    // click save after changing the historic price
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    await wrapper.find('[data-cy=primary] input').setValue('1000');
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
+
   it('should edit an existing online event', async () => {
     wrapper = createWrapper({
       props: {
@@ -291,11 +329,16 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       success: false,
     });
 
+    await wrapper.find('[data-cy=amount] input').setValue('4.5');
+
+    await vi.advanceTimersToNextTimerAsync();
+
     const saveMethod = wrapper.vm.save;
 
     const saveResult = await saveMethod();
     await nextTick();
 
+    expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
     expect(wrapper.find('[data-cy=location] .details').text()).toBe('invalid location');
   });

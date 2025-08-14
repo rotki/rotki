@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
@@ -28,7 +29,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import UNISWAP_PROTOCOL, UNISWAPV3_PROTOCOL, Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 
 from .types import HistoricalPrice, HistoricalPriceOracle, HistoricalPriceOracleInstance
 
@@ -175,7 +176,7 @@ class PriceHistorian:
                 timestamp=timestamp,
             )
 
-        if from_asset.is_evm_token() and (pool_token := from_asset.resolve_to_evm_token()).protocol in {UNISWAP_PROTOCOL, UNISWAPV3_PROTOCOL}:  # noqa: E501
+        if from_asset.is_evm_token() and (pool_token := from_asset.resolve_to_evm_token()).protocol in {CPT_UNISWAP_V2, CPT_UNISWAP_V3}:  # noqa: E501
             try:
                 return PriceHistorian.query_uniswap_position_price(
                     pool_token=pool_token,
@@ -382,7 +383,7 @@ class PriceHistorian:
         """
         evm_inquirer = Inquirer.get_evm_manager(chain_id=pool_token.chain_id).node_inquirer
         block_number = evm_inquirer.get_blocknumber_by_time(timestamp)
-        if pool_token.protocol == UNISWAP_PROTOCOL:
+        if pool_token.protocol == CPT_UNISWAP_V2:
             if (pool_price := lp_price_from_uniswaplike_pool_contract(
                 evm_inquirer=evm_inquirer,
                 token=pool_token,

@@ -1,5 +1,6 @@
 import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
 import type { BlockchainMetadata, TaskMeta } from '@/types/task';
+import { Blockchain } from '@rotki/common';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -12,7 +13,11 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
-import { BlockchainBalances, type BtcBalances } from '@/types/blockchain/balances';
+import {
+  type AssetProtocolBalances,
+  BlockchainBalances,
+  type BtcBalances,
+} from '@/types/blockchain/balances';
 import { Module } from '@/types/modules';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
@@ -23,7 +28,6 @@ import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { convertBtcBalances } from '@/utils/blockchain/accounts';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
-import { Blockchain } from '@rotki/common';
 
 function isBtcBalances(data?: BtcBalances | AssetBalances): data is BtcBalances {
   return !!data && (!!data.standalone || !!data.xpubs);
@@ -176,40 +180,38 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
       });
 
       const loopringBalances = AccountAssetBalances.parse(result);
-      const accounts = Object.keys(loopringBalances).map(
-        address =>
-          ({
-            chain: 'loopring',
-            data: {
-              address,
-              type: 'address',
-            },
-            nativeAsset: Blockchain.ETH.toUpperCase(),
-            tags: [],
-            virtual: true,
-          }) satisfies BlockchainAccount,
-      );
+      const accounts = Object.keys(loopringBalances).map(address => ({
+        chain: 'loopring',
+        data: {
+          address,
+          type: 'address',
+        },
+        nativeAsset: Blockchain.ETH.toUpperCase(),
+        tags: [],
+        virtual: true,
+      }) satisfies BlockchainAccount);
 
       const loopring = Object.fromEntries(
         Object.entries(loopringBalances).map(([address, assets]) => [
           address,
           {
-            assets,
+            assets: Object.fromEntries(Object.entries(assets).map(([asset, value]) => [asset, { address: value }])),
             liabilities: {},
           },
         ]),
       );
 
-      const assets: AssetBalances = {};
+      const assets: AssetProtocolBalances = {};
       for (const loopringAssets of Object.values(loopringBalances)) {
         for (const [asset, value] of Object.entries(loopringAssets)) {
           const identifier = getAssociatedAssetIdentifier(asset);
-          const associatedAsset: string = get(identifier);
+          const associatedAsset: string = get(identifier) ?? asset;
           const ownedAsset = assets[associatedAsset];
 
           if (!ownedAsset)
-            assets[associatedAsset] = { ...value };
-          else assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+            assets[associatedAsset] = { address: { ...value } };
+          else
+            assets[associatedAsset] = { address: { ...balanceSum(ownedAsset.address, value) } };
         }
       }
 

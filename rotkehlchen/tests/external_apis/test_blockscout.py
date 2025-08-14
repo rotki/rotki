@@ -30,12 +30,11 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
     eth_blockscout.query_withdrawals(address)
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EthWithdrawalFilterQuery.make(
                 order_by_rules=[('timestamp', True), ('history_events_identifier', True)],
             ),
-            has_premium=True,
             group_by_event_ids=False,
         )
 

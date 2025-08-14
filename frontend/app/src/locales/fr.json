@@ -452,16 +452,6 @@
         "title": "Modification du validateur de staking ETH"
       }
     },
-    "eth2_staking_stats": {
-      "error": {
-        "message": "La requête a échoué avec l'erreur suivante : {message}",
-        "title": "Interrogation des statistiques quotidiennes de staking ETH"
-      },
-      "task": {
-        "description": "Interrogation de vos statistiques quotidiennes de staking ETH",
-        "title": "Statistiques quotidiennes de staking ETH"
-      }
-    },
     "get_accounts": {
       "error": {
         "description": "Échec de la requête des comptes pour {blockchain} : {message}",
@@ -724,11 +714,11 @@
     "transactions": {
       "error": {
         "description": "Échec de la requête pour {address} ({chain}) : {error}",
-        "title": "Requête des transactions Evm"
+        "title": "Requête des transactions Blockchain"
       },
       "task": {
         "description": "Récupération des transactions pour {address} ({chain})",
-        "title": "Transactions Evm"
+        "title": "Transactions Blockchain"
       }
     },
     "transactions_redecode": {
@@ -896,7 +886,7 @@
     },
     "underlying_tokens": "Jetons sous-jacents",
     "validation": {
-      "valid_address": "Veuillez saisir une adresse ETH valide"
+      "valid_address": "Veuillez saisir une adresse valide"
     }
   },
   "asset_icon": {
@@ -1731,12 +1721,7 @@
     "title": "Format de date"
   },
   "date_time_picker": {
-    "default_format": "La date doit être au format {dateFormat} [HH:mm:[ss]]",
-    "limit_now": "Impossible d'utiliser une date future",
-    "milliseconds_format": "La date doit être au format {dateFormat} [HH:mm[:ss[.SSS]]]",
-    "timezone_field": {
-      "non_empty": "Le fuseau horaire doit être spécifié"
-    }
+    "limit_now": "Impossible d'utiliser une date future"
   },
   "docker_warning": {
     "action": "Oui, je comprends",
@@ -2162,7 +2147,6 @@
     }
   },
   "global_search": {
-    "menu_tooltip": "Rechercher ({modifier} + {key})",
     "no_actions": "Aucune action trouvée",
     "search_placeholder": "Rechercher n'importe quoi..."
   },
@@ -3725,7 +3709,7 @@
       "done_end_date": "Requête terminée pour toutes les transactions pour {address} jusqu'à {end}",
       "done_group": "Requête terminée pour toutes les informations de transaction pour {count} adresse | Requête terminée pour toutes les informations de transaction pour {count} adresses",
       "end_date": "Requête {status} pour {address} jusqu'à {end}",
-      "group": "Requête d'informations de transaction EVM pour {count} adresse | Requête d'informations de transaction EVM pour {count} adresses",
+      "group": "Requête d'informations de transaction pour {count} adresse | Requête d'informations de transaction EVM pour {count} adresses",
       "latest_period_date_range": "Période de requête réussie la plus récente est entre {start} et {end}",
       "latest_period_end_date": "Période de requête réussie la plus récente est jusqu'à {end}",
       "statuses": {
@@ -3733,7 +3717,7 @@
         "querying_internal_transactions": "transactions internes EVM",
         "querying_transactions": "transactions EVM"
       },
-      "title": "Statut de la requête de transactions EVM"
+      "title": "Statut de la requête de transactions"
     },
     "query_status_events": {
       "date_range": "Requête d'événements pour {name} entre {start} et {end}",

@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -267,7 +267,7 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
     globaldb.add_asset(EvmToken.initialize(
         address=string_to_evm_address('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=12,
         name='Conflicting token',
         symbol='CTK',
@@ -899,7 +899,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x5dbcF33D8c2E
     assert token is not None
     assert token.underlying_tokens == [UnderlyingToken(
         address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         weight=ONE,
     )]
 

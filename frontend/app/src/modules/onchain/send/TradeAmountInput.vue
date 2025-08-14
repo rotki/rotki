@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/core';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { bigNumberify } from '@rotki/common';
-import { get, set } from '@vueuse/core';
 
 const model = defineModel<string>({ required: true });
 

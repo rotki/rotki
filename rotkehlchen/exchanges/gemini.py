@@ -1,5 +1,4 @@
 import hashlib
-import hmac
 import json
 import logging
 from base64 import b64encode
@@ -24,6 +23,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import (
+    SignatureGeneratorMixin,
     deserialize_asset_movement_address,
     get_key_if_has_val,
 )
@@ -84,7 +84,10 @@ def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWit
     if symbol.endswith('perp'):
         raise UnprocessableTradePair(symbol)
 
-    special_cases = {'moodengusd': ('MOODENG', 'USD'), 'xrprlusd': ('XRP', 'RLUSD')}
+    special_cases = {
+        'xrprlusd': ('XRP', 'RLUSD'),
+        'moodengusd': ('solana/token:ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY', 'USD'),  # moodeng solana identifier  # noqa: E501
+    }
     if symbol in special_cases:
         base, quote = special_cases[symbol]
         return asset_from_gemini(base), asset_from_gemini(quote)
@@ -100,7 +103,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWit
     return asset_from_gemini(base.upper()), asset_from_gemini(quote.upper())
 
 
-class Gemini(ExchangeInterface):
+class Gemini(ExchangeInterface, SignatureGeneratorMixin):
 
     def __init__(
             self,
@@ -196,7 +199,7 @@ class Gemini(ExchangeInterface):
                     payload.update(options)
                 encoded_payload = json.dumps(payload).encode()
                 b64 = b64encode(encoded_payload)
-                signature = hmac.new(self.secret, b64, hashlib.sha384).hexdigest()
+                signature = self.generate_hmac_signature(b64, digest_algorithm=hashlib.sha384)
 
                 self.session.headers.update({
                     'X-GEMINI-PAYLOAD': b64.decode(),

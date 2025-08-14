@@ -1,7 +1,9 @@
 <script setup lang="ts" generic="T extends BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance">
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import { type BigNumber, toSentenceCase } from '@rotki/common';
+import { isEmpty } from 'es-toolkit/compat';
 import AccountChains from '@/components/accounts/AccountChains.vue';
 import AccountTopTokens from '@/components/accounts/AccountTopTokens.vue';
 import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
@@ -13,6 +15,8 @@ import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { type AccountManageState, editBlockchainAccount } from '@/composables/accounts/blockchain/use-account-manage';
+import { useAddressBookForm } from '@/composables/address-book/form';
+import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -21,9 +25,7 @@ import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { sum } from '@/utils/balances';
-import { getAccountAddress, getAccountId, getGroupId } from '@/utils/blockchain/accounts/utils';
-import { type BigNumber, toSentenceCase } from '@rotki/common';
-import { isEmpty } from 'es-toolkit/compat';
+import { getAccountAddress, getAccountId, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
 
 type DataRow = T & { id: string };
 
@@ -64,6 +66,9 @@ const { useIsTaskRunning } = useTaskStore();
 const { isLoading } = useStatusStore();
 const { supportsTransactions } = useSupportedChains();
 const { showConfirmation } = useAccountDelete();
+
+const { showGlobalDialog } = useAddressBookForm();
+const { getAddressesNames } = useAddressesNamesApi();
 
 const { isSectionLoading } = useBlockchainAccountLoading(category);
 
@@ -204,8 +209,34 @@ function confirmDelete(item: DataRow) {
   });
 }
 
-function edit(row: DataRow) {
-  emit('edit', editBlockchainAccount(row));
+async function handleXpubChildEdit(row: DataRow): Promise<void> {
+  const blockchain = getChain(row);
+  if (!blockchain)
+    return;
+
+  let name = '';
+  const address = getAccountAddress(row);
+  const savedNames = await getAddressesNames([{
+    address,
+    blockchain,
+  }]);
+  if (savedNames.length > 0) {
+    name = savedNames[0].name;
+  }
+  showGlobalDialog({
+    address,
+    blockchain,
+    name,
+  });
+}
+
+async function edit(group: string, row: DataRow) {
+  if (group === 'evm') {
+    emit('edit', editBlockchainAccount(row));
+  }
+  else if (group === 'xpub') {
+    await handleXpubChildEdit(row);
+  }
 }
 
 function getCategoryTotal(category: string): BigNumber {
@@ -320,8 +351,7 @@ defineExpose({
           class="account-balance-table__actions"
           :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation"
-          :no-edit="group !== 'evm'"
-          @edit-click="edit(row)"
+          @edit-click="edit(group, row)"
           @delete-click="confirmDelete(row)"
         />
       </div>

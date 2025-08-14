@@ -1,17 +1,17 @@
-import type { PrivacyMode } from '@/types/session';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef } from 'vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import type { PrivacyMode } from '@/types/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UsePrivacyModeReturn {
   privacyMode: ComputedRef<PrivacyMode>;
   privacyModeIcon: ComputedRef<string>;
-  togglePrivacyMode: () => void;
-  changePrivacyMode: (mode: PrivacyMode) => void;
+  togglePrivacyMode: () => Promise<void>;
+  changePrivacyMode: (mode: PrivacyMode) => Promise<void>;
 }
 
 export function usePrivacyMode(): UsePrivacyModeReturn {
-  const store = useSessionSettingsStore();
+  const store = useFrontendSettingsStore();
   const { privacyMode } = storeToRefs(store);
 
   const privacyModeIcon = computed<RuiIcons>(() => {
@@ -19,13 +19,13 @@ export function usePrivacyMode(): UsePrivacyModeReturn {
     return icons[get(privacyMode)];
   });
 
-  const changePrivacyMode = (mode: PrivacyMode): void => {
-    store.update({ privacyMode: mode });
+  const changePrivacyMode = async (mode: PrivacyMode): Promise<void> => {
+    await store.updateSetting({ privacyMode: mode });
   };
 
-  const togglePrivacyMode = (): void => {
+  const togglePrivacyMode = async (): Promise<void> => {
     const newPrivacyMode = (get(privacyMode) + 1) % 3;
-    store.update({ privacyMode: newPrivacyMode });
+    await store.updateSetting({ privacyMode: newPrivacyMode });
   };
 
   return {

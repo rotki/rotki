@@ -6,7 +6,7 @@ import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
-from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_BASE_API_URL
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, CURVE_BASE_API_URL
 from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -17,14 +17,13 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
 from rotkehlchen.types import (
-    CURVE_LENDING_VAULTS_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Price,
+    TokenKind,
 )
 
-from .constants import CURVE_VAULT_ABI
+from .constants import CURVE_LEND_VAULT_SYMBOL, CURVE_VAULT_ABI
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -68,7 +67,10 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         userdb=database,
         evm_address=deserialize_evm_address(vault['assets']['borrowed']['address']),
         chain_id=vault_chain_id,
-        decimals=deserialize_int(vault['assets']['borrowed']['decimals']),
+        decimals=deserialize_int(
+            value=vault['assets']['borrowed']['decimals'],
+            location='curve lending vault borrowed token decimals',
+        ),
         symbol=vault['assets']['borrowed']['symbol'],
         encounter=(encounter := TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False)),  # noqa: E501
     )
@@ -76,12 +78,12 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         userdb=database,
         evm_address=deserialize_evm_address(vault['address']),
         chain_id=vault_chain_id,
-        protocol=CURVE_LENDING_VAULTS_PROTOCOL,
+        protocol=CPT_CURVE,
         name=vault['name'],
-        symbol='cvcrvUSD',
+        symbol=CURVE_LEND_VAULT_SYMBOL,
         underlying_tokens=[UnderlyingToken(
             address=underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
         encounter=encounter,
@@ -118,12 +120,13 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
             )
 
 
-def query_curve_lending_vaults(database: 'DBHandler') -> None:
+def query_curve_lending_vaults(database: 'DBHandler', chain_id: ChainID) -> None:
     """Query list of Curve lending vaults and add the vault tokens to the global database."""
     update_cached_vaults(
         database=database,
         cache_key=(CacheType.CURVE_LENDING_VAULTS,),
         display_name='Curve lending',
+        chain=chain_id,
         query_vaults=_query_curve_lending_vaults_api,
         process_vault=_process_curve_lending_vault,
     )

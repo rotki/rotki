@@ -80,7 +80,7 @@ Before installing rotki, ensure you have the following dependencies:
 - `Node.js`
 - `npm` (Node Package Manager)
 - `Python 3.11`
-- `pip` (Python Package Manager)
+- `uv` (Python Package Manager)
 - `Docker`
 
 ---

@@ -1,12 +1,12 @@
-import type { Collection } from '@/types/collection';
-import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 import type { AssetBalance } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type * as Vue from 'vue';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import type { Collection } from '@/types/collection';
+import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 
 vi.mock('vue-router', async () => {
   const { ref } = await import('vue');

@@ -6,6 +6,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest import mock
+from unittest.mock import patch
 
 import gevent
 import pytest
@@ -16,6 +17,7 @@ from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
@@ -237,6 +239,7 @@ def test_user_creation_with_premium_credentials(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
+        database=None,  # type: ignore  # the user is not logged in
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',
         metadata_data_size=0,
@@ -303,7 +306,10 @@ def test_user_creation_with_invalid_premium_credentials(
         'premium_api_key': VALID_PREMIUM_KEY,
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
-    with ExitStack() as stack:
+    with (
+        ExitStack() as stack,
+        patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=RemoteError('Invalid API-KEY')),  # noqa: E501
+    ):
         patch_no_op_unlock(rotki, stack)
         response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
 
@@ -796,8 +802,8 @@ def test_user_login(
         connection_type=DBConnectionType.USER,
         sql_vm_instructions_cb=0,
     )
-    backup_connection.executescript(f"PRAGMA key='{db_password}'")  # unlock
     with backup_connection.write_ctx() as write_cursor:
+        write_cursor.executescript(f"PRAGMA key='{db_password}'")  # unlock
         write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")
     backup_connection.close()
 
@@ -823,7 +829,10 @@ def test_user_login(
 
     # Now let's try to login (without a consent to resume from backup)
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True, 'resume_from_backup': False}  # noqa: E501
-    with ExitStack() as stack:
+    with (
+        ExitStack() as stack,
+        patch('rotkehlchen.premium.premium.Premium.authenticate_device'),
+    ):
         patch_no_op_unlock(rotki, stack)
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
@@ -841,7 +850,10 @@ def test_user_login(
 
     # Now let's try to login (with a consent to resume from backup)
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True, 'resume_from_backup': True}  # noqa: E501
-    with ExitStack() as stack:
+    with (
+        ExitStack() as stack,
+        patch('rotkehlchen.premium.premium.Premium.authenticate_device'),
+    ):
         patch_no_op_unlock(rotki, stack)
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
@@ -887,6 +899,7 @@ def test_user_set_premium_credentials(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
+        database=rotki.data.db,
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',
         metadata_data_size=0,
@@ -920,6 +933,7 @@ def test_user_del_premium_credentials(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
+        database=rotki.data.db,
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',
         metadata_data_size=0,
@@ -1035,10 +1049,11 @@ def test_user_set_premium_credentials_errors(
 
     # Set valid format but not authenticated premium credentials for logged in user
     data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
-    response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
-        json=data,
-    )
+    with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=RemoteError('Invalid API-KEY')):  # noqa: E501
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+            json=data,
+        )
     assert_error_response(
         response=response,
         contained_in_msg='Invalid API-KEY',

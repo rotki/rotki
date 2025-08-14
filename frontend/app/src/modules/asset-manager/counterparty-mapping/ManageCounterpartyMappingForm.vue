@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { CounterpartyMapping } from '@/modules/asset-manager/counterparty-mapping/schema';
 import type { ValidationErrors } from '@/types/api/errors';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { nullDefined, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 const modelValue = defineModel<CounterpartyMapping>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

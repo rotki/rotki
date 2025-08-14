@@ -212,8 +212,8 @@ def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWit
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
         exchange=Location.COINBASE,
-        symbol=cb_name.upper(),  # the upper is needed since Coinbase Prime uses lower case symbols in some places  # noqa: E501
-        default=cb_name,
+        symbol=(upper_name := cb_name.upper()),  # the upper is needed since Coinbase Prime uses lower case symbols in some places  # noqa: E501
+        default=upper_name,
     ))
 
 
@@ -414,7 +414,7 @@ def asset_from_woo(woo_name: str) -> AssetWithOracles:
     woo_name = GlobalDBHandler.get_assetid_from_exchange_name(
         exchange=Location.WOO,
         symbol=woo_name,
-        default=woo_name.split('_')[-1],  # some woo assets are prefixed with the network for deposits/withdrawals  # noqa: E501
+        default=woo_name.split('_', maxsplit=1)[-1],  # some woo assets are prefixed with the network for deposits/withdrawals  # noqa: E501
     )
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
         exchange=Location.WOO,

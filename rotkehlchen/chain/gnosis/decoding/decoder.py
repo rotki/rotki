@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -27,6 +28,7 @@ class GnosisTransactionDecoder(EVMTransactionDecoder):
             database: 'DBHandler',
             gnosis_inquirer: 'GnosisInquirer',
             transactions: 'GnosisTransactions',
+            premium: 'Premium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -42,6 +44,7 @@ class GnosisTransactionDecoder(EVMTransactionDecoder):
                 address_is_exchange_fn=self._address_is_exchange,
                 exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
             ),
+            premium=premium,
             addresses_exceptions=dict.fromkeys(GNOSIS_MONERIUM_LEGACY_ADDRESSES, MONERIUM_V2_CONTRACTS_BLOCK),  # noqa: E501
         )
 

@@ -27,7 +27,7 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           package_json_file: frontend/package.json
 
@@ -47,7 +47,7 @@ jobs:
         run: pnpm run --filter rotki test:unit
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           flags: frontend_unit
           token: ${{ secrets.CODECOV_TOKEN }}

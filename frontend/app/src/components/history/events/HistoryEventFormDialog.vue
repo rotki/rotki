@@ -3,9 +3,9 @@ import type {
   GroupEventData,
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
+import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<GroupEventData | StandaloneEventData | undefined>({ required: true });
 

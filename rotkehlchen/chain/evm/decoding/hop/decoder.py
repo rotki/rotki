@@ -33,7 +33,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import HOP_PROTOCOL_LP, CacheType, ChainID, ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -114,9 +114,9 @@ class HopCommonDecoder(DecoderInterface):
 
     def _process_hop_lp_token(self, lp_token: EvmToken, pool_address: ChecksumEvmAddress) -> None:
         """Save the protocol value of the LP token and cache its pool address."""
-        GlobalDBHandler.set_token_protocol_if_missing(
-            token=lp_token,
-            new_protocol=HOP_PROTOCOL_LP,
+        GlobalDBHandler.set_tokens_protocol_if_missing(
+            tokens=[lp_token],
+            new_protocol=CPT_HOP,
         )
         # Cache the pool address if needed
         with GlobalDBHandler().conn.write_ctx() as write_cursor:

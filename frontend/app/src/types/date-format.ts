@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export enum DateFormat {
   DateMonthYearHourMinuteSecondTimezone = '%d/%m/%Y %H:%M:%S %Z',
@@ -7,4 +7,4 @@ export enum DateFormat {
   YearMonthDateHourMinuteSecond = '%Y/%m/%d %H:%M:%S',
 }
 
-export const DateFormatEnum = z.nativeEnum(DateFormat);
+export const DateFormatEnum = z.enum(DateFormat);

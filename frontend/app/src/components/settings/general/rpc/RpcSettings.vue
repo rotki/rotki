@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
 import type EvmRpcNodeManager from '@/components/settings/general/rpc/EvmRpcNodeManager.vue';
 import type SimpleRpcNodeManager from '@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
-import type { Component } from 'vue';
+import { assert, Blockchain } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { isOfEnum } from '@/utils';
-import { assert, Blockchain } from '@rotki/common';
 
 const { t } = useI18n({ useScope: 'global' });
 

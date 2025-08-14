@@ -5,7 +5,7 @@ import type {
   GroupEditableHistoryEvents,
   HistoryEvent,
   HistoryEventEntry,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import {

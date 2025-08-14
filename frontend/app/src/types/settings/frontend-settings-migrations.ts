@@ -1,3 +1,4 @@
+import { isEmpty } from 'es-toolkit/compat';
 import {
   type BalanceSource,
   BalanceUsdValueThresholdV0,
@@ -7,7 +8,6 @@ import {
   type FrontendSettings,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
-import { isEmpty } from 'es-toolkit/compat';
 
 export function migrateSettingsIfNeeded(settings?: string): string | undefined {
   if (settings === undefined || settings === '') {
@@ -19,7 +19,7 @@ export function migrateSettingsIfNeeded(settings?: string): string | undefined {
     return undefined;
   }
 
-  const migratedSettings = applyMigrations(deserializedSettings);
+  const migratedSettings = applyMigrations(deserializedSettings as any);
   return migratedSettings === undefined ? settings : JSON.stringify(migratedSettings);
 }
 

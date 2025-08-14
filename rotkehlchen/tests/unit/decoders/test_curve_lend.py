@@ -7,6 +7,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.curve.lend.constants import CURVE_LEND_VAULT_SYMBOL
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ARB, A_ETH, A_WBTC, A_WETH_ARB
@@ -16,12 +17,11 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    CURVE_LENDING_VAULTS_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -54,12 +54,12 @@ def fixture_arbitrum_vault_token(
         userdb=database,
         evm_address=string_to_evm_address('0xd3cA9BEc3e681b0f578FD87f20eBCf2B7e0bb739'),
         chain_id=ChainID.ARBITRUM_ONE,
-        protocol=CURVE_LENDING_VAULTS_PROTOCOL,
+        protocol=CPT_CURVE,
         name='Borrow crvUSD (WETH collateral)',
-        symbol='cvcrvUSD',
+        symbol=CURVE_LEND_VAULT_SYMBOL,
         underlying_tokens=[UnderlyingToken(
             address=arbitrum_vault_underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -74,9 +74,9 @@ def fixture_arbitrum_vault_token_with_gauge(
         userdb=database,
         evm_address=string_to_evm_address('0x0E6Ad128D7E217439bEEa90695FE7ec859c7F98C'),
         chain_id=ChainID.ARBITRUM_ONE,
-        protocol=CURVE_LENDING_VAULTS_PROTOCOL,
+        protocol=CPT_CURVE,
         name='Curve Vault for crvUSD',
-        symbol='cvcrvUSD',
+        symbol=CURVE_LEND_VAULT_SYMBOL,
     )
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_unique_cache_value(
@@ -108,12 +108,12 @@ def fixture_ethereum_vault_token(
         userdb=database,
         evm_address=string_to_evm_address('0xccd37EB6374Ae5b1f0b85ac97eFf14770e0D0063'),
         chain_id=ChainID.ETHEREUM,
-        protocol=CURVE_LENDING_VAULTS_PROTOCOL,
+        protocol=CPT_CURVE,
         name='Borrow crvUSD (WBTC collateral)',
-        symbol='cvcrvUSD',
+        symbol=CURVE_LEND_VAULT_SYMBOL,
         underlying_tokens=[UnderlyingToken(
             address=ethereum_vault_underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -139,12 +139,12 @@ def fixture_optimism_vault_token(
         userdb=database,
         evm_address=string_to_evm_address('0xE8dd743E376EcA40cc9547236D46eD83e06Fd471'),
         chain_id=ChainID.OPTIMISM,
-        protocol=CURVE_LENDING_VAULTS_PROTOCOL,
+        protocol=CPT_CURVE,
         name='Borrow crvUSD (WETH collateral)',
-        symbol='cvcrvUSD',
+        symbol=CURVE_LEND_VAULT_SYMBOL,
         underlying_tokens=[UnderlyingToken(
             address=optimism_vault_underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )

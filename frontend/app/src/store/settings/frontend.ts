@@ -1,16 +1,17 @@
 import type { ActionStatus } from '@/types/action';
+import { assert, BigNumber } from '@rotki/common';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { PrivacyMode } from '@/types/session';
 import {
   type FrontendSettings,
   type FrontendSettingsPayload,
   getDefaultFrontendSettings,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
-import { assert, BigNumber } from '@rotki/common';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));
@@ -49,11 +50,19 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const versionUpdateCheckFrequency = useComputedRef(settings, 'versionUpdateCheckFrequency');
   const enableAliasNames = useComputedRef(settings, 'enableAliasNames');
   const blockchainRefreshButtonBehaviour = useComputedRef(settings, 'blockchainRefreshButtonBehaviour');
-  const shouldRefreshValidatorDailyStats = useComputedRef(settings, 'shouldRefreshValidatorDailyStats');
   const savedFilters = useComputedRef(settings, 'savedFilters');
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
   const notifyNewNfts = useComputedRef(settings, 'notifyNewNfts');
+  const persistPrivacySettings = useComputedRef(settings, 'persistPrivacySettings');
+  const privacyMode = useComputedRef(settings, 'privacyMode');
+  const scrambleData = useComputedRef(settings, 'scrambleData');
+  const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
+  const evmQueryIndicatorMinOutOfSyncPeriod = useComputedRef(settings, 'evmQueryIndicatorMinOutOfSyncPeriod');
+  const evmQueryIndicatorDismissalThreshold = useComputedRef(settings, 'evmQueryIndicatorDismissalThreshold');
+
+  const shouldShowAmount = computed(() => get(privacyMode) < PrivacyMode.SEMI_PRIVATE);
+  const shouldShowPercentage = computed(() => get(privacyMode) < PrivacyMode.PRIVATE);
 
   const globalItemsPerPage = useItemsPerPage();
 
@@ -124,6 +133,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     defaultThemeVersion,
     defiSetupDone,
     enableAliasNames,
+    evmQueryIndicatorDismissalThreshold,
+    evmQueryIndicatorMinOutOfSyncPeriod,
     explorers,
     graphZeroBased,
     ignoreSnapshotError,
@@ -134,15 +145,20 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     minimumDigitToBeAbbreviated,
     nftsInNetValue,
     notifyNewNfts,
+    persistPrivacySettings,
     persistTableSorting,
+    privacyMode,
     profitLossReportPeriod,
     queryPeriod,
     refreshPeriod,
     renderAllNftImages,
     savedFilters,
+    scrambleData,
+    scrambleMultiplier,
     selectedTheme,
     settings,
-    shouldRefreshValidatorDailyStats,
+    shouldShowAmount,
+    shouldShowPercentage,
     showGraphRangeSelector,
     subscriptDecimals,
     thousandSeparator,

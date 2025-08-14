@@ -1,16 +1,18 @@
 import os
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import _patch, patch
 
 import pytest
 import requests
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -54,6 +56,8 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.exchanges.binance import Binance
+    from rotkehlchen.tests.fixtures import WebsocketReader
 
 
 def mock_validate_api_key() -> None:
@@ -168,7 +172,7 @@ def test_setup_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
     # But check that same location different name works
-    data = {'location': 'kraken', 'name': 'my_other_kraken', 'api_key': 'aadddddd', 'api_secret': 'fffffff'}  # noqa: E501
+    data = {'location': 'kraken', 'name': 'my_other_kraken', 'api_key': 'aadddddd', 'api_secret': 'ZmZmZmZmZg=='}  # noqa: E501
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -257,7 +261,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(
 
     Regression test for the second part of https://github.com/rotki/rotki/issues/943
     """
-    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='}  # noqa: E501
     with API_KEYPAIR_KRAKEN_VALIDATION_FAIL_PATCH:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -268,7 +272,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(
     )
 
     # Now try to register the exchange again
-    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='}  # noqa: E501
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -289,7 +293,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'location': 'notexisting', 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'},  # noqa: E501
+            json={'location': 'notexisting', 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},  # noqa: E501
         )
     assert_error_response(
         response=response,
@@ -301,7 +305,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'location': 3434, 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'},
+            json={'location': 3434, 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},  # noqa: E501
         )
     assert_error_response(
         response=response,
@@ -313,7 +317,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'location': 'kraken', 'name': 55, 'api_key': 'ddddd', 'api_secret': 'fffffff'},
+            json={'location': 'kraken', 'name': 55, 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},  # noqa: E501
         )
     assert_error_response(
         response=response,
@@ -325,7 +329,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'api_key': 'ddddd', 'api_secret': 'fffffff'},
+            json={'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},
         )
     assert_error_response(
         response=response,
@@ -337,7 +341,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'name': 'kraken', 'api_key': True, 'api_secret': 'fffffff'},
+            json={'name': 'kraken', 'api_key': True, 'api_secret': 'ZmZmZmZmZg=='},
         )
     assert_error_response(
         response=response,
@@ -349,7 +353,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'name': 'kraken', 'api_secret': 'fffffff'},
+            json={'name': 'kraken', 'api_secret': 'ZmZmZmZmZg=='},
         )
     assert_error_response(
         response=response,
@@ -382,6 +386,57 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
+def test_binance_api_without_markets_error(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that adding Binance API key without markets returns a proper error message"""
+    auth_data = {
+        'location': 'binance',
+        'name': 'my_binance',
+        'api_key': 'test_key',
+        'api_secret': 'dGVzdF9zZWNyZXQ=',
+    }
+    # Test Binance without markets
+    with mock_validate_api_key_success(Location.BINANCE):
+        response = requests.put(
+            (endpoint := api_url_for(rotkehlchen_api_server, 'exchangesresource')),
+            json=auth_data,
+        )
+
+    # Check that we get the expected error message
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    data = response.json()
+    assert 'message' in data
+    # The error message should be flat, not nested JSON
+    expected_msg = 'Binance API key requires at least one market pair to be selected. Please choose the trading pairs you want to monitor before adding the API key.'  # noqa: E501
+    assert expected_msg in data['message']
+
+    # Test BinanceUS without markets (same requirement)
+    with mock_validate_api_key_success(Location.BINANCEUS):
+        response = requests.put(endpoint, json=auth_data)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    data = response.json()
+    assert 'message' in data
+    assert expected_msg in data['message']
+
+    # Test that providing empty markets list also triggers the error
+    with mock_validate_api_key_success(Location.BINANCE):
+        response = requests.put(endpoint, json=auth_data | {'binance_markets': []})
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    data = response.json()
+    assert 'message' in data
+    assert expected_msg in data['message']
+
+    # Test that providing markets works correctly
+    with mock_validate_api_key_success(Location.BINANCE):
+        response = requests.put(
+            endpoint,
+            json=auth_data | {'binance_markets': ['BTCUSDT', 'ETHUSDT']},
+        )
+
+    assert_simple_ok_response(response)
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that removing a setup exchange via the api works"""
@@ -392,7 +447,7 @@ def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
         'location': 'coinbase',
         'name': 'Coinbase 1',
         'api_key': 'ddddd',
-        'api_secret': 'fffffff',
+        'api_secret': 'ZmZmZmZmZg==',
     }
     with mock_validate_api_key_success(Location.COINBASE):
         response = requests.put(
@@ -636,10 +691,9 @@ def test_delete_external_exchange_data_works(
     with rotki.data.db.user_write() as write_cursor:
         history_db.add_history_events(write_cursor=write_cursor, history=events)
 
-        assert len(history_db.get_history_events(
+        assert len(history_db.get_history_events_internal(
             cursor=write_cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )) == 2
     response = requests.delete(
         api_url_for(
@@ -651,10 +705,9 @@ def test_delete_external_exchange_data_works(
     result = assert_proper_sync_response_with_result(response)  # check no validation error happens
     assert result is True
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(history_db.get_history_events(
+        assert len(history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )) == 1
 
 
@@ -863,8 +916,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
     # Test that valid api key/secret is edited properly
-    new_key = 'new_key'
-    new_secret = 'new_secret'
+    new_key, new_secret, new_secret_kraken = 'new_key', 'new_secret', 'bmV3X3NlY3JldA=='  # last one is base65 for new_secret  # noqa: E501
     for location in SUPPORTED_EXCHANGES:
         exchange = try_get_first_exchange(rotki.exchange_manager, location)  # type: ignore[call-overload]  # mypy only sees the type as Location
         # change both passphrase and name -- kucoin
@@ -875,7 +927,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             'api_key': new_key,
         }
         if location not in EXCHANGES_WITHOUT_API_SECRET:
-            data['api_secret'] = new_secret
+            data['api_secret'] = new_secret_kraken if location == Location.KRAKEN else new_secret
         if location in (Location.BINANCE, Location.BINANCEUS):
             data['binance_markets'] = ['ETHBTC']
         elif location == Location.KRAKEN:
@@ -886,11 +938,11 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX):
-                continue  # except for iconomi AND huobi
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+                continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
-            assert any(new_key in value for _, value in exchange.session.headers.items())
+            assert any(new_key in value for value in exchange.session.headers.values())
 
     # Test that api key validation failure is handled correctly
     for location in SUPPORTED_EXCHANGES:
@@ -901,8 +953,12 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             'location': str(location),
             'new_name': f'my_{exchange.name}',
             'api_key': 'invalid',
-            'api_secret': 'invalid',
+            'api_secret': 'aW52YWxpZA==' if location == Location.KRAKEN else 'invalid',  # base64 for 'invalid'  # noqa: E501
         }
+
+        if location in (Location.BINANCE, Location.BINANCEUS):
+            data['binance_markets'] = ['ETHBTC']
+
         with mock_validate_api_key_failure(location):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_error_response(
@@ -914,11 +970,11 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX):
-                continue  # except for iconomi AND huobi
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+                continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
-            assert any(new_key in value for _, value in exchange.session.headers.items())
+            assert any(new_key in value for value in exchange.session.headers.values())
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
@@ -956,6 +1012,71 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges: 'APIServer')
     assert 'FTTBNB' not in result
     if ci_run is False:
         assert binance_pairs_num > binanceus_pairs_num
+
+
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
+def test_query_binance_events(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        websocket_connection: 'WebsocketReader',
+) -> None:
+    """Test that querying binance events will only query the market pairs set in the db and
+    will not try to query all markets if no market pairs are set."""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    binance = cast('Binance', rotki.exchange_manager.get_exchange(
+        name='binance',
+        location=Location.BINANCE,
+    ))
+    binance.selected_pairs = []  # create_test_binance automatically selects pairs, so reset this to properly test here.  # noqa: E501
+
+    # Try directly querying with no pairs set to ensure that it never queries all market pairs.
+    with (
+        pytest.raises(InputError),
+        patch.object(binance, 'api_query', side_effect=lambda **kwargs: []) as mock_api_query,
+    ):
+        binance.query_online_history_events(start_ts=Timestamp(0), end_ts=Timestamp(1600000000))
+
+    websocket_connection.wait_until_messages_num(num=1, timeout=5)
+    assert websocket_connection.pop_message() == (missing_ws_msg := {
+        'type': str(WSMessageType.BINANCE_PAIRS_MISSING),
+        'data': {'location': 'binance', 'name': 'binance'},
+    })
+    assert len([x for x in mock_api_query.call_args_list if x.kwargs.get('method') == 'myTrades']) == 0  # noqa: E501
+
+    # Query via the API checking the error with no pairs set and that it works when pairs are set.
+    for with_pairs in (False, True):
+        if with_pairs:
+            with rotki.data.db.conn.write_ctx() as write_cursor:
+                rotki.data.db.set_binance_pairs(
+                    write_cursor=write_cursor,
+                    name='binance',
+                    location=Location.BINANCE,
+                    pairs=['ETHUSDC', 'ETHBTC', 'BNBBTC'],
+                )
+            binance.reset_to_db_extras()
+
+        with patch.object(binance, 'api_query', side_effect=lambda **kwargs: []) as mock_api_query:
+            response = requests.post(
+                api_url_for(rotkehlchen_api_server_with_exchanges, 'exchangeeventsqueryresource'),
+                json={'location': Location.BINANCE.serialize(), 'name': 'binance'},
+            )
+        trades_queries = [x for x in mock_api_query.call_args_list if x.kwargs.get('method') == 'myTrades']  # noqa: E501
+        if with_pairs:
+            assert_proper_sync_response_with_result(response)
+            assert len(trades_queries) == 3
+            assert {x.kwargs['options']['symbol'] for x in trades_queries} == {'ETHUSDC', 'ETHBTC', 'BNBBTC'}  # noqa: E501
+        else:
+            assert_error_response(
+                response=response,
+                contained_in_msg='Cannot query binance trade history with no market pairs selected.',  # noqa: E501
+                status_code=HTTPStatus.CONFLICT,
+            )
+            websocket_connection.wait_until_messages_num(num=3, timeout=5)
+            assert [
+               x for x in websocket_connection.messages
+               if x['type'] != str(WSMessageType.HISTORY_EVENTS_STATUS)
+            ] == [missing_ws_msg]
+            assert len(trades_queries) == 0
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

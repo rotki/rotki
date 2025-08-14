@@ -1,11 +1,13 @@
+import { BackendCode, type OAuthResult } from '@shared/ipc';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { logger } from '@/utils/logging';
-import { BackendCode } from '@shared/ipc';
-import { checkIfDevelopment, startPromise } from '@shared/utils';
+
+type OAuthCallback = (oAuthResult: OAuthResult) => void;
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');
@@ -19,6 +21,23 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const { start } = useMonitorStore();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());
+
+  const oauthCallbackHandlers = ref<Array<OAuthCallback>>([]);
+
+  function registerOAuthCallbackHandler(handler: OAuthCallback): void {
+    const handlers = get(oauthCallbackHandlers);
+    set(oauthCallbackHandlers, [...handlers, handler]);
+  }
+
+  function unregisterOAuthCallbackHandler(handler: OAuthCallback): void {
+    const handlers = get(oauthCallbackHandlers);
+    const index = handlers.indexOf(handler);
+    if (index !== -1) {
+      const newHandlers = [...handlers];
+      newHandlers.splice(index, 1);
+      set(oauthCallbackHandlers, newHandlers);
+    }
+  }
 
   onBeforeMount(() => {
     setupListeners({
@@ -35,6 +54,12 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
         else if (code === BackendCode.WIN_VERSION) {
           set(isWinVersionUnsupported, true);
         }
+      },
+      onOAuthCallback: (oAuthResult: OAuthResult) => {
+        const handlers = get(oauthCallbackHandlers);
+        handlers.forEach((handler) => {
+          handler(oAuthResult);
+        });
       },
       onProcessDetected: (pids) => {
         set(
@@ -57,7 +82,9 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   return {
     isMacOsVersionUnsupported,
     isWinVersionUnsupported,
+    registerOAuthCallbackHandler,
     startupErrorMessage,
+    unregisterOAuthCallbackHandler,
   };
 });
 

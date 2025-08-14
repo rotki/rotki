@@ -3,17 +3,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.filtering import (
-    EvmTransactionsFilterQuery,
-    HistoryEventFilterQuery,
-)
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import has_premium_check
+from rotkehlchen.premium.premium import UserLimitType, get_user_limit
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
@@ -74,8 +71,6 @@ class HistoryQueryingManager:
             db_settings = self.db.get_settings(cursor)
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
-        # query daily eth2 daily stats for PnL only if they want to count PnL before withdrawals
-        self.should_query_eth2_daily_stats = db_settings.eth_staking_taxable_after_withdrawal_enabled is False  # noqa: E501
 
     def _increase_progress(self, step: int, total_steps: int, step_by: int = 1) -> int:
         """Counts the progress for querying history. When transmitted to the frontend
@@ -115,11 +110,14 @@ class HistoryQueryingManager:
                 )
 
         db = DBHistoryEvents(self.db)
-        has_premium = has_premium_check(self.chains_aggregator.premium)
+        history_events_limit, _ = get_user_limit(
+            premium=self.chains_aggregator.premium,
+            limit_type=UserLimitType.HISTORY_EVENTS,
+        )
         events, filter_total_found, _ = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
-            has_premium=has_premium,
+            entries_limit=history_events_limit,
         )
         return events, filter_total_found  # type: ignore  # event is guaranteed HistoryEvent
 
@@ -185,16 +183,17 @@ class HistoryQueryingManager:
             str_blockchain = str(blockchain)
             self.processing_state_name = f'Querying {str_blockchain} transactions history'
             evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
-            tx_filter_query = EvmTransactionsFilterQuery.make(
-                limit=None,
-                offset=None,
-                # We need to have history of transactions since before the range
-                from_ts=Timestamp(0),
-                to_ts=end_ts,
-                chain_id=blockchain.to_chain_id(),
-            )
+            with self.db.conn.read_ctx() as cursor:
+                addresses = self.db.get_single_blockchain_addresses(
+                    cursor=cursor,
+                    blockchain=blockchain,
+                )
             try:
-                evm_manager.transactions.query_chain(filter_query=tx_filter_query)
+                evm_manager.transactions.query_chain(
+                    from_timestamp=Timestamp(0),  # We need to have history of transactions since before the range  # noqa: E501
+                    to_timestamp=end_ts,
+                    addresses=addresses,
+                )
             except RemoteError as e:
                 msg = str(e)
                 self.msg_aggregator.add_error(
@@ -216,17 +215,6 @@ class HistoryQueryingManager:
         eth2 = self.chains_aggregator.get_module('eth2')
         if eth2 is not None and has_premium:
             self.processing_state_name = 'Querying ETH2 staking history'
-            if self.should_query_eth2_daily_stats:
-                try:
-                    eth2_events = self.chains_aggregator.refresh_eth2_get_daily_stats(
-                        from_timestamp=Timestamp(0),
-                        to_timestamp=end_ts,
-                    )
-                    history.extend(eth2_events)
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Eth2 daily stats are not included in the PnL report due to {e!s}',
-                    )
             # make sure that eth2 events and history events are combined
             eth2.combine_block_with_tx_events()
 
@@ -235,23 +223,22 @@ class HistoryQueryingManager:
         # Include all base history entries
         history_events_db = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
-            base_entries = history_events_db.get_history_events(
+            base_entries = history_events_db.get_history_events_internal(  # ignore limits here. Limit applied at processing  # noqa: E501
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
                     # We need to have history since before the range
                     from_ts=Timestamp(0),
                     to_ts=end_ts,
                 ),
-                has_premium=True,  # ignore limits here. Limit applied at processing
                 group_by_event_ids=False,
             )
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
 
-        history.sort(  # sort events first by timestamp (in milliseconds) and by sequence index if HistoryBaseEntry  # noqa: E501
+        history.sort(  # sort events first by timestamp (in milliseconds), then by event_identifier, and finally by sequence index if HistoryBaseEntry  # noqa: E501
             key=lambda x: (
-                (x.timestamp, x.sequence_index) if isinstance(x, HistoryBaseEntry)
-                else (ts_sec_to_ms(x.get_timestamp()), 1)
+                (x.timestamp, x.event_identifier, x.sequence_index) if isinstance(x, HistoryBaseEntry)  # noqa: E501
+                else (ts_sec_to_ms(x.get_timestamp()), '', 1)
             ),
         )
         return empty_or_error, history

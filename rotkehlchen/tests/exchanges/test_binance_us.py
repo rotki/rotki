@@ -29,6 +29,7 @@ def test_name():
     assert exchange.name == 'binanceus1'
 
 
+@pytest.mark.asset_test
 def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api.binance.us/api/v3/exchangeInfo').json()
     binance_assets = set()
@@ -105,7 +106,7 @@ def test_binanceus_trades_location(function_scope_binance):
 
 @pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
 def test_binanceus_deposits_withdrawals_location(function_scope_binance):
-    """Test deposits/withdrawls of binance US have the right location.
+    """Test deposits/withdrawals of binance US have the right location.
 
     Regression test for https://github.com/rotki/rotki/issues/2837
     """

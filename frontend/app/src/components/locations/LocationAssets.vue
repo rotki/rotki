@@ -1,35 +1,29 @@
 <script setup lang="ts">
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import { useBalancesLoading } from '@/composables/balances/loading';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 
 const props = defineProps<{
   identifier: string;
 }>();
 
 const { identifier } = toRefs(props);
-const { useIsTaskRunning } = useTaskStore();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useLocationBreakdown } = useLocationBalancesBreakdown();
+const { useLocationBreakdown } = useAggregatedBalances();
 const locationBreakdown = useLocationBreakdown(identifier);
 
-const loadingData = logicOr(
-  useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
-  useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES),
-  useIsTaskRunning(TaskType.QUERY_BALANCES),
-);
+const { loadingBalances } = useBalancesLoading();
 </script>
 
 <template>
-  <RuiCard v-if="loadingData || locationBreakdown.length > 0">
+  <RuiCard v-if="loadingBalances || locationBreakdown.length > 0">
     <template #header>
       {{ t('common.assets') }}
     </template>
     <AssetBalances
-      :loading="loadingData"
+      :loading="loadingBalances"
       :balances="locationBreakdown"
       hide-breakdown
       sticky-header

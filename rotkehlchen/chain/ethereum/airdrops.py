@@ -6,13 +6,13 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Final, NamedTuple, cast
+from typing import Any, Final, NamedTuple
 
 import polars as pl
 import requests
 from requests import Response
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset
+from rotkehlchen.assets.asset import Asset, CryptoAsset, SolanaToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -33,7 +33,14 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, FValWithTolerance, Timestamp
+from rotkehlchen.types import (
+    CacheType,
+    ChainID,
+    ChecksumEvmAddress,
+    FValWithTolerance,
+    Timestamp,
+    TokenKind,
+)
 from rotkehlchen.utils.misc import is_production
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
@@ -114,19 +121,22 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
         try:
             if (new_asset_data := airdrop_data.get('new_asset_data')) is not None:
                 try:
-                    if (chain_id_raw := new_asset_data.get('chain_id')) is not None:
-                        chain_id = ChainID.deserialize(chain_id_raw)
-                    else:
-                        log.warning(f'Airdrops Index contains no ChainID of a token for {protocol_name}. Assuming mainnet')  # noqa: E501
-                        chain_id = ChainID.ETHEREUM
-
                     new_asset_type = AssetType.deserialize(new_asset_data['asset_type'])
-
                 except DeserializationError as e:
-                    log.error(f'Airdrops Index contains an invalid ChainID or AssetType of a token for {protocol_name}. {e!s}')  # noqa: E501
+                    log.error(f'Airdrops Index contains an invalid AssetType of a token for {protocol_name}. {e!s}')  # noqa: E501
                     continue
 
                 if new_asset_type == AssetType.EVM_TOKEN:
+                    try:
+                        if (chain_id_raw := new_asset_data.get('chain_id')) is not None:
+                            chain_id = ChainID.deserialize(chain_id_raw)
+                        else:
+                            log.warning(f'Airdrops Index contains no ChainID of a token for {protocol_name}. Assuming mainnet')  # noqa: E501
+                            chain_id = ChainID.ETHEREUM
+                    except DeserializationError as e:
+                        log.error(f'Airdrops Index contains an invalid ChainID of a token for {protocol_name}. {e!s}')  # noqa: E501
+                        continue
+
                     crypto_asset: CryptoAsset = get_or_create_evm_token(
                         userdb=database,
                         evm_address=new_asset_data['address'],
@@ -134,6 +144,16 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                         decimals=new_asset_data['decimals'],
                         name=new_asset_data['name'],
                         symbol=new_asset_data['symbol'],
+                        coingecko=new_asset_data.get('coingecko'),
+                        cryptocompare=new_asset_data.get('cryptocompare'),
+                    )
+                elif new_asset_type == AssetType.SOLANA_TOKEN:
+                    crypto_asset = SolanaToken.initialize(
+                        address=new_asset_data['address'],
+                        token_kind=TokenKind.SPL_TOKEN,
+                        name=new_asset_data['name'],
+                        symbol=new_asset_data['symbol'],
+                        decimals=new_asset_data['decimals'],
                         coingecko=new_asset_data.get('coingecko'),
                         cryptocompare=new_asset_data.get('cryptocompare'),
                     )
@@ -455,7 +475,7 @@ def process_airdrop_with_api_data(
             continue
 
         try:
-            amount = deserialize_int(cast('int', token_num))
+            amount = deserialize_int(value=token_num, location='airdrop data processing')
         except DeserializationError as e:
             log.error(f'Failed to read amount from {protocol_name} API: {e}. Skipping')
             continue

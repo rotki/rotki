@@ -1,7 +1,7 @@
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { AllLocation } from '@/types/location';
-import { useHistoryApi } from '@/composables/api/history';
 import { toSentenceCase } from '@rotki/common';
+import { useHistoryApi } from '@/composables/api/history';
 
 export const useLocationStore = defineStore('locations', () => {
   const allLocations = ref<AllLocation>({});
@@ -66,14 +66,23 @@ export const useLocationStore = defineStore('locations', () => {
     return get(exchangesWithKey).filter(key => locations[key].exchangeDetails?.isExchangeWithoutApiSecret);
   });
 
+  const experimentalExchanges = computed<string[]>(() => {
+    const locations = get(allLocations);
+    return get(exchangesWithKey).filter(key => locations[key].exchangeDetails?.experimental);
+  });
+
+  const useIsExperimentalExchange = (location: MaybeRef<string>): ComputedRef<boolean> => computed(() => get(experimentalExchanges).includes(get(location)));
+
   return {
     allExchanges,
     allLocations,
     exchangesWithKey,
     exchangesWithoutApiSecret,
     exchangesWithPassphrase,
+    experimentalExchanges,
     fetchAllTradeLocations,
     tradeLocations,
+    useIsExperimentalExchange,
   };
 });
 

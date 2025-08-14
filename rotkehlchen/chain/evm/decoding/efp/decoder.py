@@ -128,7 +128,7 @@ class EfpCommonDecoder(DecoderInterface, ABC):
             tag = data[24:].rstrip(b'\x00').decode()
             notes = f'Remove {tag} tag from {followed_address} on EFP'
 
-        return DecodingOutput(event=self.base.make_event_from_transaction(
+        return DecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -138,7 +138,7 @@ class EfpCommonDecoder(DecoderInterface, ABC):
             location_label=address,
             notes=notes,
             counterparty=CPT_EFP,
-        ))
+        )])
 
     # -- DecoderInterface methods
 

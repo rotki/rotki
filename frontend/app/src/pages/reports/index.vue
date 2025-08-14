@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
+import { type Message, Priority, Severity } from '@rotki/common';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
@@ -20,7 +21,6 @@ import { NoteLocation } from '@/types/notes';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { downloadFileByTextContent } from '@/utils/download';
-import { type Message, Priority, Severity } from '@rotki/common';
 
 definePage({
   meta: {

@@ -1,14 +1,18 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type {
   MatchedKeywordWithBehaviour,
   SearchMatcher,
 
 } from '@/types/filtering';
-import type { MaybeRef } from '@vueuse/core';
+import { HistoryEventEntryType, isValidEthAddress, isValidTxHash } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
+import { z } from 'zod/v4';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { arrayify } from '@/utils/array';
@@ -16,9 +20,6 @@ import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, 
 import { uniqueStrings } from '@/utils/data';
 import { getDateInputISOFormat } from '@/utils/date';
 import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';
-import { HistoryEventEntryType, isValidEthAddress, isValidTxHash } from '@rotki/common';
-import { isEqual } from 'es-toolkit';
-import { z } from 'zod';
 
 enum HistoryEventFilterKeys {
   START = 'start',
@@ -33,6 +34,7 @@ enum HistoryEventFilterKeys {
   TX_HASHES = 'tx_hash',
   VALIDATOR_INDICES = 'validator_index',
   ADDRESSES = 'address',
+  NOTES = 'notes',
 }
 
 enum HistoryEventFilterValueKeys {
@@ -48,6 +50,7 @@ enum HistoryEventFilterValueKeys {
   TX_HASHES = 'txHashes',
   VALIDATOR_INDICES = 'validatorIndices',
   ADDRESSES = 'addresses',
+  NOTES = 'notesSubstring',
 }
 
 export type Matcher = SearchMatcher<HistoryEventFilterKeys, HistoryEventFilterValueKeys>;
@@ -74,12 +77,14 @@ export function useHistoryEventFilter(
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { assetInfo, assetSearch } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
+  const { txChainsToLocation } = useSupportedChains();
   const { t } = useI18n({ useScope: 'global' });
 
   const matchers = computed<Matcher[]>(() => {
-    let selectedLocation = get(filters)?.location;
-    if (Array.isArray(selectedLocation))
-      selectedLocation = selectedLocation[0] || undefined;
+    const selectedLocation = get(filters)?.location;
+    const locationString = (Array.isArray(selectedLocation) ? selectedLocation[0] : selectedLocation)?.toString();
+    const evmChain = locationString && get(txChainsToLocation).includes(locationString) ? locationString : undefined;
+
     const data: Matcher[] = [
       ...(disabled?.period
         ? []
@@ -117,7 +122,15 @@ export function useHistoryEventFilter(
         deserializer: assetDeserializer(assetInfo),
         key: HistoryEventFilterKeys.ASSET,
         keyValue: HistoryEventFilterValueKeys.ASSET,
-        suggestions: assetSuggestions(assetSearch, selectedLocation?.toString()),
+        suggestions: assetSuggestions(assetSearch, evmChain?.toString()),
+      },
+      {
+        description: t('transactions.filter.notes'),
+        key: HistoryEventFilterKeys.NOTES,
+        keyValue: HistoryEventFilterValueKeys.NOTES,
+        string: true,
+        suggestions: () => [],
+        validate: (notes: string) => !!notes,
       },
     ];
 
@@ -193,6 +206,7 @@ export function useHistoryEventFilter(
           multiple: true,
           string: true,
           suggestions: () => get(historyEventTypes),
+          suggestionsToShow: -1,
           validate: (type: string) => !!type,
         });
       }
@@ -239,6 +253,7 @@ export function useHistoryEventFilter(
           multiple: true,
           string: true,
           suggestions: () => globalMappingKeys.filter(uniqueStrings),
+          suggestionsToShow: -1,
           validate: (type: string) => globalMappingKeys.includes(type),
         });
       }
@@ -297,6 +312,7 @@ export function useHistoryEventFilter(
     [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
+    [HistoryEventFilterValueKeys.NOTES]: OptionalString,
     [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.START]: OptionalString,

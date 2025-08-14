@@ -1,14 +1,14 @@
 import json
 import logging
 import re
-import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import rsqlite
 
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL
 from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -332,7 +332,7 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
                     assets_ids=list(assets_to_add),
                     root_dir=root_dir,
                 )
-            except sqlite3.OperationalError as e:
+            except rsqlite.OperationalError as e:
                 log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
                 return
 
@@ -354,6 +354,6 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
     @progress_step('Updating protocol name for yearn assets.')
     def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
         """Update the protocol name for yearn assets"""
-        cursor.execute("UPDATE evm_tokens SET protocol=? WHERE protocol='yearn-v1'", (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+        cursor.execute("UPDATE evm_tokens SET protocol=? WHERE protocol='yearn-v1'", ('yearn_vaults_v1',))  # noqa: E501
 
     perform_globaldb_upgrade_steps(connection, progress_handler)

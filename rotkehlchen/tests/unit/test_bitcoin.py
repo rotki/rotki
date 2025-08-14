@@ -1,10 +1,10 @@
 import re
 from contextlib import nullcontext
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
     WitnessVersion,
@@ -28,6 +28,10 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import BTCAddress
+from rotkehlchen.utils.network import request_get_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 
 
 def test_is_valid_btc_address():
@@ -477,7 +481,10 @@ BLOCKCHAIN_INFO_RESULT = {
 }
 
 
-def test_bitcoin_balance_api_resolver(network_mocking):
+def test_bitcoin_balance_api_resolver(
+        network_mocking: bool,
+        bitcoin_manager: 'BitcoinManager',
+) -> None:
     """Test that bitcoin balances are queried and that if one source fails we use the next"""
     address_re = re.compile(r'.*/address/(.*)')
     addresses = [
@@ -507,7 +514,7 @@ def test_bitcoin_balance_api_resolver(network_mocking):
             assert addr in balances_to_check
 
     blockchain_info_mock = patch(
-        'rotkehlchen.chain.bitcoin.request_get_dict',
+        'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
         return_value=BLOCKCHAIN_INFO_RESULT,
     ) if network_mocking else nullcontext()
     blockstream_mempool_mock = patch(
@@ -517,21 +524,42 @@ def test_bitcoin_balance_api_resolver(network_mocking):
 
     # Test balances are returned properly if first source works
     with blockchain_info_mock:
-        balances = get_bitcoin_addresses_balances(addresses)
+        balances = bitcoin_manager.get_balances(addresses)
     check_balances(balances)
 
+    def mock_query_blockstream_or_mempool(only_blockstream: bool, **kwargs):
+        if only_blockstream and 'blockstream' in kwargs['url']:
+            raise RemoteError('Fatality')
+
+        return request_get_dict(**kwargs)
+
     # First source fails
-    with patch('rotkehlchen.chain.bitcoin._query_blockchain_info', MagicMock(side_effect=KeyError('someProperty'))):  # noqa: E501
+    with patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._query_blockchain_info',
+            MagicMock(side_effect=KeyError('someProperty')),
+    ):
         with blockstream_mempool_mock:
-            balances = get_bitcoin_addresses_balances(addresses)
+            balances = bitcoin_manager.get_balances(addresses)
         check_balances(balances)
 
         # Second source fails
-        with patch('rotkehlchen.chain.bitcoin._query_blockstream_info', MagicMock(side_effect=RemoteError('Epic fail'))):  # noqa: E501
+        with patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
+            new=lambda *args, **kwargs: mock_query_blockstream_or_mempool(
+                only_blockstream=True,
+                **kwargs,
+            ),
+        ):
             with blockstream_mempool_mock:
-                balances = get_bitcoin_addresses_balances(addresses)
+                balances = bitcoin_manager.get_balances(addresses)
             check_balances(balances)
 
             # Third source fails - FATALITY!!!
-            with patch('rotkehlchen.chain.bitcoin._query_mempool_space', MagicMock(side_effect=RemoteError('Fatality'))), pytest.raises(RemoteError):  # noqa: E501
-                get_bitcoin_addresses_balances(addresses)
+            with patch(
+                'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
+                new=lambda *args, **kwargs: mock_query_blockstream_or_mempool(
+                    only_blockstream=False,
+                    **kwargs,
+                ),
+            ):
+                bitcoin_manager.get_balances(addresses)

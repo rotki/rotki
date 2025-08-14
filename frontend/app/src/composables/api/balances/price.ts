@@ -1,7 +1,7 @@
+import type { ActionResult } from '@rotki/common';
 import type { SupportedCurrency } from '@/types/currencies';
 import type { PriceOracle } from '@/types/settings/price-oracle';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {

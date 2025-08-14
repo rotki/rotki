@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { WebVersion } from '@/types';
 import type { SystemVersion } from '@shared/ipc';
+import type { WebVersion } from '@/types';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -9,6 +9,7 @@ import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremium } from '@/composables/premium';
 import { useMainStore } from '@/store/main';
+import { millisecondsToSeconds } from '@/utils/date';
 
 const store = useMainStore();
 const { isPackaged, openPath, version: getVersion } = useInterop();
@@ -244,7 +245,7 @@ const { copy } = useClipboard({ source: versionText });
                 {{ t('about.components.build') }}
               </td>
               <td class="text-rui-text-secondary">
-                <DateDisplay :timestamp="componentsVersion.build / 1000" />
+                <DateDisplay :timestamp="millisecondsToSeconds(componentsVersion.build)" />
               </td>
             </tr>
           </template>

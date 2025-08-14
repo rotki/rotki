@@ -1,5 +1,4 @@
 import hashlib
-import hmac
 import json
 import logging
 import operator
@@ -7,15 +6,16 @@ from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import suppress
 from json.decoder import JSONDecodeError
-from sqlite3 import IntegrityError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 from uuid import uuid4
 
 import gevent
 import requests
+from rsqlite import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
@@ -35,6 +35,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeWithExtras,
 )
 from rotkehlchen.exchanges.utils import (
+    SignatureGeneratorMixin,
     deserialize_asset_movement_address,
     get_key_if_has_val,
     query_binance_exchange_pairs,
@@ -101,7 +102,6 @@ V3_METHODS: Final = (
 )
 PUBLIC_METHODS: Final = ('exchangeInfo', 'time')
 
-RETRY_AFTER_LIMIT: Final = 60
 # Binance api error codes we check for (all below apis seem to have the same)
 # https://binance-docs.github.io/apidocs/spot/en/#error-codes-2
 # https://binance-docs.github.io/apidocs/futures/en/#error-codes-2
@@ -179,7 +179,7 @@ def trade_from_binance(
     )
 
 
-class Binance(ExchangeInterface, ExchangeWithExtras):
+class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
       - Binance US: when instantiated with uri equals BINANCEUS_BASE_URL.
@@ -264,6 +264,21 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         self.first_connection()
         return self._symbols_to_pair
 
+    def send_unknown_asset_message(
+            self,
+            asset_identifier: str,
+            details: str,
+            location: Location | None = None,
+    ) -> None:
+        """Override setting the WS message location to Binance for both Binance and BinanceUS
+        since they share mappings.
+        """
+        self._send_unknown_asset_message(
+            asset_identifier=asset_identifier,
+            details=details,
+            location=Location.BINANCE,
+        )
+
     def validate_api_key(self) -> tuple[bool, str]:
         try:
             # We know account endpoint returns a dict
@@ -301,7 +316,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
          - BinancePermissionError
         """
         call_options = options.copy() if options else {}
-        timeout = CachedSettings().get_timeout_tuple()
+        timeout = (cached_settings := CachedSettings()).get_timeout_tuple()
+        tries_left = cached_settings.get_query_retry_limit()
         while True:
             if 'signature' in call_options:
                 del call_options['signature']
@@ -325,11 +341,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 # Recommended recvWindows is 5000 but we get timeouts with it
                 call_options['recvWindow'] = 10000
                 call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
-                signature = hmac.new(
-                    self.secret,
-                    urlencode(call_options).encode('utf-8'),
-                    hashlib.sha256,
-                ).hexdigest()
+                signature = self.generate_hmac_signature(urlencode(call_options))
                 call_options['signature'] = signature
 
             api_subdomain = api_type if is_new_futures_api else 'api'
@@ -384,24 +396,24 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 # will give the number of seconds required to wait, in the case
                 # of a 429, to prevent a ban, or, in the case of a 418, until
                 # the ban is over.
-                # https://binance-docs.github.io/apidocs/spot/en/#limits
-                retry_after = int(response.headers.get('retry-after', '0'))
-                # Spoiler. They actually seem to always return 0 here. So we don't
-                # wait at all. Won't be much of an improvement but force 1 sec wait if 0 returns
-                retry_after = max(1, retry_after)  # wait at least 1 sec even if api says otherwise
+                # https://developers.binance.com/docs/binance-spot-api-docs/rest-api/limits
+                # the Retry-After header is returned but it is always 0. We implement our own
+                # backoff logic.
                 log.debug(
-                    f'Got status code {response.status_code} from {self.name}. Backing off',
-                    seconds=retry_after,
+                    'Rate limited request from binance answered with status code '
+                    f'{response.status_code} and headers {response.headers}. '
+                    f'Retries left: {tries_left}',
                 )
-                if retry_after > RETRY_AFTER_LIMIT:
-                    raise RemoteError(
-                        f'{self.name} API request {response.url} for {method} failed with '
-                        f'HTTP status code: {response.status_code} due to a too long '
-                        f'retry after value ({retry_after} > {RETRY_AFTER_LIMIT})',
-                    )
+                if tries_left >= 1:
+                    backoff_seconds = 10 / tries_left
+                    gevent.sleep(backoff_seconds)
+                    tries_left -= 1
+                    continue
 
-                gevent.sleep(retry_after)
-                continue
+                raise RemoteError(
+                    f'{self.name} API request {response.url} for {method} failed with '
+                    f'HTTP status code: {response.status_code} after exhausting the retries.',
+                )
 
             # else success
             break
@@ -1129,18 +1141,21 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         last trade queried on each market speeding up the queries. For fiat payments the time
         range is respected.
 
-        May raise due to api query and unexpected id:
+        May raise due to api query, unexpected id, or missing market pairs:
         - RemoteError
         - BinancePermissionError
+        - InputError
         """
         self.first_connection()
-        if self.selected_pairs is not None:
-            iter_markets = list(set(self.selected_pairs).intersection(set(self._symbols_to_pair.keys())))  # noqa: E501
-            log.debug(f'Will query the following binance markets: {iter_markets}')
-        else:
-            iter_markets = list(self._symbols_to_pair.keys())
-            log.debug('Will query all the binance markets')
+        if self.selected_pairs is None or len(self.selected_pairs) == 0:
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.BINANCE_PAIRS_MISSING,
+                data={'location': self.location, 'name': self.name},
+            )
+            raise InputError(f'Cannot query {self.name} trade history with no market pairs selected.')  # noqa: E501
 
+        iter_markets = list(set(self.selected_pairs).intersection(set(self._symbols_to_pair.keys())))  # noqa: E501
+        log.debug(f'Will query the following binance markets: {iter_markets}')
         raw_data = []
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000

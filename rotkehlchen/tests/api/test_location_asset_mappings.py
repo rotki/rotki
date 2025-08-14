@@ -8,11 +8,12 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
-NUM_PACKAGED_ASSETS_MAPPINGS: Final = 3173
+NUM_PACKAGED_ASSETS_MAPPINGS: Final = 3354
 
 
 def _get_all_location_mappings(rotkehlchen_api_server: 'APIServer') -> Any:
@@ -41,7 +42,7 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
         json={'location': None},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == result['entries_found'] == 213
+    assert len(result['entries']) == result['entries_found'] == 264
 
     # query all kraken mappings
     response = requests.post(
@@ -52,7 +53,7 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
         json={'location': 'kraken'},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == result['entries_found'] == 283
+    assert len(result['entries']) == result['entries_found'] == 305
 
     # query by symbol all the kraken mappings
     response = requests.post(
@@ -227,6 +228,24 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
             'Failed to add the location asset mapping of AXS in None because it already exists in the DB.'  # noqa: E501
         ),
     )
+
+    # check that some locations are not allowed since they share mappings with another location.
+    for location, replacement_location in (
+        (Location.BINANCEUS, Location.BINANCE),
+        (Location.COINBASEPRIME, Location.COINBASE),
+        (Location.COINBASEPRO, Location.COINBASE),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'locationassetmappingsresource'),
+            json={'entries': [
+                {'asset': 'BTC', 'location': location.serialize(), 'location_symbol': 'XYZ'},
+            ]},
+        )
+        assert_error_response(
+            response=response,
+            status_code=HTTPStatus.BAD_REQUEST,
+            contained_in_msg=f'Mappings for {location.name} should use a location of {replacement_location.name}.',  # noqa: E501
+        )
 
     # delete a mapping that does not exist and expect failure
     response = requests.delete(

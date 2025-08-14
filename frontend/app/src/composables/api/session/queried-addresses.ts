@@ -1,5 +1,5 @@
-import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
 import type { ActionResult } from '@rotki/common';
+import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 

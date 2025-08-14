@@ -20,6 +20,7 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
@@ -62,19 +63,21 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import Premium, has_premium_check
 from rotkehlchen.tasks.assets import maybe_detect_new_tokens
 from rotkehlchen.types import (
+    EVM_TOKEN_KINDS,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     Location,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
+from .base import BaseDecoderTools, BaseDecoderToolsWithProxy
 from .constants import (
     CPT_ACCOUNT_DELEGATION,
     CPT_GAS,
@@ -82,6 +85,7 @@ from .constants import (
     ERC20_OR_ERC721_TRANSFER,
     OUTGOING_EVENT_TYPES,
 )
+from .merkl.decoder import MerklDecoder
 from .structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -95,7 +99,7 @@ from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -112,15 +116,18 @@ MIN_LOGS_PROCESSED_TO_SLEEP = 1000
 
 def decode_safely(
         msg_aggregator: 'MessagesAggregator',
-        tx_hash: EVMTxHash,
         chain_id: ChainID,
         func: Callable,
+        tx_hash: EVMTxHash | None = None,
         *args: tuple[Any],
         **kwargs: Any,
 ) -> tuple[Any, bool]:
     """
     Wrapper for methods that execute logic from decoders. It handles all known errors
     by logging them and optionally sending them to the user.
+
+    tx_hash is used only to log more information in case of error when decoding
+    a single transaction.
 
     It returns a tuple where the first argument is the output of func and the second is a boolean
     set to True if an error was raised from func.
@@ -138,7 +145,11 @@ def decode_safely(
         NotERC20Conformant,
     ) as e:
         log.error(traceback.format_exc())
-        error_prefix = f'Decoding of transaction {tx_hash.hex()} in {chain_id.to_name()}'
+        error_prefix = (
+            f'Decoding of transaction {tx_hash.hex()} in {chain_id.to_name()}'
+            if tx_hash is not None else
+            f'Post processing of decoded events in {chain_id.to_name()}'
+        )
         log.error(
             f'{error_prefix} failed due to {e} '
             f'when calling {func.__name__} with {args=} {kwargs=}',
@@ -171,6 +182,9 @@ class DecodingRules:
     # rules to run after the main decoding loop. post_decoding_rules is a mapping of
     # counterparties to tuples of the rules that need to be executed.
     post_decoding_rules: dict[str, list[tuple[int, Callable]]]
+    # rules to run after the full batch of txs are decoded. Maps a counterparty
+    # to a tuple of rules to apply
+    post_processing_rules: dict[str, tuple[Callable]]
     all_counterparties: set['CounterpartyDetails']
     addresses_to_counterparties: dict[ChecksumEvmAddress, str]
 
@@ -190,6 +204,7 @@ class DecodingRules:
             input_data_rules=self.input_data_rules | other.input_data_rules,
             token_enricher_rules=self.token_enricher_rules + other.token_enricher_rules,
             post_decoding_rules=self.post_decoding_rules | other.post_decoding_rules,
+            post_processing_rules=self.post_processing_rules | other.post_processing_rules,
             all_counterparties=self.all_counterparties | other.all_counterparties,
             addresses_to_counterparties=self.addresses_to_counterparties | other.addresses_to_counterparties,  # noqa: E501
         )
@@ -206,6 +221,7 @@ class EVMTransactionDecoder(ABC):
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderTools,
+            premium: 'Premium | None' = None,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
             addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
             beacon_chain: 'BeaconChain | None' = None,
@@ -222,11 +238,14 @@ class EVMTransactionDecoder(ABC):
         `misc_counterparties` is a list of counterparties not associated with any specific
         decoder that should be included for this decoder modules.
 
+        `premium` is the Premium object for checking user limits
+
         `addresses_exceptions` is a dict of address to the block number at which we should start
         ignoring transfers for that address. It was introduced to ignore events for monerium
         legacy tokens.
         """
         self.database = database
+        self.premium = premium
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='lu-flame')] + misc_counterparties  # noqa: E501
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
@@ -246,6 +265,7 @@ class EVMTransactionDecoder(ABC):
             input_data_rules={},
             token_enricher_rules=[],
             post_decoding_rules={},
+            post_processing_rules={},
             all_counterparties=set(self.misc_counterparties),
             addresses_to_counterparties={},
         )
@@ -271,6 +291,8 @@ class EVMTransactionDecoder(ABC):
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='OpenOcean', decoder_class=OpenOceanDecoder, rules=rules)  # noqa: E501
+        self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
+        self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
 
         # Excluding Gnosis and Polygon PoS because they dont have ETH as native token
         # Also arb and scroll because they don't follow the weth9 design
@@ -356,6 +378,7 @@ class EVMTransactionDecoder(ABC):
         rules.input_data_rules.update(new_input_data_rules)
         rules.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
         rules.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())
+        rules.post_processing_rules.update(self.decoders[class_name].post_processing_rules())
         rules.all_counterparties.update(self.decoders[class_name].counterparties())
         rules.addresses_to_counterparties.update(new_address_to_counterparties)
         self._chain_specific_decoder_initialization(self.decoders[class_name])
@@ -373,6 +396,7 @@ class EVMTransactionDecoder(ABC):
             input_data_rules={},
             token_enricher_rules=[],
             post_decoding_rules={},
+            post_processing_rules={},
             all_counterparties=set(),
             addresses_to_counterparties={},
         )
@@ -484,7 +508,7 @@ class EVMTransactionDecoder(ABC):
                 continue
 
             if (
-                decoding_output.event is not None or
+                decoding_output.events or
                 len(decoding_output.action_items) > 0 or
                 decoding_output.process_swaps
             ):
@@ -508,9 +532,9 @@ class EVMTransactionDecoder(ABC):
         method, *args = mapping_result
         result, err = decode_safely(  # can't used named arguments with *args
             self.msg_aggregator,
-            context.transaction.tx_hash,
             context.transaction.chain_id,
             method,
+            context.transaction.tx_hash,
             *(context, *args),
         )
         if err:
@@ -717,9 +741,9 @@ class EVMTransactionDecoder(ABC):
                     func=input_rule,
                     context=context,
                 )
-                if not is_err and result.event:
-                    events.append(result.event)
-                    continue  # since the input data rule found an event for this log
+                if not is_err and result.events:
+                    events.extend(result.events)
+                    continue  # since the input data rule found events for this log
 
             decoding_output = self.decode_by_address_rules(context)
             if decoding_output.refresh_balances is True:
@@ -732,8 +756,8 @@ class EVMTransactionDecoder(ABC):
             action_items.extend(decoding_output.action_items)
             if decoding_output.matched_counterparty is not None:
                 counterparties.add(decoding_output.matched_counterparty)
-            if decoding_output.event:
-                events.append(decoding_output.event)
+            if decoding_output.events:
+                events.extend(decoding_output.events)
                 continue
 
             rules_decoding_output = self.try_all_rules(
@@ -750,8 +774,8 @@ class EVMTransactionDecoder(ABC):
                 action_items.extend(rules_decoding_output.action_items)
                 if rules_decoding_output.matched_counterparty is not None:
                     counterparties.add(rules_decoding_output.matched_counterparty)
-                if rules_decoding_output.event is not None:
-                    events.append(rules_decoding_output.event)
+                if rules_decoding_output.events is not None:
+                    events.extend(rules_decoding_output.events)
                 if rules_decoding_output.process_swaps:
                     process_swaps = True
 
@@ -867,7 +891,7 @@ class EVMTransactionDecoder(ABC):
             self,
             limit: int | None = None,
             send_ws_notifications: bool = False,
-    ) -> None:
+    ) -> list[EVMTxHash]:
         """Checks the DB for up to `limit` undecoded transactions and decodes them.
         If a list of addresses is provided then only the transactions involving those
         addresses are decoded.
@@ -887,6 +911,7 @@ class EVMTransactionDecoder(ABC):
                     send_ws_notifications=send_ws_notifications,
                 )
             log.debug(f'Finished task to process undecoded transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
+            return hashes
 
     def decode_and_get_transaction_hashes(
             self,
@@ -961,6 +986,7 @@ class EVMTransactionDecoder(ABC):
         refresh_balances = False
         total_transactions = len(tx_hashes)
         log.debug(f'Started logic to decode {total_transactions} transactions from {self.evm_inquirer.chain_id}')  # noqa: E501
+        post_processing_events = []
         for tx_index, tx_hash in enumerate(tx_hashes):
             log.debug(f'Decoding logic started for {tx_hash.hex()} ({self.evm_inquirer.chain_name})')  # noqa: E501
             if send_ws_notifications and tx_index % 10 == 0:
@@ -996,6 +1022,11 @@ class EVMTransactionDecoder(ABC):
             if events is not None:
                 events.extend(new_events)
 
+            # store events that get affected by post processing rules
+            post_processing_events.extend(
+                [x for x in new_events if x.counterparty in self.rules.post_processing_rules],
+            )
+
             if new_refresh_balances is True:
                 refresh_balances = True
 
@@ -1014,7 +1045,7 @@ class EVMTransactionDecoder(ABC):
                 },
             )
 
-        self._post_process(refresh_balances=refresh_balances)
+        self._post_process(refresh_balances=refresh_balances, events=post_processing_events)
         maybe_detect_new_tokens(self.database)
 
     def _get_or_decode_transaction_events(
@@ -1053,12 +1084,11 @@ class EVMTransactionDecoder(ABC):
                     (tx_id, EVMTX_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
-                    events = self.dbevents.get_history_events(
+                    events = self.dbevents.get_history_events_internal(
                         cursor=cursor,
                         filter_query=EvmEventFilterQuery.make(
                             tx_hashes=[transaction.tx_hash],
                         ),
-                        has_premium=True,  # for this function we don't limit anything
                     )
                     return events, False, None
 
@@ -1141,15 +1171,15 @@ class EVMTransactionDecoder(ABC):
     def _get_transfer_or_approval_token_kind_and_id(
             self,
             tx_log: EvmTxReceiptLog,
-    ) -> tuple[EvmTokenKind, str | None] | None:
+    ) -> tuple[EVM_TOKEN_KINDS, str | None] | None:
         """Determine if a transfer or approval event is for an erc20 or erc721 token.
         Returns the token kind and id (or None for erc20) in a tuple, or None on error."""
         if self._is_non_conformant_erc721(tx_log.address):
-            return EvmTokenKind.ERC721, str(int.from_bytes(tx_log.data[0:32]))  # token_id is in data  # noqa: E501
+            return TokenKind.ERC721, str(int.from_bytes(tx_log.data[0:32]))  # token_id is in data  # noqa: E501
         elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
-            return EvmTokenKind.ERC20, None  # no token_id for erc20
+            return TokenKind.ERC20, None  # no token_id for erc20
         elif len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args
-            return EvmTokenKind.ERC721, str(int.from_bytes(tx_log.topics[3]))  # token_id is in topics  # noqa: E501
+            return TokenKind.ERC721, str(int.from_bytes(tx_log.topics[3]))  # token_id is in topics  # noqa: E501
         else:
             log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
             return None
@@ -1218,7 +1248,7 @@ class EVMTransactionDecoder(ABC):
             notes=notes,
             address=spender_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _maybe_decode_simple_transactions(
             self,
@@ -1421,19 +1451,46 @@ class EVMTransactionDecoder(ABC):
             ),
         )
         return DecodingOutput(
-            event=transfer,
+            events=[transfer],
             matched_counterparty=enrichment_output.matched_counterparty,
             refresh_balances=enrichment_output.refresh_balances,
             process_swaps=enrichment_output.process_swaps,
         )
 
-    def _post_process(self, refresh_balances: bool) -> None:
+    def _post_process(self, refresh_balances: bool, events: list['EvmEvent'] | None) -> None:
         """
         Method that handles actions that have to be taken after a batch of transactions gets
-        decoded. Currently may only send a websocket message to the frontend to refresh balances.
+        decoded.
+
+        First it tries to apply post processing rules to the decoded events. This is used
+        for example for monerium and gnosis pay to pull metadata and overwrite the notes
+        after having successfully decoded the events.
+        Finally it sends a websocket message to the frontend to refresh balances.
+
         The caller of decode_transactions should call this method after a batch of transactions
         has been decoded.
         """
+        if events is not None:
+            log.debug(f'Executing post processing with {len(events)} events and {refresh_balances=}')  # noqa: E501
+            counterparties_to_events = defaultdict(list)
+            for event in events:
+                if event.counterparty is None:
+                    continue
+                counterparties_to_events[event.counterparty].append(event)
+
+            has_premium = has_premium_check(premium=self.premium)
+            for counterparty, counterparty_events in counterparties_to_events.items():
+                for post_processing_fn in self.rules.post_processing_rules.get(counterparty, []):
+                    decode_safely(
+                        msg_aggregator=self.msg_aggregator,
+                        chain_id=self.evm_inquirer.chain_id,
+                        func=post_processing_fn,
+                        decoded_events=counterparty_events,
+                        has_premium=has_premium,
+                    )
+        else:
+            log.debug(f'Executing post processing with no events and {refresh_balances=}')
+
         if refresh_balances is True:
             log.debug(f'Sending ws to refresh balances for {self.evm_inquirer.chain_name}')
             self.msg_aggregator.add_message(
@@ -1513,13 +1570,14 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
     def __init__(
             self,
             database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirerWithDSProxy',
+            evm_inquirer: 'EvmNodeInquirerWithProxies',
             transactions: 'EvmTransactions',
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
-            base_tools: BaseDecoderToolsWithDSProxy,
+            base_tools: BaseDecoderToolsWithProxy,
             beacon_chain: 'BeaconChain | None' = None,
+            premium: 'Premium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -1529,7 +1587,8 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             event_rules=event_rules,
             misc_counterparties=misc_counterparties,
             base_tools=base_tools,
+            premium=premium,
             beacon_chain=beacon_chain,
         )
-        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # Set explicit type
-        self.base: BaseDecoderToolsWithDSProxy  # Set explicit type
+        self.evm_inquirer: EvmNodeInquirerWithProxies  # Set explicit type
+        self.base: BaseDecoderToolsWithProxy  # Set explicit type

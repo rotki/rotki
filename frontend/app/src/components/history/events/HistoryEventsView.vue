@@ -11,19 +11,20 @@ import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
-  HistoryEventRow,
   PullEthBlockEventPayload,
   PullEvmTransactionPayload,
-  RepullingTransactionPayload,
 } from '@/types/history/events';
+import type { HistoryEventRow } from '@/types/history/events/schemas';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { flatten, isEqual } from 'es-toolkit';
 import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import HistoryEventFormDialog from '@/components/history/events/HistoryEventFormDialog.vue';
 import HistoryEventsDecodingStatus from '@/components/history/events/HistoryEventsDecodingStatus.vue';
 import HistoryEventsProtocolCacheUpdateStatus
   from '@/components/history/events/HistoryEventsProtocolCacheUpdateStatus.vue';
-import HistoryEventsTable from '@/components/history/events/HistoryEventsTable.vue';
 import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
 import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
 import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
@@ -38,6 +39,7 @@ import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
@@ -52,9 +54,6 @@ import {
   isEvmEventType,
   isOnlineHistoryEventType,
 } from '@/utils/history/events';
-import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { flatten, isEqual } from 'es-toolkit';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -124,7 +123,7 @@ const protocolCacheStatusDialogOpen = ref<boolean>(false);
 const currentAction = ref<'decode' | 'query'>('query');
 
 const addTransactionModelValue = ref<AddTransactionHashPayload>();
-const repullingTransactionModelValue = ref<RepullingTransactionPayload>();
+const showRePullTransactionsDialog = ref<boolean>(false);
 
 const { show } = useConfirmStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
@@ -435,15 +434,6 @@ function addTxHash() {
   });
 }
 
-function repullingTransactions() {
-  set(repullingTransactionModelValue, {
-    address: '',
-    evmChain: '',
-    fromTimestamp: 0,
-    toTimestamp: 0,
-  });
-}
-
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -494,7 +484,7 @@ onMounted(async () => {
         @refresh="refresh(true, $event)"
         @show:form="showForm($event)"
         @show:add-transaction-form="addTxHash()"
-        @show:repulling-transactions-form="repullingTransactions()"
+        @show:repulling-transactions-form="showRePullTransactionsDialog = true"
       />
     </template>
 
@@ -521,6 +511,7 @@ onMounted(async () => {
           :processing="processing"
           :matchers="matchers"
           :export-params="pageParams"
+          :hide-redecode-buttons="!mainPage"
           :hide-account-selector="useExternalAccountFilter"
           @update:accounts="onFilterAccountsChanged($event)"
           @redecode="redecode($event)"
@@ -594,9 +585,14 @@ onMounted(async () => {
         />
 
         <RepullingTransactionFormDialog
-          v-model="repullingTransactionModelValue"
+          v-model="showRePullTransactionsDialog"
           :loading="sectionLoading"
-          @refresh="fetchAndRedecodeEvents()"
+          @refresh="refreshTransactions({
+            chains: $event,
+            disableEvmEvents: false,
+            payload: undefined,
+            userInitiated: true,
+          });"
         />
 
         <MissingRulesDialog

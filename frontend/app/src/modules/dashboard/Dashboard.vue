@@ -4,20 +4,19 @@ import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.
 import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useBalancesLoading } from '@/composables/balances/loading';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
-import { useTaskStore } from '@/store/tasks';
+import HistoryQueryIndicator from '@/modules/dashboard/history-progress/HistoryQueryIndicator.vue';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { TaskType } from '@/types/task-type';
 import PoolTable from './liquidity-pools/PoolTable.vue';
 import Summary from './summary/Summary.vue';
 
 const Type = DashboardTableType;
 
 const { t } = useI18n({ useScope: 'global' });
-const { useIsTaskRunning } = useTaskStore();
 const { isModuleEnabled } = useModules();
 const { balances, liabilities } = useAggregatedBalances();
 const { activeDashboardMessages } = useDynamicMessages();
@@ -27,28 +26,47 @@ const aggregatedLiabilities = liabilities();
 
 const nftEnabled = isModuleEnabled(Module.NFTS);
 
-const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
-const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-const isAllBalancesLoading = useIsTaskRunning(TaskType.QUERY_BALANCES);
-
-const isBlockchainLoading = logicOr(isQueryingBlockchain, isLoopringLoading);
-const isAnyLoading = logicOr(isBlockchainLoading, isExchangeLoading, isAllBalancesLoading);
+const { loadingBalancesAndDetection: isAnyLoading } = useBalancesLoading();
 const dismissedMessage = useSessionStorage('rotki.messages.dash.dismissed', false);
+
+const dashboardRef = ref<HTMLElement>();
+const floatingRef = ref<HTMLElement>();
+const dashboardWidth = ref(0);
+
+const { width } = useElementSize(dashboardRef);
+watch(width, (newWidth) => {
+  set(dashboardWidth, newWidth);
+});
+
+const showDynamicMessage = computed(() => get(activeDashboardMessages).length > 0 && !get(dismissedMessage));
+
+const { height: floatingHeight } = useElementSize(floatingRef);
+
+const paddingTop = computed(() => get(floatingHeight) || 0);
 </script>
 
 <template>
   <div
+    ref="dashboardRef"
     class="pb-6"
     data-cy="dashboard"
   >
-    <DynamicMessageDisplay
-      v-if="activeDashboardMessages.length > 0 && !dismissedMessage"
-      class="!-mt-6 mb-4"
-      :messages="activeDashboardMessages"
-      @dismiss="dismissedMessage = true"
-    />
-    <div class="container">
+    <div
+      ref="floatingRef"
+      class="fixed z-[7] top-14 md:top-16 shadow-sm"
+      :style="{ width: `${dashboardWidth}px` }"
+    >
+      <DynamicMessageDisplay
+        v-if="showDynamicMessage"
+        :messages="activeDashboardMessages"
+        @dismiss="dismissedMessage = true"
+      />
+      <HistoryQueryIndicator />
+    </div>
+    <div
+      class="container"
+      :style="{ paddingTop: `${paddingTop}px` }"
+    >
       <div class="flex flex-wrap gap-6">
         <div class="w-full">
           <OverallBalances />

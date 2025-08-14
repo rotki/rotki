@@ -1,11 +1,13 @@
 import type { LogService } from '@electron/main/log-service';
-import type { BackendCode } from '@shared/ipc';
+import type { BackendCode, OAuthResult } from '@shared/ipc';
 import process from 'node:process';
 import { ContextMenuHandler } from '@electron/main/context-menu-handler';
 import { createProtocol } from '@electron/main/create-protocol';
 import { NavigationHandler } from '@electron/main/navigation-handler';
+import { parseToken } from '@electron/main/oauth-utils';
 import { WindowConfig } from '@electron/main/window-config';
 import { assert } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { BrowserWindow, ipcMain } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 
@@ -97,8 +99,8 @@ export class WindowManager {
   private async loadContent(window: BrowserWindow): Promise<void> {
     const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL;
     if (devServerUrl) {
-      // Load the url of the dev server if in development mode
-      await window.loadURL(devServerUrl);
+      // Load the url of the dev server if in development mode with retry logic
+      await this.loadUrlWithRetry(window, devServerUrl);
       if (process.env.ENABLE_DEV_TOOLS)
         window.webContents.openDevTools();
       return;
@@ -107,6 +109,36 @@ export class WindowManager {
     createProtocol('app');
     // Load the index.html when not in development
     await window.loadURL('app://localhost/index.html');
+  }
+
+  private async loadUrlWithRetry(window: BrowserWindow, url: string, maxRetries: number = 5): Promise<void> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.logger.debug(`Loading URL attempt ${attempt}/${maxRetries}: ${url}`);
+        await window.loadURL(url);
+        this.logger.debug(`Successfully loaded URL on attempt ${attempt}`);
+        return;
+      }
+      catch (error) {
+        lastError = error as Error;
+        this.logger.warn(`Failed to load URL on attempt ${attempt}/${maxRetries}:`, error);
+
+        // Don't retry on the last attempt
+        if (attempt === maxRetries) {
+          break;
+        }
+
+        // Wait with exponential backoff: 1s, 2s, 4s, 8s
+        const delay = Math.min(1000 * (2 ** (attempt - 1)), 8000);
+        this.logger.debug(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    this.logger.error(`Failed to load URL after ${maxRetries} attempts. Last error:`, lastError);
+    throw new Error(`Failed to load dev server URL after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
   }
 
   private createWindowState() {
@@ -166,12 +198,12 @@ export class WindowManager {
   }
 
   listenForAckMessages() {
-    // Listen for ack messages from renderer process
-    ipcMain.on('ack', (event, ...args) => {
+    // Listen for ack messages from the renderer process
+    ipcMain.on('ack', (_event, ...args) => {
       if (args[0] === 1)
         this.clearPending();
       else
-        this.logger.log(`Warning: unknown ack code ${args[0]}`);
+        this.logger.warn(`Warning: unknown ack code ${args[0]}`);
     });
   }
 
@@ -198,5 +230,87 @@ export class WindowManager {
         clearInterval(this.notificationInterval);
       }
     }, 2000) as unknown as number;
+  }
+
+  sendOAuthCallback(oAuthResult: OAuthResult): void {
+    try {
+      if (this.window?.webContents) {
+        this.window.webContents.send('oauth-callback', oAuthResult);
+      }
+    }
+    catch (error) {
+      this.logger.error('Failed to send OAuth callback:', error);
+    }
+  }
+
+  sendIpcMessage(channel: string, ...args: any[]): void {
+    try {
+      if (this.window?.webContents) {
+        this.window.webContents.send(channel, ...args);
+      }
+    }
+    catch (error) {
+      this.logger.error(`Failed to send IPC message to channel ${channel}:`, error);
+    }
+  }
+
+  async openOAuthWindow(url: string): Promise<void> {
+    try {
+      const oauthWindow = new BrowserWindow({
+        width: 800,
+        height: 800,
+        show: false,
+        autoHideMenuBar: true,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+        },
+      });
+
+      // Function to inject URL display
+      const injectUrlDisplay = async () => {
+        try {
+          await oauthWindow.webContents.executeJavaScript(`
+            const urlDisplay = document.createElement('input');
+            urlDisplay.value = window.location.href;
+            urlDisplay.readOnly = true;
+            urlDisplay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:30px;z-index:10000;border:none;background:#f5f5f5;padding:5px;font-family:monospace;font-size:12px;box-sizing:border-box;';
+            document.body.style.paddingTop = '30px';
+            document.body.insertBefore(urlDisplay, document.body.firstChild);
+          `);
+        }
+        catch (error) {
+          this.logger.debug('Failed to inject URL display:', error);
+        }
+      };
+
+      await oauthWindow.loadURL(url);
+      await injectUrlDisplay();
+
+      // Re-inject URL display after each navigation
+      oauthWindow.webContents.on('did-finish-load', () => {
+        startPromise(injectUrlDisplay());
+      });
+
+      oauthWindow.show();
+
+      // Listen for navigation to detect OAuth callback
+      oauthWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+        if (navigationUrl.startsWith('rotki://oauth/')) {
+          event.preventDefault();
+          this.sendOAuthCallback(parseToken(navigationUrl));
+          oauthWindow.close();
+        }
+      });
+
+      // Handle window close
+      oauthWindow.on('closed', () => {
+        this.logger.debug('OAuth window closed');
+      });
+    }
+    catch (error) {
+      this.logger.error('Failed to open OAuth window:', error);
+    }
   }
 }

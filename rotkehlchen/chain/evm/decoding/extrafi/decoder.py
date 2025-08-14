@@ -48,7 +48,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import CacheType, EvmTokenKind
+from rotkehlchen.types import CacheType, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
@@ -187,7 +187,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         token_identifier = evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[2]),
             chain_id=self.evm_inquirer.chain_id,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
         )
         amount = int.from_bytes(context.tx_log.data[0:32])
         for event in context.decoded_events:

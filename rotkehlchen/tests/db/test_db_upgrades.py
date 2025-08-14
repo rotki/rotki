@@ -13,7 +13,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_COW, A_ETH, A_LTC
+from rotkehlchen.constants.assets import A_COW, A_ETH
 from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
     ALLASSETIMAGESDIR_NAME,
@@ -47,6 +47,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.oracles.structures import CurrentPriceOracle
+from rotkehlchen.tests.utils.constants import A_LTC
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     column_exists,
@@ -58,10 +59,10 @@ from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     ChainID,
-    EvmTokenKind,
     Location,
     SupportedBlockchain,
     Timestamp,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -148,7 +149,7 @@ def _init_db_with_target_version(
         stack.enter_context(target_patch(target_version=target_version))
         stack.enter_context(mock_db_schema_sanity_check())
         stack.enter_context(no_tables_created_after_init)
-        if target_version <= 47:
+        if target_version <= 48:
             stack.enter_context(mock_dbhandler_update_owned_assets())
             stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         return DBHandler(
@@ -1618,8 +1619,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
     assert cursor.execute('SELECT identifier from history_events WHERE entry_type=2;').fetchall() == [(1,), (74,), (238,)]  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'uniswap_events_%'").fetchone() == (1,)  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'sushiswap_events_%'").fetchone() == (1,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('uniswap\\_events\\_%', '\\')).fetchone() == (1,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('sushiswap\\_events\\_%', '\\')).fetchone() == (1,)  # noqa: E501
 
     db_v37.logout()
     # Execute upgrade
@@ -1646,8 +1647,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key,)).fetchone()[0] == 0  # noqa: E501
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='aave_events';").fetchone()[0] == 0  # noqa: E501
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='amm_events';").fetchone()[0] == 0  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'uniswap_events_%'").fetchone() == (0,)  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'sushiswap_events_%'").fetchone() == (0,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('uniswap\\_events\\_%', '\\')).fetchone() == (0,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('sushiswap\\_events\\_%', '\\')).fetchone() == (0,)  # noqa: E501
     # Make sure that duplicate events were removed
     expected_history_events = [expected_history_events[0]] + expected_history_events[2:6]
     assert cursor.execute('SELECT * from history_events WHERE entry_type=4;').fetchall() == expected_history_events  # noqa: E501
@@ -2574,7 +2575,7 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             "SELECT value FROM settings WHERE name='historical_price_oracles'",
         ).fetchone()[0] == '["manual", "cryptocompare", "coingecko", "defillama", "uniswapv3", "uniswapv2"]'  # noqa: E501
         assert cursor.execute(
-            "SELECT * FROM used_query_ranges WHERE name LIKE 'zksynclitetxs_%'",
+            "SELECT * FROM used_query_ranges WHERE name LIKE 'zksynclitetxs\\_%' ESCAPE '\\'",
         ).fetchone() is None
         assert cursor.execute(  # check that the new locations we add are now in the DB
             'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
@@ -2774,21 +2775,21 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     uniswap_erc20_token = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
     )
     erc721_token_with_id = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='12345',
     )
     basename_token = get_or_create_evm_token(
@@ -2796,14 +2797,14 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         evm_address=string_to_evm_address('0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
         name='Base name',
         chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     basename_token_with_id = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
         name='Base name',
         chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='4242',
     )
 
@@ -2918,7 +2919,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             "SELECT value FROM settings WHERE name='active_modules'",
         ).fetchone()[0]) == ['aave', 'sushiswap', 'uniswap', 'nfts', 'loopring', 'eth2', 'compound', 'makerdao_vaults', 'liquity', 'yearn_vaults_v2', 'yearn_vaults', 'pickle_finance']  # noqa: E501
         assert set(cursor.execute(
-            "SELECT * FROM multisettings WHERE name LIKE 'queried_address_%'",
+            "SELECT * FROM multisettings WHERE name LIKE 'queried\\_address\\_%' ESCAPE '\\'",
         ).fetchall()) == {
             ('queried_address_aave', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
             ('queried_address_aave', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
@@ -3046,7 +3047,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             "SELECT value FROM settings WHERE name='active_modules'",
         ).fetchone()[0]) == ['sushiswap', 'uniswap', 'nfts', 'loopring', 'eth2', 'makerdao_vaults', 'liquity', 'pickle_finance']  # noqa: E501
         assert cursor.execute(
-            "SELECT * FROM multisettings WHERE name LIKE 'queried_address_%'",
+            "SELECT * FROM multisettings WHERE name LIKE 'queried\\_address\\_%' ESCAPE '\\'",
         ).fetchall() == []
         # After tests for the avalanche/binance tokens deletion
         assert cursor.execute('SELECT * FROM manually_tracked_balances').fetchall() == [
@@ -3147,7 +3148,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('0xefef1234abcd1234abcd1234abcd1234abcd5678',),
             (None,),
         ]
-        assert cursor.execute('SELECT * from used_query_ranges WHERE name LIKE "%_trades_%"').fetchall() == [  # noqa: E501
+        assert cursor.execute('SELECT * from used_query_ranges WHERE name LIKE ? ESCAPE ?', ('%\\_trades\\_%', '\\')).fetchall() == [  # noqa: E501
             ('kraken_trades_kraken', 1577836800, 1609459200),
             ('binance_trades_binance', 1609459200, 1640995200),
             ('coinbase_trades_coinbase', 1640995200, 1672531200),
@@ -3264,7 +3265,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('0xefef1234abcd1234abcd1234abcd1234abcd5678', 1),
             (None, 0),
         ]
-        assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "%_trades_%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE ? ESCAPE ?', ('%\\_trades\\_%', '\\')).fetchone()[0] == 0  # noqa: E501
         assert not table_exists(cursor, 'action_type')
         assert cursor.execute('SELECT COUNT(*) FROM rpc_nodes').fetchone()[0] == 43
         assert cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE endpoint=""').fetchone()[0] == 0  # noqa: E501
@@ -3327,13 +3328,15 @@ def test_latest_upgrade_correctness(user_data_dir):
         cursor=cursor,
         db_name=db.conn.connection_type.name.lower(),
         minimized_schema=db.conn.minimized_schema,
+        minimized_indexes=db.conn.minimized_indexes,
     )
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables_after_upgrade = {x[0] for x in result}
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='view'")
     views_after_upgrade = {x[0] for x in result}
     # also add latest tables (this will indicate if DB upgrade missed something
-    db.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+    with db.conn.write_ctx() as write_cursor:
+        write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables_after_creation = {x[0] for x in result}
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='view'")
@@ -3342,7 +3345,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
-    removed_tables = {'action_type', 'trade_type', 'trades'}
+    removed_tables = {'eth2_daily_staking_details'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -3351,7 +3354,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'evm_transactions_authorizations', 'eth_validators_data_cache'}
+    assert new_tables == set()
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -3490,8 +3493,8 @@ def test_unfinished_upgrades(user_data_dir):
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=0,
             )
-            backup_connection.executescript("PRAGMA key='123'")  # unlock
             with backup_connection.write_ctx() as write_cursor:
+                write_cursor.executescript("PRAGMA key='123'")  # unlock
                 write_cursor.execute('INSERT INTO settings VALUES(?, ?)', ('is_backup', write_version))  # mark as a backup  # noqa: E501
             backup_connection.close()
 
@@ -3525,3 +3528,116 @@ def test_unfinished_upgrades(user_data_dir):
                         (Path(user_data_dir) / f).unlink()
 
             db.logout()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 48 to version 49"""
+    _use_prepared_db(user_data_dir, 'v48_rotkehlchen.db')
+    db_v48 = _init_db_with_target_version(
+        target_version=48,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+
+    # Check the buggy schema before upgrade
+    with db_v48.conn.read_ctx() as cursor:
+        # Get the schema and verify it has the bug
+        schema_info = cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'",
+        ).fetchone()
+        assert schema_info is not None
+        assert 'TEXT_NOT NULL' in schema_info[0], 'Expected TEXT_NOT NULL bug in schema'
+
+        # Check that data exists - just verify we have some data
+        swaps_count = cursor.execute(
+            'SELECT COUNT(*) FROM zksynclite_swaps',
+        ).fetchone()[0]
+        assert swaps_count > 0, 'Expected some swap data'
+
+        # check that old format solana assets exist
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE identifier IN ('$NAP', 'ACS', 'AI16Z', 'BONK', 'TRISIG', 'HODLSOL')").fetchone()[0] == 6  # noqa: E501
+        tokens_mapping = {  # define before/after mapping for token identifiers
+            '$NAP': 'solana/token:4G86CMxGsMdLETrYnavMFKPhQzKTvDBYGMRAdVtr72nu',
+            'ACS': 'solana/token:5MAYDfq5yxtudAhtfyuMBuHZjgAbaS9tbEyEQYAhDS5y',
+            'AI16Z': 'solana/token:HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',
+            'HODLSOL': 'solana/token:58UC31xFjDJhv1NnBF73mtxcsxN92SWjhYRzbfmvDREJ',
+        }
+        expected_timed_balances_before = [
+            ('$NAP', '100.5', '15000.0'),
+            ('ACS', '5000.0', '5000.0'),
+            ('AI16Z', '1000000.0', '50.0'),
+        ]
+        expected_history_events_before = [
+            ('$NAP', '10.0', 'receive'),
+            ('ACS', '1000.0', 'receive'),
+            ('HODLSOL', '500.0', 'receive'),
+        ]
+        expected_margin_positions_before = [
+            ('AI16Z', '100.0'),
+            ('ACS', '-50.0'),
+        ]
+        # check old asset references in other tables exist
+        assert cursor.execute('SELECT currency, amount, usd_value FROM timed_balances WHERE currency IN ("$NAP", "ACS", "AI16Z")').fetchall() == expected_timed_balances_before  # noqa: E501
+        assert cursor.execute('SELECT asset, amount, type FROM history_events WHERE asset IN ("$NAP", "ACS", "HODLSOL")').fetchall() == expected_history_events_before  # noqa: E501
+        assert cursor.execute('SELECT pl_currency, profit_loss FROM margin_positions WHERE pl_currency IN ("AI16Z", "ACS")').fetchall() == expected_margin_positions_before  # noqa: E501
+        # it should not have any CAIPS format assets before upgrade
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier LIKE "solana:%" ORDER BY identifier').fetchone()[0] == 0  # noqa: E501
+        # user notes with empty string for global location
+        assert cursor.execute('SELECT * FROM user_notes').fetchall() == [
+            (1, 'Note1', 'Test note 1 contents', 'DASHBOARD', 1754674299, 0),
+            (2, 'Note2', 'Test note 2 contents', '', 1754674299, 0),
+        ]
+
+        assert cursor.execute(
+            solana_query := "SELECT COUNT(*) FROM location WHERE location='w' AND seq=55",
+        ).fetchone()[0] == 0
+
+    # Logout and upgrade
+    db_v48.logout()
+
+    # Now open with target version 49 to trigger upgrade
+    db = _init_db_with_target_version(
+        target_version=49,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+
+    # Check the schema after upgrade
+    with db.conn.read_ctx() as cursor:
+        # Get the fixed schema
+        schema_info = cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'",
+        ).fetchone()
+        assert schema_info is not None
+        assert 'TEXT_NOT NULL' not in schema_info[0], 'TEXT_NOT NULL bug should be fixed'
+        assert 'to_amount TEXT NOT NULL' in schema_info[0], 'Should have correct TEXT NOT NULL syntax'  # noqa: E501
+
+        # Test solana assets migration to CAIPS format
+        # verify old format assets are gone
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN ("$NAP", "ACS", "AI16Z", "BONK") ORDER BY identifier').fetchone()[0] == 0  # noqa: E501
+        # verify duplicates were deleted
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN ("TRISIG", "HODLSOL")').fetchone()[0] == 0  # noqa: E501
+        # Check that asset references were updated in other tables
+        assert cursor.execute('SELECT currency, amount, usd_value FROM timed_balances WHERE currency LIKE "solana%"').fetchall() == [  # noqa: E501
+            (tokens_mapping[entry[0]], entry[1], entry[2])
+            for entry in expected_timed_balances_before
+        ]
+        assert cursor.execute('SELECT asset, amount, type FROM history_events WHERE asset LIKE "solana%"').fetchall() == [  # noqa: E501
+            (tokens_mapping[entry[0]], entry[1], entry[2])
+            for entry in expected_history_events_before
+        ]
+        assert cursor.execute('SELECT pl_currency, profit_loss FROM margin_positions WHERE pl_currency LIKE "solana%"').fetchall() == [  # noqa: E501
+            (tokens_mapping[entry[0]], entry[1])
+            for entry in expected_margin_positions_before
+        ]
+        # global user note location is now None and the other note is unmodified.
+        assert cursor.execute('SELECT * FROM user_notes').fetchall() == [
+            (1, 'Note1', 'Test note 1 contents', 'DASHBOARD', 1754674299, 0),
+            (2, 'Note2', 'Test note 2 contents', 'G', 1754674299, 0),
+        ]
+        assert cursor.execute(solana_query).fetchone()[0] == 1
+
+    db.logout()

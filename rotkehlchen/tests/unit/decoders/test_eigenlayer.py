@@ -440,7 +440,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         tx_decoder=tx_decoder,
     )
     balances = balances_inquirer.query_balances()
-    assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()] == Balance(
+    assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()][balances_inquirer.counterparty] == Balance(  # noqa: E501
         amount=FVal(amount),
         usd_value=FVal('0.7720684677079537845'),
     )
@@ -507,10 +507,9 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
             tx_hashes=[queue_tx_hash],
             event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
         )
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=filter_query,
-            has_premium=True,
         )
     assert events[0].extra_data == {
         'amount': '0.108703837292797064',
@@ -527,7 +526,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         tx_decoder=tx_decoder,
     )
     balances = balances_inquirer.query_balances()
-    assert balances[ethereum_accounts[0]].assets[cbeth] == Balance()
+    assert balances[ethereum_accounts[0]].assets[cbeth][balances_inquirer.counterparty] == Balance()  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CounterpartyMapping, CounterpartyMappingRequestPayload } from '@/modules/asset-manager/counterparty-mapping/schema';
+import { omit } from 'es-toolkit';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import ManageCounterpartyMappingFormDialog
@@ -8,7 +9,6 @@ import ManageCounterpartyMappingTable from '@/modules/asset-manager/counterparty
 import { useCounterpartyMappingApi } from '@/modules/asset-manager/counterparty-mapping/use-counterparty-mapping-api';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { omit } from 'es-toolkit';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();

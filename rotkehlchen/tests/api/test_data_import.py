@@ -349,7 +349,7 @@ def test_data_import_errors(
         _, history_events_count, _ = DBHistoryEvents(database).get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
+            entries_limit=None,
         )
     assert history_events_count == 0
 
@@ -493,6 +493,7 @@ def test_data_import_custom_format(rotkehlchen_api_server: 'APIServer', file_upl
 
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.vcr
 def test_data_import_binance_history(
         rotkehlchen_api_server: 'APIServer',
         websocket_connection: 'WebsocketReader',
@@ -533,6 +534,10 @@ def test_data_import_rotki_generic_trades(
     )
     assert assert_proper_sync_response_with_result(response) is True
     assert_rotki_generic_trades_import_results(rotki, websocket_connection)
+
+    # purge the existing entries to avoid duplicates
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM history_events')
 
     # check that passing `timestamp_format` does not break anything
     json_data = {

@@ -1,14 +1,25 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@/types/asset';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { useAssets } from '@/composables/assets';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 type Errors = Partial<Record<'targetIdentifier' | 'sourceIdentifier', string[]>>;
 
 const display = defineModel<boolean>({ required: true });
+
+const props = defineProps<{
+  sourceIdentifier?: string;
+  targetIdentifier?: string;
+}>();
+
+const emit = defineEmits<{
+  merged: [events: { sourceIdentifier: string; targetIdentifier: string }];
+}>();
+
+const { sourceIdentifier: propSourceIdentifier, targetIdentifier: propTargetIdentifier } = toRefs(props);
 
 const done = ref(false);
 const errorMessages = ref<Errors>({});
@@ -58,12 +69,16 @@ function clearErrors() {
 
 async function merge() {
   set(pending, true);
+  const source = get(sourceIdentifier);
+  const target = get(targetIdentifier);
+
   const result = await mergeAssets({
-    sourceIdentifier: get(sourceIdentifier),
-    targetIdentifier: get(targetIdentifier),
+    sourceIdentifier: source,
+    targetIdentifier: target,
   });
 
   if (result.success) {
+    emit('merged', { sourceIdentifier: source, targetIdentifier: target });
     reset();
     set(done, true);
   }
@@ -91,6 +106,23 @@ const excluded = computed(() => {
   if (!source)
     return [];
   return [source];
+});
+
+watch([display, propSourceIdentifier, propTargetIdentifier], ([isDisplayed, propSourceIdentifier, propTargetIdentifier]) => {
+  if (isDisplayed) {
+    if (propSourceIdentifier) {
+      set(sourceIdentifier, propSourceIdentifier);
+    }
+    if (propTargetIdentifier) {
+      set(targetIdentifier, propTargetIdentifier);
+    }
+  }
+});
+
+watch(display, (isDisplayed) => {
+  if (!isDisplayed) {
+    reset();
+  }
 });
 </script>
 

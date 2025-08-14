@@ -1,16 +1,18 @@
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
@@ -25,10 +27,11 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class MoneriumCommonDecoder(DecoderInterface):
+class MoneriumCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
@@ -43,6 +46,12 @@ class MoneriumCommonDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.monerium_token_addresses = monerium_token_addresses
+        self.monerium_api = init_monerium(database=self.base.database)
+
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
+        """Reload the monerium api from the DB with the credentials"""
+        self.monerium_api = init_monerium(database=self.base.database)
+        return self.addresses_to_decoders()
 
     def _decode_mint_and_burn(self, context: DecoderContext) -> DecodingOutput:
         """Decode mint and burn events for monerium"""
@@ -97,9 +106,26 @@ class MoneriumCommonDecoder(DecoderInterface):
                 counterparty=CPT_MONERIUM,
             )
 
-        return DecodingOutput(event=event, refresh_balances=False)
+        return DecodingOutput(
+            events=[event] if event is not None else None,
+            refresh_balances=False,
+            matched_counterparty=CPT_MONERIUM,
+        )
+
+    def _handle_post_processing(
+            self,
+            decoded_events: list['EvmEvent'],
+            has_premium: bool,
+    ) -> None:
+        if self.monerium_api is None or not has_premium:
+            return
+
+        self.monerium_api.update_events(events=decoded_events)
 
     # -- DecoderInterface methods
+
+    def post_processing_rules(self) -> dict[str, tuple[Callable]]:
+        return {CPT_MONERIUM: (self._handle_post_processing,)}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(self.monerium_token_addresses, (self._decode_mint_and_burn,))

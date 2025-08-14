@@ -4,7 +4,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
-    A_ADA,
     A_BAT,
     A_BCH,
     A_BNB,
@@ -12,7 +11,6 @@ from rotkehlchen.constants.assets import (
     A_BTC,
     A_BUSD,
     A_DAI,
-    A_DOGE,
     A_DOT,
     A_ETC,
     A_ETH,
@@ -20,14 +18,11 @@ from rotkehlchen.constants.assets import (
     A_ETH_MATIC,
     A_EUR,
     A_KNC,
-    A_LTC,
     A_SAI,
-    A_SOL,
     A_UNI,
     A_USD,
     A_USDC,
     A_USDT,
-    A_XRP,
 )
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.db.filtering import (
@@ -44,14 +39,19 @@ from rotkehlchen.history.events.utils import create_event_identifier_from_unique
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.constants import (
+    A_ADA,
     A_AXS,
     A_CRO,
     A_DASH,
+    A_DOGE,
     A_GBP,
     A_KCS,
+    A_LTC,
     A_MCO,
     A_NANO,
+    A_SOL,
     A_XMR,
+    A_XRP,
     A_XTZ,
 )
 from rotkehlchen.types import Location, Timestamp, TimestampMS
@@ -66,7 +66,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
     """A utility function to help assert on correctness of importing data from cointracking.info"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
+        events = dbevents.get_history_events_internal(cursor, filter_query=HistoryEventFilterQuery.make())  # noqa: E501
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -198,11 +198,10 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
 def assert_cryptocom_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -544,11 +543,10 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
 def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -728,11 +726,10 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
 def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockfi"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -810,11 +807,10 @@ def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
 def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from blockfi"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -845,11 +841,10 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
     """A utility function to help assert on correctness of importing data from nexo"""
     with rotki.data.db.conn.read_ctx() as cursor:
         events_db = DBHistoryEvents(rotki.data.db)
-        events = events_db.get_history_events(
+        events = events_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -860,9 +855,12 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         'data': {
             'subtype': 'csv_import_result',
             'source_name': 'Nexo',
-            'total': 38,
-            'processed': 36,
-            'messages': [{'msg': 'Ignoring rejected entry.', 'rows': [2, 8]}],
+            'total': 39,
+            'processed': 37,
+            'messages': [
+                {'msg': 'Ignoring rejected entry.', 'rows': [2, 8]},
+                {'msg': 'Skipped duplicate asset movement event: withdrawal/remove asset of 0.0017316 BTC at 2022/04/17 10:43:00', 'rows': [-1]},  # noqa: E501
+            ],
         },
     }
     assert websocket_connection.messages_num() == 0
@@ -1120,11 +1118,10 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
 def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from shapeshift"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     notes1 = """
@@ -1206,11 +1203,10 @@ def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from uphold"""
     with rotki.data.db.conn.read_ctx() as cursor:
         history_db = DBHistoryEvents(rotki.data.db)
-        events = history_db.get_history_events(
+        events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -1364,11 +1360,10 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
     when using custom formats for dates
     """
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     assert events == [AssetMovement(
         identifier=1,
         event_identifier='55220a50d1f1af04042410f6c0223518cd14e1a5ad250dfb65be6404c7b6a01e',
@@ -1400,11 +1395,10 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
 def assert_bisq_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from bisq"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        swap_events = DBHistoryEvents(rotki.data.db).get_history_events(
+        swap_events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -1835,11 +1829,10 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
         margin_positions = rotki.data.db.get_margin_positions(cursor)
         warnings = rotki.msg_aggregator.consume_warnings()
         errors = rotki.msg_aggregator.consume_errors()
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     assert events == expected_events
     assert margin_positions == expected_margin_positions
     assert len(warnings) == 0
@@ -2513,7 +2506,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             location_label='CSV import',
             notes='1.29642000 USDT realized profit on binance USD-MFutures',
         ), SwapEvent(
-            event_identifier='BNC_be0583092c912bbeb15a6dbe61e69093a869164ac1feeca375036b1a1d33f0c8',
+            event_identifier='BNC_c6e5a5527ed3ad65bc2bceffdb2a432f5335e04768a0b86256c653a40d12229a',
             timestamp=TimestampMS(1695981386000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -2522,7 +2515,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             identifier=71,
         ), SwapEvent(
-            event_identifier='BNC_be0583092c912bbeb15a6dbe61e69093a869164ac1feeca375036b1a1d33f0c8',
+            event_identifier='BNC_c6e5a5527ed3ad65bc2bceffdb2a432f5335e04768a0b86256c653a40d12229a',
             timestamp=TimestampMS(1695981386000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -2530,7 +2523,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             amount=FVal('0.01700000'),
             identifier=72,
         ), SwapEvent(
-            event_identifier='BNC_be0583092c912bbeb15a6dbe61e69093a869164ac1feeca375036b1a1d33f0c8',
+            event_identifier='BNC_c6e5a5527ed3ad65bc2bceffdb2a432f5335e04768a0b86256c653a40d12229a',
             timestamp=TimestampMS(1695981386000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.FEE,
@@ -2563,7 +2556,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             amount=FVal('0.00003605'),
             identifier=76,
         ), SwapEvent(
-            event_identifier='BNC_e483a8113ec41413e994787c73d945ee286b50c9a8f2a059f2698ca0dc978a58',
+            event_identifier='BNC_2ede3e3de73269b127690a1758dee9b896a1ae3b43b05caedd3e34860022aec8',
             timestamp=TimestampMS(1715864275000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -2572,7 +2565,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             identifier=77,
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ), SwapEvent(
-            event_identifier='BNC_e483a8113ec41413e994787c73d945ee286b50c9a8f2a059f2698ca0dc978a58',
+            event_identifier='BNC_2ede3e3de73269b127690a1758dee9b896a1ae3b43b05caedd3e34860022aec8',
             timestamp=TimestampMS(1715864275000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -2580,22 +2573,55 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             amount=FVal('2011.67800000'),
             identifier=78,
         ), SwapEvent(
-            event_identifier='BNC_e483a8113ec41413e994787c73d945ee286b50c9a8f2a059f2698ca0dc978a58',
+            event_identifier='BNC_2ede3e3de73269b127690a1758dee9b896a1ae3b43b05caedd3e34860022aec8',
             timestamp=TimestampMS(1715864275000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:1/erc20:0x71Ab77b7dbB4fa7e017BC15090b2163221420282'),
             amount=FVal('2.01167800'),
             identifier=79,
+        ), SwapEvent(
+            event_identifier='BNC_de70f198dc94c110e5921f12684714cb2f5375e3396373d26b9fa699def5394a',
+            timestamp=TimestampMS(1726136106000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.54321'),
+            identifier=80,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ), SwapEvent(
+            event_identifier='BNC_de70f198dc94c110e5921f12684714cb2f5375e3396373d26b9fa699def5394a',
+            timestamp=TimestampMS(1726136106000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('1234'),
+            identifier=81,
+        ), SwapEvent(
+            event_identifier='BNC_accc00aaa9c5c1e1b1562b25c18756e98b32a6b6605fea24bfeda63edb70219b',
+            timestamp=TimestampMS(1726136111000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.54321'),
+            identifier=82,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ), SwapEvent(
+            event_identifier='BNC_accc00aaa9c5c1e1b1562b25c18756e98b32a6b6605fea24bfeda63edb70219b',
+            timestamp=TimestampMS(1726136111000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('1234'),
+            identifier=83,
         ),
     ]
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
-            has_premium=True,
-        )
+                    )
 
     assert expected_events == events
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
@@ -2604,13 +2630,14 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
         'data': {
             'subtype': 'csv_import_result',
             'source_name': 'Binance',
-            'total': 180,
-            'processed': 174,
+            'total': 184,
+            'processed': 178,
             'messages': [
                 {'msg': 'Failed to deserialize a timestamp from a null entry in binance', 'rows': [4], 'is_error': True},  # noqa: E501
                 {'msg': 'Unknown asset "" provided.', 'rows': [5], 'is_error': True},
                 {'msg': 'Could not process row in multi-line entry. Expected a valid combination of operations but got "Small assets exchange BNB, Small assets exchange BNB, Small assets exchange BNB" instead', 'rows': [31, 32, 33], 'is_error': True},  # noqa: E501
                 {'msg': 'Could not process row in multi-line entry. Expected a valid combination of operations but got "ABC" instead', 'rows': [41], 'is_error': True},  # noqa: E501
+                {'msg': 'Skipped duplicate history event: staking/reward of 0.00001605 MATIC at 2023/01/13 05:29:00', 'rows': [-1]},  # noqa: E501
             ],
         },
     }
@@ -2624,19 +2651,22 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
         'data': {
             'subtype': 'csv_import_result',
             'source_name': 'Rotki generic trades',
-            'total': 5,
-            'processed': 5,
-            'messages': [],
+            'total': 6,
+            'processed': 6,
+            'messages': [
+                {'msg': 'Skipped duplicate swap event: trade/spend of 4576.6400 ADA at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
+                {'msg': 'Skipped duplicate swap event: trade/receive of 16.3444 BCH at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
+                {'msg': 'Skipped duplicate swap event: trade/fee of 5.1345 USD at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
+            ],
         },
     }
     assert websocket_connection.messages_num() == 0
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
 
     trade1_id, trade2_id, trade3_id, trade4_id, trade5_id = '39324bc8b48e567efdfdd8b04709f9681285fae0845f0ae09a9744ac37e71184', '468eefc8785bcb4755fdeab34c259bb90839df4689707918738d81d3d8f0e222', '5c5f3e50672360a5765ce521cac1b01d6acc2e8257350fa84f161493dd07880b', '504e930f842eb62b5e4bbbc319497e4d9d3afa0adf37869b21b2f305b9a2f490', 'd68e17cae1ce5548c320227218b7c984e263be4b4b1ff72a3d1dbdde7b8f5312'  # noqa: E501
     expected_events = [SwapEvent(
@@ -2835,11 +2865,10 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
     ]
     with rotki.data.db.conn.read_ctx() as cursor:
         history_db = DBHistoryEvents(rotki.data.db)
-        history_events = history_db.get_history_events(
+        history_events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
         warnings = rotki.msg_aggregator.consume_warnings()
 
     assert len(history_events) == 7
@@ -2941,11 +2970,10 @@ def assert_bitcoin_tax_trades_import_results(
         ]
         with rotki.data.db.conn.read_ctx() as cursor:
             history_db = DBHistoryEvents(rotki.data.db)
-            history_events = history_db.get_history_events(
+            history_events = history_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(),
-                has_premium=False,
-            )
+                            )
         assert len(history_events) == 6
         assert len(expected_history_events) == 6
         for actual, expected in zip(history_events, expected_history_events, strict=True):
@@ -2969,10 +2997,10 @@ def assert_bitcoin_tax_trades_import_results(
         ]
         with rotki.data.db.conn.read_ctx() as cursor:
             history_db = DBHistoryEvents(rotki.data.db)
-            history_events = history_db.get_history_events(
+            history_events = history_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(),
-                has_premium=False,
+
             )
 
         assert len(history_events) == 7  # events from trades import + 1
@@ -2989,11 +3017,10 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from bitstamp"""
     with rotki.data.db.conn.read_ctx() as cursor:
         history_db = DBHistoryEvents(rotki.data.db)
-        history_events = history_db.get_history_events(
+        history_events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=False,
-        )
+                    )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -3056,11 +3083,10 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
 def assert_bittrex_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from bittrex"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -3217,11 +3243,10 @@ def assert_bittrex_import_results(rotki: Rotkehlchen):
 def assert_kucoin_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from kucoin"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        swap_events = DBHistoryEvents(rotki.data.db).get_history_events(
+        swap_events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KUCOIN),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -3330,7 +3355,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockpit"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        history_events = dbevents.get_history_events(cursor=cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
+        history_events = dbevents.get_history_events_internal(cursor=cursor, filter_query=HistoryEventFilterQuery.make())  # noqa: E501
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()

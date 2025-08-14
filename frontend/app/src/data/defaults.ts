@@ -1,7 +1,7 @@
+import { TimeFramePeriod } from '@rotki/common';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { TableColumn } from '@/types/table-column';
-import { TimeFramePeriod } from '@rotki/common';
 
 export const Defaults = {
   ANONYMOUS_USAGE_ANALYTICS: true,
@@ -15,6 +15,8 @@ export const Defaults = {
   DEFAULT_DATE_DISPLAY_FORMAT: DateFormat.DateMonthYearHourMinuteSecondTimezone,
   DEFAULT_DATE_INPUT_FORMAT: DateFormat.DateMonthYearHourMinuteSecond,
   DEFAULT_DECIMAL_SEPARATOR: '.',
+  DEFAULT_EVM_QUERY_INDICATOR_DISMISSAL_THRESHOLD: 6,
+  DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD: 12,
   DEFAULT_ORACLE_PENALTY_DURATION: 1800,
   DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT: 5,
   DEFAULT_QUERY_PERIOD: 5,

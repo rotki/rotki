@@ -1,8 +1,8 @@
-import sqlite3
 from contextlib import suppress
 
 import gevent
 import pytest
+import rsqlite
 
 from rotkehlchen.db.drivers.gevent import ContextError, DBConnection, DBConnectionType
 from rotkehlchen.errors.asset import UnknownAsset
@@ -14,7 +14,9 @@ def test_unnamed_savepoints():
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
     )
-    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.write_ctx() as write_cursor:
+        write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+
     with conn.savepoint_ctx() as cursor1:
         assert len(conn.savepoints) == 1
         savepoint1 = next(iter(conn.savepoints))
@@ -30,8 +32,9 @@ def test_unnamed_savepoints():
         assert cursor1.execute('SELECT b FROM a').fetchall() == [(1,)]  # 2 should not be there
         cursor1.execute('INSERT INTO a VALUES (3)')  # add one more value after the rollback
     assert len(conn.savepoints) == 0  # check that we released successfully
-    # And make sure that the data is saved
-    assert conn.execute('SELECT b FROM a').fetchall() == [(1,), (3,)]
+
+    with conn.read_ctx() as cursor:  # And make sure that the data is saved
+        assert cursor.execute('SELECT b FROM a').fetchall() == [(1,), (3,)]
 
 
 def test_savepoint_errors():
@@ -59,8 +62,8 @@ def test_write_transaction_with_savepoint():
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
     )
-    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.write_ctx() as write_cursor:
+        write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
         write_cursor.execute('INSERT INTO a VALUES (1)')
         with conn.savepoint_ctx() as savepoint_cursor:
             savepoint_cursor.execute('INSERT INTO a VALUES (2)')
@@ -87,8 +90,8 @@ def test_write_transaction_with_savepoint_other_context():
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
     )
-    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.write_ctx() as write_cursor:
+        write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
         write_cursor.execute('INSERT INTO a VALUES (1)')
         greenlet1 = gevent.spawn(other_context, conn, True)
         gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
@@ -126,7 +129,9 @@ def test_savepoint_with_write_transaction():
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
     )
-    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.write_ctx() as write_cursor:
+        write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (1)')
         with conn.write_ctx() as write_cursor:
@@ -157,7 +162,9 @@ def test_savepoint_with_write_transaction_other_context():
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
     )
-    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.write_ctx() as write_cursor:
+        write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (1)')
         greenlet1 = gevent.spawn(other_context, conn)
@@ -191,7 +198,9 @@ def test_open_savepoint_with_savepoint_other_context():
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
     )
-    conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+    with conn.write_ctx() as write_cursor:
+        write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
+
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (1)')
         greenlet1 = gevent.spawn(other_context, conn, True)
@@ -243,5 +252,5 @@ def test_rollback_in_savepoints():
 
     # leaving the with statement should have released the savepoint and trying to release
     # again the savepoint should raise an error because we have already released it.
-    with pytest.raises(sqlite3.OperationalError):
-        conn.execute("RELEASE SAVEPOINT 'mysave'")
+    with pytest.raises(rsqlite.OperationalError), conn.write_ctx() as write_cursor:
+        write_cursor.execute("RELEASE SAVEPOINT 'mysave'")

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBalancesLoading } from '@/composables/balances/loading';
 import { usePremium } from '@/composables/premium';
 import { useSync } from '@/composables/session/sync';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
@@ -6,7 +7,7 @@ import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/syn
 defineProps<{ pending: boolean }>();
 
 const emit = defineEmits<{
-  (event: 'action', action: SyncAction): void;
+  action: [action: SyncAction];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -20,6 +21,7 @@ function action(action: SyncAction) {
 }
 
 const { uploadStatus } = useSync();
+const { loadingBalancesAndDetection: loading } = useBalancesLoading();
 </script>
 
 <template>
@@ -33,7 +35,7 @@ const { uploadStatus } = useSync();
           :variant="uploadStatus ? 'default' : 'outlined'"
           color="primary"
           class="w-full"
-          :disabled="!premium || pending"
+          :disabled="!premium || pending || loading"
           @click="action(UPLOAD)"
         >
           <template #prepend>
@@ -54,7 +56,7 @@ const { uploadStatus } = useSync();
           variant="outlined"
           color="primary"
           class="w-full"
-          :disabled="!premium || pending || !!uploadStatus"
+          :disabled="!premium || pending || !!uploadStatus || loading"
           @click="action(DOWNLOAD)"
         >
           <template #prepend>

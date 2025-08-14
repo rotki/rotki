@@ -86,7 +86,7 @@ class PolygonPosBridgeDecoder(DecoderInterface):
                 amount=int.from_bytes(context.tx_log.data[0:32]),
                 asset=asset,
             )
-            return DecodingOutput(event=self.base.make_event_from_transaction(
+            return DecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.WITHDRAWAL,
@@ -97,7 +97,7 @@ class PolygonPosBridgeDecoder(DecoderInterface):
                 notes=f'Bridge {amount} {asset.resolve_to_asset_with_symbol().symbol} from Ethereum to Polygon POS via Polygon bridge',  # noqa: E501
                 counterparty=CPT_POLYGON,
                 address=context.tx_log.address,
-            ))
+            )])
 
         return DEFAULT_DECODING_OUTPUT
 

@@ -1,6 +1,6 @@
+import { startPromise } from '@shared/utils';
 import { useBalances } from '@/composables/balances/index';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { startPromise } from '@shared/utils';
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
 

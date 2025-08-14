@@ -12,6 +12,7 @@ from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import decode_transfer_direction
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
@@ -20,14 +21,14 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import (
         DSProxyL2WithL1FeesInquirerWithCacheData,
     )
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTokenKind, EvmTransaction, EVMTxHash, Location
+from rotkehlchen.types import EvmTransaction, EVMTxHash, Location, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address, ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
@@ -125,7 +126,7 @@ class BaseDecoderTools:
         return None
 
     def get_address_or_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:  # pylint: disable=unused-argument
-        """If the address is a DS proxy return its owner, if not return address itself"""
+        """If the address is a proxy return its owner, if not return address itself"""
         owner = self.maybe_get_proxy_owner(address)
         return owner or address
 
@@ -134,54 +135,15 @@ class BaseDecoderTools:
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress | None,
     ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, ChecksumEvmAddress, str, str] | None:  # noqa: E501
-        """Depending on addresses, if they are tracked by the user or not, if they
-        are an exchange address etc. determine the type of event to classify the transfer as.
-
-        Returns event type, location label, address, counterparty and verb.
-        address is the address on the opposite side of the event. counterparty is the exchange name
-        if it is a deposit / withdrawal to / from an exchange.
+        """Wrapper for decode_transfer_direction automatically specifying the
+        tracked_accounts and maybe_get_exchange_fn.
         """
-        tracked_from = from_address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())  # noqa: E501
-        tracked_to = to_address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())  # noqa: E501
-        if not tracked_from and not tracked_to:
-            return None
-
-        from_exchange = self.address_is_exchange(from_address)
-        to_exchange = self.address_is_exchange(to_address) if to_address else None
-
-        counterparty: str | None = None
-        event_subtype = HistoryEventSubType.NONE
-        if tracked_from and tracked_to:
-            event_type = HistoryEventType.TRANSFER
-            location_label = from_address
-            address = to_address
-            verb = 'Transfer'
-        elif tracked_from:
-            if to_exchange is not None:
-                event_type = HistoryEventType.DEPOSIT
-                verb = 'Deposit'
-                counterparty = to_exchange
-                event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            else:
-                event_type = HistoryEventType.SPEND
-                verb = 'Send'
-
-            address = to_address
-            location_label = from_address
-        else:  # can only be tracked_to
-            if from_exchange:
-                event_type = HistoryEventType.WITHDRAWAL
-                verb = 'Withdraw'
-                counterparty = from_exchange
-                event_subtype = HistoryEventSubType.REMOVE_ASSET
-            else:
-                event_type = HistoryEventType.RECEIVE
-                verb = 'Receive'
-
-            address = from_address
-            location_label = to_address  # type: ignore  # to_address can't be None here
-
-        return event_type, event_subtype, location_label, address, counterparty, verb  # type: ignore
+        return decode_transfer_direction(
+            from_address=from_address,
+            to_address=to_address,
+            tracked_accounts=self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain()),  # type: ignore[arg-type]
+            maybe_get_exchange_fn=self.address_is_exchange,
+        )
 
     def decode_erc20_721_transfer(
             self,
@@ -209,13 +171,13 @@ class BaseDecoderTools:
         event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
         amount_raw_or_token_id = int.from_bytes(tx_log.data)
-        if token.token_kind == EvmTokenKind.ERC20:
+        if token.token_kind == TokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
             if event_type in OUTGOING_EVENT_TYPES:
                 notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:
                 notes = f'{verb} {amount} {token.symbol} from {counterparty_or_address} to {location_label}'  # noqa: E501
-        elif token.token_kind == EvmTokenKind.ERC721:
+        else:  # erc721
             if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
                 log.debug(f'Failed to get token id from identifier when decoding token {token} as ERC721')  # noqa: E501
                 return None
@@ -226,8 +188,6 @@ class BaseDecoderTools:
                 notes = f'{verb} {name} with id {collectible_id} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:
                 notes = f'{verb} {name} with id {collectible_id} from {counterparty_or_address} to {location_label}'  # noqa: E501
-        else:
-            return None  # unknown kind
 
         if amount == ZERO:
             return None  # Zero transfers are useless, so ignoring them
@@ -390,28 +350,35 @@ class BaseDecoderTools:
                     evm_inquirer=self.evm_inquirer,
                     evm_address=token_address,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                 )
 
             resolved_result[asset.identifier] = asset_normalized_value(amount=token_amount, asset=asset)  # noqa: E501
 
         return resolved_result
 
-    def get_token_or_native(self, address: ChecksumEvmAddress) -> CryptoAsset | EvmToken:
+    def get_token_or_native(
+            self,
+            address: ChecksumEvmAddress,
+            encounter: 'TokenEncounterInfo | None' = None,
+    ) -> CryptoAsset | EvmToken:
         """Return the native token if the address is special or zero; otherwise return the EVM token."""  # noqa: E501
         if address in (ZERO_ADDRESS, ETH_SPECIAL_ADDRESS):
             return self.evm_inquirer.native_token
 
-        return self.get_or_create_evm_token(address)
+        return self.get_or_create_evm_token(
+            address=address,
+            encounter=encounter,
+        )
 
 
-class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
-    """Like BaseDecoderTools but with DSProxy evm inquirers"""
+class BaseDecoderToolsWithProxy(BaseDecoderTools):
+    """Like BaseDecoderTools but with Proxy evm inquirers"""
 
     def __init__(
             self,
             database: 'DBHandler',
-            evm_inquirer: Union['EvmNodeInquirerWithDSProxy', 'DSProxyL2WithL1FeesInquirerWithCacheData'],  # noqa: E501
+            evm_inquirer: Union['EvmNodeInquirerWithProxies', 'DSProxyL2WithL1FeesInquirerWithCacheData'],  # noqa: E501
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
             exceptions_mappings: dict[str, 'Asset'] | None = None,
@@ -423,12 +390,11 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
             address_is_exchange_fn=address_is_exchange_fn,
             exceptions_mappings=exceptions_mappings,
         )
-        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # to specify the type
+        self.evm_inquirer: EvmNodeInquirerWithProxies  # to specify the type
 
     def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         """
         Checks whether given address is a proxy owned by any of the tracked accounts.
         If it is a proxy, it returns the owner of the proxy, otherwise `None`.
         """
-        self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()  # calling to make sure that proxies are queried  # noqa: E501
-        return self.evm_inquirer.proxies_inquirer.proxy_to_address.get(address)
+        return self.evm_inquirer.proxies_inquirer.maybe_get_proxy_owner(address)
