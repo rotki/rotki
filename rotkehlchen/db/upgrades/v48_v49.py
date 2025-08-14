@@ -110,4 +110,9 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 (0,),  # decoded tx state
             )
 
+    @progress_step(description='Adding new locations to the DB.')
+    def _add_new_locations(write_cursor: 'DBCursor') -> None:
+        """Adds Solana as location"""
+        write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('w', 55);")
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=False)

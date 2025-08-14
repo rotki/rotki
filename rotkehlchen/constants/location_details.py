@@ -88,6 +88,7 @@ LOCATION_DETAILS: dict = {
     },
     Location.POLKADOT: {'image': 'polkadot.svg'},
     Location.KUSAMA: {'image': 'kusama.svg'},
+    Location.SOLANA: {'image': 'solana.svg'},
 }
 for key, value in LOCATION_DETAILS.items():
     if key in ALL_SUPPORTED_EXCHANGES:
