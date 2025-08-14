@@ -31,6 +31,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.tests.unit.decoders.test_metamask import EvmSwapEvent
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_POLYGON_POS_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
@@ -1942,4 +1943,86 @@ def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts) -> None:
         location_label=user_address,
         notes=f'Receive {interest_amount} aGnoWXDAI as interest earned from AAVE v3',
         counterparty=CPT_AAVE_V3,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0xE37b28362F65060C18c16398cFD23275D8CaE750']])
+def test_aave_v3_collateral_swap(base_inquirer, base_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xdc1a92c8cbda2fe7917e633efd889d17fc62e88e0f584af65f577b5d2a8bcb3c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755166263000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_fees := '0.000006714097305863'),
+        location_label=base_accounts[0],
+        notes=f'Burn {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1639,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=EvmToken('eip155:8453/erc20:0xD4a0e0b9149BCee3C920d2E00b5dE09138fd8bb7'),
+        amount=FVal(approval := '115792089237316195423570985008687907853269984665640564039457.583533021730857741'),  # noqa: E501
+        location_label=base_accounts[0],
+        notes=f'Set aBasWETH spending approval of 0xE37b28362F65060C18c16398cFD23275D8CaE750 by 0x2E549104c516b8657A7D888494DfbAbD7C70b464 to {approval}',  # noqa: E501
+        address=string_to_evm_address('0x2E549104c516b8657A7D888494DfbAbD7C70b464'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1644,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=EvmToken('eip155:8453/erc20:0x4200000000000000000000000000000000000006'),
+        amount=ZERO,
+        location_label=base_accounts[0],
+        notes='Disable WETH as collateral on AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x2E549104c516b8657A7D888494DfbAbD7C70b464'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1645,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.INTEREST,
+        asset=EvmToken('eip155:8453/erc20:0xD4a0e0b9149BCee3C920d2E00b5dE09138fd8bb7'),
+        amount=FVal(interest_amount := '0.000000000001857221'),
+        location_label=base_accounts[0],
+        notes=f'Receive {interest_amount} aBasWETH as interest earned from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1646,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=EvmToken('eip155:8453/erc20:0xD4a0e0b9149BCee3C920d2E00b5dE09138fd8bb7'),
+        amount=FVal(swapped_amount := '0.000109666465527922'),
+        location_label=base_accounts[0],
+        notes=f'Swap {swapped_amount} aBasWETH AAVE v3 collateral',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x2E549104c516b8657A7D888494DfbAbD7C70b464'),
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1647,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=EvmToken('eip155:8453/erc20:0x99CBC45ea5bb7eF3a5BC08FB1B7E56bB2442Ef0D'),
+        amount=FVal(swapped_amount := '0.000090901062973315'),
+        location_label=base_accounts[0],
+        notes=f'Receive {swapped_amount} aBaswstETH as the result of collateral swap in AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x2E549104c516b8657A7D888494DfbAbD7C70b464'),
     )]

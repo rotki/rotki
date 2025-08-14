@@ -28,4 +28,5 @@ class Aavev3Decoder(Aavev3LikeCommonDecoder):
             ),
             treasury=string_to_evm_address('0x3e652E97ff339B73421f824F5b03d75b62F1Fb51'),
             incentives=string_to_evm_address('0xaD4F91D26254B6B0C6346b390dDA2991FDE2F20d'),
+            collateral_swap_address=string_to_evm_address('0x63dfa7c09Dc2Ff4030d6B8Dc2ce6262BF898C8A4'),
         )
