@@ -346,12 +346,17 @@ class GlobalDBHandler:
                     })
                     data.update(common_data)
                 elif asset_type == AssetType.SOLANA_TOKEN:
-                    data.update({
-                        'protocol': entry[16],
-                        'token_kind': TokenKind.deserialize_solana_from_db(entry[17]).serialize(),
-                        'address': entry[18],
-                        'decimals': entry[19],
-                    })
+                    try:
+                        data.update({
+                            'protocol': entry[16],
+                            'token_kind': TokenKind.deserialize_solana_from_db(entry[17]).serialize(),
+                            'address': entry[18],
+                            'decimals': entry[19],
+                        })
+                    except DeserializationError as e:
+                        log.error(f'Failed to deserialize solana token kind {entry[17]} for {entry[0]}: {e}. Skipping it')  # noqa: E501
+                        continue
+
                     data.update(common_data)
                 elif AssetType.is_crypto_asset(asset_type):
                     data.update(common_data)
