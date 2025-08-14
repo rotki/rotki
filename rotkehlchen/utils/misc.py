@@ -9,9 +9,11 @@ import time
 from binascii import unhexlify
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextlib import suppress
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from base58 import b58decode
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
 
@@ -292,6 +294,14 @@ def bytes32hexstr_to_address(hexstr: str) -> ChecksumEvmAddress:
         raise DeserializationError(
             f'Invalid ethereum address: {hexstr[24:]}',
         ) from e
+
+
+def is_valid_solana_address(address: str) -> bool:
+    """Check if a string is a valid solana address."""
+    with suppress(ValueError, TypeError):
+        return len(b58decode(address)) == 32
+
+    return False
 
 
 T = TypeVar('T')

@@ -144,7 +144,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
+from rotkehlchen.utils.misc import create_order_by_rules_list, is_valid_solana_address, ts_now
 
 from .fields import (
     AmountField,
@@ -2335,7 +2335,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     name = EmptyAsNoneStringField(load_default=None)
     symbol = EmptyAsNoneStringField(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
-    address = EvmAddressField(load_default=None)
+    address = EmptyAsNoneStringField(load_default=None)
     evm_chain = EvmChainNameField(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
     show_user_owned_assets_only = fields.Boolean(load_default=False)
@@ -2377,6 +2377,15 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
+        if (address := data['address']) is not None and not is_valid_solana_address(address):
+            try:
+                address = to_checksum_address(data['address'])
+            except (ValueError, TypeError) as e:
+                raise ValidationError(
+                    message=f'Given value {address} is not a valid EVM or Solana address',
+                    field_name='address',
+                ) from e
+
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(
@@ -2389,7 +2398,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             symbol=data['symbol'],
             asset_type=data['asset_type'],
             chain_id=data['evm_chain'],
-            address=data['address'],
+            address=address,
             identifiers=data['identifiers'],
             show_user_owned_assets_only=data['show_user_owned_assets_only'],
             show_whitelisted_assets_only=data['show_whitelisted_assets_only'],
