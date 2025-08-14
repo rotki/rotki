@@ -3,6 +3,7 @@ import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { z } from 'zod/v4';
 import { useSupportedChains } from '@/composables/info/chains';
+import { SOLANA_CHAIN } from '@/types/asset';
 import { arrayify } from '@/utils/array';
 
 enum AssetFilterKeys {
@@ -10,7 +11,7 @@ enum AssetFilterKeys {
   ASSET_TYPE = 'type',
   SYMBOL = 'symbol',
   NAME = 'name',
-  EVM_CHAIN = 'chain',
+  CHAIN = 'chain',
   ADDRESS = 'address',
 }
 
@@ -19,7 +20,7 @@ enum AssetFilterValueKeys {
   ASSET_TYPE = 'assetType',
   SYMBOL = 'symbol',
   NAME = 'name',
-  EVM_CHAIN = 'evmChain',
+  CHAIN = 'evmChain',
   ADDRESS = 'address',
 }
 
@@ -33,66 +34,57 @@ export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters,
   const { allEvmChains } = useSupportedChains();
   const { t } = useI18n({ useScope: 'global' });
 
-  const matchers = computed<Matcher[]>(() => {
-    const matcherList: Matcher[] = [
-      {
-        description: t('assets.filter.identifier'),
-        hint: t('assets.filter.identifier_hint'),
-        key: AssetFilterKeys.IDENTIFIER,
-        keyValue: AssetFilterValueKeys.IDENTIFIER,
-        multiple: false,
-        string: true,
-        suggestions: (): string[] => [],
-        validate: (): true => true,
-      },
-    ];
-
-    // Only add asset_type matcher if evmChain filter is not set
-    if (!get(filters).evmChain) {
-      matcherList.push({
+  const matchers = computed<Matcher[]>(() => [
+    {
+      description: t('assets.filter.identifier'),
+      hint: t('assets.filter.identifier_hint'),
+      key: AssetFilterKeys.IDENTIFIER,
+      keyValue: AssetFilterValueKeys.IDENTIFIER,
+      multiple: false,
+      string: true,
+      suggestions: (): string[] => [],
+      validate: (): true => true,
+    },
+    ...(!get(filters).evmChain
+      ? [{
         description: t('assets.filter.asset_type'),
         key: AssetFilterKeys.ASSET_TYPE,
         keyValue: AssetFilterValueKeys.ASSET_TYPE,
         string: true,
         suggestions: (): string[] => get(assetTypes),
+        suggestionsToShow: -1,
         validate: (): true => true,
-      });
-    }
-
-    matcherList.push(
-      {
-        description: t('assets.filter.symbol'),
-        hint: t('assets.filter.symbol_hint'),
-        key: AssetFilterKeys.SYMBOL,
-        keyValue: AssetFilterValueKeys.SYMBOL,
-        string: true,
-        suggestions: (): string[] => [],
-        validate: (): true => true,
-      },
-      {
-        description: t('assets.filter.name'),
-        hint: t('assets.filter.name_hint'),
-        key: AssetFilterKeys.NAME,
-        keyValue: AssetFilterValueKeys.NAME,
-        string: true,
-        suggestions: (): string[] => [],
-        validate: (): true => true,
-      },
-    );
-
-    // Only add chain matcher if assetType filter is not set
-    if (!get(filters).assetType) {
-      matcherList.push({
+      }] satisfies Matcher[]
+      : []),
+    {
+      description: t('assets.filter.symbol'),
+      hint: t('assets.filter.symbol_hint'),
+      key: AssetFilterKeys.SYMBOL,
+      keyValue: AssetFilterValueKeys.SYMBOL,
+      string: true,
+      suggestions: (): string[] => [],
+      validate: (): true => true,
+    },
+    {
+      description: t('assets.filter.name'),
+      hint: t('assets.filter.name_hint'),
+      key: AssetFilterKeys.NAME,
+      keyValue: AssetFilterValueKeys.NAME,
+      string: true,
+      suggestions: (): string[] => [],
+      validate: (): true => true,
+    },
+    ...(!get(filters).assetType
+      ? [{
         description: t('assets.filter.chain'),
-        key: AssetFilterKeys.EVM_CHAIN,
-        keyValue: AssetFilterValueKeys.EVM_CHAIN,
+        key: AssetFilterKeys.CHAIN,
+        keyValue: AssetFilterValueKeys.CHAIN,
         string: true,
-        suggestions: (): string[] => [...get(allEvmChains).map(x => x.name), 'solana'],
+        suggestions: (): string[] => [...get(allEvmChains).map(x => x.name), SOLANA_CHAIN],
         validate: (chain: string): boolean => !!chain,
-      });
-    }
-
-    matcherList.push({
+      }] satisfies Matcher[]
+      : []),
+    {
       description: t('assets.filter.address'),
       hint: t('assets.filter.address_hint'),
       key: AssetFilterKeys.ADDRESS,
@@ -100,10 +92,8 @@ export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters,
       string: true,
       suggestions: (): string[] => [],
       validate: (address: string): boolean => !!address,
-    });
-
-    return matcherList;
-  });
+    },
+  ]);
 
   const OptionalString = z.string().optional();
   const OptionalMultipleString = z
@@ -115,7 +105,7 @@ export function useAssetFilter(assetTypes: Ref<string[]>): FilterSchema<Filters,
   const RouteFilterSchema = z.object({
     [AssetFilterValueKeys.ADDRESS]: OptionalString,
     [AssetFilterValueKeys.ASSET_TYPE]: OptionalString,
-    [AssetFilterValueKeys.EVM_CHAIN]: OptionalString,
+    [AssetFilterValueKeys.CHAIN]: OptionalString,
     [AssetFilterValueKeys.IDENTIFIER]: OptionalMultipleString,
     [AssetFilterValueKeys.NAME]: OptionalString,
     [AssetFilterValueKeys.SYMBOL]: OptionalString,

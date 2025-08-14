@@ -206,6 +206,7 @@ export function useHistoryEventFilter(
           multiple: true,
           string: true,
           suggestions: () => get(historyEventTypes),
+          suggestionsToShow: -1,
           validate: (type: string) => !!type,
         });
       }
@@ -252,6 +253,7 @@ export function useHistoryEventFilter(
           multiple: true,
           string: true,
           suggestions: () => globalMappingKeys.filter(uniqueStrings),
+          suggestionsToShow: -1,
           validate: (type: string) => globalMappingKeys.includes(type),
         });
       }
