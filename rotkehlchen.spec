@@ -72,7 +72,6 @@ a = Entrypoint(
     hookspath=['tools/pyinstaller_hooks'],
     hiddenimports=hiddenimports,
     datas=[
-        # This list should be kept in sync with setup.py (package_data)
         ('rotkehlchen/data/eth_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
         (f'rotkehlchen/data/{GLOBALDB_NAME}', 'rotkehlchen/data'),
@@ -83,6 +82,7 @@ a = Entrypoint(
         ('rotkehlchen/data/populate_multiasset_mappings.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/populate_location_asset_mappings.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/populate_location_unsupported_assets.sql', 'rotkehlchen/data'),
+        ('rotkehlchen/data/solana_tokens_data.csv', 'rotkehlchen/data'),
         # TODO
         # We probably should have a better way to specify some data should be loaded
         # by a module in pyinstaller. Should be loaded dynamically by rotki and not
