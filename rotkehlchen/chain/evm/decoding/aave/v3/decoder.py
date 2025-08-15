@@ -307,11 +307,11 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                         counterparty=self.counterparty,
                     ))
 
-        if supply_event is not None and receive_event is not None:  # re-assign the receive amount
+        if supply_event is not None and receive_event is not None and earned_event:  # re-assign the receive amount  # noqa: E501
             receive_event.amount = supply_event.amount
             receive_event.notes = f'Receive {supply_event.amount} {a_token.symbol} from {self.label}'  # noqa: E501
 
-        if withdraw_event is not None:
+        if withdraw_event is not None and earned_event is not None:
             if return_event is not None:  # re-assign the withdraw amount
                 withdraw_event.amount = return_event.amount
                 withdraw_event.notes = f'Withdraw {return_event.amount} {token.symbol} from {self.label}'  # noqa: E501
