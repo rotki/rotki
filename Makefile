@@ -5,6 +5,7 @@ ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
 lint:
 	ruff check $(ALL_LINT_PATHS)
 	double-indent --dry-run $(ALL_LINT_PATHS)
+	./tools/find-duplicate-constants/run.sh
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
 	PYRIGHT_PYTHON_IGNORE_WARNINGS=1 pyright $(COMMON_LINT_PATHS)
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
