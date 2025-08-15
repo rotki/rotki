@@ -314,6 +314,7 @@ class BaseDecoderTools:
             self,
             address: ChecksumEvmAddress,
             encounter: 'TokenEncounterInfo | None' = None,
+            protocol: str | None = None,
     ) -> EvmToken:
         """A version of get_create_evm_token to be called from the decoders"""
         return get_or_create_evm_token(
@@ -322,6 +323,7 @@ class BaseDecoderTools:
             chain_id=self.evm_inquirer.chain_id,
             evm_inquirer=self.evm_inquirer,
             encounter=encounter,
+            protocol=protocol,
         )
 
     def get_or_create_evm_asset(self, address: ChecksumEvmAddress) -> CryptoAsset:

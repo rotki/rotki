@@ -308,7 +308,7 @@ def test_susdc_ethereum_deposit(ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=Asset('eip155:1/erc20:0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE'),
+            asset=(susdc_token := Asset('eip155:1/erc20:0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE')),  # noqa: E501
             amount=FVal(received_amount),
             location_label=user_address,
             notes=f'Receive {received_amount} sUSDC from depositing into Spark Savings',
@@ -316,6 +316,7 @@ def test_susdc_ethereum_deposit(ethereum_inquirer, ethereum_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
+    assert susdc_token.resolve_to_evm_token().protocol == CPT_SPARK
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
