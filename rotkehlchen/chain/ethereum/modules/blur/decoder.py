@@ -3,7 +3,12 @@ from typing import Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import (
+    CLAIMED_TOPIC,
+    DEFAULT_TOKEN_DECIMALS,
+    DEPOSIT_TOPIC_V2,
+    WITHDRAW_TOPIC_V2,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -19,13 +24,10 @@ from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
-    BLUR_AIRDROP_2_CLAIM,
     BLUR_CPT_DETAILS,
-    BLUR_DEPOSITED,
     BLUR_DISTRIBUTOR,
     BLUR_IDENTIFIER,
     BLUR_STAKING_CONTRACT,
-    BLUR_WITHDRAWN,
     CPT_BLUR,
 )
 
@@ -37,10 +39,10 @@ class BlurDecoder(DecoderInterface):
 
     def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode staking events in the Blur protocol"""
-        if context.tx_log.topics[0] == BLUR_DEPOSITED:
+        if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
             return self._decode_stake(context)
 
-        if context.tx_log.topics[0] == BLUR_WITHDRAWN:
+        if context.tx_log.topics[0] == WITHDRAW_TOPIC_V2:
             return self._decode_unstake(context)
 
         return DEFAULT_DECODING_OUTPUT
@@ -109,7 +111,7 @@ class BlurDecoder(DecoderInterface):
 
     def _decode_blur_airdrop_2_claim(self, context: DecoderContext) -> DecodingOutput:
         """Decode airdrop 2 claim event in the Blur protocol"""
-        if context.tx_log.topics[0] != BLUR_AIRDROP_2_CLAIM:
+        if context.tx_log.topics[0] != CLAIMED_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         if self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])) is False:

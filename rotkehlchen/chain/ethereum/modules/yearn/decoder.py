@@ -15,7 +15,12 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import (
+    DEPOSIT_TOPIC,
+    STAKE_TOPIC,
+    WITHDRAW_TOPIC_V3,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
@@ -49,9 +54,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 YEARN_DEPOSIT_4_BYTES: Final = b'\x83@\xf5I'
 YEARN_DEPOSIT_NO_LOGS_4_BYTES: Final = b'\xb6\xb5_%'
-YEARN_V2_DEPOSIT_TOPIC: Final = b'\x90\x89\x08\t\xc6T\xf1\x1dnr\xa2\x8f\xa6\x01Iw\n\r\x11\xecl\x921\x9dl\xeb+\xb0\xa4\xea\x1a\x15'  # noqa: E501
-YEARN_V3_DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
-YEARN_V3_WITHDRAW_TOPIC: Final = b'\xfb\xdey} \x1ch\x1b\x91\x05e)\x11\x9e\x0b\x02@|{\xb9jJ,u\xc0\x1f\xc9fr2\xc8\xdb'  # noqa: E501
 YEARN_V2_INCREASE_DEPOSIT_TOPIC: Final = b"\xdb\x11\x01&'\xbc\xb8W\xec\x91^\x92\xe4\xc5\xa6\\\x80\t\x8e\xa7r\x90\xa7\xb3-Y\xa8\xef+>\xa4\x1b"  # noqa: E501
 YEARN_COUNTERPARTIES: TypeAlias = Literal['yearn-v1', 'yearn-v2', 'yearn-v3']
 
@@ -282,7 +284,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def _decode_vault_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode yearn v1 and v2 vault events."""
-        if context.tx_log.topics[0] == YEARN_V2_DEPOSIT_TOPIC:
+        if context.tx_log.topics[0] == STAKE_TOPIC:
             out_event, in_event = self._handle_deposit_events(
                 events=context.decoded_events,
                 counterparty=CPT_YEARN_V2,
@@ -293,7 +295,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             )
         elif (
             context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-            not context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES)  # decoded via YEARN_V2_DEPOSIT_TOPIC above  # noqa: E501
+            not context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES)  # decoded via STAKE_TOPIC above  # noqa: E501
         ):
             return self._handle_transfer_events(context=context)
 
@@ -302,12 +304,12 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
     def _decode_v3_vault_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode yearn v3 vault events."""
         out_event, in_event, is_deposit = None, None, False
-        if context.tx_log.topics[0] == YEARN_V3_WITHDRAW_TOPIC:
+        if context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
             out_event, in_event = self._handle_withdraw_events(
                 events=context.decoded_events,
                 counterparty=CPT_YEARN_V3,
             )
-        elif context.tx_log.topics[0] == YEARN_V3_DEPOSIT_TOPIC:
+        elif context.tx_log.topics[0] == DEPOSIT_TOPIC:
             out_event, in_event = self._handle_deposit_events(
                 events=context.decoded_events,
                 counterparty=CPT_YEARN_V3,

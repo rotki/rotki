@@ -6,13 +6,15 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.evm.constants import (
+    ADD_LIQUIDITY_DYNAMIC_ASSETS,
+    DEPOSIT_TOPIC_V2,
     ETH_SPECIAL_ADDRESS,
+    WITHDRAW_TOPIC_V2,
     ZERO_ADDRESS,
 )
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2, CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
-    ADD_LIQUIDITY_DYNAMIC_ASSETS,
     ADD_LIQUIDITY_EVENTS,
     ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE,
     ADD_LIQUIDITY_TOKEN_COUNTS,
@@ -20,8 +22,6 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     CURVE_COUNTERPARTY_DETAILS,
     EXCHANGE_MULTIPLE,
     EXCHANGE_NG,
-    GAUGE_DEPOSIT,
-    GAUGE_WITHDRAW,
     MINTED_CRV,
     REMOVE_LIQUIDITY_EVENTS,
     REMOVE_LIQUIDITY_IMBALANCE,
@@ -701,7 +701,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] not in (GAUGE_DEPOSIT, GAUGE_WITHDRAW):
+        if context.tx_log.topics[0] not in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2):
             return DEFAULT_DECODING_OUTPUT
 
         provider = bytes_to_address(context.tx_log.topics[1])
@@ -757,7 +757,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.product = EvmProduct.GAUGE
                 found_event_modifying_balances = True
                 gauge_events.append(event)
-                if context.tx_log.topics[0] == GAUGE_DEPOSIT:
+                if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED if gauge_token is not None else HistoryEventSubType.DEPOSIT_ASSET  # noqa: E501
                     event.notes = f'Deposit {event.amount} {evm_asset.symbol} into {gauge_address} curve gauge'  # noqa: E501

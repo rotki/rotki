@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
+    SWAPPED_TOPIC,
     ZERO_ADDRESS,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
@@ -32,7 +33,6 @@ from .constants import (
     ADD_LIQUIDITY_TOPIC,
     CPT_PENDLE,
     EXIT_POST_EXP_TO_TOKEN_TOPIC,
-    KYBERSWAP_SWAPPED_TOPIC,
     MINT_PT_YT_FROM_TOKEN_TOPIC,
     MINT_SY_FROM_TOKEN_TOPIC,
     ODOS_SWAP_TOPIC,
@@ -233,7 +233,7 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             asset=(token_out := self.base.get_token_or_native(bytes_to_address(context.tx_log.topics[2]))),  # noqa: E501
         )
         if (swap_type := int.from_bytes(context.tx_log.topics[1])) == 1:
-            expected_log_topic = KYBERSWAP_SWAPPED_TOPIC
+            expected_log_topic = SWAPPED_TOPIC
         elif swap_type == 2:
             expected_log_topic = ODOS_SWAP_TOPIC
         elif swap_type == 4:

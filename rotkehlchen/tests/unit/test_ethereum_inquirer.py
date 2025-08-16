@@ -9,9 +9,8 @@ import requests
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import SWAPPED_TOPIC, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.kyber.constants import KYBER_AGGREGATOR_SWAPPED
 from rotkehlchen.chain.evm.decoding.thegraph.constants import GRAPH_DELEGATION_TRANSFER_ABI
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -128,7 +127,7 @@ def test_get_transaction_receipt(
                     log_index=236,
                     data=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00[\xea\xba\xeb\xb3\x14f\x85\xddt\x17oh\xa0r\x1f\x91)}7\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02T\x0b\xe4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\xe0\xb6\xb3\xa7d\x00\x00',  # noqa: E501
                     address='0x73282A63F0e3D7e9604575420F777361ecA3C86A',
-                    topics=[KYBER_AGGREGATOR_SWAPPED],
+                    topics=[SWAPPED_TOPIC],
             ),
         ])
 
