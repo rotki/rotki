@@ -301,7 +301,7 @@ The mapping of these HistoryEvents types, subtypes, and categories is done in [r
 
 #### Things to keep in mind
 
-- All byte signatures should be a constant byte literal. Like ```SPARK_STAKE_SIGNATURE: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
+- All byte signatures should be a constant byte literal. Like ```DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
 - Don't put assets as constants. If you need a constant just use the asset identifier as a string and compare against it.
 
 ## Testing Strategy

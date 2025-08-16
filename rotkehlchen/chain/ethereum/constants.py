@@ -36,3 +36,6 @@ PRUNED_NODE_CHECK_TX_HASH: Final = deserialize_evm_tx_hash('0x5c504ed432cb51138b
 
 SHAPPELA_TIMESTAMP: Final = 1681338455  # the timestamp of the fork where withdrawals enabled
 LAST_GRAPH_DELEGATIONS: Final = 'GRAPH_DELEGATIONS'
+
+
+MIGRATED: Final = b'\x92\x8f\xd5S\x13$\xee\x87\xd7l\xc50}\xc3u\x80\x17M\xa7k\x85\xcdTm\xa61\xb2g\x0b\xc2f\xb5'  # noqa: E501

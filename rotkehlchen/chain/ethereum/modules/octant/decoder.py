@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.evm.constants import WITHDRAWN_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -18,7 +19,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import CPT_OCTANT, LOCKED, OCTANT_DEPOSITS, OCTANT_REWARDS, UNLOCKED, WITHDRAWN
+from .constants import CPT_OCTANT, LOCKED, OCTANT_DEPOSITS, OCTANT_REWARDS, UNLOCKED
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -87,7 +88,7 @@ class OctantDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_reward_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != WITHDRAWN:
+        if context.tx_log.topics[0] != WITHDRAWN_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         user = bytes_to_address(context.tx_log.data[0:32])

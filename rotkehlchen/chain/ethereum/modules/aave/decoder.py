@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, STAKED_TOPIC
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -25,7 +25,6 @@ from .constants import (
     REDEEM_AAVE_OLD,
     REWARDS_CLAIMED,
     STAKED_AAVE,
-    STAKED_AAVE_BEHALFOF,
     STK_AAVE_ADDR,
     STKAAVE_IDENTIFIER,
 )
@@ -38,7 +37,7 @@ class AaveDecoder(DecoderInterface):
     """Aave decoder for staking and unstaking events"""
     def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode aave staking unstaking events"""
-        if context.tx_log.topics[0] in (STAKED_AAVE, STAKED_AAVE_BEHALFOF):
+        if context.tx_log.topics[0] in (STAKED_AAVE, STAKED_TOPIC):
             method = self._decode_stake
         elif context.tx_log.topics[0] in (REDEEM_AAVE, REDEEM_AAVE_OLD):
             method = self._decode_unstake

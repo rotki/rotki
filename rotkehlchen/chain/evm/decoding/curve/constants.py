@@ -1,5 +1,6 @@
 from typing import Final, Literal, get_args
 
+from rotkehlchen.chain.evm.constants import ADD_LIQUIDITY_DYNAMIC_ASSETS
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
@@ -14,7 +15,6 @@ ADD_LIQUIDITY_2_ASSETS: Final = b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\
 ADD_LIQUIDITY_2_ASSETS_OPTIMIZED: Final = b'q\x96\xcb\xf6=\xf1\xf2\xec c\x8eh>\xbeQ\xd1\x82`\xbeQ\x05\x92\xee\x1e.\xfe?<\xfdL3\xe9'  # in CurveTwocryptoOptimized  # noqa: E501
 ADD_LIQUIDITY_3_ASSETS: Final = b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r'  # noqa: E501
 ADD_LIQUIDITY_4_ASSETS: Final = b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d'  # noqa: E501
-ADD_LIQUIDITY_DYNAMIC_ASSETS: Final = b'\x18\x9cb;fk\x1bE\xb8=qx\xf3\x9b\x8c\x08|\xb0\x97t1|\xa2\xf5<-<7&\xf2"\xa2'  # in DepositAndStake Zap  # noqa: E501
 ADD_LIQUIDITY_EVENTS: Final = {
     ADD_LIQUIDITY_2_ASSETS,
     ADD_LIQUIDITY_2_ASSETS_OPTIMIZED,
@@ -43,8 +43,6 @@ REMOVE_LIQUIDITY_EVENTS: Final = {
     b'\xdd<\x036\xa1o\x1bd\xf1r\xb7\xbb\r\xad[+<|v\xf9\x1e\x8cJ\xaf\xd6\xaa\xe6\r\xce\x80\x01S',  # RemoveLiquidity in CurveTwocryptoOptimized  # noqa: E501
     b"oH\x12\x9d\xb1\xf3|\xcb\x9c\xc5\xdd~\x11\x9c\xb3'P\xca\xbd\xf7[H7]s\r&\xce6Y\xbb\xe1",  # RemoveLiquidityOne  # noqa: E501
 }
-GAUGE_DEPOSIT: Final = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
-GAUGE_WITHDRAW: Final = b'\x88N\xda\xd9\xceo\xa2D\r\x8aT\xcc\x124\x90\xeb\x96\xd2v\x84y\xd4\x9f\xf9\xc76a%\xa9BCd'  # noqa: E501
 GAUGE_VOTE: Final = b'E\xca\x9aL\x8d\x01\x19\xeb2\x9eX\r(\xfeh\x9eHN\x1b\xe20\xda\x807\xad\xe9T}-%\xcc\x91'  # noqa: E501
 TOKEN_EXCHANGE: Final = b'\x8b>\x96\xf2\xb8\x89\xfaw\x1cS\xc9\x81\xb4\r\xaf\x00_c\xf67\xf1\x86\x9fppR\xd1Z=\xd9q@'  # noqa: E501
 TOKEN_EXCHANGE_UNDERLYING: Final = b'\xd0\x13\xca#\xe7ze\x00<,e\x9cTB\xc0\x0c\x80Sq\xb7\xfc\x1e\xbdL lA\xd1Sk\xd9\x0b'  # noqa: E501

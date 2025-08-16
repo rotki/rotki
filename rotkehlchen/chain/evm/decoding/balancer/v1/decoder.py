@@ -9,6 +9,7 @@ from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
 from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V1
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.balancer.types import BalancerV1EventTypes
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -36,7 +37,6 @@ if TYPE_CHECKING:
 
 JOIN_V1: Final = b'c\x98-\xf1\x0e\xfd\x8d\xfa\xaa\xa0\xfc\xc7\xf5\x0b-\x93\xb7\xcb\xa2l\xccH\xad\xee(s"\rH]\xc3\x9a'  # noqa: E501
 EXIT_V1: Final = b'\xe7L\x91U+d\xc2\xe2\xe7\xbd%V9\xe0\x04\xe6\x93\xbd>\x1d\x01\xcc3\xe6V\x10\xb8j\xfc\xc1\xff\xed'  # noqa: E501
-TRANSFER_TOPIC: Final = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -152,7 +152,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
 
     def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Not all balancer v1 pools are created via the UI. This method decodes the events of such pools."""  # noqa: E501
-        if context.tx_log.topics[0] not in (JOIN_V1, EXIT_V1, TRANSFER_TOPIC):
+        if context.tx_log.topics[0] not in (JOIN_V1, EXIT_V1, ERC20_OR_ERC721_TRANSFER):
             return DEFAULT_DECODING_OUTPUT
 
         from_event_subtype, to_event_type, to_event_subtype, location_label = HistoryEventSubType.NONE, None, None, None  # noqa: E501

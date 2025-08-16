@@ -23,8 +23,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 from .constants import (
+    AIRDROP_CLAIM,
     GNOSIS_CPT_DETAILS,
-    GTC_CLAIM,
     KRAKEN_ADDRESSES,
     POLONIEX_ADDRESS,
     UPHOLD_ADDRESS,
@@ -100,7 +100,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> DecodingOutput:
-        if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
+        if tx_log.topics[0] == AIRDROP_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP

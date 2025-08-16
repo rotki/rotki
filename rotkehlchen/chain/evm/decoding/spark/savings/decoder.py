@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import TokenEncounterInfo
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3
 from rotkehlchen.chain.evm.decoding.constants import ERC4626_ABI
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.spark.decoder import SparkCommonDecoder
@@ -19,7 +20,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import DEPOSIT_TOPIC, SWAP_TOPIC, WITHDRAW_TOPIC
+from .constants import SWAP_TOPIC
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -112,10 +113,10 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
 
         # skip if there are later deposit/withdraw events (we only want to process the last one)
         if (
-            context.tx_log.topics[0] not in (DEPOSIT_TOPIC, WITHDRAW_TOPIC) or
+            context.tx_log.topics[0] not in (DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3) or
             any(
                 log.log_index > context.tx_log.log_index and
-                log.topics[0] in (DEPOSIT_TOPIC, WITHDRAW_TOPIC)
+                log.topics[0] in (DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3)
                 for log in context.all_logs
             )
         ):

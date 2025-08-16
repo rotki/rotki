@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.utils import (
     should_update_protocol_cache,
     token_normalized_value,
 )
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.stakedao.utils import (
@@ -40,10 +40,8 @@ from .constants import (
     CLAIMED_WITH_BRIBE,
     CPT_STAKEDAO,
     REWARDS_CLAIMED_TOPIC,
-    STAKEDAO_DEPOSIT,
     STAKEDAO_GAUGE_ABI,
     STAKEDAO_VAULT_ABI,
-    STAKEDAO_WITHDRAW,
 )
 
 if TYPE_CHECKING:
@@ -299,9 +297,9 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )])
 
     def _decode_deposit_withdrawal_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == STAKEDAO_DEPOSIT:
+        if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
             return self._decode_deposit(context)
-        elif context.tx_log.topics[0] == STAKEDAO_WITHDRAW:
+        elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V2:
             return self._decode_withdraw(context)
         return DEFAULT_DECODING_OUTPUT
 

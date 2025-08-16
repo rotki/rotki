@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.modules.compound.constants import (
     CPT_COMPOUND,
 )
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.evm.constants import MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -40,7 +41,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAXIMILLION_ADDR = string_to_evm_address('0xf859A1AD94BcF445A406B892eF0d3082f4174088')
-MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
 BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\x9a-\xac\xc1\xc4\xca\x89\x84\xab\x80'  # noqa: E501
 REPAY_COMPOUND = b'\x1a*"\xcb\x03M&\xd1\x85K\xdcff\xa5\xb9\x1f\xe2^\xfb\xbb]\xca\xd3\xb05Tx\xd6\xf5\xc3b\xa1'  # noqa: E501
@@ -317,7 +317,7 @@ class Compoundv2Decoder(DecoderInterface):
             context: DecoderContext,
             compound_token: EvmToken,
     ) -> DecodingOutput:
-        if context.tx_log.topics[0] == MINT_COMPOUND_TOKEN:
+        if context.tx_log.topics[0] == MINT_TOPIC:
             return self._decode_mint(transaction=context.transaction, tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
 
         if context.tx_log.topics[0] in (BORROW_COMPOUND, REPAY_COMPOUND):

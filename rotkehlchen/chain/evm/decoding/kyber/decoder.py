@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import SWAPPED_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -20,7 +21,6 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import (
     CPT_KYBER,
     KYBER_AGGREGATOR_CONTRACT,
-    KYBER_AGGREGATOR_SWAPPED,
     KYBER_CPT_DETAILS,
 )
 
@@ -69,7 +69,7 @@ class KyberCommonDecoder(DecoderInterface):
 
     def _decode_aggregator_trade(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a kyber aggregator swap, updating the events with proper metadata"""
-        if context.tx_log.topics[0] != KYBER_AGGREGATOR_SWAPPED:
+        if context.tx_log.topics[0] != SWAPPED_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         sender = bytes_to_address(context.tx_log.data[:32])

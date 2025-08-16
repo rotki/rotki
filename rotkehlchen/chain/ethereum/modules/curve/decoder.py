@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, UNSTAKE_TOPIC
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CHILD_LIQUIDITY_GAUGE_FACTORY,
@@ -41,7 +41,6 @@ from .constants import (
     GAUGE_CONTROLLER,
     VOTING_ESCROW,
     VOTING_ESCROW_DEPOSIT,
-    VOTING_ESCROW_WITHDRAW,
 )
 
 if TYPE_CHECKING:
@@ -159,7 +158,7 @@ class CurveDecoder(CurveCommonDecoder):
     def _decode_voting_escrow(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == VOTING_ESCROW_DEPOSIT:
             method = self._decode_voting_escrow_deposit
-        elif context.tx_log.topics[0] == VOTING_ESCROW_WITHDRAW:
+        elif context.tx_log.topics[0] == UNSTAKE_TOPIC:
             method = self._decode_voting_escrow_withdraw
         else:
             return DEFAULT_DECODING_OUTPUT

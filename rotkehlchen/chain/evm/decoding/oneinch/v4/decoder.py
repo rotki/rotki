@@ -6,11 +6,11 @@ from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
     SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
 )
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, SWAPPED_TOPIC
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import (
     V2_SWAP as BALANCER_V2_SWAP_SIGNATURE,
 )
 from rotkehlchen.chain.evm.decoding.curve.constants import TOKEN_EXCHANGE
-from rotkehlchen.chain.evm.decoding.kyber.constants import KYBER_AGGREGATOR_SWAPPED
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import DEFI_PLAZA_SWAPPED, ORDERFILLED_RFQ
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
@@ -20,7 +20,7 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.velodrome.decoder import SWAP_V2 as VELODROME_SWAP_SIGNATURE
-from rotkehlchen.chain.evm.decoding.weth.decoder import WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC
+from rotkehlchen.chain.evm.decoding.weth.decoder import WETH_WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -55,7 +55,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 BALANCER_V2_SWAP_SIGNATURE,
                 ORDERFILLED_RFQ,
                 TOKEN_EXCHANGE,  # curve is also used by 1inch
-                KYBER_AGGREGATOR_SWAPPED,
+                SWAPPED_TOPIC,
                 DEFI_PLAZA_SWAPPED,
             ],
             counterparty=counterparty,
@@ -79,7 +79,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
         tx_has_weth_transfer = False
         weth_transfer_tx_log = None
         for tx_log in all_logs:
-            if tx_log.topics[0] in [WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC]:
+            if tx_log.topics[0] in [DEPOSIT_TOPIC_V2, WETH_WITHDRAW_TOPIC]:
                 tx_has_weth_transfer = True
                 weth_transfer_tx_log = tx_log
 

@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.chain.ethereum.decoding.constants import AIRDROP_CLAIM
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -18,7 +19,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import CLAIMED, CPT_FLUENCE, DEV_REWARD_DISTRIBUTOR, FLUENCE_IDENTIFIER
+from .constants import CPT_FLUENCE, DEV_REWARD_DISTRIBUTOR, FLUENCE_IDENTIFIER
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -103,7 +104,7 @@ class FluenceDecoder(DecoderInterface):
 
     def _decode_events(self, context: DecoderContext) -> DecodingOutput:
         if (
-            context.tx_log.topics[0] == CLAIMED and
+            context.tx_log.topics[0] == AIRDROP_CLAIM and
             self.base.is_tracked(user_address := bytes_to_address(context.tx_log.data[0:32]))
         ):
             return self._decode_fluence_claim(context=context, user_address=user_address)

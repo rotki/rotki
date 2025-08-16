@@ -7,7 +7,11 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
+    DEPOSIT_TOPIC,
+    WITHDRAW_TOPIC_V3,
+)
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, REWARD_CLAIMED
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     GearboxPoolData,
@@ -36,10 +40,8 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import (
     CLAIM_GEAR_WITHDRAWAL,
     CPT_GEARBOX,
-    DEPOSIT,
     DEPOSIT_GEAR,
     GEARBOX_CPT_DETAILS,
-    WITHDRAW,
 )
 
 if TYPE_CHECKING:
@@ -222,10 +224,10 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
 
     def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode the deposit and withdrawal events done via Gearbox protocol."""
-        if context.tx_log.topics[0] == DEPOSIT:
+        if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             return self._decode_deposit(context=context)
 
-        if context.tx_log.topics[0] == WITHDRAW:
+        if context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
             return self._decode_withdraw(context=context)
 
         return DEFAULT_DECODING_OUTPUT
