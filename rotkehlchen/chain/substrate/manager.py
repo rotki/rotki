@@ -142,7 +142,7 @@ class SubstrateManager:
 
         Polkascan py-substrate-interface:
         https://github.com/polkascan/py-substrate-interface
-        https://polkascan.github.io/py-substrate-interface/base.html
+        https://jamdottech.github.io/py-polkadot-sdk/reference/base/
 
         Subscan API documentation:
         https://docs.api.subscan.io
