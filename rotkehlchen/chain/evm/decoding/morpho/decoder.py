@@ -1,9 +1,9 @@
 import logging
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import REWARD_CLAIMED
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -38,9 +38,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
-WITHDRAW_TOPIC: Final = b'\xfb\xdey} \x1ch\x1b\x91\x05e)\x11\x9e\x0b\x02@|{\xb9jJ,u\xc0\x1f\xc9fr2\xc8\xdb'  # noqa: E501
 
 
 class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
@@ -268,7 +265,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         """Decode events from Morpho vaults."""
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             out_events, in_event = self._decode_deposit(context=context)
-        elif context.tx_log.topics[0] == WITHDRAW_TOPIC:
+        elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
             out_event, in_event = self._decode_withdraw(context=context)
             out_events = [out_event] if out_event is not None else []
         else:

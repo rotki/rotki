@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.modules.spark.constants import (
     SPARK_STAKE_TOKEN,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, DEPOSIT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.spark.lend.decoder import SparklendCommonDecoder
@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 SPARK_CLAIM_SIGNATURE: Final = b'\xce;\xcbn!\x95\x96\xcf&\x00\x7f\xfd\xfa\xae\x89S\xbc?v\xe3\xf3l\ny\xb2>(\x02\r\xa3".'  # noqa: E501
-SPARK_STAKE_SIGNATURE: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
 
 SPARK_ASSET_ID: Final = 'eip155:1/erc20:0xc20059e0317DE91738d13af027DfC4a50781b066'
 
@@ -82,7 +81,7 @@ class SparklendDecoder(SparklendCommonDecoder, MerkleClaimDecoderInterface):
 
     def _decode_spark_staking(self, context: DecoderContext) -> DecodingOutput:
         """Decode Spark token staking into the staking contract"""
-        if context.tx_log.topics[0] != SPARK_STAKE_SIGNATURE:
+        if context.tx_log.topics[0] != DEPOSIT_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         user_address = bytes_to_address(context.tx_log.topics[1])

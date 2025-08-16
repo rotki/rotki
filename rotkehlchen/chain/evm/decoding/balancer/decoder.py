@@ -1,8 +1,9 @@
 from abc import ABC
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import query_balancer_data
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.interfaces import (
@@ -25,10 +26,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
-
-
-GAUGE_DEPOSIT_TOPIC: Final = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
-GAUGE_WITHDRAW_TOPIC: Final = b'\x88N\xda\xd9\xceo\xa2D\r\x8aT\xcc\x124\x90\xeb\x96\xd2v\x84y\xd4\x9f\xf9\xc76a%\xa9BCd'  # noqa: E501
 
 
 class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin, ABC):
@@ -69,7 +66,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         return self.cache_data[0]
 
     def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] not in (GAUGE_DEPOSIT_TOPIC, GAUGE_WITHDRAW_TOPIC):
+        if context.tx_log.topics[0] not in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2):
             return DEFAULT_DECODING_OUTPUT
 
         gauge_asset = self.base.get_or_create_evm_token(context.tx_log.address)

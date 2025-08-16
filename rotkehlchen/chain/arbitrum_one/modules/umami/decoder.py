@@ -7,6 +7,13 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     UMAMI_STAKING_CONTRACT,
 )
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import (
+    DEPOSIT_TOPIC,
+    STAKE_TOPIC,
+    UNSTAKE_TOPIC,
+    WITHDRAW_TOPIC_V3,
+)
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -26,11 +33,6 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
-DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
-TRANSFER_TOPIC: Final = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
-WITHDRAW_TOPIC: Final = b'\xfb\xdey} \x1ch\x1b\x91\x05e)\x11\x9e\x0b\x02@|{\xb9jJ,u\xc0\x1f\xc9fr2\xc8\xdb'  # noqa: E501
-STAKE_TOPIC: Final = b'\x90\x89\x08\t\xc6T\xf1\x1dnr\xa2\x8f\xa6\x01Iw\n\r\x11\xecl\x921\x9dl\xeb+\xb0\xa4\xea\x1a\x15'  # noqa: E501
-UNSTAKE_TOPIC: Final = b'\xf2y\xe6\xa1\xf5\xe3 \xcc\xa9\x115gm\x9c\xb6\xe4L\xa8\xa0\x8c\x0b\x884+\xcd\xb1\x14Oe\x11\xb5h'  # noqa: E501
 REWARD_TOPIC: Final = b'q\xba\xb6\\\xed.WPwZ\x06\x13\xbe\x06}\xf4\x8e\xf0l\xf9*In\xbfvc\xae\x06`\x92IT'  # noqa: E501
 DEPOSIT_EXECUTION_FOUR_BYTES: Final = b'\xdb\x10\xc3\xb9'
 UMAMI_DEPOSIT_WITHDRAWAL_FEE_PERCENTAGE: Final = FVal('0.0015')  # this is an estimate since the actual percentage is dynamic -- 0.15%  # noqa: E501
@@ -146,7 +148,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
                 type_found = FoundEventType.NONE
                 if context.tx_log.topics[0] == DEPOSIT_TOPIC:
                     type_found = self._decode_deposit_request(context=context, event=event)
-                elif context.tx_log.topics[0] == WITHDRAW_TOPIC:
+                elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
                     type_found = self._decode_withdraw_request(context=context, event=event)
 
                 if type_found == FoundEventType.MAIN:
@@ -156,7 +158,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                context.tx_log.topics[0] == TRANSFER_TOPIC
+                context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER
             ):  # withdraw execution
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
@@ -209,7 +211,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         if (
-            context.tx_log.topics[0] == TRANSFER_TOPIC and
+            context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
             context.transaction.input_data.startswith(DEPOSIT_EXECUTION_FOUR_BYTES)
         ):  # deposit execution
             vault_asset = self.base.get_or_create_evm_asset(context.tx_log.address)

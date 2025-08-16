@@ -11,9 +11,12 @@ from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
+    DEPOSIT_TOPIC,
+    WITHDRAW_TOPIC_V3,
+)
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
-from rotkehlchen.chain.evm.decoding.spark.savings.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.decoding.spark.savings.decoder import SparksavingsCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -67,7 +70,7 @@ class SparksavingsDecoder(SparksavingsCommonDecoder):
         """
         if not (
             (is_deposit := context.tx_log.topics[0] == DEPOSIT_TOPIC) or
-            context.tx_log.topics[0] == WITHDRAW_TOPIC
+            context.tx_log.topics[0] == WITHDRAW_TOPIC_V3
         ):
             return DEFAULT_DECODING_OUTPUT
 
@@ -101,7 +104,7 @@ class SparksavingsDecoder(SparksavingsCommonDecoder):
         # Try to find sDAI withdraw log to create sDAI spend event
         for tx_log in context.all_logs:
             if (
-                    tx_log.topics[0] == WITHDRAW_TOPIC and
+                    tx_log.topics[0] == WITHDRAW_TOPIC_V3 and
                     tx_log.address == self.sdai.evm_address and
                     bytes_to_address(tx_log.topics[1]) == MIGRATION_ACTIONS_CONTRACT and
                     bytes_to_address(tx_log.topics[3]) == received_address
@@ -218,7 +221,7 @@ class SparksavingsDecoder(SparksavingsCommonDecoder):
         """
         if (  # Check if this is a sky migration event and delegate to the migration decoder
             context.tx_log.address == SUSDS_CONTRACT and
-            context.tx_log.topics[0] in (DEPOSIT_TOPIC, WITHDRAW_TOPIC) and
+            context.tx_log.topics[0] in (DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3) and
             bytes_to_address(context.tx_log.topics[1]) == MIGRATION_ACTIONS_CONTRACT
         ):
             return self._decode_sky_migration_to_susds(context)

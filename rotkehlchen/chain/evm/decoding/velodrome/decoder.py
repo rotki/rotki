@@ -8,7 +8,13 @@ from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import (
+    BURN_TOPIC,
+    DEFAULT_TOKEN_DECIMALS,
+    MINT_TOPIC,
+    WITHDRAW_TOPIC_V2,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import (
     DecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,
@@ -20,11 +26,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.velodrome.constants import (
-    ADD_LIQUIDITY_EVENT,
     CLAIM_REWARDS_V2,
     GAUGE_DEPOSIT_V2,
-    GAUGE_WITHDRAW_V2,
-    REMOVE_LIQUIDITY_EVENT_V1,
     REMOVE_LIQUIDITY_EVENT_V2,
     SWAP_V2,
     VOTER_CLAIM_REWARDS,
@@ -220,12 +223,12 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
 
     def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Decodes transactions that interact with a (velo/aero)drome v1 or v2 pool"""
-        if context.tx_log.topics[0] in (REMOVE_LIQUIDITY_EVENT_V2, REMOVE_LIQUIDITY_EVENT_V1):
+        if context.tx_log.topics[0] in (REMOVE_LIQUIDITY_EVENT_V2, BURN_TOPIC):
             return self._decode_remove_liquidity_events(
                 tx_log=context.tx_log,
                 decoded_events=context.decoded_events,
             )
-        if context.tx_log.topics[0] == ADD_LIQUIDITY_EVENT:
+        if context.tx_log.topics[0] == MINT_TOPIC:
             return self._decode_add_liquidity_events(
                 tx_log=context.tx_log,
                 decoded_events=context.decoded_events,
@@ -240,7 +243,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
         Decodes transactions that interact with a (velo/aero)drome v2 gauge.
         Velodrome v1 had no gauges.
         """
-        if context.tx_log.topics[0] not in (GAUGE_DEPOSIT_V2, GAUGE_WITHDRAW_V2, CLAIM_REWARDS_V2):
+        if context.tx_log.topics[0] not in (GAUGE_DEPOSIT_V2, WITHDRAW_TOPIC_V2, CLAIM_REWARDS_V2):
             return DEFAULT_DECODING_OUTPUT
 
         user_or_contract_address = bytes_to_address(context.tx_log.topics[1])
@@ -265,7 +268,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                         tokens=[event.asset.resolve_to_evm_token()],
                         new_protocol=self.counterparty,
                     )
-                elif context.tx_log.topics[0] == GAUGE_WITHDRAW_V2:
+                elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V2:
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.notes = f'Withdraw {event.amount} {crypto_asset.symbol} from {gauge_address} {self.counterparty} gauge'  # noqa: E501

@@ -7,8 +7,16 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, GAUGE_DEPOSIT
+from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
+    DEPOSIT_TOPIC,
+    DEPOSIT_TOPIC_V2,
+    STAKING_DEPOSIT,
+    WITHDRAW_TOPIC_V2,
+    WITHDRAW_TOPIC_V3,
+    ZERO_ADDRESS,
+)
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -34,10 +42,6 @@ from .common import CurveBorrowRepayCommonDecoder
 from .constants import (
     CURVE_LEND_VAULT_SYMBOL,
     CURVE_VAULT_ABI,
-    CURVE_VAULT_GAUGE_WITHDRAW,
-    DEPOSIT_TOPIC,
-    LEVERAGE_ZAP_DEPOSIT_TOPIC,
-    WITHDRAW_TOPIC,
 )
 from .utils import query_curve_lending_vaults
 
@@ -250,7 +254,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
         """Decode events from Curve lending vaults."""
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             out_event, in_event = self._decode_deposit(context=context)
-        elif context.tx_log.topics[0] == WITHDRAW_TOPIC:
+        elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
             out_event, in_event = self._decode_withdraw(context=context)
         else:
             return DEFAULT_DECODING_OUTPUT
@@ -340,7 +344,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
         for tx_log in context.all_logs:
             if (
                 tx_log.address == self.leverage_zap and
-                tx_log.topics[0] == LEVERAGE_ZAP_DEPOSIT_TOPIC and
+                tx_log.topics[0] == STAKING_DEPOSIT and
                 self.base.is_tracked(bytes_to_address(tx_log.topics[1]))
             ):
                 collateral_amount = token_normalized_value(
@@ -389,7 +393,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
 
     def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
         """This decodes deposit & withdraw events of the vault's gauge contract."""
-        if context.tx_log.topics[0] not in (GAUGE_DEPOSIT, CURVE_VAULT_GAUGE_WITHDRAW):
+        if context.tx_log.topics[0] not in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(

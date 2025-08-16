@@ -9,7 +9,6 @@ VOTING_ESCROW: Final = string_to_evm_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202
 CURVE_MINTER: Final = string_to_evm_address('0xd061D61a4d941c39E5453435B6345Dc261C2fcE0')
 CLAIMED: Final = b'\x9c\xdc\xf2\xf7qL\xca5\x08\xc7\xf0\x11\x0b\x04\xa9\n\x80\xa3\xa8\xdd\x0e5\xde\x99h\x9d\xb7M(\xc58>'  # noqa: E501
 VOTING_ESCROW_DEPOSIT: Final = b'Ef\xdf\xc2\x9fo\x11\xd1:A\x8c&\xa0+\xef|(\xba\xe7I\xd4\xdeG\xe4\xe6\xa7\xcd\xde\xa6s\rY'  # noqa: E501
-VOTING_ESCROW_WITHDRAW: Final = b'\xf2y\xe6\xa1\xf5\xe3 \xcc\xa9\x115gm\x9c\xb6\xe4L\xa8\xa0\x8c\x0b\x884+\xcd\xb1\x14Oe\x11\xb5h'  # noqa: E501
 
 GAUGE_BRIBE_V2_ASSETS: Final = [
     string_to_evm_address('0xD533a949740bb3306d119CC777fa900bA034cd52'),  # CRV

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-CLAIMED_TOPIC: Final = b'\xd8\x13\x8f\x8a?7|RY\xcaT\x8ep\xe4\xc2\xde\x94\xf1)\xf5\xa1\x106\xa1[iQ<\xba+Bj'  # noqa: E501
 EXECUTION_SUCCESS_TOPIC: Final = b"D.q_bcF\xe8\xc5C\x81\x00-\xa6\x14\xf6+\xee\x8d'8e5\xb2R\x1e\xc8T\x08\x98Un"  # noqa: E501
 
 
