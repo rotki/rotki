@@ -65,6 +65,7 @@ from .constants import (
     CPT_VAULT,
     DAI_JOIN_ADDRESS,
     GENERIC_EXIT,
+    MAKER_BURN_TOPIC,
     MAKERDAO_ICON,
     MAKERDAO_LABEL,
     MAKERDAO_MIGRATION_ADDRESS,
@@ -85,8 +86,6 @@ POT_EXIT = b'\x7f\x86a\xa1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x
 NEWCDP = b"\xd6\xbe\x0b\xc1xe\x8a8/\xf4\xf9\x1c\x8ch\xb5B\xaakqh[\x8f\xe4'\x96k\x87t\\>\xa7\xa2"
 CDPMANAGER_MOVE = b'\xf9\xf3\r\xb6\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
 CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
-
-BURN_MKR = b'\xcc\x16\xf5\xdb\xb4\x872\x80\x81\\\x1e\xe0\x9d\xbd\x06sl\xff\xcc\x18D\x12\xcfzq\xa0\xfd\xb7]9|\xa5'  # noqa: E501
 
 
 class MakerdaoDecoder(DecoderInterface):
@@ -563,7 +562,7 @@ class MakerdaoDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_burn_event(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != BURN_MKR:
+        if context.tx_log.topics[0] != MAKER_BURN_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(

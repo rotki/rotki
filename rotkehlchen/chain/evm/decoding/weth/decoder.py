@@ -1,9 +1,10 @@
 import logging
 from abc import ABC
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -25,8 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-WETH_DEPOSIT_TOPIC = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
-WETH_WITHDRAW_TOPIC = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0\xd8\x08\xc7\xd9\x8c\xb3\xbfrh\xa9[\xf5\x08\x1be'  # noqa: E501
+WETH_WITHDRAW_TOPIC: Final = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0\xd8\x08\xc7\xd9\x8c\xb3\xbfrh\xa9[\xf5\x08\x1be'  # noqa: E501
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -52,7 +52,7 @@ class WethDecoderBase(DecoderInterface, ABC):
         self.counterparty = counterparty
 
     def _decode_wrapper(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
+        if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
             return self._decode_deposit_event(context)
         elif context.tx_log.topics[0] == WETH_WITHDRAW_TOPIC:
             return self._decode_withdrawal_event(context)

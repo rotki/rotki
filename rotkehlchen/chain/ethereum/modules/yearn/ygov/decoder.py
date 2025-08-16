@@ -2,11 +2,9 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YGOV, YEARN_ICON
-from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import (
-    REWARD_PAID_TOPIC,
-    YGOV_ADDRESS,
-)
+from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import YGOV_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
@@ -100,7 +98,7 @@ class YearnygovDecoder(DecoderInterface):
                 break
 
     def decode_gov_events(self, context: 'DecoderContext') -> 'DecodingOutput':
-        if context.tx_log.topics[0] == REWARD_PAID_TOPIC:
+        if context.tx_log.topics[0] == REWARD_PAID_TOPIC_V2:
             self._decode_reward_token(context)
         elif context.tx_log.topics[0] == WITHDRAWN:
             self._decode_withdrawal(context)

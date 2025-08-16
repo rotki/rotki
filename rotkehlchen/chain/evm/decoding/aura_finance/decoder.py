@@ -6,7 +6,13 @@ from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
+    DEPOSIT_TOPIC,
+    REWARD_PAID_TOPIC_V2,
+    WITHDRAWN_TOPIC,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -41,11 +47,8 @@ WITHDRAW_AND_UNWRAP_4BYTE: Final = b'\xc3.r\x02'
 LOCK_ETHEREUM_AND_BASE_4BYTE: Final = b'(-?\xdf'
 
 LOCKED_TOPIC: Final = b'\x9f\x1e\xc8\xc8\x80\xf7g\x98\xe7\xb7\x932]b^\x9b`\xe4\x08*U<\x98\xf4+l\xda6\x8d\xd6\x00\x08'  # noqa: E501
-STAKED_TOPIC: Final = b'\x14I\xc6\xddxQ\xab\xc3\n\xbf7\xf5w\x15\xf4\x92\x01\x05\x19\x14|\xc2e/\xbc8 ,\x18\xa6\xee\x90'  # noqa: E501
-DEPOSIT_AURA_BAL_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
-REWARD_PAID_TOPIC: Final = b'\xe2@6@\xbah\xfe\xd3\xa2\xf8\x8buWU\x1d\x19\x93\xf8K\x99\xbb\x10\xff\x83?\x0c\xf8\xdb\x0c^\x04\x86'  # noqa: E501
+AURA_STAKED_TOPIC: Final = b'\x14I\xc6\xddxQ\xab\xc3\n\xbf7\xf5w\x15\xf4\x92\x01\x05\x19\x14|\xc2e/\xbc8 ,\x18\xa6\xee\x90'  # noqa: E501
 DEPOSITED_TOPIC: Final = b's\xa1\x9d\xd2\x10\xf1\xa7\xf9\x02\x192\x14\xc0\xee\x91\xdd5\xee[M\x92\x0c\xba\x8dQ\x9e\xcae\xa7\xb4\x88\xca'  # noqa: E501
-WITHDRAWN_AURA_BOOSTER = b'\x92\xcc\xf4P\xa2\x86\xa9W\xafRP\x9b\xc1\xc9\x93\x9d\x1ajH\x17\x83\xe1B\xe4\x1e$\x99\xf0\xbbf\xeb\xc6'  # noqa: E501
 
 AURA_BAL_VAULT_ADDRESS = string_to_evm_address('0x4EA9317D90b61fc28C418C247ad0CA8939Bbb0e9')
 AURA_L2_BOOSTER_LITE_ADDRESS = string_to_evm_address('0x98Ef32edd24e2c92525E59afc4475C1242a30184')
@@ -283,7 +286,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
 
     def _decode_deposit_aura_bal(self, context: DecoderContext) -> DecodingOutput:
         """Decodes auraBAL deposit events (Base, Arbitrum, Polygon)."""
-        if context.tx_log.topics[0] != DEPOSIT_AURA_BAL_TOPIC:
+        if context.tx_log.topics[0] != DEPOSIT_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         received_amount = token_normalized_value_decimals(
@@ -306,7 +309,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
                 receive_note_suffix='from an Aura gauge',
             )
 
-        if context.tx_log.topics[0] == WITHDRAWN_AURA_BOOSTER:
+        if context.tx_log.topics[0] == WITHDRAWN_TOPIC:
             return self._decode_withdraw(context=context)
 
         return DEFAULT_DECODING_OUTPUT
@@ -324,13 +327,13 @@ class AuraFinanceCommonDecoder(DecoderInterface):
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
         decoders = {
-            GET_REWARD_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
-            CLAIM_REWARDS_L1_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
-            CLAIM_REWARDS_L2_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
-            WITHDRAW_AND_UNWRAP_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
+            GET_REWARD_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
+            CLAIM_REWARDS_L1_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
+            CLAIM_REWARDS_L2_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
+            WITHDRAW_AND_UNWRAP_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
         }
         if self.evm_inquirer.chain_id in (ChainID.ETHEREUM, ChainID.BASE):
-            decoders[LOCK_ETHEREUM_AND_BASE_4BYTE] = {STAKED_TOPIC: self._decode_lock_aura}
+            decoders[LOCK_ETHEREUM_AND_BASE_4BYTE] = {AURA_STAKED_TOPIC: self._decode_lock_aura}
         if self.evm_inquirer.chain_id != ChainID.ETHEREUM:
             decoders[LOCK_4BYTE] = {LOCKED_TOPIC: self._decode_lock_aura_bridged}
 

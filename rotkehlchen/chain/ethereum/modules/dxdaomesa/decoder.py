@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
 DEPOSIT = b'\xc1\x1c\xc3N\x93\xc6z\x938+\x99\xf2I\x8e\x997\x19\x87\x98\xf3\xc1\xc2\x88\x80\x08\xff\xc0\xee\xb8/h\xc4'  # noqa: E501
 ORDER_PLACEMENT = b'\xde\xcfo\xde\x82C\x98\x12\x99\xf7\xb7\xa7v\xf2\x9a\x9f\xc6z,\x98H\xe2]w\xc5\x0e\xb1\x1f\xa5\x8a~!'  # noqa: E501
 WITHDRAW_REQUEST = b',bE\xafPo\x0f\xc1\x08\x99\x18\xc0,\x1d\x01\xbd\xe9\xcc\x80v\t\xb34\xb3\xe7dMm\xfbZl^'  # noqa: E501
-WITHDRAW = b'\x9b\x1b\xfa\x7f\xa9\xeeB\n\x16\xe1$\xf7\x94\xc3Z\xc9\xf9\x04r\xac\xc9\x91@\xeb/dG\xc7\x14\xca\xd8\xeb'  # noqa: E501
 
 
 class DxdaomesaDecoder(DecoderInterface):
@@ -58,7 +58,7 @@ class DxdaomesaDecoder(DecoderInterface):
             return self._decode_order_placement(context=context)
         if context.tx_log.topics[0] == WITHDRAW_REQUEST:
             return self._decode_withdraw_request(context=context)
-        if context.tx_log.topics[0] == WITHDRAW:
+        if context.tx_log.topics[0] == WITHDRAW_TOPIC:
             return self._decode_withdraw(context=context)
 
         return DEFAULT_DECODING_OUTPUT

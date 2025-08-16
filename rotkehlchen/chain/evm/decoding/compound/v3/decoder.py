@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -29,7 +29,6 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import (
     COMPOUND_V3_SUPPLY,
     COMPOUND_V3_SUPPLY_COLLATERAL,
-    COMPOUND_V3_WITHDRAW,
     COMPOUND_V3_WITHDRAW_COLLATERAL,
     CPT_COMPOUND_V3,
     REWARD_CLAIMED,
@@ -369,7 +368,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
         if (
             context.tx_log.topics[0] not in {
                 COMPOUND_V3_SUPPLY, COMPOUND_V3_SUPPLY_COLLATERAL,
-                COMPOUND_V3_WITHDRAW, COMPOUND_V3_WITHDRAW_COLLATERAL,
+                WITHDRAW_TOPIC, COMPOUND_V3_WITHDRAW_COLLATERAL,
             } or self.base.any_tracked([
                 bytes_to_address(context.tx_log.topics[1]),  # from_address
                 bytes_to_address(context.tx_log.topics[2]),  # to_address
@@ -382,7 +381,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 context=context,
                 compound_token=compound_token,
             )
-        elif context.tx_log.topics[0] == COMPOUND_V3_WITHDRAW:
+        elif context.tx_log.topics[0] == WITHDRAW_TOPIC:
             return self._decode_withdraw_or_borrow_event(
                 context=context,
                 compound_token=compound_token,

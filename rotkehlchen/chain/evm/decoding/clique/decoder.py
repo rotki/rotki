@@ -1,7 +1,7 @@
 from abc import ABC
 
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.clique.constants import CLIQUE_CLAIMED
+from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext
 from rotkehlchen.fval import FVal
@@ -14,7 +14,7 @@ class CliqueAirdropDecoderInterface(DecoderInterface, ABC):
 
     def _decode_claim(self, context: DecoderContext) -> tuple[ChecksumEvmAddress, FVal] | None:
         """Just decode the claim part of a clique claim and return the amount and address"""
-        if context.tx_log.topics[0] != CLIQUE_CLAIMED:
+        if context.tx_log.topics[0] != CLAIMED_TOPIC:
             return None
 
         if not self.base.is_tracked(claiming_address := bytes_to_address(context.tx_log.topics[1])):  # noqa: E501

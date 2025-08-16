@@ -28,8 +28,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-MIGRATED = b'\x92\x8f\xd5S\x13$\xee\x87\xd7l\xc50}\xc3u\x80\x17M\xa7k\x85\xcdTm\xa61\xb2g\x0b\xc2f\xb5'  # noqa: E501
-
 
 class HedgeyDecoder(DecoderInterface):
 

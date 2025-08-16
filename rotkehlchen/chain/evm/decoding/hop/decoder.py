@@ -6,7 +6,12 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import (
+    ADD_LIQUIDITY_DYNAMIC_ASSETS,
+    DEFAULT_TOKEN_DECIMALS,
+    REWARD_PAID_TOPIC_V2,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP, HOP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.hop.structures import HopBridgeEventData
@@ -37,11 +42,9 @@ from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
-    ADD_LIQUIDITY,
     CLAIMED,
     REMOVE_LIQUIDITY,
     REMOVE_LIQUIDITY_ONE,
-    REWARDS_PAID,
     TOKEN_SWAP,
     TRANSFER_FROM_L1_COMPLETED,
     TRANSFER_SENT,
@@ -485,7 +488,7 @@ class HopCommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] == TOKEN_SWAP:
             return self._decode_token_swap(context=context)
 
-        if context.tx_log.topics[0] == ADD_LIQUIDITY:
+        if context.tx_log.topics[0] == ADD_LIQUIDITY_DYNAMIC_ASSETS:
             return self._decode_add_liquidity(context=context)
 
         if context.tx_log.topics[0] == REMOVE_LIQUIDITY:
@@ -514,7 +517,7 @@ class HopCommonDecoder(DecoderInterface):
                 product=EvmProduct.STAKING,
             )
 
-        if context.tx_log.topics[0] == REWARDS_PAID:
+        if context.tx_log.topics[0] == REWARD_PAID_TOPIC_V2:
             return self._decode_common_staking(
                 context=context,
                 event_type=HistoryEventType.RECEIVE,

@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.extrafi.cache import (
     get_existing_reward_pools,
@@ -26,7 +27,6 @@ from rotkehlchen.chain.evm.decoding.extrafi.constants import (
     EXTRAFI_STAKING_CONTRACT,
     INVEST_TO_VAULT_POSITION,
     REDEEM,
-    REWARD_PAID,
     USER_CHECKPOINT,
     VOTE_ESCROW,
 )
@@ -180,7 +180,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
 
     def _handle_pool_rewards(self, context: DecoderContext) -> DecodingOutput:
         """Handle rewards claimed for depositing in extrafi pools"""
-        if context.tx_log.topics[0] != REWARD_PAID:
+        if context.tx_log.topics[0] != REWARD_PAID_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         user = bytes_to_address(context.tx_log.topics[1])
@@ -413,7 +413,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def decode_lending_claim_reward(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != REWARD_PAID:
+        if context.tx_log.topics[0] != REWARD_PAID_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
         token_address = bytes_to_address(context.tx_log.topics[2])

@@ -2,7 +2,11 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.makerdao.constants import MAKERDAO_ICON, MAKERDAO_LABEL
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
+    MAKER_BURN_TOPIC,
+    MAKERDAO_ICON,
+    MAKERDAO_LABEL,
+)
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, ERC20_OR_ERC721_TRANSFER
@@ -33,7 +37,6 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 POOLED_ETHER_ADDRESS = string_to_evm_address('0xf53AD2c6851052A81B42133467480961B2321C09')
-PETH_BURN_EVENT_TOPIC = b'\xcc\x16\xf5\xdb\xb4\x872\x80\x81\\\x1e\xe0\x9d\xbd\x06sl\xff\xcc\x18D\x12\xcfzq\xa0\xfd\xb7]9|\xa5'  # noqa: E501
 PETH_MINT_EVENT_TOPIC = b'\x0fg\x98\xa5`y:T\xc3\xbc\xfe\x86\xa9<\xde\x1es\x08}\x94L\x0e\xa2\x05D\x13}A!9h\x85'  # noqa: E501
 SAI_CDP_MIGRATION_TOPIC = b'\n\t\x94\xe6\x12<i3\xeeu\x98\x86\x90WW\xde\xfe"\xc1\xf5\xd0<\xd1\xee1\\\xb6\xbd\xe8\xd1\x1a\xe8'  # noqa: E501
 MAKERDAO_SAITUB_CONTRACT = string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3')
@@ -95,7 +98,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 # look for the pooled ether burn event to match the withdrawal
                 for log in context.all_logs:
                     if (
-                        log.topics[0] == PETH_BURN_EVENT_TOPIC and
+                        log.topics[0] == MAKER_BURN_TOPIC and
                         log.address == POOLED_ETHER_ADDRESS and
                         # checks that the amount to be withdrawn matches the amount of PETH burnt
                         int.from_bytes(context.tx_log.topics[3]) == int.from_bytes(log.data[:32])

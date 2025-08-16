@@ -5,7 +5,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, STAKING_DEPOSIT
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
@@ -36,7 +36,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 TOKENS_CLAIMED: Final = b'\x89n\x03If\xea\xaf\x1a\xdcT\xac\xc0\xf2W\x05o\xeb\xbd0\x0c\x9eG\x18,\xf7a\x98,\xf1\xf5\xe40'  # noqa: E501
-STAKING_DEPOSIT: Final = b'\xf9C\xcf\x10\xefM\x1e29\xf4qm\xde\xcd\xf5F\xe8\xba\x8a\xb0\xe4\x1d\xea\xfd\x9aq\xa9\x996\x82~E'  # noqa: E501
 STAKING_WITHDRAW: Final = b"\x02\xf2Rp\xa4\xd8{\xeau\xdbT\x1c\xdf\xe5Y3J'[J#5 \xedl\n$)f|\xca\x94"
 
 

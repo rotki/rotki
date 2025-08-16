@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
     decode_uniswap_v2_like_swap,
 )
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
+from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -25,13 +26,8 @@ from rotkehlchen.types import EvmTransaction
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
-
-# https://www.4byte.directory/api/v1/event-signatures/?hex_signature=0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822  # noqa: E501
-MINT_SIGNATURE = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
-BURN_SIGNATURE = b'\xdc\xcdA/\x0b\x12R\x81\x9c\xb1\xfd3\x0b\x93"L\xa4&\x12\x89+\xb3\xf4\xf7\x89\x97nm\x81\x93d\x96'  # noqa: E501
-
-UNISWAP_V2_FACTORY = string_to_evm_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
-UNISWAP_V2_INIT_CODE_HASH = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f'
+UNISWAP_V2_FACTORY: Final = string_to_evm_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
+UNISWAP_V2_INIT_CODE_HASH: Final = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f'  # noqa: E501
 
 
 class Uniswapv2Decoder(DecoderInterface):
@@ -104,7 +100,7 @@ class Uniswapv2Decoder(DecoderInterface):
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
     ) -> DecodingOutput:
-        if tx_log.topics[0] == MINT_SIGNATURE:
+        if tx_log.topics[0] == MINT_TOPIC:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
                 decoded_events=decoded_events,
@@ -117,7 +113,7 @@ class Uniswapv2Decoder(DecoderInterface):
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
             )
-        if tx_log.topics[0] == BURN_SIGNATURE:
+        if tx_log.topics[0] == BURN_TOPIC:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
                 decoded_events=decoded_events,
