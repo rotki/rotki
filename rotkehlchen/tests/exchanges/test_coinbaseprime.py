@@ -143,12 +143,13 @@ def test_process_trade():
         'time_in_force': 'IMMEDIATE_OR_CANCEL',
         'type': 'MARKET',
         'user_id': user_id,
-    }) == [SwapEvent(
+    }, exchange_name=(exchange_name := 'coinbaseprime1')) == [SwapEvent(
         timestamp=TimestampMS(1728997300000),
         location=Location.COINBASEPRIME,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('49950.06'),
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.COINBASEPRIME,
             unique_id=str(unique_id_1),
@@ -159,6 +160,7 @@ def test_process_trade():
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('SUI'),
         amount=FVal('23304.3'),
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.COINBASEPRIME,
             unique_id=str(unique_id_1),
@@ -169,6 +171,7 @@ def test_process_trade():
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('49.94'),
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.COINBASEPRIME,
             unique_id=str(unique_id_1),
@@ -199,7 +202,7 @@ def test_process_trade():
         'time_in_force': 'GOOD_UNTIL_CANCELLED',
         'type': 'LIMIT',
         'user_id': user_id,
-    }) == [SwapEvent(
+    }, exchange_name=exchange_name) == [SwapEvent(
         timestamp=TimestampMS(1679777345000),
         location=Location.COINBASEPRIME,
         event_subtype=HistoryEventSubType.SPEND,
@@ -209,6 +212,7 @@ def test_process_trade():
             location=Location.COINBASEPRIME,
             unique_id=str(unique_id_2),
         ),
+        location_label=exchange_name,
     ), SwapEvent(
         timestamp=TimestampMS(1679777345000),
         location=Location.COINBASEPRIME,
@@ -219,6 +223,7 @@ def test_process_trade():
             location=Location.COINBASEPRIME,
             unique_id=str(unique_id_2),
         ),
+        location_label=exchange_name,
     ), SwapEvent(
         timestamp=TimestampMS(1679777345000),
         location=Location.COINBASEPRIME,
@@ -229,6 +234,7 @@ def test_process_trade():
             location=Location.COINBASEPRIME,
             unique_id=str(unique_id_2),
         ),
+        location_label=exchange_name,
     )]
 
 
@@ -504,6 +510,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.SPEND,
             amount=FVal(50),
             asset=A_USD,
+            location_label=function_scope_coinbaseprime.name,
             notes='Swap 50 USD in Coinbase Prime',
         ), HistoryEvent(
             identifier=2,
@@ -515,6 +522,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.RECEIVE,
             amount=FVal(50),
             asset=A_USDC,
+            location_label=function_scope_coinbaseprime.name,
             notes='Receive 50 USDC from a Coinbase Prime conversion',
         ), HistoryEvent(
             identifier=3,
@@ -526,6 +534,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.SPEND,
             amount=FVal(150),
             asset=A_USDC,
+            location_label=function_scope_coinbaseprime.name,
             notes='Swap 150 USDC in Coinbase Prime',
         ), HistoryEvent(
             identifier=4,
@@ -537,6 +546,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.RECEIVE,
             amount=FVal(150),
             asset=A_USD,
+            location_label=function_scope_coinbaseprime.name,
             notes='Receive 150 USD from a Coinbase Prime conversion',
         ), HistoryEvent(
             identifier=5,
@@ -548,6 +558,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.FEE,
             amount=ONE,
             asset=A_USDC,
+            location_label=function_scope_coinbaseprime.name,
             notes='Spend 1 USDC as Coinbase Prime conversion fee',
         ), HistoryEvent(
             identifier=6,
@@ -559,6 +570,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.REWARD,
             amount=FVal(20),
             asset=A_ETH,
+            location_label=function_scope_coinbaseprime.name,
             notes='Receive 20 ETH as Coinbase Prime staking reward',
         ), SwapEvent(
             identifier=8,
@@ -571,6 +583,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
                 location=Location.COINBASEPRIME,
                 unique_id=fifth_id,
             ),
+            location_label=function_scope_coinbaseprime.name,
         ), SwapEvent(
             identifier=9,
             timestamp=TimestampMS(1728997300000),
@@ -582,6 +595,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
                 location=Location.COINBASEPRIME,
                 unique_id=fifth_id,
             ),
+            location_label=function_scope_coinbaseprime.name,
         ), SwapEvent(
             identifier=10,
             timestamp=TimestampMS(1728997300000),
@@ -593,6 +607,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
                 location=Location.COINBASEPRIME,
                 unique_id=fifth_id,
             ),
+            location_label=function_scope_coinbaseprime.name,
         ),
     ]
 

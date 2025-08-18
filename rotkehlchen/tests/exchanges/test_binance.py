@@ -123,6 +123,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='1',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1512561941000),
             location=Location.BINANCE,
@@ -133,6 +134,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='1',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1512561941000),
             location=Location.BINANCE,
@@ -143,6 +145,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='1',
             ),
+            location_label=binance.name,
         )],
         [SwapEvent(
             timestamp=TimestampMS(1531117990000),
@@ -154,6 +157,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='2',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1531117990000),
             location=Location.BINANCE,
@@ -164,6 +168,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='2',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1531117990000),
             location=Location.BINANCE,
@@ -174,6 +179,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='2',
             ),
+            location_label=binance.name,
         )],
         [SwapEvent(
             timestamp=TimestampMS(1531728338000),
@@ -185,6 +191,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='3',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1531728338000),
             location=Location.BINANCE,
@@ -195,6 +202,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='3',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1531728338000),
             location=Location.BINANCE,
@@ -205,6 +213,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='3',
             ),
+            location_label=binance.name,
         )],
         [SwapEvent(
             timestamp=TimestampMS(1531871806000),
@@ -216,6 +225,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='4',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1531871806000),
             location=Location.BINANCE,
@@ -226,6 +236,7 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='4',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1531871806000),
             location=Location.BINANCE,
@@ -236,11 +247,17 @@ def test_trade_from_binance(function_scope_binance):
                 location=Location.BINANCE,
                 unique_id='4',
             ),
+            location_label=binance.name,
         )],
     ]
 
     for idx, binance_trade in enumerate(binance_trades_list):
-        _, events = trade_from_binance(binance_trade, binance.symbols_to_pair, location=Location.BINANCE)  # noqa: E501
+        _, events = trade_from_binance(
+            binance_trade,
+            binance.symbols_to_pair,
+            location=Location.BINANCE,
+            exchange_name=binance.name,
+        )
         assert events == our_expected_list[idx]
         assert isinstance(events[2].asset, Asset)
 
@@ -359,6 +376,7 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
             location=Location.BINANCE,
             unique_id='28457',
         ),
+        location_label=binance.name,
     ), SwapEvent(
         timestamp=TimestampMS(1499865549590),
         location=Location.BINANCE,
@@ -369,6 +387,7 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
             location=Location.BINANCE,
             unique_id='28457',
         ),
+        location_label=binance.name,
     ), SwapEvent(
         timestamp=TimestampMS(1499865549590),
         location=Location.BINANCE,
@@ -379,35 +398,36 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
             location=Location.BINANCE,
             unique_id='28457',
         ),
+        location_label=binance.name,
     ), SwapEvent(
         timestamp=TimestampMS(1624529919000),
         location=Location.BINANCE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('19.800000064'),
-        location_label='binance',
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.BINANCE,
             unique_id='353fca443f06466db0c4dc89f94f027a',
         ),
+        location_label=binance.name,
     ), SwapEvent(
         timestamp=TimestampMS(1624529919000),
         location=Location.BINANCE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_LUNA,
         amount=FVal('4.462'),
-        location_label='binance',
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.BINANCE,
             unique_id='353fca443f06466db0c4dc89f94f027a',
         ),
+        location_label=binance.name,
     ), SwapEvent(
         timestamp=TimestampMS(1624529919000),
         location=Location.BINANCE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('0.2'),
-        location_label='binance',
+        location_label=binance.name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.BINANCE,
             unique_id='353fca443f06466db0c4dc89f94f027a',
@@ -418,7 +438,7 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('4.462'),
-        location_label='binance',
+        location_label=binance.name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.BINANCE,
             unique_id='463fca443f06466db0c4dc89f94f027a',
@@ -429,7 +449,7 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('19.800000064'),
-        location_label='binance',
+        location_label=binance.name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.BINANCE,
             unique_id='463fca443f06466db0c4dc89f94f027a',
@@ -440,7 +460,7 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('0.2'),
-        location_label='binance',
+        location_label=binance.name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.BINANCE,
             unique_id='463fca443f06466db0c4dc89f94f027a',

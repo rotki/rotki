@@ -56,12 +56,13 @@ def test_name():
 
 
 def test_trade_from_poloniex():
-    assert trade_from_poloniex(TEST_POLO_TRADE) == [SwapEvent(
+    assert trade_from_poloniex(exchange_name=(exchange_name := 'poloniex1'), poloniex_trade=TEST_POLO_TRADE) == [SwapEvent(  # noqa: E501
         timestamp=TimestampMS(1500758317000),
         location=Location.POLONIEX,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(TEST_AMOUNT_STR),
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.POLONIEX,
             unique_id='192167',
@@ -72,6 +73,7 @@ def test_trade_from_poloniex():
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.1411665444631867'),
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.POLONIEX,
             unique_id='192167',
@@ -82,6 +84,7 @@ def test_trade_from_poloniex():
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal(TEST_FEE_STR),
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.POLONIEX,
             unique_id='192167',
@@ -93,32 +96,32 @@ def test_poloniex_trade_deserialization_errors():
     test_trade = TEST_POLO_TRADE.copy()
     test_trade['createTime'] = 'dsadsad'
     with pytest.raises(DeserializationError):
-        trade_from_poloniex(test_trade)
+        trade_from_poloniex(poloniex_trade=test_trade, exchange_name=(exchange_name := 'poloniex1'))  # noqa: E501
 
     test_trade = TEST_POLO_TRADE.copy()
     test_trade['side'] = 'lololol'
     with pytest.raises(DeserializationError):
-        trade_from_poloniex(test_trade)
+        trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
     test_trade = TEST_POLO_TRADE.copy()
     test_trade['quantity'] = None
     with pytest.raises(DeserializationError):
-        trade_from_poloniex(test_trade)
+        trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
     test_trade = TEST_POLO_TRADE.copy()
     test_trade['price'] = None
     with pytest.raises(DeserializationError):
-        trade_from_poloniex(test_trade)
+        trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
     test_trade = TEST_POLO_TRADE.copy()
     test_trade['feeAmount'] = ['a']
     with pytest.raises(DeserializationError):
-        trade_from_poloniex(test_trade)
+        trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
     test_trade = TEST_POLO_TRADE.copy()
     del test_trade['price']
     with pytest.raises(DeserializationError):
-        trade_from_poloniex(test_trade)
+        trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
 
 def test_poloniex_trade_with_asset_needing_conversion():
@@ -136,11 +139,12 @@ def test_poloniex_trade_with_asset_needing_conversion():
         'type': 'LIMIT',
         'side': 'SELL',
     }
-    events = trade_from_poloniex(poloniex_trade)
+    events = trade_from_poloniex(poloniex_trade=poloniex_trade, exchange_name=(exchange_name := 'poloniex'))  # noqa: E501
     assert events[0].asset == A_BTC
     assert events[1].asset == A_AIR2
     assert events[2].asset == A_AIR2
     assert events[0].location == Location.POLONIEX
+    assert all(event.location_label == exchange_name for event in events)
 
 
 def test_query_trade_history(poloniex: 'Poloniex'):
@@ -166,6 +170,7 @@ def test_query_trade_history(poloniex: 'Poloniex'):
                 location=Location.POLONIEX,
                 unique_id='394131412',
             ),
+            location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539713117000),
             location=Location.POLONIEX,
@@ -176,6 +181,7 @@ def test_query_trade_history(poloniex: 'Poloniex'):
                 location=Location.POLONIEX,
                 unique_id='394131412',
             ),
+            location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539713117000),
             location=Location.POLONIEX,
@@ -186,6 +192,7 @@ def test_query_trade_history(poloniex: 'Poloniex'):
                 location=Location.POLONIEX,
                 unique_id='394131412',
             ),
+            location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
             location=Location.POLONIEX,
@@ -196,6 +203,7 @@ def test_query_trade_history(poloniex: 'Poloniex'):
                 location=Location.POLONIEX,
                 unique_id='13536350',
             ),
+            location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
             location=Location.POLONIEX,
@@ -206,6 +214,7 @@ def test_query_trade_history(poloniex: 'Poloniex'):
                 location=Location.POLONIEX,
                 unique_id='13536350',
             ),
+            location_label=poloniex.name,
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
             location=Location.POLONIEX,
@@ -216,6 +225,7 @@ def test_query_trade_history(poloniex: 'Poloniex'):
                 location=Location.POLONIEX,
                 unique_id='13536350',
             ),
+            location_label=poloniex.name,
         )]
 
 

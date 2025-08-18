@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Users will be able to see the history event location label, even if the scramble setting is enabled.
+* :bug:`-` Exchange trade events will now properly show the exchange name in the location label field.
 
 * :release:`1.40.0 <2025-08-15>`
 * :bug:`-` Fix an issue where the selected filter suggestion is sometimes cleared in the combined filter.
