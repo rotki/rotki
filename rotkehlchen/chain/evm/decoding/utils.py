@@ -243,6 +243,7 @@ def get_vault_price(
         return ZERO_PRICE
 
     if (
+        vault_token.underlying_tokens is None or
         len(vault_token.underlying_tokens) == 0 or
         (underlying_token := get_token(
             evm_address=vault_token.underlying_tokens[0].address,
