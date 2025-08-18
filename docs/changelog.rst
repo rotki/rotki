@@ -3,8 +3,9 @@ Changelog
 =========
 
 * :feature:`-` Users can now manually reset cached Beefy Finance vault data to trigger re-pulling the data during decoding.
-* :bug:`-` Fix an issue where significant layout shifts occur due to the history events status banner suddenly appearing on the dashboard.
-* :bug:`10473` Fix 1inch v6 swap transactions not being properly decoded in certain scenarios.
+* :bug:`-` Paraswap swaps will be properly decoded when curve pool interactions are present in the same transaction.
+* :bug:`-` History events status banner will no longer cause layout shifts on the dashboard.
+* :bug:`10473` 1inch v6 swap transactions are now more accurately decoded.
 * :bug:`-` Users will be able to see the history event location label, even if the scramble setting is enabled.
 * :bug:`-` Exchange trade events will now properly show the exchange name in the location label field.
 
