@@ -113,6 +113,30 @@ try {
     $file = Get-Item $FilePath
     Write-Log "Signing file: $($file.FullName) ($([math]::Round($file.Length / 1MB, 2)) MB)"
     
+    # Create backup of the file before signing
+    $backupPath = "$($file.FullName).backup"
+    
+    # Check if backup already exists
+    if (Test-Path $backupPath) {
+        Write-Warning "Backup file already exists: $backupPath"
+        $response = Read-Host "Do you want to overwrite the existing backup? (Y/N)"
+        
+        if ($response -ne 'Y' -and $response -ne 'y') {
+            Write-Log "User chose not to overwrite existing backup. Exiting." -Level "INFO"
+            exit 0
+        }
+        
+        Write-Log "Overwriting existing backup..."
+    }
+    
+    Write-Log "Creating backup: $backupPath"
+    Copy-Item -Path $file.FullName -Destination $backupPath -Force
+    
+    if (-not (Test-Path $backupPath)) {
+        throw "Failed to create backup file"
+    }
+    Write-Log "Backup created successfully"
+    
     # Find signtool
     $signTool = Find-SignTool
     Write-Log "Using signtool: $signTool"
@@ -174,21 +198,81 @@ try {
         Write-Log "Signatures verified successfully"
     }
     
+    # Extract version from filename (expecting format like rotki-win32_x64-v1.39.1.exe)
+    $versionPattern = 'v?(\d+\.\d+\.\d+(?:\.\d+)?)'
+    if ($file.Name -match $versionPattern) {
+        $version = $Matches[1]
+    } else {
+        Write-Warning "Could not extract version from filename. Using 0.0.0"
+        $version = "0.0.0"
+    }
+    
+    # Create output directory
+    $outputDir = Join-Path $file.DirectoryName "rotki-$version-signed"
+    Write-Log "Creating output directory: $outputDir"
+    
+    if (-not (Test-Path $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+    }
+    
+    # Copy signed file to output directory
+    $signedFilePath = Join-Path $outputDir $file.Name
+    Write-Log "Copying signed file to output directory..."
+    Copy-Item -Path $file.FullName -Destination $signedFilePath -Force
+    
     # Generate SHA512 hash
     Write-Log "Generating SHA512 hash..."
-    $hash = Get-FileHash -Path $file.FullName -Algorithm SHA512
-    $hashFileName = "$($file.FullName).sha512"
+    $hash = Get-FileHash -Path $signedFilePath -Algorithm SHA512
+    $hashFileName = "$signedFilePath.sha512"
     
-    # Format: hash *filename (compatible with sha512sum)
-    $hashContent = "$($hash.Hash.ToLower()) *$($file.Name)"
+    # Simple format: just the capitalized hash
+    $hashContent = $hash.Hash.ToUpper()
     $hashContent | Out-File -FilePath $hashFileName -Encoding ASCII
     
+    # Generate latest.yml for Electron auto-updater
+    Write-Log "Generating latest.yml for auto-updater..."
+    
+    # Convert hex hash to base64 for Electron auto-updater
+    # FromHexString is not available in older PowerShell, so we convert manually
+    $hashHex = $hash.Hash
+    $hashBytes = New-Object byte[] ($hashHex.Length / 2)
+    for ($i = 0; $i -lt $hashHex.Length; $i += 2) {
+        $hashBytes[$i / 2] = [System.Convert]::ToByte($hashHex.Substring($i, 2), 16)
+    }
+    $hashBase64 = [System.Convert]::ToBase64String($hashBytes)
+    
+    # Get file size
+    $fileSize = (Get-Item $signedFilePath).Length
+    
+    # Get current date in ISO format
+    $releaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'")
+    
+    # Create YAML content
+    $yamlContent = @"
+version: $version
+files:
+  - url: $($file.Name)
+    sha512: $hashBase64
+    size: $fileSize
+path: $($file.Name)
+sha512: $hashBase64
+releaseDate: '$releaseDate'
+"@
+    
+    $yamlFileName = Join-Path $outputDir "latest.yml"
+    $yamlContent | Out-File -FilePath $yamlFileName -Encoding UTF8
+    
+    Write-Log "Generated auto-updater file: $yamlFileName"
+    
     Write-Log "Process completed successfully!"
-    Write-Log "Signed file: $($file.FullName)"
-    Write-Log "SHA512 hash: $hashFileName"
+    Write-Log "Output directory: $outputDir"
+    Write-Log "  - Signed file: $($file.Name)"
+    Write-Log "  - SHA512 hash: $($file.Name).sha512"
+    Write-Log "  - Auto-updater: latest.yml"
+    Write-Log "Original backup: $backupPath"
     
     # Display file info
-    $signedSize = [math]::Round((Get-Item $file.FullName).Length / 1MB, 2)
+    $signedSize = [math]::Round((Get-Item $signedFilePath).Length / 1MB, 2)
     Write-Log "Final size: $signedSize MB"
 }
 catch {
