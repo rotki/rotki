@@ -27,7 +27,7 @@ FROM ghcr.io/astral-sh/uv:python3.11-bookworm AS backend-build-stage
 ARG TARGETARCH
 ARG ROTKI_VERSION
 ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
-ARG PYINSTALLER_VERSION=v6.7.0
+ARG PYINSTALLER_VERSION=v6.15.0
 
 WORKDIR /app
 COPY pyproject.toml uv.lock* ./
