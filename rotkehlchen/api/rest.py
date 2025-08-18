@@ -4784,6 +4784,12 @@ class RestAPI:
                         'DELETE FROM unique_cache WHERE key LIKE ?',
                         (f'{CacheType.MERKL_REWARD_PROTOCOLS.serialize()}%',),
                     )
+            case ProtocolsWithCache.BEEFY_FINANCE:
+                with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                    write_cursor.execute(
+                        'DELETE FROM unique_cache WHERE key LIKE ?',
+                        (f'{CacheType.BEEFY_VAULTS.serialize()}%',),
+                    )
 
         failed_to_update = []
         for (cache, cache_type, query_method, chain_id, inquirer) in cache_rules:
