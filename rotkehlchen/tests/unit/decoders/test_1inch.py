@@ -980,3 +980,62 @@ def test_1inch4_swap_via_defi_plaza(ethereum_inquirer, ethereum_accounts):
         address=ONEINCH_V4_ROUTER,
         counterparty=CPT_ONEINCH_V4,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xAc305b47BB34AD6BB566288050920e9307fd23A7']])
+def test_1inch_swap_via_pancake(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x5a092c4d40f2f6a090ec00c38c5b6266bd07f4e6ab3ff87f18c575749a4e60ec')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1753079607000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000003936113484'),
+        location_label=(user := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=13,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:42161/erc20:0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978'),
+        amount=FVal(approval_amount := '47.534435349931445199'),
+        location_label=user,
+        notes=f'Set CRV spending approval of {user} by {ONEINCH_V6_ROUTER} to {approval_amount}',
+        address=ONEINCH_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=14,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:42161/erc20:0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978'),
+        amount=FVal(amount_out := '7.74372251908424143'),
+        location_label=user,
+        notes=f'Swap {amount_out} CRV in {CPT_ONEINCH_V6}',
+        address=ONEINCH_V6_ROUTER,
+        counterparty=CPT_ONEINCH_V6,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=15,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(amount_in := '0.002036613409952366'),
+        location_label=user,
+        notes=f'Receive {amount_in} ETH as a result of a {CPT_ONEINCH_V6} swap',
+        address=ONEINCH_V6_ROUTER,
+        counterparty=CPT_ONEINCH_V6,
+    )]

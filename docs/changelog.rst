@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`-` Users can now manually reset cached Beefy Finance vault data to trigger re-pulling the data during decoding.
 * :bug:`-` Fix an issue where significant layout shifts occur due to the history events status banner suddenly appearing on the dashboard.
+* :bug:`10473` Fix 1inch v6 swap transactions not being properly decoded in certain scenarios.
 * :bug:`-` Users will be able to see the history event location label, even if the scramble setting is enabled.
 
 * :release:`1.40.0 <2025-08-15>`
