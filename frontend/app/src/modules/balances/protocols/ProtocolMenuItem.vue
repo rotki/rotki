@@ -25,7 +25,6 @@ const dot = '•';
     <ProtocolIcon
       :protocol="toSnakeCase(protocol)"
       :size="20"
-      :loading="loading"
     />
 
     <div class="flex flex-col flex-1">
@@ -44,6 +43,7 @@ const dot = '•';
           :value="protocolBalance.amount"
           :asset="asset"
           :asset-padding="0.1"
+          :loading="loading"
           data-cy="protocol-menu-amount"
         />
         <span class="text-rui-text-secondary">
@@ -53,6 +53,7 @@ const dot = '•';
           :asset-padding="0.1"
           fiat-currency="USD"
           :value="protocolBalance.usdValue"
+          :loading="loading"
           show-currency="symbol"
           data-cy="protocol-menu-value"
         />

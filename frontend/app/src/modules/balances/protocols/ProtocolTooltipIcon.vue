@@ -41,7 +41,6 @@ const name = computed<string>(() => {
       <ProtocolIcon
         :protocol="transformCase(protocol)"
         :size="20"
-        :loading="loading"
       />
     </template>
 
@@ -59,11 +58,13 @@ const name = computed<string>(() => {
         :value="protocolBalance.amount"
         :asset="asset"
         :asset-padding="0.1"
+        :loading="loading"
         data-cy="top-protocol-amount"
       />
       <AmountDisplay
         :asset-padding="0.1"
         fiat-currency="USD"
+        :loading="loading"
         :value="protocolBalance.usdValue"
         show-currency="symbol"
         data-cy="top-protocol-value"
