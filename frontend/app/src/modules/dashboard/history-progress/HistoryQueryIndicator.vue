@@ -2,6 +2,7 @@
 import type { BlockchainAccount } from '@/types/blockchain/accounts';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useRefWithDebounce } from '@/composables/ref';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import {
@@ -29,7 +30,8 @@ const { appVersion } = storeToRefs(useMainStore());
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 
 const router = useRouter();
-const { processing } = useHistoryEventsStatus();
+const { processing: rawProcessing } = useHistoryEventsStatus();
+const processing = useRefWithDebounce(rawProcessing, 400);
 const { allTxChainsInfo } = useSupportedChains();
 const userId = useLoggedUserIdentifier();
 const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();

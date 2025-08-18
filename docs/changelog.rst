@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix an issue where significant layout shifts occur due to the history events status banner suddenly appearing on the dashboard.
 * :bug:`-` Users will be able to see the history event location label, even if the scramble setting is enabled.
 
 * :release:`1.40.0 <2025-08-15>`

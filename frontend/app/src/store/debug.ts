@@ -14,6 +14,12 @@ function convert(data: any): any {
   if (data instanceof BigNumber)
     return `bn::${data.toString()}`;
 
+  if (data instanceof Set)
+    return { __type: 'Set', values: Array.from(data).map(item => convert(item)) };
+
+  if (data instanceof Map)
+    return { __type: 'Map', entries: Array.from(data.entries()).map(([k, v]) => [convert(k), convert(v)]) };
+
   const converted: Record<string, any> = {};
   Object.keys(data).map((key) => {
     const datum = data[key];
@@ -41,9 +47,15 @@ function getState(key: string): any {
   if (!items)
     return null;
 
-  return JSON.parse(items, (key1, value) => {
+  return JSON.parse(items, (_, value) => {
     if (typeof value === 'string' && value.startsWith('bn::'))
       return bigNumberify(value.replace('bn::', ''));
+
+    if (isObject(value) && value.__type === 'Set')
+      return new Set(value.values);
+
+    if (isObject(value) && value.__type === 'Map')
+      return new Map(value.entries);
 
     return value;
   });
