@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import { useRefWithDebounce } from '@/composables/ref';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -13,8 +14,7 @@ export function useBalanceQueries(connected: Ref<boolean>, connectedAddress: Ref
   const { addresses } = useAccountAddresses();
 
   const queryingBalances = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-  const queryingBalancesDebounced = refDebounced(queryingBalances, 200);
-  const useQueryingBalances = logicOr(queryingBalances, queryingBalancesDebounced);
+  const useQueryingBalances = useRefWithDebounce(queryingBalances, 200);
 
   const warnUntrackedAddress = computed<boolean>(() => {
     const address = get(connectedAddress);

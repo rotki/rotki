@@ -42,6 +42,25 @@ const showDynamicMessage = computed(() => get(activeDashboardMessages).length > 
 
 const { height: floatingHeight } = useElementSize(floatingRef);
 
+watch(floatingHeight, (newHeight, oldHeight) => {
+  const diff = newHeight - oldHeight;
+  if (diff !== 0) {
+    const scrollElement = document.documentElement.scrollTop > 0 ? document.documentElement : document.body;
+    const currentScroll = scrollElement.scrollTop;
+
+    // Temporarily disable smooth scrolling
+    const originalBehavior = scrollElement.style.scrollBehavior;
+    scrollElement.style.scrollBehavior = 'auto';
+
+    scrollElement.scrollTop = currentScroll + diff;
+
+    // Restore original scroll behavior after a frame
+    requestAnimationFrame(() => {
+      scrollElement.style.scrollBehavior = originalBehavior;
+    });
+  }
+});
+
 const paddingTop = computed(() => get(floatingHeight) || 0);
 </script>
 

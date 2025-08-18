@@ -5,6 +5,7 @@ import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import { flatten } from 'es-toolkit';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useRefWithDebounce } from '@/composables/ref';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
@@ -120,7 +121,7 @@ export function useHistoryEventsData(
     return mapping;
   });
 
-  const loading = refDebounced(logicOr(groupLoading, eventsLoading), 100);
+  const loading = useRefWithDebounce(logicOr(groupLoading, eventsLoading), 100);
   const hasIgnoredEvent = useArraySome(events, event => Array.isArray(event) && event.some(item => item.ignoredInAccounting));
 
   const flattenedGroups = computed<HistoryEventEntry[]>(() => flatten(get(data)));

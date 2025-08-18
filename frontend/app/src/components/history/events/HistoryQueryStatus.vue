@@ -10,6 +10,7 @@ import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryS
 import HistoryQueryStatusDialog from '@/components/history/events/HistoryQueryStatusDialog.vue';
 import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import { useRefWithDebounce } from '@/composables/ref';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
@@ -64,8 +65,7 @@ const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === 'query');
 
 const show = computed(() => get(loading) || get(anyEventsDecoding) || get(receivingProtocolCacheStatus) || get(items).length > 0);
-const showDebounced = refDebounced(show, 400);
-const usedShow = logicOr(show, showDebounced);
+const usedShow = useRefWithDebounce(show, 400);
 
 function getItemKey(item: TxQueryStatusData | HistoryEventsQueryData) {
   if ('eventType' in item)
