@@ -1,5 +1,6 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
+import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/utils/logging';
 
@@ -41,7 +42,6 @@ export function useItemCache<T>(
   const cache = ref<Record<string, T | null>>({});
   const pending = ref<Record<string, boolean>>({});
   const batch = ref<string[]>([]);
-  const currentBatchKeys = new Set<string>();
 
   const deleteCacheKey = (key: string): void => {
     const copy = { ...get(cache) };
@@ -70,37 +70,15 @@ export function useItemCache<T>(
     set(pending, copy);
   };
 
-  const put = (key: string, item: T, isInBatch: boolean = false): void => {
+  const put = (key: string, item: T): void => {
     recent.delete(key);
 
-    // Check if we need to evict items
     if (recent.size === options.size) {
       logger.debug(`Hit cache size of ${options.size} going to evict items`);
-
-      if (isInBatch) {
-        // During batch processing, try to evict items not in the current batch
-        let removeKey: string | undefined;
-        for (const [k] of recent) {
-          if (!currentBatchKeys.has(k)) {
-            removeKey = k;
-            break;
-          }
-        }
-
-        // Only evict if we found an item not in the current batch
-        if (removeKey) {
-          recent.delete(removeKey);
-          deleteCacheKey(removeKey);
-        }
-      }
-      else {
-        // Not in batch, evict the oldest item normally
-        const removeKey = recent.keys().next().value;
-        if (removeKey) {
-          recent.delete(removeKey);
-          deleteCacheKey(removeKey);
-        }
-      }
+      const removeKey = recent.keys().next().value;
+      assert(removeKey, 'removeKey is null or undefined');
+      recent.delete(removeKey);
+      deleteCacheKey(removeKey);
     }
     recent.set(key, Date.now() + options.expiry);
     updateCacheKey(key, item);
@@ -116,17 +94,11 @@ export function useItemCache<T>(
   }, 800);
 
   async function processBatch(keys: string[]): Promise<void> {
-    // Track keys in current batch
-    currentBatchKeys.clear();
-    for (const key of keys) {
-      currentBatchKeys.add(key);
-    }
-
     try {
       const batch = await fetch(keys);
       for (const { item, key } of batch()) {
         if (item) {
-          put(key, item, true); // Pass true to indicate this is part of a batch
+          put(key, item);
         }
         else {
           if (import.meta.env.VITE_VERBOSE_CACHE)
@@ -144,8 +116,6 @@ export function useItemCache<T>(
     }
     finally {
       for (const key of keys) resetPending(key);
-      // Clear batch tracking after processing
-      currentBatchKeys.clear();
     }
   }
 
