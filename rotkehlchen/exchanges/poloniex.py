@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
+def trade_from_poloniex(exchange_name: str, poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
     """Convert a poloniex trade returned from poloniex trade history into a list of SwapEvents.
 
     Throws:
@@ -110,6 +110,7 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
         spend=spend,
         receive=receive,
         fee=fee,
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.POLONIEX,
             unique_id=str(poloniex_trade['id']),
@@ -462,7 +463,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
         try:
             if account_type == 'SPOT':
                 if start_ts < deserialize_timestamp_from_intms(trade_data['createTime']) < end_ts:
-                    return trade_from_poloniex(trade_data)
+                    return trade_from_poloniex(poloniex_trade=trade_data, exchange_name=self.name)
             else:
                 log.warning(
                     f'Error deserializing a poloniex trade. Unknown trade '

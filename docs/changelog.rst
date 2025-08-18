@@ -6,6 +6,7 @@ Changelog
 * :bug:`-` Fix an issue where significant layout shifts occur due to the history events status banner suddenly appearing on the dashboard.
 * :bug:`10473` Fix 1inch v6 swap transactions not being properly decoded in certain scenarios.
 * :bug:`-` Users will be able to see the history event location label, even if the scramble setting is enabled.
+* :bug:`-` Exchange trade events will now properly show the exchange name in the location label field.
 
 * :release:`1.40.0 <2025-08-15>`
 * :bug:`-` Fix an issue where the selected filter suggestion is sometimes cleared in the combined filter.

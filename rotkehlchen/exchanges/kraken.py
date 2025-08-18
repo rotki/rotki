@@ -629,6 +629,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     location=self.location,
                     unique_id=exchange_uuid,
                 ),
+                location_label=self.name,
             )
 
         if spend_part is None or receive_part is None:
@@ -659,6 +660,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 location=self.location,
                 unique_id=exchange_uuid,
             ),
+            location_label=self.name,
         )
 
     def process_kraken_trades(
@@ -726,6 +728,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         location=self.location,
                         unique_id='adjustment' + a1.event_identifier + a2.event_identifier,
                     ),
+                    location_label=self.name,
                 ))
                 # Remove these adjustments since they are now represented by SwapEvents
                 adjustments.remove(a1)
