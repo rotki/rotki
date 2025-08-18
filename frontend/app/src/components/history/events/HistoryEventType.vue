@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import type { Blockchain } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
-import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events/schemas';
+import type {
+  AssetMovementEvent,
+  HistoryEventEntry,
+  OnlineHistoryEvent,
+  SwapEvent,
+} from '@/types/history/events/schemas';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useSupportedChains } from '@/composables/info/chains';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
 import {
   isAssetMovementEvent,
   isOnlineHistoryEvent,
@@ -24,13 +30,13 @@ const { event } = toRefs(props);
 
 const { getEventTypeData } = useHistoryEventMappings();
 const attrs = getEventTypeData(event);
-const { getChain } = useSupportedChains();
+const { matchChain } = useSupportedChains();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | undefined>(() => {
+const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | SwapEvent | undefined>(() => {
   const event = props.event;
-  if ((isOnlineHistoryEvent(event) && !getChain(event.location, undefined)) || isAssetMovementEvent(event)) {
+  if (((isOnlineHistoryEvent(event) || isSwapEvent(event)) && !matchChain(event.location)) || isAssetMovementEvent(event)) {
     return event;
   }
 
@@ -77,6 +83,7 @@ const isInformational = computed(() => get(event).eventType === 'informational')
           class="mr-2"
         />
         <HashLink
+          :no-scramble="!!exchangeEvent"
           :text="event.locationLabel"
           :location="event.location"
         />
