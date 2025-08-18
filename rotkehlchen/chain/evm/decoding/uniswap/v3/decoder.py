@@ -28,7 +28,10 @@ from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     CPT_UNISWAP_V3,
     UNISWAP_ICON,
 )
-from rotkehlchen.chain.evm.decoding.uniswap.utils import decode_basic_uniswap_info
+from rotkehlchen.chain.evm.decoding.uniswap.utils import (
+    decode_basic_uniswap_info,
+    get_uniswap_swap_amounts,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     COLLECT_LIQUIDITY_SIGNATURE,
     INCREASE_LIQUIDITY_SIGNATURE,
@@ -199,17 +202,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         if tx_log.topics[0] != SWAP_SIGNATURE:
             return DEFAULT_DECODING_OUTPUT
 
-        # Uniswap V3 represents the delta of tokens in the pool with a signed integer
-        # for each token. In the transaction we have the difference of tokens in the pool
-        # for the token0 [0:32] and the token1 [32:64]. If that difference is negative it
-        # means that the tokens are leaving the pool (the user receives them) and if it is
-        # positive they get into the pool (the user sends them to the pool)
-        delta_token_0 = int.from_bytes(tx_log.data[0:32], signed=True)
-        delta_token_1 = int.from_bytes(tx_log.data[32:64], signed=True)
-        if delta_token_0 > 0:
-            amount_sent, amount_received = delta_token_0, -delta_token_1
-        else:
-            amount_sent, amount_received = delta_token_1, -delta_token_0
+        amount_received, amount_sent = get_uniswap_swap_amounts(tx_log=tx_log)
 
         # Uniswap V3 pools are used with complex routers/aggregators and there can be
         # multiple spend and multiple receive events that are hard to decode by looking only
@@ -585,9 +578,8 @@ class Uniswapv3CommonDecoder(DecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(
-            identifier=CPT_UNISWAP_V3,
-            label=CPT_UNISWAP_V3.capitalize().replace('-v', ' V'),
+        return (CounterpartyDetails.from_versioned_counterparty(
+            counterparty=CPT_UNISWAP_V3,
             image=UNISWAP_ICON,
         ),)
 

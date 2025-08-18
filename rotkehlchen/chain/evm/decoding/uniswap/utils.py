@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
+from rotkehlchen.chain.evm.decoding.uniswap.v4.constants import V4_SWAP_TOPIC
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -12,6 +13,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 
@@ -101,3 +103,28 @@ def decode_basic_uniswap_info(
         events_list=decoded_events,
     )
     return DecodingOutput(process_swaps=True)
+
+
+def get_uniswap_swap_amounts(tx_log: 'EvmTxReceiptLog') -> tuple[int, int]:
+    """Get the amount received and amount sent in a swap from the swap tx_log.
+
+    Uniswap represents the delta of tokens in the pool with a signed integer.
+    In V3 the negative delta indicates the amount leaving the pool (the user receives them),
+    and positive indicates the amount entering the pool (the user sends them to the pool).
+    In V4 this is reversed - negative indicates the amount entering the pool (sent by the user),
+    and positive indicates the amount leaving the pool (received by the user).
+
+    The caller is responsible for only calling this function with a swap tx_log.
+    Returns a tuple of (amount_received, amount_sent).
+    """
+    delta_token_0 = int.from_bytes(tx_log.data[0:32], signed=True)
+    delta_token_1 = int.from_bytes(tx_log.data[32:64], signed=True)
+    if delta_token_0 > 0:
+        amount_a, amount_b = delta_token_0, -delta_token_1
+    else:
+        amount_a, amount_b = delta_token_1, -delta_token_0
+
+    if tx_log.topics[0] == V4_SWAP_TOPIC:
+        return amount_a, amount_b
+
+    return amount_b, amount_a  # V3

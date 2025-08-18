@@ -24,3 +24,22 @@ class CounterpartyDetails(NamedTuple):
             data['icon'] = self.icon
 
         return data
+
+    @classmethod
+    def from_versioned_counterparty(
+            cls,
+            counterparty: str,
+            image: str | None = None,
+            darkmode_image: str | None = None,
+            icon: str | None = None,
+    ) -> 'CounterpartyDetails':
+        """Create a CounterpartyDetails from a counterparty identifier
+        ending with '-vX' where X is the version number.
+        """
+        return cls(
+            identifier=counterparty,
+            label=counterparty.capitalize().replace('-v', ' V'),
+            image=image,
+            darkmode_image=darkmode_image,
+            icon=icon,
+        )

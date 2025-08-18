@@ -143,8 +143,7 @@ class Aavev1Decoder(DecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(
-            identifier=CPT_AAVE_V1,
-            label=CPT_AAVE_V1.capitalize().replace('-v', ' V'),
+        return (CounterpartyDetails.from_versioned_counterparty(
+            counterparty=CPT_AAVE_V1,
             image='aave.svg',
         ),)
