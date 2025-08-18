@@ -62,12 +62,14 @@ interface HashLinkProps {
    * @default address
    */
   type?: keyof ExplorerUrls;
+  noScramble?: boolean;
 }
 
 const props = withDefaults(defineProps<HashLinkProps>(), {
   displayMode: 'default',
   hideText: false,
   location: undefined,
+  noScramble: false,
   size: 12,
   truncateLength: 4,
   type: 'address',
@@ -123,7 +125,7 @@ const addressBookChain = computed<string | undefined>(() => {
 
 const canShowAddressInfo = computed<boolean>(() => {
   const isLocationNotBlockchain = props.location && !isDefined(blockchain);
-  return !get(scrambleData) && props.type === 'address' && !isLocationNotBlockchain;
+  return (!get(scrambleData) || props.noScramble) && props.type === 'address' && !isLocationNotBlockchain;
 });
 
 const aliasName = computed<string | undefined>(() => {
@@ -145,6 +147,11 @@ const displayText = computed<string>(() => {
     return props.text;
 
   const linkText = props.text;
+
+  if (props.noScramble) {
+    return linkText;
+  }
+
   const linkType = props.type;
 
   return linkType === 'block' || consistOfNumbers(linkText)
