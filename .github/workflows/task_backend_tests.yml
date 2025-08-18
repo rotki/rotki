@@ -33,13 +33,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 2
           persist-credentials: false
 
       - name: Checkout test caching
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: rotki/test-caching
           path: test-caching
