@@ -385,9 +385,8 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
     @staticmethod  # DecoderInterface method
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(
-            identifier=CPT_AAVE_V3,
-            label=CPT_AAVE_V3.capitalize().replace('-v', ' V'),
+        return (CounterpartyDetails.from_versioned_counterparty(
+            counterparty=CPT_AAVE_V3,
             image='aave.svg',
         ),)
 

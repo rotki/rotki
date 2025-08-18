@@ -138,8 +138,7 @@ class Uniswapv2Decoder(DecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(
-            identifier=CPT_UNISWAP_V2,
-            label=CPT_UNISWAP_V2.capitalize().replace('-v', ' V'),
+        return (CounterpartyDetails.from_versioned_counterparty(
+            counterparty=CPT_UNISWAP_V2,
             image=UNISWAP_ICON,
         ),)
