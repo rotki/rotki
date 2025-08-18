@@ -6,7 +6,7 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { useAssetSelectInfo } from '@/components/inputs/use-asset-select-info';
+import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
