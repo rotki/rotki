@@ -22,5 +22,6 @@ class Uniswapv4Decoder(Uniswapv4CommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             pool_manager=string_to_evm_address('0x498581fF718922c3f8e6A244956aF099B2652b2b'),
+            position_manager=string_to_evm_address('0x7C5f5A4bBd8fD63184577525326123B519429bDc'),
             universal_router=string_to_evm_address('0x6fF5693b99212Da76ad316178A184AB56D299b43'),
         )
