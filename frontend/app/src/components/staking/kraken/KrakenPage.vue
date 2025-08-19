@@ -7,7 +7,7 @@ import InternalLink from '@/components/helper/InternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
-import { useBalances } from '@/composables/balances';
+import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { Routes } from '@/router/routes';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -24,7 +24,7 @@ const { events } = toRefs(store);
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 
-const { refreshPrices } = useBalances();
+const { refreshPrices } = usePriceRefresh();
 
 const { t } = useI18n({ useScope: 'global' });
 

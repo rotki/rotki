@@ -6,9 +6,9 @@ import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useBalances } from '@/composables/balances';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useLatestPrices } from '@/composables/price-manager/latest';
+import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -27,7 +27,7 @@ const { identifier, isCollectionParent } = toRefs(props);
 const { assetPriceInfo } = useAggregatedBalances();
 
 const { assetName } = useAssetInfoRetrieval();
-const { refreshPrice } = useBalances();
+const { refreshPrice } = usePriceRefresh();
 const { isLoading } = useStatusStore();
 
 const refreshingPrices = isLoading(Section.PRICES);

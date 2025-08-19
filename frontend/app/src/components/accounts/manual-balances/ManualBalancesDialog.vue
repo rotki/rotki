@@ -4,8 +4,8 @@ import { startPromise } from '@shared/utils';
 import { useTemplateRef } from 'vue';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { useBalances } from '@/composables/balances';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useMessageStore } from '@/store/message';
 
 const modelValue = defineModel<ManualBalance | RawManualBalance | undefined>({ required: true });
@@ -24,7 +24,7 @@ const stateUpdated = ref(false);
 const { setMessage } = useMessageStore();
 const { save: saveBalance } = useManualBalances();
 
-const { refreshPrices } = useBalances();
+const { refreshPrices } = usePriceRefresh();
 
 const isEdit = computed<boolean>(() => isDefined(modelValue) && 'identifier' in get(modelValue));
 

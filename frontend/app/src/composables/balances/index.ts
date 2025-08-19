@@ -1,103 +1,28 @@
-import type { MaybeRef } from '@vueuse/core';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
-import type { AssetPrices } from '@/types/prices';
 import { startPromise } from '@shared/utils';
 import { useBalancesApi } from '@/composables/api/balances';
-import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useBlockchains } from '@/composables/blockchain';
-import { useStatusUpdater } from '@/composables/status';
-import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
-import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
-import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTaskStore } from '@/store/tasks';
-import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { uniqueStrings } from '@/utils/data';
 
 export const useBalances = createSharedComposable(() => {
-  const pendingAssets = ref<string[]>([]);
   const { fetchManualBalances } = useManualBalances();
-  const { missingCustomAssets } = useManualBalanceData();
-  const { updatePrices } = useBalancesStore();
   const { fetchConnectedExchangeBalances } = useExchanges();
   const { refreshAccounts } = useBlockchains();
-  const { assets: regularAssets } = useAggregatedBalances();
-  const { collectionMainAssets } = storeToRefs(useCollectionMappingStore());
   const { queryBalancesAsync } = useBalancesApi();
-  const { prices } = storeToRefs(useBalancePricesStore());
-  const { hasCachedPrice } = usePriceUtils();
-  const { cacheEuroCollectionAssets, fetchExchangeRates, fetchPrices } = usePriceTaskManager();
+  const { fetchExchangeRates } = usePriceTaskManager();
+  const { refreshPrices } = usePriceRefresh();
   const { notify } = useNotificationsStore();
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsStore();
-
-  const assets = computed(() => [...get(regularAssets), ...get(collectionMainAssets)]);
-
-  const noPriceAssets = useArrayFilter(assets, asset => !hasCachedPrice(asset));
-
-  const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
-    updatePrices({ ...get(prices) });
-  };
-
-  const filterMissingAssets = (assets: string[]): string[] => {
-    const missingAssets = get(missingCustomAssets);
-    return assets.filter(item => !missingAssets.includes(item));
-  };
-
-  const refreshPrices = async (ignoreCache = false, selectedAssets: string[] | null = null): Promise<void> => {
-    const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;
-    const { setStatus } = useStatusUpdater(Section.PRICES);
-    setStatus(Status.LOADING);
-    await cacheEuroCollectionAssets();
-    if (ignoreCache)
-      await fetchExchangeRates();
-
-    await fetchPrices({
-      ignoreCache,
-      selectedAssets: filterMissingAssets(unique && unique.length > 0 ? unique : get(assets)),
-    });
-    adjustPrices(get(prices));
-    setStatus(Status.LOADED);
-  };
-
-  const refreshPrice = async (asset: string): Promise<void> => {
-    const { setStatus } = useStatusUpdater(Section.PRICES);
-    setStatus(Status.LOADING);
-    await fetchPrices({
-      ignoreCache: true,
-      selectedAssets: [asset],
-    });
-    adjustPrices(get(prices));
-    setStatus(Status.LOADED);
-  };
-
-  watchDebounced(
-    noPriceAssets,
-    async (assets) => {
-      const pending = get(pendingAssets);
-      const newAssets = assets.filter(asset => !pending.includes(asset));
-
-      if (newAssets.length === 0)
-        return;
-
-      set(pendingAssets, [...pending, ...newAssets]);
-      await refreshPrices(false, newAssets);
-      set(
-        pendingAssets,
-        get(pendingAssets).filter(asset => !newAssets.includes(asset)),
-      );
-    },
-    { debounce: 800, maxWait: 2000 },
-  );
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
     const taskType = TaskType.QUERY_BALANCES;
@@ -141,11 +66,8 @@ export const useBalances = createSharedComposable(() => {
   };
 
   return {
-    adjustPrices,
     autoRefresh,
     fetch,
     fetchBalances,
-    refreshPrice,
-    refreshPrices,
   };
 });
