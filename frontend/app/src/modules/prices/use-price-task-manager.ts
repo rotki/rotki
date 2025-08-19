@@ -50,6 +50,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
         taskId,
         taskType,
         {
+          description: t('actions.session.fetch_prices.task.description', { count: assets.length }, assets.length),
           title: t('actions.session.fetch_prices.task.title'),
         },
         true,

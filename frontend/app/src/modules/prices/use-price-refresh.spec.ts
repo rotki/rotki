@@ -4,15 +4,36 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useCurrencies } from '@/types/currencies';
 import '@test/i18n';
 
+// Mock functions
+const mockCacheEuroCollectionAssets = vi.fn();
+const mockFetchExchangeRates = vi.fn();
+const mockFetchPrices = vi.fn();
+
+// Mock the price task manager at the top level
+vi.mock('@/modules/prices/use-price-task-manager', (): any => ({
+  usePriceTaskManager: () => ({
+    cacheEuroCollectionAssets: mockCacheEuroCollectionAssets,
+    fetchExchangeRates: mockFetchExchangeRates,
+    fetchPrices: mockFetchPrices,
+  }),
+}));
+
+// Import after mocking
+const { usePriceRefresh } = await import('@/modules/prices/use-price-refresh');
+
 describe('usePriceRefresh', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+
+    // Reset mocks before each test
+    mockCacheEuroCollectionAssets.mockClear().mockResolvedValue({});
+    mockFetchExchangeRates.mockClear().mockResolvedValue({});
+    mockFetchPrices.mockClear().mockResolvedValue({});
   });
 
   describe('adjustPrices', () => {
@@ -137,13 +158,6 @@ describe('usePriceRefresh', () => {
     it('should handle single asset price refresh', async () => {
       const { refreshPrice } = usePriceRefresh();
 
-      // Mock the price fetching to avoid actual API calls
-      vi.mock('@/modules/prices/use-price-task-manager', (): any => ({
-        usePriceTaskManager: (): any => ({
-          fetchPrices: vi.fn().mockResolvedValue({}),
-        }),
-      }));
-
       // This test mainly verifies the function doesn't throw errors
       // In a real test environment, you'd mock the actual price fetching
       await expect(refreshPrice('BTC')).resolves.not.toThrow();
@@ -154,29 +168,12 @@ describe('usePriceRefresh', () => {
     it('should handle bulk price refresh', async () => {
       const { refreshPrices } = usePriceRefresh();
 
-      // Mock the price fetching to avoid actual API calls
-      vi.mock('@/modules/prices/use-price-task-manager', (): any => ({
-        usePriceTaskManager: (): any => ({
-          cacheEuroCollectionAssets: vi.fn().mockResolvedValue({}),
-          fetchExchangeRates: vi.fn().mockResolvedValue({}),
-          fetchPrices: vi.fn().mockResolvedValue({}),
-        }),
-      }));
-
       // This test mainly verifies the function doesn't throw errors
       await expect(refreshPrices()).resolves.not.toThrow();
     });
 
     it('should handle selected assets parameter', async () => {
       const { refreshPrices } = usePriceRefresh();
-
-      // Mock the price fetching to avoid actual API calls
-      vi.mock('@/modules/prices/use-price-task-manager', (): any => ({
-        usePriceTaskManager: (): any => ({
-          cacheEuroCollectionAssets: vi.fn().mockResolvedValue({}),
-          fetchPrices: vi.fn().mockResolvedValue({}),
-        }),
-      }));
 
       // Test with specific assets
       await expect(refreshPrices(false, ['BTC', 'ETH'])).resolves.not.toThrow();
@@ -185,17 +182,101 @@ describe('usePriceRefresh', () => {
     it('should handle ignoreCache parameter', async () => {
       const { refreshPrices } = usePriceRefresh();
 
-      // Mock the price fetching to avoid actual API calls
-      vi.mock('@/modules/prices/use-price-task-manager', (): any => ({
-        usePriceTaskManager: (): any => ({
-          cacheEuroCollectionAssets: vi.fn().mockResolvedValue({}),
-          fetchExchangeRates: vi.fn().mockResolvedValue({}),
-          fetchPrices: vi.fn().mockResolvedValue({}),
-        }),
-      }));
-
       // Test with ignoreCache = true
       await expect(refreshPrices(true)).resolves.not.toThrow();
+    });
+  });
+
+  describe('queue fifo', () => {
+    let executionOrder: string[];
+    let callCount: number;
+    let processingCount: number;
+    let maxConcurrent: number;
+
+    beforeEach(() => {
+      // Reset execution tracking variables
+      executionOrder = [];
+      callCount = 0;
+      processingCount = 0;
+      maxConcurrent = 0;
+    });
+
+    it('should process price refresh requests sequentially in FIFO order', async () => {
+      const { refreshPrice, refreshPrices } = usePriceRefresh();
+
+      // Configure mock for execution order tracking
+      mockFetchPrices.mockImplementation(async (params: any) =>
+        // Add a small delay to simulate async operation
+        new Promise((resolve) => {
+          setTimeout(() => {
+            executionOrder.push(params.selectedAssets.join(','));
+            resolve({});
+          }, 10);
+        }),
+      );
+
+      // Fire multiple requests simultaneously
+      const promise1 = refreshPrice('BTC');
+      const promise2 = refreshPrices(false, ['ETH', 'DAI']);
+      const promise3 = refreshPrice('USDT');
+
+      // Wait for all to complete
+      await Promise.all([promise1, promise2, promise3]);
+
+      // Verify they executed in FIFO order
+      expect(executionOrder).toEqual(['BTC', 'ETH,DAI', 'USDT']);
+    });
+
+    it('should handle errors in queue without breaking subsequent tasks', async () => {
+      const { refreshPrice } = usePriceRefresh();
+
+      // Configure mock to fail on second call
+      mockFetchPrices.mockImplementation(async () => {
+        callCount++;
+        if (callCount === 2) {
+          return Promise.reject(new Error('Network error'));
+        }
+        return Promise.resolve({});
+      });
+
+      // First request should succeed
+      await expect(refreshPrice('BTC')).resolves.not.toThrow();
+
+      // Second request should fail
+      await expect(refreshPrice('ETH')).rejects.toThrow('Network error');
+
+      // Third request should still succeed
+      await expect(refreshPrice('DAI')).resolves.not.toThrow();
+    });
+
+    it('should not start multiple queue processors simultaneously', async () => {
+      const { refreshPrices } = usePriceRefresh();
+
+      // Configure mock to track concurrent executions
+      mockFetchPrices.mockImplementation(async () => {
+        processingCount++;
+        maxConcurrent = Math.max(maxConcurrent, processingCount);
+
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            processingCount--;
+            resolve({});
+          }, 20);
+        });
+      });
+
+      // Fire multiple requests simultaneously
+      const promises = [
+        refreshPrices(false, ['BTC']),
+        refreshPrices(false, ['ETH']),
+        refreshPrices(false, ['DAI']),
+        refreshPrices(false, ['USDT']),
+      ];
+
+      await Promise.all(promises);
+
+      // Should never have more than 1 concurrent execution
+      expect(maxConcurrent).toBe(1);
     });
   });
 });

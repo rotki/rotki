@@ -1,5 +1,6 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPrices } from '@/types/prices';
+import { startPromise } from '@shared/utils';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useStatusUpdater } from '@/composables/status';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
@@ -11,6 +12,13 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { Section, Status } from '@/types/status';
 import { uniqueStrings } from '@/utils/data';
 
+interface PriceRefreshTask {
+  ignoreCache: boolean;
+  selectedAssets: string[];
+  resolve: () => void;
+  reject: (error: any) => void;
+}
+
 interface UsePriceRefreshReturn {
   adjustPrices: (prices: MaybeRef<AssetPrices>) => void;
   refreshPrice: (asset: string) => Promise<void>;
@@ -19,6 +27,8 @@ interface UsePriceRefreshReturn {
 
 export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn => {
   const pendingAssets = ref<string[]>([]);
+  const taskQueue = ref<PriceRefreshTask[]>([]);
+  const isProcessingQueue = ref<boolean>(false);
 
   const { updatePrices } = useBalancesStore();
   const { prices } = storeToRefs(useBalancePricesStore());
@@ -66,12 +76,58 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     }
   };
 
+  const processQueue = async (): Promise<void> => {
+    if (get(isProcessingQueue)) {
+      return;
+    }
+
+    set(isProcessingQueue, true);
+
+    try {
+      while (get(taskQueue).length > 0) {
+        const task = get(taskQueue).shift(); // FIFO: take from front
+        if (!task)
+          break;
+
+        try {
+          await performPriceFetch(task.ignoreCache, task.selectedAssets);
+          task.resolve();
+        }
+        catch (error) {
+          task.reject(error);
+        }
+      }
+    }
+    finally {
+      set(isProcessingQueue, false);
+    }
+  };
+
+  // Add task to queue and start processing if not already running
+  const enqueueTask = async (ignoreCache: boolean, selectedAssets: string[]): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+      const task: PriceRefreshTask = {
+        ignoreCache,
+        reject,
+        resolve,
+        selectedAssets,
+      };
+
+      // Add to end of queue (FIFO)
+      get(taskQueue).push(task);
+
+      startPromise(nextTick(() => {
+        startPromise(processQueue());
+      }));
+    });
+
   const refreshPrices = async (ignoreCache = false, selectedAssets: string[] | null = null): Promise<void> => {
-    await performPriceFetch(ignoreCache, selectedAssets?.filter(uniqueStrings) ?? get(assets));
+    const assetsToRefresh = selectedAssets?.filter(uniqueStrings) ?? get(assets);
+    await enqueueTask(ignoreCache, assetsToRefresh);
   };
 
   const refreshPrice = async (asset: string): Promise<void> => {
-    await performPriceFetch(true, [asset]);
+    await enqueueTask(true, [asset]);
   };
 
   async function fetchNoPriceAssets(assets: string[]): Promise<void> {
