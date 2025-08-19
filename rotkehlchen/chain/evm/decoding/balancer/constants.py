@@ -7,6 +7,7 @@ from rotkehlchen.types import ChainID
 BALANCER_LABEL: Final = 'Balancer'
 CPT_BALANCER_V1: Final = 'balancer-v1'
 CPT_BALANCER_V2: Final = 'balancer-v2'
+CPT_BALANCER_V3: Final = 'balancer-v3'
 
 BALANCER_API_CHUNK_SIZE: Final = 100
 BALANCER_API_URL: Final = 'https://api-v3.balancer.fi'
