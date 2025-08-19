@@ -20,6 +20,8 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
+from rotkehlchen.chain.evm.decoding.balancer.v3.decoder import Balancerv3CommonDecoder
 from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
@@ -322,6 +324,13 @@ class EVMTransactionDecoder(ABC):
             self._add_single_decoder(
                 class_name='Stakedao',
                 decoder_class=StakedaoCommonDecoder,
+                rules=rules,
+            )
+
+        if self.evm_inquirer.chain_id in BALANCER_V3_SUPPORTED_CHAINS:
+            self._add_single_decoder(
+                class_name='Balancerv3',
+                decoder_class=Balancerv3CommonDecoder,
                 rules=rules,
             )
 
