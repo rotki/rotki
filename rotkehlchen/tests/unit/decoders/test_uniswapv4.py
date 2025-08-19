@@ -3,10 +3,18 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V4
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_OP, A_USDC
+from rotkehlchen.constants.assets import (
+    A_BSC_BNB,
+    A_ETH,
+    A_OP,
+    A_POLYGON_POS_MATIC,
+    A_USDC,
+    A_WETH_POLYGON,
+)
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -25,6 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -329,4 +338,250 @@ def test_multi_pool_swap_to_second_address(
         notes=f'Receive {receive_amount} USDC after a swap in Uniswap V4',
         counterparty=CPT_UNISWAP_V4,
         address=pool_address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x7E25f8488D25152437dBECC787F655966DD00C67']])
+def test_create_lp_position(
+        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x2277ee48d4e5394a59500a9f70ab29c12b27b28398973e6ca2666143dd690358')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755608652000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POLYGON_POS_MATIC,
+        amount=FVal(gas_amount := '0.012086010300538782'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} POL for gas',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=446,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=(a_oauto := Asset('eip155:137/erc20:0x7f426F6Dc648e50464a0392E60E1BB465a67E9cf')),
+        amount=FVal(oauto_approval := '577.561778438973357269'),
+        location_label=user_address,
+        notes=f'Set oAUTO spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {oauto_approval}',  # noqa: E501
+        address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=448,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=(a_usdt := Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F')),
+        amount=FVal(usdt_approval := '637.938815'),
+        location_label=user_address,
+        notes=f'Set USDT spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {usdt_approval}',  # noqa: E501
+        address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=449,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=a_oauto,
+        amount=FVal(oauto_amount := '0.027630635454744533'),
+        location_label=user_address,
+        notes=f'Deposit {oauto_amount} oAUTO to Uniswap V4 oAUTO/USDT LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=(pool_manager := string_to_evm_address('0x67366782805870060151383F4BbFF9daB53e5cD6')),  # noqa: E501
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=450,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=a_usdt,
+        amount=FVal(usdt_amount := '10'),
+        location_label=user_address,
+        notes=f'Deposit {usdt_amount} USDT to Uniswap V4 oAUTO/USDT LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=pool_manager,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=451,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.DEPLOY,
+        event_subtype=HistoryEventSubType.NFT,
+        asset=Asset('eip155:137/erc721:0x1Ec2eBf4F37E7363FDfe3551602425af0B3ceef9/39018'),
+        amount=ONE,
+        location_label=user_address,
+        notes='Create Uniswap V4 LP with id 39018',
+        counterparty=CPT_UNISWAP_V4,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x8605355cA4E07C1B2cEB548a052876A18028d7Fd']])
+def test_increase_liquidity(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xe65d2fe847aa7e8143f01f67567f2659efa750eaa254421aeb27ba090df5ea2e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755539811000)),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000000225013656822'),
+        location_label=(user_address := optimism_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
+        amount=FVal(usdc_amount := '0.458611'),
+        location_label=user_address,
+        notes=f'Deposit {usdc_amount} USDC to Uniswap V4 USDC/OP LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=(pool_manager := string_to_evm_address('0x9a13F98Cb987694C9F086b1F5eB990EeA8264Ec3')),  # noqa: E501
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_OP,
+        amount=FVal(op_amount := '0.799999094140701646'),
+        location_label=user_address,
+        notes=f'Deposit {op_amount} OP to Uniswap V4 USDC/OP LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=pool_manager,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x076E7D08170036FFa56142372723c03326ee27E9']])
+def test_exit_lp_position(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xd96f3bdbdcb28e0e038a14afd343858a8dc72ddb41c16651a07d9422b6b04694')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755608207000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00005128618368435'),
+        location_label=(user_address := ethereum_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.BURN,
+        event_subtype=HistoryEventSubType.NFT,
+        asset=Asset('eip155:1/erc721:0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e/51028'),
+        amount=ONE,
+        location_label=user_address,
+        notes='Exit Uniswap V4 LP with id 51028',
+        counterparty=CPT_UNISWAP_V4,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_ETH,
+        amount=FVal(eth_amount := '0.01122274372981923'),
+        location_label=user_address,
+        notes=f'Withdraw {eth_amount} ETH from Uniswap V4 ETH/USDC LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=(pool_manager := string_to_evm_address('0x000000000004444c5dc75cB358380D2e3dE08A90')),  # noqa: E501
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_USDC,
+        amount=FVal(usdc_amount := '175118.699175'),
+        location_label=user_address,
+        notes=f'Withdraw {usdc_amount} USDC from Uniswap V4 ETH/USDC LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=pool_manager,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x2fCC69eaa8c9F33538CBac50eb5432c422825e6D']])
+def test_decrease_liquidity(
+        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x550832040e57647103a03e23eba5ce869f8a96c3e8b92f1f9258024a286e2525')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755609920000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POLYGON_POS_MATIC,
+        amount=FVal('0.005868403632678156'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        counterparty=CPT_GAS,
+        notes='Burn 0.005868403632678156 POL for gas',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_POLYGON_POS_MATIC,
+        amount=FVal('20.49016382840257149'),
+        location_label=user_address,
+        notes='Withdraw 20.49016382840257149 POL from Uniswap V4 POL/WETH LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=(pool_manager := string_to_evm_address('0x67366782805870060151383F4BbFF9daB53e5cD6')),  # noqa: E501
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_WETH_POLYGON,
+        amount=FVal('0.001429032787070825'),
+        location_label=user_address,
+        notes='Withdraw 0.001429032787070825 WETH from Uniswap V4 POL/WETH LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=pool_manager,
     )]
