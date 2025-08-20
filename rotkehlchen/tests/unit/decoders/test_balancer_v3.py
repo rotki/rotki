@@ -12,6 +12,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
@@ -301,6 +302,94 @@ def test_remove_liquidity_proportionally(gnosis_inquirer: 'GnosisInquirer', gnos
         amount=(wbtc_amount := FVal('0.000328')),
         location_label=user_address,
         notes=f'Withdraw {wbtc_amount} WBTC from a Balancer v3 pool',
+        counterparty=CPT_BALANCER_V3,
+        address=VAULT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x5aA57B34DaaDB76ea486157B3D4472C4DF536C82']])
+def test_swap_via_batch_router(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xbffb6bd2994f90676be45db667203317f0f70afb4eaa3832271e02e8dffb8101')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755679029000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000007558210030013')),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        timestamp=timestamp,
+        asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+        amount=(out_amount := FVal('6.53544')),
+        location_label=user_address,
+        notes=f'Swap {out_amount} USDC in Balancer v3',
+        counterparty=CPT_BALANCER_V3,
+        address=VAULT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        timestamp=timestamp,
+        asset=A_ETH,
+        amount=(in_amount := FVal('0.001549083846430882')),
+        location_label=user_address,
+        notes=f'Receive {in_amount} ETH as the result of a swap in Balancer v3',
+        counterparty=CPT_BALANCER_V3,
+        address=VAULT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xD17AE94E595c3987c277114AEcb377e89450Bc07']])
+def test_swap(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x3dabc20af2bc5bf72c42fd1e915578f789189c2f09ec8049c4a6e3a2921b1baf')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755614699000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.0013000257121251')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        timestamp=timestamp,
+        asset=Asset('eip155:1/erc20:0x7Bc3485026Ac48b6cf9BaF0A377477Fff5703Af8'),
+        amount=(out_amount := FVal('217')),
+        location_label=user_address,
+        notes=f'Swap {out_amount} waEthUSDT in Balancer v3',
+        counterparty=CPT_BALANCER_V3,
+        address=VAULT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        timestamp=timestamp,
+        asset=Asset('eip155:1/erc20:0xD4fa2D31b7968E448877f69A96DE69f5de8cD23E'),
+        amount=(in_amount := FVal('215.913782')),
+        location_label=user_address,
+        notes=f'Receive {in_amount} waEthUSDC as the result of a swap in Balancer v3',
         counterparty=CPT_BALANCER_V3,
         address=VAULT_ADDRESS,
     )]
