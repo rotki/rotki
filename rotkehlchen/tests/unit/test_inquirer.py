@@ -26,7 +26,11 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
 )
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
-from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
+from rotkehlchen.chain.evm.decoding.uniswap.constants import (
+    CPT_UNISWAP_V2,
+    CPT_UNISWAP_V3,
+    CPT_UNISWAP_V4,
+)
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
@@ -1335,6 +1339,22 @@ def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'I
         token_id='188693',
         chain_id=ChainID.BINANCE_SC,
     ).is_close(FVal('7219.93640'), max_diff='1e-5')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_uniswap_v4_position_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+    assert inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=TokenKind.ERC721,
+        collectible_id='61912',
+        symbol='UNI-V4-POS-61912',
+        name='Uniswap V4 Positions #61912',
+        protocol=CPT_UNISWAP_V4,
+    )).is_close(FVal('122.70417'), max_diff='1e-5')
 
 
 @pytest.mark.vcr

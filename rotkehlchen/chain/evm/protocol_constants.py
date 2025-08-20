@@ -5,7 +5,11 @@ from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FIN
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
-from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
+from rotkehlchen.chain.evm.decoding.uniswap.constants import (
+    CPT_UNISWAP_V2,
+    CPT_UNISWAP_V3,
+    CPT_UNISWAP_V4,
+)
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 
 # NOTE: these constants are kept separate from evm/constants.py to avoid circular imports.
@@ -19,6 +23,7 @@ EVM_PROTOCOLS_WITH_PRICE_LOGIC: Final = (
     CPT_HOP,
     CPT_PENDLE,
     CPT_UNISWAP_V3,
+    CPT_UNISWAP_V4,
     CPT_BEEFY_FINANCE,
 )
 

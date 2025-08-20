@@ -63,8 +63,6 @@ from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
-from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
-from rotkehlchen.chain.evm.decoding.uniswap.v3.balances import UniswapV3Balances
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -112,7 +110,6 @@ from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.balances import find_inheriting_classes
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.ethereum import (
-    INFURA_ETH_NODE,
     get_decoded_events_of_transaction,
     wait_until_all_nodes_connected,
 )
@@ -1230,85 +1227,6 @@ def test_optimism_giveth_staked_balances(
     assert user_balance.assets[giv_asset][CPT_GIVETH] == Balance(
         amount=FVal('31641.865744797163817899'),
         usd_value=FVal('247.43907370565637308433200101'),
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
-@pytest.mark.parametrize('ethereum_accounts', [['0x561fe975d925CC259D5aFF7A4d83612Fb4758103']])
-def test_uniswapv3_balances_ethereum(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list[ChecksumEvmAddress],
-        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    """Check that Uniswap V3 LP positions are properly detected on ethereum"""
-    _, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0xc20a48dc99d805116ac94ce8a7f669ce174d7cefa6712c3858b605365c314f80'),
-    )
-    protocol_balances_inquirer = UniswapV3Balances(
-        evm_inquirer=ethereum_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    protocol_balances = protocol_balances_inquirer.query_balances()
-    user_balance = protocol_balances[ethereum_accounts[0]]
-    position_nft = Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/931287')
-    assert user_balance.assets[position_nft][CPT_UNISWAP_V3] == Balance(
-        amount=ONE,
-        usd_value=FVal('1079.26539536305871313957103164322012047931617819770314565623847023176368686119'),
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('base_accounts', [['0xD79B70C1D4Ab78Cd97d53508b5CBf0D573728980']])
-def test_uniswapv3_balances_base(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list[ChecksumEvmAddress],
-        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    """Check that Uniswap V3 LP positions are properly detected on base"""
-    _, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=base_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x0de888bf954f77a48d9e538c60e4e8763b066660b9570840d5299e9c604d60a3'),
-    )
-    protocol_balances_inquirer = UniswapV3Balances(
-        evm_inquirer=base_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    protocol_balances = protocol_balances_inquirer.query_balances()
-    user_balance = protocol_balances[base_accounts[0]]
-    position_nft = Asset('eip155:8453/erc721:0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1/1797484')
-    assert user_balance.assets[position_nft][CPT_UNISWAP_V3] == Balance(
-        amount=ONE,
-        usd_value=FVal('2874.37501899742102833253858580810245123589303319863408360101801493666273901534'),
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
-def test_uniswapv3_balances_arbitrum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list[ChecksumEvmAddress],
-        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    """Check that Uniswap V3 LP positions are properly detected on arbitrum"""
-    _, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x59c14ea121a693a2da3503cb3734baa35efc7d75c8e8b1fb1e9b474af7decde0'),
-    )
-    protocol_balances_inquirer = UniswapV3Balances(
-        evm_inquirer=arbitrum_one_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    protocol_balances = protocol_balances_inquirer.query_balances()
-    user_balance = protocol_balances[arbitrum_one_accounts[0]]
-    position_nft = Asset('eip155:42161/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/4085191')
-    assert user_balance.assets[position_nft][CPT_UNISWAP_V3] == Balance(
-        amount=ONE,
-        usd_value=FVal('26.7962165816347802200022991318482105023701331828161909334783235019695249285796'),
     )
 
 

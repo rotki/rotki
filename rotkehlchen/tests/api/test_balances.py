@@ -48,6 +48,7 @@ from rotkehlchen.tests.utils.blockchain import (
     assert_eth_balances_result,
 )
 from rotkehlchen.tests.utils.constants import A_RDN
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.exchanges import (
     assert_binance_balances_result,
     try_get_first_exchange,
@@ -63,6 +64,7 @@ from rotkehlchen.types import (
     Price,
     SupportedBlockchain,
     Timestamp,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -551,6 +553,57 @@ def test_protocol_balances_all_chains(rotkehlchen_api_server: 'APIServer') -> No
 
     for key in CHAIN_TO_BALANCE_PROTOCOLS:
         assert key in queried_chains
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_uniswap_v3_v4_balances(
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Check that Uniswap V3 and V4 LP balances are properly detected via the erc721 token
+    detection logic (using history event processing).
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    for tx_hash in (
+        '0x0ca4942007ea1e93a7b979da6066bb9b5ac25c14ebd8a8a4002bd03c339c0606',
+        '0xe2b6233758c84618e8f08c8df0782e45b3ba4a012c8d5fe0b4281fae7cbcce50',
+    ):
+        get_decoded_events_of_transaction(
+            evm_inquirer=rotki.chains_aggregator.arbitrum_one.node_inquirer,
+            tx_hash=deserialize_evm_tx_hash(tx_hash),
+        )
+
+    with patch.object(  # patch the erc20 token detection
+            target=rotki.chains_aggregator.arbitrum_one.tokens,
+            attribute='_detect_tokens',
+            return_value={(user_address := arbitrum_one_accounts[0]): []},
+    ):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'detecttokensresource',
+                blockchain=SupportedBlockchain.ARBITRUM_ONE.serialize(),
+            ),
+            json={'async_query': False, 'addresses': arbitrum_one_accounts},
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result[user_address]['tokens'] == [
+        (v3_nft := 'eip155:42161/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/4818837'),
+        (v4_nft := 'eip155:42161/erc721:0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869/61912'),
+    ]
+
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+        json={'blockchain': SupportedBlockchain.ARBITRUM_ONE.serialize()},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    asset_balances = result['per_account']['arbitrum_one'][user_address]['assets']
+    assert asset_balances[v3_nft]['uniswap-v3']['amount'] == '1'
+    assert asset_balances[v4_nft]['uniswap-v4']['amount'] == '1'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
