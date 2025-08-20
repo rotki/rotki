@@ -203,11 +203,4 @@ export default defineConfig({
     },
     emptyOutDir: false,
   },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        api: 'modern',
-      },
-    },
-  },
 });
