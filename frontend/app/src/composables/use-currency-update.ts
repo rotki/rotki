@@ -1,12 +1,12 @@
 import { startPromise } from '@shared/utils';
-import { useBalances } from '@/composables/balances/index';
+import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
 
 export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
   const { updateSetting } = useFrontendSettingsStore();
-  const { refreshPrices } = useBalances();
+  const { refreshPrices } = usePriceRefresh();
 
   async function onCurrencyUpdate(): Promise<void> {
     // TODO: This is temporary fix for double conversion issue. Future solutions should try to eliminate this part.

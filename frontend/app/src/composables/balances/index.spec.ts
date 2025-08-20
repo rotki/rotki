@@ -1,12 +1,4 @@
-import { bigNumberify, Blockchain } from '@rotki/common';
-import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
-import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TRADE_LOCATION_BANKS } from '@/data/defaults';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useCurrencies } from '@/types/currencies';
 import { useBalances } from './index';
 import '@test/i18n';
 
@@ -15,156 +7,114 @@ describe('useBalances', () => {
     setActivePinia(createPinia());
   });
 
-  describe('adjustPrices', () => {
-    it('should handle currency conversion without breaking calculations', () => {
-      const { exchangeBalances } = storeToRefs(useBalancesStore());
-      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-      const { adjustPrices } = useBalances();
+  describe('fetchBalances', () => {
+    it('should handle balance fetching', async () => {
+      const { fetchBalances } = useBalances();
 
-      set(connectedExchanges, [{
-        location: 'kraken',
-        name: 'Bitrex Acc',
-      }]);
+      // Mock the balance API to avoid actual API calls
+      vi.mock('@/composables/api/balances', (): any => ({
+        useBalancesApi: (): any => ({
+          queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 'test-task' }),
+        }),
+      }));
 
-      set(exchangeBalances, {
-        kraken: {
-          BTC: createTestBalance(50, 50),
-          DAI: createTestBalance(50, 50),
-          ETH: createTestBalance(50, 50),
-          EUR: createTestBalance(50, 50),
-        },
-      });
-
-      const { prices } = storeToRefs(useBalancePricesStore());
-
-      const { exchangeRates } = storeToRefs(useBalancePricesStore());
-      set(exchangeRates, { EUR: bigNumberify(1.2) });
-
-      const { currencies } = useCurrencies();
-      updateGeneralSettings({
-        mainCurrency: get(currencies)[1],
-      });
-
-      set(prices, {
-        BTC: createTestPriceInfo(40000),
-        DAI: createTestPriceInfo(1),
-        ETH: createTestPriceInfo(3000),
-        EUR: createTestPriceInfo(1),
-        SAI: createTestPriceInfo(1),
-      });
-
-      const { manualBalances } = storeToRefs(useBalancesStore());
-
-      set(manualBalances, [
-        createTestManualBalance('DAI', 50, 50, TRADE_LOCATION_BANKS),
-      ]);
-
-      const { balances: allBalances } = storeToRefs(useBalancesStore());
-
-      set(allBalances, {
-        [Blockchain.ETH]: {
-          '0x123': {
-            assets: {
-              BTC: { address: createTestBalance(100, 100) },
-              DAI: { address: createTestBalance(100, 100) },
-              ETH: { address: createTestBalance(100, 100) },
-              SAI: { address: createTestBalance(100, 100) },
-            },
-            liabilities: {},
-          },
-        },
-      });
-
-      // Test adjustPrices function
-      adjustPrices(get(prices));
-
-      // Verify that prices were adjusted correctly
-      const { prices: adjustedPrices } = storeToRefs(useBalancePricesStore());
-      const pricesAfterAdjustment = get(adjustedPrices);
-
-      expect(pricesAfterAdjustment.BTC?.value).toEqual(bigNumberify(40000));
-      expect(pricesAfterAdjustment.DAI?.value).toEqual(bigNumberify(1));
-      expect(pricesAfterAdjustment.ETH?.value).toEqual(bigNumberify(3000));
-      expect(pricesAfterAdjustment.EUR?.value).toEqual(bigNumberify(1));
-      expect(pricesAfterAdjustment.SAI?.value).toEqual(bigNumberify(1));
-    });
-
-    it('should update balances correctly when called with new prices', () => {
-      const { adjustPrices } = useBalances();
-      const { exchangeBalances } = storeToRefs(useBalancesStore());
-
-      // Set up initial exchange balances
-      set(exchangeBalances, {
-        kraken: {
-          BTC: createTestBalance(1, 40000),
-          ETH: createTestBalance(2, 6000),
-        },
-      });
-
-      const newPrices = {
-        BTC: createTestPriceInfo(50000),
-        ETH: createTestPriceInfo(4000),
-      };
-
-      adjustPrices(newPrices);
-
-      // The adjustPrices function should update the balance calculations
-      // Verify that the function completes without error
-      const updatedBalances = get(exchangeBalances);
-      expect(updatedBalances.kraken.BTC.amount).toEqual(bigNumberify(1));
-      expect(updatedBalances.kraken.ETH.amount).toEqual(bigNumberify(2));
-    });
-
-    it('should handle empty prices object', () => {
-      const { adjustPrices } = useBalances();
-      const { prices } = storeToRefs(useBalancePricesStore());
-
-      // Set initial prices
-      set(prices, {
-        BTC: createTestPriceInfo(40000),
-      });
-
-      // Adjust with empty object
-      adjustPrices({});
-
-      const updatedPrices = get(prices);
-      // Should still have the previous prices since adjustPrices spreads the new prices
-      expect(updatedPrices.BTC?.value).toEqual(bigNumberify(40000));
-    });
-  });
-
-  describe('refreshPrice', () => {
-    it('should handle single asset price refresh', async () => {
-      const { refreshPrice } = useBalances();
-
-      // Mock the price fetching to avoid actual API calls
-      vi.mock('@/modules/prices/use-price-task-manager', (): any => ({
-        usePriceTaskManager: (): any => ({
-          fetchPrices: vi.fn().mockResolvedValue({}),
+      vi.mock('@/store/tasks', (): any => ({
+        useTaskStore: (): any => ({
+          awaitTask: vi.fn().mockResolvedValue({}),
+          isTaskRunning: vi.fn().mockReturnValue(false),
         }),
       }));
 
       // This test mainly verifies the function doesn't throw errors
-      // In a real test environment, you'd mock the actual price fetching
-      await expect(refreshPrice('BTC')).resolves.not.toThrow();
+      await expect(fetchBalances()).resolves.not.toThrow();
+    });
+
+    it('should skip fetching if task is already running', async () => {
+      const { fetchBalances } = useBalances();
+
+      vi.mock('@/store/tasks', (): any => ({
+        useTaskStore: (): any => ({
+          awaitTask: vi.fn(),
+          isTaskRunning: vi.fn().mockReturnValue(true),
+        }),
+      }));
+
+      // Should return early without throwing
+      await expect(fetchBalances()).resolves.not.toThrow();
     });
   });
 
-  describe('refreshPrices', () => {
-    it('should handle bulk price refresh', async () => {
-      const { refreshPrices } = useBalances();
+  describe('fetch', () => {
+    it('should coordinate fetching of all balance types', async () => {
+      const { fetch } = useBalances();
 
-      // Mock the price fetching to avoid actual API calls
+      // Mock all the dependencies
       vi.mock('@/modules/prices/use-price-task-manager', (): any => ({
         usePriceTaskManager: (): any => ({
-          cacheEuroCollectionAssets: vi.fn().mockResolvedValue({}),
           fetchExchangeRates: vi.fn().mockResolvedValue({}),
-          fetchPrices: vi.fn().mockResolvedValue({}),
         }),
       }));
 
-      // This test mainly verifies the function doesn't throw errors
-      await expect(refreshPrices()).resolves.not.toThrow();
+      vi.mock('@/modules/balances/manual/use-manual-balances', (): any => ({
+        useManualBalances: (): any => ({
+          fetchManualBalances: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      vi.mock('@/composables/blockchain', (): any => ({
+        useBlockchains: (): any => ({
+          refreshAccounts: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      vi.mock('@/modules/balances/exchanges/use-exchanges', (): any => ({
+        useExchanges: (): any => ({
+          fetchConnectedExchangeBalances: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      // This test verifies the function orchestrates balance fetching properly
+      await expect(fetch()).resolves.not.toThrow();
+    });
+  });
+
+  describe('autoRefresh', () => {
+    it('should perform auto refresh of balances and prices', async () => {
+      const { autoRefresh } = useBalances();
+
+      // Mock all dependencies for auto refresh
+      vi.mock('@/modules/balances/manual/use-manual-balances', (): any => ({
+        useManualBalances: (): any => ({
+          fetchManualBalances: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      vi.mock('@/composables/blockchain', (): any => ({
+        useBlockchains: (): any => ({
+          refreshAccounts: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      vi.mock('@/modules/balances/exchanges/use-exchanges', (): any => ({
+        useExchanges: (): any => ({
+          fetchConnectedExchangeBalances: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      vi.mock('@/store/statistics', (): any => ({
+        useStatisticsStore: (): any => ({
+          fetchNetValue: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      vi.mock('@/modules/prices/use-price-refresh', (): any => ({
+        usePriceRefresh: (): any => ({
+          refreshPrices: vi.fn().mockResolvedValue({}),
+        }),
+      }));
+
+      // This test verifies auto refresh coordinates all balance updates
+      await expect(autoRefresh()).resolves.not.toThrow();
     });
   });
 });

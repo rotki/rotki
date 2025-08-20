@@ -2,8 +2,8 @@ import type { ComputedRef, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import { NotificationCategory, type NotificationPayload, One, Severity, Zero } from '@rotki/common';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useBalances } from '@/composables/balances';
 import { useStatusUpdater } from '@/composables/status';
+import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
@@ -31,7 +31,7 @@ export function useLatestPrices(
 
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
   const { assetPrice } = usePriceUtils();
-  const { refreshPrices } = useBalances();
+  const { refreshPrices } = usePriceRefresh();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();

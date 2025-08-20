@@ -747,6 +747,7 @@
           "title": "Fetching prices"
         },
         "task": {
+          "description": "Fetching prices for {count} asset | Fetching prices for {count} assets",
           "title": "Fetching prices"
         }
       },
