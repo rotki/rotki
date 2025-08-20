@@ -10,11 +10,10 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -23,7 +22,14 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    Price,
+    SupportedBlockchain,
+    Timestamp,
+    TokenKind,
+)
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 from .constants import ZERO_ADDRESS
@@ -487,7 +493,12 @@ class EvmTokens(ABC):  # noqa: B024
                         continue  # skip any zero balance tokens
 
                     tokens_with_balance.add(token)
-                    addresses_to_balances[address][token] = balance
+                    if token.token_kind == TokenKind.ERC721:
+                        # For nfts the balance will be the total number of nfts the user owns from
+                        # this collection. But any individual nft can only have a balance of one.
+                        addresses_to_balances[address][token] = ONE
+                    else:
+                        addresses_to_balances[address][token] = balance
 
         token_usd_price = cast('dict[EvmToken, Price]', Inquirer.find_usd_prices(list(tokens_with_balance)))  # noqa: E501
         return dict(addresses_to_balances), token_usd_price
@@ -502,13 +513,6 @@ class EvmTokens(ABC):  # noqa: B024
         for asset_id in ignored_asset_ids:  # don't query for the ignored tokens
             if (evm_details := asset_id_is_evm_token(asset_id)) is not None and evm_details[0] == self.evm_inquirer.chain_id:  # noqa: E501
                 exceptions.add(evm_details[1])
-
-        # Exclude the Uniswap V3 NFT Manager address.
-        # Without this exclusion, the balance logic reports a balance equal to the
-        # number of Uniswap V3 positions held by the user for *each* position NFT.
-        # Actual position balances are handled by the UniswapV3Balances class.
-        if self.evm_inquirer.chain_id in UNISWAP_V3_NFT_MANAGER_ADDRESSES:
-            exceptions.add(UNISWAP_V3_NFT_MANAGER_ADDRESSES[self.evm_inquirer.chain_id])
 
         return exceptions | self._per_chain_token_exceptions()
 

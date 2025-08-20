@@ -115,7 +115,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     HistoryEventType.DEPLOY: {
         HistoryEventSubType.NONE: {DEFAULT: EventCategory.DEPLOY},
         HistoryEventSubType.SPEND: {DEFAULT: EventCategory.DEPLOY_WITH_SPEND},
-        HistoryEventSubType.NFT: {DEFAULT: EventCategory.DEPLOY},
+        HistoryEventSubType.NFT: {DEFAULT: EventCategory.MINT_NFT},
     },
     HistoryEventType.MIGRATE: {
         HistoryEventSubType.SPEND: {DEFAULT: EventCategory.MIGRATE_OUT},

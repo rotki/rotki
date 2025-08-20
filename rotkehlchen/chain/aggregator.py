@@ -54,7 +54,6 @@ from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalance
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
-from rotkehlchen.chain.evm.decoding.uniswap.v3.balances import UniswapV3Balances
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
@@ -221,7 +220,6 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         SafeBalances,
         AaveBalances,
         CurveLendBalances,
-        UniswapV3Balances,
         PendleBalances,
         CurveCrvusdBalances,
     ),
@@ -234,14 +232,12 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         WalletconnectBalances,
         CurveLendBalances,
         GivethOptimismBalances,
-        UniswapV3Balances,
     ),
     ChainID.BASE: (
         Compoundv3Balances,
         AerodromeBalances,
         HopBalances,
         ExtrafiBalancesBase,
-        UniswapV3Balances,
     ),
     ChainID.ARBITRUM_ONE: (
         Compoundv3Balances,
@@ -251,20 +247,18 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         GearboxBalancesArbitrumOne,
         UmamiBalances,
         CurveLendBalances,
-        UniswapV3Balances,
         HyperliquidBalances,
     ),
     ChainID.POLYGON_POS: (
         Compoundv3Balances,
         HopBalances,
-        UniswapV3Balances,
     ),
     ChainID.GNOSIS: (
         HopBalances,
         GivethGnosisBalances,
     ),
     ChainID.SCROLL: (Compoundv3Balances,),
-    ChainID.BINANCE_SC: (UniswapV3Balances,),
+    ChainID.BINANCE_SC: (),
 }
 
 

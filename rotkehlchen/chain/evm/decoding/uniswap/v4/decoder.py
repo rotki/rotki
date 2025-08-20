@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
+from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -284,6 +284,18 @@ class Uniswapv4CommonDecoder(DecoderInterface):
                     event.event_type = HistoryEventType.DEPLOY
                     verb = 'Create'
                     mint_events.append(event)
+                    # Update the position nft with the uniswap v4 protocol and
+                    # add the collectible id to its name and symbol.
+                    get_or_create_evm_token(
+                        userdb=self.evm_inquirer.database,
+                        evm_address=self.position_manager,
+                        chain_id=self.evm_inquirer.chain_id,
+                        token_kind=TokenKind.ERC721,
+                        symbol=f'UNI-V4-POS-{collectible_id}',
+                        name=f'Uniswap V4 Positions #{collectible_id}',
+                        collectible_id=collectible_id,
+                        protocol=CPT_UNISWAP_V4,
+                    )
 
                 event.counterparty = CPT_UNISWAP_V4
                 event.event_subtype = HistoryEventSubType.NFT
