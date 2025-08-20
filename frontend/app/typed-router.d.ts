@@ -79,4 +79,268 @@ declare module 'vue-router/auto-routes' {
     '/user/login/': RouteRecordInfo<'/user/login/', '/user/login', Record<never, never>, Record<never, never>>,
     '/wallet-bridge/': RouteRecordInfo<'/wallet-bridge/', '/wallet-bridge', Record<never, never>, Record<never, never>>,
   }
+
+  /**
+   * Route file to route info map by unplugin-vue-router.
+   * Used by the volar plugin to automatically type useRoute()
+   *
+   * Each key is a file path relative to the project root with 2 properties:
+   * - routes: union of route names of the possible routes when in this page (passed to useRoute<...>())
+   * - views: names of nested views (can be passed to <RouterView name="...">)
+   *
+   * @internal
+   */
+  export interface _RouteFileInfoMap {
+    'src/pages/index.vue': {
+      routes: '/'
+      views: never
+    }
+    'src/pages/404.vue': {
+      routes: '/404'
+      views: never
+    }
+    'src/pages/accounts/index.vue': {
+      routes: 'accounts'
+      views: never
+    }
+    'src/pages/accounts/bitcoin/index.vue': {
+      routes: 'accounts-bitcoin'
+      views: never
+    }
+    'src/pages/accounts/evm/[[tab]].vue': {
+      routes: 'accounts-evm'
+      views: never
+    }
+    'src/pages/accounts/substrate/index.vue': {
+      routes: 'accounts-substrate'
+      views: never
+    }
+    'src/pages/address-book-manager/index.vue': {
+      routes: '/address-book-manager/'
+      views: never
+    }
+    'src/pages/airdrops/index.vue': {
+      routes: '/airdrops/'
+      views: never
+    }
+    'src/pages/api-keys/index.vue': {
+      routes: '/api-keys/'
+      views: never
+    }
+    'src/pages/api-keys/exchanges/index.vue': {
+      routes: '/api-keys/exchanges/'
+      views: never
+    }
+    'src/pages/api-keys/external/index.vue': {
+      routes: '/api-keys/external/'
+      views: never
+    }
+    'src/pages/api-keys/premium/index.vue': {
+      routes: '/api-keys/premium/'
+      views: never
+    }
+    'src/pages/asset-manager/index.vue': {
+      routes: '/asset-manager/'
+      views: never
+    }
+    'src/pages/asset-manager/custom/index.vue': {
+      routes: 'asset-manager-custom'
+      views: never
+    }
+    'src/pages/asset-manager/managed/index.vue': {
+      routes: 'asset-manager-managed'
+      views: never
+    }
+    'src/pages/asset-manager/more.vue': {
+      routes: 'asset-manager-more' | 'asset-manager-cex-mapping' | 'asset-manager-counterparty-mapping' | 'asset-manager-newly-detected' | 'asset-manager-missing-mappings' | 'asset-manager-solana-token-migration' | '/asset-manager/more/cex-mapping' | '/asset-manager/more/counterparty-mapping' | '/asset-manager/more/missing-mappings' | '/asset-manager/more/newly-detected' | '/asset-manager/more/solana-token-migration'
+      views: 'default'
+    }
+    'src/pages/asset-manager/more/cex-mapping/index.vue': {
+      routes: 'asset-manager-cex-mapping'
+      views: never
+    }
+    'src/pages/asset-manager/more/counterparty-mapping/index.vue': {
+      routes: 'asset-manager-counterparty-mapping'
+      views: never
+    }
+    'src/pages/asset-manager/more/missing-mappings/index.vue': {
+      routes: 'asset-manager-missing-mappings'
+      views: never
+    }
+    'src/pages/asset-manager/more/newly-detected/index.vue': {
+      routes: 'asset-manager-newly-detected'
+      views: never
+    }
+    'src/pages/asset-manager/more/solana-token-migration/index.vue': {
+      routes: 'asset-manager-solana-token-migration'
+      views: never
+    }
+    'src/pages/assets/[identifier].vue': {
+      routes: '/assets/[identifier]'
+      views: never
+    }
+    'src/pages/balances/index.vue': {
+      routes: 'balances'
+      views: never
+    }
+    'src/pages/balances/blockchain/index.vue': {
+      routes: 'balances-blockchain'
+      views: never
+    }
+    'src/pages/balances/exchange/[[exchange]].vue': {
+      routes: 'balances-exchange'
+      views: never
+    }
+    'src/pages/balances/manual/[[tab]].vue': {
+      routes: 'balances-manual'
+      views: never
+    }
+    'src/pages/balances/non-fungible/index.vue': {
+      routes: 'balances-non-fungible'
+      views: never
+    }
+    'src/pages/calendar/index.vue': {
+      routes: '/calendar/'
+      views: never
+    }
+    'src/pages/dashboard/index.vue': {
+      routes: 'dashboard'
+      views: never
+    }
+    'src/pages/history/index.vue': {
+      routes: 'history-events'
+      views: never
+    }
+    'src/pages/import/index.vue': {
+      routes: 'import'
+      views: never
+    }
+    'src/pages/locations/[identifier].vue': {
+      routes: '/locations/[identifier]'
+      views: never
+    }
+    'src/pages/nfts/index.vue': {
+      routes: 'nfts'
+      views: never
+    }
+    'src/pages/onchain/index.vue': {
+      routes: '/onchain/'
+      views: never
+    }
+    'src/pages/onchain/send/index.vue': {
+      routes: '/onchain/send/'
+      views: never
+    }
+    'src/pages/playground/index.vue': {
+      routes: 'playground'
+      views: never
+    }
+    'src/pages/price-manager/index.vue': {
+      routes: 'price-manager'
+      views: never
+    }
+    'src/pages/price-manager/historic/index.vue': {
+      routes: 'price-manager-historic'
+      views: never
+    }
+    'src/pages/price-manager/latest/index.vue': {
+      routes: 'price-manager-current'
+      views: never
+    }
+    'src/pages/reports/index.vue': {
+      routes: '/reports/'
+      views: never
+    }
+    'src/pages/reports/[id].vue': {
+      routes: '/reports/[id]'
+      views: never
+    }
+    'src/pages/reports/wrapper.vue': {
+      routes: '/reports/wrapper'
+      views: never
+    }
+    'src/pages/settings.vue': {
+      routes: '/settings' | '/settings/account/' | '/settings/accounting/' | '/settings/database/' | '/settings/general/' | '/settings/interface/' | '/settings/modules/' | '/settings/oracle/' | '/settings/rpc/' | '/settings/account' | '/settings/accounting' | '/settings/database' | '/settings/general' | '/settings/interface' | '/settings/modules' | '/settings/oracle' | '/settings/rpc'
+      views: 'default'
+    }
+    'src/pages/settings/account/index.vue': {
+      routes: '/settings/account/'
+      views: never
+    }
+    'src/pages/settings/accounting/index.vue': {
+      routes: '/settings/accounting/'
+      views: never
+    }
+    'src/pages/settings/database/index.vue': {
+      routes: '/settings/database/'
+      views: never
+    }
+    'src/pages/settings/general/index.vue': {
+      routes: '/settings/general/'
+      views: never
+    }
+    'src/pages/settings/interface/index.vue': {
+      routes: '/settings/interface/'
+      views: never
+    }
+    'src/pages/settings/modules/index.vue': {
+      routes: '/settings/modules/'
+      views: never
+    }
+    'src/pages/settings/oracle/index.vue': {
+      routes: '/settings/oracle/'
+      views: never
+    }
+    'src/pages/settings/rpc/index.vue': {
+      routes: '/settings/rpc/'
+      views: never
+    }
+    'src/pages/staking/[[location]].vue': {
+      routes: '/staking/[[location]]'
+      views: never
+    }
+    'src/pages/statistics/index.vue': {
+      routes: '/statistics/'
+      views: never
+    }
+    'src/pages/statistics/graphs/index.vue': {
+      routes: 'statistics-graphs'
+      views: never
+    }
+    'src/pages/statistics/history-events/index.vue': {
+      routes: 'statistics-history-events'
+      views: never
+    }
+    'src/pages/tag-manager/index.vue': {
+      routes: 'tag_manager'
+      views: never
+    }
+    'src/pages/user/index.vue': {
+      routes: '/user/'
+      views: never
+    }
+    'src/pages/user/create/index.vue': {
+      routes: '/user/create/'
+      views: never
+    }
+    'src/pages/user/login/index.vue': {
+      routes: '/user/login/'
+      views: never
+    }
+    'src/pages/wallet-bridge/index.vue': {
+      routes: '/wallet-bridge/'
+      views: never
+    }
+  }
+
+  /**
+   * Get a union of possible route names in a certain route component file.
+   * Used by the volar plugin to automatically type useRoute()
+   *
+   * @internal
+   */
+  export type _RouteNamesForFilePath<FilePath extends string> =
+    _RouteFileInfoMap extends Record<FilePath, infer Info>
+      ? Info['routes']
+      : keyof RouteNamedMap
 }
