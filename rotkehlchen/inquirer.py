@@ -30,7 +30,11 @@ from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.aura_finance.utils import get_aura_pool_price
-from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.balancer.constants import (
+    CPT_BALANCER_V1,
+    CPT_BALANCER_V2,
+    CPT_BALANCER_V3,
+)
 from rotkehlchen.chain.evm.decoding.balancer.utils import get_balancer_pool_price
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.beefy_finance.utils import query_beefy_vault_price
@@ -241,7 +245,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             inquirer=Inquirer(),  # Initialize here to avoid a circular import
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
         )
-    elif token.protocol in (CPT_BALANCER_V1, CPT_BALANCER_V2):
+    elif token.protocol in (CPT_BALANCER_V1, CPT_BALANCER_V2, CPT_BALANCER_V3):
         price = get_balancer_pool_price(
             pool_token=token,
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,

@@ -11,17 +11,25 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    CacheType,
+    ChecksumEvmAddress,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -392,4 +400,138 @@ def test_swap(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['Ch
         notes=f'Receive {in_amount} waEthUSDC as the result of a swap in Balancer v3',
         counterparty=CPT_BALANCER_V3,
         address=VAULT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V3]])
+@pytest.mark.parametrize('ethereum_accounts', [['0x719a143654a0C4621F49FA77077800ef3F5C3b40']])
+def test_gauge_deposit(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+        globaldb: 'GlobalDBHandler',
+):
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V3_POOLS, str(ethereum_inquirer.chain_id.value)),
+            values=['0x57c23c58B1D8C3292c15BEcF07c62C5c52457A42'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V3_GAUGES, str(ethereum_inquirer.chain_id.value)),
+            values=['0x70A1c01902DAb7a45dcA1098Ca76A8314dd8aDbA'],
+        )
+    tx_hash = deserialize_evm_tx_hash('0x50ce5d69c6856fe4501b537b81cddea6327d3082a908e587775a6356a31ab6c8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755709055000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000616747733174853'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x57c23c58B1D8C3292c15BEcF07c62C5c52457A42'),
+        amount=FVal(deposit_amount := '0.016912211753057734'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} osETH-waWETH into balancer-v3 gauge',
+        counterparty=CPT_BALANCER_V3,
+        address=string_to_evm_address('0x70A1c01902DAb7a45dcA1098Ca76A8314dd8aDbA'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x70A1c01902DAb7a45dcA1098Ca76A8314dd8aDbA'),
+        amount=FVal(receive_amount := '0.016912211753057734'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} osETH-waWETH-gauge after depositing in balancer-v3 gauge',
+        counterparty=CPT_BALANCER_V3,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V3]])
+@pytest.mark.parametrize('base_accounts', [['0x9EE4d24dB1104bDF818391efCB8CCBa8Ff206159']])
+def test_gauge_withdrawal(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+        globaldb: 'GlobalDBHandler',
+):
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V3_POOLS, str(base_inquirer.chain_id.value)),
+            values=['0x7AB124EC4029316c2A42F713828ddf2a192B36db'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V3_GAUGES, str(base_inquirer.chain_id.value)),
+            values=['0x70DB188E5953f67a4B16979a2ceA26248b315401'],
+        )
+    tx_hash = deserialize_evm_tx_hash('0xd00e99e4e26704e5207b7b322424fb7ee625b850726f599ddd4100a86844ecfb')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1756113395000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000000713702598843'),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:8453/erc20:0x70DB188E5953f67a4B16979a2ceA26248b315401'),
+        amount=FVal(return_amount := '7.452356019321253694'),
+        location_label=user_address,
+        notes=f'Return {return_amount} Aave USDC-Aave GHO-gauge after withdrawing from balancer-v3 gauge',  # noqa: E501
+        counterparty=CPT_BALANCER_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:8453/erc20:0x7AB124EC4029316c2A42F713828ddf2a192B36db'),
+        amount=FVal(receive_amount := '7.452356019321253694'),
+        location_label=user_address,
+        notes=f'Withdraw {receive_amount} Aave USDC-Aave GHO from balancer-v3 gauge',
+        counterparty=CPT_BALANCER_V3,
+        address=string_to_evm_address('0x70DB188E5953f67a4B16979a2ceA26248b315401'),
     )]
