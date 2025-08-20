@@ -1441,14 +1441,14 @@ wheels = [
 
 [[package]]
 name = "py-machineid"
-version = "0.7.0"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "winregistry", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/10/2c/fd1764547506819eca1e849865b5f64268f37bc48c03433af379ad2faeed/py-machineid-0.7.0.tar.gz", hash = "sha256:5a74a810e38b57b043b145c756c1e6ac161529cb7d83fe20099fcb986acc577b", size = 4587, upload-time = "2024-12-14T22:24:10.712Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/4b/0f8f37eeb0e9feb53ed77ff8e04a6300916971ee3d2c1ff905b88fed5a7e/py-machineid-0.8.0.tar.gz", hash = "sha256:5515d5f9779073d0caa2e8aaf15a0fdd0ad4247fd0b86d9c447431c96d3e3467", size = 4591, upload-time = "2025-05-26T15:24:31.749Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/ce/7e0f98cd38efee0da8cfb2e50ac825c3df240f57364f87c225ad8ef04223/py_machineid-0.7.0-py3-none-any.whl", hash = "sha256:3dacc322b0511383d79f1e817a2710b19bcfb820a4c7cea34aaa329775fef468", size = 4892, upload-time = "2024-12-14T22:24:08.704Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/d6/ecbf0c7825a6cc30f4f100df904625f67d251236639304b52b3d03fa285c/py_machineid-0.8.0-py3-none-any.whl", hash = "sha256:fddf06c5f4e87759a74128117c50e5604cddcef6bcc1728b697924c49b5f6e79", size = 4886, upload-time = "2025-05-26T15:24:30.731Z" },
 ]
 
 [[package]]
@@ -2058,7 +2058,7 @@ requires-dist = [
     { name = "polyleven", specifier = "==0.9" },
     { name = "py-bip39-bindings", specifier = "==0.2.0" },
     { name = "py-ed25519-zebra-bindings", specifier = "==1.2.0" },
-    { name = "py-machineid", specifier = "==0.7.0" },
+    { name = "py-machineid", specifier = "==0.8.0" },
     { name = "py-sr25519-bindings", specifier = "==0.2.2" },
     { name = "pycparser", specifier = "<=2.17" },
     { name = "pyjwt", specifier = "==2.10.1" },
