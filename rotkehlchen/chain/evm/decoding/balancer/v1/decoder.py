@@ -55,9 +55,8 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             counterparty=CPT_BALANCER_V1,
-            pool_cache_type=CacheType.BALANCER_V1_POOLS,
             read_fn=lambda chain_id: read_balancer_pools_and_gauges_from_cache(
-                version='1',
+                version=1,
                 chain_id=chain_id,
                 cache_type=CacheType.BALANCER_V1_POOLS,
             ),

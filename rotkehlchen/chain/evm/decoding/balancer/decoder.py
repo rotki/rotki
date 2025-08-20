@@ -34,8 +34,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            counterparty: Literal['balancer-v1', 'balancer-v2'],
-            pool_cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
+            counterparty: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'],
             read_fn: Callable[[ChainID], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
     ) -> None:
         super().__init__(
@@ -46,19 +45,19 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         ReloadablePoolsAndGaugesDecoderMixin.__init__(
             self,
             evm_inquirer=evm_inquirer,
-            cache_type_to_check_for_freshness=pool_cache_type,
+            cache_type_to_check_for_freshness=CacheType.BALANCER_V1_POOLS if counterparty == 'balancer-v1' else (CacheType.BALANCER_V2_POOLS if counterparty == 'balancer-v2' else CacheType.BALANCER_V3_POOLS),  # noqa: E501,
             query_data_method=lambda inquirer, cache_type, msg_aggregator, reload_all: query_balancer_data(  # noqa: E501
                 inquirer=inquirer,
                 cache_type=cache_type,
                 protocol=counterparty,
                 msg_aggregator=msg_aggregator,
-                version=1 if counterparty == 'balancer-v1' else 2,
+                version=1 if counterparty == 'balancer-v1' else (2 if counterparty == 'balancer-v2' else 3),  # noqa: E501
                 reload_all=reload_all,
             ),
             read_data_from_cache_method=read_fn,
             chain_id=evm_inquirer.chain_id,
         )
-        self.counterparty: Literal['balancer-v1', 'balancer-v2'] = counterparty
+        self.counterparty: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'] = counterparty
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:

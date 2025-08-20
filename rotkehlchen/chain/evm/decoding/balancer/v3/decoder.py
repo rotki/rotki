@@ -8,8 +8,11 @@ from eth_abi import decode as decode_abi
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
+    read_balancer_pools_and_gauges_from_cache,
+)
 from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V3
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -23,7 +26,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -48,7 +51,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Balancerv3CommonDecoder(DecoderInterface):
+class Balancerv3CommonDecoder(BalancerCommonDecoder):
 
     def __init__(
             self,
@@ -60,8 +63,19 @@ class Balancerv3CommonDecoder(DecoderInterface):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            counterparty=CPT_BALANCER_V3,
+            read_fn=lambda chain_id: read_balancer_pools_and_gauges_from_cache(
+                version=3,
+                chain_id=chain_id,
+                cache_type=CacheType.BALANCER_V3_POOLS,
+            ),
         )
         self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
+
+    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+        # no-op implementation of abstract method from ReloadablePoolsAndGaugesDecoderMixin.
+        # balancer v3 pool deposits and withdrawals are handled by _decode_liquidity_event.
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_liquidity_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode liquidity events (inflow & outflow) for Balancer V3 pools."""
@@ -285,7 +299,9 @@ class Balancerv3CommonDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {VAULT_ADDRESS: (self._decode_vault_events,)}
+        return super().addresses_to_decoders() | {
+            VAULT_ADDRESS: (self._decode_vault_events,),
+        }
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {

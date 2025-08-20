@@ -557,7 +557,7 @@ def test_balancer_cache(ethereum_inquirer):
             write_cursor.execute('DELETE FROM address_book WHERE address=?', (pool,))
 
     pools, gauges = read_balancer_pools_and_gauges_from_cache(
-        version='2',
+        version=2,
         chain_id=ethereum_inquirer.chain_id,
         cache_type=CacheType.BALANCER_V2_POOLS,
     )
@@ -576,7 +576,7 @@ def test_balancer_cache(ethereum_inquirer):
         ),
     )
     pools, gauges = read_balancer_pools_and_gauges_from_cache(
-        version='2',
+        version=2,
         chain_id=ethereum_inquirer.chain_id,
         cache_type=CacheType.BALANCER_V2_POOLS,
     )

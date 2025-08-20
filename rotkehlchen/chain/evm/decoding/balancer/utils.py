@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import (
     BALANCER_POOL_ABI,
     CHAIN_ID_TO_BALANCER_API_MAPPINGS,
     CPT_BALANCER_V1,
+    CPT_BALANCER_V3,
     GET_POOL_PRICE_QUERY,
     GET_POOLS_COUNT_QUERY,
     GET_POOLS_QUERY,
@@ -58,7 +59,7 @@ def query_balancer_api(query: str, variables: dict[str, Any]) -> dict[str, Any]:
         raise RemoteError(f'Balancer API request with query={query} and vars={variables} failed due to {msg}') from e  # noqa: E501
 
 
-def query_balancer_pools_count(chain: 'ChainID', version: Literal[1, 2]) -> int:
+def query_balancer_pools_count(chain: 'ChainID', version: Literal[1, 2, 3]) -> int:
     """Fetch the total number of balancer pools for the specified chain and protocol
     May raise:
     - RemoteError
@@ -77,7 +78,7 @@ def query_balancer_pools_count(chain: 'ChainID', version: Literal[1, 2]) -> int:
         raise RemoteError(f'Balancer v{version} pools count query for {chain} failed due to {msg}') from e  # noqa: E501
 
 
-def query_balancer_pools(chain: 'ChainID', version: Literal[1, 2]) -> list[dict[str, Any]]:
+def query_balancer_pools(chain: 'ChainID', version: Literal[1, 2, 3]) -> list[dict[str, Any]]:
     """Fetches and processes balancer pools from API.
     May raise:
     - RemoteError
@@ -114,8 +115,8 @@ def get_balancer_pool_price(
     May raise:
     - RemoteError
     """
-    # For v1 pool tokens, pool id is the pool address since they don't implement getPoolId
-    if pool_token.protocol == CPT_BALANCER_V1:
+    # For v1 & v3 pool tokens, pool id is the pool address since they don't implement getPoolId
+    if pool_token.protocol in (CPT_BALANCER_V1, CPT_BALANCER_V3):
         pool_id = str(pool_token.evm_address)
     else:
         try:

@@ -18,7 +18,11 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V3
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
-from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.balancer.constants import (
+    CPT_BALANCER_V1,
+    CPT_BALANCER_V2,
+    CPT_BALANCER_V3,
+)
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
@@ -1070,6 +1074,56 @@ def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquire
 
     price = inquirer_defi.find_usd_price(asset=prf_usdc_token)
     assert price == ZERO_PRICE  # This CoW AMM pool has zero liquidity and supply, so ZERO_PRICE is correct  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_balancer_v3_pool_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+    oseth_waweth_token = get_or_create_evm_token(  # v3 pool
+        userdb=database,
+        evm_address=string_to_evm_address('0x57c23c58B1D8C3292c15BEcF07c62C5c52457A42'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='osETH-waWETH',
+        name='Balancer osETH-waWETH',
+        decimals=18,
+        protocol=CPT_BALANCER_V3,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x0bfc9d54Fc184518A81162F8fB99c2eACa081202'),
+            token_kind=TokenKind.ERC20,
+            weight=FVal('0.5'),
+        ), UnderlyingToken(
+            address=string_to_evm_address('0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38'),
+            token_kind=TokenKind.ERC20,
+            weight=FVal('0.5'),
+        )],
+    )
+    fluid_wsteth_weth_token = get_or_create_evm_token(  # another v3 pool
+        userdb=database,
+        evm_address=string_to_evm_address('0x6b31a94029fd7840d780191b6d63fa0d269bd883'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='Surge Fluid wstETH-wETH',
+        name='Balancer Surge Fluid wstETH-wETH',
+        decimals=18,
+        protocol=CPT_BALANCER_V3,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x2411802D8BEA09be0aF8fD8D08314a63e706b29C'),
+            token_kind=TokenKind.ERC20,
+            weight=FVal('0.5'),
+        ), UnderlyingToken(
+            address=string_to_evm_address('0x90551c1795392094FE6D29B758EcCD233cFAa260'),
+            token_kind=TokenKind.ERC20,
+            weight=FVal('0.5'),
+        )],
+    )
+
+    price = inquirer_defi.find_usd_price(asset=oseth_waweth_token)
+    assert price == FVal('4407.38372893843922592300785701555915054361348676355223729348537322198887813713')  # noqa: E501
+
+    price = inquirer_defi.find_usd_price(asset=fluid_wsteth_weth_token)
+    assert price == FVal('4387.46380885547713516547271593303658059129307871331714940131303950662658698146')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
