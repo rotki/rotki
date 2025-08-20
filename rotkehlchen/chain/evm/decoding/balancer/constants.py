@@ -1,8 +1,8 @@
-from typing import Final
+from typing import Final, Literal
 
 from eth_typing import ABI
 
-from rotkehlchen.types import ChainID
+from rotkehlchen.types import CacheType, ChainID
 
 BALANCER_LABEL: Final = 'Balancer'
 CPT_BALANCER_V1: Final = 'balancer-v1'
@@ -18,6 +18,16 @@ CHAIN_ID_TO_BALANCER_API_MAPPINGS: Final = {
     ChainID.OPTIMISM: 'OPTIMISM',
     ChainID.POLYGON_POS: 'POLYGON',
     ChainID.ARBITRUM_ONE: 'ARBITRUM',
+}
+BALANCER_CACHE_TYPE_MAPPING: Final = {
+    CPT_BALANCER_V1: CacheType.BALANCER_V1_POOLS,
+    CPT_BALANCER_V2: CacheType.BALANCER_V2_POOLS,
+    CPT_BALANCER_V3: CacheType.BALANCER_V3_POOLS,
+}
+BALANCER_VERSION_MAPPING: Final[dict[str, Literal[1, 2, 3]]] = {
+    CPT_BALANCER_V1: 1,
+    CPT_BALANCER_V2: 2,
+    CPT_BALANCER_V3: 3,
 }
 
 GET_POOLS_QUERY: Final = """

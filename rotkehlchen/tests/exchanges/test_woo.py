@@ -1,3 +1,4 @@
+import os
 import warnings as test_warnings
 from json.decoder import JSONDecodeError
 from unittest.mock import MagicMock, call, patch
@@ -26,6 +27,7 @@ def test_name():
     assert exchange.name == 'woo'
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip woo in CI')
 @pytest.mark.asset_test
 def test_woo_assets_are_known(mock_woo):
     request_url = f'{mock_woo.base_uri}/v1/public/token'

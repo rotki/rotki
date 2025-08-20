@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Literal
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import query_balancer_data
-from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.balancer.constants import (
+    BALANCER_CACHE_TYPE_MAPPING,
+    BALANCER_VERSION_MAPPING,
+    CPT_BALANCER_V1,
+    CPT_BALANCER_V2,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import (
     DecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,
@@ -19,7 +24,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -34,8 +39,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            counterparty: Literal['balancer-v1', 'balancer-v2'],
-            pool_cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
+            counterparty: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'],
             read_fn: Callable[[ChainID], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
     ) -> None:
         super().__init__(
@@ -46,19 +50,19 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         ReloadablePoolsAndGaugesDecoderMixin.__init__(
             self,
             evm_inquirer=evm_inquirer,
-            cache_type_to_check_for_freshness=pool_cache_type,
+            cache_type_to_check_for_freshness=BALANCER_CACHE_TYPE_MAPPING[counterparty],
             query_data_method=lambda inquirer, cache_type, msg_aggregator, reload_all: query_balancer_data(  # noqa: E501
                 inquirer=inquirer,
                 cache_type=cache_type,
                 protocol=counterparty,
                 msg_aggregator=msg_aggregator,
-                version=1 if counterparty == 'balancer-v1' else 2,
+                version=BALANCER_VERSION_MAPPING[counterparty],
                 reload_all=reload_all,
             ),
             read_data_from_cache_method=read_fn,
             chain_id=evm_inquirer.chain_id,
         )
-        self.counterparty: Literal['balancer-v1', 'balancer-v2'] = counterparty
+        self.counterparty: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'] = counterparty
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:
