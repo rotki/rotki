@@ -4,7 +4,6 @@ from enum import Enum, auto
 from typing import Any, Literal, NamedTuple
 
 from eth_typing import HexAddress, HexStr
-from web3 import Web3
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -100,13 +99,6 @@ class EvmAccount(NamedTuple):
 class EvmlikeAccount(NamedTuple):
     address: ChecksumEvmAddress
     chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None = None
-
-
-class Web3Node(NamedTuple):
-    """This represents an EVM node with its capabilities."""
-    web3_instance: Web3
-    is_pruned: bool
-    is_archive: bool
 
 
 ASSET_ID_RE = re.compile(r'eip155:(.*?)/(.*?):(.*)')

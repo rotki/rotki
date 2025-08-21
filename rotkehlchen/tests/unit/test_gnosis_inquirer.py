@@ -25,7 +25,7 @@ def test_gnosis_nodes_prune_and_archive_status(
         connect_at_start=gnosis_manager_connect_at_start,
         evm_inquirer=gnosis_inquirer,
     )
-    for node_name, web3_node in gnosis_inquirer.web3_mapping.items():
+    for node_name, web3_node in gnosis_inquirer.rpc_mapping.items():
         if node_name.endpoint == 'https://gnosis.blockpi.network/v1/rpc/public':
             assert not web3_node.is_pruned
             assert not web3_node.is_archive
@@ -38,4 +38,4 @@ def test_gnosis_nodes_prune_and_archive_status(
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
-    assert len(gnosis_inquirer.web3_mapping) == len(gnosis_manager_connect_at_start)
+    assert len(gnosis_inquirer.rpc_mapping) == len(gnosis_manager_connect_at_start)

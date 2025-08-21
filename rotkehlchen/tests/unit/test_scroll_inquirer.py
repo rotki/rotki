@@ -30,11 +30,11 @@ def test_scroll_nodes_prune_and_archive_status(
         connect_at_start=scroll_manager_connect_at_start,
         evm_inquirer=scroll_inquirer,
     )
-    for node_name, web3_node in scroll_inquirer.web3_mapping.items():
+    for node_name, web3_node in scroll_inquirer.rpc_mapping.items():
         if node_name in {SCROLLIO_NODE, ANKR_SCROLL_NODE, ONE_RPC_SCROLL_NODE}:
             assert not web3_node.is_pruned
             assert web3_node.is_archive
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
-    assert len(scroll_inquirer.web3_mapping) == len(scroll_manager_connect_at_start)
+    assert len(scroll_inquirer.rpc_mapping) == len(scroll_manager_connect_at_start)

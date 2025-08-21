@@ -31,7 +31,7 @@ def test_binance_sc_nodes_prune_and_archive_status(
         connect_at_start=binance_sc_manager_connect_at_start,
         evm_inquirer=binance_sc_inquirer,
     )
-    for node_name, web3_node in binance_sc_inquirer.web3_mapping.items():
+    for node_name, web3_node in binance_sc_inquirer.rpc_mapping.items():
         if node_name == ONE_RPC_BINANCE_SC_NODE:
             assert not web3_node.is_pruned
             assert web3_node.is_archive
@@ -47,4 +47,4 @@ def test_binance_sc_nodes_prune_and_archive_status(
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
-    assert len(binance_sc_inquirer.web3_mapping) == len(binance_sc_manager_connect_at_start)
+    assert len(binance_sc_inquirer.rpc_mapping) == len(binance_sc_manager_connect_at_start)

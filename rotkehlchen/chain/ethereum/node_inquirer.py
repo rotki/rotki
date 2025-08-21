@@ -9,7 +9,7 @@ from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_na
 from eth_typing import HexStr
 from web3 import Web3
 
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
@@ -58,7 +58,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)
         super().__init__(

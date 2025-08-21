@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault, MakerdaoVaults
-from rotkehlchen.chain.evm.types import Web3Node
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH, A_USDC
 from rotkehlchen.fval import FVal
@@ -106,10 +106,10 @@ def fixture_makerdao_vaults(
     if not use_etherscan:
         set_web3_node_in_inquirer(
             ethereum_inquirer=ethereum_inquirer,
-            web3node=Web3Node(web3_instance=Web3(), is_pruned=False, is_archive=True),
+            rpc_node=RPCNode(rpc_client=Web3(), is_pruned=False, is_archive=True),
         )
         web3_node = get_web3_node_from_inquirer(ethereum_inquirer)
-        web3_patch = create_web3_mock(web3=web3_node.web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
+        web3_patch = create_web3_mock(web3=web3_node.rpc_client, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
     else:
         web3_patch = nullcontext()
 
@@ -135,7 +135,7 @@ def fixture_makerdao_vaults(
 @pytest.mark.parametrize('mocked_proxies', [{}])
 def test_get_vaults(makerdao_vaults, makerdao_test_data, ethereum_inquirer):
     web3_node = get_web3_node_from_inquirer(makerdao_vaults.ethereum)
-    web3_patch = create_web3_mock(web3=web3_node.web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
+    web3_patch = create_web3_mock(web3=web3_node.rpc_client, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
     with web3_patch:
         vaults = makerdao_vaults.get_vaults()
 

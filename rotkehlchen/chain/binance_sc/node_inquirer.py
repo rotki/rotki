@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Literal
 
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -35,7 +35,7 @@ class BinanceSCInquirer(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,

@@ -1,32 +1,25 @@
 import json
 import logging
-import random
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal
-from urllib.parse import urlparse
 
 import requests
-from ens import ENS
 from eth_abi.exceptions import DecodingError
 from eth_typing.abi import ABI
 from eth_utils.abi import get_abi_output_types
-from requests import RequestException
-from web3 import HTTPProvider, Web3
+from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
-from web3.middleware import ExtraDataToPOAMiddleware
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import (
-    ETHEREUM_ETHERSCAN_NODE,
     ETHEREUM_ETHERSCAN_NODE_NAME,
 )
 from rotkehlchen.chain.ethereum.types import LogIterationCallback
@@ -41,7 +34,8 @@ from rotkehlchen.chain.evm.constants import (
 )
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.types import NodeName, RemoteDataQueryStatus, Web3Node, WeightedNode
+from rotkehlchen.chain.evm.types import RemoteDataQueryStatus, WeightedNode
+from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import (
@@ -188,7 +182,7 @@ def _query_web3_get_logs(
     return events
 
 
-class EvmNodeInquirer(ABC, LockableQueryMixIn):
+class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     """Class containing generic functionality for querying evm nodes
 
     The child class must implement the following methods:
@@ -215,16 +209,14 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
             native_token: CryptoAsset,
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
             blockscout: Blockscout | None = None,
     ) -> None:
         self.greenlet_manager = greenlet_manager
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
-        self.etherscan_node = ETHEREUM_ETHERSCAN_NODE
         self.contracts = contracts
-        self.web3_mapping: dict[NodeName, Web3Node] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()
         self.chain_name = self.chain_id.to_name()
@@ -242,94 +234,12 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
-        # failed_to_connect_nodes keeps the nodes that we couldn't connect while
-        # doing remote queries so they aren't tried again if they get chosen. At the
-        # moment of writing this we don't remove entries from the set after some time.
-        # To force the app to retry a node a restart is needed.
-        self.failed_to_connect_nodes: set[str] = set()
+
         LockableQueryMixIn.__init__(self)
+        EVMRPCMixin.__init__(self)
         # Log the available nodes so we have extra information when debugging connection errors.
         nodes = '\n'.join([str(x.serialize()) for x in self.default_call_order()])  # variable because \ is not valid in f-strings  # noqa: E501
         log.debug(f'RPC nodes at startup {nodes}')
-
-    def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
-        """Start async connect to the saved nodes for the given evm chain if needed.
-
-        If `when_tracked_accounts` is True then it will connect when we have some
-        tracked accounts in the DB. Otherwise when we have none.
-
-        In ethereum case always connect to nodes. Needed for ENS resolution.
-        For other EVM chains we respect `when_tracked_accounts`.
-        """
-        if self.connected_to_any_web3() or self.greenlet_manager.has_task(_connect_task_prefix(self.chain_name)):  # noqa: E501
-            return
-
-        with self.database.conn.read_ctx() as cursor:
-            accounts = self.database.get_blockchain_accounts(cursor)
-
-        tracked_accounts_num = len(accounts.get(self.blockchain))
-        if (
-            (tracked_accounts_num != 0 and when_tracked_accounts) or
-            (tracked_accounts_num == 0 and (when_tracked_accounts is False or self.chain_id == ChainID.ETHEREUM))  # noqa: E501
-        ):
-            rpc_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
-            self.connect_to_multiple_nodes(rpc_nodes)
-
-    def connected_to_any_web3(self) -> bool:
-        return len(self.web3_mapping) != 0
-
-    def get_own_node_web3(self) -> Web3 | None:
-        for node, web3node in self.web3_mapping.items():
-            if node.owned:
-                return web3node.web3_instance
-        return None
-
-    def get_own_node_info(self) -> NodeName | None:
-        for node in self.web3_mapping:
-            if node.owned:
-                return node
-        return None
-
-    def get_connected_nodes(self) -> list[NodeName]:
-        return list(self.web3_mapping.keys())
-
-    def default_call_order(self, skip_etherscan: bool = False) -> list[WeightedNode]:
-        """Default call order for evm nodes
-
-        Own node always has preference. Then all other node types are randomly queried
-        in sequence depending on a weighted probability.
-
-
-        Some benchmarks on weighted probability based random selection when compared
-        to simple random selection. Benchmark was on blockchain balance querying with
-        29 ethereum accounts and at the time 1010 different ethereum tokens.
-
-        With weights: etherscan: 0.5, mycrypto: 0.25, blockscout: 0.2, avado: 0.05
-        ===> Runs: 66, 58, 60, 68, 58 seconds
-        ---> Average: 62 seconds
-        - Without weights
-        ===> Runs: 66, 82, 72, 58, 72 seconds
-        ---> Average: 70 seconds
-        """
-        open_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
-        selection = [wnode for wnode in open_nodes if wnode.node_info.owned is False]
-        ordered_list = []
-        while len(selection) != 0:
-            weights = [float(entry.weight) for entry in selection]
-            node = random.choices(selection, weights, k=1)
-            ordered_list.append(node[0])
-            selection.remove(node[0])
-
-        if not skip_etherscan:  # explicitly adding at the end to minimize etherscan API queries
-            ordered_list.append(self.etherscan_node)
-
-        owned_nodes = [node.node_info for node in open_nodes if node.node_info.owned]
-        if len(owned_nodes) != 0:
-            # Assigning one is just a default since we always use it.
-            # The weight is only important for the other nodes since they
-            # are selected using this parameter
-            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # noqa: E501
-        return ordered_list
 
     def get_multi_balance(
             self,
@@ -372,14 +282,13 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         If `web3` is None, it uses the local own node.
         Returns None if there is no local node or node cannot query historical balance.
         """
-        web3 = web3 if web3 is not None else self.get_own_node_web3()
-        if web3 is None:
+        if (web3 := web3 if web3 is not None else self.get_own_node()) is None:
             return None
 
         try:
             result = web3.eth.get_balance(address, block_identifier=block_number)
         except (
-                requests.exceptions.RequestException,
+                requests.RequestException,
                 BlockchainQueryError,
                 KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
                 Web3Exception,
@@ -394,132 +303,14 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         return balance
 
-    def _init_web3(self, node: NodeName) -> tuple[Web3, str]:
-        """Initialize a new Web3 object based on a given endpoint"""
-        rpc_endpoint = node.endpoint
-        parsed_rpc_endpoint = urlparse(node.endpoint)
-        if not parsed_rpc_endpoint.scheme:
-            rpc_endpoint = f'http://{node.endpoint}'
-        provider = HTTPProvider(
-            endpoint_uri=node.endpoint,
-            request_kwargs={'timeout': self.rpc_timeout},
-        )
-        ens = ENS(provider) if self.chain_id == ChainID.ETHEREUM else None
-        web3 = Web3(provider, ens=ens)
-        for middleware in (
-                'validation',  # validation middleware makes an un-needed for us chain ID validation causing 1 extra rpc call per eth_call # noqa: E501
-                'gas_price_strategy',  # We do not need to automatically estimate gas
-                'gas_estimate',
-                'ens_name_to_address',  # we do our own handling for ens names
-        ):
-            # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142  # noqa: E501
-            with suppress(ValueError):  # If not existing raises ValueError, so ignore
-                web3.middleware_onion.remove(middleware)
-
-        if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE):  # noqa: E501
-            # TODO: Is it needed for all non-mainet EVM chains?
-            # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
-            web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-
-        return web3, rpc_endpoint
-
-    def attempt_connect(
-            self,
-            node: NodeName,
-            connectivity_check: bool = True,
-    ) -> tuple[bool, str]:
-        """Attempt to connect to a particular node type
-
-        For our own node if the given rpc endpoint is not the same as the saved one
-        the connection is re-attempted to the new one
-        """
-        message = ''
-        node_connected = self.web3_mapping.get(node, None) is not None
-        if node_connected:
-            return True, f'Already connected to {node} {self.chain_name} node'
-
-        web3, rpc_endpoint = self._init_web3(node)
-        try:  # it is here that an actual connection is attempted
-            is_connected = web3.is_connected()
-        except requests.exceptions.RequestException:
-            message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint}'  # noqa: E501
-            log.warning(message)
-            return False, message
-        except AssertionError:
-            # Terrible, terrible hack but needed due to https://github.com/rotki/rotki/issues/1817
-            is_connected = False
-
-        if is_connected:
-            # Also make sure we are actually connected to the right network
-            msg = ''
-            try:
-                if connectivity_check:
-                    try:
-                        network_id = int(web3.net.version, 0)  # version can be in hex too. base 0 triggers the prefix check  # noqa: E501
-                    except requests.exceptions.RequestException as e:
-                        msg = (
-                            f'Connected to node {node} at endpoint {rpc_endpoint} but'
-                            f'failed to request node version due to {e!s}'
-                        )
-                        log.warning(msg)
-                        return False, msg
-
-                    if network_id != self.chain_id.value:
-                        message = (
-                            f'Connected to {self.chain_name} node {node} at endpoint {rpc_endpoint} but '  # noqa: E501
-                            f'it is not on the expected network value {self.chain_id.value}. '
-                            f'The chain id the node is in is {network_id}.'
-                        )
-                        log.warning(message)
-                        return False, message
-
-                    try:
-                        current_block = web3.eth.block_number  # pylint: disable=no-member
-                        if isinstance(current_block, int) is False:  # Check for https://github.com/rotki/rotki/issues/6350  # TODO: Check if web3.py v6 has a check for this # noqa: E501
-                            raise RemoteError(f'Found non-int current block:{current_block}')
-                    except (requests.exceptions.RequestException, RemoteError) as e:
-                        msg = f'Could not query latest block due to {e!s}'
-                        log.warning(msg)
-
-            except (Web3Exception, ValueError) as e:
-                message = (
-                    f'Failed to connect to {self.chain_name} node {node} at endpoint '
-                    f'{rpc_endpoint} due to {e!s}'
-                )
-                return False, message
-
-            if node.endpoint.endswith('llamarpc.com'):  # temporary. Seems to sometimes switch
-                is_pruned, is_archive = True, False  # between pruned and non-pruned nodes
-            elif node.endpoint.endswith('blastapi.io'):  # temporary
-                # After the bedrock update blastapi.io switches from archive to non archive nodes
-                # It has never reported pruned nodes.
-                is_pruned, is_archive = False, False
-            else:
-                is_pruned, is_archive = self.determine_capabilities(web3)
-            log.info(f'Connected {self.chain_name} node {node} at {rpc_endpoint}')
-            self.web3_mapping[node] = Web3Node(
-                web3_instance=web3,
-                is_pruned=is_pruned,
-                is_archive=is_archive,
-            )
-            return True, ''
-
-        # else
-        message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint}'
-        log.warning(message)
-        return False, message
-
-    def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
-        for weighted_node in nodes:
-            task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=task_name,
-                exception_is_error=True,
-                method=self.attempt_connect,
-                node=weighted_node.node_info,
-                connectivity_check=True,
-            )
+    def _have_archive(self, web3: Web3) -> bool:
+        """Returns a boolean representing if node is an archive one."""
+        address_to_check, block_to_check, expected_balance = self._get_archive_check_data()
+        return self.get_historical_balance(
+            address=address_to_check,
+            block_number=block_to_check,
+            web3=web3,
+        ) == expected_balance
 
     def _query(self, method: Callable, call_order: Sequence[WeightedNode], **kwargs: Any) -> Any:
         """Queries evm related data by performing a query of the provided method to all given nodes
@@ -529,8 +320,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         """
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
-            web3node = self.web3_mapping.get(node_info, None)
-            if web3node is None:
+            if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                 if node_info.name in self.failed_to_connect_nodes:
                     continue
 
@@ -540,23 +330,23 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                         self.failed_to_connect_nodes.add(node_info.name)
                         continue
 
-                    if (web3node := self.web3_mapping.get(node_info, None)) is None:
+                    if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                         log.error(f'Unexpected missing node {node_info} at {self.chain_id}')
                         continue
 
-            if web3node is not None and ((
+            if rpc_node is not None and ((
                 method.__name__ in self.methods_that_query_past_data and
-                web3node.is_pruned is True
+                rpc_node.is_pruned is True
             ) or (
                 kwargs.get('block_identifier', 'latest') != 'latest' and
-                web3node.is_archive is False
+                rpc_node.is_archive is False
             )):
                 # If the block_identifier is different from 'latest'
                 # this query should be routed to an archive node
                 continue
 
             try:
-                web3 = web3node.web3_instance if web3node is not None else None
+                web3 = rpc_node.rpc_client if rpc_node is not None else None
                 result = method(web3, **kwargs)
             except TransactionNotFound:
                 if kwargs.get('must_exist', False) is True:
@@ -573,7 +363,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     f'{method.__name__}: {e!s}. Skipping this node in future queries.',
                 )
                 self.failed_to_connect_nodes.add(node_info.name)
-                self.web3_mapping.pop(node_info, None)
+                self.rpc_mapping.pop(node_info, None)
                 continue
             except (
                     RemoteError,
@@ -1372,18 +1162,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         return decoded_contract_info
 
-    def determine_capabilities(self, web3: Web3) -> tuple[bool, bool]:
-        """This method checks for the capabilities of an rpc node. This includes:
-        - whether it is an archive node.
-        - if the node is pruned or not.
-
-        Returns a tuple of booleans i.e. (is_pruned, is_archived)
-        """
-        is_archive = self._have_archive(web3)
-        is_pruned = self._is_pruned(web3)
-
-        return is_pruned, is_archive
-
     def get_contract_deployed_block(self, address: ChecksumEvmAddress) -> int | None:
         """Get the deployed block of a contract
 
@@ -1457,39 +1235,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         """
         return WEB3_LOGQUERY_BLOCK_RANGE
 
-    def _have_archive(self, web3: Web3) -> bool:
-        """Returns a boolean representing if node is an archive one."""
-        address_to_check, block_to_check, expected_balance = self._get_archive_check_data()
-        balance = self.get_historical_balance(
-            address=address_to_check,
-            block_number=block_to_check,
-            web3=web3,
-        )
-        return balance == expected_balance
-
-    @abstractmethod
-    def _get_archive_check_data(self) -> tuple[ChecksumEvmAddress, int, FVal]:
-        """Returns a tuple of (address, block_number, expected_balance) that can used for
-        checking whether a node is an archive one."""
-
-    def _is_pruned(self, web3: Web3) -> bool:
-        """Returns a boolean representing if the node is pruned or not."""
-        try:
-            tx = web3.eth.get_transaction(self._get_pruned_check_tx_hash())  # type: ignore
-        except (
-                RequestException,
-                Web3Exception,
-                KeyError,
-                ValueError,  # may still be raised in web3 v6 for missing trie error
-        ):
-            tx = None
-
-        return tx is None
-
-    @abstractmethod
-    def _get_pruned_check_tx_hash(self) -> EVMTxHash:
-        """Returns a transaction hash that can used for checking whether a node is pruned."""
-
     def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:
         """Performs additional tx_receipt processing where necessary"""
 
@@ -1557,7 +1302,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             contract_multicall: 'EvmContract',
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
             blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
@@ -1594,7 +1339,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             contract_multicall: 'EvmContract',
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
             blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(

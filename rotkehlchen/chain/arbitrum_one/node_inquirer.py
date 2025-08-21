@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from web3.types import BlockIdentifier
 
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import (
     ETHEREUM_ETHERSCAN_NODE,
 )
@@ -43,7 +43,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ARBITRUM_ONE]](chain_id=ChainID.ARBITRUM_ONE)
         super().__init__(

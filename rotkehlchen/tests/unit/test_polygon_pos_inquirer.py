@@ -27,7 +27,7 @@ def test_polygon_pos_nodes_prune_and_archive_status(
         connect_at_start=polygon_pos_manager_connect_at_start,
         evm_inquirer=polygon_pos_inquirer,
     )
-    for node_name, web3_node in polygon_pos_inquirer.web3_mapping.items():
+    for node_name, web3_node in polygon_pos_inquirer.rpc_mapping.items():
         if node_name.endpoint == 'https://polygon-bor.publicnode.com':
             assert web3_node.is_pruned
             assert not web3_node.is_archive
@@ -37,4 +37,4 @@ def test_polygon_pos_nodes_prune_and_archive_status(
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
-    assert len(polygon_pos_inquirer.web3_mapping) == len(polygon_pos_manager_connect_at_start)
+    assert len(polygon_pos_inquirer.rpc_mapping) == len(polygon_pos_manager_connect_at_start)

@@ -37,6 +37,7 @@ from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
+from rotkehlchen.chain.solana.manager import SolanaManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
@@ -58,7 +59,7 @@ from rotkehlchen.tests.utils.substrate import (
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, SupportedBlockchain
 
 
 def _initialize_and_yield_evm_inquirer_fixture(
@@ -184,6 +185,11 @@ def fixture_bch_accounts() -> list[BTCAddress]:
     return []
 
 
+@pytest.fixture(name='solana_accounts')
+def fixture_solana_accounts() -> list[SolanaAddress]:
+    return []
+
+
 @pytest.fixture(name='ksm_accounts')
 def fixture_ksm_accounts() -> list[SubstrateAddress]:
     """As per feature requirements, instantiating SubstrateManager won't trigger
@@ -225,6 +231,7 @@ def fixture_blockchain_accounts(
         bch_accounts: list[BTCAddress],
         ksm_accounts: list[SubstrateAddress],
         dot_accounts: list[SubstrateAddress],
+        solana_accounts: list[SolanaAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
         eth=tuple(ethereum_accounts),
@@ -241,6 +248,7 @@ def fixture_blockchain_accounts(
         bch=tuple(bch_accounts),
         ksm=tuple(ksm_accounts),
         dot=tuple(dot_accounts),
+        solana=tuple(solana_accounts),
     )
 
 
@@ -850,6 +858,14 @@ def fixture_btc_derivation_gap_limit():
     return DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
+@pytest.fixture(name='solana_manager')
+def fixture_solana_manager(greenlet_manager, database):
+    return SolanaManager(
+        greenlet_manager=greenlet_manager,
+        database=database,
+    )
+
+
 @pytest.fixture(name='blockchain')
 def fixture_blockchain(
         ethereum_manager,
@@ -866,6 +882,7 @@ def fixture_blockchain(
         zksync_lite_manager,
         bitcoin_manager,
         bitcoin_cash_manager,
+        solana_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -904,6 +921,7 @@ def fixture_blockchain(
         zksync_lite_manager=zksync_lite_manager,
         bitcoin_manager=bitcoin_manager,
         bitcoin_cash_manager=bitcoin_cash_manager,
+        solana_manager=solana_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,

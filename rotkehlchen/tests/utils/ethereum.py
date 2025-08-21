@@ -178,7 +178,7 @@ def wait_until_all_nodes_connected(
         with gevent.Timeout(timeout):
             while not all(connected):
                 for idx, weighted_node in enumerate(connect_at_start):
-                    if weighted_node.node_info in evm_inquirer.web3_mapping:
+                    if weighted_node.node_info in evm_inquirer.rpc_mapping:
                         connected[idx] = True
 
                 gevent.sleep(0.1)

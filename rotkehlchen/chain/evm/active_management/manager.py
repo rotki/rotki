@@ -22,14 +22,14 @@ class ActiveManager:
 
     def _create_token_transfer(
             self,
-            web3_instance: 'Web3',
+            rpc_client: 'Web3',
             from_address: 'ChecksumEvmAddress',
             to_address: 'ChecksumEvmAddress',
             token: 'EvmToken',
             amount: 'FVal',
     ) -> dict[str, Any]:
         """Build transaction to transfer erc20 tokens"""
-        contract = web3_instance.eth.contract(
+        contract = rpc_client.eth.contract(
             address=token.evm_address,
             abi=self.node_inquirer.contracts.erc20_abi,
         )
@@ -38,7 +38,7 @@ class ActiveManager:
             asset_raw_value(amount=amount, asset=token),
         ).build_transaction({
             'from': from_address,
-            'nonce': web3_instance.eth.get_transaction_count(from_address),
+            'nonce': rpc_client.eth.get_transaction_count(from_address),
         }))
 
         # ensure that information about gas is not sent in the payload
@@ -72,7 +72,7 @@ class ActiveManager:
 
     def _transfer_native_token(
             self,
-            web3_instance: 'Web3',
+            rpc_client: 'Web3',
             from_address: 'ChecksumEvmAddress',
             to_address: 'ChecksumEvmAddress',
             amount: 'FVal',
@@ -82,7 +82,7 @@ class ActiveManager:
             'from': from_address,
             'to': to_address,
             'value': asset_raw_value(amount=amount, asset=self.node_inquirer.native_token),
-            'nonce': web3_instance.eth.get_transaction_count(from_address),
+            'nonce': rpc_client.eth.get_transaction_count(from_address),
         }
 
     def transfer_native_token(

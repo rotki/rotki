@@ -6,7 +6,7 @@ from web3 import HTTPProvider, Web3
 from web3.datastructures import MutableAttributeDict
 from web3.exceptions import Web3Exception
 
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.errors.misc import BlockchainQueryError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -25,7 +25,7 @@ class AvalancheManager:
             self,
             avaxrpc_endpoint: str,
             msg_aggregator: MessagesAggregator,
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         log.debug(f'Initializing Avalanche Manager with own rpc endpoint: {avaxrpc_endpoint}')
         self.rpc_timeout = rpc_timeout
