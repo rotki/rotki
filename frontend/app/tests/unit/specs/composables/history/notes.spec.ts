@@ -468,4 +468,36 @@ describe('composables::history/notes', () => {
     const formatted = get(formatNotes({ notes, assetId: '0xdeadbeef' }));
     expect(formatted).toMatchObject([{ type: 'word', word: 'Sell JUNO for USD. Amount out' }]);
   });
+
+  it('should handle amount for gnosis pay event notes properly', () => {
+    const notes = 'Pay 1500 CHF (84.12 EUR) to merchant.';
+
+    const formatted = get(formatNotes({ notes, counterparty: 'gnosis_pay' }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Pay',
+      },
+      {
+        type: NoteType.AMOUNT,
+        amount: bigNumberify(1500),
+      },
+      {
+        type: NoteType.WORD,
+        word: 'CHF (',
+      },
+      {
+        type: NoteType.AMOUNT,
+        amount: bigNumberify(84.12),
+        asset: undefined,
+      },
+      {
+        type: NoteType.WORD,
+        word: 'EUR) to merchant.',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
 });
