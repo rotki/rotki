@@ -584,6 +584,84 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_uniswap_v3_create_lp_position_with_native_refund(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test decoding of a lp creation with a native token deposit where a small amount of the
+    deposited native token is returned (receive amount is subtracted from the deposit and the
+    receive event is removed).
+    """
+    tx_hash = deserialize_evm_tx_hash('0x0ca4942007ea1e93a7b979da6066bb9b5ac25c14ebd8a8a4002bd03c339c0606')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755714977000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000004389183915'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_ETH,
+        amount=FVal(eth_amount := '0.004921550321882571'),
+        location_label=user_address,
+        notes=f'Deposit {eth_amount} ETH to uniswap-v3 LP 4818837',
+        counterparty=CPT_UNISWAP_V3,
+        address=(nft_manager := string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88')),  # noqa: E501
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'),
+        amount=FVal(wbtc_amount := '0.00016509'),
+        location_label=user_address,
+        notes=f'Deposit {wbtc_amount} WBTC to uniswap-v3 LP 4818837',
+        counterparty=CPT_UNISWAP_V3,
+        address=string_to_evm_address('0x2f5e87C9312fa29aed5c179E456625D79015299c'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'),
+        amount=FVal(approve_amount := '1157920892373161954235709850086879078532699846656405640394575840079131.29623426'),  # noqa: E501
+        location_label=user_address,
+        notes=f'Set WBTC spending approval of {user_address} by {nft_manager} to {approve_amount}',
+        address=nft_manager,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=8,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPLOY,
+        event_subtype=HistoryEventSubType.NFT,
+        asset=Asset('eip155:42161/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/4818837'),
+        amount=ONE,
+        location_label=user_address,
+        notes='Create uniswap-v3 LP with id 4818837',
+        counterparty=CPT_UNISWAP_V3,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf615a55e686499511557b3F75Ea9166DD455bFd5']])
 def test_uniswap_v3_swap_by_universal_router(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd2fe13a9727b2ff3f9458154afb8e59216864b57e0aacffeedc3d3d4cff1c43d')  # noqa: E501

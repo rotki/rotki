@@ -428,6 +428,72 @@ def test_create_lp_position(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_create_lp_position_with_native_refund(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test decoding of a lp creation with a native token deposit where a small amount of the
+    deposited native token is returned (receive amount is subtracted from the deposit and the
+    receive event is removed).
+    """
+    tx_hash = deserialize_evm_tx_hash('0xa604ae170e78c203330605619e82c82337daf8d1af52b78cdf82db82c3f9deb4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755696178000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000004281262202'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_ETH,
+        amount=FVal(eth_amount := '0.009160753478273742'),
+        location_label=user_address,
+        notes=f'Deposit {eth_amount} ETH to Uniswap V4 ETH/USDC LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=string_to_evm_address('0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=FVal('50'),
+        location_label=user_address,
+        notes='Deposit 50 USDC to Uniswap V4 ETH/USDC LP',
+        counterparty=CPT_UNISWAP_V4,
+        address=string_to_evm_address('0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPLOY,
+        event_subtype=HistoryEventSubType.NFT,
+        asset=Asset('eip155:42161/erc721:0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869/61908'),
+        amount=ONE,
+        location_label=user_address,
+        notes='Create Uniswap V4 LP with id 61908',
+        counterparty=CPT_UNISWAP_V4,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x8605355cA4E07C1B2cEB548a052876A18028d7Fd']])
 def test_increase_liquidity(
         optimism_inquirer: 'OptimismInquirer',

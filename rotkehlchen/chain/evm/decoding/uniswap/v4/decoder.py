@@ -104,17 +104,35 @@ class Uniswapv4CommonDecoder(DecoderInterface):
         # Edit the native currency event from the already decoded events, but use action items
         # to transform events for other tokens since they aren't present in decoded_events yet.
         if has_native:
+            refund_event, deposit_withdraw_event = None, None
             for event in context.decoded_events:
                 if (
-                        event.event_type == expected_type and
                         event.event_subtype == HistoryEventSubType.NONE and
                         event.asset == self.native_currency and
-                        event.address == self.pool_manager
+                        event.address in (self.pool_manager, self.position_manager)
                 ):
-                    event.counterparty = CPT_UNISWAP_V4
-                    event.event_type = event_type
-                    event.event_subtype = event_subtype
-                    event.notes = f'{verb} {event.amount} {self.native_currency.symbol} {from_to} {lp_str}'  # noqa: E501
+                    if event.event_type == expected_type:
+                        event.counterparty = CPT_UNISWAP_V4
+                        event.event_type = event_type
+                        event.event_subtype = event_subtype
+                        event.notes = f'{verb} {{amount}} {self.native_currency.symbol} {from_to} {lp_str}'  # noqa: E501
+                        deposit_withdraw_event = event
+                    elif (
+                        expected_type == HistoryEventType.SPEND and
+                        event.event_type == HistoryEventType.RECEIVE
+                    ):
+                        # Unlike approved tokens where the contract requests an exact amount,
+                        # the approximate amount of the native asset sent may require a refund.
+                        refund_event = event
+
+            if deposit_withdraw_event is not None:
+                if refund_event is not None:
+                    deposit_withdraw_event.amount -= refund_event.amount
+                    context.decoded_events.remove(refund_event)
+
+                deposit_withdraw_event.notes = deposit_withdraw_event.notes.format(  # type: ignore  # notes will not be None
+                    amount=deposit_withdraw_event.amount,
+                )
 
         return DecodingOutput(
             matched_counterparty=CPT_UNISWAP_V4_LP,  # Trigger _lp_post_decoding
