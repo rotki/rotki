@@ -393,12 +393,14 @@ class Uniswapv3CommonDecoder(DecoderInterface):
 
         if event_action_type == 'addition':
             notes = 'Deposit {amount} {asset} to uniswap-v3 LP {pool_id}'
-            from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
-            to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)
+            from_event_type = HistoryEventType.SPEND
+            to_event_type = HistoryEventType.DEPOSIT
+            to_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
         else:  # can only be 'removal'
             notes = 'Remove {amount} {asset} from uniswap-v3 LP {pool_id}'
-            from_event_type = (HistoryEventType.RECEIVE, HistoryEventSubType.NONE)
-            to_event_type = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED)
+            from_event_type = HistoryEventType.RECEIVE
+            to_event_type = HistoryEventType.WITHDRAWAL
+            to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
 
         try:
             # Returns a tuple containing information about the state of the LP position.
@@ -438,84 +440,67 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                 amount=asset_normalized_value(amount, token_with_data),
             ))
 
-        found_event_for_token0 = found_event_for_token1 = False
+        found_events = [False, False]
+        refund_event = None
         for event in context.decoded_events:
-            # search for the event of the first token
-            token_0_matches_asset, maybe_event_asset_symbol = self._compare_with_maybe_native_token(  # noqa: E501
-                event_asset=event.asset,
-                pool_token=resolved_assets_and_amounts[0].asset,
-            )
-            if (
-                token_0_matches_asset is True and
-                event.amount == resolved_assets_and_amounts[0].amount and
-                event.event_type == from_event_type[0] and
-                event.event_subtype == from_event_type[1]
-            ):
-                found_event_for_token0 = True
-                event.event_type = to_event_type[0]
-                event.event_subtype = to_event_type[1]
-                event.counterparty = CPT_UNISWAP_V3
-                event.notes = notes.format(
-                    amount=event.amount,
-                    asset=maybe_event_asset_symbol,
-                    pool_id=liquidity_pool_id,
-                )
-                continue
+            for idx, resolved_asset_amount in enumerate(resolved_assets_and_amounts):
+                if found_events[idx]:
+                    continue  # Skip if we already found an event for this token
 
-            # search for the event of the second token
-            token_1_matches_asset, maybe_event_asset_symbol = self._compare_with_maybe_native_token(  # noqa: E501
-                event_asset=event.asset,
-                pool_token=resolved_assets_and_amounts[1].asset,
-            )
-            if (
-                token_1_matches_asset is True and
-                event.amount == resolved_assets_and_amounts[1].amount and
-                event.event_type == from_event_type[0] and
-                event.event_subtype == from_event_type[1]
-            ):
-                found_event_for_token1 = True
-                event.event_type = to_event_type[0]
-                event.event_subtype = to_event_type[1]
-                event.counterparty = CPT_UNISWAP_V3
-                event.notes = notes.format(
-                    amount=event.amount,
-                    asset=maybe_event_asset_symbol,
-                    pool_id=liquidity_pool_id,
+                token_matches_asset, maybe_event_asset_symbol = self._compare_with_maybe_native_token(  # noqa: E501
+                    event_asset=event.asset,
+                    pool_token=resolved_asset_amount.asset,
                 )
-                continue
+                if token_matches_asset is False or event.event_subtype != HistoryEventSubType.NONE:
+                    continue
 
-        if found_event_for_token0 is False:
-            new_action_items.append(
-                ActionItem(
-                    action='transform',
-                    from_event_type=from_event_type[0],
-                    from_event_subtype=from_event_type[1],
-                    asset=resolved_assets_and_amounts[0].asset,
-                    amount=resolved_assets_and_amounts[0].amount,
-                    to_event_type=to_event_type[0],
-                    to_event_subtype=to_event_type[1],
-                    to_notes=notes.format(
-                        amount=resolved_assets_and_amounts[0].amount,
-                        asset=resolved_assets_and_amounts[0].asset.symbol,
+                if (
+                        from_event_type == HistoryEventType.SPEND and
+                        event.event_type == HistoryEventType.RECEIVE
+                ):
+                    # Unlike approved tokens where the contract requests an exact amount,
+                    # the approximate amount of the native asset sent may require a refund.
+                    refund_event = event
+                elif event.event_type == from_event_type:
+                    if event.amount != resolved_asset_amount.amount:
+                        if (
+                                refund_event is not None and
+                                event.amount - refund_event.amount == resolved_asset_amount.amount
+                        ):
+                            event.amount = resolved_asset_amount.amount
+                        else:
+                            continue
+
+                    found_events[idx] = True
+                    event.event_type = to_event_type
+                    event.event_subtype = to_event_subtype
+                    event.counterparty = CPT_UNISWAP_V3
+                    event.notes = notes.format(
+                        amount=event.amount,
+                        asset=maybe_event_asset_symbol,
                         pool_id=liquidity_pool_id,
-                    ),
-                    to_counterparty=CPT_UNISWAP_V3,
-                ),
-            )
+                    )
+                    break
 
-        if found_event_for_token1 is False:
+        if refund_event is not None:
+            context.decoded_events.remove(refund_event)
+
+        for resolved_asset_amount, found in zip(resolved_assets_and_amounts, found_events, strict=False):  # noqa: E501
+            if found:
+                continue
+
             new_action_items.append(
                 ActionItem(
                     action='transform',
-                    from_event_type=from_event_type[0],
-                    from_event_subtype=from_event_type[1],
-                    asset=resolved_assets_and_amounts[1].asset,
-                    amount=resolved_assets_and_amounts[1].amount,
-                    to_event_type=to_event_type[0],
-                    to_event_subtype=to_event_type[1],
+                    from_event_type=from_event_type,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=resolved_asset_amount.asset,
+                    amount=resolved_asset_amount.amount,
+                    to_event_type=to_event_type,
+                    to_event_subtype=to_event_subtype,
                     to_notes=notes.format(
-                        amount=resolved_assets_and_amounts[1].amount,
-                        asset=resolved_assets_and_amounts[1].asset.symbol,
+                        amount=resolved_asset_amount.amount,
+                        asset=resolved_asset_amount.asset.symbol,
                         pool_id=liquidity_pool_id,
                     ),
                     to_counterparty=CPT_UNISWAP_V3,
