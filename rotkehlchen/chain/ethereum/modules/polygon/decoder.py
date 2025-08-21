@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON, CPT_POLYGON_DETAILS
@@ -14,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.constants.assets import A_ETH_MATIC
+from rotkehlchen.constants.assets import A_ETH_MATIC, A_POL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -60,7 +59,7 @@ class PolygonDecoder(DecoderInterface):
             to_address=POLYGON_MIGRATION_ADDRESS,
         ) for from_type, asset, to_subtype, notes in (
             (HistoryEventType.SPEND, A_ETH_MATIC, HistoryEventSubType.SPEND, f'Migrate {amount} MATIC to POL'),  # noqa: E501
-            (HistoryEventType.RECEIVE, Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'), HistoryEventSubType.RECEIVE, f'Receive {amount} POL from MATIC->POL migration'),  # noqa: E501
+            (HistoryEventType.RECEIVE, A_POL, HistoryEventSubType.RECEIVE, f'Receive {amount} POL from MATIC->POL migration'),  # noqa: E501
         )]
         return DecodingOutput(action_items=action_items, matched_counterparty=CPT_POLYGON)
 

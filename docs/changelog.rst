@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Fix an issue where some amounts in the history event notes are not scrambled/blurred when the privacy mode/scramble setting is activated.
+* :bug:`-` Historical price data will now display correctly for all supported assets instead of showing empty results in some cases.
 * :feature:`-` Users can now manually reset cached Beefy Finance vault data to trigger re-pulling the data during decoding.
 * :bug:`-` Paraswap swaps will be properly decoded when curve pool interactions are present in the same transaction.
 * :bug:`-` History events status banner will no longer cause layout shifts on the dashboard.
