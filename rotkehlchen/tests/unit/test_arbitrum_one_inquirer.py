@@ -30,7 +30,7 @@ def test_arbitrum_one_nodes_prune_and_archive_status(
         connect_at_start=arbitrum_one_manager_connect_at_start,
         evm_inquirer=arbitrum_one_inquirer,
     )
-    for node_name, web3_node in arbitrum_one_inquirer.web3_mapping.items():
+    for node_name, web3_node in arbitrum_one_inquirer.rpc_mapping.items():
         if node_name.endpoint == 'https://arbitrum-one-archive.allthatnode.com':
             assert not web3_node.is_pruned
             assert web3_node.is_archive
@@ -42,7 +42,7 @@ def test_arbitrum_one_nodes_prune_and_archive_status(
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
-    assert len(arbitrum_one_inquirer.web3_mapping) == len(arbitrum_one_manager_connect_at_start)
+    assert len(arbitrum_one_inquirer.rpc_mapping) == len(arbitrum_one_manager_connect_at_start)
 
 
 def test_block_by_time_close_to_genesis(arbitrum_one_inquirer):

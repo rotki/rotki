@@ -25,7 +25,7 @@ def test_base_nodes_prune_and_archive_status(
         connect_at_start=base_manager_connect_at_start,
         evm_inquirer=base_inquirer,
     )
-    for node_name, web3_node in base_inquirer.web3_mapping.items():
+    for node_name, web3_node in base_inquirer.rpc_mapping.items():
         if node_name.endpoint == 'https://base.blockpi.network/v1/rpc/public':
             assert not web3_node.is_pruned
             # not checking for archive here, as some times it is and some not
@@ -38,4 +38,4 @@ def test_base_nodes_prune_and_archive_status(
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
-    assert len(base_inquirer.web3_mapping) == len(base_manager_connect_at_start)
+    assert len(base_inquirer.rpc_mapping) == len(base_manager_connect_at_start)

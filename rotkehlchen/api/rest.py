@@ -2414,7 +2414,7 @@ class RestAPI:
         """
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             # get the current rpc endpoint so we can identify the node and remove it
-            # from node_inquirer.web3_mapping
+            # from node_inquirer.rpc_mapping
             if (old_endpoint := cursor.execute(
                 'SELECT endpoint FROM rpc_nodes WHERE identifier=?',
                 (node.identifier,),
@@ -2441,9 +2441,9 @@ class RestAPI:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(
             blockchain=node.node_info.blockchain,
         )
-        for entry in list(manager.node_inquirer.web3_mapping):  # remove old node from memory
+        for entry in list(manager.node_inquirer.rpc_mapping):  # remove old node from memory
             if entry.endpoint == old_endpoint:
-                manager.node_inquirer.web3_mapping.pop(entry, None)
+                manager.node_inquirer.rpc_mapping.pop(entry, None)
                 break
         else:
             log.debug(

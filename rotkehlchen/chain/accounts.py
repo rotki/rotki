@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Generic, NamedTuple, overload
+from typing import Any, Generic, Literal, NamedTuple, overload
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.types import (
@@ -8,6 +8,7 @@ from rotkehlchen.types import (
     BlockchainAddress,
     BTCAddress,
     ChecksumEvmAddress,
+    SolanaAddress,
     SupportedBlockchain,
     TuplesOfBlockchainAddresses,
 )
@@ -29,9 +30,14 @@ class BlockchainAccounts:
     dot: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
     avax: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     zksync_lite: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    solana: tuple[SolanaAddress, ...] = field(default_factory=tuple)
 
     @overload
     def get(self, blockchain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> tuple[ChecksumEvmAddress, ...]:
+        ...
+
+    @overload
+    def get(self, blockchain: Literal[SupportedBlockchain.SOLANA]) -> tuple[SolanaAddress, ...]:
         ...
 
     @overload

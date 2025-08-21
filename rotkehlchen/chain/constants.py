@@ -8,7 +8,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
 )
 
-DEFAULT_EVM_RPC_TIMEOUT = 10
+DEFAULT_RPC_TIMEOUT = 10
 NON_BITCOIN_CHAINS = [
     SupportedBlockchain.AVALANCHE,
     SupportedBlockchain.POLKADOT,

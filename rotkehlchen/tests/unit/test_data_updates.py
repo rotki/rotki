@@ -467,7 +467,7 @@ def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
 
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
     """Test that rpc nodes for different blockchains are updated correctly.."""
-    default_rpc_nodes_count = 33
+    default_rpc_nodes_count = 34
     # check db state of the default rpc nodes before updating
     with GlobalDBHandler().conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')

@@ -390,7 +390,7 @@ def test_ethereum_nodes_prune_and_archive_status(
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-    for node_name, web3_node in ethereum_inquirer.web3_mapping.items():
+    for node_name, web3_node in ethereum_inquirer.rpc_mapping.items():
         if node_name.endpoint == 'https://ethereum.publicnode.com':
             assert web3_node.is_pruned
             assert not web3_node.is_archive
@@ -399,9 +399,9 @@ def test_ethereum_nodes_prune_and_archive_status(
             assert web3_node.is_archive
 
     if ethereum_manager_connect_at_start[0].node_info.name == 'etherscan':
-        assert len(ethereum_inquirer.web3_mapping) == 0  # excluding etherscan
+        assert len(ethereum_inquirer.rpc_mapping) == 0  # excluding etherscan
     else:
-        assert len(ethereum_inquirer.web3_mapping) == 1
+        assert len(ethereum_inquirer.rpc_mapping) == 1
 
 
 @pytest.mark.vcr(
@@ -451,7 +451,7 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         connect_at_start=pruned_node,
         evm_inquirer=ethereum_inquirer,
     )
-    assert len(ethereum_inquirer.web3_mapping) == 2
+    assert len(ethereum_inquirer.rpc_mapping) == 2
     etherscan_tx_or_tx_receipt_calls = 0
 
     def mock_etherscan_get_tx(chain_id, tx_hash):

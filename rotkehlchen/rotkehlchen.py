@@ -47,6 +47,7 @@ from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
+from rotkehlchen.chain.solana.manager import SolanaManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -470,6 +471,10 @@ class Rotkehlchen:
             ),
             bitcoin_manager=BitcoinManager(database=self.data.db),
             bitcoin_cash_manager=BitcoinCashManager(database=self.data.db),
+            solana_manager=SolanaManager(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            ),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,

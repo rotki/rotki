@@ -172,15 +172,16 @@ Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 T_SolanaAddress = str
 SolanaAddress = NewType('SolanaAddress', T_SolanaAddress)
 
-BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress
+BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress | SolanaAddress
 AnyBlockchainAddress = TypeVar(
     'AnyBlockchainAddress',
     BTCAddress,
     ChecksumEvmAddress,
     SubstrateAddress,
+    SolanaAddress,
 )
-ListOfBlockchainAddresses = list[BTCAddress] | list[ChecksumEvmAddress] | list[SubstrateAddress]
-TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...]  # noqa: E501
+ListOfBlockchainAddresses = list[BTCAddress] | list[ChecksumEvmAddress] | list[SubstrateAddress] | list[SolanaAddress]  # noqa: E501
+TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...] | tuple[SolanaAddress, ...]  # noqa: E501
 
 
 T_Price = FVal

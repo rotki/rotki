@@ -199,7 +199,7 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
         json={
-            'name': 'cloudflae',
+            'name': 'cloudflare',
             'endpoint': 'https://cloudflare-eth.com/',
             'owned': False,
             'weight': '20',
@@ -337,11 +337,17 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    # set owned to false and see that we have the expected amount of nodes
+
+    # set active to false and see that we have the expected amount of nodes
+    with database.conn.read_ctx() as cursor:
+        target_id = cursor.execute(
+            "SELECT identifier from rpc_nodes WHERE name='my_super_node'",
+        ).fetchone()[0]
+
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
         json={
-            'identifier': 5,
+            'identifier': target_id,
             'name': 'myetherwallet',
             'endpoint': 'https://https://nodes.mewapi.io/rpc/eth.cloud.ava.do/',
             'owned': False,

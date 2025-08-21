@@ -214,6 +214,8 @@ def configure_logging(args: argparse.Namespace) -> None:
 
     if not args.logfromothermodules:
         logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+        logging.getLogger('httpx').setLevel(logging.CRITICAL)
+        logging.getLogger('httpcore').setLevel(logging.CRITICAL)
         logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
         logging.getLogger('substrateinterface.base').setLevel(logging.CRITICAL)
         logging.getLogger('eth_hash').setLevel(logging.CRITICAL)

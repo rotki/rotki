@@ -69,7 +69,17 @@ from rotkehlchen.chain.optimism.modules.walletconnect.balances import Walletconn
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
-from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
+from rotkehlchen.constants.assets import (
+    A_AVAX,
+    A_BCH,
+    A_BTC,
+    A_DAI,
+    A_DOT,
+    A_ETH,
+    A_ETH2,
+    A_KSM,
+    A_SOL,
+)
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
@@ -141,6 +151,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.chain.scroll.manager import ScrollManager
+    from rotkehlchen.chain.solana.manager import SolanaManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -284,6 +295,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             zksync_lite_manager: 'ZksyncLiteManager',
             bitcoin_manager: 'BitcoinManager',
             bitcoin_cash_manager: 'BitcoinCashManager',
+            solana_manager: 'SolanaManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
             greenlet_manager: GreenletManager,
@@ -309,6 +321,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.zksync_lite = zksync_lite_manager
         self.bitcoin = bitcoin_manager
         self.bitcoin_cash = bitcoin_cash_manager
+        self.solana = solana_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -922,7 +935,28 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.balances.eth2[pubkey].assets[A_ETH2][DEFAULT_BALANCE_LABEL] = balance
 
     def query_solana_balances(self, ignore_cache: bool) -> None:
-        return None  # TODO @solana: Implement the logic here
+        """
+        May raise:
+
+        - RemoteError if an external service is queried and there is a problem with its query.
+        """
+        if len(accounts := self.accounts.get(SupportedBlockchain.SOLANA)) == 0:
+            return
+
+        # Clear existing balances for this chain to avoid accumulation
+        chain_balances = self.balances.get(SupportedBlockchain.SOLANA)
+        chain_balances.clear()
+
+        # Query native token balances
+        native_token_usd_price = Inquirer.find_usd_price(A_SOL)
+        for account, balance in self.solana.get_multi_balance(accounts).items():
+            if balance != ZERO:
+                chain_balances[account].assets[A_SOL][DEFAULT_BALANCE_LABEL] = Balance(
+                    amount=balance,
+                    usd_value=balance * native_token_usd_price,
+                )
+
+        # TODO: query token balances
 
     @staticmethod
     def _update_balances_after_token_query(
@@ -1004,7 +1038,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # Query native token balances
         manager = cast('EvmManager', self.get_chain_manager(chain))
         native_token_usd_price = Inquirer.find_usd_price(manager.node_inquirer.native_token)
-        chain_balances = self.balances.get(chain)
         for account, balance in manager.node_inquirer.get_multi_balance(accounts).items():
             if balance != ZERO:  # accounts (e.g. multisigs) can have zero balances
                 chain_balances[account].assets[manager.node_inquirer.native_token][DEFAULT_BALANCE_LABEL] = Balance(  # noqa: E501

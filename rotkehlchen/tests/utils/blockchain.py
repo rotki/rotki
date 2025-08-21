@@ -10,7 +10,8 @@ from web3 import Web3
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
-from rotkehlchen.chain.evm.types import NodeName, Web3Node, string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -584,7 +585,7 @@ def compare_account_data(expected: list[dict], got: list[dict]) -> None:
         assert found, msg
 
 
-def get_web3_node_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> Web3Node:
+def get_web3_node_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> RPCNode:
     """Util function to simplify getting the testing web3 node object from an ethereum inquirer"""
     node_name = NodeName(
         name='own',
@@ -592,10 +593,10 @@ def get_web3_node_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> Web3No
         owned=True,
         blockchain=SupportedBlockchain.ETHEREUM,
     )
-    return ethereum_inquirer.web3_mapping[node_name]
+    return ethereum_inquirer.rpc_mapping[node_name]
 
 
-def set_web3_node_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3node: Web3Node) -> None:
+def set_web3_node_in_inquirer(ethereum_inquirer: 'EthereumInquirer', rpc_node: RPCNode) -> None:
     """Util function to simplify setting the testing web3 node object from an ethereum inquirer"""
     node_name = NodeName(
         name='own',
@@ -603,7 +604,7 @@ def set_web3_node_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3node: W
         owned=True,
         blockchain=SupportedBlockchain.ETHEREUM,
     )
-    ethereum_inquirer.web3_mapping[node_name] = web3node
+    ethereum_inquirer.rpc_mapping[node_name] = rpc_node
 
 
 def setup_evm_addresses_activity_mock(

@@ -72,6 +72,9 @@ dependencies = [
     "pycparser<=2.17", # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
     # To build JWT for coinbase exchange key validation
     "PyJWT==2.10.1",
+    # solana
+    "solana==0.36.9",
+    "solders==0.26.0"
 ]
 
 [project.urls]
