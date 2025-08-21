@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, NamedTuple
+from typing import Any, Literal, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 from web3 import Web3
@@ -35,7 +35,7 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
-    blockchain: EVM_CHAINS_WITH_CHAIN_MANAGER
+    blockchain: EVM_CHAINS_WITH_CHAIN_MANAGER | Literal[SupportedBlockchain.SOLANA]
 
     def serialize(self) -> dict[str, Any]:
         return {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
-import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
+import type { BlockchainRpcNodeManageState } from '@/types/settings/rpc';
 import useVuelidate from '@vuelidate/core';
 import { between, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';
@@ -13,11 +13,11 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = defineProps<{
-  modelValue: EvmRpcNodeManageState;
+  modelValue: BlockchainRpcNodeManageState;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: EvmRpcNodeManageState): void;
+  (e: 'update:model-value', value: BlockchainRpcNodeManageState): void;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

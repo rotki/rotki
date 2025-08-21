@@ -1,7 +1,7 @@
 import type { Blockchain } from '@rotki/common';
 import { z } from 'zod/v4';
 
-const EvmRpcNode = z.object({
+const BlockchainRpcNode = z.object({
   active: z.boolean(),
   blockchain: z.string().min(1),
   endpoint: z.string(),
@@ -11,13 +11,13 @@ const EvmRpcNode = z.object({
   weight: z.preprocess(weight => Number.parseFloat(weight as string), z.number().nonnegative().max(100)),
 });
 
-export type EvmRpcNode = z.infer<typeof EvmRpcNode>;
+export type BlockchainRpcNode = z.infer<typeof BlockchainRpcNode>;
 
-export const EvmRpcNodeList = z.array(EvmRpcNode);
+export const BlockchainRpcNodeList = z.array(BlockchainRpcNode);
 
-export type EvmRpcNodeList = z.infer<typeof EvmRpcNodeList>;
+export type BlockchainRpcNodeList = z.infer<typeof BlockchainRpcNodeList>;
 
-export function getPlaceholderNode(chain: Blockchain): EvmRpcNode {
+export function getPlaceholderNode(chain: Blockchain): BlockchainRpcNode {
   return {
     active: true,
     blockchain: chain,
@@ -31,12 +31,12 @@ export function getPlaceholderNode(chain: Blockchain): EvmRpcNode {
 
 export interface EvmRpcNodeAddState {
   mode: 'add';
-  node: EvmRpcNode;
+  node: BlockchainRpcNode;
 }
 
 export interface EvmRpcNodeEditState {
   mode: 'edit';
-  node: EvmRpcNode;
+  node: BlockchainRpcNode;
 }
 
-export type EvmRpcNodeManageState = EvmRpcNodeAddState | EvmRpcNodeEditState;
+export type BlockchainRpcNodeManageState = EvmRpcNodeAddState | EvmRpcNodeEditState;

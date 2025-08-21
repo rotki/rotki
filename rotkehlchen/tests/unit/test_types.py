@@ -9,6 +9,7 @@ from rotkehlchen.constants.assets import (
     A_ETH2,
     A_KSM,
     A_POLYGON_POS_MATIC,
+    A_SOL,
     A_XDAI,
 )
 from rotkehlchen.types import SupportedBlockchain
@@ -32,6 +33,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.SCROLL: A_ETH,
         SupportedBlockchain.BINANCE_SC: A_BSC_BNB,
         SupportedBlockchain.ZKSYNC_LITE: A_ETH,
+        SupportedBlockchain.SOLANA: A_SOL,
     }
     for chain in SupportedBlockchain:
         assert expected_assets[chain] == Asset(chain.get_native_token_id())

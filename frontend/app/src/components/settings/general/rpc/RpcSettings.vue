@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
-import type EvmRpcNodeManager from '@/components/settings/general/rpc/EvmRpcNodeManager.vue';
+import type BlockchainRpcNodeManager from '@/components/settings/general/rpc/BlockchainRpcNodeManager.vue';
 import type SimpleRpcNodeManager from '@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
 import { assert, Blockchain } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
@@ -28,19 +28,24 @@ interface CustomRpcSettingTab {
 type RpcSettingTab = ChainRpcSettingTab | CustomRpcSettingTab;
 
 const rpcSettingTab = ref<number>(0);
-const evmRpcNodeManagerRef = ref<InstanceType<typeof EvmRpcNodeManager | typeof SimpleRpcNodeManager>[]>();
+const evmRpcNodeManagerRef = ref<InstanceType<typeof BlockchainRpcNodeManager | typeof SimpleRpcNodeManager>[]>();
 
 const { txEvmChains } = useSupportedChains();
 const evmChainTabs = useArrayMap(txEvmChains, (chain) => {
   assert(isOfEnum(Blockchain)(chain.id));
   return {
     chain: chain.id,
-    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/BlockchainRpcNodeManager.vue')),
   } satisfies RpcSettingTab;
 });
 
 const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
   ...get(evmChainTabs),
+  {
+    // Solana behaves like EVM RPC nodes in UI/API
+    chain: Blockchain.SOLANA,
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/BlockchainRpcNodeManager.vue')),
+  },
   {
     chain: Blockchain.KSM,
     component: defineAsyncComponent(() => import('@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue')),

@@ -906,10 +906,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise(forward_ignore_cache=True)
-    def query_eth2_balances(
-            self,
-            ignore_cache: bool,
-    ) -> None:
+    def query_eth2_balances(self, ignore_cache: bool) -> None:
         """Queries ethereum beacon chain balances
 
         May raise:
@@ -929,6 +926,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         for pubkey, balance in balance_mapping.items():
             self.balances.eth2[pubkey] = BalanceSheet()
             self.balances.eth2[pubkey].assets[A_ETH2][DEFAULT_BALANCE_LABEL] = balance
+
+    def query_solana_balances(self, ignore_cache: bool) -> None:
+        return None  # TODO @solana: Implement the logic here
 
     @staticmethod
     def _update_balances_after_token_query(
