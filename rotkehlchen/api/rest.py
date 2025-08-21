@@ -2403,13 +2403,7 @@ class RestAPI:
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        # Update the connected nodes
-        nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
-            blockchain=node.node_info.blockchain,
-            only_active=True,
-        )
-        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
-        manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
+        # node will be connected automatically when the order requires it
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def update_and_connect_rpc_node(self, node: WeightedNode) -> Response:
@@ -2434,6 +2428,10 @@ class RestAPI:
             self.rotkehlchen.data.db.update_rpc_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        if node.node_info.blockchain == SupportedBlockchain.SOLANA:
+            # TODO: @solana. Implement once we have the manager
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
         nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,

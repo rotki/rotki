@@ -90,6 +90,10 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://scrollscan.com/token/',
     transaction: 'https://scrollscan.com/tx/',
   },
+  [Blockchain.SOLANA]: {
+    address: 'https://solscan.io/account/',
+    block: 'solscan.io/block/',
+  },
   [Blockchain.ZKSYNC_LITE]: {
     address: 'https://zkscan.io/explorer/accounts/',
     block: 'https://zkscan.io/explorer/blocks/',

@@ -4,7 +4,7 @@ import { camelCase } from 'es-toolkit';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import EvmRpcNodeFormDialog from '@/components/settings/general/rpc/EvmRpcNodeFormDialog.vue';
+import BlockchainRpcNodeFormDialog from '@/components/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useConfirmStore } from '@/store/confirm';
@@ -12,9 +12,9 @@ import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { usePeriodicStore } from '@/store/session/periodic';
 import {
-  type EvmRpcNode,
-  type EvmRpcNodeList,
-  type EvmRpcNodeManageState,
+  type BlockchainRpcNode,
+  type BlockchainRpcNodeList,
+  type BlockchainRpcNodeManageState,
   getPlaceholderNode,
 } from '@/types/settings/rpc';
 
@@ -26,8 +26,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { chain } = toRefs(props);
 
-const nodes = ref<EvmRpcNodeList>([]);
-const state = ref<EvmRpcNodeManageState>();
+const nodes = ref<BlockchainRpcNodeList>([]);
+const state = ref<BlockchainRpcNodeManageState>();
 const reconnecting = ref<boolean>(false);
 
 const { notify } = useNotificationsStore();
@@ -55,7 +55,7 @@ async function loadNodes(): Promise<void> {
   }
 }
 
-function editRpcNode(node: EvmRpcNode) {
+function editRpcNode(node: BlockchainRpcNode) {
   set(state, {
     mode: 'edit',
     node,
@@ -69,7 +69,7 @@ function addNewRpcNode() {
   });
 }
 
-async function deleteNode(node: EvmRpcNode) {
+async function deleteNode(node: BlockchainRpcNode) {
   try {
     const identifier = node.identifier;
     await api.deleteEvmNode(identifier);
@@ -86,7 +86,7 @@ async function deleteNode(node: EvmRpcNode) {
   }
 }
 
-async function onActiveChange(active: boolean, node: EvmRpcNode) {
+async function onActiveChange(active: boolean, node: BlockchainRpcNode) {
   const state = { ...node, active };
   try {
     await api.editEvmNode(state);
@@ -103,22 +103,22 @@ async function onActiveChange(active: boolean, node: EvmRpcNode) {
   }
 }
 
-function isEtherscan(item: EvmRpcNode) {
+function isEtherscan(item: BlockchainRpcNode) {
   return !item.endpoint && item.name.includes('etherscan');
 }
 
-function isNodeInDataset(dataset: Record<string, string[]>, item: EvmRpcNode): boolean {
+function isNodeInDataset(dataset: Record<string, string[]>, item: BlockchainRpcNode): boolean {
   const blockchain = get(chain);
   const evmChain = camelCase(getEvmChainName(blockchain) ?? '');
   const nodes = evmChain && dataset?.[evmChain] ? dataset[evmChain] : [];
   return nodes.includes(item.name);
 }
 
-function isNodeConnected(item: EvmRpcNode): boolean {
+function isNodeConnected(item: BlockchainRpcNode): boolean {
   return isNodeInDataset(get(connectedNodes), item) || isEtherscan(item);
 }
 
-function getNodeStatus(item: EvmRpcNode): 'connected' | 'ready' | 'failed' {
+function getNodeStatus(item: BlockchainRpcNode): 'connected' | 'ready' | 'failed' {
   if (isNodeConnected(item)) {
     return 'connected';
   }
@@ -130,7 +130,7 @@ function getNodeStatus(item: EvmRpcNode): 'connected' | 'ready' | 'failed' {
   }
 }
 
-function showDeleteConfirmation(item: EvmRpcNode) {
+function showDeleteConfirmation(item: BlockchainRpcNode) {
   const chainProp = get(chainName);
   show(
     {
@@ -346,7 +346,7 @@ defineExpose({
       </tr>
     </tbody>
   </SimpleTable>
-  <EvmRpcNodeFormDialog
+  <BlockchainRpcNodeFormDialog
     v-model="state"
     @complete="loadNodes()"
   />

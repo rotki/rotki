@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
+import type { BlockchainRpcNodeManageState } from '@/types/settings/rpc';
 import { assert, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue';
+import BlockchainRpcNodeForm from '@/components/settings/general/rpc/BlockchainRpcNodeForm.vue';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBlockchain } from '@/types/blockchain/chains';
 
-const model = defineModel<EvmRpcNodeManageState | undefined>({ required: true });
+const model = defineModel<BlockchainRpcNodeManageState | undefined>({ required: true });
 
 const emit = defineEmits<{
   (e: 'complete'): void;
@@ -24,7 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const errorMessages = ref<ValidationErrors>({});
 const submitting = ref<boolean>(false);
-const form = ref<InstanceType<typeof EvmRpcNodeForm>>();
+const form = ref<InstanceType<typeof BlockchainRpcNodeForm>>();
 const stateUpdated = ref(false);
 
 const { getChainName } = useSupportedChains();
@@ -122,7 +122,7 @@ async function save() {
     @confirm="save()"
     @cancel="resetForm()"
   >
-    <EvmRpcNodeForm
+    <BlockchainRpcNodeForm
       v-if="model"
       ref="form"
       v-model="model"

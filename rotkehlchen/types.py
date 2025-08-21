@@ -416,6 +416,7 @@ class ChainType(SerializableEnumNameMixin):
     SUBSTRATE = auto()
     BITCOIN = auto()
     ETH2 = auto()
+    SOLANA = auto()
 
     def type_to_blockchains(self) -> Sequence['SupportedBlockchain']:
         """Return the set of valid blockchains for the chain type"""
@@ -427,6 +428,9 @@ class ChainType(SerializableEnumNameMixin):
 
         if self == ChainType.SUBSTRATE:
             return get_args(SUPPORTED_SUBSTRATE_CHAINS)
+
+        if self == ChainType.SOLANA:
+            return [SupportedBlockchain.SOLANA]
 
         raise InputError(f'Invalid chain type {self} when removing accounts')
 
@@ -450,6 +454,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     SCROLL = 'SCROLL'
     BINANCE_SC = 'BINANCE_SC'
     ZKSYNC_LITE = 'ZKSYNC_LITE'
+    SOLANA = 'SOLANA'
 
     def __str__(self) -> str:
         return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
@@ -493,6 +498,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 'XDAI'
         if self == SupportedBlockchain.BINANCE_SC:
             return 'BNB'
+        if self == SupportedBlockchain.SOLANA:
+            return 'SOL-2'
 
         return self.value
 
@@ -506,6 +513,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return ChainType.SUBSTRATE
         if self.is_bitcoin():
             return ChainType.BITCOIN
+        if self == SupportedBlockchain.SOLANA:
+            return ChainType.SOLANA
         # else
         return ChainType.ETH2  # the outlier
 
@@ -577,6 +586,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.SCROLL: 'scroll.svg',
     SupportedBlockchain.ZKSYNC_LITE: 'zksync_lite.svg',
     SupportedBlockchain.BINANCE_SC: 'binance_sc.svg',
+    SupportedBlockchain.SOLANA: 'solana.svg',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
