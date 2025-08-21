@@ -47,6 +47,7 @@ from rotkehlchen.constants.assets import (
     A_EUR,
     A_KFEE,
     A_LINK,
+    A_POL,
     A_POLYGON_POS_MATIC,
     A_USD,
     A_USDC,
@@ -954,7 +955,7 @@ def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
         assert patched_gecko.call_args.kwargs['from_assets'] == [A_POLYGON_POS_MATIC]
         freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
         inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
-        assert patched_gecko.call_args.kwargs['from_assets'] == [Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')]  # POL token  # noqa: E501
+        assert patched_gecko.call_args.kwargs['from_assets'] == [A_POL]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

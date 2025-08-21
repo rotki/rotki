@@ -5513,16 +5513,28 @@ class RestAPI:
             if (ts := Timestamp(from_timestamp + (i * interval))) not in exclude_timestamps
         ]
         if only_cache_period is not None:
-            for price_result in GlobalDBHandler.get_historical_prices(
-                query_data=[(asset, main_currency, ts) for ts in timestamps],
-                max_seconds_distance=only_cache_period,
-            ):
-                if price_result is not None:
-                    prices[price_result.timestamp] = str(price_result.price)
+            # try special assets first: they use custom logic not stored in global DB
+            for ts in timestamps:
+                special_asset_price = PriceHistorian().get_price_for_special_asset(
+                    from_asset=asset,
+                    to_asset=main_currency,
+                    timestamp=ts,
+                    max_seconds_distance=only_cache_period,
+                )
+                if special_asset_price is not None:
+                    prices[ts] = str(special_asset_price)
+
+            if (missing_timestamps := [ts for ts in timestamps if ts not in prices]):
+                for price_result in GlobalDBHandler.get_historical_prices(
+                    query_data=[(asset, main_currency, ts) for ts in missing_timestamps],
+                    max_seconds_distance=only_cache_period,
+                ):
+                    if price_result is not None:
+                        prices[price_result.timestamp] = str(price_result.price)
 
             return _wrap_in_ok_result(result={
                 'prices': prices,
-                'no_prices_timestamps': no_prices_ts,
+                'no_prices_timestamps': [ts for ts in missing_timestamps if ts not in prices],
                 'rate_limited_prices_timestamps': rate_limited_prices_ts,
             })
 

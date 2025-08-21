@@ -1,9 +1,14 @@
-
 import pytest
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
-from rotkehlchen.constants.assets import A_BAL, A_BTC, A_ETH, A_POLYGON_POS_MATIC, A_USD
+from rotkehlchen.constants.assets import (
+    A_BAL,
+    A_BTC,
+    A_ETH,
+    A_POL,
+    A_POLYGON_POS_MATIC,
+    A_USD,
+)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -154,7 +159,7 @@ def test_matic_pol_hardforked_price(price_historian: PriceHistorian):
         price=Price(ZERO),
     ))
     assert GlobalDBHandler.add_single_historical_price(HistoricalPrice(  # set POL price ONE
-        from_asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),
+        from_asset=A_POL,
         to_asset=A_USD,
         source=HistoricalPriceOracle.MANUAL,
         timestamp=after_hardfork,

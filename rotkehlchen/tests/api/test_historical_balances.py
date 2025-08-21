@@ -8,8 +8,8 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import DAY_IN_SECONDS, ONE
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants import DAY_IN_SECONDS, HOUR_IN_SECONDS, ONE
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
@@ -904,3 +904,80 @@ def test_get_historical_prices_per_asset(
 
         # The fourth timestamp should have a price (uses original function)
         assert str(START_TS + 3 * DAY_IN_SECONDS) in result['prices']
+
+
+def test_historical_price_cache_only_special_assets(
+        rotkehlchen_api_server: 'APIServer',
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    """Test special assets work with only_cache_period."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    # Test EURe collection asset cache consistency
+    response_no_cache = requests.post(  # Query without cache
+        api_url_for(rotkehlchen_api_server, 'historicalpricesperassetresource'),
+        json={
+            'asset': (eure_asset := 'eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+            'interval': DAY_IN_SECONDS,
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + DAY_IN_SECONDS,
+        },
+    )
+    result_no_cache = assert_proper_sync_response_with_result(response_no_cache)
+    response_cache_only = requests.post(  # query with cache only
+        api_url_for(rotkehlchen_api_server, 'historicalpricesperassetresource'),
+        json={
+            'asset': eure_asset,
+            'interval': DAY_IN_SECONDS,
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + DAY_IN_SECONDS,
+            'only_cache_period': HOUR_IN_SECONDS,
+        },
+    )
+    result_cache_only = assert_proper_sync_response_with_result(response_cache_only)
+    assert result_no_cache['prices'] == result_cache_only['prices']
+
+    with db.conn.write_ctx() as write_cursor:
+        db.set_setting(write_cursor=write_cursor, name='main_currency', value=A_USD)
+
+    # KFEE should return fixed $0.01 price
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'KFEE',
+            'from_timestamp': (kfee_ts := START_TS + DAY_IN_SECONDS),
+            'to_timestamp': kfee_ts + 10,
+            'interval': 5,
+            'only_cache_period': HOUR_IN_SECONDS,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert str(kfee_ts) in result['prices']
+    assert result['prices'][str(kfee_ts)] == '0.01'
+
+    # Test that ETH2 should use ETH price
+    globaldb.add_historical_prices(entries=[HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_USD,
+        timestamp=START_TS,
+        price=Price(FVal('1400')),
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+    )])
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'ETH2',
+            'interval': DAY_IN_SECONDS,
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + DAY_IN_SECONDS,
+            'only_cache_period': HOUR_IN_SECONDS,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert str(START_TS) in result['prices']
+    assert result['prices'][str(START_TS)] == '1400'

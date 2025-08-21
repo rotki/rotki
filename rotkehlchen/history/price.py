@@ -18,6 +18,7 @@ from rotkehlchen.constants.assets import (
     A_ETH2,
     A_EUR,
     A_KFEE,
+    A_POL,
     A_POLYGON_POS_MATIC,
     A_USD,
 )
@@ -120,10 +121,40 @@ class PriceHistorian:
         instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
 
     @staticmethod
+    def _get_cached_price_or_query(
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+            max_seconds_distance: int | None,
+    ) -> Price | None:
+        """Helper method to get price from cache if `max_seconds_distance`
+        is given, otherwise query normally.
+        """
+        if from_asset == to_asset:
+            return Price(ONE)
+
+        if max_seconds_distance is not None:
+            cached_price_entry = GlobalDBHandler.get_historical_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+                max_seconds_distance=max_seconds_distance,
+            )
+            # we return None here by design to avoid making remote queries in cache-only mode
+            return cached_price_entry.price if cached_price_entry is not None else None
+        else:
+            return PriceHistorian.query_historical_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+
+    @staticmethod
     def get_price_for_special_asset(
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
+            max_seconds_distance: int | None = None,
     ) -> Price | None:
         """
         Query the historical price on `timestamp` for `from_asset` in `to_asset`
@@ -137,16 +168,18 @@ class PriceHistorian:
             to_asset: The ticker symbol of the asset against which we want to
                       know the price.
             timestamp: The timestamp at which to query the price
+            max_seconds_distance: Maximum time distance for cache lookups
 
         May raise:
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the external service.
         """
         if from_asset == A_ETH2:
-            return PriceHistorian.query_historical_price(
+            return PriceHistorian._get_cached_price_or_query(
                 from_asset=A_ETH,
                 to_asset=to_asset,
                 timestamp=timestamp,
+                max_seconds_distance=max_seconds_distance,
             )
 
         if from_asset == A_KFEE:
@@ -155,38 +188,50 @@ class PriceHistorian:
             if to_asset == A_USD:
                 return usd_price
 
-            price_mapping = PriceHistorian().query_historical_price(
+            usd_to_target_price = PriceHistorian._get_cached_price_or_query(
                 from_asset=A_USD,
                 to_asset=to_asset,
                 timestamp=timestamp,
+                max_seconds_distance=max_seconds_distance,
             )
-            return Price(usd_price * price_mapping)
+            return Price(usd_price * usd_to_target_price) if usd_to_target_price is not None else None  # noqa: E501
 
         if from_asset == A_POLYGON_POS_MATIC and timestamp > POLYGON_POS_POL_HARDFORK:
-            return PriceHistorian.query_historical_price(
-                from_asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),  # POL token  # noqa: E501,
+            return PriceHistorian._get_cached_price_or_query(
+                from_asset=A_POL,
                 to_asset=to_asset,
                 timestamp=timestamp,
+                max_seconds_distance=max_seconds_distance,
             )
 
         if GlobalDBHandler.asset_in_collection(collection_id=240, asset_id=from_asset.identifier):  # part of the EURe collection # noqa: E501  # todo: Super hacky. Figure out a way to generalize
-            return PriceHistorian.query_historical_price(
+            return PriceHistorian._get_cached_price_or_query(
                 from_asset=A_EUR,
                 to_asset=to_asset,
                 timestamp=timestamp,
+                max_seconds_distance=max_seconds_distance,
             )
 
         if from_asset.is_evm_token() and (pool_token := from_asset.resolve_to_evm_token()).protocol in {CPT_UNISWAP_V2, CPT_UNISWAP_V3}:  # noqa: E501
-            try:
-                return PriceHistorian.query_uniswap_position_price(
-                    pool_token=pool_token,
-                    pool_token_amount=ONE,
+            if max_seconds_distance is not None:
+                cached_price_entry = GlobalDBHandler.get_historical_price(
+                    from_asset=from_asset,
                     to_asset=to_asset,
                     timestamp=timestamp,
+                    max_seconds_distance=max_seconds_distance,
                 )
-            except (RemoteError, NoPriceForGivenTimestamp):
-                log.error(f'Could not query uniswap position price for {from_asset.identifier} and time {timestamp}.')  # noqa: E501
-                return None
+                return cached_price_entry.price if cached_price_entry is not None else None
+            else:
+                try:
+                    return PriceHistorian.query_uniswap_position_price(
+                        pool_token=pool_token,
+                        pool_token_amount=ONE,
+                        to_asset=to_asset,
+                        timestamp=timestamp,
+                    )
+                except (RemoteError, NoPriceForGivenTimestamp):
+                    log.error(f'Could not query uniswap position price for {from_asset.identifier} and time {timestamp}.')  # noqa: E501
+                    return None
 
         return None
 
