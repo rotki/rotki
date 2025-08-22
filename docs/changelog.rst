@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10468` Crypto.com exchange integration should now be working properly.
 * :bug:`-` Crypto.com mobile app events imported via a CSV file will now have their location label set.
 * :bug:`-` Users can now access the Solana token migration guide using the correct link.
 * :bug:`10499` Crypto.com mobile app CSV imports will now properly handle limit order transactions that were previously failing to import.
