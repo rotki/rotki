@@ -161,7 +161,7 @@ function isUniqueConstraintError(errorMessage: string): boolean {
               tag="div"
             >
               <ExternalLink
-                :text="t('solana_token_migration.usage_guide')"
+                :text="t('solana_token_migration.release_notes')"
                 :url="externalLinks.usageGuideSection.solanaTokenMigration"
               />
             </i18n-t>

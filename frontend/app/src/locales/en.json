@@ -4309,7 +4309,7 @@
   },
   "solana_token_migration": {
     "hint": "You can find more information about migrating Solana tokens in our {0}.",
-    "usage_guide": "usage guide"
+    "release_notes": "release notes"
   },
   "sorting_selector": {
     "desc": {
