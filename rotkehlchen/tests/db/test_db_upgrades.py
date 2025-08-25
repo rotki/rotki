@@ -3345,7 +3345,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
-    removed_tables = {'eth2_daily_staking_details'}
+    removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -3639,5 +3639,47 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
             (2, 'Note2', 'Test note 2 contents', 'G', 1754674299, 0),
         ]
         assert cursor.execute(solana_query).fetchone()[0] == 1
+
+    db.logout()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 49 to version 50"""
+    _use_prepared_db(user_data_dir, 'v49_rotkehlchen.db')
+    db_v49 = _init_db_with_target_version(
+        target_version=49,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v49.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT identifier, event_identifier, location_label FROM history_events WHERE location = 'P'",  # noqa: E501
+        ).fetchall() == [
+            (1, 'TEST_EVENT_1', None),
+            (2, 'TEST_EVENT_2', None),
+            (3, 'TEST_EVENT_3', 'Cryptocom 1'),
+        ]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE parent_identifier=? AND name=? AND value=?',  # noqa: E501
+            (2, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        ).fetchone()[0] == 1  # TEST_EVENT_2 is customized.
+
+    db_v49.logout()
+    db = _init_db_with_target_version(
+        target_version=50,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT identifier, event_identifier, location_label FROM history_events WHERE location = 'P'",  # noqa: E501
+        ).fetchall() == [
+            (1, 'TEST_EVENT_1', 'Crypto.com App'),
+            (2, 'TEST_EVENT_2', None),  # Customized events are not updated since they may not be for the app account.  # noqa: E501
+            (3, 'TEST_EVENT_3', 'Cryptocom 1'),
+        ]
 
     db.logout()
