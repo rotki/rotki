@@ -32,6 +32,7 @@ from rotkehlchen.db.upgrades.v45_v46 import upgrade_v45_to_v46
 from rotkehlchen.db.upgrades.v46_v47 import upgrade_v46_to_v47
 from rotkehlchen.db.upgrades.v47_v48 import upgrade_v47_to_v48
 from rotkehlchen.db.upgrades.v48_v49 import upgrade_v48_to_v49
+from rotkehlchen.db.upgrades.v49_v50 import upgrade_v49_to_v50
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -47,98 +48,30 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 UPGRADES_LIST = [
-    UpgradeRecord(
-        from_version=26,
-        function=upgrade_v26_to_v27,
-    ),
-    UpgradeRecord(
-        from_version=27,
-        function=upgrade_v27_to_v28,
-    ),
-    UpgradeRecord(
-        from_version=28,
-        function=upgrade_v28_to_v29,
-    ),
-    UpgradeRecord(
-        from_version=29,
-        function=upgrade_v29_to_v30,
-    ),
-    UpgradeRecord(
-        from_version=30,
-        function=upgrade_v30_to_v31,
-    ),
-    UpgradeRecord(
-        from_version=31,
-        function=upgrade_v31_to_v32,
-    ),
-    UpgradeRecord(
-        from_version=32,
-        function=upgrade_v32_to_v33,
-    ),
-    UpgradeRecord(
-        from_version=33,
-        function=upgrade_v33_to_v34,
-    ),
-    UpgradeRecord(
-        from_version=34,
-        function=upgrade_v34_to_v35,
-    ),
-    UpgradeRecord(
-        from_version=35,
-        function=upgrade_v35_to_v36,
-    ),
-    UpgradeRecord(
-        from_version=36,
-        function=upgrade_v36_to_v37,
-    ),
-    UpgradeRecord(
-        from_version=37,
-        function=upgrade_v37_to_v38,
-    ),
-    UpgradeRecord(
-        from_version=38,
-        function=upgrade_v38_to_v39,
-    ),
-    UpgradeRecord(
-        from_version=39,
-        function=upgrade_v39_to_v40,
-    ),
-    UpgradeRecord(
-        from_version=40,
-        function=upgrade_v40_to_v41,
-    ),
-    UpgradeRecord(
-        from_version=41,
-        function=upgrade_v41_to_v42,
-    ),
-    UpgradeRecord(
-        from_version=42,
-        function=upgrade_v42_to_v43,
-    ),
-    UpgradeRecord(
-        from_version=43,
-        function=upgrade_v43_to_v44,
-    ),
-    UpgradeRecord(
-        from_version=44,
-        function=upgrade_v44_to_v45,
-    ),
-    UpgradeRecord(
-        from_version=45,
-        function=upgrade_v45_to_v46,
-    ),
-    UpgradeRecord(
-        from_version=46,
-        function=upgrade_v46_to_v47,
-    ),
-    UpgradeRecord(
-        from_version=47,
-        function=upgrade_v47_to_v48,
-    ),
-    UpgradeRecord(
-        from_version=48,
-        function=upgrade_v48_to_v49,
-    ),
+    UpgradeRecord(from_version=26, function=upgrade_v26_to_v27),
+    UpgradeRecord(from_version=27, function=upgrade_v27_to_v28),
+    UpgradeRecord(from_version=28, function=upgrade_v28_to_v29),
+    UpgradeRecord(from_version=29, function=upgrade_v29_to_v30),
+    UpgradeRecord(from_version=30, function=upgrade_v30_to_v31),
+    UpgradeRecord(from_version=31, function=upgrade_v31_to_v32),
+    UpgradeRecord(from_version=32, function=upgrade_v32_to_v33),
+    UpgradeRecord(from_version=33, function=upgrade_v33_to_v34),
+    UpgradeRecord(from_version=34, function=upgrade_v34_to_v35),
+    UpgradeRecord(from_version=35, function=upgrade_v35_to_v36),
+    UpgradeRecord(from_version=36, function=upgrade_v36_to_v37),
+    UpgradeRecord(from_version=37, function=upgrade_v37_to_v38),
+    UpgradeRecord(from_version=38, function=upgrade_v38_to_v39),
+    UpgradeRecord(from_version=39, function=upgrade_v39_to_v40),
+    UpgradeRecord(from_version=40, function=upgrade_v40_to_v41),
+    UpgradeRecord(from_version=41, function=upgrade_v41_to_v42),
+    UpgradeRecord(from_version=42, function=upgrade_v42_to_v43),
+    UpgradeRecord(from_version=43, function=upgrade_v43_to_v44),
+    UpgradeRecord(from_version=44, function=upgrade_v44_to_v45),
+    UpgradeRecord(from_version=45, function=upgrade_v45_to_v46),
+    UpgradeRecord(from_version=46, function=upgrade_v46_to_v47),
+    UpgradeRecord(from_version=47, function=upgrade_v47_to_v48),
+    UpgradeRecord(from_version=48, function=upgrade_v48_to_v49),
+    UpgradeRecord(from_version=49, function=upgrade_v49_to_v50),
 ]
 
 
