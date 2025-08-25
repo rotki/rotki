@@ -607,6 +607,12 @@ class AssociatedLocations(BaseMethodView):
         return self.rest_api.get_associated_locations()
 
 
+class LocationLabelsResource(BaseMethodView):
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_location_labels()
+
+
 class BlockchainTransactionsResource(BaseMethodView):
     delete_schema = BlockchainTransactionDeletionSchema()
 

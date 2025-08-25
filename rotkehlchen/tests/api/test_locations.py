@@ -8,7 +8,9 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.tests.utils.exchanges import mock_exchange_data_in_db
 from rotkehlchen.types import (
@@ -58,3 +60,27 @@ def test_get_associated_locations(
     )
     result = assert_proper_sync_response_with_result(response)
     assert set(result) == {'nexo', 'binance', 'poloniex'}
+
+
+def test_get_location_labels(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that the location labels endpoint returns all the labels used in the DB."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    labels = ['Kraken 1', 'Kraken 2', 'some other random label']
+    with db.user_write() as cursor:
+        DBHistoryEvents(db).add_history_events(
+            write_cursor=cursor,
+            history=[HistoryEvent(
+                event_identifier=f'xyz{location_label}',
+                sequence_index=0,
+                timestamp=TimestampMS(1500000000000),
+                location=Location.KRAKEN,
+                asset=A_EUR,
+                amount=ONE,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                location_label=location_label,
+            ) for location_label in labels])
+
+    assert assert_proper_sync_response_with_result(
+        response=requests.get(api_url_for(rotkehlchen_api_server, 'locationlabelsresource')),
+    ) == labels
