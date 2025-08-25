@@ -60,7 +60,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/assets/collections",
             routing::get(api::globaldb_endpoints::assets_collections::query_collection_assets),
         )
+        .route(
+            "/assets/mappings",
+            routing::post(api::assets::get_assets_mappings),
+        )
         .route("/user", routing::post(api::database::unlock_user))
+        .route("/user/logout", routing::post(api::database::logout_user))
         .route(
             "/assets/ignored",
             routing::get(api::database::get_ignored_assets),
