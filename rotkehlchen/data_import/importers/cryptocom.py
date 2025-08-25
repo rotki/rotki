@@ -3,7 +3,7 @@ import functools
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import ONE, ZERO
@@ -38,8 +38,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-CRYPTOCOM_PREFIX = 'CCM_'
-INDEX = '_index'
+CRYPTOCOM_PREFIX: Final = 'CCM_'
+INDEX: Final = '_index'
+CRYPTOCOM_LOCATION_LABEL: Final = 'Crypto.com App'  # The csv import is from the Crypto.com mobile app  # noqa: E501
 
 
 def hash_csv_row_without_index(csv_row: Any) -> str:
@@ -129,6 +130,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
                     fee=AssetAmount(asset=fee_currency, amount=fee),
                     location=Location.CRYPTOCOM,
+                    location_label=CRYPTOCOM_LOCATION_LABEL,
                     spend_notes=notes,
                 ),
             )
@@ -153,6 +155,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
             )])
         elif row_type in {
             'airdrop_to_exchange_transfer',
@@ -180,6 +183,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
                 asset=asset,
                 notes=notes,
             )
@@ -195,6 +199,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
                 asset=asset,
                 notes=notes,
             )
@@ -208,6 +213,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
             )])
         elif row_type == 'invest_withdrawal':
             asset = asset_from_cryptocom(csv_row['Currency'])
@@ -218,6 +224,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
             )])
         elif row_type == 'crypto_transfer':
             asset = asset_from_cryptocom(csv_row['Currency'])
@@ -236,6 +243,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
                 asset=asset,
                 notes=notes,
             )
@@ -437,6 +445,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
                             fee=AssetAmount(asset=fee_currency, amount=fee),
                             location=Location.CRYPTOCOM,
+                            location_label=CRYPTOCOM_LOCATION_LABEL,
                             spend_notes=notes,
                         ),
                     )
@@ -503,6 +512,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             amount=profit,
                             asset=asset_object,
                             notes=f'Staking profit for {asset}',
+                            location_label=CRYPTOCOM_LOCATION_LABEL,
                         )
                         self.add_history_events(write_cursor, [event])
 

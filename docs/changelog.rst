@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Crypto.com App events imported via a CSV file will now have their location label set.
 * :bug:`-` Users can now access the Solana token migration guide using the correct link.
 * :bug:`-` Fix an issue where some amounts in the history event notes are not scrambled/blurred when the privacy mode/scramble setting is activated.
 * :bug:`-` Historical price data will now display correctly for all supported assets instead of showing empty results in some cases.
