@@ -88,6 +88,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'crypto_viban_exchange',
             'recurring_buy_order',
             'card_top_up',
+            'trading.limit_order.cash_account.purchase_commit',  # a fulfilled limit order
         }:
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -102,6 +103,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 'crypto_viban_exchange',
                 'recurring_buy_order',
                 'viban_purchase',
+                'trading.limit_order.cash_account.purchase_commit',  # a fulfilled limit order
             }:
                 # trades (fiat, crypto) to (crypto, fiat)
                 base_asset = asset_from_cryptocom(to_currency)
@@ -267,6 +269,8 @@ class CryptocomImporter(BaseExchangeImporter):
             'supercharger_withdrawal',
             # The user has received an airdrop but can't claim it yet
             'airdrop_locked',
+            'trading.limit_order.cash_account.purchase_lock',
+            'trading.limit_order.cash_account.purchase_unlock',
         }:
             raise SkippedCSVEntry("Entry doesn't affect wallet balance")
         elif row_type in {
@@ -281,7 +285,7 @@ class CryptocomImporter(BaseExchangeImporter):
             raise SkippedCSVEntry
         else:
             raise UnsupportedCSVEntry(
-                f'Unknown entrype type "{row_type}" encountered during '
+                f'Unknown entry type "{row_type}" encountered during '
                 f'cryptocom data import. Ignoring entry',
             )
 
