@@ -155,7 +155,6 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
         regular_tx_in_db = dbtx.get_evm_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(),
-            has_premium=True,
         )
         internal_tx_in_db = dbtx.get_evm_internal_transactions(
             parent_tx_hash=GENESIS_HASH,

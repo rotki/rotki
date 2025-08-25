@@ -344,7 +344,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
 
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert_txlists_equal(transactions[0:8], EXPECTED_AFB7_TXS + EXPECTED_4193_TXS)
 
@@ -630,7 +630,7 @@ def test_query_transactions_removed_address(
     # Check that only the 3 remaining transactions from the other account are returned
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
     assert len(transactions) == 3
 
 
@@ -689,7 +689,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert_simple_ok_response(response)
         dbevmtx = DBEvmTx(rotki.data.db)
         with rotki.data.db.conn.read_ctx() as cursor:
-            transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+            transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
 
         assert len(transactions) == 2
 
@@ -737,7 +737,7 @@ def test_query_transactions_check_decoded_events(
     query_transactions(rotki)
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert len(transactions) == 4
 
@@ -983,7 +983,7 @@ def test_query_transactions_check_decoded_events(
     # requery all transactions and events. Assert they are the same (different event id though)
     query_transactions(rotki)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert len(transactions) == 4
     returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
@@ -1286,7 +1286,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
     assert_simple_ok_response(response)
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert len(transactions) == 1
     assert transactions[0].tx_hash.hex() == tx_str

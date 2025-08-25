@@ -15,7 +15,6 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -48,28 +47,18 @@ class DBL2WithL1FeesTx(DBEvmTx):
         """
         write_cursor.executemany(query, tx_tuples)
 
-    def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any], has_premium: bool) -> tuple[str, list[tuple]]:  # noqa: E501
+    def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any]) -> tuple[str, list[tuple]]:  # noqa: E501
         base_select = (
             'SELECT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, '  # noqa: E501
             'evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, '  # noqa: E501
             'evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, '  # noqa: E501
-            'evm_transactions.input_data, evm_transactions.nonce, evm_transactions.identifier, OP.l1_fee, auth.nonce AS auth_nonce, auth.delegated_address'  # noqa: E501
-        )
-        join_clause = (
+            'evm_transactions.input_data, evm_transactions.nonce, evm_transactions.identifier, OP.l1_fee, auth.nonce AS auth_nonce, auth.delegated_address '  # noqa: E501
+            'FROM evm_transactions '
             'LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id '
             'LEFT JOIN evm_transactions_authorizations AS auth ON evm_transactions.identifier = auth.tx_id'  # noqa: E501
         )
 
-        if has_premium:
-            sql = f'{base_select} FROM evm_transactions {join_clause} {query}'
-        else:
-            sql = (
-                f'{base_select} FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions '  # noqa: E501
-                f'{join_clause} {query}'
-            )
-            bindings = [FREE_ETH_TX_LIMIT] + bindings
-
-        return sql, bindings
+        return f'{base_select} {query}', bindings
 
     def _build_evm_transaction(self, result: tuple[Any, ...], authorization_list_result: list[tuple[int, ChecksumEvmAddress]]) -> L2WithL1FeesTransaction:  # noqa: E501
         return L2WithL1FeesTransaction(
