@@ -130,7 +130,6 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                 tx_hash=approve_tx_hash,
                 chain_id=ChainID.ETHEREUM,
             ),
-            has_premium=True,
         )
     decoder = ethereum_transaction_decoder
     with patch.object(decoder, '_decode_transaction', wraps=decoder._decode_transaction) as decode_mock:  # noqa: E501
@@ -305,7 +304,6 @@ def test_genesis_remove_address(
         genesis_tx = dbevmtx.get_evm_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH),
-            has_premium=True,
         )
 
     assert len(genesis_tx) == 0, 'Genesis transaction should have been deleted'

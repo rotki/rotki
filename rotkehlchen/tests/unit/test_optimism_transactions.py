@@ -49,7 +49,6 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
         transactions = dbevmtx.get_evm_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash),
-            has_premium=True,
         )
         assert_tx_okay(transactions, should_have_l1=True)
 
@@ -61,7 +60,6 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
         transactions = dbevmtx.get_evm_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash),
-            has_premium=True,
         )
         assert_tx_okay(transactions, should_have_l1=False)
 

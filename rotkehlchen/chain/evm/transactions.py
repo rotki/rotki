@@ -629,7 +629,6 @@ class EvmTransactions(ABC):  # noqa: B024
             return self.dbevmtx.get_evm_transactions(
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
-                has_premium=True,
             )[0], tx_receipt  # all good, tx receipt is in the database
 
         log.debug(f'Querying transaction data for {tx_hash=}({self.evm_inquirer.chain_name})')
@@ -768,12 +767,9 @@ class EvmTransactions(ABC):  # noqa: B024
                     end_ts=Timestamp(0),
                 )
 
-        # Check whether the genesis tx was added
-        with self.database.conn.read_ctx() as cursor:
-            added_tx = self.dbevmtx.get_evm_transactions(
+            added_tx = self.dbevmtx.get_evm_transactions(  # Check whether the genesis tx was added  # noqa: E501
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
-                has_premium=True,  # we don't need any limiting here
             )
 
         if len(added_tx) == 0:
@@ -896,7 +892,6 @@ class EvmTransactions(ABC):  # noqa: B024
             if len(self.dbevmtx.get_evm_transactions(
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
-                has_premium=True,
             )) == 1 and self.dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id) is not None:  # noqa: E501
                 raise AlreadyExists(f'Transaction {tx_hash.hex()} is already in the DB')
 

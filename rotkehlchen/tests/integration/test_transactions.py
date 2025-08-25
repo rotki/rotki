@@ -56,7 +56,6 @@ def test_get_transaction_receipt(
         results = dbevmtx.get_evm_transactions(
             cursor=cursor,
             filter_=filter_query,
-            has_premium=True,
         )
     assert len(results) == 1
     assert results[0] == transactions[0]

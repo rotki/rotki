@@ -55,7 +55,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
 # This is only used in get_transaction_hashes_not_decoded and count_hashes_not_decoded
 # in conjunction with TransactionsNotDecodedFilterQuery. In that filter query we also
@@ -209,7 +208,6 @@ class DBEvmTx:
             self,
             cursor: 'DBCursor',
             filter_: EvmTransactionsFilterQuery,
-            has_premium: bool,
     ) -> list[EvmTransaction]:
         """Returns a list of evm transactions optionally filtered by
         the given filter query
@@ -219,7 +217,7 @@ class DBEvmTx:
         filtering arguments.
         """
         query, bindings = filter_.prepare()
-        query, bindings = self._form_evm_transaction_dbquery(query, bindings, has_premium)
+        query, bindings = self._form_evm_transaction_dbquery(query, bindings)
         grouped_transactions: dict[int, tuple[Any, ...]] = {}  # Group results by transaction identifier  # noqa: E501
         for result in cursor.execute(query, bindings):
             if (tx_identifier := result[12]) not in grouped_transactions:  # Store base transaction data + empty auth list  # noqa: E501
@@ -612,7 +610,6 @@ class DBEvmTx:
                     accounts=[EvmAccount(address=account)],
                     chain_id=chain_id,
                 ),
-                has_premium=True,
             )
         if len(tx_in_db) == 1:
             tx = tx_in_db[0]
@@ -655,22 +652,17 @@ class DBEvmTx:
                 )
         return tx
 
-    def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any], has_premium: bool) -> tuple[str, list]:  # noqa: E501
+    def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any]) -> tuple[str, list]:
         """Constructs SQL query and bindings for EVM transactions with authorization data"""
         base_select = (
             'SELECT evm_transactions.tx_hash, evm_transactions.chain_id, '
             'timestamp, block_number, from_address, to_address, value, evm_transactions.gas, '
             'gas_price, evm_transactions.gas_used, input_data, evm_transactions.nonce, '
-            'identifier, auth.nonce AS auth_nonce, auth.delegated_address'
+            'identifier, auth.nonce AS auth_nonce, auth.delegated_address '
+            'FROM evm_transactions LEFT JOIN evm_transactions_authorizations AS auth '
+            'ON evm_transactions.identifier = auth.tx_id '
         )
-        join_clause = 'LEFT JOIN evm_transactions_authorizations AS auth ON evm_transactions.identifier = auth.tx_id'  # noqa: E501
-        if has_premium:
-            sql = f'{base_select} FROM evm_transactions {join_clause} {query}'
-        else:
-            sql = f'{base_select} FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions {join_clause} {query}'  # noqa: E501
-            bindings = [FREE_ETH_TX_LIMIT] + bindings
-
-        return sql, bindings
+        return f'{base_select} {query}', bindings
 
     def _build_evm_transaction(self, result: tuple[Any, ...], authorization_list_result: list[tuple[int, ChecksumEvmAddress]]) -> EvmTransaction:  # noqa: E501
         """Construct an EvmTransaction from db query result.
