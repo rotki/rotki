@@ -6,6 +6,7 @@ import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit, pick } from 'es-toolkit';
+import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -288,16 +289,31 @@ defineExpose({
 
       <template v-if="isEvmToken">
         <div data-cy="chain-select">
-          <RuiMenuSelect
+          <RuiAutoComplete
             v-model="evmChain"
             :label="t('asset_form.labels.chain')"
             :options="allEvmChains"
             :disabled="editMode"
             :error-messages="toMessages(v$.evmChain)"
+            :auto-select-first="true"
             key-attr="name"
             text-attr="label"
             variant="outlined"
-          />
+          >
+            <template #selection="{ item }">
+              <ChainDisplay
+                :data-value="item.name"
+                dense
+                :chain="item.name"
+              />
+            </template>
+            <template #item="{ item }">
+              <ChainDisplay
+                dense
+                :chain="item.name"
+              />
+            </template>
+          </RuiAutoComplete>
         </div>
 
         <div data-cy="token-select">
