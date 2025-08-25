@@ -1,6 +1,7 @@
+const DOCS_SUBFOLDER = !import.meta.env?.DEV ? '' : 'latest/';
 const BASE_URL = 'https://rotki.com/';
 const OLD_DOCS_BASE_URL = 'https://rotki.readthedocs.io/en/stable/';
-const DOCS_BASE_URL = 'https://docs.rotki.com/';
+const DOCS_BASE_URL = `https://docs.rotki.com/${DOCS_SUBFOLDER}`;
 const USAGE_GUIDE_URL = `${DOCS_BASE_URL}usage-guides/`;
 const CONTRIBUTE_URL = `${DOCS_BASE_URL}contribution-guides/`;
 const GITHUB_BASE_URL = 'https://github.com/rotki/rotki/';

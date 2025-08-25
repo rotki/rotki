@@ -6,7 +6,7 @@
 
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "noEmit": true
   },
   "include": [
