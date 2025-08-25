@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
+
 * :release:`1.40.0 <2025-08-15>`
 * :bug:`-` Fix an issue where the selected filter suggestion is sometimes cleared in the combined filter.
 * :bug:`10439` Fix an issue where the ETH breakdown on an account isn't filtered, displaying the ETH breakdown from all chains and accounts.
