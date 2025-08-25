@@ -32,12 +32,22 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _get_gauge_cache_type(version: Literal[1, 2, 3]) -> Literal[CacheType.BALANCER_V1_GAUGES, CacheType.BALANCER_V2_GAUGES, CacheType.BALANCER_V3_GAUGES]:  # noqa: E501
+    """Get gauge cache type for balancer version."""
+    if version == 1:
+        return CacheType.BALANCER_V1_GAUGES
+    elif version == 2:
+        return CacheType.BALANCER_V2_GAUGES
+    else:  # version '3'
+        return CacheType.BALANCER_V3_GAUGES
+
+
 def query_balancer_data(
-        version: Literal[1, 2],
+        version: Literal[1, 2, 3],
         inquirer: 'EvmNodeInquirer',
         msg_aggregator: 'MessagesAggregator',
-        protocol: Literal['balancer-v1', 'balancer-v2'],
-        cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
+        protocol: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'],
+        cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS, CacheType.BALANCER_V3_POOLS],  # noqa: E501
         reload_all: bool,
 ) -> tuple[set['ChecksumEvmAddress'], set['ChecksumEvmAddress']]:
     """Query and store balancer pools with their gauges.
@@ -60,12 +70,11 @@ def query_balancer_data(
                     key_parts=(cache_type, *pool_key_parts),
                 )
             }
-            gauge_cache_type: Literal[CacheType.BALANCER_V1_GAUGES, CacheType.BALANCER_V2_GAUGES] = CacheType.BALANCER_V1_GAUGES if version == 1 else CacheType.BALANCER_V2_GAUGES  # noqa: E501
             existing_gauges = {
                 string_to_evm_address(address)
                 for address in globaldb_get_general_cache_values(
                     cursor=cursor,
-                    key_parts=(gauge_cache_type, str_chain_id),
+                    key_parts=(_get_gauge_cache_type(version), str_chain_id),
                 )
             }
 
@@ -143,10 +152,9 @@ def query_balancer_data(
             values=pools,
         )
         if len(gauges) > 0:
-            gauge_cache_type = CacheType.BALANCER_V1_GAUGES if version == 1 else CacheType.BALANCER_V2_GAUGES  # noqa: E501
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
-                key_parts=(gauge_cache_type, str_chain_id),
+                key_parts=(_get_gauge_cache_type(version), str_chain_id),
                 values=gauges,
             )
 
@@ -161,8 +169,8 @@ def query_balancer_data(
 
 def read_balancer_pools_and_gauges_from_cache(
         chain_id: ChainID,
-        version: Literal['1', '2'],
-        cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
+        version: Literal[1, 2, 3],
+        cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS, CacheType.BALANCER_V3_POOLS],  # noqa: E501
 ) -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:
     """Retrieves cached balancer pool and gauge addresses for a given chain and version.
 
@@ -178,13 +186,11 @@ def read_balancer_pools_and_gauges_from_cache(
                 key_parts=(cache_type, str(chain_id.value)),
             )
         }
-
-        gauge_cache_type: Literal[CacheType.BALANCER_V1_GAUGES, CacheType.BALANCER_V2_GAUGES] = CacheType.BALANCER_V1_GAUGES if version == '1' else CacheType.BALANCER_V2_GAUGES  # noqa: E501
         gauge_addresses = {
             string_to_evm_address(gauge_address)
             for gauge_address in globaldb_get_general_cache_values(
                 cursor=cursor,
-                key_parts=(gauge_cache_type, str(chain_id.value)),
+                key_parts=(_get_gauge_cache_type(version), str(chain_id.value)),
             )
         }
 

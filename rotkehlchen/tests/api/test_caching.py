@@ -205,6 +205,7 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             (ProtocolsWithCache.ETH_BLOCKS, patched_eth_withdrawals_cache, 1),
             (ProtocolsWithCache.BALANCER_V1, patched_balancer_query, 3),  # supported on 3 chains
             (ProtocolsWithCache.BALANCER_V2, patched_balancer_query, 6),  # supported on 6 chains
+
             (ProtocolsWithCache.MERKL, patched_merkl_cache, 1),
         ):
             patched_obj.reset_mock()

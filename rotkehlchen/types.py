@@ -1273,12 +1273,14 @@ class CacheType(Enum):
     MORPHO_REWARD_DISTRIBUTORS = auto()
     BALANCER_V1_POOLS = auto()
     BALANCER_V2_POOLS = auto()
+    BALANCER_V3_POOLS = auto()
     CURVE_LENDING_VAULTS = auto()
     CURVE_LENDING_VAULT_CONTROLLER = auto()
     CURVE_LENDING_VAULT_BORROWED_TOKEN = auto()
     AURA_POOLS = auto()  # stores count of pools in db + chain_id (stringified)
     BALANCER_V1_GAUGES = auto()  # stores gauges + chain_id
     BALANCER_V2_GAUGES = auto()  # stores gauges + chain_id
+    BALANCER_V3_GAUGES = auto()  # stores gauges + chain_id
     VELODROME_GAUGE_FEE_ADDRESS = auto()
     VELODROME_GAUGE_BRIBE_ADDRESS = auto()
     AERODROME_GAUGE_FEE_ADDRESS = auto()
@@ -1380,8 +1382,10 @@ GeneralCacheType = Literal[
     CacheType.EXTRAFI_REWARD_CONTRACTS,
     CacheType.BALANCER_V1_POOLS,
     CacheType.BALANCER_V2_POOLS,
+    CacheType.BALANCER_V3_POOLS,
     CacheType.BALANCER_V1_GAUGES,
     CacheType.BALANCER_V2_GAUGES,
+    CacheType.BALANCER_V3_GAUGES,
     CacheType.MORPHO_REWARD_DISTRIBUTORS,
     CacheType.CURVE_CRVUSD_CONTROLLERS,
     CacheType.STAKEDAO_GAUGES,
