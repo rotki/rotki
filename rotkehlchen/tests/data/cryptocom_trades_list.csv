@@ -39,3 +39,11 @@
 2021-03-20 10:49:11,To +49XXXXXXXXXX,CRO,-100.0,,,EUR,-20.0,-23.175318,crypto_transfer
 2021-03-07 06:17:09,Card Rebate Reversal: Netflix,CRO,-7.76792828,,,EUR,-1.0,-1.1587659,reimbursement_reverted
 2021-03-06 00:05:35,Card Rebate: Netflix,CRO,7.76792828,,,EUR,1.0,1.1587659,reimbursement
+2025-01-22 17:32:03,USD -> SOL,USD,-5.0,SOL,11.0,USD,5.0,5.0,trading.limit_order.cash_account.purchase_lock
+2025-01-22 17:47:53,USD -> SOL,USD,-5.0,SOL,10.0,USD,5.0,5.0,trading.limit_order.cash_account.purchase_lock
+2025-01-22 17:49:13,USD -> SOL,USD,-5.0,SOL,12.0,USD,5.0,5.0,trading.limit_order.cash_account.purchase_lock
+2025-02-01 07:09:10,USD -> SOL,USD,-5.0,SOL,10.0,USD,5.0,5,trading.limit_order.cash_account.purchase_commit
+2025-03-11 01:35:34,USD -> SOL,USD,5.0,SOL,11.0,USD,5.0,5.0,trading.limit_order.cash_account.purchase_unlock
+2025-03-11 01:35:41,USD -> SOL,USD,5.0,SOL,12.0,USD,5.0,5.0,trading.limit_order.cash_account.purchase_unlock
+2025-04-09 11:24:31,USD -> ETH,USD,-10.0,ETH,7.99,USD,10.0,10.0,trading.limit_order.cash_account.purchase_lock
+2025-04-18 13:19:44,USD -> ETH,USD,-10.0,ETH,7.99,USD,10.0,10.0,trading.limit_order.cash_account.purchase_commit
