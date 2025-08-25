@@ -1,24 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type {
-  GroupEventData,
-  HistoryEventEditData,
-  ShowEventHistoryForm,
-  ShowFormData,
-  StandaloneEventData,
-} from '@/modules/history/management/forms/form-types';
-import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type {
-  AddTransactionHashPayload,
-  PullEthBlockEventPayload,
-  PullEvmTransactionPayload,
-} from '@/types/history/events';
-import type { HistoryEventRow } from '@/types/history/events/schemas';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { flatten, isEqual } from 'es-toolkit';
+import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import HistoryEventFormDialog from '@/components/history/events/HistoryEventFormDialog.vue';
@@ -32,28 +13,13 @@ import RepullingTransactionFormDialog from '@/components/history/events/tx/Repul
 import TransactionFormDialog from '@/components/history/events/tx/TransactionFormDialog.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { useHistoryTransactions } from '@/composables/history/events/tx';
-import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
+import { useHistoryEventsDialogs } from '@/composables/history/events/use-history-events-dialogs';
+import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
-import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
-import { RouterAccountsSchema } from '@/types/route';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { toEvmChainAndTxHash } from '@/utils/history';
-import {
-  isEthBlockEvent,
-  isEvmEvent,
-  isEvmEventType,
-  isOnlineHistoryEventType,
-} from '@/utils/history/events';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -104,10 +70,6 @@ const {
   validators,
 } = toRefs(props);
 
-const formData = ref<GroupEventData | StandaloneEventData>();
-const missingRuleData = ref<HistoryEventEditData>();
-const accounts = ref<BlockchainAccount<AddressData>[]>([]);
-const locationOverview = ref(get(location));
 const toggles = ref<{
   customizedEventsOnly: boolean;
   showIgnoredAssets: boolean;
@@ -117,26 +79,10 @@ const toggles = ref<{
   matchExactEvents: false,
   showIgnoredAssets: false,
 });
-const decodingStatusDialogPersistent = ref<boolean>(false);
-const decodingStatusDialogOpen = ref<boolean>(false);
-const protocolCacheStatusDialogOpen = ref<boolean>(false);
 const currentAction = ref<'decode' | 'query'>('query');
 
-const addTransactionModelValue = ref<AddTransactionHashPayload>();
-const showRePullTransactionsDialog = ref<boolean>(false);
-
-const { show } = useConfirmStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
 const { decodingStatus } = storeToRefs(useHistoryStore());
-const { getAccountByAddress } = useBlockchainAccountsStore();
-const { fetchHistoryEvents } = useHistoryEvents();
-const { refreshTransactions } = useHistoryTransactions();
-const {
-  fetchUndecodedTransactionsStatus,
-  pullAndRecodeEthBlockEvents,
-  pullAndRedecodeTransactions,
-  redecodeTransactions,
-} = useHistoryTransactionDecoding();
 const {
   anyEventsDecoding,
   processing,
@@ -144,273 +90,80 @@ const {
   sectionLoading,
   shouldFetchEventsRegularly,
 } = useHistoryEventsStatus();
-const historyEventMappings = useHistoryEventMappings();
-useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
 
 const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
-const usedAccounts = computed<Account[]>(() => {
-  if (isDefined(useExternalAccountFilter))
-    return get(externalAccountFilter);
-
-  const accountData = get(accounts).map(account => ({
-    address: getAccountAddress(account),
-    chain: account.chain,
-  }));
-  return accountData.length > 0 ? [accountData[0]] : accountData;
-});
-
-const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
-  const entryTypes = props.entryTypes;
-  return {
-    evmEvents: entryTypes ? entryTypes.some(type => isEvmEventType(type)) : true,
-    onlineEvents: entryTypes ? entryTypes.some(type => isOnlineHistoryEventType(type)) : true,
-  };
-});
-
-const identifiers = computed<string[] | undefined>(() => {
-  const { identifiers } = get(route).query;
-
-  return identifiers ? [identifiers as string] : undefined;
-});
-
-const eventIdentifiers = computed<string[] | undefined>(() => {
-  const { eventIdentifiers } = get(route).query;
-
-  return eventIdentifiers ? [eventIdentifiers as string] : undefined;
-});
-
-const highlightedIdentifiers = computed<string[] | undefined>(() => {
-  const { highlightedIdentifier } = get(route).query;
-
-  return highlightedIdentifier ? [highlightedIdentifier as string] : undefined;
-});
-
 const {
+  accounts,
   fetchData,
   filters,
-  isLoading: groupLoading,
+  groupLoading,
+  groups,
+  highlightedIdentifiers,
+  identifiers,
+  includes,
+  locations,
   matchers,
+  onFilterAccountsChanged,
   pageParams,
   pagination,
   setPage,
   sort,
-  state: groups,
-  updateFilter,
-  userAction,
-} = usePaginationFilters<
-  HistoryEventRow,
-  HistoryEventRequestPayload,
-  Filters,
-  Matcher
->(fetchHistoryEvents, {
-  defaultParams: computed(() => {
-    if (isDefined(entryTypes)) {
-      return {
-        entryTypes: {
-          values: get(entryTypes),
-        },
-      };
-    }
-    return {};
-  }),
-  extraParams: computed(() => ({
-    customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
-    eventIdentifiers: get(eventIdentifiers),
-    excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
-    identifiers: get(identifiers),
-  })),
-  filterSchema: () => useHistoryEventFilter({
-    eventSubtypes: get(eventSubTypes).length > 0,
-    eventTypes: get(eventTypes).length > 0,
-    locations: !!get(location),
-    period: !!get(period),
-    protocols: get(protocols).length > 0,
-    validators: !!get(validators),
-  }, entryTypes),
-  history: get(mainPage) ? 'router' : false,
-  onUpdateFilters(query) {
-    const parsedAccounts = RouterAccountsSchema.parse(query);
-    const accountsParsed = parsedAccounts.accounts;
-    if (!accountsParsed || accountsParsed.length === 0)
-      set(accounts, []);
-    else
-      set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
+} = useHistoryEventsFilters(
+  {
+    entryTypes,
+    eventSubTypes,
+    eventTypes,
+    externalAccountFilter,
+    location,
+    mainPage,
+    period,
+    protocols,
+    useExternalAccountFilter,
+    validators,
   },
-  queryParamsOnly: computed(() => ({
-    accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
-  })),
-  requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
-    const params: Writeable<Partial<HistoryEventRequestPayload>> = {
-      counterparties: get(protocols),
-      eventSubtypes: get(eventSubTypes),
-      eventTypes: get(eventTypes),
-      groupByEventIds: true,
-    };
+  toggles,
+  fetchDataAndLocations,
+);
 
-    const accounts = get(usedAccounts);
+const {
+  addTransactionModelValue,
+  addTxHash,
+  decodingStatusDialogOpen,
+  decodingStatusDialogPersistent,
+  editMissingRulesEntry,
+  formData,
+  missingRuleData,
+  onAddMissingRule,
+  onShowDialog,
+  protocolCacheStatusDialogOpen,
+  showForm,
+  showRePullTransactionsDialog,
+} = useHistoryEventsDialogs();
 
-    if (isDefined(locationOverview))
-      params.location = toSnakeCase(get(locationOverview));
-
-    if (accounts.length > 0)
-      params.locationLabels = accounts.map(account => account.address);
-
-    if (isDefined(period)) {
-      const { fromTimestamp, toTimestamp } = get(period);
-      params.fromTimestamp = fromTimestamp;
-      params.toTimestamp = toTimestamp;
-    }
-
-    if (isDefined(validators))
-      params.validatorIndices = get(validators).map(v => v.toString());
-
-    return params;
-  }),
+const {
+  fetchAndRedecodeEvents,
+  forceRedecodeEvmEvents,
+  redecode,
+  redecodeAllEvents,
+  redecodeBlockEvents,
+  refresh,
+  refreshTransactions,
+} = useHistoryEventsActions({
+  currentAction,
+  decodingStatusDialogPersistent,
+  entryTypes,
+  fetchAssociatedLocations,
+  fetchData,
+  groups,
+  onlyChains,
 });
+
+useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
 
 async function fetchDataAndLocations(): Promise<void> {
   await fetchData();
   await fetchAssociatedLocations();
-}
-
-const locations = computed<string[]>(() => {
-  const filteredData = get(filters);
-
-  if ('location' in filteredData) {
-    if (typeof filteredData.location === 'string')
-      return [filteredData.location];
-    else if (Array.isArray(filteredData.location))
-      return filteredData.location;
-
-    return [];
-  }
-  return [];
-});
-
-function onFilterAccountsChanged(acc: BlockchainAccount<AddressData>[]): void {
-  set(userAction, true);
-  set(accounts, acc.length > 0 ? [acc[0]] : []);
-}
-
-function redecodeAllEvents(): void {
-  set(decodingStatusDialogPersistent, true);
-  show({
-    message: t('transactions.events_decoding.confirmation'),
-    title: t('transactions.events_decoding.redecode_all'),
-  }, () => redecodeAllEventsHandler(), () => {
-    set(decodingStatusDialogPersistent, false);
-  });
-}
-
-async function redecodeAllEventsHandler(): Promise<void> {
-  set(decodingStatusDialogPersistent, false);
-  set(currentAction, 'decode');
-  await fetchUndecodedTransactionsStatus();
-  await redecodeTransactions(get(onlyChains));
-  await fetchData();
-}
-
-async function redecode(payload: 'all' | 'page' | string[]) {
-  if (Array.isArray(payload)) {
-    set(decodingStatusDialogPersistent, false);
-    set(currentAction, 'decode');
-    resetUndecodedTransactionsStatus();
-    await redecodeTransactions(payload);
-    await fetchData();
-  }
-  else if (payload === 'all') {
-    redecodeAllEvents();
-  }
-  else if (payload === 'page') {
-    await redecodePageTransactions();
-  }
-}
-
-async function forceRedecodeEvmEvents(data: PullEvmTransactionPayload): Promise<void> {
-  set(currentAction, 'decode');
-  await pullAndRedecodeTransactions(data);
-  await fetchData();
-}
-
-function showForm(payload: ShowEventHistoryForm): void {
-  if (payload.type === 'event') {
-    set(formData, payload.data);
-  }
-  else {
-    set(missingRuleData, payload.data);
-  }
-}
-
-function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>): void {
-  router.push({
-    path: '/settings/accounting',
-    query: { 'add-rule': 'true', ...data },
-  });
-}
-
-function editMissingRulesEntry(data: ShowFormData): void {
-  startPromise(nextTick(() => {
-    showForm({ data, type: 'event' });
-  }));
-}
-
-async function refresh(userInitiated = false, payload?: HistoryRefreshEventData): Promise<void> {
-  if (userInitiated)
-    startPromise(historyEventMappings.refresh());
-  else
-    startPromise(fetchDataAndLocations());
-
-  set(currentAction, 'query');
-  const entryTypesVal = get(entryTypes) || [];
-  const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
-  await refreshTransactions({
-    chains: get(onlyChains),
-    disableEvmEvents,
-    payload,
-    userInitiated,
-  });
-  startPromise(fetchDataAndLocations());
-}
-
-async function fetchAndRedecodeEvents(data?: PullEvmTransactionPayload): Promise<void> {
-  await fetchDataAndLocations();
-  if (data)
-    await forceRedecodeEvmEvents(data);
-}
-
-async function redecodeBlockEvents(data: PullEthBlockEventPayload): Promise<void> {
-  set(currentAction, 'decode');
-  await pullAndRecodeEthBlockEvents(data);
-  await fetchData();
-}
-
-function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
-  if (type === 'decode')
-    set(decodingStatusDialogOpen, true);
-  else
-    set(protocolCacheStatusDialogOpen, true);
-}
-
-async function redecodePageTransactions(): Promise<void> {
-  const events = flatten(get(groups).data);
-  const evmEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event));
-  const ethBlockEvents = events.filter(isEthBlockEvent);
-
-  if (evmEvents.length > 0 || ethBlockEvents.length > 0) {
-    if (evmEvents.length > 0) {
-      const redecodePayload = evmEvents.map(item => toEvmChainAndTxHash(item));
-      await pullAndRedecodeTransactions({ transactions: redecodePayload });
-      await fetchUndecodedTransactionsStatus();
-    }
-
-    if (ethBlockEvents.length > 0) {
-      const redecodePayload = ethBlockEvents.map(item => item.blockNumber);
-      await redecodeBlockEvents({ blockNumbers: redecodePayload });
-    }
-
-    await fetchData();
-  }
 }
 
 function removeIdentifierParam() {
@@ -426,14 +179,6 @@ function removeEventIdentifierParam() {
   router.push({ query });
 }
 
-function addTxHash() {
-  set(addTransactionModelValue, {
-    associatedAddress: '',
-    evmChain: '',
-    txHash: '',
-  });
-}
-
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -444,24 +189,6 @@ watchImmediate(route, async (route) => {
 watch(anyEventsDecoding, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchDataAndLocations();
-});
-
-watch([filters, usedAccounts], ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
-  const filterChanged = !isEqual(filters, oldFilters);
-  const accountsChanged = !isEqual(usedAccounts, oldAccounts);
-
-  if (!(filterChanged || accountsChanged))
-    return;
-
-  if (accountsChanged && usedAccounts.length > 0) {
-    const updatedFilter = { ...get(filters) };
-    updateFilter(updatedFilter);
-  }
-
-  if (filterChanged || accountsChanged) {
-    set(locationOverview, filters.location);
-    setPage(1);
-  }
 });
 
 onMounted(async () => {
