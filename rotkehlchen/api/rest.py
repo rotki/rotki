@@ -3658,6 +3658,15 @@ class RestAPI:
             status_code=HTTPStatus.OK,
         )
 
+    def get_location_labels(self) -> Response:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            labels = [x[0] for x in cursor.execute('SELECT DISTINCT location_label FROM history_events')]  # noqa: E501
+
+        return api_response(
+            result=_wrap_in_ok_result(labels),
+            status_code=HTTPStatus.OK,
+        )
+
     @async_api_call()
     def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
         """Query the specified event type for data and add/update the events in the DB."""
