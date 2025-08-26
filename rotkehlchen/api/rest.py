@@ -4761,6 +4761,23 @@ class RestAPI:
                         (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
                     )
                 ])
+            case ProtocolsWithCache.BALANCER_V3:
+                cache_rules.extend([
+                    (
+                        'balancer v3 pools',
+                        CacheType.BALANCER_V3_POOLS,
+                        query_balancer_data,
+                        chain_id,
+                        node_inquirer,
+                    )
+                    for chain_id, node_inquirer in (
+                        (ChainID.BASE, base_inquirer),
+                        (ChainID.GNOSIS, gnosis_inquirer),
+                        (ChainID.ETHEREUM, eth_node_inquirer),
+                        (ChainID.OPTIMISM, optimism_inquirer),
+                        (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
+                    )
+                ])
             case ProtocolsWithCache.ETH_WITHDRAWALS:
                 with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
                     self.rotkehlchen.data.db.delete_dynamic_caches(
