@@ -3,6 +3,7 @@ import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-st
 import type {
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
+import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/events/dialog-types';
 import EventsCacheRefreshStatusCurrent from '@/components/history/events/EventsCacheRefreshStatusCurrent.vue';
 import EventsDecodingStatusCurrent from '@/components/history/events/EventsDecodingStatusCurrent.vue';
 import HistoryQueryStatusBar from '@/components/history/events/HistoryQueryStatusBar.vue';
@@ -10,13 +11,14 @@ import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryS
 import HistoryQueryStatusDialog from '@/components/history/events/HistoryQueryStatusDialog.vue';
 import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-const currentAction = defineModel<'decode' | 'query'>('currentAction', { required: true });
+const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
 const props = withDefaults(defineProps<{
   colspan: number;
@@ -29,7 +31,7 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  'show:dialog': [type: 'decode' | 'protocol-refresh'];
+  'show:dialog': [options: DialogShowOptions];
 }>();
 
 const { loading, locations, onlyChains } = toRefs(props);
@@ -62,7 +64,7 @@ const { useIsTaskRunning } = useTaskStore();
 
 const refreshProtocolCacheTaskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const items = computed(() => [...get(transactions), ...get(events)]);
-const isQuery = computed(() => get(currentAction) === 'query');
+const isQuery = computed(() => get(currentAction) === HISTORY_EVENT_ACTIONS.QUERY);
 
 const show = computed(() => get(loading) || get(anyEventsDecoding) || get(receivingProtocolCacheStatus) || get(items).length > 0);
 const usedShow = useRefWithDebounce(show, 400);
@@ -85,7 +87,7 @@ function resetQueryStatus() {
   resetTransactionsQueryStatus();
   resetEventsQueryStatus();
   resetUndecodedTransactionsStatus();
-  set(currentAction, 'query');
+  set(currentAction, HISTORY_EVENT_ACTIONS.QUERY);
 }
 </script>
 
@@ -139,7 +141,7 @@ function resetQueryStatus() {
             icon
             size="sm"
             class="!p-2"
-            @click="emit('show:dialog', refreshProtocolCacheTaskRunning ? 'protocol-refresh' : 'decode')"
+            @click="emit('show:dialog', { type: refreshProtocolCacheTaskRunning ? DIALOG_TYPES.PROTOCOL_CACHE : DIALOG_TYPES.DECODING_STATUS })"
           >
             <template #append>
               <RuiIcon name="lu-info" />

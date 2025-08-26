@@ -1,7 +1,9 @@
 import type { Ref } from 'vue';
+import type { DialogEventHandlers } from '@/components/history/events/dialog-types';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Collection } from '@/types/collection';
 import type {
+  EvmChainAndTxHash,
   PullEthBlockEventPayload,
   PullEvmTransactionPayload,
 } from '@/types/history/events';
@@ -12,8 +14,11 @@ import { flatten } from 'es-toolkit';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
+import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { useConfirmStore } from '@/store/confirm';
+import { useHistoryStore } from '@/store/history';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import {
   isEthBlockEvent,
@@ -23,38 +28,48 @@ import {
 interface UseHistoryEventsActionsOptions {
   onlyChains: Ref<Blockchain[]>;
   entryTypes?: Ref<HistoryEventEntryType[] | undefined>;
-  currentAction: Ref<'decode' | 'query'>;
+  currentAction: Ref<HistoryEventAction>;
   fetchData: () => Promise<void>;
-  fetchAssociatedLocations: () => Promise<void>;
   groups: Ref<Collection<HistoryEventRow>>;
-  decodingStatusDialogPersistent: Ref<boolean>;
+  shouldFetchEventsRegularly?: Ref<boolean>;
+  showDialog?: (options: { type: 'decodingStatus'; persistent?: boolean }) => Promise<void>;
 }
 
-export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions): {
-  fetchAndRedecodeEvents: (data?: PullEvmTransactionPayload) => Promise<void>;
-  fetchUndecodedTransactionsStatus: () => Promise<void>;
-  forceRedecodeEvmEvents: (data: PullEvmTransactionPayload) => Promise<void>;
-  redecode: (payload: 'all' | 'page' | string[]) => Promise<void>;
-  redecodeAllEvents: () => void;
-  redecodeAllEventsHandler: () => Promise<void>;
-  redecodeBlockEvents: (data: PullEthBlockEventPayload) => Promise<void>;
-  redecodePageTransactions: () => Promise<void>;
-  redecodeTransactions: (chains: Blockchain[]) => Promise<void>;
-  refresh: (userInitiated?: boolean, payload?: HistoryRefreshEventData) => Promise<void>;
-  refreshTransactions: (params?: any) => Promise<void>;
-} {
+interface UseHistoryEventsActionsReturn {
+  dialogHandlers: DialogEventHandlers;
+  fetch: {
+    dataAndLocations: () => Promise<void>;
+    dataAndRedecode: (data?: PullEvmTransactionPayload) => Promise<void>;
+    undecodedStatus: () => Promise<void>;
+  };
+  redecode: {
+    all: () => void; // Shows confirmation dialog
+    blocks: (data: PullEthBlockEventPayload) => Promise<void>;
+    by: (payload: 'all' | 'page' | string[]) => Promise<void>; // Current unified redecode
+    evm: (data: PullEvmTransactionPayload) => Promise<void>;
+    page: () => Promise<void>;
+    transactions: (chains: Blockchain[]) => Promise<void>;
+  };
+  refresh: {
+    all: (userInitiated?: boolean, payload?: HistoryRefreshEventData) => Promise<void>;
+    transactions: (params?: any) => Promise<void>;
+  };
+}
+
+export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions): UseHistoryEventsActionsReturn {
   const {
     currentAction,
-    decodingStatusDialogPersistent,
     entryTypes,
-    fetchAssociatedLocations,
     fetchData,
     groups,
     onlyChains,
+    shouldFetchEventsRegularly,
+    showDialog,
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
+  const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
   const { refreshTransactions } = useHistoryTransactions();
   const {
     fetchUndecodedTransactionsStatus,
@@ -75,7 +90,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     else
       startPromise(fetchDataAndLocations());
 
-    set(currentAction, 'query');
+    set(currentAction, HISTORY_EVENT_ACTIONS.QUERY);
     const entryTypesVal = get(entryTypes) || [];
     const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
     await refreshTransactions({
@@ -88,7 +103,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   async function forceRedecodeEvmEvents(data: PullEvmTransactionPayload): Promise<void> {
-    set(currentAction, 'decode');
+    set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await pullAndRedecodeTransactions(data);
     await fetchData();
   }
@@ -100,7 +115,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   async function redecodeBlockEvents(data: PullEthBlockEventPayload): Promise<void> {
-    set(currentAction, 'decode');
+    set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await pullAndRecodeEthBlockEvents(data);
     await fetchData();
   }
@@ -127,18 +142,17 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   function redecodeAllEvents(): void {
-    set(decodingStatusDialogPersistent, true);
+    if (showDialog)
+      startPromise(showDialog({ persistent: true, type: 'decodingStatus' }));
+
     show({
       message: t('transactions.events_decoding.confirmation'),
       title: t('transactions.events_decoding.redecode_all'),
-    }, async () => redecodeAllEventsHandler(), () => {
-      set(decodingStatusDialogPersistent, false);
-    });
+    }, redecodeAllEventsHandler);
   }
 
   async function redecodeAllEventsHandler(): Promise<void> {
-    set(decodingStatusDialogPersistent, false);
-    set(currentAction, 'decode');
+    set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await fetchUndecodedTransactionsStatus();
     await redecodeTransactions(get(onlyChains));
     await fetchData();
@@ -149,7 +163,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
       redecodeAllEvents();
     }
     else if (Array.isArray(payload)) {
-      set(currentAction, 'decode');
+      set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
       await redecodeTransactions(payload);
       await fetchData();
     }
@@ -158,18 +172,52 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     }
   }
 
+  // Set up auto-fetch functionality if shouldFetchEventsRegularly is provided
+  if (shouldFetchEventsRegularly) {
+    useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
+  }
+
+  // Dialog handlers
+  const handleTransactionRecode = async (txHash: EvmChainAndTxHash): Promise<void> => {
+    await forceRedecodeEvmEvents({ transactions: [txHash] });
+  };
+
+  const dialogHandlers: DialogEventHandlers = {
+    onHistoryEventSaved: fetchDataAndLocations,
+    onRedecodeAllEvents: redecodeAllEvents,
+    onRedecodeTransaction: handleTransactionRecode,
+    onRepullTransactions: async (chains: string[]): Promise<void> => {
+      await refreshTransactions({
+        chains,
+        disableEvmEvents: false,
+        payload: undefined,
+        userInitiated: true,
+      });
+    },
+    onResetUndecodedTransactions: (): void => {
+      resetUndecodedTransactionsStatus();
+    },
+    onTransactionAdded: handleTransactionRecode,
+  };
+
   return {
-    fetchAndRedecodeEvents,
-    fetchUndecodedTransactionsStatus,
-    forceRedecodeEvmEvents,
-    redecode,
-    redecodeAllEvents,
-    redecodeAllEventsHandler,
-    redecodeBlockEvents,
-    redecodePageTransactions,
-    redecodeTransactions,
-    // Methods
-    refresh,
-    refreshTransactions,
+    dialogHandlers,
+    fetch: {
+      dataAndLocations: fetchDataAndLocations,
+      dataAndRedecode: fetchAndRedecodeEvents,
+      undecodedStatus: fetchUndecodedTransactionsStatus,
+    },
+    redecode: {
+      all: redecodeAllEvents,
+      blocks: redecodeBlockEvents,
+      by: redecode,
+      evm: forceRedecodeEvmEvents,
+      page: redecodePageTransactions,
+      transactions: redecodeTransactions,
+    },
+    refresh: {
+      all: refresh,
+      transactions: refreshTransactions,
+    },
   };
 }

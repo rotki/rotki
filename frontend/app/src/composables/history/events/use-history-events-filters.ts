@@ -1,5 +1,6 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
+import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
@@ -59,12 +60,7 @@ interface UseHistoryEventsFiltersReturn {
 
 export function useHistoryEventsFilters(
   options: HistoryEventsFiltersOptions,
-  toggles: Ref<{
-    customizedEventsOnly: boolean;
-    showIgnoredAssets: boolean;
-    matchExactEvents: boolean;
-  }>,
-  _fetchDataCallback: () => Promise<void>,
+  toggles: Ref<HistoryEventsToggles>,
 ): UseHistoryEventsFiltersReturn {
   const {
     entryTypes,
@@ -85,6 +81,17 @@ export function useHistoryEventsFilters(
   const route = useRoute();
   const { fetchHistoryEvents } = useHistoryEvents();
   const { getAccountByAddress } = useBlockchainAccountsStore();
+
+  // Define these early since they're used in extraParams
+  const identifiersFromQuery = computed<string[] | undefined>(() => {
+    const { identifiers } = get(route).query;
+    return identifiers ? [identifiers as string] : undefined;
+  });
+
+  const eventIdentifiersFromQuery = computed<string[] | undefined>(() => {
+    const { eventIdentifiers } = get(route).query;
+    return eventIdentifiers ? [eventIdentifiers as string] : undefined;
+  });
 
   const usedAccounts = computed<Account[]>(() => {
     if (isDefined(useExternalAccountFilter) && get(externalAccountFilter))
@@ -194,16 +201,6 @@ export function useHistoryEventsFilters(
       return [];
     }
     return [];
-  });
-
-  const identifiersFromQuery = computed<string[] | undefined>(() => {
-    const { identifiers } = get(route).query;
-    return identifiers ? [identifiers as string] : undefined;
-  });
-
-  const eventIdentifiersFromQuery = computed<string[] | undefined>(() => {
-    const { eventIdentifiers } = get(route).query;
-    return eventIdentifiers ? [eventIdentifiers as string] : undefined;
   });
 
   const highlightedIdentifiers = computed<string[] | undefined>(() => {

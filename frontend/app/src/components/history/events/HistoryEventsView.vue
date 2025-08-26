@@ -1,25 +1,19 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
-import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
-import HistoryEventFormDialog from '@/components/history/events/HistoryEventFormDialog.vue';
-import HistoryEventsDecodingStatus from '@/components/history/events/HistoryEventsDecodingStatus.vue';
-import HistoryEventsProtocolCacheUpdateStatus
-  from '@/components/history/events/HistoryEventsProtocolCacheUpdateStatus.vue';
+import { DIALOG_TYPES, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
+import HistoryEventsDialogContainer from '@/components/history/events/HistoryEventsDialogContainer.vue';
+import HistoryEventsFiltersChips from '@/components/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
 import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
 import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
-import RepullingTransactionFormDialog from '@/components/history/events/tx/RepullingTransactionFormDialog.vue';
-import TransactionFormDialog from '@/components/history/events/tx/TransactionFormDialog.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
-import { useHistoryEventsDialogs } from '@/composables/history/events/use-history-events-dialogs';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
-import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useHistoryStore } from '@/store/history';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -70,19 +64,16 @@ const {
   validators,
 } = toRefs(props);
 
-const toggles = ref<{
-  customizedEventsOnly: boolean;
-  showIgnoredAssets: boolean;
-  matchExactEvents: boolean;
-}>({
+const toggles = ref<HistoryEventsToggles>({
   customizedEventsOnly: false,
   matchExactEvents: false,
   showIgnoredAssets: false,
 });
-const currentAction = ref<'decode' | 'query'>('query');
 
-const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
-const { decodingStatus } = storeToRefs(useHistoryStore());
+const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
+
+const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
+
 const {
   anyEventsDecoding,
   processing,
@@ -123,76 +114,33 @@ const {
     validators,
   },
   toggles,
-  fetchDataAndLocations,
 );
 
-const {
-  addTransactionModelValue,
-  addTxHash,
-  decodingStatusDialogOpen,
-  decodingStatusDialogPersistent,
-  editMissingRulesEntry,
-  formData,
-  missingRuleData,
-  onAddMissingRule,
-  onShowDialog,
-  protocolCacheStatusDialogOpen,
-  showForm,
-  showRePullTransactionsDialog,
-} = useHistoryEventsDialogs();
-
-const {
-  fetchAndRedecodeEvents,
-  forceRedecodeEvmEvents,
-  redecode,
-  redecodeAllEvents,
-  redecodeBlockEvents,
-  refresh,
-  refreshTransactions,
-} = useHistoryEventsActions({
+const actions = useHistoryEventsActions({
   currentAction,
-  decodingStatusDialogPersistent,
   entryTypes,
-  fetchAssociatedLocations,
   fetchData,
   groups,
   onlyChains,
+  shouldFetchEventsRegularly,
 });
 
-useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
-
-async function fetchDataAndLocations(): Promise<void> {
-  await fetchData();
-  await fetchAssociatedLocations();
-}
-
-function removeIdentifierParam() {
-  const query = { ...route.query };
-  delete query.identifiers;
-  router.push({ query });
-}
-
-function removeEventIdentifierParam() {
-  const query = { ...route.query };
-  delete query.eventIdentifiers;
-  delete query.highlightIdentifier;
-  router.push({ query });
-}
-
 watchImmediate(route, async (route) => {
-  if (route.query.openDecodingStatusDialog) {
-    set(decodingStatusDialogOpen, true);
-    await router.replace({ query: {} });
+  if (!route.query.openDecodingStatusDialog) {
+    return;
   }
+  await nextTick();
+  get(dialogContainer)?.show({ type: DIALOG_TYPES.DECODING_STATUS });
+  await router.replace({ query: {} });
 });
 
 watch(anyEventsDecoding, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
-    await fetchDataAndLocations();
+    await actions.fetch.dataAndLocations();
 });
 
 onMounted(async () => {
-  await refresh();
+  await actions.refresh.all();
 });
 </script>
 
@@ -204,14 +152,11 @@ onMounted(async () => {
   >
     <template #buttons>
       <HistoryEventsViewButtons
-        v-model:open-decoding-dialog="decodingStatusDialogOpen"
         :processing="processing"
         :loading="anyEventsDecoding"
         :include-evm-events="includes.evmEvents"
-        @refresh="refresh(true, $event)"
-        @show:form="showForm($event)"
-        @show:add-transaction-form="addTxHash()"
-        @show:repulling-transactions-form="showRePullTransactionsDialog = true"
+        @refresh="actions.refresh.all(true, $event)"
+        @show:dialog="dialogContainer?.show($event)"
       />
     </template>
 
@@ -225,7 +170,7 @@ onMounted(async () => {
             <RefreshButton
               :disabled="refreshing"
               :tooltip="t('transactions.refresh_tooltip')"
-              @refresh="refresh(true)"
+              @refresh="actions.refresh.all(true)"
             />
             {{ usedTitle }}
           </CardTitle>
@@ -241,38 +186,11 @@ onMounted(async () => {
           :hide-redecode-buttons="!mainPage"
           :hide-account-selector="useExternalAccountFilter"
           @update:accounts="onFilterAccountsChanged($event)"
-          @redecode="redecode($event)"
+          @redecode="actions.redecode.by($event)"
         />
 
-        <div
-          v-if="route.query.identifiers"
-          class="mb-4"
-        >
-          <RuiChip
-            closeable
-            color="primary"
-            size="sm"
-            variant="outlined"
-            @click:close="removeIdentifierParam()"
-          >
-            {{ t('transactions.events.show_missing_acquisition') }}
-          </RuiChip>
-        </div>
+        <HistoryEventsFiltersChips />
 
-        <div
-          v-if="route.query.eventIdentifiers"
-          class="mb-4"
-        >
-          <RuiChip
-            closeable
-            color="primary"
-            size="sm"
-            variant="outlined"
-            @click:close="removeEventIdentifierParam()"
-          >
-            {{ t('transactions.events.show_negative_balance') }}
-          </RuiChip>
-        </div>
         <HistoryEventsTable
           v-model:sort="sort"
           v-model:pagination="pagination"
@@ -282,9 +200,9 @@ onMounted(async () => {
           :exclude-ignored="!toggles.showIgnoredAssets"
           :identifiers="identifiers"
           :highlighted-identifiers="highlightedIdentifiers"
-          @show:form="showForm($event)"
-          @refresh="fetchAndRedecodeEvents($event)"
-          @refresh:block-event="redecodeBlockEvents($event)"
+          @show:dialog="dialogContainer?.show($event)"
+          @refresh="actions.fetch.dataAndRedecode($event)"
+          @refresh:block-event="actions.redecode.blocks($event)"
           @set-page="setPage($event)"
         >
           <template #query-status="{ colspan }">
@@ -292,84 +210,21 @@ onMounted(async () => {
               v-model:current-action="currentAction"
               :only-chains="onlyChains"
               :locations="locations"
-              :decoding-status="decodingStatus"
               :colspan="colspan"
               :loading="processing"
-              @show:dialog="onShowDialog($event)"
+              @show:dialog="dialogContainer?.show($event)"
             />
           </template>
         </HistoryEventsTable>
-
-        <HistoryEventFormDialog
-          v-model="formData"
-          @refresh="fetchAndRedecodeEvents()"
-        />
-
-        <TransactionFormDialog
-          v-model="addTransactionModelValue"
-          :loading="sectionLoading"
-          @reload="fetchAndRedecodeEvents({ transactions: [$event] })"
-        />
-
-        <RepullingTransactionFormDialog
-          v-model="showRePullTransactionsDialog"
-          :loading="sectionLoading"
-          @refresh="refreshTransactions({
-            chains: $event,
-            disableEvmEvents: false,
-            payload: undefined,
-            userInitiated: true,
-          });"
-        />
-
-        <MissingRulesDialog
-          v-model="missingRuleData"
-          @edit-event="editMissingRulesEntry($event)"
-          @redecode="forceRedecodeEvmEvents({ transactions: [$event] })"
-          @add="onAddMissingRule($event)"
-          @dismiss="missingRuleData = undefined"
-        />
       </RuiCard>
 
-      <RuiDialog
-        v-model="decodingStatusDialogOpen"
-        max-width="600"
-        :persistent="decodingStatusDialogPersistent"
-      >
-        <HistoryEventsDecodingStatus
-          v-if="decodingStatusDialogOpen"
-          :refreshing="refreshing"
-          :decoding-status="decodingStatus"
-          @redecode-all-events="redecodeAllEvents()"
-          @reset-undecoded-transactions="resetUndecodedTransactionsStatus()"
-        >
-          <RuiButton
-            variant="text"
-            icon
-            @click="decodingStatusDialogOpen = false"
-          >
-            <RuiIcon name="lu-x" />
-          </RuiButton>
-        </HistoryEventsDecodingStatus>
-      </RuiDialog>
-
-      <RuiDialog
-        v-model="protocolCacheStatusDialogOpen"
-        max-width="600"
-      >
-        <HistoryEventsProtocolCacheUpdateStatus
-          v-if="protocolCacheStatusDialogOpen"
-          :refreshing="refreshing"
-        >
-          <RuiButton
-            variant="text"
-            icon
-            @click="protocolCacheStatusDialogOpen = false"
-          >
-            <RuiIcon name="lu-x" />
-          </RuiButton>
-        </HistoryEventsProtocolCacheUpdateStatus>
-      </RuiDialog>
+      <HistoryEventsDialogContainer
+        ref="dialogContainer"
+        :loading="processing"
+        :refreshing="refreshing"
+        :section-loading="sectionLoading"
+        :event-handlers="actions.dialogHandlers"
+      />
     </div>
   </TablePageLayout>
 </template>

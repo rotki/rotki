@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
@@ -15,11 +16,7 @@ const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { requi
 
 const accounts = defineModel<BlockchainAccount<AddressData>[]>('accounts', { required: true });
 
-const toggles = defineModel<{
-  customizedEventsOnly: boolean;
-  showIgnoredAssets: boolean;
-  matchExactEvents: boolean;
-}>('toggles', { required: true });
+const toggles = defineModel<HistoryEventsToggles>('toggles', { required: true });
 
 withDefaults(defineProps<{
   matchers: SearchMatcher<any, any>[];

@@ -3,6 +3,7 @@ import type {
   HistoryEventEntry,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
+import { DIALOG_TYPES } from '@/components/history/events/dialog-types';
 
 interface UseHistoryEventsFormsReturn {
   addEvent: (group: StandaloneEditableEvents, row: HistoryEventEntry) => void;
@@ -15,33 +16,33 @@ export function useHistoryEventsForms(
   emit: HistoryEventsTableEmitFn,
 ): UseHistoryEventsFormsReturn {
   function addEvent(group: StandaloneEditableEvents, row: HistoryEventEntry): void {
-    emit('show:form', {
+    emit('show:dialog', {
       data: {
         group,
         nextSequenceId: suggestNextSequenceId(row),
         type: 'group-add',
       },
-      type: 'event',
+      type: DIALOG_TYPES.EVENT_FORM,
     });
   }
 
   function editEvent(event: any, row: HistoryEventEntry): void {
-    emit('show:form', {
+    emit('show:dialog', {
       data: {
         ...event,
         nextSequenceId: suggestNextSequenceId(row),
       },
-      type: 'event',
+      type: DIALOG_TYPES.EVENT_FORM,
     });
   }
 
   function addMissingRule($event: any, row: HistoryEventEntry): void {
-    emit('show:form', {
+    emit('show:dialog', {
       data: {
         ...$event,
         nextSequenceId: suggestNextSequenceId(row),
       },
-      type: 'missingRule',
+      type: DIALOG_TYPES.MISSING_RULES,
     });
   }
 
