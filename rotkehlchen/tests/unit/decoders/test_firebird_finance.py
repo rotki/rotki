@@ -199,7 +199,7 @@ def test_swap_erc20_token_for_bnb(
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=265,
+        sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -211,7 +211,7 @@ def test_swap_erc20_token_for_bnb(
         address=string_to_evm_address('0x92e4F29Be975C1B1eB72E77De24Dccf11432a5bd'),
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=266,
+        sequence_index=3,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
         event_subtype=HistoryEventSubType.SPEND,
@@ -223,7 +223,7 @@ def test_swap_erc20_token_for_bnb(
         address=string_to_evm_address('0x0852Dba413446B2fd8Cc0e45c96b7F226b09e992'),
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=267,
+        sequence_index=4,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
         event_subtype=HistoryEventSubType.RECEIVE,

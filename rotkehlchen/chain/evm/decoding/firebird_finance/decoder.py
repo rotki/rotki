@@ -67,8 +67,8 @@ class FirebirdFinanceCommonDecoder(DecoderInterface):
         in_event = out_event = None
         for event in context.decoded_events:
             if (
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
+                ((event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
+                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND)) and  # noqa: E501
                 event.location_label == sender and
                 event.asset == from_token and
                 event.amount == out_amount
@@ -80,8 +80,8 @@ class FirebirdFinanceCommonDecoder(DecoderInterface):
                 event.counterparty = CPT_FIREBIRD_FINANCE
 
             elif (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE and
+                ((event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
+                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE)) and  # noqa: E501
                 event.location_label == receiver and
                 event.amount == in_amount and
                 event.asset == to_token

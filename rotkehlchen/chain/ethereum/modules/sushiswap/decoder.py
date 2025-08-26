@@ -3,12 +3,6 @@ from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
-    SUSHISWAP_ROUTER,
-    decode_uniswap_like_deposit_and_withdrawals,
-    decode_uniswap_v2_like_swap,
-)
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
 from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -17,6 +11,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
+from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
+    decode_uniswap_like_deposit_and_withdrawals,
+    decode_uniswap_v2_like_swap,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import EvmTransaction
@@ -24,6 +23,7 @@ from rotkehlchen.types import EvmTransaction
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
+SUSHISWAP_ROUTER: Final = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F')
 SUSHISWAP_V2_FACTORY: Final = string_to_evm_address('0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac')
 SUSHISWAP_V2_INIT_CODE_HASH: Final = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'  # noqa: E501
 
@@ -39,14 +39,15 @@ class SushiswapDecoder(DecoderInterface):
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> DecodingOutput:
-        if tx_log.topics[0] == SWAP_SIGNATURE and transaction.to_address == SUSHISWAP_ROUTER:
+        if tx_log.topics[0] == UNISWAP_V2_SWAP_SIGNATURE and transaction.to_address == SUSHISWAP_ROUTER:  # noqa: E501
             return decode_uniswap_v2_like_swap(
                 tx_log=tx_log,
                 decoded_events=decoded_events,
                 transaction=transaction,
                 counterparty=CPT_SUSHISWAP_V2,
+                router_address=SUSHISWAP_ROUTER,
                 database=self.evm_inquirer.database,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 notify_user=self.notify_user,
             )
         return DEFAULT_DECODING_OUTPUT
@@ -68,7 +69,7 @@ class SushiswapDecoder(DecoderInterface):
                 event_action_type='addition',
                 counterparty=CPT_SUSHISWAP_V2,
                 database=self.evm_inquirer.database,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
@@ -81,7 +82,7 @@ class SushiswapDecoder(DecoderInterface):
                 event_action_type='removal',
                 counterparty=CPT_SUSHISWAP_V2,
                 database=self.evm_inquirer.database,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
