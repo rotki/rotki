@@ -31,13 +31,15 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('dont_mock_price_for', [[A_KFEE]])
 def test_kfee_price_in_accounting(accountant, google_service):
-    """
-    Test that KFEEs are correctly handled during accounting
-
+    """Test that KFEEs are correctly handled during accounting
     KFEE price is fixed at $0.01
+
+    VCR is used to prevent live queries when recursive calls bypass price mocking
+    See: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=125504145
     """
     history = [
         HistoryEvent(
@@ -52,7 +54,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
         ), HistoryEvent(
             event_identifier='2',
             sequence_index=0,
-            timestamp=TimestampMS(1539713238000),  # 0.8612 USD/EUR. 1 KFEE = $0.01 so 8.612 EUR
+            timestamp=TimestampMS(1539713238000),  # 0.863329 USD/EUR. 1 KFEE = $0.01 so 8.633 EUR
             location=Location.COINBASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
@@ -76,7 +78,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('8.3929')),
-        AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('187.227'), free=ZERO),
+        AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('187.24829'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 

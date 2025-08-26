@@ -3,7 +3,7 @@ import functools
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import ONE, ZERO
@@ -38,8 +38,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-CRYPTOCOM_PREFIX = 'CCM_'
-INDEX = '_index'
+CRYPTOCOM_PREFIX: Final = 'CCM_'
+INDEX: Final = '_index'
+CRYPTOCOM_LOCATION_LABEL: Final = 'Crypto.com App'  # The csv import is from the Crypto.com mobile app  # noqa: E501
 
 
 def hash_csv_row_without_index(csv_row: Any) -> str:
@@ -87,6 +88,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'crypto_viban_exchange',
             'recurring_buy_order',
             'card_top_up',
+            'trading.limit_order.cash_account.purchase_commit',  # a fulfilled limit order
         }:
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -101,6 +103,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 'crypto_viban_exchange',
                 'recurring_buy_order',
                 'viban_purchase',
+                'trading.limit_order.cash_account.purchase_commit',  # a fulfilled limit order
             }:
                 # trades (fiat, crypto) to (crypto, fiat)
                 base_asset = asset_from_cryptocom(to_currency)
@@ -129,6 +132,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
                     fee=AssetAmount(asset=fee_currency, amount=fee),
                     location=Location.CRYPTOCOM,
+                    location_label=CRYPTOCOM_LOCATION_LABEL,
                     spend_notes=notes,
                 ),
             )
@@ -153,6 +157,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
             )])
         elif row_type in {
             'airdrop_to_exchange_transfer',
@@ -180,6 +185,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
                 asset=asset,
                 notes=notes,
             )
@@ -195,6 +201,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
                 asset=asset,
                 notes=notes,
             )
@@ -208,6 +215,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
             )])
         elif row_type == 'invest_withdrawal':
             asset = asset_from_cryptocom(csv_row['Currency'])
@@ -218,6 +226,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
             )])
         elif row_type == 'crypto_transfer':
             asset = asset_from_cryptocom(csv_row['Currency'])
@@ -236,6 +245,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=amount,
+                location_label=CRYPTOCOM_LOCATION_LABEL,
                 asset=asset,
                 notes=notes,
             )
@@ -259,6 +269,8 @@ class CryptocomImporter(BaseExchangeImporter):
             'supercharger_withdrawal',
             # The user has received an airdrop but can't claim it yet
             'airdrop_locked',
+            'trading.limit_order.cash_account.purchase_lock',
+            'trading.limit_order.cash_account.purchase_unlock',
         }:
             raise SkippedCSVEntry("Entry doesn't affect wallet balance")
         elif row_type in {
@@ -273,7 +285,7 @@ class CryptocomImporter(BaseExchangeImporter):
             raise SkippedCSVEntry
         else:
             raise UnsupportedCSVEntry(
-                f'Unknown entrype type "{row_type}" encountered during '
+                f'Unknown entry type "{row_type}" encountered during '
                 f'cryptocom data import. Ignoring entry',
             )
 
@@ -437,6 +449,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
                             fee=AssetAmount(asset=fee_currency, amount=fee),
                             location=Location.CRYPTOCOM,
+                            location_label=CRYPTOCOM_LOCATION_LABEL,
                             spend_notes=notes,
                         ),
                     )
@@ -503,6 +516,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             amount=profit,
                             asset=asset_object,
                             notes=f'Staking profit for {asset}',
+                            location_label=CRYPTOCOM_LOCATION_LABEL,
                         )
                         self.add_history_events(write_cursor, [event])
 

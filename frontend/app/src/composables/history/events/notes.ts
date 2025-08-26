@@ -59,23 +59,57 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
   const { scrambleData, scrambleIdentifier } = useScramble();
 
   function separateByPunctuation(word: string): string[] {
-    // Use a regular expression to find trailing characters
-    const trailingMatch = word.match(/\.+$/);
-
-    // Extract the trailing characters if they exist, otherwise set to an empty string
-    const trailingChars = trailingMatch ? trailingMatch[0] : '';
-
-    // Remove the trailing characters from the original word
-    const mainPart = word.substring(0, word.length - trailingChars.length);
-
-    // Construct the result array
     const result = [];
+    const openParenMatch = word.match(/^\(/);
+    const openParen = openParenMatch ? openParenMatch[0] : '';
+
+    let remaining = openParen ? word.substring(1) : word;
+    const closeParenMatch = remaining.match(/\)(?=\.*$)/);
+    const closeParen = closeParenMatch ? ')' : '';
+
+    if (closeParen) {
+      const closeParenIndex = remaining.lastIndexOf(')');
+      remaining = remaining.substring(0, closeParenIndex) + remaining.substring(closeParenIndex + 1);
+    }
+
+    const trailingMatch = remaining.match(/\.+$/);
+    const trailingDots = trailingMatch ? trailingMatch[0] : '';
+    const mainPart = remaining.substring(0, remaining.length - trailingDots.length);
+
+    if (openParen)
+      result.push(openParen);
     if (mainPart)
       result.push(mainPart);
-    if (trailingChars)
-      result.push(trailingChars);
-
+    if (closeParen)
+      result.push(closeParen);
+    if (trailingDots)
+      result.push(trailingDots);
     return result;
+  }
+
+  function parsePunctuation(split: string[]): { leading: string; trailing: string; word: string } {
+    let word = '';
+    let leading = '';
+    let trailing = '';
+
+    for (const part of split) {
+      if (/^[().]+$/.test(part)) {
+        if (!word)
+          leading += part;
+        else
+          trailing += part;
+      }
+      else {
+        word = part;
+      }
+    }
+
+    return { leading, trailing, word };
+  }
+
+  function getCleanWord(wordWithPunctuation: string): string {
+    const split = separateByPunctuation(wordWithPunctuation);
+    return split.find(part => !/^[().]+$/.test(part)) || '';
   }
 
   function findAndScrambleIBAN(notes: string): string {
@@ -109,19 +143,6 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     return notes;
   }
 
-  /**
-   * Merges sequential "WORD" type entries in an array of NoteFormat objects.
-   *
-   * @param {NoteFormat[]} formats - The array of existing NoteFormat objects.
-   * @param {NoteFormat} current - The current NoteFormat object to be added or merged.
-   * @returns {NoteFormat[]} The updated array of NoteFormat objects.
-   *
-   * This function checks if the last entry in the 'formats' array and the 'current' entry
-   * are both of type 'WORD'. If so, it merges the 'current' word with the last entry's word.
-   * Otherwise, it simply adds the 'current' entry to the 'formats' array.
-   *
-   * This is done to avoid rendering each word as a single text node.
-   */
   const mergeSequentialWords = (formats: NoteFormat[], current: NoteFormat): NoteFormat[] => {
     const lastFormatEntry = formats.at(-1);
     if (!lastFormatEntry) {
@@ -129,13 +150,13 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       return formats;
     }
     if (current.type === NoteType.WORD && lastFormatEntry.type === NoteType.WORD) {
-      lastFormatEntry.word += ` ${current.word}`;
+      const isClosingPunctuation = /^[!),.:;?]+$/.test(current.word || '');
+      const separator = isClosingPunctuation ? '' : ' ';
+      lastFormatEntry.word += `${separator}${current.word}`;
       return formats;
     }
-    else {
-      formats.push(current);
-      return formats;
-    }
+    formats.push(current);
+    return formats;
   };
 
   const formatNotes = ({
@@ -162,9 +183,11 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     let skip = false;
 
     const counterpartyVal = get(counterparty);
+    const isMonerium = counterpartyVal === 'monerium';
+    const shouldFormatAllAmount = counterpartyVal === 'gnosis_pay';
 
     // Check if we need to scramble IBAN
-    if (get(scrambleData) && counterpartyVal === 'monerium')
+    if (get(scrambleData) && isMonerium)
       notesVal = findAndScrambleIBAN(notesVal);
 
     const words = notesVal
@@ -193,42 +216,44 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       }
 
       const split = separateByPunctuation(wordItem);
-
       if (split.length === 0)
         return;
 
-      const word = split[0];
+      const { leading: leadingPunctuation, trailing: trailingPunctuation, word } = parsePunctuation(split);
 
-      const putBackPunctuation = (): void => {
-        if (!split[1])
-          return;
+      const addLeadingPunctuation = (): void => {
+        if (leadingPunctuation) {
+          formats.push({ type: NoteType.WORD, word: leadingPunctuation });
+        }
+      };
 
-        formats.push({
-          type: NoteType.WORD,
-          word: split[1],
-        });
+      const addTrailingPunctuation = (): void => {
+        if (trailingPunctuation) {
+          formats.push({ type: NoteType.WORD, word: trailingPunctuation });
+        }
       };
 
       const isValidBch = isValidBchAddress(word);
 
-      // Check if the word is ETH address
       if (isValidEthAddress(word) || isValidBtcAddress(word) || isValidBch) {
+        addLeadingPunctuation();
         formats.push({
           address: isValidBch ? word.replace(/^bitcoincash:/, '') : word,
           showHashLink: true,
           type: NoteType.ADDRESS,
         });
-        return putBackPunctuation();
+        return addTrailingPunctuation();
       }
 
       // Check if the word is Tx Hash
       if (isValidTxHash(word) && !get(noTxHash)) {
+        addLeadingPunctuation();
         formats.push({
           address: word,
           showHashLink: true,
           type: NoteType.TX,
         });
-        return putBackPunctuation();
+        return addTrailingPunctuation();
       }
 
       const validatorIndices = [];
@@ -248,40 +273,44 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
 
       // Check if the word is ETH2 Validator Index
       if (validatorIndices.includes(word)) {
+        addLeadingPunctuation();
         formats.push({
           address: word,
           chain: Blockchain.ETH2,
           showHashLink: true,
           type: NoteType.ADDRESS,
         });
-        return putBackPunctuation();
+        return addTrailingPunctuation();
       }
 
       // Check if the word is Block Number
       if (get(blockNumber)?.toString() === word) {
+        addLeadingPunctuation();
         formats.push({
           address: word,
           showHashLink: true,
           type: NoteType.BLOCK,
         });
-        return putBackPunctuation();
+        return addTrailingPunctuation();
       }
 
       const amountVal = get(amount);
       const amountArr: BigNumber[] = amountVal ? arrayify(amountVal) : [];
       const wordUsed = word.replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
 
-      const isAmount = amountArr.length > 0
+      const isAmount = (amountArr.length > 0 || shouldFormatAllAmount)
         && !isNaN(parseFloat(wordUsed));
 
       if (isAmount) {
         const bigNumber = bigNumberify(wordUsed);
-        const isIncluded = amountArr.some(item => item.eq(bigNumber));
+        const isIncluded = amountArr.some(item => item.eq(bigNumber)) || shouldFormatAllAmount;
 
         if (isIncluded && bigNumber.gt(0)) {
+          // Check if next word (without punctuation) is the asset
           const isAsset = index < processedWords.length - 1
-            && processedWords[index + 1] === asset;
+            && getCleanWord(processedWords[index + 1]) === asset;
 
+          addLeadingPunctuation();
           formats.push({
             amount: bigNumber,
             asset: isAsset ? get(assetId) : undefined,
@@ -291,7 +320,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
           if (isAsset)
             skip = true;
 
-          return putBackPunctuation();
+          return addTrailingPunctuation();
         }
       }
 
@@ -312,7 +341,8 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
             word: text,
           });
 
-          return putBackPunctuation();
+          addLeadingPunctuation();
+          return addTrailingPunctuation();
         }
       }
 
@@ -320,13 +350,14 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       const urlRegex = /^(https?:\/\/.+)$/;
 
       if (urlRegex.test(word)) {
+        addLeadingPunctuation();
         formats.push({
           type: NoteType.URL,
           url: word,
           word,
         });
 
-        return putBackPunctuation();
+        return addTrailingPunctuation();
       }
 
       if (isEvmIdentifier(word)) {
@@ -336,21 +367,26 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
             type: NoteType.WORD,
             word: symbol,
           });
-          return putBackPunctuation();
+          addLeadingPunctuation();
+          return addTrailingPunctuation();
         }
       }
+
       // Check if the word is a country flag
       const countryFlagRegex = /:country:([A-Z]{2}):/;
       const countryFlagMatch = word.match(countryFlagRegex);
       if (countryFlagMatch && counterpartyVal === 'gnosis_pay') {
+        addLeadingPunctuation();
         formats.push({
           countryCode: countryFlagMatch[1]?.toLowerCase(),
           type: NoteType.FLAG,
         });
-        return putBackPunctuation();
+        return addTrailingPunctuation();
       }
 
-      formats.push({ type: NoteType.WORD, word: split.join('') });
+      addLeadingPunctuation();
+      formats.push({ type: NoteType.WORD, word });
+      addTrailingPunctuation();
     });
 
     return formats.reduce(mergeSequentialWords, new Array<NoteFormat>());

@@ -25,6 +25,7 @@ from rotkehlchen.constants.assets import (
     A_USDT,
 )
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
+from rotkehlchen.data_import.importers.cryptocom import CRYPTOCOM_LOCATION_LABEL
 from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
 )
@@ -216,6 +217,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('281.14'),
         asset=A_EUR,
         notes=get_cryptocom_note('Buy ETH'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=23,
         event_identifier='CCM_9ae9033697be4060e51746089335fd254528354a7ef522dbb58f455a83204ff6',
@@ -224,6 +226,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=ONE,
         asset=A_ETH,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=20,
         event_identifier='CCM_b3b66fbb4bcfcaf6d5ef6f136753f820bdf9150145f04e9c955f75381c38a7d0',
@@ -233,6 +236,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('176.05'),
         asset=A_EUR,
         notes=get_cryptocom_note('Buy MCO'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=21,
         event_identifier='CCM_b3b66fbb4bcfcaf6d5ef6f136753f820bdf9150145f04e9c955f75381c38a7d0',
@@ -241,6 +245,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=FVal('50.0'),
         asset=A_MCO,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=19,
         event_identifier='CCM_8742d989ca51cb724a6de9492cab6a647074635ea1fb5cad8c9db5596ec4cf46',
@@ -252,6 +257,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('12.32402069'),
         asset=A_MCO,
         notes=get_cryptocom_note('Sign-up Bonus Unlocked'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=17,
         event_identifier='CCM_71c9914b9065de357bcba737b8d3ec6a6257647b5b04bbe63b4d56ba9864bdc7',
@@ -261,6 +267,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('12.32'),
         asset=A_MCO,
         notes=get_cryptocom_note('MCO -> ETH'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=18,
         event_identifier='CCM_71c9914b9065de357bcba737b8d3ec6a6257647b5b04bbe63b4d56ba9864bdc7',
@@ -269,6 +276,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=FVal('0.14445954600007045'),
         asset=A_ETH,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=16,
         event_identifier='CCM_983789e023405101a67cc9bb77faba8819e49e78de4ad4fda5281d2ecffd8052',
@@ -280,6 +288,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('0.00061475'),
         asset=A_ETH,
         notes=get_cryptocom_note('Crypto Earn'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=3,
         event_identifier='CCM_4a542db62c4c1ec73fcc864352a2283c03313001bc8cd4e50ae3e352525acb3b',
@@ -289,6 +298,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('50.00402069'),
         asset=A_MCO,
         notes=get_cryptocom_note('MCO/CRO Overall Swap'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=4,
         event_identifier='CCM_4a542db62c4c1ec73fcc864352a2283c03313001bc8cd4e50ae3e352525acb3b',
@@ -297,6 +307,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=FVal('1382.306147552291'),
         asset=A_CRO,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=1,
         event_identifier='CCM_a096438fd902d39af3e2461f7dedc11720df9030de90fec5ffbca2095a454d0e',
@@ -306,6 +317,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('50'),
         asset=A_MCO,
         notes=get_cryptocom_note('MCO/CRO Overall Swap'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=2,
         event_identifier='CCM_a096438fd902d39af3e2461f7dedc11720df9030de90fec5ffbca2095a454d0e',
@@ -314,6 +326,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=FVal('1301.64'),
         asset=A_CRO,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=15,
         event_identifier='20b719f712a8951eeaa518e6976950c8410028dc974c2b6e72b62e6e8745d355',
@@ -322,6 +335,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1596992965000),
         asset=A_DAI,
         amount=FVal('115'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=14,
         event_identifier='2e2bba27c61cf9d71b8c60e1fce061a59b01d150b294badbb060c940d603594b',
@@ -330,6 +344,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1596993025000),
         asset=A_DAI,
         amount=FVal('115'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=13,
         event_identifier='CCM_f24eb95216e362d79bb4a9cec0743fbb5bfd387c743e98ce51a97c6b3c430987',
@@ -341,6 +356,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('138.256'),
         asset=A_CRO,
         notes=get_cryptocom_note('Card Rebate: Deliveries'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=12,
         event_identifier='CCM_eadaa0af72f57a3a987faa9da84b149a14af47c94a5cf37f3dc0d3a6b795af95',
@@ -352,6 +368,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('52.151'),
         asset=A_CRO,
         notes=get_cryptocom_note('Card Cashback'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=11,
         event_identifier='CCM_10f2e57d3ff770148095e4b1f8407858dacb5b0f738679a5e30a61a9e65abd2c',
@@ -363,6 +380,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('482.2566417'),
         asset=A_CRO,
         notes=get_cryptocom_note('Referral Bonus Reward'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=9,
         event_identifier='CCM_7cd82c9fe61590593f7f8349586b925ad6fb3b7189301a6c4206ed4f80d490cd',
@@ -372,6 +390,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('0.00050680380674961'),
         asset=A_DAI,
         notes=get_cryptocom_note('Convert Dust'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=10,
         event_identifier='CCM_7cd82c9fe61590593f7f8349586b925ad6fb3b7189301a6c4206ed4f80d490cd',
@@ -380,6 +399,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=FVal('0.007231228760408149'),
         asset=A_CRO,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=5,
         event_identifier='CCM_21ea7227dc931c362a5530b676c030a0823fa33ab8bd87934116e9407acf6f48',
@@ -389,6 +409,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('0.734823872932330827067669172932330827067669172932330827067669172932330827067669'),
         asset=Asset('eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'),
         notes=get_cryptocom_note('Convert Dust'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=6,
         event_identifier='CCM_21ea7227dc931c362a5530b676c030a0823fa33ab8bd87934116e9407acf6f48',
@@ -397,6 +418,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=FVal('105.947588930640516443834586466165413533834586466165413533834586466165413533835'),
         asset=A_CRO,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=7,
         event_identifier='CCM_73df24989bdcf041e585bf506a903db58eb093a5ad470c8c42b2fdc581619377',
@@ -406,6 +428,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('0.283989112781954887218045112781954887218045112781954887218045112781954887218045'),
         asset=A_DOT,
         notes=get_cryptocom_note('Convert Dust'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=8,
         event_identifier='CCM_73df24989bdcf041e585bf506a903db58eb093a5ad470c8c42b2fdc581619377',
@@ -414,6 +437,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=FVal('87.0802100799785066661654135338345864661654135338345864661654135338345864661654'),
         asset=A_CRO,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=35,
         event_identifier='CCM_da60cedfc97c1df9319d7c2102e0269cbca97d4abac374d2d96a385ab02d072c',
@@ -425,6 +449,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('7.76792828'),
         asset=A_CRO,
         notes=get_cryptocom_note('Card Rebate: Netflix'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=34,
         event_identifier='CCM_0bcbe9abf2d75f68eecebc2c99611efb56e6f8795fbaa2e2c33db348864e6f4c',
@@ -436,6 +461,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('7.76792828'),
         asset=A_CRO,
         notes=get_cryptocom_note('Card Rebate Reversal: Netflix'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=32,
         event_identifier='CCM_a5051400dab1a0736302f3d80c969067f60def2e01f00fe5088d46016c351121',
@@ -447,6 +473,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('10'),
         asset=A_CRO,
         notes=get_cryptocom_note('Pay Rewards'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=33,
         event_identifier='CCM_f1b8ad8d5c58fbdc361faa8e2747ac6dd3d7ddc85025dc965f6324149ffe2b08',
@@ -458,6 +485,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('100'),
         asset=A_CRO,
         notes=get_cryptocom_note('To +49XXXXXXXXXX'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=31,
         event_identifier='CCM_29fe97c4aa05263dfccd478c2f90177f0006fea259bd71e22d3813b6602d9692',
@@ -469,6 +497,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('100'),
         asset=A_CRO,
         notes=get_cryptocom_note('From +49XXXXXXXXXX'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=30,
         event_identifier='CCM_5450de111ff9e242523f011a42f2b1ed9684110bf2cb1b3c893ea3c5957bc3db',
@@ -480,6 +509,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('15.38'),
         asset=A_CRO,
         notes=get_cryptocom_note('Merchant XXX'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=29,
         event_identifier='CCM_61d0b5ca125f051c7a3b04be7d94ee450d86d6777b0ef9cd334689883138bf5e',
@@ -491,6 +521,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('0.3076'),
         asset=A_CRO,
         notes=get_cryptocom_note('Pay Rewards'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=28,
         event_identifier='CCM_68a055044785832276c423a6acc538b7118ce2e04021859a687c9655c47c16d9',
@@ -502,6 +533,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         amount=FVal('15.31'),
         asset=A_CRO,
         notes=get_cryptocom_note('Refund from Merchant XXX'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=26,
         event_identifier='CCM_5e2b8b92f3bbad193cd19f7b021366b1cb2719f837924acebc8f65cf7e564aed',
@@ -511,6 +543,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         asset=A_DOGE,
         amount=FVal('750.0'),
         notes=get_cryptocom_note('DOGE -> EUR'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=27,
         event_identifier='CCM_5e2b8b92f3bbad193cd19f7b021366b1cb2719f837924acebc8f65cf7e564aed',
@@ -519,6 +552,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('406.22'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=24,
         event_identifier='CCM_26bccacb6107ce9bc436b98edf6262365973a3a398f962ae11f177ce4240066d',
@@ -528,6 +562,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         asset=A_EUR,
         amount=FVal('78.01'),
         notes=get_cryptocom_note('EUR -> BTC'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=25,
         event_identifier='CCM_26bccacb6107ce9bc436b98edf6262365973a3a398f962ae11f177ce4240066d',
@@ -536,6 +571,45 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.003'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
+    ), SwapEvent(
+        identifier=36,
+        event_identifier='CCM_87b1244732564cfaa122cb989c67c9f7d611463f7098fd4d4de00dd1a89ac763',
+        timestamp=TimestampMS(1738393750000),
+        location=Location.CRYPTOCOM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('5.0'),
+        notes=get_cryptocom_note('USD -> SOL'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
+    ), SwapEvent(
+        identifier=37,
+        event_identifier='CCM_87b1244732564cfaa122cb989c67c9f7d611463f7098fd4d4de00dd1a89ac763',
+        timestamp=TimestampMS(1738393750000),
+        location=Location.CRYPTOCOM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_SOL,
+        amount=FVal('10.0'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
+    ), SwapEvent(
+        identifier=38,
+        event_identifier='CCM_8a618a6d3ce350415977c9bbf55661dde6614fbc47da5eb836c78c79ec3ddd7f',
+        timestamp=TimestampMS(1744982384000),
+        location=Location.CRYPTOCOM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('10.0'),
+        notes=get_cryptocom_note('USD -> ETH'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
+    ), SwapEvent(
+        identifier=39,
+        event_identifier='CCM_8a618a6d3ce350415977c9bbf55661dde6614fbc47da5eb836c78c79ec3ddd7f',
+        timestamp=TimestampMS(1744982384000),
+        location=Location.CRYPTOCOM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('7.99'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     )]
     assert expected_events == events
 
@@ -560,6 +634,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1609534800000),
         asset=A_ETC,
         amount=ONE,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=13,
         event_identifier='e973b9453f750c8286fdb718b8211abbd8b9027fea582a4e9365f3d0b5c371dc',
@@ -568,6 +643,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1609534860000),
         asset=A_ETC,
         amount=FVal('0.24'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=12,
         event_identifier='6e7b476f5880af1cea17c22fd8781fc7aa75a67fc7808200f18d20b181589c34',
@@ -576,6 +652,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1609538400000),
         asset=A_BTC,
         amount=FVal('0.01'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=11,
         event_identifier='edfb38684bb8ddfa0cd961a3a1fe0f90bda823f45a2095859b2d0e3c43401e4d',
@@ -584,6 +661,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1609542000000),
         asset=A_BTC,
         amount=FVal('0.01'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=3,
         event_identifier='CCM_26556241ec9e68acba8cd0d6a6e7b5c010f344b7c763d4b45fa1b6d2abfaf2af',
@@ -595,6 +673,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         amount=FVal('0.00005'),
         asset=A_BTC,
         notes='Staking profit for BTC',
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=10,
         event_identifier='dd3b3db7df9d05e2a725bfb2edfd15f55a4d8cd473941735ab863a321ad38d92',
@@ -603,6 +682,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1609624800000),
         asset=A_BTC,
         amount=FVal('0.02005'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=9,
         event_identifier='4944f654c206336187e8df89b7ef8201fe7fdda65133a362166770de9283b6b6',
@@ -611,6 +691,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1609714800000),
         asset=A_BTC,
         amount=ONE,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=4,
         event_identifier='CCM_680977437f573e30752041fb8971be234a8fdb4d72f707d56eb5643d40908d82',
@@ -622,6 +703,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         amount=FVal('0.02005'),
         asset=A_BTC,
         notes='Staking profit for BTC',
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), AssetMovement(
         identifier=8,
         event_identifier='99e05dba03cbcd7337e453049be2bdaa88814aec73cdcce26f40a0bc98d79f2e',
@@ -630,6 +712,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         timestamp=TimestampMS(1609797600000),
         asset=A_BTC,
         amount=FVal('1.02005'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=1,
         event_identifier='CCM_ebe2ce31051fc960270785590b349735d10d5cd7b7b972bd1c3017a7e3f83b1c',
@@ -639,6 +722,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         asset=A_MCO,
         amount=FVal('0.1'),
         notes=get_cryptocom_note('MCO Earnings/Rewards Swap'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=2,
         event_identifier='CCM_ebe2ce31051fc960270785590b349735d10d5cd7b7b972bd1c3017a7e3f83b1c',
@@ -647,6 +731,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_CRO,
         amount=ONE,
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=5,
         event_identifier='CCM_4edba1d54872a176b913a3a1afc476f4b7d9565d665b86d7fb0c8b1f56ca8cbf',
@@ -658,6 +743,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         amount=ONE,
         asset=A_CRO,
         notes=get_cryptocom_note('CRO Stake Rewards'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=6,
         event_identifier='CCM_b0bb99d65ac111caec2d5d9b6a2b69bae1a13de50f89358a2a25dfc0992c51c4',
@@ -669,6 +755,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         amount=FVal('0.5'),
         asset=A_MCO,
         notes=get_cryptocom_note('MCO Stake Rewards'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=7,
         event_identifier='CCM_afb12f3eac3e93695a1ac1b09b4708f678d7cf395a3f364390376510ec801059',
@@ -680,6 +767,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         amount=ONE,
         asset=A_CRO,
         notes=get_cryptocom_note('CRO Airdrop to Exchange'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=15,
         event_identifier='CCM_64288070ac60947e3fcaaf150f76c5768122a08538c8efdec806d689d4c49d62',
@@ -691,6 +779,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         amount=FVal('0.00356292'),
         asset=A_AXS,
         notes=get_cryptocom_note('Supercharger Reward'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=16,
         event_identifier='CCM_060450c1d57f9e2dd52f2ab747b9cdb4c4bbd14b690d5ffa1eada014d2382f40',
@@ -700,6 +789,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         asset=A_USDC,
         amount=FVal('12.94'),
         notes=get_cryptocom_note('USDC -> EUR'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), SwapEvent(
         identifier=17,
         event_identifier='CCM_060450c1d57f9e2dd52f2ab747b9cdb4c4bbd14b690d5ffa1eada014d2382f40',
@@ -708,6 +798,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('11.3'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     ), HistoryEvent(
         identifier=18,
         event_identifier='CCM_e66810bd6561fbe1d31aec4ad7942d854d63115808c2d1a7b2cd0df8bb110e49',
@@ -719,6 +810,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         amount=FVal('0.5678'),
         asset=A_CRO,
         notes=get_cryptocom_note('Card Cashback Reversal'),
+        location_label=CRYPTOCOM_LOCATION_LABEL,
     )]
     assert expected_events == events
 

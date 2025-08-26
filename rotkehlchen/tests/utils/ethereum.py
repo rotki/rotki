@@ -261,7 +261,7 @@ def setup_ethereum_transactions_test(
         with database.user_write() as cursor:
             dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction1], relevant_address=TEST_ADDR1)  # noqa: E501
             dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction2], relevant_address=TEST_ADDR2)  # noqa: E501
-            result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
+            result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM))  # noqa: E501
         assert result == transactions
 
     expected_receipt1 = EvmTxReceipt(

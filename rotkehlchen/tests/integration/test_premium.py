@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 from base64 import b64decode
 from http import HTTPStatus
@@ -19,7 +20,14 @@ from rotkehlchen.errors.api import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.premium.premium import Premium, PremiumCredentials
+from rotkehlchen.premium.premium import (
+    DOCKER_PLATFORM_KEY,
+    KUBERNETES_PLATFORM_KEY,
+    Premium,
+    PremiumCredentials,
+    check_docker_container,
+    get_kubernetes_pod_name,
+)
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -840,7 +848,7 @@ def test_docker_device_version_update(rotki_premium_object, database):
         # Mock platform.system to return Linux (Docker detection)
         patch('rotkehlchen.premium.premium.platform.system', return_value='Linux'),
         # Mock check_docker_container to return a container ID
-        patch('rotkehlchen.premium.premium.check_docker_container', return_value='abc123def456'),
+        patch('rotkehlchen.premium.premium.check_docker_container', return_value=('abc123def456', DOCKER_PLATFORM_KEY)),  # noqa: E501
         # Mock get_system_spec to control version
         patch('rotkehlchen.premium.premium.get_system_spec', return_value={'rotkehlchen': '1.0.0'}),  # noqa: E501
     ):
@@ -892,3 +900,16 @@ def test_docker_device_version_update(rotki_premium_object, database):
             assert cached_info is not None
             assert cached_info[0] == 'new_device_id'
             assert cached_info[1] == '1.0.0'
+
+
+def test_get_kubernetes_pod_name_reads_hostname():
+    """Ensures pod name is read from /etc/hostname when K8s is detected."""
+    with (
+        patch.dict(os.environ, {'KUBERNETES_SERVICE_HOST': '1'}, clear=False),
+        patch(
+            'rotkehlchen.premium.premium.Path.read_text',
+            return_value=(pod_id := 'test-pod-123'),
+        ),
+    ):
+        assert get_kubernetes_pod_name() == pod_id
+        assert check_docker_container() == (pod_id, KUBERNETES_PLATFORM_KEY)

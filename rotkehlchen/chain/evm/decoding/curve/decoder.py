@@ -25,6 +25,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     MINTED_CRV,
     REMOVE_LIQUIDITY_EVENTS,
     REMOVE_LIQUIDITY_IMBALANCE,
+    REMOVE_LIQUIDITY_TOKEN_COUNTS,
     TOKEN_EXCHANGE,
     TOKEN_EXCHANGE_NG,
     TOKEN_EXCHANGE_UNDERLYING,
@@ -174,6 +175,16 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     tx_log.topics[0] in REMOVE_LIQUIDITY_IMBALANCE
                 )
             ):
+                # Check if the amount matches an amount in the REMOVE_LIQUIDITY event data
+                # to prevent false matches with unrelated spend events (e.g. paraswap swaps)
+                if (token_count := REMOVE_LIQUIDITY_TOKEN_COUNTS.get(tx_log.topics[0])) is not None:  # noqa: E501
+                    token_amounts = [
+                        int.from_bytes(tx_log.data[i:i + 32]) for i in
+                        range(0, token_count * 32, 32)
+                    ]
+                    if asset_raw_value(amount=event.amount, asset=crypto_asset) not in token_amounts:  # noqa: E501
+                        continue  # Event is not a withdrawal event.
+
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_CURVE

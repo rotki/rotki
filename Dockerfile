@@ -36,7 +36,9 @@ RUN uv sync --locked --no-dev --no-install-project
 
 COPY . /app
 
-RUN if [ "$TARGETARCH" != "amd64" ]; then \
+RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && \
+    uv sync --locked --no-dev --no-install-project && \
+    if [ "$TARGETARCH" != "amd64" ]; then \
       git clone https://github.com/pyinstaller/pyinstaller.git && \
       cd pyinstaller && git checkout ${PYINSTALLER_VERSION} && \
       cd bootloader && ./waf all && cd .. && \
@@ -45,7 +47,6 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
       uv pip install pyinstaller==${PYINSTALLER_VERSION}; \
     fi && \
     cd /app && \
-    sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && \
     uv pip install -e . && \
     uv run python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 uv run pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec

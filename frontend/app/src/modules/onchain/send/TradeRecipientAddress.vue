@@ -4,6 +4,7 @@ import { isValidEthAddress } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useTemplateRef } from 'vue';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
+import { useRefWithDebounce } from '@/composables/ref';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import TradeAddressDisplay from '@/modules/onchain/send/TradeAddressDisplay.vue';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
@@ -59,8 +60,7 @@ const valid = computed<boolean>(() => {
 });
 
 const anyFocused = logicOr(searchInputFocused, menuFocusedWithin);
-const focusDebounced = refDebounced(anyFocused, 200);
-const usedAnyFocused = logicAnd(anyFocused, focusDebounced);
+const usedAnyFocused = useRefWithDebounce(anyFocused, 200);
 
 function select(address: string) {
   if (isNotConnectedAddress(address)) {

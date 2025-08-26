@@ -2,6 +2,7 @@
 import type { RuiButton } from '@rotki/ui-library';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useTemplateRef } from 'vue';
+import { useRefWithDebounce } from '@/composables/ref';
 
 const model = defineModel<Dayjs>({ required: true });
 
@@ -25,9 +26,8 @@ const menuContainerRef = useTemplateRef<InstanceType<typeof HTMLDivElement>>('me
 const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);
 const { focused: activatorFocusedWithin } = useFocusWithin(activatorRef);
 
-const anyFocused = computed(() => get(activatorFocusedWithin) || get(menuFocusedWithin));
-const debouncedAnyFocused = debouncedRef(anyFocused, 100);
-const usedAnyFocused = logicOr(anyFocused, debouncedAnyFocused);
+const anyFocused = logicOr(activatorFocusedWithin, menuFocusedWithin);
+const usedAnyFocused = useRefWithDebounce(anyFocused, 100);
 
 function goToSelectedDate() {
   set(model, dayjs(get(datetime) * 1000));

@@ -2,7 +2,22 @@
 Changelog
 =========
 
+
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
+* :bug:`-` All single token curve pool withdrawals should decode properly now.
+* :bug:`10468` Crypto.com exchange integration should now be working properly.
+* :bug:`-` Crypto.com mobile app events imported via a CSV file will now have their location label set.
+* :bug:`-` Users can now access the Solana token migration guide using the correct link.
+* :bug:`10499` Crypto.com mobile app CSV imports will now properly handle limit order transactions that were previously failing to import.
+* :bug:`-` Fix an issue where some amounts in the history event notes are not scrambled/blurred when the privacy mode/scramble setting is activated.
+* :bug:`-` Historical price data will now display correctly for all supported assets instead of showing empty results in some cases.
+* :feature:`-` Users can now manually reset cached Beefy Finance vault data to trigger re-pulling the data during decoding.
+* :bug:`-` Paraswap swaps will be properly decoded when curve pool interactions are present in the same transaction.
+* :bug:`-` History events status banner will no longer cause layout shifts on the dashboard.
+* :bug:`10473` 1inch v6 swap transactions are now more accurately decoded.
+* :bug:`-` rotki won't fail to check the premium status under specific conditions.
+* :bug:`-` Users will be able to see the history event location label, even if the scramble setting is enabled.
+* :bug:`-` Exchange trade events will now properly show the exchange name in the location label field.
 
 * :release:`1.40.0 <2025-08-15>`
 * :bug:`-` Fix an issue where the selected filter suggestion is sometimes cleared in the combined filter.

@@ -41,7 +41,6 @@ def test_gnosischain_specific_chain_data(
                 assert len(dbevmtx.get_evm_transactions(
                     cursor=cursor,
                     filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.GNOSIS),  # noqa: E501
-                    has_premium=True,
                 )) == 1
                 assert dbevmtx.get_receipt(
                     cursor=cursor,

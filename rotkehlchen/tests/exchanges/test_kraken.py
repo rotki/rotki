@@ -406,6 +406,7 @@ def test_kraken_trade_with_spend_receive(kraken):
                 location=Location.KRAKEN,
                 unique_id='11636406000865',
             ),
+            location_label=kraken.name,
         ), SwapEvent(
             identifier=2,
             timestamp=TimestampMS(1636406000865),
@@ -417,6 +418,7 @@ def test_kraken_trade_with_spend_receive(kraken):
                 location=Location.KRAKEN,
                 unique_id='11636406000865',
             ),
+            location_label=kraken.name,
         ), SwapEvent(
             identifier=3,
             timestamp=TimestampMS(1636406000865),
@@ -428,6 +430,7 @@ def test_kraken_trade_with_spend_receive(kraken):
                 location=Location.KRAKEN,
                 unique_id='11636406000865',
             ),
+            location_label=kraken.name,
         )]
 
     errors = kraken.msg_aggregator.consume_errors()
@@ -490,6 +493,7 @@ def test_kraken_trade_with_adjustment(kraken):
                     location=Location.KRAKEN,
                     unique_id='adjustment12',
                 ),
+                location_label=kraken.name,
             ), SwapEvent(
                 identifier=2,
                 timestamp=TimestampMS(1636406000855),
@@ -501,6 +505,7 @@ def test_kraken_trade_with_adjustment(kraken):
                     location=Location.KRAKEN,
                     unique_id='adjustment12',
                 ),
+                location_label=kraken.name,
             )]
 
     errors = kraken.msg_aggregator.consume_errors()
@@ -604,6 +609,7 @@ def test_kraken_trade_no_counterpart(kraken):
                     location=Location.KRAKEN,
                     unique_id='11636406000855',
                 ),
+                location_label=kraken.name,
             ), SwapEvent(
                 identifier=2,
                 timestamp=TimestampMS(1636406000855),
@@ -615,6 +621,7 @@ def test_kraken_trade_no_counterpart(kraken):
                     location=Location.KRAKEN,
                     unique_id='11636406000855',
                 ),
+                location_label=kraken.name,
             ), SwapEvent(
                 identifier=3,
                 timestamp=TimestampMS(1636406000865),
@@ -626,6 +633,7 @@ def test_kraken_trade_no_counterpart(kraken):
                     location=Location.KRAKEN,
                     unique_id='21636406000865',
                 ),
+                location_label=kraken.name,
             ), SwapEvent(
                 identifier=4,
                 timestamp=TimestampMS(1636406000865),
@@ -637,6 +645,7 @@ def test_kraken_trade_no_counterpart(kraken):
                     location=Location.KRAKEN,
                     unique_id='21636406000865',
                 ),
+                location_label=kraken.name,
             )]
 
     errors = kraken.msg_aggregator.consume_errors()

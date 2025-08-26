@@ -5,6 +5,7 @@ import { toSentenceCase } from '@rotki/common';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useRefWithDebounce } from '@/composables/ref';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -32,8 +33,7 @@ defineSlots<{
 const { useIsTaskRunning } = useTaskStore();
 const fetching = useIsTaskRunning(TaskType.FETCH_UNDECODED_TXS);
 const isDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
-const debouncedIsDecoding = refDebounced(isDecoding, 500);
-const usedIsDecoding = logicOr(isDecoding, debouncedIsDecoding);
+const usedIsDecoding = useRefWithDebounce(isDecoding, 500);
 const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
 const isPartiallyDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING, {
   all: false,

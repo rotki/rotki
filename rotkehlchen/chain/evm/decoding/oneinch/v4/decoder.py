@@ -12,7 +12,11 @@ from rotkehlchen.chain.evm.decoding.balancer.v2.constants import (
 )
 from rotkehlchen.chain.evm.decoding.curve.constants import TOKEN_EXCHANGE
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
-from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import DEFI_PLAZA_SWAPPED, ORDERFILLED_RFQ
+from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import (
+    DEFI_PLAZA_SWAPPED,
+    ORDERFILLED_RFQ,
+    PANCAKE_SWAP_TOPIC,
+)
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
@@ -57,6 +61,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 TOKEN_EXCHANGE,  # curve is also used by 1inch
                 SWAPPED_TOPIC,
                 DEFI_PLAZA_SWAPPED,
+                PANCAKE_SWAP_TOPIC,
             ],
             counterparty=counterparty,
         )

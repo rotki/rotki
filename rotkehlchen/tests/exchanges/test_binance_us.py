@@ -81,6 +81,7 @@ def test_binanceus_trades_location(function_scope_binance):
                 location=Location.BINANCEUS,
                 unique_id='28457',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1499865549590),
             location=Location.BINANCEUS,
@@ -91,6 +92,7 @@ def test_binanceus_trades_location(function_scope_binance):
                 location=Location.BINANCEUS,
                 unique_id='28457',
             ),
+            location_label=binance.name,
         ), SwapEvent(
             timestamp=TimestampMS(1499865549590),
             location=Location.BINANCEUS,
@@ -101,6 +103,7 @@ def test_binanceus_trades_location(function_scope_binance):
                 location=Location.BINANCEUS,
                 unique_id='28457',
             ),
+            location_label=binance.name,
         )]
 
 

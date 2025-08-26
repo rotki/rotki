@@ -46,7 +46,7 @@ dependencies = [
     "pywin32==306; sys_platform == 'win32'",
     "miniupnpc==2.3.2",
     "cryptography==44.0.2",
-    "py-machineid==0.7.0",
+    "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2024.11.6",  # used for unicode information in detection of spam tokens
     "eth-abi==5.2.0",

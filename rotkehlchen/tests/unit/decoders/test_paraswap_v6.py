@@ -17,6 +17,7 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_WETH_ARB,
+    A_WXDAI,
     A_XDAI,
 )
 from rotkehlchen.constants.misc import ZERO
@@ -923,6 +924,73 @@ def test_swap_with_unrelated_curve_deposit(
         amount=FVal(receive_amount := '973.320900476562704102'),
         location_label=user_address,
         notes=f'Receive {receive_amount} EURe as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('gnosis_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_curve_deposit_interfering_with_paraswap_swap(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list['ChecksumEvmAddress'],
+        load_global_caches,
+) -> None:
+    """Regression test for a bug where a curve deposit was causing the spend half of the
+    paraswap swap to be incorrectly decoded as a curve return wrapped event."""
+    tx_hash = deserialize_evm_tx_hash('0x863e33760f41500e261e8e9a81be18af2dc68f494803c22802e922a4771a91ce')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1753098820000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal(gas_amount := '0.0000438784'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Burn {gas_amount} XDAI for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Revoke USDC spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER}',
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=5,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
+        amount=FVal(spend_amount := '1000'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} USDC in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=6,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_WXDAI,
+        amount=FVal(receive_amount := '999.881364447403282395'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} WXDAI as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     )]

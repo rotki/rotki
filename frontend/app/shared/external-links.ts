@@ -32,7 +32,7 @@ export const externalLinks = {
     gnosisPayKey: `${USAGE_GUIDE_URL}api-keys#gnosis-pay`,
     importBlockchainAccounts: `${USAGE_GUIDE_URL}accounts-and-balances#import-and-export-blockchain-accounts-csv`,
     importAddressBook: `${USAGE_GUIDE_URL}address-book#importing-address-book-names-csv`,
-    solanaTokenMigration: `${USAGE_GUIDE_URL}solana-tokens-migration`,
+    solanaTokenMigration: `${GITHUB_BASE_URL}releases/tag/v1.40.0`,
   },
   coingeckoAsset: `https://www.coingecko.com/en/coins/$symbol`,
   cryptocompareAsset: `https://www.cryptocompare.com/coins/$symbol/overview`,

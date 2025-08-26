@@ -8,6 +8,7 @@ import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
 import HistoryEventsQueryStatus from '@/components/history/events/query-status/HistoryEventsQueryStatus.vue';
 import TransactionQueryStatus from '@/components/history/events/tx/query-status/TransactionQueryStatus.vue';
+import { useRefWithDebounce } from '@/composables/ref';
 
 interface HistoryQueryStatusDialogProps {
   onlyChains?: string[];
@@ -30,8 +31,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { loading } = toRefs(props);
 
-const loadingDebounced = refDebounced(loading, 500);
-const usedLoading = logicOr(loading, loadingDebounced);
+const usedLoading = useRefWithDebounce(loading, 500);
 </script>
 
 <template>

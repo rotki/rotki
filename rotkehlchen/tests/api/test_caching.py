@@ -139,6 +139,8 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
         'balancer v1',
         'balancer v2',
         'balancer v3',
+        'merkl',
+        'beefy finance',
     }.issubset(set(result))
 
     with ExitStack() as stack:
@@ -187,7 +189,7 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             'rotkehlchen.api.rest.query_balancer_data',
             new=MagicMock(),
         ))
-        patched_merkl_cache = stack.enter_context(patch(
+        patched_globaldb_handler = stack.enter_context(patch(
             'rotkehlchen.api.rest.GlobalDBHandler',
             new=MagicMock(),
         ))
@@ -207,7 +209,8 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             (ProtocolsWithCache.BALANCER_V1, patched_balancer_query, 3),  # supported on 3 chains
             (ProtocolsWithCache.BALANCER_V2, patched_balancer_query, 6),  # supported on 6 chains
             (ProtocolsWithCache.BALANCER_V3, patched_balancer_query, 5),  # supported on 5 chains
-            (ProtocolsWithCache.MERKL, patched_merkl_cache, 1),
+            (ProtocolsWithCache.MERKL, patched_globaldb_handler, 1),
+            (ProtocolsWithCache.BEEFY_FINANCE, patched_globaldb_handler, 1),
         ):
             patched_obj.reset_mock()
             response = requests.post(api_url_for(

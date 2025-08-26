@@ -70,7 +70,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _process_trade(trade_data: dict[str, Any]) -> list[SwapEvent]:
+def _process_trade(exchange_name: str, trade_data: dict[str, Any]) -> list[SwapEvent]:
     """Process trade from coinbase prime. Returns an empty list if the order can't be processed.
     May raise:
     - DeserializationError
@@ -109,6 +109,7 @@ def _process_trade(trade_data: dict[str, Any]) -> list[SwapEvent]:
                 asset=receive_asset,
                 amount=deserialize_fval(trade_data['filled_quantity']),
             ),
+            location_label=exchange_name,
             fee=AssetAmount(
                 asset=quote_asset,
                 amount=deserialize_fval(trade_data['commission']),
@@ -178,7 +179,7 @@ def _process_deposit_withdrawal(
         ) from e
 
 
-def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
+def _process_conversions(exchange_name: str, raw_data: dict[str, Any]) -> list[HistoryEvent]:
     """Process conversion from coinbase prime
     May raise:
     - KeyError
@@ -205,6 +206,7 @@ def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             event_subtype=HistoryEventSubType.SPEND,
             amount=converted_amount,
             asset=from_asset,
+            location_label=exchange_name,
             notes=f'Swap {converted_amount} {from_asset.symbol} in Coinbase Prime',
         ), HistoryEvent(
             event_identifier=raw_data['id'],
@@ -215,6 +217,7 @@ def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             event_subtype=HistoryEventSubType.RECEIVE,
             amount=converted_amount,
             asset=to_asset,
+            location_label=exchange_name,
             notes=f'Receive {converted_amount} {to_asset.symbol} from a Coinbase Prime conversion',
         ),
     ]
@@ -233,13 +236,14 @@ def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             event_subtype=HistoryEventSubType.FEE,
             amount=fee_amount,
             asset=(fee_asset := asset_from_coinbase(raw_data['fee_symbol'])),
+            location_label=exchange_name,
             notes=f'Spend {fee_amount} {fee_asset.symbol} as Coinbase Prime conversion fee',
         ))
 
     return conversion_events
 
 
-def _process_reward(raw_data: dict[str, Any]) -> list[HistoryEvent]:
+def _process_reward(exchange_name: str, raw_data: dict[str, Any]) -> list[HistoryEvent]:
     """Process rewards from coinbase prime.
     At the moment of writing this logic we don't have any real example, only the docs
     so it might need adjustment in the future.
@@ -260,6 +264,7 @@ def _process_reward(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             name='history_event reward',
             location='coinbase prime',
         )),
+        location_label=exchange_name,
         asset=(asset := asset_from_coinbase(raw_data['symbol'])),
         notes=f'Receive {amount} {asset.symbol} as Coinbase Prime staking reward',
     )]
@@ -369,9 +374,9 @@ class Coinbaseprime(ExchangeInterface):
         """
         try:
             if (tx_type := raw_data['type']) == 'CONVERSION':
-                return _process_conversions(raw_data)
+                return _process_conversions(exchange_name=self.name, raw_data=raw_data)
             elif tx_type == 'REWARD':
-                return _process_reward(raw_data)
+                return _process_reward(exchange_name=self.name, raw_data=raw_data)
             elif tx_type in ['DEPOSIT', 'WITHDRAWAL', 'COINBASE_DEPOSIT']:
                 return _process_deposit_withdrawal(exchange_name=self.name, event_data=raw_data)
         except KeyError as e:
@@ -552,7 +557,7 @@ class Coinbaseprime(ExchangeInterface):
                 },
                 portfolio_id=portfolio_id,
                 method='orders',
-                decoding_logic=_process_trade,
+                decoding_logic=lambda data: _process_trade(exchange_name=self.name, trade_data=data),  # noqa: E501
             ))
 
         return events, end_ts

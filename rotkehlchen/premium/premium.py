@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DOCKER_PLATFORM_KEY: Final = 'docker'
+KUBERNETES_PLATFORM_KEY: Final = 'kubernetes'
 
 
 class RemoteMetadata(NamedTuple):
@@ -159,17 +160,54 @@ def _process_dict_response(
     return result_dict
 
 
-def check_docker_container() -> str | None:
+def get_kubernetes_pod_name() -> str | None:
+    """Get the pod name by reading /etc/hostname. Returns None if it can't be read"""
+    if 'KUBERNETES_SERVICE_HOST' not in os.environ:
+        return None
+
+    try:
+        return Path('/etc/hostname').read_text(encoding='utf-8').strip()
+    except OSError as e:
+        log.error(f'Failed at open hostname due to {e}')
+
+    return None
+
+
+def extended_get_machine_id(username: str) -> str:
+    """Wrapper around machineid.hashed_id that checks the hostname in the case of
+    kubernetes being detected in the environment.
+
+    May raise:
+        - MachineIdNotFound
+    """
+    try:
+        return machineid.hashed_id(username)
+    except machineid.MachineIdNotFound:
+        if (pod_name := get_kubernetes_pod_name()) is not None:
+            return hmac.new(
+                key=bytes(username.encode()),
+                msg=pod_name.encode(),
+                digestmod=hashlib.sha256,
+            ).hexdigest()
+
+        raise
+
+
+def check_docker_container() -> tuple[str, str] | None:
     """This function checks if the user is running inside a docker container.
-    Returns the 12 first chars of the container id.
+    Returns the container platform (docker/kubernetes) and container identifier
+    (12-char container ID or pod ID).
 
     In case of a bad error this function logs and returns None.
     """
+    if (pod_name := get_kubernetes_pod_name()) is not None:
+        return (pod_name, KUBERNETES_PLATFORM_KEY)
+
     try:
         data = Path('/proc/self/mountinfo').read_text(encoding='utf-8').strip()
         if 'docker' in data:
             match = re.search(r'docker/containers/([a-f0-9]+)/hostname', data)
-            return match.group(1)[:12] if match else None
+            return (match.group(1)[:12], DOCKER_PLATFORM_KEY) if match else None
     except OSError as e:
         log.error(f'Failed at open mountinfo file due to {e}')
 
@@ -313,7 +351,7 @@ class Premium:
             raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
-        result['current_device_id'] = machineid.hashed_id(self.username)
+        result['current_device_id'] = extended_get_machine_id(self.username)
         return result
 
     def authenticate_device(self) -> None:
@@ -323,7 +361,12 @@ class Premium:
         - RemoteError
         - PremiumAuthenticationError: when the device can't be registered
         """
-        device_id = machineid.hashed_id(self.username)
+        try:
+            device_id = extended_get_machine_id(self.username)
+        except machineid.MachineIdNotFound as e:
+            raise PremiumAuthenticationError(
+                'Failed to identify the current device. Please contact the rotki team.',
+            ) from e
 
         # Check if device is already registered
         try:
@@ -418,10 +461,9 @@ class Premium:
         log.debug(f'Registering new device {device_id}')
         if (
             (system_platform := platform.system()) == 'Linux' and
-            (docker_container := check_docker_container()) is not None
+            (container_info := check_docker_container()) is not None
         ):  # in the case of docker where we always run under linux, get the container id
-            system_platform = DOCKER_PLATFORM_KEY
-            device_name = docker_container
+            device_name, system_platform = container_info
         else:
             device_name = str(uuid4())  # can be edited later.
 
@@ -441,14 +483,14 @@ class Premium:
 
         if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
             # Cache Docker device info on successful registration
-            if system_platform == DOCKER_PLATFORM_KEY:
+            if system_platform in (DOCKER_PLATFORM_KEY, KUBERNETES_PLATFORM_KEY):
                 self._set_docker_device_info(device_id, get_system_spec()['rotkehlchen'])
 
             return None  # device was created or it already exists
 
         if (
             response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY and
-            system_platform == DOCKER_PLATFORM_KEY and
+            system_platform in (DOCKER_PLATFORM_KEY, KUBERNETES_PLATFORM_KEY) and
             self._maybe_register_docker_device(
                 device_id=device_id,
                 device_name=device_name,
@@ -465,7 +507,7 @@ class Premium:
         - InputError
         - RemoteError
         """
-        if device_id == machineid.hashed_id(self.username):
+        if device_id == extended_get_machine_id(self.username):
             raise InputError('Cannot delete the current device')
 
         log.debug(f'Deleting premium registered {device_id=}')

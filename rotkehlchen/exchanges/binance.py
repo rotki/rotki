@@ -127,6 +127,7 @@ def trade_from_binance(
         binance_trade: dict,
         binance_symbols_to_pair: dict[str, BinancePair],
         location: Location,
+        exchange_name: str,
 ) -> tuple[str, list[SwapEvent]]:
     """Convert a trade returned from the Binance API into SwapEvents.
 
@@ -172,6 +173,7 @@ def trade_from_binance(
         spend=spend,
         receive=receive,
         fee=fee,
+        location_label=exchange_name,
         event_identifier=create_event_identifier_from_unique_id(
             location=location,
             unique_id=unique_id,
@@ -1209,6 +1211,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 unique_id, swap_events = trade_from_binance(
                     binance_trade=raw_trade,
                     binance_symbols_to_pair=self.symbols_to_pair,
+                    exchange_name=self.name,
                     location=self.location,
                 )
             except UnknownAsset as e:
