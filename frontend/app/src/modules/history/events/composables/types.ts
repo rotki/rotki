@@ -1,11 +1,11 @@
-import type { ShowEventHistoryForm } from '@/modules/history/management/forms/form-types';
+import type { DialogShowOptions } from '@/components/history/events/dialog-types';
 import type {
   PullEthBlockEventPayload,
   PullEvmTransactionPayload,
 } from '@/types/history/events';
 
 export interface HistoryEventsTableEmits {
-  'show:form': [payload: ShowEventHistoryForm];
+  'show:dialog': [options: DialogShowOptions];
   'set-page': [page: number];
   'refresh': [payload?: PullEvmTransactionPayload];
   'refresh:block-event': [payload: PullEthBlockEventPayload];

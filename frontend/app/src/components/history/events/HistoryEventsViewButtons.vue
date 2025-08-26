@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import type { ShowEventForm } from '@/modules/history/management/forms/form-types';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/events/dialog-types';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';
-
-const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });
 
 defineProps<{
   processing: boolean;
@@ -13,9 +11,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'refresh': [payload?: HistoryRefreshEventData];
-  'show:form': [payload: ShowEventForm];
-  'show:add-transaction-form': [];
-  'show:repulling-transactions-form': [];
+  'show:dialog': [options: DialogShowOptions];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -30,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
   <RuiButton
     color="primary"
     data-cy="history-events__add"
-    @click="emit('show:form', { type: 'event', data: { type: 'add', nextSequenceId: '0' } })"
+    @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
   >
     <template #prepend>
       <RuiIcon name="lu-plus" />
@@ -68,7 +64,7 @@ const { t } = useI18n({ useScope: 'global' });
       <template v-if="includeEvmEvents">
         <RuiButton
           variant="list"
-          @click="openDecodingDialog = true"
+          @click="emit('show:dialog', { type: DIALOG_TYPES.DECODING_STATUS })"
         >
           <template #prepend>
             <RuiBadge
@@ -91,7 +87,7 @@ const { t } = useI18n({ useScope: 'global' });
         variant="list"
         data-cy="history-events__add_by_tx_hash"
         :disabled="loading"
-        @click="emit('show:add-transaction-form')"
+        @click="emit('show:dialog', { type: DIALOG_TYPES.ADD_TRANSACTION })"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
@@ -103,7 +99,7 @@ const { t } = useI18n({ useScope: 'global' });
         variant="list"
         data-cy="history-events__repulling-transactions"
         :disabled="loading"
-        @click="emit('show:repulling-transactions-form')"
+        @click="emit('show:dialog', { type: DIALOG_TYPES.REPULLING_TRANSACTION })"
       >
         <template #prepend>
           <RuiIcon name="lu-clock-arrow-up" />
