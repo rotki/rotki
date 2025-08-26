@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` All single token curve pool withdrawals should decode properly now.
 * :bug:`10468` Crypto.com exchange integration should now be working properly.
 * :bug:`-` Crypto.com mobile app events imported via a CSV file will now have their location label set.
 * :bug:`-` Users can now access the Solana token migration guide using the correct link.
