@@ -2,13 +2,13 @@ from abc import ABC
 from collections.abc import Callable
 from typing import Any
 
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.paraswap.decoder import ParaswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import DIRECT_SWAP_SIGNATURE
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
@@ -59,7 +59,7 @@ class Paraswapv5CommonDecoder(ParaswapCommonDecoder, ABC):
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
         return {
-            method_id: {SWAP_SIGNATURE: self._decode_uniswap_v2_swap}
+            method_id: {UNISWAP_V2_SWAP_SIGNATURE: self._decode_uniswap_v2_swap}
             for method_id in (
                 SWAP_ON_UNISWAP_V2_FORK,
                 SWAP_ON_UNISWAP_V2_FACTORY,

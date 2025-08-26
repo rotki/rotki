@@ -615,7 +615,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=88,
+        sequence_index=87,
         timestamp=timestamp,
         location=Location.OPTIMISM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -627,7 +627,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         address=OP_ROUTER,
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=89,
+        sequence_index=88,
         timestamp=timestamp,
         location=Location.OPTIMISM,
         event_type=HistoryEventType.MULTI_TRADE,
@@ -640,7 +640,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         address=OP_ROUTER,
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=90,
+        sequence_index=89,
         timestamp=timestamp,
         location=Location.OPTIMISM,
         event_type=HistoryEventType.MULTI_TRADE,
@@ -653,7 +653,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         address=OP_ROUTER,
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=91,
+        sequence_index=90,
         timestamp=timestamp,
         location=Location.OPTIMISM,
         event_type=HistoryEventType.MULTI_TRADE,
@@ -666,7 +666,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         address=OP_ROUTER,
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=92,
+        sequence_index=91,
         timestamp=timestamp,
         location=Location.OPTIMISM,
         event_type=HistoryEventType.MULTI_TRADE,

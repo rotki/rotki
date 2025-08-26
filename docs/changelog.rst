@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
 * :bug:`-` All single token curve pool withdrawals should decode properly now.
 * :bug:`10468` Crypto.com exchange integration should now be working properly.

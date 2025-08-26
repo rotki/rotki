@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Literal
 
 from eth_utils import to_hex
 from web3 import Web3
@@ -28,10 +28,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
@@ -48,14 +46,12 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-UNISWAP_V2_ROUTER: Final = string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D')
-SUSHISWAP_ROUTER: Final = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F')
 
 
 def decode_uniswap_v2_like_swap(
@@ -63,8 +59,9 @@ def decode_uniswap_v2_like_swap(
         decoded_events: list['EvmEvent'],
         transaction: EvmTransaction,
         counterparty: str,
+        router_address: ChecksumEvmAddress,
         database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
+        evm_inquirer: 'EvmNodeInquirer',
         notify_user: Callable[['EvmEvent', str], None],
 ) -> DecodingOutput:
     """Common logic for decoding uniswap v2 like protocols (uniswap and sushiswap atm)
@@ -85,9 +82,9 @@ def decode_uniswap_v2_like_swap(
     pool_token = get_or_create_evm_token(
         userdb=database,
         evm_address=tx_log.address,
-        chain_id=ChainID.ETHEREUM,
+        chain_id=evm_inquirer.chain_id,
         token_kind=TokenKind.ERC20,
-        evm_inquirer=ethereum_inquirer,
+        evm_inquirer=evm_inquirer,
         encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
     )
 
@@ -169,7 +166,7 @@ def decode_uniswap_v2_like_swap(
             ) and
             event.asset == A_ETH and
             transaction.from_address == event.location_label and
-            event.address in (SUSHISWAP_ROUTER, UNISWAP_V2_ROUTER)
+            event.address == router_address
         ):
             # this is to make sure it's the amm issuing the refund and not an aggregator making a swap  # noqa: E501
             # Those are assets returned due to a change in the swap price
@@ -189,7 +186,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         event_action_type: Literal['addition', 'removal'],
         counterparty: str,
         database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
+        evm_inquirer: 'EvmNodeInquirer',
         factory_address: ChecksumEvmAddress,
         init_code_hash: str,
         tx_hash: EVMTxHash,
@@ -230,9 +227,9 @@ def decode_uniswap_like_deposit_and_withdrawals(
             token0 = get_or_create_evm_token(
                 userdb=database,
                 evm_address=other_log.address,
-                chain_id=ChainID.ETHEREUM,
+                chain_id=evm_inquirer.chain_id,
                 token_kind=TokenKind.ERC20,
-                evm_inquirer=ethereum_inquirer,
+                evm_inquirer=evm_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
             # we make a distinction between token and asset since for eth uniswap moves around
@@ -242,9 +239,9 @@ def decode_uniswap_like_deposit_and_withdrawals(
             token1 = get_or_create_evm_token(
                 userdb=database,
                 evm_address=other_log.address,
-                chain_id=ChainID.ETHEREUM,
+                chain_id=evm_inquirer.chain_id,
                 token_kind=TokenKind.ERC20,
-                evm_inquirer=ethereum_inquirer,
+                evm_inquirer=evm_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
             asset_1 = resolved_eth if token1 == A_WETH else token1
@@ -274,9 +271,9 @@ def decode_uniswap_like_deposit_and_withdrawals(
         pool_token = get_or_create_evm_token(
             userdb=database,
             evm_address=pool_address,
-            chain_id=ChainID.ETHEREUM,
+            chain_id=evm_inquirer.chain_id,
             token_kind=TokenKind.ERC20,
-            evm_inquirer=ethereum_inquirer,
+            evm_inquirer=evm_inquirer,
             encounter=TokenEncounterInfo(tx_hash=tx_hash),
             underlying_tokens=underlying_tokens,
             protocol=CPT_UNISWAP_V2 if counterparty == CPT_UNISWAP_V2 else None,

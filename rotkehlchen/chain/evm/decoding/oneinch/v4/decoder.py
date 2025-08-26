@@ -3,9 +3,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
-    SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
-)
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, SWAPPED_TOPIC
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import (
     V2_SWAP as BALANCER_V2_SWAP_SIGNATURE,
@@ -19,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import (
 )
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
 )
