@@ -58,7 +58,7 @@ class GoogleService:
     google sheets for the user via rotki.
 
     Also useful info:
-    https://robocorp.com/docs/development-guide/google-sheets/interacting-with-google-sheets
+    https://robocorp.com/docs-robot-framework/development-guide/google-sheets/interacting-with-google-sheets
     """
     def __init__(self, credentials_path: Path) -> None:
         self.drive_service = _login('drive', 'v3', DRIVE_SCOPES, credentials_path)
