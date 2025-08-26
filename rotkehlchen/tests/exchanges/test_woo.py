@@ -27,7 +27,7 @@ def test_name():
     assert exchange.name == 'woo'
 
 
-@pytest.mark.skipif('CI' in os.environ, reason='temporarily skip woo in CI')
+@pytest.mark.xfail('CI' in os.environ, reason='WOO API sometimes fails with 403 HTML error pages')
 @pytest.mark.asset_test
 def test_woo_assets_are_known(mock_woo):
     request_url = f'{mock_woo.base_uri}/v1/public/token'
