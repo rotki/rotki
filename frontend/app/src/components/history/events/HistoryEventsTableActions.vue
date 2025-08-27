@@ -1,19 +1,17 @@
 <script lang="ts" setup>
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
 import HistoryEventsExport from '@/components/history/events/HistoryEventsExport.vue';
 import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
+import LocationLabelSelector from '@/components/history/LocationLabelSelector.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { useSupportedChains } from '@/composables/info/chains';
 import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
 import { useRefPropVModel } from '@/utils/model';
 
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
 
-const accounts = defineModel<BlockchainAccount<AddressData>[]>('accounts', { required: true });
+const locationLabels = defineModel<string[]>('locationLabels', { required: true });
 
 const toggles = defineModel<{
   customizedEventsOnly: boolean;
@@ -42,9 +40,6 @@ const { t } = useI18n({ useScope: 'global' });
 const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
-
-const { allTxChainsInfo } = useSupportedChains();
-const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 </script>
 
 <template>
@@ -96,17 +91,9 @@ const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
       :filters="exportParams"
     />
 
-    <BlockchainAccountSelector
+    <LocationLabelSelector
       v-if="!hideAccountSelector"
-      v-model="accounts"
-      class="w-[18rem]"
-      :chains="txChainIds"
-      dense
-      :label="t('transactions.filter.account')"
-      outlined
-      multichain
-      hide-chain-icon
-      unique
+      v-model="locationLabels"
     />
   </HistoryTableActions>
 </template>

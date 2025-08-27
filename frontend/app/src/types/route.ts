@@ -40,6 +40,25 @@ export const HistoryPaginationSchema = z.object({
     .default(1),
 });
 
+export const RouterLocationLabelsSchema = z.object({
+  locationLabels: z
+    .array(z.string())
+    .or(z.string())
+    .transform((val) => {
+      const arr = arrayify(val);
+      const mapped: string[] = [];
+      arr.forEach((entry) => {
+        const parsed = entry.split(',');
+        if (parsed.length > 0) {
+          mapped.push(...parsed);
+        }
+      });
+
+      return mapped;
+    })
+    .optional(),
+});
+
 export const RouterAccountsSchema = z.object({
   accounts: z.array(z.string())
     .or(z.string())

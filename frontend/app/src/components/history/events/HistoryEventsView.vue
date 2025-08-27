@@ -8,7 +8,6 @@ import type {
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
   PullEthBlockEventPayload,
@@ -38,15 +37,13 @@ import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
-import { RouterAccountsSchema } from '@/types/route';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { RouterLocationLabelsSchema } from '@/types/route';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import {
   isEthBlockEvent,
@@ -106,7 +103,7 @@ const {
 
 const formData = ref<GroupEventData | StandaloneEventData>();
 const missingRuleData = ref<HistoryEventEditData>();
-const accounts = ref<BlockchainAccount<AddressData>[]>([]);
+const locationLabels = ref<string[]>([]);
 const locationOverview = ref(get(location));
 const toggles = ref<{
   customizedEventsOnly: boolean;
@@ -126,9 +123,8 @@ const addTransactionModelValue = ref<AddTransactionHashPayload>();
 const showRePullTransactionsDialog = ref<boolean>(false);
 
 const { show } = useConfirmStore();
-const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
+const { fetchAssociatedLocations, fetchLocationLabels, resetUndecodedTransactionsStatus } = useHistoryStore();
 const { decodingStatus } = storeToRefs(useHistoryStore());
-const { getAccountByAddress } = useBlockchainAccountsStore();
 const { fetchHistoryEvents } = useHistoryEvents();
 const { refreshTransactions } = useHistoryTransactions();
 const {
@@ -149,15 +145,11 @@ useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
 
 const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
-const usedAccounts = computed<Account[]>(() => {
+const usedLocationLabels = computed<string[]>(() => {
   if (isDefined(useExternalAccountFilter))
-    return get(externalAccountFilter);
+    return get(externalAccountFilter).map(item => item.address);
 
-  const accountData = get(accounts).map(account => ({
-    address: getAccountAddress(account),
-    chain: account.chain,
-  }));
-  return accountData.length > 0 ? [accountData[0]] : accountData;
+  return get(locationLabels);
 });
 
 const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
@@ -230,15 +222,15 @@ const {
   }, entryTypes),
   history: get(mainPage) ? 'router' : false,
   onUpdateFilters(query) {
-    const parsedAccounts = RouterAccountsSchema.parse(query);
-    const accountsParsed = parsedAccounts.accounts;
-    if (!accountsParsed || accountsParsed.length === 0)
-      set(accounts, []);
+    const parsedLocationLabels = RouterLocationLabelsSchema.parse(query);
+    const locationLabelsParsed = parsedLocationLabels.locationLabels;
+    if (!locationLabelsParsed || locationLabelsParsed.length === 0)
+      set(locationLabels, []);
     else
-      set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
+      set(locationLabels, locationLabelsParsed);
   },
   queryParamsOnly: computed(() => ({
-    accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
+    locationLabels: get(usedLocationLabels),
   })),
   requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
     const params: Writeable<Partial<HistoryEventRequestPayload>> = {
@@ -248,13 +240,11 @@ const {
       groupByEventIds: true,
     };
 
-    const accounts = get(usedAccounts);
-
     if (isDefined(locationOverview))
       params.location = toSnakeCase(get(locationOverview));
 
-    if (accounts.length > 0)
-      params.locationLabels = accounts.map(account => account.address);
+    if (get(locationLabels).length > 0)
+      params.locationLabels = get(usedLocationLabels);
 
     if (isDefined(period)) {
       const { fromTimestamp, toTimestamp } = get(period);
@@ -272,6 +262,7 @@ const {
 async function fetchDataAndLocations(): Promise<void> {
   await fetchData();
   await fetchAssociatedLocations();
+  await fetchLocationLabels();
 }
 
 const locations = computed<string[]>(() => {
@@ -288,9 +279,9 @@ const locations = computed<string[]>(() => {
   return [];
 });
 
-function onFilterAccountsChanged(acc: BlockchainAccount<AddressData>[]): void {
+function onLocationLabelsChanged(acc: string[]): void {
   set(userAction, true);
-  set(accounts, acc.length > 0 ? [acc[0]] : []);
+  set(locationLabels, acc);
 }
 
 function redecodeAllEvents(): void {
@@ -446,14 +437,14 @@ watch(anyEventsDecoding, async (isLoading, wasLoading) => {
     await fetchDataAndLocations();
 });
 
-watch([filters, usedAccounts], ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
+watch([filters, locationLabels], ([filters, locationLabels], [oldFilters, oldLocationLabels]) => {
   const filterChanged = !isEqual(filters, oldFilters);
-  const accountsChanged = !isEqual(usedAccounts, oldAccounts);
+  const accountsChanged = !isEqual(locationLabels, oldLocationLabels);
 
   if (!(filterChanged || accountsChanged))
     return;
 
-  if (accountsChanged && usedAccounts.length > 0) {
+  if (accountsChanged && usedLocationLabels.value.length > 0) {
     const updatedFilter = { ...get(filters) };
     updateFilter(updatedFilter);
   }
@@ -507,13 +498,13 @@ onMounted(async () => {
         <HistoryEventsTableActions
           v-model:filters="filters"
           v-model:toggles="toggles"
-          :accounts="accounts"
+          :location-labels="locationLabels"
           :processing="processing"
           :matchers="matchers"
           :export-params="pageParams"
           :hide-redecode-buttons="!mainPage"
           :hide-account-selector="useExternalAccountFilter"
-          @update:accounts="onFilterAccountsChanged($event)"
+          @update:location-labels="onLocationLabelsChanged($event)"
           @redecode="redecode($event)"
         />
 
