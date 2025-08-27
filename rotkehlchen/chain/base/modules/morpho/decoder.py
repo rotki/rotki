@@ -29,5 +29,10 @@ class MorphoDecoder(MorphoCommonDecoder):
                 string_to_evm_address('0x1f8076e2EB6f10b12e6886f30D4909A91969F7dA'),  # CompoundV3MigrationBundlerV2  # noqa: E501
                 string_to_evm_address('0xcAe2929baBc60Be34818EaA5F40bF69265677108'),  # AaveV3MigrationBundlerV2  # noqa: E501
             },
+            adapters={
+                string_to_evm_address('0xb98c948CFA24072e58935BC004a8A7b376AE746A'),  # GeneralAdapter1  # noqa: E501
+                string_to_evm_address('0xdeEf55F0A7366cC3Baf5E04313269389Fe17E9AE'),  # ERC20WrapperAdapter  # noqa: E501
+                string_to_evm_address('0x6abE8ABd0275E5564ed1336F0243A52C32562F71'),  # ParaswapAdapter  # noqa: E501
+            },
             weth=A_WETH_BASE,
         )

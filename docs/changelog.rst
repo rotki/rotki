@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10517` Morpho transactions that perform multiple actions in one go are now decoded properly.
 * :feature:`-` Users will now be able to filter history events by location labels, including account addresses and exchange labels.
 * :bug:`-` All single token curve pool withdrawals should decode properly now.
 * :bug:`10468` Crypto.com exchange integration should now be working properly.
