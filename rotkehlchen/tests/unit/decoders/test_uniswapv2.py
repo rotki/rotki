@@ -8,7 +8,6 @@ from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecod
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_UNISWAP
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import UNISWAP_DISTRIBUTOR
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.decoder import UNISWAP_V2_ROUTER
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -221,7 +220,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x1bab8a89a6a3f8cb127cfaf7cd58809201a4e230d0a05f9e067674749605959e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     lp_token_identifier = evm_address_to_identifier(
-        address='0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',
+        address=(pool_address := string_to_evm_address('0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         token_type=TokenKind.ERC20,
     )
@@ -248,10 +247,10 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('25'),
             location_label=ADDY_2,
-            notes='Deposit 25 USDC to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',
+            notes=f'Deposit 25 USDC to uniswap-v2 LP {pool_address}',
             counterparty=CPT_UNISWAP_V2,
-            address=string_to_evm_address('0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'),
-            extra_data={'pool_address': '0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'},
+            address=pool_address,
+            extra_data={'pool_address': pool_address},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -262,10 +261,10 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             asset=A_DAI,
             amount=FVal('24.994824629555601269'),
             location_label=ADDY_2,
-            notes='Deposit 24.994824629555601269 DAI to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # noqa: E501
+            notes=f'Deposit 24.994824629555601269 DAI to uniswap-v2 LP {pool_address}',
             counterparty=CPT_UNISWAP_V2,
-            address=string_to_evm_address('0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'),
-            extra_data={'pool_address': '0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'},
+            address=pool_address,
+            extra_data={'pool_address': pool_address},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=3,
@@ -278,7 +277,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             location_label=ADDY_2,
             notes='Receive 0.000022187913295974 UNI-V2 DAI-USDC from uniswap-v2 pool',
             counterparty=CPT_UNISWAP_V2,
-            address=ZERO_ADDRESS,
+            address=pool_address,
         ),
     ]
     assert events == expected_events
@@ -798,7 +797,7 @@ def test_add_liquidity_on_optimism(
         location_label=user_address,
         notes=f'Receive {receive_amount} UNI-V2 OP-WBTC from uniswap-v2 pool',
         counterparty=CPT_UNISWAP_V2,
-        address=ZERO_ADDRESS,
+        address=pool_address,
     )]
 
 

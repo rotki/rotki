@@ -1,0 +1,62 @@
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V3
+from rotkehlchen.chain.evm.decoding.quickswap.utils import decode_quickswap_swap
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
+    SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
+)
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.user_messages import MessagesAggregator
+
+
+class Quickswapv3CommonDecoder(DecoderInterface):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            router_address: 'ChecksumEvmAddress',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.router_address = router_address
+
+    def _v3_router_post_decoding(
+            self,
+            transaction: 'EvmTransaction',
+            decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],
+    ) -> list['EvmEvent']:
+        for tx_log in all_logs:
+            if tx_log.topics[0] == UNISWAP_V3_SWAP_SIGNATURE:
+                return decode_quickswap_swap(tx_log=tx_log, decoded_events=decoded_events)
+
+        return decoded_events
+
+    # -- DecoderInterface methods
+
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {CPT_QUICKSWAP_V3: [(0, self._v3_router_post_decoding)]}
+
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
+        return {self.router_address: CPT_QUICKSWAP_V3}
+
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails.from_versioned_counterparty(
+            counterparty=CPT_QUICKSWAP_V3,
+            image='quickswap.png',
+        ),)
