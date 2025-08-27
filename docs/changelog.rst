@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now be able to filter history events by location labels, including account addresses and exchange labels.
 * :bug:`-` All single token curve pool withdrawals should decode properly now.
 * :bug:`10468` Crypto.com exchange integration should now be working properly.
 * :bug:`-` Crypto.com mobile app events imported via a CSV file will now have their location label set.
