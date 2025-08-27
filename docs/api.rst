@@ -10683,6 +10683,55 @@ Get associated locations
    :statuscode 409: Other error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+
+Get location labels
+========================
+
+.. http:get:: /api/(version)/locations/labels
+
+   Doing a GET on this endpoint will return a list of all unique location labels with their corresponding locations from the user's history events. Results are ordered with the most frequently occurring labels first.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/locations/labels HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "location_label": "0x616B71067BE19BdbdBea3600Db0626859Ff25A75",
+                  "location": "ethereum"
+              },
+              {
+                  "location_label": "Kraken 1",
+                  "location": "kraken"
+              },
+              {
+                  "location_label": "Binance Account",
+                  "location": "binance"
+              }
+          ],
+          "message": ""
+      }
+
+   :resjsonarr string location_label: A unique location label from the history events. An account address, exchange name, etc.
+   :resjsonarr string location: The location of events with this label.
+
+   :statuscode 200: Location labels successfully queried.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+
 Staking events
 ==============
 
