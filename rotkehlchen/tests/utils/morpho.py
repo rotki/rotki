@@ -111,3 +111,37 @@ def create_ethereum_morpho_vault_token(database: 'DBHandler') -> 'EvmToken':
             weight=ONE,
         )],
     )
+
+
+def create_multiple_vault_tokens(database: 'DBHandler') -> None:
+    """Ensure vault tokens for Base tests is in the database for proper decoding."""
+    get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x616a4E1db48e22028f6bbf20444Cd3b8e3273738'),
+        chain_id=ChainID.BASE,
+        token_kind=TokenKind.ERC20,
+        symbol='smUSDC',
+        name='Seamless USDC Vault',
+        decimals=18,
+        protocol=CPT_MORPHO,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca'),
+        chain_id=ChainID.BASE,
+        token_kind=TokenKind.ERC20,
+        symbol='mwUSDC',
+        name='Moonwell Flagship USDC',
+        decimals=18,
+        protocol=CPT_MORPHO,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
