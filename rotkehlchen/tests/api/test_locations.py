@@ -68,81 +68,24 @@ def test_get_location_labels(rotkehlchen_api_server: 'APIServer') -> None:
 
     # Create events with different frequencies
     events = []
-
-    # Ethereum address appears 4 times (most frequent)
-    eth_address = '0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0'
-    events = [
-        HistoryEvent(
-            event_identifier=f'0x{i:064x}',  # Mock transaction hash
-            sequence_index=i,
-            timestamp=TimestampMS(1500000000000 + i),
-            location=Location.ETHEREUM,
+    for count, location_label, location in (
+        (4, (eth_address := '0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0'), Location.ETHEREUM),
+        (3, 'Kraken 1', Location.KRAKEN),
+        (2, 'Binance Account', Location.BINANCE),
+        (2, (btc_address := 'bc1qdf3av8da4up78shctfual6j6cv3kyvcw6qk3fz'), Location.BITCOIN),
+        (1, 'Kraken 2', Location.KRAKEN),
+    ):
+        events.extend([HistoryEvent(
+            event_identifier=f'xyz_{location_label}_{idx}',
+            sequence_index=idx,
+            timestamp=TimestampMS(1500000000000 + idx),
+            location=location,
             asset=A_ETH,
             amount=ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            location_label=eth_address,
-        ) for i in range(4)
-    ]
-
-    # 'Kraken 1' appears 3 times
-    events.extend([
-        HistoryEvent(
-            event_identifier=f'xyz_kraken1_{i}',
-            sequence_index=i,
-            timestamp=TimestampMS(1500000000000 + i),
-            location=Location.KRAKEN,
-            asset=A_EUR,
-            amount=ONE,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
-            location_label='Kraken 1',
-        ) for i in range(3)
-    ])
-
-    # 'Binance Account' appears 2 times
-    events.extend([
-        HistoryEvent(
-            event_identifier=f'xyz_binance_{i}',
-            sequence_index=i,
-            timestamp=TimestampMS(1500000000000 + i),
-            location=Location.BINANCE,
-            asset=A_EUR,
-            amount=ONE,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
-            location_label='Binance Account',
-        ) for i in range(2)
-    ])
-
-    # Bitcoin address appears 2 times
-    btc_address = 'bc1qdf3av8da4up78shctfual6j6cv3kyvcw6qk3fz'
-    events.extend([
-        HistoryEvent(
-            event_identifier=f'btc_tx_{i}',
-            sequence_index=i,
-            timestamp=TimestampMS(1500000000000 + i),
-            location=Location.BITCOIN,
-            asset=A_EUR,
-            amount=ONE,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
-            location_label=btc_address,
-        ) for i in range(2)
-    ])
-
-    # 'Kraken 2' appears 1 time
-    events.append(HistoryEvent(
-        event_identifier='xyz_kraken2',
-        sequence_index=0,
-        timestamp=TimestampMS(1500000000000),
-        location=Location.KRAKEN,
-        asset=A_EUR,
-        amount=ONE,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.NONE,
-        location_label='Kraken 2',
-    ))
+            location_label=location_label,
+        ) for idx in range(count)])
 
     with db.user_write() as cursor:
         DBHistoryEvents(db).add_history_events(write_cursor=cursor, history=events)
