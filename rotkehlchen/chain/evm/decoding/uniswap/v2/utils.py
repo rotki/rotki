@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from eth_utils import to_hex
 from web3 import Web3
@@ -183,7 +183,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         tx_log: EvmTxReceiptLog,
         decoded_events: list['EvmEvent'],
         all_logs: list[EvmTxReceiptLog],
-        event_action_type: Literal['addition', 'removal'],
+        is_deposit: bool,
         counterparty: str,
         database: 'DBHandler',
         evm_inquirer: 'EvmNodeInquirer',
@@ -211,7 +211,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
     asset_1: Asset | None = None
     event0_idx = event1_idx = None
 
-    if event_action_type == 'addition':
+    if is_deposit:
         notes = 'Deposit {amount} {asset} to {counterparty} LP {pool_address}'
         from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
         to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)
@@ -333,6 +333,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
             event.notes = f'Receive {event.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
+            event.address = pool_address
             GlobalDBHandler.set_tokens_protocol_if_missing(
                 tokens=[event.asset.resolve_to_evm_token()],
                 new_protocol=CPT_UNISWAP_V2 if resolved_asset.symbol.startswith('UNI-V2') else CPT_SUSHISWAP_V2,  # noqa: E501
@@ -388,7 +389,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
     maybe_reshuffle_events(
         ordered_events=(
             (deposit_withdraw_events + receive_return_events)
-            if event_action_type == 'addition' else
+            if is_deposit else
             (receive_return_events + deposit_withdraw_events)
         ),
         events_list=decoded_events,
