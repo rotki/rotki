@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { HistoryEventsQueryData } from '@/types/websocket-messages';
+import type { HistoryEventsQueryData } from '@/modules/messaging/types';
 import HistoryEventsQueryStatusCurrent from './HistoryEventsQueryStatusCurrent.vue';
 import HistoryEventsQueryStatusDetails from './HistoryEventsQueryStatusDetails.vue';
 

@@ -1,5 +1,5 @@
+import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/messaging/types';
 import type { TaskMeta } from '@/types/task';
-import type { DatabaseUploadProgress, DbUploadResult } from '@/types/websocket-messages';
 import { Severity } from '@rotki/common';
 import { useSyncApi } from '@/composables/api/session/sync';
 import { serializer } from '@/composables/dynamic-messages';

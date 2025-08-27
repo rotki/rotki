@@ -1,12 +1,12 @@
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
 import { useBalances } from '@/composables/balances';
-import { useMessageHandling } from '@/composables/message-handling';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { useMessageHandling } from '@/modules/messaging';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoryStore } from '@/store/history';
 import { useSessionAuthStore } from '@/store/session/auth';

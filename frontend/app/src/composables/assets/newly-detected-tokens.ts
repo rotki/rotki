@@ -1,4 +1,4 @@
-import type { NewDetectedToken } from '@/types/websocket-messages';
+import type { NewDetectedToken } from '@/modules/messaging/types';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

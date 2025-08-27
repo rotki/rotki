@@ -1,9 +1,11 @@
-import type { CommonMessageHandler, CsvImportResult } from '@/types/websocket-messages';
-import { type Notification, Priority, Severity } from '@rotki/common';
+import type { NotificationHandler } from '../interfaces';
+import type { CsvImportResult } from '../types/status-types';
+import { NotificationCategory, Priority, Severity } from '@rotki/common';
+import { createNotificationHandler } from '@/modules/messaging/utils';
 import { groupConsecutiveNumbers } from '@/utils/text';
 
-export function useCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CsvImportResult> {
-  const handle = (data: CsvImportResult): Notification => {
+export function createCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): NotificationHandler<CsvImportResult> {
+  return createNotificationHandler<CsvImportResult>((data) => {
     const { messages, processed, sourceName, total } = data;
     const title = t('notification_messages.csv_import_result.title', { sourceName });
     let messageBody = t('notification_messages.csv_import_result.summary', {
@@ -26,13 +28,12 @@ export function useCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): C
     else
       severity = Severity.INFO;
     return {
+      category: NotificationCategory.DEFAULT,
       display: true,
       message: messageBody,
       priority: Priority.HIGH,
       severity,
       title,
     };
-  };
-
-  return { handle };
-};
+  });
+}

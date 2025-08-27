@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventsQueryData } from '@/types/websocket-messages';
+import type { HistoryEventsQueryData } from '@/modules/messaging/types';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventsQueryStatusLine from '@/components/history/events/query-status/HistoryEventsQueryStatusLine.vue';

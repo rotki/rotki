@@ -1,5 +1,5 @@
+import type { StatsPriceQueryData } from '@/modules/messaging/types';
 import type { TaskMeta } from '@/types/task';
-import type { StatsPriceQueryData } from '@/types/websocket-messages';
 import { type BigNumber, type CommonQueryStatusData, type FailedHistoricalAssetPriceResponse, NoPrice } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useItemCache } from '@/composables/item-cache';

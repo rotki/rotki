@@ -3,6 +3,7 @@ import { groupBy } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
+import { EvmUndecodedTransactionResponse } from '@/modules/messaging/types';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { useHistoryStore } from '@/store/history';
 import { useNotificationsStore } from '@/store/notifications';
@@ -17,7 +18,6 @@ import {
 } from '@/types/history/events';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';

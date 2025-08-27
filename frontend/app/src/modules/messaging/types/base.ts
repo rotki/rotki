@@ -12,13 +12,6 @@ export const LegacyMessageData = z.object({
 
 export type LegacyMessageData = z.infer<typeof LegacyMessageData>;
 
-export const BalanceSnapshotError = z.object({
-  error: z.string(),
-  location: z.string(),
-});
-
-export type BalanceSnapshotError = z.infer<typeof BalanceSnapshotError>;
-
 export const SocketMessageType = {
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
@@ -43,6 +36,10 @@ export const SocketMessageType = {
 } as const;
 
 export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];
+
+export function isSocketMessageType(type: string): type is SocketMessageType {
+  return Object.values(SocketMessageType).includes(type as SocketMessageType);
+}
 
 export const SocketMessageProgressUpdateSubType = {
   CSV_IMPORT_RESULT: 'csv_import_result',

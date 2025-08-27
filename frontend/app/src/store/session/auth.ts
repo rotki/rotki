@@ -1,5 +1,5 @@
+import type { DataMigrationStatusData, DbUpgradeStatusData } from '@/modules/messaging/types';
 import type { IncompleteUpgradeConflict, SyncConflict } from '@/types/login';
-import type { DataMigrationStatusData, DbUpgradeStatusData } from '@/types/websocket-messages';
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
   const logged = ref<boolean>(false);

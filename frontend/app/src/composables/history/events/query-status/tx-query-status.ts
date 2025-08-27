@@ -1,8 +1,8 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import { TransactionsQueryStatus } from '@/modules/messaging/types';
 import { isBitcoinTxQueryStatusData, type TxQueryStatusData, useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { TransactionsQueryStatus } from '@/types/websocket-messages';
 
 type TranslationKey = 'transactions.query_status.done_date_range'
   | 'transactions.query_status.done_end_date'

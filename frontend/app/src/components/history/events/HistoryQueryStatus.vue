@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import type {
   HistoryEventsQueryData,
-} from '@/types/websocket-messages';
+} from '@/modules/messaging/types';
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/events/dialog-types';
 import EventsCacheRefreshStatusCurrent from '@/components/history/events/EventsCacheRefreshStatusCurrent.vue';
 import EventsDecodingStatusCurrent from '@/components/history/events/EventsDecodingStatusCurrent.vue';
