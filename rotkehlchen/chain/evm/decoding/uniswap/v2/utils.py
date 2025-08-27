@@ -303,6 +303,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
 
     # find already decoded events of the transfers and store the id to mutate after
     # confirmation that it is indeed Uniswap V2 like Pool.
+    deposit_withdraw_events, receive_return_events = [], []
     for idx, event in enumerate(decoded_events):
         resolved_asset = event.asset.resolve_to_crypto_asset()
         if (
@@ -313,6 +314,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             asset_0 = resolved_asset  # here we know exactly if it is ETH or WETH (or any other asset) so assign the asset  # noqa: E501
             event0_idx = idx
+            deposit_withdraw_events.append(event)
         elif (
             event.event_type == from_event_type[0] and
             event.event_subtype == from_event_type[1] and
@@ -321,6 +323,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             asset_1 = resolved_asset
             event1_idx = idx
+            deposit_withdraw_events.append(event)
         elif (
             resolved_asset == pool_token and
             event.event_type == HistoryEventType.RECEIVE and
@@ -334,6 +337,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 tokens=[event.asset.resolve_to_evm_token()],
                 new_protocol=CPT_UNISWAP_V2 if resolved_asset.symbol.startswith('UNI-V2') else CPT_SUSHISWAP_V2,  # noqa: E501
             )
+            receive_return_events.append(event)
         elif (
             resolved_asset == pool_token and
             event.event_type == HistoryEventType.SPEND and
@@ -343,6 +347,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
             event.notes = f'Send {event.amount} {resolved_asset.symbol} to {counterparty} pool'
+            receive_return_events.append(event)
 
     new_action_items = []
     extra_data = {'pool_address': pool_address}
@@ -380,6 +385,14 @@ def decode_uniswap_like_deposit_and_withdrawals(
         )
         decoded_events[decoded_event_idx].extra_data = extra_data
 
+    maybe_reshuffle_events(
+        ordered_events=(
+            (deposit_withdraw_events + receive_return_events)
+            if event_action_type == 'addition' else
+            (receive_return_events + deposit_withdraw_events)
+        ),
+        events_list=decoded_events,
+    )
     return DecodingOutput(action_items=new_action_items)
 
 
