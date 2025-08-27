@@ -40,7 +40,7 @@ export function createProtocol(scheme: string, customProtocol?: Protocol) {
       const data = await readFile(filePath);
       const mimeType = getMimeType(filePath);
 
-      return new Response(data, {
+      return new Response(new Uint8Array(data), {
         status: 200,
         headers: {
           'Content-Type': mimeType,
