@@ -1,4 +1,4 @@
-import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
+import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/messaging/types';
 import { useHistoryApi } from '@/composables/api/history';
 import { type EvmTransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';

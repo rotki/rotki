@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { ProtocolCacheUpdatesData } from '@/types/websocket-messages';
+import type { ProtocolCacheUpdatesData } from '@/modules/messaging/types';
 import DefiIcon from '@/components/defi/DefiIcon.vue';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';

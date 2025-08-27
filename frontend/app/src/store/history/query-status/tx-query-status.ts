@@ -1,10 +1,10 @@
 import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useQueryStatusStore } from '@/store/history/query-status/index';
 import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
-} from '@/types/websocket-messages';
+} from '@/modules/messaging/types';
+import { useQueryStatusStore } from '@/store/history/query-status/index';
 import { millisecondsToSeconds } from '@/utils/date';
 
 interface BaseTxQueryStatusData {

@@ -1,21 +1,21 @@
+import type { NotificationHandler } from '../interfaces';
 import type { CalendarEventWithReminder } from '@/types/history/calendar';
-import type { CommonMessageHandler } from '@/types/websocket-messages';
-import { type Notification, NotificationCategory, Severity } from '@rotki/common';
+import { NotificationCategory, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import dayjs from 'dayjs';
 import { useCalendarReminderApi } from '@/composables/history/calendar/reminder';
 import { useSupportedChains } from '@/composables/info/chains';
+import { createNotificationHandler } from '@/modules/messaging/utils';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
 
-export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CalendarEventWithReminder> {
-  const { getChainName } = useSupportedChains();
-  const { addressNameSelector } = useAddressesNamesStore();
-  const { removeMatching } = useNotificationsStore();
-  const { editCalendarReminder } = useCalendarReminderApi();
-  const router = useRouter();
+export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<CalendarEventWithReminder> {
+  return createNotificationHandler<CalendarEventWithReminder>((data) => {
+    const { getChainName } = useSupportedChains();
+    const { addressNameSelector } = useAddressesNamesStore();
+    const { removeMatching } = useNotificationsStore();
+    const { editCalendarReminder } = useCalendarReminderApi();
 
-  const handle = (data: CalendarEventWithReminder): Notification => {
     const { name, timestamp } = data;
     const now = dayjs();
     const eventTime = dayjs(timestamp * 1000);
@@ -71,7 +71,5 @@ export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): 
       severity: Severity.REMINDER,
       title,
     };
-  };
-
-  return { handle };
-};
+  });
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
+import type { EvmUnDecodedTransactionsData } from '@/modules/messaging/types';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import { useTaskStore } from '@/store/tasks';

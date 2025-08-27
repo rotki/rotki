@@ -1,5 +1,5 @@
+import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/messaging/types';
 import { useQueryStatusStore } from '@/store/history/query-status/index';
-import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/types/websocket-messages';
 
 export const useEventsQueryStatusStore = defineStore('history/events-query-status', () => {
   const createKey = ({ location, name }: HistoryEventsQueryData): string => location + name;

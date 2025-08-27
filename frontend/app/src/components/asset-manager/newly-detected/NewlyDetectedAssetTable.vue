@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { NewDetectedToken } from '@/types/websocket-messages';
+import type { NewDetectedToken } from '@/modules/messaging/types';
 import { Blockchain, getAddressFromEvmIdentifier } from '@rotki/common';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';

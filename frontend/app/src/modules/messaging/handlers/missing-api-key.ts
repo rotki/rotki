@@ -1,13 +1,13 @@
-import type { CommonMessageHandler, MissingApiKey } from '@/types/websocket-messages';
-import { type Notification, type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
+import type { NotificationHandler } from '../interfaces';
+import type { MissingApiKey } from '../types/notification-types';
+import { type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { getServiceRegisterUrl } from '@/utils/url';
+import { createNotificationHandler } from '../utils/handler-factories';
 
-export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<MissingApiKey> {
-  const router = useRouter();
-
-  const handle = (data: MissingApiKey): Notification => {
+export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
+  return createNotificationHandler<MissingApiKey>((data) => {
     const { service } = data;
     const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
 
@@ -59,7 +59,5 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
         ? t('notification_messages.missing_api_key.thegraph.title', metadata)
         : t('notification_messages.missing_api_key.etherscan.title', metadata),
     };
-  };
-
-  return { handle };
+  });
 }

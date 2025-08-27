@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
+import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/messaging/types';
 import { toSentenceCase } from '@rotki/common';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';

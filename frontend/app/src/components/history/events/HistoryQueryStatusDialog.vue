@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import type {
   EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
-} from '@/types/websocket-messages';
+} from '@/modules/messaging/types';
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
 import HistoryEventsQueryStatus from '@/components/history/events/query-status/HistoryEventsQueryStatus.vue';

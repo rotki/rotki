@@ -1,26 +1,29 @@
-import type { MaybePromise, Notification } from '@rotki/common';
+import type { Notification } from '@rotki/common';
 import { z } from 'zod/v4';
 import { CalendarEventWithReminder } from '@/types/history/calendar';
-import { BalanceSnapshotError, LegacyMessageData, SocketMessageType } from './base';
-import { HistoryEventsQueryData } from './history';
+import { LegacyMessageData, SocketMessageType } from './types/base';
 import {
   AccountingRuleConflictData,
-  BinancePairsMissingData,
   ExchangeUnknownAssetData,
-  GnosisPaySessionKeyExpiredData,
-  MissingApiKey,
   NewDetectedToken,
   RefreshBalancesData,
+} from './types/business-types';
+import {
+  BalanceSnapshotError,
+  BinancePairsMissingData,
+  GnosisPaySessionKeyExpiredData,
+  MissingApiKey,
   SolanaTokensMigrationData,
-} from './notifications';
-import { DatabaseUploadProgress, DataMigrationStatusData, DbUpgradeStatusData, DbUploadResult, MigratedAddresses, PremiumStatusUpdateData } from './premium-db';
-import { ProgressUpdateResultData } from './progress-updates';
-import { UnifiedTransactionStatusData } from './transactions';
-
-const UnknownWebsocketMessage = z.object({
-  data: z.any(),
-  type: z.string(),
-});
+} from './types/notification-types';
+import { DatabaseUploadProgress, DbUploadResult, PremiumStatusUpdateData } from './types/shared-types';
+import {
+  DataMigrationStatusData,
+  DbUpgradeStatusData,
+  HistoryEventsQueryData,
+  MigratedAddresses,
+  ProgressUpdateResultData,
+  UnifiedTransactionStatusData,
+} from './types/status-types';
 
 const LegacyWebsocketMessage = z.object({
   data: LegacyMessageData,
@@ -143,10 +146,10 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   SolanaTokensMigrationMessage,
   BinancePairsMissingMessage,
   DatabaseUploadProgressMessage,
-]).or(UnknownWebsocketMessage);
+]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;
 
 export interface CommonMessageHandler<T> {
-  handle: (data: T) => MaybePromise<Notification>;
+  handle: (data: T) => Promise<Notification | null>;
 }
