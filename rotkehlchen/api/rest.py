@@ -3663,19 +3663,15 @@ class RestAPI:
             # Get distinct location_labels with their corresponding location
             # Ordered by frequency (most frequent first)
             # When multiple locations exist for a label, we take the first one
-            results = cursor.execute(
+            labels = [{
+                'location_label': row[0],
+                'location': Location.deserialize_from_db(row[1]).serialize(),
+            } for row in cursor.execute(
                 'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
                 'FROM history_events WHERE location_label IS NOT NULL '
                 'GROUP BY location_label '
                 'ORDER BY frequency DESC',
-            ).fetchall()
-            labels = [
-                {
-                    'location_label': row[0],
-                    'location': Location.deserialize_from_db(row[1]).serialize(),
-                }
-                for row in results
-            ]
+            )]
 
         return api_response(
             result=_wrap_in_ok_result(labels),
