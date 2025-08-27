@@ -16,7 +16,7 @@ import AddressEditButton from './AddressEditButton.vue';
 import CopyButton from './CopyButton.vue';
 import LinkButton from './LinkButton.vue';
 
-type DisplayMode = 'default' | 'link' | 'copy';
+type DisplayMode = 'default' | 'link' | 'copy' | 'text';
 
 interface HashLinkProps {
   /**
@@ -98,8 +98,8 @@ const blockchain = computed<string | undefined>(() => {
   }
 });
 
-const showLink = computed<boolean>(() => props.displayMode !== 'copy');
-const showCopy = computed<boolean>(() => props.displayMode !== 'link');
+const showLink = computed<boolean>(() => props.displayMode !== 'copy' && props.displayMode !== 'text');
+const showCopy = computed<boolean>(() => props.displayMode !== 'link' && props.displayMode !== 'text');
 /**
  * Icons will only be displayed for non-numerical blockchain addresses when the text is visible.
  */

@@ -1839,13 +1839,32 @@
       "title": "exchange"
     },
     "history_query_indicator": {
+      "event_status": {
+        "default": "Processing",
+        "querying_events_finished": "Finished querying",
+        "querying_events_started": "Querying events",
+        "querying_events_status_update": "Querying events"
+      },
       "go_to_history_events": "Go to history events",
       "incomplete_decoding": "The last event query completed {time}. Due to incomplete event processing, protocol balances may not reflect the latest state. Navigate to history events to begin processing.",
       "just_updated": "The application has recently been updated. Some balances may not display until transaction processing is fully complete. Navigate to history events to begin to begin processing.",
       "last_queried": "The last event query completed {time}. Protocol balances may be stale or missing if the transaction history has not been refreshed recently. Navigate to history events to begin refreshing them.",
       "last_queried_long": "Some balances may not display until transaction processing is fully complete. Navigate to history events to begin to begin processing.",
       "never_queried": "The transaction history has not been queried yet. Navigate to history events to begin querying them.",
-      "processing": "Historical event processing is underway. Updated protocol balances will be available once the operation concludes."
+      "processing": "Historical event processing is underway. Updated protocol balances will be available once the operation concludes.",
+      "processing_operation_event": "{status} for {name} ({location})",
+      "processing_operation_transaction": "{status} for {address}",
+      "processing_with_progress": "Historical event processing is underway. Updated protocol balances will be available once the operation concludes. ({current} / {total})",
+      "transaction_status": {
+        "decoding_transactions_finished": "Finished decoding",
+        "decoding_transactions_started": "Starting decoding",
+        "default": "Processing",
+        "querying_evm_tokens_transactions": "Querying token transactions",
+        "querying_internal_transactions": "Querying internal transactions",
+        "querying_transactions": "Querying transactions",
+        "querying_transactions_finished": "Finished querying",
+        "querying_transactions_started": "Starting transaction query"
+      }
     },
     "liabilities": {
       "title": "Liabilities"

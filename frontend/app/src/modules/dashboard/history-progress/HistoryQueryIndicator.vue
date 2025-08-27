@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { BlockchainAccount } from '@/types/blockchain/accounts';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   useHistoryQueryIndicatorSettings,
 } from '@/modules/dashboard/history-events/composables/use-history-query-indicator-settings';
+import { useHistoryQueryProgress } from '@/modules/dashboard/history-progress/composables/use-history-query-progress';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
@@ -32,6 +36,7 @@ const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore())
 const router = useRouter();
 const { processing: rawProcessing } = useHistoryEventsStatus();
 const processing = useRefWithDebounce(rawProcessing, 400);
+const { progress } = useHistoryQueryProgress();
 const { allTxChainsInfo } = useSupportedChains();
 const userId = useLoggedUserIdentifier();
 const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();
@@ -69,9 +74,21 @@ const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);
 
 const processingMessage = computed<string>(() => {
   if (get(processing)) {
+    const progressData = get(progress);
+    if (progressData && progressData.totalSteps > 0) {
+      return t('dashboard.history_query_indicator.processing_with_progress', {
+        current: progressData.currentStep,
+        total: progressData.totalSteps,
+      });
+    }
     return t('dashboard.history_query_indicator.processing');
   }
   return '';
+});
+
+const processingPercentage = computed<number>(() => {
+  const progressData = get(progress);
+  return progressData?.percentage ?? 0;
 });
 
 const showMessage = computed<boolean>(() => {
@@ -152,20 +169,75 @@ onMounted(async () => {
 
   <div
     v-if="hasTxAccounts && (processingMessage || showMessage)"
-    class="w-full px-4 py-2 border-b border-default bg-white dark:bg-[#1E1E1E] text-sm text-rui-text-secondary flex items-center justify-between"
+    class="w-full px-4 py-2 border-b border-default bg-white dark:bg-[#1E1E1E] text-sm text-rui-text-secondary flex items-center justify-between gap-4"
   >
     <div class="flex items-center gap-2">
       <RuiProgress
         v-if="processingMessage"
         circular
-        variant="indeterminate"
-        size="16"
+        :value="processingPercentage"
+        size="30"
+        show-label
         thickness="2"
         color="primary"
       />
 
-      <div v-if="processingMessage">
+      <div
+        v-if="processingMessage"
+        class="inline gap-2"
+      >
         {{ processingMessage }}
+        <template v-if="progress?.currentOperationData">
+          <i18n-t
+            v-if="progress.currentOperationData.type === 'transaction'"
+            keypath="dashboard.history_query_indicator.processing_operation_transaction"
+            tag="span"
+          >
+            <template #status>
+              {{ progress.currentOperationData.status }}
+            </template>
+            <template #address>
+              <span class="inline-flex items-center gap-1 align-middle ml-1.5 -mt-0.5">
+                <ChainIcon
+                  v-if="progress.currentOperationData.chain"
+                  :chain="progress.currentOperationData.chain"
+                  size="1.25rem"
+                />
+                <HashLink
+                  v-if="progress.currentOperationData.address"
+                  class="inline-flex align-middle"
+                  display-mode="text"
+                  :text="progress.currentOperationData.address"
+                  :location="progress.currentOperationData.chain"
+                />
+              </span>
+            </template>
+          </i18n-t>
+          <i18n-t
+            v-else-if="progress.currentOperationData.type === 'event'"
+            keypath="dashboard.history_query_indicator.processing_operation_event"
+            tag="span"
+          >
+            <template #status>
+              {{ progress.currentOperationData.status }}
+            </template>
+            <template #name>
+              <span class="inline-flex items-center gap-1 align-middle ml-1.5 -mt-0.5">
+                <LocationIcon
+                  v-if="progress.currentOperationData.location"
+                  :item="progress.currentOperationData.location"
+                  horizontal
+                  size="1.25rem"
+                  class="-my-2"
+                />
+                {{ progress.currentOperationData.name }}
+              </span>
+            </template>
+            <template #location>
+              {{ progress.currentOperationData.location }}
+            </template>
+          </i18n-t>
+        </template>
       </div>
 
       <div v-else-if="showMessage">
