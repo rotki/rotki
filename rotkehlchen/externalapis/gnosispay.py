@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import requests
 
@@ -27,7 +27,7 @@ from rotkehlchen.utils.misc import (
     ts_now,
 )
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.serialization import jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -37,7 +37,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 # the seconds around a transaction to search for when querying the API
-GNOSIS_PAY_TX_TIMESTAMP_RANGE = 30
+GNOSIS_PAY_TX_TIMESTAMP_RANGE: Final = 30
+GNOSIS_PAY_PAGE_SIZE: Final = 100
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -92,7 +93,7 @@ class GnosisPay:
 
     def _query(
             self,
-            endpoint: Literal['transactions'],
+            endpoint: Literal['cards/transactions'],
             params: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Query a gnosis pay API endpoint with the hacky session token authentication
@@ -131,14 +132,58 @@ class GnosisPay:
                 f'{response.text}',
             )
 
+        # paginated response has this format
+        # {"count":565,"next":"/api/v1/cards/transactions?after=1970-01-01T00%3A00%3A00%2B00%3A00&offset=100&limit=100","previous":null,"results":[]}  # noqa: E501,ERA001
+
         try:
-            json_ret = jsonloads_list(response.text)
+            data = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Gnosis Pay API returned invalid JSON response: {response.text}',
             ) from e
 
-        return json_ret
+        if 'results' not in data:
+            log.error(f'Missing key results in gnosis pay response: {response.text}')
+            raise RemoteError('results key missing from paginated endpoint')
+
+        return cast('list[dict[str, Any]]', data['results'])
+
+    def _query_paginated(
+            self,
+            before: Timestamp | None = None,
+            after: Timestamp | None = None,
+            page_size: int = GNOSIS_PAY_PAGE_SIZE,
+    ) -> list[dict[str, Any]]:
+        """Fetch all pages from the paginated cards/transactions endpoint.
+
+        The endpoint supports integer limit/offset and ISO 8601 before/after filters.
+        https://docs.gnosispay.com/api-reference/card-management/get-paginated-transactions-for-activated-cards
+        """
+        collected: list[dict[str, Any]] = []
+        offset, limit = 0, page_size
+        page_params: dict[str, str | int] = {}
+
+        if before is not None:
+            page_params['before'] = timestamp_to_iso8601(before)
+        if after is not None:
+            page_params['after'] = timestamp_to_iso8601(after)
+
+        while True:
+            page_params['limit'] = limit
+            page_params['offset'] = offset
+            if len(page := self._query(endpoint='cards/transactions', params=page_params)) == 0:
+                # from the docs: The final number might differ a little bit, as one thread might contain multiple transactions.  # noqa: E501
+                # GnosisPay has the concept of threads that are unique payments made with card
+                # and each thread contains one or two transactions, the payment and the reversal.
+                # The endpoint returns a list of threads and each one of those contains the
+                # on chain transactions. The pagination is done with transactions and this
+                # is why the len of the page might not match the limit.
+                break
+
+            collected.extend(page)
+            offset += limit
+
+        return collected
 
     def maybe_deserialize_transaction(self, data: dict[str, Any]) -> GnosisPayTransaction | None:
         try:
@@ -315,7 +360,7 @@ class GnosisPay:
         # else we need to query the API
         try:
             data = self._query(
-                endpoint='transactions',
+                endpoint='cards/transactions',
                 params={
                     'after': timestamp_to_iso8601(Timestamp(tx_timestamp - 1)),
                     'before': timestamp_to_iso8601(Timestamp(tx_timestamp + 1)),
@@ -356,7 +401,7 @@ class GnosisPay:
         """
         try:
             data = self._query(
-                endpoint='transactions',
+                endpoint='cards/transactions',
                 params={
                     'after': timestamp_to_iso8601(Timestamp(start_ts - GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
                     'before': timestamp_to_iso8601(Timestamp(end_ts + GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
@@ -476,11 +521,9 @@ class GnosisPay:
                 'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
                 (DBCacheStatic.LAST_GNOSISPAY_QUERY_TS.value, str(ts_now())),
             )
-        data = self._query(
-            endpoint='transactions',
-            params={'after': timestamp_to_iso8601(after_ts)},  # after is exclusive
-        )
-        for entry in data:
+
+        # after is exclusive. Use paginated fetching to cover all pages
+        for entry in self._query_paginated(after=after_ts):
             if (transaction := self.maybe_deserialize_transaction(entry)) is None:
                 continue
 

@@ -121,7 +121,7 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object
     gnosispay_decoder.reload_data()
 
     def mock_gnosispay_api(url, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(200, """[{
+        return MockResponse(200, """{"results" :[{
         "createdAt": "2024-09-17T16:32:25.0000Z",
         "transactionAmount": "850",
         "transactionCurrency": {
@@ -165,7 +165,7 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object
         ],
         "kind": "Payment",
         "status": "Approved"
-        }]""")
+        }]}""")
 
     with patch.object(
             gnosis_txs_decoder,  # do not reload data since this overwrites the api object
