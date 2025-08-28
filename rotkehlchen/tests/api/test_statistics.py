@@ -458,11 +458,11 @@ def test_query_statistics_renderer(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
 @pytest.mark.parametrize('base_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
-def test_query_wrap(
+def test_query_events_analysis(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    """Test that information returned by the yearly wrap endpoint is correct.
+    """Test that information returned by the yearly event analysis endpoint is correct.
     It adds:
     - transactions
     - evm events (for fees)
@@ -473,12 +473,11 @@ def test_query_wrap(
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
-
-    response = requests.post(  # Test that there is no failure for no data
-        url=api_url_for(rotkehlchen_api_server, 'statswrapresource'),
+    assert_proper_sync_response_with_result(response=requests.post(  # Test that there is no failure for no data  # noqa: E501
+        url=api_url_for(rotkehlchen_api_server, 'eventsanalysisresource'),
         json={'from_timestamp': 1704067200, 'to_timestamp': 1735689599},
-    )
-    result = assert_proper_sync_response_with_result(response)
+    ))
+
     events_db = DBHistoryEvents(db)
     with db.conn.write_ctx() as write_cursor:
         events_db.add_history_events(
@@ -517,7 +516,7 @@ def test_query_wrap(
         )
 
         db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_USDC)
-        tx_hash1, tx_hash2, tx_hash3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
+        tx_hash1, tx_hash2, tx_hash3, tx_hash4 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()  # noqa: E501
         tx_hash_to_chain = {
             make_evm_tx_hash(): Location.ETHEREUM,
             make_evm_tx_hash(): Location.BASE,
@@ -585,6 +584,18 @@ def test_query_wrap(
                     amount=FVal(5),
                     location_label=ethereum_accounts[0],
                 ),
+                EvmEvent(  # ENS event outside date range - should not be counted
+                    tx_hash=tx_hash4,
+                    sequence_index=1,
+                    timestamp=TimestampMS(1640995200000),  # 2022 - outside range
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=A_ETH,
+                    amount=FVal(0.1),
+                    counterparty=CPT_ENS,
+                    location_label=ethereum_accounts[0],
+                ),
             ],
         )
 
@@ -629,20 +640,36 @@ def test_query_wrap(
 
         dbevmtx.add_evm_transactions(
             write_cursor=write_cursor,
-            evm_transactions=[EvmTransaction(
-                tx_hash=tx_hash3,  # tx corresponding to the event with an ignored asset
-                chain_id=ChainID.GNOSIS,
-                timestamp=Timestamp(1718562595),
-                block_number=3,
-                from_address=make_evm_address(),
-                to_address=make_evm_address(),
-                value=4000000,
-                gas=5000000,
-                gas_price=2000000000,
-                gas_used=25000000,
-                input_data=b'',
-                nonce=1,
-            )],
+            evm_transactions=[
+                EvmTransaction(
+                    tx_hash=tx_hash3,  # tx corresponding to the event with an ignored asset
+                    chain_id=ChainID.GNOSIS,
+                    timestamp=Timestamp(1718562595),
+                    block_number=3,
+                    from_address=make_evm_address(),
+                    to_address=make_evm_address(),
+                    value=4000000,
+                    gas=5000000,
+                    gas_price=2000000000,
+                    gas_used=25000000,
+                    input_data=b'',
+                    nonce=1,
+                ),
+                EvmTransaction(
+                    tx_hash=tx_hash4,  # tx for ENS event outside date range
+                    chain_id=ChainID.ETHEREUM,
+                    timestamp=Timestamp(1640995200),  # 2022 - outside range
+                    block_number=4,
+                    from_address=make_evm_address(),
+                    to_address=make_evm_address(),
+                    value=0,
+                    gas=21000,
+                    gas_price=20000000000,
+                    gas_used=21000,
+                    input_data=b'',
+                    nonce=4,
+                ),
+            ],
             relevant_address=ethereum_accounts[0],
         )
 
@@ -662,7 +689,7 @@ def test_query_wrap(
         )
 
     response = requests.post(
-        url=api_url_for(rotkehlchen_api_server, 'statswrapresource'),
+        url=api_url_for(rotkehlchen_api_server, 'eventsanalysisresource'),
         json={'from_timestamp': 1704067200, 'to_timestamp': 1735689599},
     )
     result = assert_proper_sync_response_with_result(response)

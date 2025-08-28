@@ -13529,15 +13529,15 @@ Managing calendar reminders
   :statuscode 500: Internal rotki error.
 
 
-.. http:post:: /api/(version)/statistics/wrap
+.. http:post:: /api/(version)/statistics/events
 
-  Doing a POST on this endpoint will query basic statistics from the user DB.
+  Doing a POST on this endpoint will query basic events statistics from the user DB.
 
   **Example Request**:
 
   .. http:example:: curl wget httpie python-requests
 
-    POST /api/(version)/statistics/wrap HTTP/1.1
+    POST /api/(version)/statistics/events HTTP/1.1
     Host: localhost:5042
     Content-Type: application/json;charset=UTF-8
 
