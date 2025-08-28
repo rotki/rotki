@@ -4,10 +4,10 @@ import type {
   BlockchainAccountGroupRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
-import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { AccountBalancesTable } from '@/modules/accounts/table';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -22,7 +22,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'edit', account: AccountManageState): void;
+  edit: [account: AccountManageState];
 }>();
 
 const { category } = toRefs(props);

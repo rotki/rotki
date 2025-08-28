@@ -15,7 +15,7 @@ import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';
 
-type ShowConfirmationParams = {
+export type ShowConfirmationParams = {
   type: 'account';
   data: BlockchainAccountBalance;
 } | {
