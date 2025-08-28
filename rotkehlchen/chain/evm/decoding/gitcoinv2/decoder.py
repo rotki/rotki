@@ -33,6 +33,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.utils import get_donation_event_params
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
@@ -132,50 +133,6 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         return recipient_address
 
-    @staticmethod
-    def _get_donation_event_params(
-            context: DecoderContext,
-            sender_address: 'ChecksumEvmAddress',
-            recipient_address: 'ChecksumEvmAddress',
-            sender_tracked: bool,
-            recipient_tracked: bool,
-            asset: 'CryptoAsset',
-            amount: FVal,
-            payer_address: 'ChecksumEvmAddress',
-    ) -> tuple[HistoryEventType, HistoryEventType, 'ChecksumEvmAddress', 'ChecksumEvmAddress', str]:  # noqa: E501
-        """Get event parameters for donation events
-
-        Returns:
-            tuple of (new_type, expected_type, expected_address, expected_location_label, notes)
-        """
-        if sender_tracked and recipient_tracked:
-            new_type = HistoryEventType.TRANSFER
-            expected_type = HistoryEventType.RECEIVE
-            expected_address = context.tx_log.address
-            expected_location_label = recipient_address
-            verb = 'Transfer'
-            preposition = 'to'
-            other_address = recipient_address
-        elif sender_tracked:
-            new_type = HistoryEventType.SPEND
-            expected_type = HistoryEventType.SPEND
-            expected_address = payer_address
-            expected_location_label = sender_address
-            verb = 'Make'
-            preposition = 'to'
-            other_address = recipient_address
-        else:  # only recipient tracked
-            new_type = HistoryEventType.RECEIVE
-            expected_type = HistoryEventType.RECEIVE
-            expected_address = sender_address
-            expected_location_label = recipient_address
-            verb = 'Receive'
-            preposition = 'from'
-            other_address = sender_address
-
-        notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} {preposition} {other_address}'  # noqa: E501
-        return new_type, expected_type, expected_address, expected_location_label, notes
-
     def _common_donator_logic(
             self,
             context: DecoderContext,
@@ -192,7 +149,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         recipient_address: The final address of the recipient
         payer_address: The in-between contract that splits the payment
         """
-        new_type, expected_type, expected_address, expected_location_label, notes = self._get_donation_event_params(  # noqa: E501
+        new_type, expected_type, expected_address, expected_location_label, notes = get_donation_event_params(  # noqa: E501
             context=context,
             sender_address=sender_address,
             recipient_address=recipient_address,
@@ -201,6 +158,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             asset=asset,
             amount=amount,
             payer_address=payer_address,
+            counterparty=CPT_GITCOIN,
         )
         for event in context.decoded_events:
             if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.location_label == expected_location_label and event.address == expected_address:  # noqa: E501
@@ -572,7 +530,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             amount=int.from_bytes(context.tx_log.data[32:64]),
             asset=(token := self.base.get_token_or_native(bytes_to_address(context.tx_log.data[64:96]))),  # noqa: E501
         )
-        new_type, expected_type, _, expected_location_label, notes = self._get_donation_event_params(  # noqa: E501
+        new_type, expected_type, _, expected_location_label, notes = get_donation_event_params(
             context=context,
             sender_address=(sender := bytes_to_address(context.tx_log.data[96:128])),
             recipient_address=recipient,
@@ -581,6 +539,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             asset=token,
             amount=amount,
             payer_address=sender,
+            counterparty=CPT_GITCOIN,
         )
 
         # first, try to find existing event (for ERC20 tokens)
