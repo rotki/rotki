@@ -3312,7 +3312,7 @@ class GoogleCalendarResource(BaseMethodView):
         return self.rest_api.disconnect_google_calendar()
 
 
-class StatsWrapResource(BaseMethodView):
+class EventsAnalysisResource(BaseMethodView):
     """Endpoint for the wrap stats. It is temporary and will be removed."""
 
     query_schema = TimestampRangeSchema()

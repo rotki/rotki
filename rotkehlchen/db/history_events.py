@@ -1121,7 +1121,9 @@ class DBHistoryEvents:
                 'FROM evm_events_info JOIN history_events ON '
                 'evm_events_info.identifier = history_events.identifier '
                 "WHERE counterparty IS NOT NULL AND counterparty != 'gas' "
+                'AND timestamp BETWEEN ? AND ? '
                 'GROUP BY counterparty ORDER BY unique_transaction_count DESC',
+                (from_ts_ms, to_ts_ms),
             )
             transactions_per_protocol = [
                 {'protocol': row[0], 'transactions': row[1]}
