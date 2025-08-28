@@ -22,4 +22,5 @@ class Quickswapv3Decoder(Quickswapv3CommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             router_address=string_to_evm_address('0xf5b509bB0909a69B1c207E495f687a596C168E12'),
+            nft_manager=string_to_evm_address('0x8eF88E4c7CfbbaC1C163f7eddd4B578792201de6'),
         )
