@@ -20,7 +20,7 @@ const queries: OnlineHistoryEventsQueryType[] = [
 
 const { t } = useI18n();
 
-const { apiKey, credential } = useExternalApiKeys(t);
+const { apiKey, credential, load } = useExternalApiKeys(t);
 
 interface QueryConfig {
   enabled: boolean;
@@ -70,6 +70,10 @@ function updateSelection(selection: OnlineHistoryEventsQueryType[]): void {
   set(modelValue, selection);
   emit('update:all-selected', isEqual(selection.sort(), get(enabledQueries).sort()));
 }
+
+onBeforeMount(async () => {
+  await load();
+});
 
 defineExpose({
   toggleSelectAll,
