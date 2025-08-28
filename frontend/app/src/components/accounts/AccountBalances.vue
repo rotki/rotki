@@ -8,7 +8,6 @@ import type {
 import type { LocationQuery } from '@/types/route';
 import { toSentenceCase } from '@rotki/common';
 import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalanceAggregatedAssets.vue';
-import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
@@ -22,6 +21,7 @@ import { useRefresh } from '@/composables/balances/refresh';
 import { useBlockchains } from '@/composables/blockchain';
 import { AccountExternalFilterSchema, type Filters, type Matcher, useBlockchainAccountFilter } from '@/composables/filters/blockchain-account';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { AccountBalancesTable } from '@/modules/accounts/table';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useConfirmStore } from '@/store/confirm';
 import { SavedFilterLocation } from '@/types/filtering';
