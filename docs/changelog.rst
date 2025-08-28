@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Curve swap transactions that use the new router will now be decoded properly across supported EVM chains.
 * :bug:`-` Fix an issue where the buttons to refresh Gnosis Pay and Monerium events were always disabled initially.
 * :bug:`10517` Morpho transactions that perform multiple actions in one go are now decoded properly.
 * :feature:`-` Users will now be able to filter history events by location labels, including account addresses and exchange labels.
