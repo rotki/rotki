@@ -8,7 +8,6 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CHILD_LIQUIDITY_GAUGE_FACTORY,
     CPT_CURVE,
-    CURVE_SWAP_ROUTER_NG,
     GAUGE_VOTE,
 )
 from rotkehlchen.chain.evm.decoding.curve.decoder import CurveCommonDecoder
@@ -32,7 +31,7 @@ from .constants import (
     CLAIMED,
     CURVE_DEPOSIT_CONTRACTS,
     CURVE_MINTER,
-    CURVE_SWAP_ROUTER,
+    CURVE_SWAP_ROUTERS,
     DEPOSIT_AND_STAKE_ZAP,
     FEE_DISTRIBUTOR_3CRV,
     FEE_DISTRIBUTOR_CRVUSD,
@@ -69,7 +68,7 @@ class CurveDecoder(CurveCommonDecoder):
             native_currency=A_ETH,
             aave_pools=AAVE_POOLS,
             curve_deposit_contracts=CURVE_DEPOSIT_CONTRACTS | {DEPOSIT_AND_STAKE_ZAP},
-            curve_swap_routers={CURVE_SWAP_ROUTER, CURVE_SWAP_ROUTER_NG},
+            curve_swap_routers=CURVE_SWAP_ROUTERS,
             crv_minter_addresses={CHILD_LIQUIDITY_GAUGE_FACTORY, CURVE_MINTER},
         )
 

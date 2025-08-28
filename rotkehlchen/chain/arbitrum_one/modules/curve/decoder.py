@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CHILD_LIQUIDITY_GAUGE_FACTORY,
-    CURVE_SWAP_ROUTER_NG,
+    CURVE_SWAP_ROUTER_V1,
     DEPOSIT_AND_STAKE_ZAP,
 )
 from rotkehlchen.chain.evm.decoding.curve.decoder import CurveCommonDecoder
@@ -36,6 +36,9 @@ class CurveDecoder(CurveCommonDecoder):
                 string_to_evm_address('0x7544Fe3d184b6B55D6B36c3FCA1157eE0Ba30287'),  # MetaUSD Zap
                 string_to_evm_address('0x803A2B40c5a9BB2B86DD630B274Fa2A9202874C2'),  # MetaBTC Zap
             },
-            curve_swap_routers={CURVE_SWAP_ROUTER_NG},
+            curve_swap_routers={
+                CURVE_SWAP_ROUTER_V1,
+                string_to_evm_address('0x2191718CD32d02B8E60BAdFFeA33E4B5DD9A0A0D'),  # CurveRouterSidechain v1.1  # noqa: E501
+            },
             crv_minter_addresses={CHILD_LIQUIDITY_GAUGE_FACTORY},
         )
