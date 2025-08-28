@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import NonFungibleBalances from '@/components/accounts/balances/NonFungibleBalances.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import { useModules } from '@/composables/session/modules';
+import NonFungibleBalances from '@/modules/balances/non-fungible/components/NonFungibleBalances.vue';
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 
