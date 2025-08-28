@@ -28,30 +28,35 @@ def test_gnosis_pay_skip_refund(database: 'DBHandler', gnosispay_credentials: No
     """
     gnosispay = init_gnosis_pay(database)
     assert gnosispay is not None
-    api_contents = """[{
-        "createdAt": "XX",
-        "clearedAt": "XX",
-        "isPending": false,
-        "transactionAmount": "2300",
-        "transactionCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
-        "billingAmount": "2300",
-        "billingCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
-        "transactionType": "20",
-        "mcc": "5661",
-        "merchant": {
-            "name": "I-RUN",
-            "city": "CASTELNAU D E",
-            "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"}
-        },
-        "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"},
-        "transactions": [],
-        "kind": "Refund",
-        "refundCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
-        "refundAmount": "2300"
-    }]
-    """
+
+    def mocked_api(url, *args, **kwargs):
+        if kwargs['params']['offset'] == 0:
+            return MockResponse(200, """{"results": [{
+                "createdAt": "XX",
+                "clearedAt": "XX",
+                "isPending": false,
+                "transactionAmount": "2300",
+                "transactionCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+                "billingAmount": "2300",
+                "billingCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+                "transactionType": "20",
+                "mcc": "5661",
+                "merchant": {
+                    "name": "I-RUN",
+                    "city": "CASTELNAU D E",
+                    "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"}
+                },
+                "country": {"name": "France", "numeric": "250", "alpha2": "FR", "alpha3": "FRA"},
+                "transactions": [],
+                "kind": "Refund",
+                "refundCurrency": {"symbol": "EUR", "code": "978", "decimals": 2, "name": "Euro"},
+                "refundAmount": "2300"
+            }]}""")  # noqa: E501
+        else:
+            return MockResponse(200, """{"results": []}""")
+
     with (
-        patch.object(gnosispay.session, 'get', return_value=MockResponse(200, api_contents)),
+        patch.object(gnosispay.session, 'get', mocked_api),
         patch.object(gnosispay, 'write_txdata_to_db') as mock_write_txdata_to_db,
     ):
         gnosispay.get_and_process_transactions(after_ts=Timestamp(0))
