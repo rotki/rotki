@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from eth_abi import encode as encode_abi
 from eth_utils import to_checksum_address, to_hex
@@ -8,26 +8,50 @@ from web3 import Web3
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
-from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.structures import (
+    FAILED_ENRICHMENT_OUTPUT,
+    ActionItem,
+    DecoderContext,
+    DecodingOutput,
+    EnricherContext,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_underlying
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.resolver import tokenid_to_collectible_id
+from rotkehlchen.constants.resolver import (
+    evm_address_to_identifier,
+    tokenid_belongs_to_collection,
+    tokenid_to_collectible_id,
+)
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import ChecksumEvmAddress, Price, TokenKind
 
 from .constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 POOL_INIT_CODE_HASH: Final = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54'
+
+
+class CryptoAssetAmount(NamedTuple):
+    """This is used to represent a pair of resolved crypto asset to an amount."""
+    asset: 'EvmToken'
+    amount: 'FVal'
 
 
 def _compute_pool_address(
@@ -127,3 +151,165 @@ def get_uniswap_v3_position_price(
         tick=slot_0[1],
         price_func=price_func,
     )
+
+
+def decode_uniswap_v3_like_deposit_or_withdrawal(
+        context: DecoderContext,
+        is_deposit: bool,
+        counterparty: str,
+        token0_raw_address: str,
+        token1_raw_address: str,
+        amount0_raw: int,
+        amount1_raw: int,
+        position_id: int,
+        evm_inquirer: 'EvmNodeInquirer',
+        wrapped_native_currency: Asset,
+) -> DecodingOutput:
+    """This method decodes a Uniswap V3 like LP liquidity increase or decrease.
+
+    Examples of such transactions are:
+    https://etherscan.io/tx/0x6bf3588f669a784adf5def3c0db149b0cdbcca775e472bb35f00acedee263c4c (deposit)
+    https://etherscan.io/tx/0x76c312fe1c8604de5175c37dcbbb99cc8699336f3e4840e9e29e3383970f6c6d (withdrawal)
+    """  # noqa: E501
+    new_action_items = []
+    if is_deposit:
+        notes = f'Deposit {{amount}} {{asset}} to {counterparty} LP {position_id}'
+        from_event_type = HistoryEventType.SPEND
+        to_event_type = HistoryEventType.DEPOSIT
+        to_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+    else:  # can only be 'removal'
+        notes = f'Remove {{amount}} {{asset}} from {counterparty} LP {position_id}'
+        from_event_type = HistoryEventType.RECEIVE
+        to_event_type = HistoryEventType.WITHDRAWAL
+        to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+
+    resolved_assets_and_amounts: list[CryptoAssetAmount] = []
+    for token, amount in (
+            (deserialize_evm_address(token0_raw_address), amount0_raw),
+            (deserialize_evm_address(token1_raw_address), amount1_raw),
+    ):
+        token_with_data = get_or_create_evm_token(
+            userdb=evm_inquirer.database,
+            evm_address=token,
+            chain_id=evm_inquirer.chain_id,
+            token_kind=TokenKind.ERC20,
+            evm_inquirer=evm_inquirer,
+            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
+        )
+        resolved_assets_and_amounts.append(CryptoAssetAmount(
+            asset=token_with_data,
+            amount=asset_normalized_value(amount, token_with_data),
+        ))
+
+    found_events = [False, False]
+    refund_event = None
+    for event in context.decoded_events:
+        if event.event_subtype != HistoryEventSubType.NONE:
+            continue  # Avoid performing other checks if the event has a subtype other than NONE
+
+        for idx, resolved_asset_amount in enumerate(resolved_assets_and_amounts):
+            if found_events[idx]:
+                continue  # Skip if we already found an event for this token
+
+            if resolved_asset_amount.asset == wrapped_native_currency and event.asset == evm_inquirer.native_token:  # noqa: E501
+                maybe_event_asset_symbol = event.asset.symbol_or_name()
+            else:
+                if event.asset != resolved_asset_amount.asset:
+                    continue
+
+                maybe_event_asset_symbol = resolved_asset_amount.asset.symbol
+
+            if (
+                    from_event_type == HistoryEventType.SPEND and
+                    event.event_type == HistoryEventType.RECEIVE
+            ):
+                # Unlike approved tokens where the contract requests an exact amount,
+                # the approximate amount of the native asset sent may require a refund.
+                refund_event = event
+            elif event.event_type == from_event_type:
+                if event.amount != resolved_asset_amount.amount:
+                    if (
+                            refund_event is not None and
+                            event.amount - refund_event.amount == resolved_asset_amount.amount
+                    ):
+                        event.amount = resolved_asset_amount.amount
+                    else:
+                        continue
+
+                found_events[idx] = True
+                event.event_type = to_event_type
+                event.event_subtype = to_event_subtype
+                event.counterparty = counterparty
+                event.notes = notes.format(amount=event.amount, asset=maybe_event_asset_symbol)
+                break
+
+    if refund_event is not None:
+        context.decoded_events.remove(refund_event)
+
+    for resolved_asset_amount, found in zip(resolved_assets_and_amounts, found_events, strict=False):  # noqa: E501
+        if found:
+            continue  # Skip events that were found in decoded_events and are already modified.
+
+        new_action_items.append(
+            ActionItem(
+                action='transform',
+                from_event_type=from_event_type,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=resolved_asset_amount.asset,
+                amount=resolved_asset_amount.amount,
+                to_event_type=to_event_type,
+                to_event_subtype=to_event_subtype,
+                to_notes=notes.format(
+                    amount=resolved_asset_amount.amount,
+                    asset=resolved_asset_amount.asset.symbol,
+                ),
+                to_counterparty=counterparty,
+            ),
+        )
+
+    return DecodingOutput(action_items=new_action_items)
+
+
+def maybe_enrich_uniswap_v3_like_lp_position_creation(
+        context: EnricherContext,
+        evm_inquirer: 'EvmNodeInquirer',
+        nft_manager: ChecksumEvmAddress,
+        counterparty: str,
+        token_symbol: str,
+        token_name: str,
+) -> TransferEnrichmentOutput:
+    """Enrich Uniswap V3 like LP position creation events and update the
+    position token with the position id appended to the specified name and symbol.
+    """
+    if (
+        context.event.amount == ONE and
+        context.event.address == ZERO_ADDRESS and
+        context.event.event_type == HistoryEventType.RECEIVE and
+        context.event.event_subtype == HistoryEventSubType.NONE and
+        tokenid_belongs_to_collection(
+            token_identifier=context.event.asset.identifier,
+            collection_identifier=evm_address_to_identifier(
+                address=nft_manager,
+                chain_id=evm_inquirer.chain_id,
+                token_type=TokenKind.ERC721,
+            ),
+        )
+    ):
+        position_id = int.from_bytes(context.tx_log.topics[3])
+        context.event.event_type = HistoryEventType.DEPLOY
+        context.event.event_subtype = HistoryEventSubType.NFT
+        context.event.notes = f'Create {counterparty} LP with id {position_id}'
+        context.event.counterparty = counterparty
+        context.event.asset = get_or_create_evm_token(
+            userdb=evm_inquirer.database,
+            evm_address=nft_manager,
+            chain_id=evm_inquirer.chain_id,
+            token_kind=TokenKind.ERC721,
+            symbol=f'{token_symbol}-{position_id}',
+            name=f'{token_name} #{position_id}',
+            collectible_id=str(position_id),
+            protocol=counterparty,
+        )
+        return TransferEnrichmentOutput(matched_counterparty=counterparty)
+
+    return FAILED_ENRICHMENT_OUTPUT
