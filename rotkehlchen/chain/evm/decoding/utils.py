@@ -28,7 +28,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, Timestamp, UniqueCacheType
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+    from rotkehlchen.chain.evm.decoding.structures import DecoderContext
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
@@ -261,3 +262,48 @@ def get_vault_price(
         token=underlying_token,
     )
     return Price(inquirer.find_usd_price(asset=underlying_token) * formatted_pps)
+
+
+def get_donation_event_params(
+        context: 'DecoderContext',
+        sender_address: ChecksumEvmAddress,
+        recipient_address: ChecksumEvmAddress,
+        sender_tracked: bool,
+        recipient_tracked: bool,
+        asset: 'CryptoAsset',
+        amount: FVal,
+        payer_address: ChecksumEvmAddress,
+        counterparty: Literal['giveth', 'gitcoin'],
+) -> tuple[HistoryEventType, HistoryEventType, ChecksumEvmAddress, ChecksumEvmAddress, str]:
+    """Get event parameters for donation events.
+
+    Returns:
+        tuple of (new_type, expected_type, expected_address, expected_location_label, notes)
+    """
+    if sender_tracked and recipient_tracked:
+        new_type = HistoryEventType.TRANSFER
+        expected_type = HistoryEventType.RECEIVE
+        expected_address = context.tx_log.address
+        expected_location_label = recipient_address
+        verb = 'Transfer'
+        preposition = 'to'
+        other_address = recipient_address
+    elif sender_tracked:
+        new_type = HistoryEventType.SPEND
+        expected_type = HistoryEventType.SPEND
+        expected_address = payer_address
+        expected_location_label = sender_address
+        verb = 'Make'
+        preposition = 'to'
+        other_address = recipient_address
+    else:  # only recipient tracked
+        new_type = HistoryEventType.RECEIVE
+        expected_type = HistoryEventType.RECEIVE
+        expected_address = sender_address
+        expected_location_label = recipient_address
+        verb = 'Receive'
+        preposition = 'from'
+        other_address = sender_address
+
+    notes = f'{verb} a {counterparty} donation of {amount} {asset.symbol} {preposition} {other_address}'  # noqa: E501
+    return new_type, expected_type, expected_address, expected_location_label, notes

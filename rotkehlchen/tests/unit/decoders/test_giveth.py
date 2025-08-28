@@ -1,10 +1,12 @@
 import pytest
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.giveth.constants import GNOSIS_GIVPOWERSTAKING_WRAPPER
+from rotkehlchen.chain.polygon_pos.modules.giveth.constants import GIVETH_DONATION_CONTRACT_ADDRESS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.fval import FVal
@@ -410,3 +412,130 @@ def test_gnosis_withdraw(gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x2345678901234567890123456789012345678901']])
+def test_giveth_donation_pol(polygon_pos_inquirer, polygon_pos_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x2f39809f4cab0e97ee12eb5a70fd76a28c2855ccc2b840f2030844c7e81b2e43')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1754368465000),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
+        amount=(donation_amount := FVal('0.01')),
+        location_label=polygon_pos_accounts[0],
+        notes=f'Receive a giveth donation of {donation_amount} POL from 0x47498b788942a74DB601B117bd406a8C5369a32F',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=GIVETH_DONATION_CONTRACT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x29EE09Bd0f7f41EcD083Ad2708Df17691065790B']])
+def test_giveth_donation_erc20(polygon_pos_inquirer, polygon_pos_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x0b7bbafb80a494ab65eaf8b8f38f3afca1bd4f8979dc6c72b090bb609dd6d329')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1213,
+        timestamp=TimestampMS(1756375213000),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0xc20CAf8deE81059ec0c8E5971b2AF7347eC131f4'),
+        amount=(donation_amount := FVal('28.894081')),
+        location_label=polygon_pos_accounts[0],
+        notes=f'Receive a giveth donation of {donation_amount} TPOL from 0xEA2dB4736F6D8Cacb3532eDf37D15a29466Daaa7',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xEA2dB4736F6D8Cacb3532eDf37D15a29466Daaa7'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xB5Ab1C37ac3d89A48f32307C4DfCc96F79BeAd27']])
+def test_giveth_donation_sender(polygon_pos_inquirer, polygon_pos_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x9150c5c1dfc5a587b43f5dc39c585af2c6e16cd62396f6d2feb6bafd77e9edac')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        timestamp=(timestamp := TimestampMS(1756386087000)),
+        sequence_index=0,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
+        amount=(gas_amount := FVal('0.002843750017390625')),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        notes=f'Burn {gas_amount} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=363,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0xc20CAf8deE81059ec0c8E5971b2AF7347eC131f4'),
+        amount=(donation_amount := FVal('2.673594')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_amount} TPOL to 0xcd192b61a8Dd586A97592555c1f5709e032F2505',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xcd192b61a8Dd586A97592555c1f5709e032F2505'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=365,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0xc20CAf8deE81059ec0c8E5971b2AF7347eC131f4'),
+        amount=(donation_amount := FVal('4.455991')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_amount} TPOL to 0xd10BAC02a02747cB293972f99981F4Faf78E1626',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xd10BAC02a02747cB293972f99981F4Faf78E1626'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=367,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0xc20CAf8deE81059ec0c8E5971b2AF7347eC131f4'),
+        amount=(donation_amount := FVal('46.363509')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_amount} TPOL to 0xBBdA03b2f234E57e0cf7eC85F493aa4162762A1a',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xBBdA03b2f234E57e0cf7eC85F493aa4162762A1a'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=369,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0xc20CAf8deE81059ec0c8E5971b2AF7347eC131f4'),
+        amount=(donation_amount := FVal('24.401905')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_amount} TPOL to 0xCd144358cC53c01909166A8412FcfaACa689e4c3',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xCd144358cC53c01909166A8412FcfaACa689e4c3'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=371,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0xc20CAf8deE81059ec0c8E5971b2AF7347eC131f4'),
+        amount=(donation_amount := FVal('11.224832')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_amount} TPOL to 0xc5319dbdcC2930778c1473Ddc8E8F1606252e675',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xc5319dbdcC2930778c1473Ddc8E8F1606252e675'),
+    )]
