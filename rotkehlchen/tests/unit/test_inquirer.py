@@ -1241,6 +1241,59 @@ def test_find_beefy_finance_vaults_price(ethereum_inquirer: 'EthereumInquirer', 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_beefy_finance_boost_vault_price(
+        database: 'DBHandler',
+        inquirer_defi: 'Inquirer',
+) -> None:
+    """Test that we get the correct price for Beefy finance boost vault (rmoo) tokens.
+    This particular vault is a bit special - it wraps a clm vault (cowVelomooBIFI-USDC) in a
+    standard vault (mooBeefyVeloMooBIFI-USDC), which is then boosted (rmooBeefyVeloMooBIFI-USDC).
+    """
+    moo_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x436001D53b77cB0AA636F8124C65dC2c92A46D91'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='mooBeefyVeloMooBIFI-USDC',
+        name='Moo Beefy Velo mooBIFI-USDC',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=get_or_create_evm_token(
+                userdb=database,
+                evm_address=string_to_evm_address('0xD4768E30180786e875a4909472c9826b18931E43'),
+                chain_id=ChainID.OPTIMISM,
+                token_kind=TokenKind.ERC20,
+                symbol='cowVelomooBIFI-USDC',
+                name='Cow Velo mooBIFI-USDC',
+                decimals=18,
+                protocol=CPT_BEEFY_FINANCE,
+            ).evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    rmoo_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xc36Ae0469EC19EefD6923f2e4445a782644A0371'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='rmooBeefyVeloMooBIFI-USDC',
+        name='Reward Moo Beefy Velo mooBIFI-USDC',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=moo_token.evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    assert inquirer_defi.find_usd_price(rmoo_token) == FVal('247.80721536927881284627513063683570519048')  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_beefy_finance_clm_vaults_price(
         database: 'DBHandler',
         inquirer_defi: 'Inquirer',
