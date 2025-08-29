@@ -5,9 +5,11 @@ import { usePremium } from '@/composables/premium';
 import { createStateWithNotificationHandler } from '@/modules/messaging/utils';
 
 export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<PremiumStatusUpdateData> {
+  // Capture premium ref at handler creation time (in setup context)
+  const premium = usePremium();
+
   return createStateWithNotificationHandler<PremiumStatusUpdateData, boolean>(
     (data) => {
-      const premium = usePremium();
       const isPremium = get(premium);
       set(premium, data.isPremiumActive);
       return isPremium;

@@ -10,10 +10,12 @@ export function createExchangeUnknownAssetHandler(
   t: ReturnType<typeof useI18n>['t'],
   router: ReturnType<typeof useRouter>,
 ): MessageHandler<ExchangeUnknownAssetData> {
+  // Capture DB functions at handler creation time (in setup context)
+  const { count, put } = useMissingMappingsDB();
+
   return createStateWithNotificationHandler<ExchangeUnknownAssetData, number>(
     // State update function - stores the mapping and returns count
     async (data) => {
-      const { count, put } = useMissingMappingsDB();
       const mapping = pick(data, ['identifier', 'location', 'name', 'details']);
 
       await put(mapping); // This will be caught by the factory's error handling

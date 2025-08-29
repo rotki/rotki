@@ -7,6 +7,9 @@ import { getServiceRegisterUrl } from '@/utils/url';
 import { createNotificationHandler } from '../utils/handler-factories';
 
 export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
+  // Capture interop functions at handler creation time (in setup context)
+  const { openUrl } = useInterop();
+
   return createNotificationHandler<MissingApiKey>((data) => {
     const { service } = data;
     const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
@@ -22,8 +25,6 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     }
 
     if (external) {
-      const { openUrl } = useInterop();
-
       actions.push({
         action: async () => openUrl(external),
         icon: 'lu-external-link',

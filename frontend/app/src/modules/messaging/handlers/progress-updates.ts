@@ -8,6 +8,11 @@ import { SocketMessageProgressUpdateSubType } from '../types/base';
 import { createCsvImportResultHandler } from './csv-import-result';
 
 export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<ProgressUpdateResultData> {
+  // Capture store methods at handler creation time (in setup context)
+  const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
+  const { setHistoricalDailyPriceStatus, setHistoricalPriceStatus, setStatsPriceQueryStatus } = useHistoricCachePriceStore();
+  const { setStakingQueryStatus } = useLiquityStore();
+
   return createConditionalHandler<ProgressUpdateResultData>(async (data) => {
     const subtype = data.subtype;
 
@@ -15,10 +20,6 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
       const csvHandler = createCsvImportResultHandler(t);
       return csvHandler.handle(data);
     }
-
-    const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
-    const { setHistoricalDailyPriceStatus, setHistoricalPriceStatus, setStatsPriceQueryStatus } = useHistoricCachePriceStore();
-    const { setStakingQueryStatus } = useLiquityStore();
 
     switch (subtype) {
       case SocketMessageProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS:
