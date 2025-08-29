@@ -671,6 +671,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.ZKSYNC_LITE,
     SupportedBlockchain.BINANCE_SC,
+    SupportedBlockchain.SOLANA,
 ]
 
 SUPPORTED_BITCOIN_CHAINS_TYPE = Literal[

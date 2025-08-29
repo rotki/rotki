@@ -338,6 +338,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.dot_lock = Semaphore()
         self.avax_lock = Semaphore()
         self.optimism_lock = Semaphore()
+        self.solana_lock = Semaphore()
         self.polygon_pos_lock = Semaphore()
         self.arbitrum_one_lock = Semaphore()
         self.base_lock = Semaphore()

@@ -14,6 +14,10 @@ const blockchainCategories = [{
   label: t('dashboard.blockchain_balances.categories.bitcoin'),
   path: '/accounts/bitcoin',
 }, {
+  icon: 'lu-blockchain',
+  label: t('dashboard.blockchain_balances.categories.solana'),
+  path: '/accounts/solana',
+}, {
   icon: 'lu-substrate-accounts',
   label: t('dashboard.blockchain_balances.categories.substrate'),
   path: '/accounts/substrate',
