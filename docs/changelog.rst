@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`-` Beefy Finance boost vault tokens will now be properly priced.
+* :bug:`-` Beefy Finance reward pool and boost vault tokens will now be properly priced.
 * :bug:`-` Curve swap transactions that use the new router will now be decoded properly across supported EVM chains.
 * :bug:`-` Fix an issue where the buttons to refresh Gnosis Pay and Monerium events were always disabled initially.
 * :bug:`10517` Morpho transactions that perform multiple actions in one go are now decoded properly.
