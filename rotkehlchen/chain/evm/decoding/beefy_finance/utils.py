@@ -2,7 +2,11 @@ import logging
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    get_or_create_evm_token,
+    get_single_underlying_token,
+)
 from rotkehlchen.chain.ethereum.utils import token_normalized_value, token_raw_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
@@ -213,19 +217,16 @@ def query_beefy_vault_price(
     * rmoo (boosted standard vault) https://docs.beefy.finance/beefy-products/boost
     * cow (clm vault) https://docs.beefy.finance/beefy-products/clm
     * rcow (reward pool token for clm vault) https://docs.beefy.finance/beefy-products/clm#how-does-the-clm-pool-work
+    * other simple reward pool vault (e.g. rBIFI, etc). The docs don't cover this very well, but
+      rBIFI is mentioned here: https://docs.beefy.finance/ecosystem/bifi-token#what-is-usdrbifi
+      These seem to be the `"type": "gov"` vaults in the api, which are BeefyRewardPool contracts.
 
     Note that rmoo and rcow are 1:1 with their underlying moo or cow token, so simply use
-    the underlying token as the vault token for these.
+    the underlying token as the vault token for these. The simple reward pool vaults are also 1:1
+    with their underlying token, but in this case the underlying token is not a beefy vault token.
     """
     if vault_token.symbol.startswith('rmoo') or vault_token.symbol.startswith('rcow'):
-        if (
-            vault_token.underlying_tokens is not None and
-            len(vault_token.underlying_tokens) == 1 and
-            (underlying_token := get_token(
-                evm_address=vault_token.underlying_tokens[0].address,
-                chain_id=evm_inquirer.chain_id,
-            )) is not None
-        ):
+        if (underlying_token := get_single_underlying_token(vault_token)) is not None:
             vault_token = underlying_token
         else:
             log.error(
@@ -249,7 +250,9 @@ def query_beefy_vault_price(
             evm_inquirer=evm_inquirer,
             vault_token=vault_token,
         )
+    elif (underlying_token := get_single_underlying_token(vault_token)) is not None:
+        return inquirer.find_usd_price(underlying_token)
     else:
-        log.error(f'Unexpected Beefy token symbol for token {vault_token} on {evm_inquirer.chain_name}')  # noqa: E501
+        log.error(f'Unexpected Beefy token {vault_token} on {evm_inquirer.chain_name}')
 
     return ZERO_PRICE

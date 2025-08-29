@@ -1335,6 +1335,38 @@ def test_find_beefy_finance_clm_vaults_price(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_beefy_finance_reward_pool_vault_price(ethereum_inquirer: 'EthereumInquirer', database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+    """Test that we get the correct prices for Beefy finance reward pool vaults"""
+    vault_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xb1F131437e314614313aAb3a3016FA05c1b0e087'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='rBIFI',
+        name='Beefy Reward Pool',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=get_or_create_evm_token(
+                userdb=database,
+                evm_address=string_to_evm_address('0xB1F1ee126e9c96231Cc3d3fAD7C08b4cf873b1f1'),
+                chain_id=ChainID.ETHEREUM,
+                token_kind=TokenKind.ERC20,
+                symbol='BIFI',
+                name='Beefy',
+                decimals=18,
+                coingecko='beefy-finance',
+            ).evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    assert inquirer_defi.find_usd_price(vault_token) == FVal('185.4')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
     """Test that we get the correct price for Uniswap V3 position NFTs in all supported chains."""
 
