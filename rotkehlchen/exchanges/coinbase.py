@@ -78,7 +78,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 CB_EVENTS_PREFIX = 'CBE_'
 CB_VERSION = '2019-08-25'  # the latest api version we know rotki works fine for: https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/versioning  # noqa: E501
-LEGACY_RE: re.Pattern = re.compile(r'^[\w]+$')
+LEGACY_RE: re.Pattern = re.compile(r'^\w+$')
 NEW_RE: re.Pattern = re.compile(r'^organizations/[\w-]+/apiKeys/[\w-]+$')
 PRIVATE_KEY_RE: re.Pattern = re.compile(
     r'^-----BEGIN EC PRIVATE KEY-----\n'
