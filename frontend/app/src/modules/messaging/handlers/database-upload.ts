@@ -4,9 +4,10 @@ import { useSync } from '@/composables/session/sync';
 import { createStateHandler } from '@/modules/messaging/utils';
 
 export function createDbUploadResultHandler(): StateHandler<DbUploadResult> {
-  return createStateHandler<DbUploadResult>((data) => {
-    const { uploadProgress, uploadStatus, uploadStatusAlreadyHandled } = useSync();
+  // Capture refs at handler creation time (in setup context)
+  const { uploadProgress, uploadStatus, uploadStatusAlreadyHandled } = useSync();
 
+  return createStateHandler<DbUploadResult>((data) => {
     set(uploadProgress, undefined);
 
     if (data.uploaded) {
@@ -24,8 +25,10 @@ export function createDbUploadResultHandler(): StateHandler<DbUploadResult> {
 }
 
 export function createDbUploadProgressHandler(): StateHandler<DatabaseUploadProgress> {
+  // Capture ref at handler creation time (in setup context)
+  const { uploadProgress } = useSync();
+
   return createStateHandler<DatabaseUploadProgress>((data) => {
-    const { uploadProgress } = useSync();
     set(uploadProgress, data);
   });
 }

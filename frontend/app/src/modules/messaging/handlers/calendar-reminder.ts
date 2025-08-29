@@ -10,12 +10,13 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { useNotificationsStore } from '@/store/notifications';
 
 export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<CalendarEventWithReminder> {
-  return createNotificationHandler<CalendarEventWithReminder>((data) => {
-    const { getChainName } = useSupportedChains();
-    const { addressNameSelector } = useAddressesNamesStore();
-    const { removeMatching } = useNotificationsStore();
-    const { editCalendarReminder } = useCalendarReminderApi();
+  // Capture all functions and stores at handler creation time (in setup context)
+  const { getChainName } = useSupportedChains();
+  const { addressNameSelector } = useAddressesNamesStore();
+  const { removeMatching } = useNotificationsStore();
+  const { editCalendarReminder } = useCalendarReminderApi();
 
+  return createNotificationHandler<CalendarEventWithReminder>((data) => {
     const { name, timestamp } = data;
     const now = dayjs();
     const eventTime = dayjs(timestamp * 1000);
