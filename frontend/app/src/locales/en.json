@@ -4373,6 +4373,11 @@
       "sort_desc_tooltip": "Change sort to descending"
     }
   },
+  "sponsorship": {
+    "sponsor": "Sponsor our next release!",
+    "sponsored_by": "Sponsored by:",
+    "version": "Version {version}"
+  },
   "staking": {
     "eth2": "ETH",
     "kraken": "Kraken",

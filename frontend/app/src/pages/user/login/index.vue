@@ -99,30 +99,28 @@ onMounted(() => fetchMessages());
       </footer>
     </div>
   </section>
-  <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
-    <div>
-      <span :class="$style.logo">
-        <RotkiLogo
-          size="2"
-          unique-key="0"
-        />
-      </span>
-      <h2 class="text-h3 font-light xl:text-h2 mb-6">
-        {{ header.header }}
-      </h2>
-      <p class="text-body-2">
-        {{ header.text }}
-      </p>
-      <NewReleaseChangelog
-        v-if="showReleaseNotes"
-        class="mt-4"
+  <AccountManagementAside>
+    <span :class="$style.logo">
+      <RotkiLogo
+        size="2"
+        unique-key="0"
       />
-      <WelcomeMessageDisplay
-        v-else-if="welcomeMessage"
-        class="mt-6"
-        :messages="activeWelcomeMessages"
-      />
-    </div>
+    </span>
+    <h2 class="text-h3 font-light xl:text-h2 mb-6">
+      {{ header.header }}
+    </h2>
+    <p class="text-body-2">
+      {{ header.text }}
+    </p>
+    <NewReleaseChangelog
+      v-if="showReleaseNotes"
+      class="mt-4"
+    />
+    <WelcomeMessageDisplay
+      v-else-if="welcomeMessage"
+      class="mt-6"
+      :messages="activeWelcomeMessages"
+    />
   </AccountManagementAside>
 </template>
 
@@ -144,7 +142,7 @@ onMounted(() => fetchMessages());
 }
 
 .logo {
-  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-40;
+  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-20;
 
   &__mobile {
     @apply my-5 lg:hidden max-w-[27.5rem] mx-auto;

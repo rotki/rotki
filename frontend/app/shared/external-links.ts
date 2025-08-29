@@ -26,6 +26,7 @@ export const blockscoutLinks = {
 
 export const externalLinks = {
   premium: `${BASE_URL}products`,
+  sponsor: `${BASE_URL}sponsor/mint`,
   usageGuide: USAGE_GUIDE_URL,
   usageGuideSection: {
     dockerWarning: `${USAGE_GUIDE_URL}using-rotki-from-mobile#docker`,
