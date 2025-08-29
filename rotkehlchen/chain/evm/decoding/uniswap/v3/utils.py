@@ -11,23 +11,10 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.structures import (
-    FAILED_ENRICHMENT_OUTPUT,
-    ActionItem,
-    DecoderContext,
-    DecodingOutput,
-    EnricherContext,
-    TransferEnrichmentOutput,
-)
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_underlying
-from rotkehlchen.constants import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.resolver import (
-    evm_address_to_identifier,
-    tokenid_belongs_to_collection,
-    tokenid_to_collectible_id,
-)
+from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -176,12 +163,12 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
         notes = f'Deposit {{amount}} {{asset}} to {counterparty} LP {position_id}'
         from_event_type = HistoryEventType.SPEND
         to_event_type = HistoryEventType.DEPOSIT
-        to_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+        to_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
     else:  # can only be 'removal'
         notes = f'Remove {{amount}} {{asset}} from {counterparty} LP {position_id}'
         from_event_type = HistoryEventType.RECEIVE
         to_event_type = HistoryEventType.WITHDRAWAL
-        to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+        to_event_subtype = HistoryEventSubType.REMOVE_ASSET
 
     resolved_assets_and_amounts: list[CryptoAssetAmount] = []
     for token, amount in (
@@ -267,49 +254,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
             ),
         )
 
-    return DecodingOutput(action_items=new_action_items)
-
-
-def maybe_enrich_uniswap_v3_like_lp_position_creation(
-        context: EnricherContext,
-        evm_inquirer: 'EvmNodeInquirer',
-        nft_manager: ChecksumEvmAddress,
-        counterparty: str,
-        token_symbol: str,
-        token_name: str,
-) -> TransferEnrichmentOutput:
-    """Enrich Uniswap V3 like LP position creation events and update the
-    position token with the position id appended to the specified name and symbol.
-    """
-    if (
-        context.event.amount == ONE and
-        context.event.address == ZERO_ADDRESS and
-        context.event.event_type == HistoryEventType.RECEIVE and
-        context.event.event_subtype == HistoryEventSubType.NONE and
-        tokenid_belongs_to_collection(
-            token_identifier=context.event.asset.identifier,
-            collection_identifier=evm_address_to_identifier(
-                address=nft_manager,
-                chain_id=evm_inquirer.chain_id,
-                token_type=TokenKind.ERC721,
-            ),
-        )
-    ):
-        position_id = int.from_bytes(context.tx_log.topics[3])
-        context.event.event_type = HistoryEventType.DEPLOY
-        context.event.event_subtype = HistoryEventSubType.NFT
-        context.event.notes = f'Create {counterparty} LP with id {position_id}'
-        context.event.counterparty = counterparty
-        context.event.asset = get_or_create_evm_token(
-            userdb=evm_inquirer.database,
-            evm_address=nft_manager,
-            chain_id=evm_inquirer.chain_id,
-            token_kind=TokenKind.ERC721,
-            symbol=f'{token_symbol}-{position_id}',
-            name=f'{token_name} #{position_id}',
-            collectible_id=str(position_id),
-            protocol=counterparty,
-        )
-        return TransferEnrichmentOutput(matched_counterparty=counterparty)
-
-    return FAILED_ENRICHMENT_OUTPUT
+    return DecodingOutput(
+        action_items=new_action_items,
+        matched_counterparty=counterparty,
+    )

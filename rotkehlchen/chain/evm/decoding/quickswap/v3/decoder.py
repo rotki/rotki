@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V3
 from rotkehlchen.chain.evm.decoding.quickswap.utils import decode_quickswap_swap
 from rotkehlchen.chain.evm.decoding.quickswap.v3.constants import (
+    CPT_QUICKSWAP_V3_ROUTER,
     QUICKSWAP_COLLECT_LIQUIDITY_TOPIC,
     QUICKSWAP_INCREASE_LIQUIDITY_TOPIC,
     QUICKSWAP_NFT_MANAGER_ABI,
@@ -15,16 +16,16 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
-    EnricherContext,
-    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.utils import (
+    decode_uniswap_v3_like_position_create_or_exit,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
     decode_uniswap_v3_like_deposit_or_withdrawal,
-    maybe_enrich_uniswap_v3_like_lp_position_creation,
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -117,17 +118,19 @@ class Quickswapv3CommonDecoder(DecoderInterface):
             wrapped_native_currency=self.wrapped_native_currency,
         )
 
-    def _maybe_enrich_liquidity_pool_creation(
+    def _lp_post_decoding(
             self,
-            context: EnricherContext,
-    ) -> TransferEnrichmentOutput:
+            transaction: 'EvmTransaction',
+            decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
+    ) -> list['EvmEvent']:
         """Update the lp position creation event and position token.
         Note that Quickswap v3 uses Algebra dynamic fees (https://docs.algebra.finance/algebra-integral-documentation)
         and the original token name and symbol are `Algebra Positions NFT-V1 (ALGB-POS)`.
         To clarify what protocol this token is actually from, we add quickswap v3 to the name and symbol.
         """  # noqa: E501
-        return maybe_enrich_uniswap_v3_like_lp_position_creation(
-            context=context,
+        return decode_uniswap_v3_like_position_create_or_exit(
+            decoded_events=decoded_events,
             evm_inquirer=self.evm_inquirer,
             nft_manager=self.nft_manager,
             counterparty=CPT_QUICKSWAP_V3,
@@ -138,16 +141,16 @@ class Quickswapv3CommonDecoder(DecoderInterface):
     # -- DecoderInterface methods
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {CPT_QUICKSWAP_V3: [(0, self._v3_router_post_decoding)]}
+        return {
+            CPT_QUICKSWAP_V3: [(0, self._lp_post_decoding)],
+            CPT_QUICKSWAP_V3_ROUTER: [(0, self._v3_router_post_decoding)],
+        }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return {self.router_address: CPT_QUICKSWAP_V3}
+        return {self.router_address: CPT_QUICKSWAP_V3_ROUTER}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.nft_manager: (self._decode_deposits_and_withdrawals,)}
-
-    def enricher_rules(self) -> list[Callable]:
-        return [self._maybe_enrich_liquidity_pool_creation]
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

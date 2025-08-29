@@ -25,3 +25,6 @@ UNISWAP_V3_NFT_MANAGER_ADDRESSES: Final = {
     ChainID.BASE: string_to_evm_address('0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1'),
     ChainID.BINANCE_SC: string_to_evm_address('0x7b8A01B39D58278b5DE7e48c8449c9f4F5170613'),
 }
+
+# Counterparty used to trigger router post decoding rules.
+CPT_UNISWAP_V3_ROUTER: Final = 'uniswap-v3-router'

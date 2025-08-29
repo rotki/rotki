@@ -12,8 +12,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     DecoderContext,
     DecodingOutput,
-    EnricherContext,
-    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.constants import (
@@ -23,16 +21,17 @@ from rotkehlchen.chain.evm.decoding.uniswap.constants import (
 )
 from rotkehlchen.chain.evm.decoding.uniswap.utils import (
     decode_basic_uniswap_info,
+    decode_uniswap_v3_like_position_create_or_exit,
     get_uniswap_swap_amounts,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     COLLECT_LIQUIDITY_SIGNATURE,
+    CPT_UNISWAP_V3_ROUTER,
     INCREASE_LIQUIDITY_SIGNATURE,
     SWAP_SIGNATURE,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import (
     decode_uniswap_v3_like_deposit_or_withdrawal,
-    maybe_enrich_uniswap_v3_like_lp_position_creation,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.constants import ZERO
@@ -375,13 +374,15 @@ class Uniswapv3CommonDecoder(DecoderInterface):
 
         return [gas_event, from_event, to_event]
 
-    def _maybe_enrich_liquidity_pool_creation(
+    def _lp_post_decoding(
             self,
-            context: EnricherContext,
-    ) -> TransferEnrichmentOutput:
+            transaction: EvmTransaction,
+            decoded_events: list['EvmEvent'],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list['EvmEvent']:
         """Update the lp position creation event and position token."""
-        return maybe_enrich_uniswap_v3_like_lp_position_creation(
-            context=context,
+        return decode_uniswap_v3_like_position_create_or_exit(
+            decoded_events=decoded_events,
             evm_inquirer=self.evm_inquirer,
             nft_manager=self.nft_manager,
             counterparty=CPT_UNISWAP_V3,
@@ -392,19 +393,10 @@ class Uniswapv3CommonDecoder(DecoderInterface):
     # -- DecoderInterface methods
 
     def decoding_rules(self) -> list[Callable]:
-        return [
-            self._maybe_decode_v3_swap,
-        ]
+        return [self._maybe_decode_v3_swap]
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
-            self.nft_manager: (self._decode_deposits_and_withdrawals,),
-        }
-
-    def enricher_rules(self) -> list[Callable]:
-        return [
-            self._maybe_enrich_liquidity_pool_creation,
-        ]
+        return {self.nft_manager: (self._decode_deposits_and_withdrawals,)}
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
@@ -414,7 +406,10 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         ),)
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {CPT_UNISWAP_V3: [(0, self._routers_post_decoding)]}
+        return {
+            CPT_UNISWAP_V3: [(0, self._lp_post_decoding)],
+            CPT_UNISWAP_V3_ROUTER: [(0, self._routers_post_decoding)],
+        }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return dict.fromkeys(self.routers_addresses, CPT_UNISWAP_V3)
+        return dict.fromkeys(self.routers_addresses, CPT_UNISWAP_V3_ROUTER)

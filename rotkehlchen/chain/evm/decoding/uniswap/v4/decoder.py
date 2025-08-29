@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, get_or_create_evm_token
+from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -17,16 +17,17 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V4, UNISWAP_ICON
-from rotkehlchen.chain.evm.decoding.uniswap.utils import get_uniswap_swap_amounts
+from rotkehlchen.chain.evm.decoding.uniswap.utils import (
+    decode_uniswap_v3_like_position_create_or_exit,
+    get_uniswap_swap_amounts,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import SWAP_SIGNATURE as V3_SWAP_TOPIC
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.constants.misc import ONE
-from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
 from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, TokenKind
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_UNISWAP_V4_LP, MODIFY_LIQUIDITY, POSITION_MANAGER_ABI, V4_SWAP_TOPIC
@@ -93,12 +94,12 @@ class Uniswapv4CommonDecoder(DecoderInterface):
         if int.from_bytes(context.tx_log.data[64:96], signed=True) > 0:
             expected_type = HistoryEventType.SPEND
             event_type = HistoryEventType.DEPOSIT
-            event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+            event_subtype = HistoryEventSubType.DEPOSIT_ASSET
             verb, from_to = 'Deposit', 'to'
         else:
             expected_type = HistoryEventType.RECEIVE
             event_type = HistoryEventType.WITHDRAWAL
-            event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+            event_subtype = HistoryEventSubType.REMOVE_ASSET
             verb, from_to = 'Withdraw', 'from'
 
         # Edit the native currency event from the already decoded events, but use action items
@@ -277,64 +278,14 @@ class Uniswapv4CommonDecoder(DecoderInterface):
         """Decode LP position NFT mint/burn events and properly reshuffle them along with
         the deposit/withdraw events already decoded by _decode_modify_liquidity.
         """
-        deposit_withdrawal_events, mint_events, burn_events = [], [], []
-        for event in decoded_events:
-            if (
-                event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.address == ZERO_ADDRESS and
-                event.amount == ONE and
-                (collectible_id := tokenid_to_collectible_id(
-                    identifier=event.asset.identifier,
-                )) is not None and
-                event.asset == Asset(evm_address_to_identifier(
-                    address=self.position_manager,
-                    chain_id=self.evm_inquirer.chain_id,
-                    token_type=TokenKind.ERC721,
-                    collectible_id=collectible_id,
-                ))
-            ):
-                if event.event_type == HistoryEventType.SPEND:
-                    event.event_type = HistoryEventType.BURN
-                    verb = 'Exit'
-                    burn_events.append(event)
-                else:  # HistoryEventType.RECEIVE
-                    event.event_type = HistoryEventType.DEPLOY
-                    verb = 'Create'
-                    mint_events.append(event)
-                    # Update the position nft with the uniswap v4 protocol and
-                    # add the collectible id to its name and symbol.
-                    get_or_create_evm_token(
-                        userdb=self.evm_inquirer.database,
-                        evm_address=self.position_manager,
-                        chain_id=self.evm_inquirer.chain_id,
-                        token_kind=TokenKind.ERC721,
-                        symbol=f'UNI-V4-POS-{collectible_id}',
-                        name=f'Uniswap V4 Positions #{collectible_id}',
-                        collectible_id=collectible_id,
-                        protocol=CPT_UNISWAP_V4,
-                    )
-
-                event.counterparty = CPT_UNISWAP_V4
-                event.event_subtype = HistoryEventSubType.NFT
-                event.notes = f'{verb} Uniswap V4 LP with id {collectible_id}'
-            elif (
-                event.counterparty == CPT_UNISWAP_V4 and
-                ((
-                    event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                ) or (
-                    event.event_type == HistoryEventType.WITHDRAWAL and
-                    event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED
-                ))
-            ):
-                deposit_withdrawal_events.append(event)
-
-        maybe_reshuffle_events(
-            ordered_events=burn_events + deposit_withdrawal_events + mint_events,
-            events_list=decoded_events,
+        return decode_uniswap_v3_like_position_create_or_exit(
+            decoded_events=decoded_events,
+            evm_inquirer=self.evm_inquirer,
+            nft_manager=self.position_manager,
+            counterparty=CPT_UNISWAP_V4,
+            token_symbol='UNI-V4-POS',
+            token_name='Uniswap V4 Positions',
         )
-        return decoded_events
 
     # -- DecoderInterface methods
 

@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
@@ -26,7 +26,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChainID, Location, TimestampMS, TokenKind, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 WETH_OP_BASE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000006')
 WMATIC_ADDRESS = string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270')
@@ -158,8 +158,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     timestamp = TimestampMS(1666595591000)
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
-    assert len(events) == 4
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
@@ -187,7 +186,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=187,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -198,31 +197,21 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             notes='Deposit 294.145955 USDC to uniswap-v3 LP 343053',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/343053'),
+            amount=ONE,
+            location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
+            notes='Create Uniswap V3 LP with id 343053',
+            counterparty=CPT_UNISWAP_V3,
+            address=ZERO_ADDRESS,
         ),
     ]
-    assert events[:-1] == expected_events
-    expected_erc721 = get_or_create_evm_token(
-        userdb=database,
-        evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
-        chain_id=ChainID.ETHEREUM,
-        token_kind=TokenKind.ERC721,
-        collectible_id='343053',
-        evm_inquirer=ethereum_inquirer,
-    )
-    assert events[3] == EvmEvent(
-        tx_hash=evmhash,
-        sequence_index=191,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.DEPLOY,
-        event_subtype=HistoryEventSubType.NFT,
-        asset=expected_erc721,
-        amount=ONE,
-        location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-        notes='Create uniswap-v3 LP with id 343053',
-        counterparty=CPT_UNISWAP_V3,
-        address=ZERO_ADDRESS,
-    )
 
 
 @pytest.mark.vcr
@@ -258,7 +247,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             timestamp=timesatmp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
             amount=FVal('0.764522981784947382'),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
@@ -267,11 +256,11 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=243,
+            sequence_index=2,
             timestamp=timesatmp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_USDC,
             amount=FVal('1028.82092'),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
