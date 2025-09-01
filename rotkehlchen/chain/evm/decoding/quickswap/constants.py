@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.uniswap.constants import (
 
 CPT_QUICKSWAP_V2: Final = 'quickswap-v2'
 CPT_QUICKSWAP_V3: Final = 'quickswap-v3'
+CPT_QUICKSWAP_V4: Final = 'quickswap-v4'
 
 UNISWAP_QUICKSWAP_COUNTERPARTY_MAP: Final = {
     CPT_UNISWAP_V2: CPT_QUICKSWAP_V2,
