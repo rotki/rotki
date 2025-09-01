@@ -561,8 +561,18 @@ class EVMTransactionDecoder(ABC):
         """
         maybe_modified = False
         if transaction.to_address is not None:
-            address_counterparty = self.rules.addresses_to_counterparties.get(transaction.to_address)  # noqa: E501
-            if address_counterparty is not None:
+            # in delegation transactions, to_address can be the user's wallet, not
+            # the actual contract. look at event addresses to find possible protocols that were actually used.  # noqa: E501
+            # TODO: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=126845644
+            # add a test for this once we merge bugfixes into develop.
+            if (
+                transaction.authorization_list is not None and
+                len(transaction.authorization_list) > 0
+            ):
+                for addy in {event.address for event in decoded_events if event.address is not None}:  # noqa: E501
+                    if (address_counterparty := self.rules.addresses_to_counterparties.get(addy)) is not None:  # noqa: E501
+                        counterparties.add(address_counterparty)
+            elif (address_counterparty := self.rules.addresses_to_counterparties.get(transaction.to_address)) is not None:  # noqa: E501
                 counterparties.add(address_counterparty)
 
         rules = self._chain_specific_post_decoding_rules(transaction)
