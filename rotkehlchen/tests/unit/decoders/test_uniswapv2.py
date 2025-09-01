@@ -71,7 +71,7 @@ def test_uniswap_v2_swap(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.15'),
             location_label=ADDY_1,
-            notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
+            notes='Swap 0.15 ETH in Uniswap V2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
             counterparty=CPT_UNISWAP_V2,
             address=UNISWAP_V2_ROUTER,
         ), EvmSwapEvent(
@@ -83,7 +83,7 @@ def test_uniswap_v2_swap(ethereum_inquirer):
             asset=EvmToken('eip155:1/erc20:0x853d955aCEf822Db058eb8505911ED77F175b99e'),
             amount=FVal('462.967761432322996701'),
             location_label=ADDY_1,
-            notes='Receive 462.967761432322996701 FRAX in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
+            notes='Receive 462.967761432322996701 FRAX in Uniswap V2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=UNISWAP_V2_ROUTER,
         ),
@@ -121,7 +121,7 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal(0.008104374914845978),
             location_label=ADDY_1,
-            notes='Refund of 0.008104374914845978 ETH in uniswap-v2 due to price change',
+            notes='Refund of 0.008104374914845978 ETH in Uniswap V2 due to price change',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ), EvmSwapEvent(
@@ -133,7 +133,7 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('1.59134916748576351'),
             location_label=ADDY_1,
-            notes='Swap 1.59134916748576351 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
+            notes='Swap 1.59134916748576351 ETH in Uniswap V2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=UNISWAP_V2_ROUTER,
         ), EvmSwapEvent(
@@ -145,7 +145,7 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
             asset=EvmToken('eip155:1/erc20:0x761D38e5ddf6ccf6Cf7c55759d5210750B5D60F3'),
             amount=FVal('10000000000'),
             location_label=ADDY_1,
-            notes='Receive 10000000000 ELON in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
+            notes='Receive 10000000000 ELON in Uniswap V2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=UNISWAP_V2_ROUTER,
         ),
@@ -194,7 +194,7 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6'),
             amount=FVal('20.653429896'),
             location_label=user_address,
-            notes='Swap 20.653429896 MPL in uniswap-v2',
+            notes='Swap 20.653429896 MPL in Uniswap V2',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7b28470032DA06051f2E620531adBAeAdb285408'),
         ), EvmSwapEvent(
@@ -206,7 +206,7 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal('273.798721'),
             location_label=user_address,
-            notes=f'Receive 273.798721 USDC as a result of a {CPT_UNISWAP_V2} swap',
+            notes='Receive 273.798721 USDC as a result of a Uniswap V2 swap',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7b28470032DA06051f2E620531adBAeAdb285408'),
         ),
@@ -247,7 +247,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('25'),
             location_label=ADDY_2,
-            notes=f'Deposit 25 USDC to uniswap-v2 LP {pool_address}',
+            notes=f'Deposit 25 USDC to Uniswap V2 LP {pool_address}',
             counterparty=CPT_UNISWAP_V2,
             address=pool_address,
             extra_data={'pool_address': pool_address},
@@ -261,7 +261,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             asset=A_DAI,
             amount=FVal('24.994824629555601269'),
             location_label=ADDY_2,
-            notes=f'Deposit 24.994824629555601269 DAI to uniswap-v2 LP {pool_address}',
+            notes=f'Deposit 24.994824629555601269 DAI to Uniswap V2 LP {pool_address}',
             counterparty=CPT_UNISWAP_V2,
             address=pool_address,
             extra_data={'pool_address': pool_address},
@@ -275,7 +275,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             asset=Asset(lp_token_identifier),
             amount=FVal('0.000022187913295974'),
             location_label=ADDY_2,
-            notes='Receive 0.000022187913295974 UNI-V2 DAI-USDC from uniswap-v2 pool',
+            notes='Receive 0.000022187913295974 UNI-V2 DAI-USDC from Uniswap V2 pool',
             counterparty=CPT_UNISWAP_V2,
             address=pool_address,
         ),
@@ -327,7 +327,7 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
             asset=Asset('eip155:1/erc20:0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
             amount=FVal('9.6176228659E-8'),
             location_label=ADDY_3,
-            notes='Send 0.000000096176228659 UNI-V2 USDC-WETH to uniswap-v2 pool',
+            notes='Send 0.000000096176228659 UNI-V2 USDC-WETH to Uniswap V2 pool',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
         ), EvmEvent(
@@ -340,7 +340,7 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.005839327781368506'),
             location_label=ADDY_3,
-            notes='Remove 0.005839327781368506 ETH from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
+            notes='Remove 0.005839327781368506 ETH from Uniswap V2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
             extra_data={'pool_address': '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'},
@@ -354,7 +354,7 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('7.073493'),
             location_label=ADDY_3,
-            notes='Remove 7.073493 USDC from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
+            notes='Remove 7.073493 USDC from Uniswap V2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
             extra_data={'pool_address': '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'},
@@ -535,7 +535,7 @@ def test_uniswap_v2_swap_events_order(
             asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
             amount=FVal('23.084547675349898741'),
             location_label=user_address,
-            notes=f'Swap 23.084547675349898741 MTA in uniswap-v2 from {user_address}',
+            notes=f'Swap 23.084547675349898741 MTA in Uniswap V2 from {user_address}',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
         ), EvmSwapEvent(
@@ -547,7 +547,7 @@ def test_uniswap_v2_swap_events_order(
             asset=A_DAI,
             amount=FVal('58.517806710690769903'),
             location_label=user_address,
-            notes=f'Receive 58.517806710690769903 DAI in uniswap-v2 from {user_address}',
+            notes=f'Receive 58.517806710690769903 DAI in Uniswap V2 from {user_address}',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
         ),
@@ -587,7 +587,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
             amount=FVal('17.988110986983157473'),
             location_label=user_address,
-            notes='Send 17.988110986983157473 UNI-V2 POLS-WETH to uniswap-v2 pool',
+            notes='Send 17.988110986983157473 UNI-V2 POLS-WETH to Uniswap V2 pool',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
         ), EvmEvent(
@@ -600,7 +600,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa'),
             amount=FVal('518.338444992444885019'),
             location_label=user_address,
-            notes='Remove 518.338444992444885019 POLS from uniswap-v2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
+            notes='Remove 518.338444992444885019 POLS from Uniswap V2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
             extra_data={'pool_address': '0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'},
@@ -614,7 +614,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
             amount=FVal('1.378246251315897532'),
             location_label=user_address,
-            notes='Remove 1.378246251315897532 WETH from uniswap-v2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
+            notes='Remove 1.378246251315897532 WETH from Uniswap V2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
             extra_data={'pool_address': '0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'},
@@ -706,7 +706,7 @@ def test_swap_on_polygon(
         asset=EvmToken('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'),
         amount=FVal(spend_amount := '5.8559'),
         location_label=user_address,
-        notes=f'Swap {spend_amount} USDT in uniswap-v2 from {user_address}',
+        notes=f'Swap {spend_amount} USDT in Uniswap V2 from {user_address}',
         counterparty=CPT_UNISWAP_V2,
         address=string_to_evm_address('0xD12bA2A40289Ed8728682447DC77D001F03675F9'),
     ), EvmSwapEvent(
@@ -718,7 +718,7 @@ def test_swap_on_polygon(
         asset=EvmToken('eip155:137/erc20:0x94b959c93761835f634B8d6E655070C58E2CAa12'),
         amount=FVal(receive_amount := '1122.506594'),
         location_label=user_address,
-        notes=f'Receive {receive_amount} MEN in uniswap-v2 from {user_address}',
+        notes=f'Receive {receive_amount} MEN in Uniswap V2 from {user_address}',
         counterparty=CPT_UNISWAP_V2,
         address=string_to_evm_address('0xD12bA2A40289Ed8728682447DC77D001F03675F9'),
     )]
@@ -767,7 +767,7 @@ def test_add_liquidity_on_optimism(
         asset=EvmToken('eip155:10/erc20:0x4200000000000000000000000000000000000042'),
         amount=FVal(op_amount := '0.01'),
         location_label=user_address,
-        notes=f'Deposit {op_amount} OP to uniswap-v2 LP {pool_address}',
+        notes=f'Deposit {op_amount} OP to Uniswap V2 LP {pool_address}',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
         extra_data={'pool_address': pool_address},
@@ -781,7 +781,7 @@ def test_add_liquidity_on_optimism(
         asset=EvmToken('eip155:10/erc20:0x68f180fcCe6836688e9084f035309E29Bf0A2095'),
         amount=FVal(wbtc_amount := '0.00000006'),
         location_label=user_address,
-        notes=f'Deposit {wbtc_amount} WBTC to uniswap-v2 LP {pool_address}',
+        notes=f'Deposit {wbtc_amount} WBTC to Uniswap V2 LP {pool_address}',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
         extra_data={'pool_address': pool_address},
@@ -795,7 +795,7 @@ def test_add_liquidity_on_optimism(
         asset=EvmToken('eip155:10/erc20:0x9250E720C0F2bB732c598bEE54C0aeE195cEA673'),
         amount=FVal(receive_amount := '0.000000000219948894'),
         location_label=user_address,
-        notes=f'Receive {receive_amount} UNI-V2 OP-WBTC from uniswap-v2 pool',
+        notes=f'Receive {receive_amount} UNI-V2 OP-WBTC from Uniswap V2 pool',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
     )]
@@ -832,7 +832,7 @@ def test_remove_liquidity_on_arbitrum_one(
         asset=EvmToken('eip155:42161/erc20:0x342dEe677FEA9ECAA71A9490B08f9e4ADDEf79D6'),
         amount=FVal(spend_amount := '0.000020354830439389'),
         location_label=user_address,
-        notes=f'Send {spend_amount} UNI-V2 FUSD-USDT to uniswap-v2 pool',
+        notes=f'Send {spend_amount} UNI-V2 FUSD-USDT to Uniswap V2 pool',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
     ), EvmEvent(
@@ -845,7 +845,7 @@ def test_remove_liquidity_on_arbitrum_one(
         asset=EvmToken('eip155:42161/erc20:0x894341be568Eae3697408c420f1d0AcFCE6E55f9'),
         amount=FVal(fusd_amount := '20.605223289269023355'),
         location_label=user_address,
-        notes=f'Remove {fusd_amount} FUSD from uniswap-v2 LP {pool_address}',
+        notes=f'Remove {fusd_amount} FUSD from Uniswap V2 LP {pool_address}',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
         extra_data={'pool_address': pool_address},
@@ -859,7 +859,7 @@ def test_remove_liquidity_on_arbitrum_one(
         asset=EvmToken('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
         amount=FVal(usdt_amount := '20.217226'),
         location_label=user_address,
-        notes=f'Remove {usdt_amount} USDT from uniswap-v2 LP {pool_address}',
+        notes=f'Remove {usdt_amount} USDT from Uniswap V2 LP {pool_address}',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
         extra_data={'pool_address': pool_address},

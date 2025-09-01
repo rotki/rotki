@@ -181,7 +181,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.999999999949533767'),
             location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-            notes='Deposit 0.999999999949533767 ETH to uniswap-v3 LP 343053',
+            notes='Deposit 0.999999999949533767 ETH to Uniswap V3 LP 343053',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
@@ -194,7 +194,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('294.145955'),
             location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-            notes='Deposit 294.145955 USDC to uniswap-v3 LP 343053',
+            notes='Deposit 294.145955 USDC to Uniswap V3 LP 343053',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8'),
         ), EvmEvent(
@@ -251,7 +251,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.764522981784947382'),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Remove 0.764522981784947382 ETH from uniswap-v3 LP 337559',
+            notes='Remove 0.764522981784947382 ETH from Uniswap V3 LP 337559',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
@@ -264,7 +264,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('1028.82092'),
             location_label='0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47',
-            notes='Remove 1028.82092 USDC from uniswap-v3 LP 337559',
+            notes='Remove 1028.82092 USDC from Uniswap V3 LP 337559',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ),

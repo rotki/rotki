@@ -13,7 +13,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.types import (
+    CounterpartyDetails,
+    get_versioned_counterparty_label,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     CPT_UNISWAP_V2,
     CPT_UNISWAP_V3,
@@ -344,6 +347,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         gas_event.sequence_index = 0
 
         timestamp = ts_ms_to_sec(decoded_events[0].timestamp)  # all events have same timestamp
+        display_name = get_versioned_counterparty_label(CPT_UNISWAP_V3)
         from_event = self.base.make_event(
             tx_hash=transaction.tx_hash,
             sequence_index=1,
@@ -353,7 +357,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             asset=from_crypto_asset,
             amount=swap_data.from_amount,
             location_label=transaction.from_address,
-            notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {display_name} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=transaction.to_address,
         )
@@ -367,7 +371,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             asset=to_crypto_asset,
             amount=swap_data.to_amount,
             location_label=transaction.from_address,
-            notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {display_name} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=transaction.to_address,
         )
