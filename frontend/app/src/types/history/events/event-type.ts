@@ -9,7 +9,7 @@ const RuiIcon = z.string().transform((icon) => {
     return icon satisfies RuiIcons;
 
   console.warn(`${icon} returned from the backend does not match RuiIcons`);
-  return 'lu-circle-help' satisfies RuiIcons;
+  return 'lu-circle-question-mark' satisfies RuiIcons;
 });
 
 const HistoryEventTypeGlobalMapping = z.record(z.string(), z.record(z.string(), z.object({

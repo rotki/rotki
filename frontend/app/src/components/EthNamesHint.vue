@@ -11,7 +11,7 @@ const { t } = useI18n({ useScope: 'global' });
           icon
           v-bind="attrs"
         >
-          <RuiIcon name="lu-circle-help" />
+          <RuiIcon name="lu-circle-question-mark" />
         </RuiButton>
       </template>
       <div class="p-4 max-w-[20rem] flex flex-col gap-2">
