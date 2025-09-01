@@ -265,12 +265,16 @@ def is_valid_db_blockchain_account(
         account: str,
 ) -> bool:
     """Validates a blockchain address already stored in DB."""
-    if blockchain == SupportedBlockchain.BITCOIN:
+    if blockchain in (
+        SupportedBlockchain.BITCOIN,
+        SupportedBlockchain.BITCOIN_CASH,
+        SupportedBlockchain.SOLANA,
+    ):
         return True
-    if blockchain == SupportedBlockchain.BITCOIN_CASH:
-        return True
+
     if blockchain.is_evm_or_evmlike():
         return is_checksum_address(account)
+
     if blockchain.is_substrate():  # mypy does not understand the type narrowing here
         return is_valid_substrate_address(blockchain, account)  # type: ignore[arg-type]
 

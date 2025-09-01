@@ -61,6 +61,11 @@ const navItems: MenuItem[] = [
         ...Routes.ACCOUNTS_BITCOIN,
       },
       {
+        class: 'accounts-solana',
+        type: 'item',
+        ...Routes.ACCOUNTS_SOLANA,
+      },
+      {
         class: 'accounts-substrate',
         type: 'item',
         ...Routes.ACCOUNTS_SUBSTRATE,

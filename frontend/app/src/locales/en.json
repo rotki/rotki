@@ -1828,6 +1828,7 @@
       "categories": {
         "bitcoin": "Bitcoin Address",
         "evm": "EVM Address",
+        "solana": "Solana Address",
         "substrate": "Substrate Address"
       },
       "title": "blockchain"
@@ -3395,6 +3396,7 @@
     "accounts_sub": {
       "bitcoin": "Bitcoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
+      "solana": "Solana @:navigation_menu.accounts",
       "substrate": "Substrate @:navigation_menu.accounts"
     },
     "api_keys": "API Keys",
