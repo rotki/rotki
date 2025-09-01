@@ -32,7 +32,7 @@ defineProps<{ item: HistoryEventsQueryData }>();
       <template #activator>
         <RuiIcon
           class="text-rui-text-secondary"
-          name="lu-circle-help"
+          name="lu-circle-question-mark"
         />
       </template>
 

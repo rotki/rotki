@@ -472,7 +472,7 @@ function abortLogin() {
                   >
                     <template #activator>
                       <RuiIcon
-                        name="lu-circle-help"
+                        name="lu-circle-question-mark"
                         color="primary"
                       />
                     </template>

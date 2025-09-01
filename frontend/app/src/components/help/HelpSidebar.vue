@@ -29,7 +29,7 @@ const entries: Entry[] = [
     title: t('help_sidebar.user_guide.title'),
   },
   {
-    icon: 'lu-message-circle-question',
+    icon: 'lu-message-circle-question-mark',
     link: externalLinks.faq,
     subtitle: t('help_sidebar.faq.subtitle'),
     title: t('help_sidebar.faq.title'),

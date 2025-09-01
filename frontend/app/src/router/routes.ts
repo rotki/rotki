@@ -86,7 +86,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.accounts_sub.evm'),
     },
     ACCOUNTS_SOLANA: {
-      icon: 'lu-blockchain' as const,
+      icon: 'lu-solana-accounts-fill' as const,
       route: Routes.ACCOUNTS_SOLANA,
       text: t('navigation_menu.accounts_sub.solana'),
     },

@@ -130,7 +130,7 @@ function resetForm() {
                 >
                   <RuiIcon
                     :size="20"
-                    name="lu-circle-help"
+                    name="lu-circle-question-mark"
                   />
                 </RuiButton>
               </template>

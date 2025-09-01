@@ -137,7 +137,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     return {
       color: 'error',
       direction: 'neutral',
-      icon: 'lu-circle-help',
+      icon: 'lu-circle-question-mark',
       identifier: '',
       label,
     };
@@ -172,7 +172,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     const typeVal = get(type);
     return (
       get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
-        icon: 'lu-circle-help',
+        icon: 'lu-circle-question-mark',
         identifier: typeVal,
         label: toCapitalCase(typeVal),
       }

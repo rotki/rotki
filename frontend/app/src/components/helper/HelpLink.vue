@@ -34,7 +34,7 @@ const { href, onLinkClick } = useLinks(url);
       >
         <RuiIcon
           :size="small ? 20 : 24"
-          name="lu-circle-help"
+          name="lu-circle-question-mark"
         />
       </RuiButton>
     </template>

@@ -30,7 +30,7 @@ defineProps<{ item: TxQueryStatusData }>();
       <template #activator>
         <RuiIcon
           class="text-rui-text-secondary"
-          name="lu-circle-help"
+          name="lu-circle-question-mark"
           size="18"
         />
       </template>

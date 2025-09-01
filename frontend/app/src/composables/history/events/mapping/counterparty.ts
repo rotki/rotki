@@ -90,7 +90,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
       return {
         color: 'error',
-        icon: 'lu-circle-help',
+        icon: 'lu-circle-question-mark',
         identifier: '',
         label: counterparty,
       };
@@ -125,7 +125,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
     return {
       color: 'error',
-      icon: 'lu-circle-help',
+      icon: 'lu-circle-question-mark',
       identifier: counterpartyVal,
       label: counterpartyVal,
     };
