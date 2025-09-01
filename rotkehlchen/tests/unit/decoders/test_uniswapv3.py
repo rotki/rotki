@@ -83,7 +83,7 @@ def test_uniswap_v3_swap(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('0.632989659350357136'),
             location_label=ADDY,
-            notes='Swap 0.632989659350357136 ETH via uniswap-v3 auto router',
+            notes='Swap 0.632989659350357136 ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
         ), EvmSwapEvent(
@@ -95,7 +95,7 @@ def test_uniswap_v3_swap(ethereum_inquirer):
             asset=Asset('eip155:1/erc20:0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32'),
             amount=FVal('1000'),
             location_label=ADDY,
-            notes=f'Receive 1000 LDO as the result of a swap via {CPT_UNISWAP_V3} auto router',
+            notes='Receive 1000 LDO as the result of a swap via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
         ),
@@ -132,7 +132,7 @@ def test_uniswap_v3_swap_received_token2(ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('75000'),
             location_label=ADDY_2,
-            notes=f'Swap 75000 USDC via {CPT_UNISWAP_V3} auto router',
+            notes='Swap 75000 USDC via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmSwapEvent(
@@ -144,7 +144,7 @@ def test_uniswap_v3_swap_received_token2(ethereum_inquirer):
             asset=Asset('ETH'),
             amount=FVal('49.523026278486536412'),
             location_label=ADDY_2,
-            notes=f'Receive 49.523026278486536412 ETH as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes='Receive 49.523026278486536412 ETH as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
@@ -241,7 +241,7 @@ def test_swap_eth_to_tokens(ethereum_inquirer, ethereum_accounts):
             asset=Asset('ETH'),
             amount=FVal('262'),
             location_label=user_address,
-            notes=f'Swap 262 ETH via {CPT_UNISWAP_V3} auto router',
+            notes='Swap 262 ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmSwapEvent(
@@ -253,7 +253,7 @@ def test_swap_eth_to_tokens(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal('841047.621362'),
             location_label=user_address,
-            notes=f'Receive 841047.621362 USDC as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes='Receive 841047.621362 USDC as the result of a swap via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
@@ -289,7 +289,7 @@ def test_swap_eth_to_tokens_refund(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal('0.003918934703639028'),
             location_label=user_address,
-            notes=f'Swap 0.003918934703639028 ETH via {CPT_UNISWAP_V3} auto router',
+            notes='Swap 0.003918934703639028 ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmSwapEvent(
@@ -301,7 +301,7 @@ def test_swap_eth_to_tokens_refund(ethereum_inquirer, ethereum_accounts):
             asset=A_USDT,
             amount=FVal('5'),
             location_label=user_address,
-            notes=f'Receive 5 USDT as the result of a swap via {CPT_UNISWAP_V3} auto router',
+            notes='Receive 5 USDT as the result of a swap via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
@@ -337,7 +337,7 @@ def test_swap_tokens_to_eth(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal('150000'),
             location_label=user_address,
-            notes=f'Swap 150000 USDC via {CPT_UNISWAP_V3} auto router',
+            notes='Swap 150000 USDC via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmSwapEvent(
@@ -349,7 +349,7 @@ def test_swap_tokens_to_eth(ethereum_inquirer, ethereum_accounts):
             asset=Asset('ETH'),
             amount=FVal('150.306972002256248665'),
             location_label=user_address,
-            notes=f'Receive 150.306972002256248665 ETH as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes='Receive 150.306972002256248665 ETH as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
@@ -385,7 +385,7 @@ def test_swap_tokens_to_tokens_single_receipt(ethereum_inquirer, ethereum_accoun
             asset=Asset('eip155:1/erc20:0xa47c8bf37f92aBed4A126BDA807A7b7498661acD'),
             amount=FVal('3000000'),
             location_label=user_address,
-            notes=f'Swap 3000000 UST via {CPT_UNISWAP_V3} auto router',
+            notes='Swap 3000000 UST via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmSwapEvent(
@@ -397,7 +397,7 @@ def test_swap_tokens_to_tokens_single_receipt(ethereum_inquirer, ethereum_accoun
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal('2994089.109716'),
             location_label=user_address,
-            notes=f'Receive 2994089.109716 USDC as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes='Receive 2994089.109716 USDC as the result of a swap via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
@@ -434,7 +434,7 @@ def test_swap_tokens_to_tokens_multiple_receipts(ethereum_inquirer, ethereum_acc
             asset=Asset('eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
             amount=FVal('224.18247796'),
             location_label=user_address,
-            notes=f'Swap 224.18247796 WBTC via {CPT_UNISWAP_V3} auto router',
+            notes='Swap 224.18247796 WBTC via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmSwapEvent(
@@ -446,7 +446,7 @@ def test_swap_tokens_to_tokens_multiple_receipts(ethereum_inquirer, ethereum_acc
             asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
             amount=FVal('5326023.631679255788142165'),
             location_label=user_address,
-            notes=f'Receive 5326023.631679255788142165 DAI as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes='Receive 5326023.631679255788142165 DAI as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
@@ -489,7 +489,7 @@ def test_uniswap_v3_remove_liquidity(ethereum_inquirer):
             asset=A_ETH,
             amount=FVal('1000.374356073654694973'),
             location_label=ADDY_4,
-            notes='Remove 1000.374356073654694973 ETH from uniswap-v3 LP 389043',
+            notes='Remove 1000.374356073654694973 ETH from Uniswap V3 LP 389043',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
@@ -502,7 +502,7 @@ def test_uniswap_v3_remove_liquidity(ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('198401.464386'),
             location_label=ADDY_4,
-            notes='Remove 198401.464386 USDC from uniswap-v3 LP 389043',
+            notes='Remove 198401.464386 USDC from Uniswap V3 LP 389043',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ),
@@ -539,7 +539,7 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
             asset=A_DAI,
             amount=FVal('11257.999999195502514358'),
             location_label=ADDY_5,
-            notes='Deposit 11257.999999195502514358 DAI to uniswap-v3 LP 401357',
+            notes='Deposit 11257.999999195502514358 DAI to Uniswap V3 LP 401357',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
         ), EvmEvent(
@@ -552,7 +552,7 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
             asset=A_USDC,
             amount=FVal('13732.357062'),
             location_label=ADDY_5,
-            notes='Deposit 13732.357062 USDC to uniswap-v3 LP 401357',
+            notes='Deposit 13732.357062 USDC to Uniswap V3 LP 401357',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
         ), EvmEvent(
@@ -629,7 +629,7 @@ def test_uniswap_v3_create_lp_position_with_native_refund(
         asset=A_ETH,
         amount=FVal(eth_amount := '0.004921550321882571'),
         location_label=user_address,
-        notes=f'Deposit {eth_amount} ETH to uniswap-v3 LP 4818837',
+        notes=f'Deposit {eth_amount} ETH to Uniswap V3 LP 4818837',
         counterparty=CPT_UNISWAP_V3,
         address=nft_manager,
     ), EvmEvent(
@@ -642,7 +642,7 @@ def test_uniswap_v3_create_lp_position_with_native_refund(
         asset=Asset('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'),
         amount=FVal(wbtc_amount := '0.00016509'),
         location_label=user_address,
-        notes=f'Deposit {wbtc_amount} WBTC to uniswap-v3 LP 4818837',
+        notes=f'Deposit {wbtc_amount} WBTC to Uniswap V3 LP 4818837',
         counterparty=CPT_UNISWAP_V3,
         address=string_to_evm_address('0x2f5e87C9312fa29aed5c179E456625D79015299c'),
     ), EvmEvent(
@@ -688,7 +688,7 @@ def test_uniswap_v3_swap_by_universal_router(ethereum_inquirer, ethereum_account
         asset=A_LUSD,
         amount=FVal('29998.270067672164822565'),
         location_label=user_address,
-        notes='Swap 29998.270067672164822565 LUSD via uniswap-v3 auto router',
+        notes='Swap 29998.270067672164822565 LUSD via Uniswap V3 auto router',
         tx_hash=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address='0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD',
@@ -700,7 +700,7 @@ def test_uniswap_v3_swap_by_universal_router(ethereum_inquirer, ethereum_account
         asset=A_ETH,
         amount=FVal('16.48341101375048316'),
         location_label=user_address,
-        notes='Receive 16.48341101375048316 ETH as the result of a swap via uniswap-v3 auto router',  # noqa: E501
+        notes='Receive 16.48341101375048316 ETH as the result of a swap via Uniswap V3 auto router',  # noqa: E501
         tx_hash=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address='0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD',
@@ -738,7 +738,7 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919'),
         amount=FVal(rai_amount),
         location_label=user_address,
-        notes=f'Deposit {rai_amount} RAI to uniswap-v3 LP {nft_id}',
+        notes=f'Deposit {rai_amount} RAI to Uniswap V3 LP {nft_id}',
         tx_hash=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address=(pool_address := string_to_evm_address('0x0dc9877F6024CCf16a470a74176C9260beb83AB6')),  # noqa: E501
@@ -751,7 +751,7 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
         asset=A_WETH,
         amount=FVal(weth_amount),
         location_label=user_address,
-        notes=f'Deposit {weth_amount} WETH to uniswap-v3 LP {nft_id}',
+        notes=f'Deposit {weth_amount} WETH to Uniswap V3 LP {nft_id}',
         tx_hash=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address=pool_address,
@@ -802,7 +802,7 @@ def test_swap_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             amount=FVal(swap_amount),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Swap {swap_amount} ETH via {CPT_UNISWAP_V3} auto router',
+            notes=f'Swap {swap_amount} ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ), EvmSwapEvent(
@@ -814,7 +814,7 @@ def test_swap_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ARB,
             amount=FVal(receive_amount),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Receive {receive_amount} ARB as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes=f'Receive {receive_amount} ARB as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
@@ -850,7 +850,7 @@ def test_swap_on_base(base_inquirer, base_accounts):
             asset=A_ETH,
             amount=FVal(swap_amount),
             location_label=base_accounts[0],
-            notes=f'Swap {swap_amount} ETH via {CPT_UNISWAP_V3} auto router',
+            notes=f'Swap {swap_amount} ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ), EvmSwapEvent(
@@ -862,7 +862,7 @@ def test_swap_on_base(base_inquirer, base_accounts):
             asset=Asset('eip155:8453/erc20:0x7299cD731d0712dB09E7dF43fD670D75Db3319Bc'),
             amount=FVal(receive_amount),
             location_label=base_accounts[0],
-            notes=f'Receive {receive_amount} NESSY as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes=f'Receive {receive_amount} NESSY as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
@@ -898,7 +898,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
             asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
             amount=FVal(swap_amount),
             location_label=optimism_accounts[0],
-            notes=f'Swap {swap_amount} DAI via {CPT_UNISWAP_V3} auto router',
+            notes=f'Swap {swap_amount} DAI via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ), EvmSwapEvent(
@@ -910,7 +910,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
             amount=FVal(receive_amount),
             location_label=optimism_accounts[0],
-            notes=f'Receive {receive_amount} USDC.e as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes=f'Receive {receive_amount} USDC.e as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
@@ -949,7 +949,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_WETH_POLYGON,
             amount=FVal(swap_amount),
             location_label=polygon_pos_accounts[0],
-            notes=f'Swap {swap_amount} WETH via {CPT_UNISWAP_V3} auto router',
+            notes=f'Swap {swap_amount} WETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ), EvmSwapEvent(
@@ -961,7 +961,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             asset=Asset('eip155:137/erc20:0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6'),
             amount=FVal(receive_amount),
             location_label=polygon_pos_accounts[0],
-            notes=f'Receive {receive_amount} WBTC as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes=f'Receive {receive_amount} WBTC as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
@@ -1010,7 +1010,7 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),  # USDC
             amount=FVal(usdc_deposit),
             location_label=optimism_accounts[0],
-            notes=f'Deposit {usdc_deposit} USDC to uniswap-v3 LP 550709',
+            notes=f'Deposit {usdc_deposit} USDC to Uniswap V3 LP 550709',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xB533c12fB4e7b53b5524EAb9b47d93fF6C7A456F'),
         ), EvmEvent(
@@ -1023,7 +1023,7 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             asset=A_OP,
             amount=FVal(op_deposit),
             location_label=optimism_accounts[0],
-            notes=f'Deposit {op_deposit} OP to uniswap-v3 LP 550709',
+            notes=f'Deposit {op_deposit} OP to Uniswap V3 LP 550709',
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xB533c12fB4e7b53b5524EAb9b47d93fF6C7A456F'),
         ), EvmEvent(
@@ -1075,7 +1075,7 @@ def test_swap_on_binance_sc(
             asset=Asset('eip155:56/erc20:0x2170Ed0880ac9A755fd29B2688956BD959F933F8'),
             amount=FVal(swap_amount),
             location_label=user_address,
-            notes=f'Swap {swap_amount} ETH via {CPT_UNISWAP_V3} auto router',
+            notes=f'Swap {swap_amount} ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
         ), EvmSwapEvent(
@@ -1087,7 +1087,7 @@ def test_swap_on_binance_sc(
             asset=A_BSC_BNB,
             amount=FVal(receive_amount),
             location_label=user_address,
-            notes=f'Receive {receive_amount} BNB as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            notes=f'Receive {receive_amount} BNB as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
         ),
@@ -1188,7 +1188,7 @@ def test_uniswap_v3_universal_router_2(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(amount_out := '0.000184539583537197'),
             location_label=ethereum_accounts[0],
-            notes=f'Swap {amount_out} ETH via uniswap-v3 auto router',
+            notes=f'Swap {amount_out} ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER_V2,
         ), EvmSwapEvent(
@@ -1200,7 +1200,7 @@ def test_uniswap_v3_universal_router_2(ethereum_inquirer, ethereum_accounts):
             asset=EvmToken('eip155:1/erc20:0x744d70FDBE2Ba4CF95131626614a1763DF805B9E'),  # SNT
             amount=FVal(amount_in := '10'),
             location_label=ethereum_accounts[0],
-            notes=f'Receive {amount_in} SNT as the result of a swap via uniswap-v3 auto router',
+            notes=f'Receive {amount_in} SNT as the result of a swap via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER_V2,
         ),

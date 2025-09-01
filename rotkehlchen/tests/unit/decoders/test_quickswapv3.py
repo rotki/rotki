@@ -63,7 +63,7 @@ def test_swap(
         asset=Asset('eip155:137/erc20:0xeB51D9A39AD5EEF215dC0Bf39a8821ff804A0F01'),
         amount=FVal(spend_amount := '6'),
         location_label=user_address,
-        notes=f'Swap {spend_amount} LGNS in quickswap-v3',
+        notes=f'Swap {spend_amount} LGNS in Quickswap V3',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xB135Aa990D02E0a31cE953Af2bD7ed0EF6587403'),
     ), EvmSwapEvent(
@@ -76,7 +76,7 @@ def test_swap(
         asset=Asset('eip155:137/erc20:0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'),
         amount=FVal(receive_amount := '60.81850271428595855'),
         location_label=user_address,
-        notes=f'Receive {receive_amount} DAI as the result of a swap in quickswap-v3',
+        notes=f'Receive {receive_amount} DAI as the result of a swap in Quickswap V3',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xB135Aa990D02E0a31cE953Af2bD7ed0EF6587403'),
     )]
@@ -112,7 +112,7 @@ def test_create_lp_position(
         asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
         amount=FVal(deposit1_amount := '9.910173'),
         location_label=user_address,
-        notes=f'Deposit {deposit1_amount} USDC to quickswap-v3 LP 170082',
+        notes=f'Deposit {deposit1_amount} USDC to Quickswap V3 LP 170082',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xE4Fd591b652CC3e566f1fA2f9891b58633A04c54'),
     ), EvmEvent(
@@ -125,7 +125,7 @@ def test_create_lp_position(
         asset=Asset('eip155:137/erc20:0x47C8017f1e8998455493175F308B8eEE59DD18C1'),
         amount=FVal(deposit2_amount := '499603.603806805364163316'),
         location_label=user_address,
-        notes=f'Deposit {deposit2_amount} $FRITH to quickswap-v3 LP 170082',
+        notes=f'Deposit {deposit2_amount} $FRITH to Quickswap V3 LP 170082',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xE4Fd591b652CC3e566f1fA2f9891b58633A04c54'),
     ), EvmEvent(
@@ -174,7 +174,7 @@ def test_add_liquidity(
         asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
         amount=FVal(deposit1_amount := '0.122014'),
         location_label=user_address,
-        notes=f'Deposit {deposit1_amount} USDC to quickswap-v3 LP 169502',
+        notes=f'Deposit {deposit1_amount} USDC to Quickswap V3 LP 169502',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x74D1578E3Db15AE7605E1420dFC3801eEe98428e'),
     ), EvmEvent(
@@ -187,7 +187,7 @@ def test_add_liquidity(
         asset=Asset('eip155:137/erc20:0x4aDe9f87c3c155ECbE96eFCa0950D9d5Bfef93Cc'),
         amount=FVal(deposit2_amount := '23309.824084423422982329'),
         location_label=user_address,
-        notes=f'Deposit {deposit2_amount} FLIP to quickswap-v3 LP 169502',
+        notes=f'Deposit {deposit2_amount} FLIP to Quickswap V3 LP 169502',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x74D1578E3Db15AE7605E1420dFC3801eEe98428e'),
     )]
@@ -223,7 +223,7 @@ def test_remove_liquidity(
         asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
         amount=FVal(withdraw1_amount := '14.275954'),
         location_label=user_address,
-        notes=f'Remove {withdraw1_amount} USDC from quickswap-v3 LP 170033',
+        notes=f'Remove {withdraw1_amount} USDC from Quickswap V3 LP 170033',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x14Ef96A0f7d738Db906bdD5260E46AA47B1e6E45'),
     ), EvmEvent(
@@ -236,7 +236,7 @@ def test_remove_liquidity(
         asset=Asset('eip155:137/erc20:0xB5C064F955D8e7F38fE0460C556a72987494eE17'),
         amount=FVal(withdraw2_amount := '958.728216407276018128'),
         location_label=user_address,
-        notes=f'Remove {withdraw2_amount} QUICK from quickswap-v3 LP 170033',
+        notes=f'Remove {withdraw2_amount} QUICK from Quickswap V3 LP 170033',
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x14Ef96A0f7d738Db906bdD5260E46AA47B1e6E45'),
     )]

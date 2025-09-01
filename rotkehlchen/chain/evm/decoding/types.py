@@ -1,6 +1,13 @@
 from typing import NamedTuple
 
 
+def get_versioned_counterparty_label(counterparty: str) -> str:
+    """Create a pretty label for a counterparty ending with '-vX' where X is the version number.
+    For example, `uniswap-v3` -> `Uniswap V3`
+    """
+    return counterparty.capitalize().replace('-v', ' V')
+
+
 class CounterpartyDetails(NamedTuple):
     """
     Details for a counterparty returned to the api consumer.
@@ -38,7 +45,7 @@ class CounterpartyDetails(NamedTuple):
         """
         return cls(
             identifier=counterparty,
-            label=counterparty.capitalize().replace('-v', ' V'),
+            label=get_versioned_counterparty_label(counterparty),
             image=image,
             darkmode_image=darkmode_image,
             icon=icon,

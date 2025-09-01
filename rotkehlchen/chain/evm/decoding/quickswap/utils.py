@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.quickswap.constants import UNISWAP_QUICKSWAP_COUNTERPARTY_MAP
+from rotkehlchen.chain.evm.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 if TYPE_CHECKING:
@@ -24,9 +25,10 @@ def decode_quickswap_swap(
             continue
 
         event.counterparty = UNISWAP_QUICKSWAP_COUNTERPARTY_MAP[event.counterparty]
+        display_name = get_versioned_counterparty_label(event.counterparty)
         if event.event_subtype == HistoryEventSubType.SPEND:
-            event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {event.counterparty}'  # noqa: E501
+            event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {display_name}'  # noqa: E501
         else:  # receive
-            event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in {event.counterparty}'  # noqa: E501
+            event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in {display_name}'  # noqa: E501
 
     return decoded_events

@@ -12,6 +12,7 @@ from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_underlying
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
@@ -159,13 +160,14 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
     https://etherscan.io/tx/0x76c312fe1c8604de5175c37dcbbb99cc8699336f3e4840e9e29e3383970f6c6d (withdrawal)
     """  # noqa: E501
     new_action_items = []
+    display_name = get_versioned_counterparty_label(counterparty)
     if is_deposit:
-        notes = f'Deposit {{amount}} {{asset}} to {counterparty} LP {position_id}'
+        notes = f'Deposit {{amount}} {{asset}} to {display_name} LP {position_id}'
         from_event_type = HistoryEventType.SPEND
         to_event_type = HistoryEventType.DEPOSIT
         to_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
     else:  # can only be 'removal'
-        notes = f'Remove {{amount}} {{asset}} from {counterparty} LP {position_id}'
+        notes = f'Remove {{amount}} {{asset}} from {display_name} LP {position_id}'
         from_event_type = HistoryEventType.RECEIVE
         to_event_type = HistoryEventType.WITHDRAWAL
         to_event_subtype = HistoryEventSubType.REMOVE_ASSET

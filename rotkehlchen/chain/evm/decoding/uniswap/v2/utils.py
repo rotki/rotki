@@ -16,7 +16,6 @@ from rotkehlchen.chain.ethereum.modules.constants import (
     SUSHISWAP_LP_SYMBOL,
     UNISWAP_V2_LP_SYMBOL,
 )
-from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -25,6 +24,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -114,6 +114,7 @@ def decode_uniswap_v2_like_swap(
         if event.asset == A_ETH and event.event_type == HistoryEventType.RECEIVE:
             received_eth += event.amount
 
+    display_name = get_versioned_counterparty_label(counterparty)
     for event in decoded_events:
         # When we look for the spend event we have to take into consideration the case
         # where not all the ETH is converted. The ETH that is not converted is returned
@@ -137,7 +138,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = counterparty
-            event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
+            event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {display_name} from {event.location_label}'  # noqa: E501
             out_event = event
         elif (  # out_event is already decoded
             event.event_type == HistoryEventType.TRADE and
@@ -156,7 +157,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = counterparty
-            event.notes = f'Receive {event.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
+            event.notes = f'Receive {event.amount} {crypto_asset.symbol} in {display_name} from {event.location_label}'  # noqa: E501
             in_event = event
         elif (
             event.event_type == HistoryEventType.RECEIVE and
@@ -173,7 +174,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type = HistoryEventType.WITHDRAWAL
             event.event_subtype = HistoryEventSubType.REFUND
             event.counterparty = counterparty
-            event.notes = f'Refund of {event.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
+            event.notes = f'Refund of {event.amount} {crypto_asset.symbol} in {display_name} due to price change'  # noqa: E501
 
     maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)
     return DecodingOutput(process_swaps=True)
@@ -303,6 +304,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
 
     # find already decoded events of the transfers and store the id to mutate after
     # confirmation that it is indeed Uniswap V2 like Pool.
+    display_name = get_versioned_counterparty_label(counterparty)
     deposit_withdraw_events, receive_return_events = [], []
     for idx, event in enumerate(decoded_events):
         resolved_asset = event.asset.resolve_to_crypto_asset()
@@ -332,11 +334,11 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-            event.notes = f'Receive {event.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
+            event.notes = f'Receive {event.amount} {resolved_asset.symbol} from {display_name} pool'  # noqa: E501
             event.address = pool_address
             GlobalDBHandler.set_tokens_protocol_if_missing(
                 tokens=[event.asset.resolve_to_evm_token()],
-                new_protocol=CPT_UNISWAP_V2 if resolved_asset.symbol.startswith('UNI-V2') else CPT_SUSHISWAP_V2,  # noqa: E501
+                new_protocol=counterparty,
             )
             receive_return_events.append(event)
         elif (
@@ -347,7 +349,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            event.notes = f'Send {event.amount} {resolved_asset.symbol} to {counterparty} pool'
+            event.notes = f'Send {event.amount} {resolved_asset.symbol} to {display_name} pool'
             receive_return_events.append(event)
 
     new_action_items = []
@@ -366,7 +368,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 to_notes=notes.format(
                     amount=amount,
                     asset=asset_symbol,
-                    counterparty=counterparty,
+                    counterparty=display_name,
                     pool_address=pool_address,
                 ),
                 to_counterparty=counterparty,
@@ -381,7 +383,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         decoded_events[decoded_event_idx].notes = notes.format(
             amount=amount,
             asset=asset_symbol,
-            counterparty=counterparty,
+            counterparty=display_name,
             pool_address=pool_address,
         )
         decoded_events[decoded_event_idx].extra_data = extra_data

@@ -7,6 +7,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, get_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
+from rotkehlchen.chain.evm.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v4.constants import V4_SWAP_TOPIC
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -50,6 +51,7 @@ def decode_basic_uniswap_info(
     We check three events because potential events are: spend, (optionally) approval, receive.
     Earlier events are not related to the current swap.
     """
+    display_name = get_versioned_counterparty_label(counterparty)
     spend_event, approval_event, receive_event = None, None, None
     for event in reversed(decoded_events):
         try:
@@ -75,7 +77,7 @@ def decode_basic_uniswap_info(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = counterparty
-            event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {counterparty}'
+            event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {display_name}'
             spend_event = event
         elif (
             event.amount == asset_normalized_value(amount=amount_received, asset=crypto_asset) and
@@ -86,7 +88,7 @@ def decode_basic_uniswap_info(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = counterparty
-            event.notes = f'Receive {event.amount} {crypto_asset.symbol} as a result of a {counterparty} swap'  # noqa: E501
+            event.notes = f'Receive {event.amount} {crypto_asset.symbol} as a result of a {display_name} swap'  # noqa: E501
             receive_event = event
         elif (
             event.counterparty in {CPT_UNISWAP_V2, CPT_UNISWAP_V3} and
@@ -285,8 +287,7 @@ def decode_uniswap_v3_like_position_create_or_exit(
                 )
 
             event.counterparty = counterparty
-            display_name = counterparty.capitalize().replace('-v', ' V')
-            event.notes = f'{verb} {display_name} LP with id {position_id}'
+            event.notes = f'{verb} {get_versioned_counterparty_label(counterparty)} LP with id {position_id}'  # noqa: E501
         elif event.counterparty == counterparty:
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
