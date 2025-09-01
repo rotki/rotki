@@ -64,6 +64,7 @@ vi.mock('@/composables/blockchain/accounts/index', () => {
         [address]: ['eth', 'optimism', 'gnosis'],
       },
     })),
+    fetch: vi.fn().mockResolvedValue(undefined),
   };
   return {
     useBlockchainAccounts: vi.fn(() => mock),
