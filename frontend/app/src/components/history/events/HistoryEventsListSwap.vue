@@ -70,10 +70,12 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
     return undefined;
   }
 
+  const options = { collectionParent: false };
+
   const receiveNotes = receive.length === 1
     ? {
         receiveAmount: receive[0].amount,
-        receiveAsset: getAssetSymbol(receive[0].asset),
+        receiveAsset: getAssetSymbol(receive[0].asset, options),
       }
     : {
         receiveAmount: receive.length,
@@ -83,7 +85,7 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
   const spendNotes = spend.length === 1
     ? {
         spendAmount: spend[0].amount,
-        spendAsset: getAssetSymbol(spend[0].asset),
+        spendAsset: getAssetSymbol(spend[0].asset, options),
       }
     : {
         spendAmount: spend.length,
@@ -97,7 +99,7 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
 
   const fee = props.events.filter(item => item.eventSubtype === 'fee');
   if (fee.length > 0) {
-    const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset)}`).join('; ');
+    const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset, options)}`).join('; ');
     notes = t('history_events_list_swap.fee_description', {
       feeText,
       notes,
