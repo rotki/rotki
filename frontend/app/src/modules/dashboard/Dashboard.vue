@@ -40,7 +40,7 @@ watch(width, (newWidth) => {
 
 const showDynamicMessage = computed(() => get(activeDashboardMessages).length > 0 && !get(dismissedMessage));
 
-const { height: floatingHeight } = useElementSize(floatingRef);
+const { height: floatingHeight } = useElementBounding(floatingRef);
 
 watch(floatingHeight, (newHeight, oldHeight) => {
   const diff = newHeight - oldHeight;
@@ -72,7 +72,7 @@ const paddingTop = computed(() => get(floatingHeight) || 0);
   >
     <div
       ref="floatingRef"
-      class="fixed z-[7] top-14 md:top-16 shadow-sm"
+      class="fixed z-[7] top-14 md:top-16 shadow-sm overflow-hidden"
       :style="{ width: `${dashboardWidth}px` }"
     >
       <DynamicMessageDisplay

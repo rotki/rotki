@@ -1839,6 +1839,12 @@
       "title": "exchange"
     },
     "history_query_indicator": {
+      "balance_status": {
+        "finalizing_chain_balances": "Finalizing {chain} balances... ({current}/{total})",
+        "querying_balances": "Querying blockchain balances...",
+        "querying_chain_balances": "Querying {chain} balances...",
+        "querying_chain_balances_with_progress": "({current}/{total}) Querying {chain} balances... "
+      },
       "event_status": {
         "default": "Processing",
         "querying_events_finished": "Finished querying",
@@ -1855,6 +1861,10 @@
       "processing_operation_event": "{status} for {name} ({location})",
       "processing_operation_transaction": "{status} for {address}",
       "processing_with_progress": "Historical event processing is underway. Updated protocol balances will be available once the operation concludes. ({current} / {total})",
+      "token_detection_status": {
+        "detecting": "Detecting tokens for",
+        "detecting_with_details": "({current}/{total}) Detecting tokens for"
+      },
       "transaction_status": {
         "decoding_transactions_finished": "Finished decoding",
         "decoding_transactions_started": "Starting decoding",
