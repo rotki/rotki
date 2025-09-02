@@ -290,7 +290,6 @@ class EVMTransactionDecoder(ABC):
         self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
-        self._add_single_decoder(class_name='OpenOcean', decoder_class=OpenOceanDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
 
@@ -322,6 +321,13 @@ class EVMTransactionDecoder(ABC):
             self._add_single_decoder(
                 class_name='Stakedao',
                 decoder_class=StakedaoCommonDecoder,
+                rules=rules,
+            )
+
+        if self.evm_inquirer.chain_id != ChainID.ARBITRUM_ONE:
+            self._add_single_decoder(  # in arbitrum one openocean has extra logic
+                class_name='OpenOcean',
+                decoder_class=OpenOceanDecoder,
                 rules=rules,
             )
 
