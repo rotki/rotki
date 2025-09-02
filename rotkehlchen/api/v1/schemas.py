@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 import marshmallow
 import webargs
 from eth_utils import is_checksum_address, is_hexstr, to_checksum_address
-from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates, validates_schema
+from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
 
@@ -781,15 +781,16 @@ class CreateHistoryEventSchema(Schema):
         extra_data = fields.Dict(load_default=None)
         location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
 
-        @validates('tx_hash')
-        def validate_tx_hash(self, tx_hash: str, data_key: str) -> None:  # pylint: disable=unused-argument
+        @validates_schema
+        def validate_tx_hash(self, data: dict[str, Any], **_kwargs: Any) -> None:
             """Check if the provided tx_hash is present in the db.
             Raises ValidationError if tx_hash is missing.
             """
             with CreateHistoryEventSchema.history_event_context.get()['schema'].database.conn.read_ctx() as cursor:  # noqa: E501
+                table = 'zksynclite_transactions' if data['location'].is_evmlike() else 'evm_transactions'  # noqa: E501
                 if cursor.execute(
-                    'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=?',
-                    (tx_hash,),
+                    f'SELECT COUNT(*) FROM {table} WHERE tx_hash=?',
+                    (data['tx_hash'],),
                 ).fetchone()[0] == 0:
                     raise ValidationError(
                         message='The provided transaction hash does not exist in the DB.',

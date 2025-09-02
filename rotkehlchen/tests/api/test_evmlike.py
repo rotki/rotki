@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -9,21 +10,26 @@ from eth_utils import to_checksum_address
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.zksync_lite.structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE, ZERO
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_proper_response,
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Location,
+    Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -458,3 +464,78 @@ def test_decode_pending_evmlike(
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_add_edit_evmlike_event(
+        rotkehlchen_api_server: 'APIServer',
+        zksync_lite_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that adding and editing evmlike events works correctly and properly validates
+    transaction hashes depending on if there is a corresponding transaction in the DB.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.chains_aggregator.zksync_lite._add_zksynctxs_db(
+            write_cursor=write_cursor,
+            transactions=[ZKSyncLiteTransaction(
+                tx_hash=(tx_hash := make_evm_tx_hash()),
+                tx_type=ZKSyncLiteTXType.TRANSFER,
+                timestamp=Timestamp(1600000000),
+                block_number=1,
+                from_address=(user_address := zksync_lite_accounts[0]),
+                to_address=make_evm_address(),
+                asset=A_ETH,
+                amount=ONE,
+                fee=ONE,
+                swap_data=None,
+            )],
+        )
+
+    # Add an event with the existing tx hash
+    entry = (event := EvmEvent(
+        event_identifier='xyz',
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1600000000000),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=user_address,
+        address=make_evm_address(),
+    )).serialize()
+    entry.pop('identifier')
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    )
+    result = assert_proper_sync_response_with_result(response)
+    entry['identifier'] = event.identifier = result['identifier']
+
+    # Edit the event keeping the correct tx hash
+    entry['user_notes'] = event.notes = 'test notes'
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    )
+    assert_proper_sync_response_with_result(response)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert DBHistoryEvents(rotki.data.db).get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(),
+            entries_limit=None,
+        ) == [event]
+
+    # Try to edit with a tx hash that is not in the db
+    entry['tx_hash'] = make_evm_tx_hash().hex()  # pylint: disable=no-member
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

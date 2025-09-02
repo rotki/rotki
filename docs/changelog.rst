@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10556` Editing ZKSync lite history events will be possible again.
 * :bug:`-` Beefy Finance reward pool and boost vault tokens will now be properly priced.
 * :bug:`-` Account delegation transactions will now be properly decoded and processed.
 * :bug:`-` Curve swap transactions that use the new router will now be decoded properly across supported EVM chains.
