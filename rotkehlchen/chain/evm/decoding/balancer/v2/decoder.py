@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     read_balancer_pools_and_gauges_from_cache,
 )
-from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import V2_SWAP, VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -256,6 +256,6 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_BALANCER_V2,
-            label=BALANCER_LABEL,
+            label=CPT_BALANCER_V2.capitalize().replace('-v', ' V'),
             image='balancer.svg',
         ),)
