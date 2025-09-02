@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Balancer V2 swaps that swap multiple times before reaching the desired token or that swap to the chain's native token will now be properly decoded.
 * :bug:`10556` Editing ZKSync lite history events will be possible again.
 * :bug:`-` Beefy Finance reward pool and boost vault tokens will now be properly priced.
 * :bug:`-` Account delegation transactions will now be properly decoded and processed.
