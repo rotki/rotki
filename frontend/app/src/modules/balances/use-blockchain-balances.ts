@@ -1,37 +1,13 @@
-import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
-import type { BlockchainMetadata, TaskMeta } from '@/types/task';
-import { Blockchain } from '@rotki/common';
-import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import type { BlockchainBalancePayload } from '@/types/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useStatusUpdater } from '@/composables/status';
 import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
-import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
-import {
-  type AssetProtocolBalances,
-  BlockchainBalances,
-  type BtcBalances,
-} from '@/types/blockchain/balances';
-import { Module } from '@/types/modules';
 import { BalanceSource } from '@/types/settings/frontend-settings';
-import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
+import { Section } from '@/types/status';
 import { arrayify } from '@/utils/array';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { convertBtcBalances } from '@/utils/blockchain/accounts';
-import { balanceSum } from '@/utils/calculation';
-import { logger } from '@/utils/logging';
-
-function isBtcBalances(data?: BtcBalances | AssetBalances): data is BtcBalances {
-  return !!data && (!!data.standalone || !!data.xpubs);
-}
+import { useBalanceProcessingService } from './services/use-balance-processing-service';
+import { useLoopringBalanceService } from './services/use-loopring-balance-service';
 
 interface UseBlockchainbalancesReturn {
   fetchBlockchainBalances: (payload?: BlockchainBalancePayload, periodic?: boolean) => Promise<void>;
@@ -39,207 +15,41 @@ interface UseBlockchainbalancesReturn {
 }
 
 export function useBlockchainBalances(): UseBlockchainbalancesReturn {
-  const { awaitTask } = useTaskStore();
-  const { notify } = useNotificationsStore();
-  const { queryBlockchainBalances } = useBlockchainBalancesApi();
-  const { accounts } = storeToRefs(useBlockchainAccountsStore());
-  const { updateBalances } = useBalancesStore();
-  const { updateAccounts } = useBlockchainAccountsStore();
-  const { getChainName, supportedChains } = useSupportedChains();
-  const { t } = useI18n({ useScope: 'global' });
-  const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
-  const { queryLoopringBalances } = useBlockchainBalancesApi();
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const { supportedChains } = useSupportedChains();
+  const { isLoading } = useStatusStore();
   const usdValueThreshold = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
 
-  const handleFetch = async (blockchain: string, ignoreCache = false): Promise<void> => {
-    try {
-      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
+  // Use services
+  const { handleFetch } = useBalanceProcessingService();
+  const { fetchLoopringBalances } = useLoopringBalanceService();
 
-      const account = get(accounts)[blockchain];
-
-      const threshold = get(usdValueThreshold);
-
-      if (account && account.length > 0) {
-        const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain, threshold);
-        const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
-        const { result } = await awaitTask<BlockchainBalances, BlockchainMetadata>(
-          taskId,
-          taskType,
-          {
-            blockchain,
-            title: t('actions.balances.blockchain.task.title', {
-              chain: get(getChainName(blockchain)),
-            }),
-          },
-          true,
-        );
-        const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
-        const perAccount = parsedBalances.perAccount[blockchain];
-
-        if (isBtcBalances(perAccount)) {
-          const totals = parsedBalances.totals;
-          updateBalances(blockchain, convertBtcBalances(blockchain, totals, perAccount));
-        }
-        else {
-          updateBalances(blockchain, parsedBalances);
-        }
-      }
-      else {
-        const emptyData: BlockchainBalances = {
-          perAccount: {},
-          totals: {
-            assets: {},
-            liabilities: {},
-          },
-        };
-        updateBalances(blockchain, emptyData);
-      }
-
-      setStatus(Status.LOADED, { subsection: blockchain });
-    }
-    catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.balances.blockchain.error.description', {
-            error: error.message,
-          }),
-          title: t('actions.balances.blockchain.error.title'),
-        });
-      }
-      resetStatus({ subsection: blockchain });
-    }
-  };
-
-  const fetch = async (blockchain: string, ignoreCache = false, periodic = false): Promise<void> => {
-    const { isLoading } = useStatusStore();
+  const fetchSingleChain = async (blockchain: string, ignoreCache: boolean, periodic: boolean): Promise<void> => {
     const loading = isLoading(Section.BLOCKCHAIN, blockchain);
 
-    const call = async (): Promise<void> => handleFetch(blockchain, ignoreCache);
+    // Skip if already loading and this is a periodic call
+    if (get(loading) && periodic)
+      return;
 
-    if (get(loading)) {
-      if (periodic)
-        return;
-
+    // Wait for existing operation to complete if not periodic
+    if (get(loading))
       await until(loading).toBe(false);
-    }
 
-    await call();
+    await handleFetch(blockchain, ignoreCache, get(usdValueThreshold));
   };
 
   const fetchBlockchainBalances = async (
-    payload: BlockchainBalancePayload = {
-      ignoreCache: false,
-    },
+    payload: BlockchainBalancePayload = { ignoreCache: false },
     periodic = false,
   ): Promise<void> => {
-    const { blockchain, ignoreCache } = payload;
+    const { blockchain, ignoreCache = false } = payload;
+    const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
-    const chains: string[] = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
-
-    try {
-      await awaitParallelExecution(
-        chains,
-        chain => chain,
-        async chain => fetch(chain, ignoreCache, periodic),
-        2,
-      );
-    }
-    catch (error: any) {
-      logger.error(error);
-      const message = t('actions.balances.blockchain.error.description', {
-        error: error.message,
-      });
-      notify({
-        display: true,
-        message,
-        title: t('actions.balances.blockchain.error.title'),
-      });
-    }
-  };
-
-  const fetchLoopringBalances = async (refresh: boolean): Promise<void> => {
-    if (!get(activeModules).includes(Module.LOOPRING))
-      return;
-
-    const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
-
-    if (fetchDisabled(refresh, { subsection: 'loopring' }))
-      return;
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, { subsection: 'loopring' });
-    try {
-      const taskType = TaskType.L2_LOOPRING;
-      const { taskId } = await queryLoopringBalances();
-      const { result } = await awaitTask<AccountAssetBalances, TaskMeta>(taskId, taskType, {
-        title: t('actions.balances.loopring.task.title'),
-      });
-
-      const loopringBalances = AccountAssetBalances.parse(result);
-      const accounts = Object.keys(loopringBalances).map(address => ({
-        chain: 'loopring',
-        data: {
-          address,
-          type: 'address',
-        },
-        nativeAsset: Blockchain.ETH.toUpperCase(),
-        tags: [],
-        virtual: true,
-      }) satisfies BlockchainAccount);
-
-      const loopring = Object.fromEntries(
-        Object.entries(loopringBalances).map(([address, assets]) => [
-          address,
-          {
-            assets: Object.fromEntries(Object.entries(assets).map(([asset, value]) => [asset, { address: value }])),
-            liabilities: {},
-          },
-        ]),
-      );
-
-      const assets: AssetProtocolBalances = {};
-      for (const loopringAssets of Object.values(loopringBalances)) {
-        for (const [asset, value] of Object.entries(loopringAssets)) {
-          const identifier = getAssociatedAssetIdentifier(asset);
-          const associatedAsset: string = get(identifier) ?? asset;
-          const ownedAsset = assets[associatedAsset];
-
-          if (!ownedAsset)
-            assets[associatedAsset] = { address: { ...value } };
-          else
-            assets[associatedAsset] = { address: { ...balanceSum(ownedAsset.address, value) } };
-        }
-      }
-
-      const updatedTotals = {
-        perAccount: {
-          loopring,
-        },
-        totals: {
-          assets,
-          liabilities: {},
-        },
-      };
-      updateBalances('loopring', updatedTotals);
-      updateAccounts('loopring', accounts);
-      setStatus(Status.LOADED, { subsection: 'loopring' });
-    }
-    catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.loopring.error.description', {
-            error: error.message,
-          }),
-          title: t('actions.balances.loopring.error.title'),
-        });
-      }
-      resetStatus({ subsection: 'loopring' });
-    }
+    await awaitParallelExecution(
+      chains,
+      chain => chain,
+      async chain => fetchSingleChain(chain, ignoreCache, periodic),
+      2,
+    );
   };
 
   return {
