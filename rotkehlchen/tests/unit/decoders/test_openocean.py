@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.arbitrum_one.modules.open_ocean.decoder import DISTRIBUTOR_ADDR
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.open_ocean.constants import (
     CPT_OPENOCEAN,
@@ -481,5 +482,31 @@ def test_openocean_swap_xdai_to_token(
             notes=f'Receive {receive_amount} USDC from {OPENOCEAN_LABEL} swap',
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc992007929b1841eA94eCFE52a600CcF8A594668']])
+def test_openocean_distribution(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xaaa23c4ce149a1c72159816e4fa4cd820143a9e0a933b10fd4c78c78884370ff')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=TimestampMS(1711763457000),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ARB,
+            amount=FVal('2'),
+            location_label=arbitrum_one_accounts[0],
+            address=DISTRIBUTOR_ADDR,
+            notes='Receive 2 ARB from OpenOcean as part of activity incentives',
+            counterparty=CPT_OPENOCEAN,
         ),
     ]
