@@ -1874,7 +1874,7 @@
       },
       "decimal_separator": {
         "error": "Error setting decimal separator",
-        "success": "Decimal separator set to {decimalSeparator}"
+        "success": "Decimal separator set to \"{decimalSeparator}\""
       },
       "floating_precision": {
         "error": "Error setting floating precision to {precision}",
@@ -1883,7 +1883,7 @@
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
-        "success": "Thousand separator set to {thousandSeparator}"
+        "success": "Thousand separator set to \"{thousandSeparator}\""
       },
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"

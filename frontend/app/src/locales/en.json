@@ -2628,7 +2628,8 @@
       "validation": {
         "cannot_be_numeric_character": "The decimal separator cannot be numeric character",
         "cannot_be_the_same": "The decimal separator cannot be the same as the thousand separator",
-        "empty": "The decimal separator cannot be empty"
+        "empty": "The decimal separator cannot be empty",
+        "single_character": "The decimal separator must be a single character"
       }
     },
     "display_date_in_localtime": {
@@ -2737,7 +2738,8 @@
       "validation": {
         "cannot_be_numeric_character": "The thousand separator cannot be numeric character",
         "cannot_be_the_same": "The thousand separator cannot be the same as the decimal separator",
-        "empty": "The thousand separator cannot be empty"
+        "empty": "The thousand separator cannot be empty",
+        "single_character": "The thousand separator must be a single character"
       }
     },
     "title": "General Settings",
@@ -2781,7 +2783,7 @@
       },
       "decimal_separator": {
         "error": "Error setting decimal separator",
-        "success": "Decimal separator set to {decimalSeparator}"
+        "success": "Decimal separator set to \"{decimalSeparator}\""
       },
       "floating_precision": {
         "error": "Error setting floating precision to {precision}",
@@ -2790,7 +2792,7 @@
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
-        "success": "Thousand separator set to {thousandSeparator}"
+        "success": "Thousand separator set to \"{thousandSeparator}\""
       },
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"
