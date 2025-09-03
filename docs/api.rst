@@ -11309,6 +11309,7 @@ Get mappings from addressbook
     :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
     :reqjson str[optional] name_substring: The substring to use as filter for the name to be found in the addressbook.
     :reqjson str[optional] blockchain: The blockchain in which to use the provided name.
+    :reqjson bool[optional] strict_blockchain: Defaults to true. When true, the provided ``blockchain`` must match exactly. When false, include all blockchains where the address format is valid for the same chain family (e.g., any EVM-based chain when ``blockchain`` is an EVM chain).
     :reqjson object[optional] addresses: List of addresses that the backend should find names for.
 
     **Example Response**

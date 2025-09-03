@@ -17,6 +17,7 @@ from typing import (
 )
 
 from eth_typing import ChecksumAddress
+from eth_utils import is_checksum_address
 from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.constants import ZERO
@@ -31,6 +32,11 @@ from rotkehlchen.utils.mixins.enums import (
 )
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
+# Import directly from substrateinterface to avoid cyclic import via our substrate utils
+from substrateinterface.utils.ss58 import is_valid_ss58_address
+
+from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
+from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -496,7 +502,13 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
         return self.value
 
-    def get_chain_type(self) -> ChainType:
+    def get_chain_type(self) -> Literal[
+        ChainType.EVM,
+        ChainType.EVMLIKE,
+        ChainType.BITCOIN,
+        ChainType.SUBSTRATE,
+        ChainType.ETH2,
+    ]:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
             return ChainType.EVM
@@ -508,6 +520,17 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return ChainType.BITCOIN
         # else
         return ChainType.ETH2  # the outlier
+
+    def get_address_chain_group(self) -> Literal[
+        ChainType.EVMLIKE,
+        ChainType.BITCOIN,
+        ChainType.SUBSTRATE,
+    ]:
+        match (chain_type := self.get_chain_type()):
+            case ChainType.EVM | ChainType.EVMLIKE | ChainType.ETH2:
+                return ChainType.EVMLIKE
+            case _:
+                return chain_type
 
     def ens_coin_type(self) -> int:
         """Return the CoinType number according to EIP-2304, multichain address
@@ -941,11 +964,12 @@ class CostBasisMethod(SerializableEnumNameMixin):
     ACB = auto()
 
 
-ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE: Final = 'NONE'  # blockchain value used to mark in the DB that the address entry is valid for any blockchain  # noqa: E501
+ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE: Final = 'NONE'  # blockchain value used to mark in the DB that the address entry is valid for any blockchain TODO: remove  # noqa: E501
+ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX: Final = 'TYPE_'  # prefix used along the address chain type to mark in the DB that the address entry is valid for any blockchain TODO: remove  # noqa: E501
 
 
 class AddressbookEntry(NamedTuple):
-    address: BlockchainAddress
+    address: 'BlockchainAddress'
     name: str
     blockchain: SupportedBlockchain | None
 
@@ -956,15 +980,42 @@ class AddressbookEntry(NamedTuple):
             'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
         }
 
+    @staticmethod
+    def check_chain_ecosystem(address: 'BlockchainAddress') -> Literal[
+        ChainType.BITCOIN,
+        ChainType.EVMLIKE,
+        ChainType.SUBSTRATE,
+    ]:
+        """Get the chain ecosystem for the provided address.
+        TODO: Add solana in develop
+        """
+        if is_checksum_address(address):
+            return ChainType.EVMLIKE
+        elif is_valid_btc_address(address) or is_valid_bitcoin_cash_address(address):
+            return ChainType.BITCOIN
+        elif (
+            is_valid_ss58_address(value=address, valid_ss58_format=0) or  # Polkadot
+            is_valid_ss58_address(value=address, valid_ss58_format=2)     # Kusama
+        ):
+            return ChainType.SUBSTRATE
+
+        # Whenever we add a new ecosystem we need to update this function.
+        # TODO: Add it for solana in develop
+        assert False, 'Unknown address chainType when identifying ecosystem'  # noqa: B011,PT015
+
+    @staticmethod
+    def get_ecosystem_key_by_address(address: 'BlockchainAddress') -> str:
+        ecosystem = AddressbookEntry.check_chain_ecosystem(address)
+        return f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}{ecosystem.name}'
+
+    def get_ecosystem_key(self) -> str:
+        return self.get_ecosystem_key_by_address(self.address)
+
     def serialize_for_db(self) -> tuple[str, str, str]:
         return (
             self.address,
             self.name,
-            (
-                self.blockchain.value
-                if self.blockchain is not None
-                else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
-            ),
+            self.blockchain.value if self.blockchain is not None else self.get_ecosystem_key(),
         )
 
     @classmethod
@@ -1001,7 +1052,7 @@ class AddressbookEntryWithSource(NamedTuple):
             (
                 self.blockchain.value
                 if self.blockchain is not None
-                else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
+                else AddressbookEntry.get_ecosystem_key_by_address(self.address)
             ),
         )
 

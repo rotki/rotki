@@ -25,7 +25,7 @@ from rotkehlchen.tests.utils.factories import (
     make_addressbook_entries,
 )
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+    ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     AddressbookEntry,
     AddressbookType,
     BTCAddress,
@@ -522,6 +522,61 @@ def test_update_addressbook(
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
+def test_blockchain_type_query_filters(rotkehlchen_api_server: 'APIServer') -> None:
+    """Add the same address to BTC and BCH, then ensure queries return a multichain entry.
+
+    - Add label valid both for BTC and BCH
+    - Query filtering by BTC, BCH and None should return the multichain entry
+    - Query filtering by unrelated chain (e.g. Polkadot) should return nothing
+    """
+    db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    book_type = AddressbookType.PRIVATE
+
+    # Use a valid Bitcoin Cash CashAddr which also classifies under the BITCOIN ecosystem key
+    btc_like_address = BTCAddress('bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g')
+
+    # Insert same label for both BTC and BCH for the same address
+    with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=(expected_output := [
+                AddressbookEntry(address=btc_like_address, name='Satoshi', blockchain=None),
+            ]),
+        )
+
+    def query(blockchain: SupportedBlockchain | None, strict_blockchain: bool = False) -> list[dict]:  # noqa: E501
+        payload: dict[str, object] = {
+            'addresses': [{'address': btc_like_address}],
+        }
+        if blockchain is not None:
+            payload['blockchain'] = blockchain.serialize()
+            payload['strict_blockchain'] = strict_blockchain
+
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'addressbookresource', book_type=book_type),
+            json=payload,
+        )
+        result = assert_proper_sync_response_with_result(response)
+        return result['entries']
+
+    # Filtering by BTC should return the multichain entry when not strict
+    result_entries = query(SupportedBlockchain.BITCOIN, strict_blockchain=False)
+    assert [AddressbookEntry.deserialize(x) for x in result_entries] == expected_output
+
+    # Filtering by BCH should also return the multichain entry when not strict
+    result_entries = query(SupportedBlockchain.BITCOIN_CASH, strict_blockchain=False)
+    assert [AddressbookEntry.deserialize(x) for x in result_entries] == expected_output
+
+    # Filtering with blockchain=None should return the multichain entry
+    result_entries = query(None)
+    assert [AddressbookEntry.deserialize(x) for x in result_entries] == expected_output
+
+    # Filtering by an unrelated chain type should not return the entry
+    result_entries = query(SupportedBlockchain.POLKADOT, strict_blockchain=False)
+    assert result_entries == []
+
+
+@pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_delete_addressbook(
         rotkehlchen_api_server: 'APIServer',
@@ -893,7 +948,7 @@ def test_insert_into_addressbook_no_blockchain(
             cursor.execute('SELECT * FROM address_book')
             result = cursor.fetchall()
 
-    assert result == [(test_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'my address')]
+    assert result == [(test_address, f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}EVMLIKE', 'my address')]  # noqa: E501
 
 
 def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> None:

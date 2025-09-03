@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+    ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     AddressbookEntry,
     AddressbookType,
     ChecksumEvmAddress,
@@ -64,7 +64,7 @@ class DBAddressbook:
             AddressbookEntry(
                 address=ChecksumEvmAddress(address),
                 name=name,
-                blockchain=SupportedBlockchain(blockchain_str) if blockchain_str != ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE else None,  # noqa: E501
+                blockchain=SupportedBlockchain(blockchain_str) if not blockchain_str.startswith(ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX) else None,  # noqa: E501
             ) for address, name, blockchain_str in cursor
         ]
         return entries, total_found_result
@@ -86,7 +86,7 @@ class DBAddressbook:
         for entry in entries:
             if not update_existing and write_cursor.execute(
                 'SELECT COUNT(*) FROM address_book WHERE address=? AND blockchain=?;',
-                (entry.address, entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),  # noqa: E501
+                (entry.address, entry.blockchain.value if entry.blockchain else entry.get_ecosystem_key()),  # noqa: E501
             ).fetchone()[0] != 0:
                 raise InputError(
                     f'Entry with address {entry.address} and blockchain {entry.blockchain} '
@@ -98,7 +98,7 @@ class DBAddressbook:
             if entry.blockchain is None:
                 write_cursor.execute(
                     'DELETE FROM address_book where address=? AND blockchain IS NOT ?',
-                    (entry.address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),
+                    (entry.address, entry.get_ecosystem_key()),
                 )
 
             write_cursor.execute(
@@ -121,7 +121,7 @@ class DBAddressbook:
                 if entry.name == '':   # Handle deletion case
                     entry_blockchain_value = (
                         entry.blockchain.value if entry.blockchain
-                        else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
+                        else entry.get_ecosystem_key()
                     )
                     write_cursor.execute(
                         'DELETE FROM address_book WHERE address = ? AND blockchain = ?',
@@ -193,12 +193,13 @@ class DBAddressbook:
         instead of the NULL one.
         """
         with self.read_ctx(book_type) as read_cursor:
+            ecosystem_key = AddressbookEntry.get_ecosystem_key_by_address(chain_address.address)
             read_cursor.execute(
                 'SELECT name FROM address_book WHERE address=? AND (blockchain IS ? OR blockchain IS ?) ORDER BY blockchain DESC',  # noqa: E501
                 (
                     chain_address.address,
-                    chain_address.blockchain.value if chain_address.blockchain is not None else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,  # noqa: E501
-                    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+                    chain_address.blockchain.value if chain_address.blockchain is not None else ecosystem_key,  # noqa: E501
+                    ecosystem_key,
                 ),
             )
             result = read_cursor.fetchone()
@@ -226,7 +227,7 @@ class DBAddressbook:
             if entry_count == 1:  # Only one entry. Just update it.
                 write_cursor.execute(
                     'UPDATE address_book SET blockchain=? WHERE address=?',
-                    (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, address),
+                    (AddressbookEntry.get_ecosystem_key_by_address(address), address),
                 )
             else:  # Same label is set on multiple chains. Delete existing entries and add new one.
                 self.add_or_update_addressbook_entries(
