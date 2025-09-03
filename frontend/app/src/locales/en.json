@@ -4598,13 +4598,22 @@
       },
       "confirmation": {
         "delete": {
+          "complete_transaction_multiple": "You have selected all events from {count} complete EVM transactions. Deleting all events will delete the entire transactions.",
+          "complete_transaction_options": "Would you like to delete the transaction(s) or ignore them in accounting?",
+          "complete_transaction_single": "You have selected all events from a complete EVM transaction. Deleting all events will delete the entire transaction.",
+          "complete_transaction_title": "Complete Transaction Selected",
+          "delete_transaction": "Delete Transaction",
           "message": "Are you sure you want to delete the event?",
+          "message_multiple": "Are you sure you want to delete {count} selected events?",
           "title": "Delete Event"
         },
         "ignore": {
           "action": "Yes, Ignore the Transaction",
+          "action_short": "Ignore in Accounting",
+          "confirm": "Confirm Ignore",
           "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
-          "title": "Cannot Delete Event"
+          "message_multiple": "Are you sure you want to ignore {count} transaction(s) in accounting?",
+          "title": "Ignore Transaction in Accounting"
         },
         "reset": {
           "message": "There are custom events in this transaction",
@@ -4615,6 +4624,14 @@
         }
       },
       "customized_event": "Customized event",
+      "delete": {
+        "error": {
+          "message": "Failed to delete events",
+          "title": "Delete Failed"
+        },
+        "success": "{count} event deleted successfully | {count} events deleted successfully",
+        "title": "Delete Events"
+      },
       "dialog": {
         "add": {
           "title": "Add Event"
@@ -4787,8 +4804,21 @@
         "history_event": "{location} event",
         "swap_event": "Swap on {location}"
       },
+      "ignore": {
+        "error": {
+          "message": "Failed to ignore events in accounting",
+          "title": "Ignore Failed"
+        },
+        "success": "{count} transaction ignored successfully | {count} transactions ignored successfully",
+        "title": "Ignore Transactions"
+      },
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
+      "selection_mode": {
+        "delete_selected": "Delete selected events",
+        "selected_count": "{count} selected",
+        "tooltip": "Select multiple events"
+      },
       "show_missing_acquisition": "Showing event for missing acquisition",
       "show_negative_balance": "Showing event that cause negative balance",
       "skipped": {

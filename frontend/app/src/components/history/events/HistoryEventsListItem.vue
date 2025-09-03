@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
@@ -20,6 +21,7 @@ const props = defineProps<{
   isLast: boolean;
   isHighlighted?: boolean;
   compact?: boolean;
+  selection?: UseHistoryEventsSelectionModeReturn;
 }>();
 
 const emit = defineEmits<{
@@ -77,6 +79,27 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     ...data,
   };
 }
+
+const showCheckbox = computed<boolean>(() => {
+  if (!props.selection || props.compact) {
+    return false;
+  }
+  return get(props.selection.isSelectionMode);
+});
+
+const isSelected = computed<boolean>({
+  get() {
+    if (!props.selection) {
+      return false;
+    }
+    return props.selection.isEventSelected(props.item.identifier);
+  },
+  set(value: boolean) {
+    if (value !== get(isSelected)) {
+      props.selection?.actions.toggleEvent(props.item.identifier);
+    }
+  },
+});
 </script>
 
 <template>
@@ -89,48 +112,60 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     }"
   >
     <div
-      class="transition-all duration-300 ease-in-out"
-      :class="{
-        'grid md:grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-center py-3 px-0 md:pl-3': !compact,
-        'py-2 md:py-2': compact,
-      }"
+      class="transition-all duration-300 ease-in-out flex items-center"
     >
-      <HistoryEventType
-        v-if="!compact"
-        :event="item"
-        :chain="getChain(item.location)"
-        class="col-span-10 md:col-span-4 @5xl:!col-span-5 pt-1.5 pb-4 @5xl:py-0"
+      <RuiCheckbox
+        v-if="showCheckbox"
+        v-model="isSelected"
+        color="primary"
+        hide-details
+        class="ml-2"
       />
-
-      <HistoryEventAsset
-        :event="item"
-        class="transition-all duration-300"
+      <div
+        class="transition-all duration-300 ease-in-out flex-1"
         :class="{
-          'col-span-10 md:col-span-6 @5xl:!col-span-4': !compact,
-          'w-full !py-0': compact,
+          'grid md:grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-center py-3 px-0 md:pl-3': !compact,
+          'py-2 md:py-2': compact,
+          '!md:pl-0': showCheckbox,
         }"
-        @refresh="emit('refresh')"
-      />
+      >
+        <HistoryEventType
+          v-if="!compact"
+          :event="item"
+          :chain="getChain(item.location)"
+          class="col-span-10 md:col-span-4 @5xl:!col-span-5 pt-1.5 pb-4 @5xl:py-0"
+        />
 
-      <HistoryEventNote
-        v-if="!compact"
-        v-bind="getEventNoteAttrs(item)"
-        :amount="item.amount"
-        :chain="getChain(item.location)"
-        :no-tx-hash="isNoTxHash(item)"
-        class="break-words leading-6 col-span-10 @md:col-span-7 @5xl:!col-span-8"
-      />
+        <HistoryEventAsset
+          :event="item"
+          class="transition-all duration-300"
+          :class="{
+            'col-span-10 md:col-span-6 @5xl:!col-span-4': !compact,
+            'w-full !py-0': compact,
+          }"
+          @refresh="emit('refresh')"
+        />
 
-      <HistoryEventsListItemAction
-        v-if="!compact"
-        class="col-span-10 @md:col-span-3"
-        :item="item"
-        :index="index"
-        :events="events"
-        @edit-event="emit('edit-event', $event)"
-        @delete-event="emit('delete-event', $event)"
-        @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-      />
+        <HistoryEventNote
+          v-if="!compact"
+          v-bind="getEventNoteAttrs(item)"
+          :amount="item.amount"
+          :chain="getChain(item.location)"
+          :no-tx-hash="isNoTxHash(item)"
+          class="break-words leading-6 col-span-10 @md:col-span-7 @5xl:!col-span-8"
+        />
+
+        <HistoryEventsListItemAction
+          v-if="!compact"
+          class="col-span-10 @md:col-span-3"
+          :item="item"
+          :index="index"
+          :events="events"
+          @edit-event="emit('edit-event', $event)"
+          @delete-event="emit('delete-event', $event)"
+          @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+        />
+      </div>
     </div>
   </LazyLoader>
 </template>

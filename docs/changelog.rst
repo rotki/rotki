@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`10321` Users can now delete multiple events in the history events section.
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.

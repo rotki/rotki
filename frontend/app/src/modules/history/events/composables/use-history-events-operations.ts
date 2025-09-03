@@ -1,6 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventsTableEmitFn } from './types';
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type {
   EvmChainAndTxHash,
   PullEventPayload,
@@ -14,6 +13,7 @@ import { flatten } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { isTaskCancelled } from '@/utils';
@@ -52,6 +52,7 @@ export function useHistoryEventsOperations(
 
   const { notify } = useNotificationsStore();
   const { show } = useConfirmStore();
+  const { getChain } = useSupportedChains();
 
   const { deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
@@ -112,7 +113,8 @@ export function useHistoryEventsOperations(
 
   async function onConfirmTxAndEventDelete({ evmChain, txHash }: EvmChainAndTxHash): Promise<void> {
     try {
-      await deleteTransactions(evmChain, txHash);
+      const chain = get(getChain(evmChain));
+      await deleteTransactions(chain, txHash);
       emit('refresh');
     }
     catch (error: any) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
@@ -12,6 +13,7 @@ interface HistoryEventsListTableProps {
   loading: boolean;
   total: number;
   highlightedIdentifiers?: string[];
+  selection: UseHistoryEventsSelectionModeReturn;
 }
 
 defineProps<HistoryEventsListTableProps>();
@@ -35,6 +37,7 @@ const { t } = useI18n({ useScope: 'global' });
           :key="`swap-${index}`"
           :events="item"
           :highlighted-identifiers="highlightedIdentifiers"
+          :selection="selection"
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
@@ -50,6 +53,7 @@ const { t } = useI18n({ useScope: 'global' });
           :event-group="eventGroup"
           :is-last="index === events.length - 1"
           :is-highlighted="highlightedIdentifiers?.includes(item.identifier.toString())"
+          :selection="selection"
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"

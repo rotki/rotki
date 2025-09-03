@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
@@ -15,6 +16,7 @@ const props = withDefaults(defineProps<{
   hasIgnoredEvent?: boolean;
   loading?: boolean;
   highlightedIdentifiers?: string[];
+  selection: UseHistoryEventsSelectionModeReturn;
 }>(), {
   loading: false,
 });
@@ -129,6 +131,7 @@ watch(() => get(eventGroup), () => {
       :total="totalBlocks"
       :loading="loading"
       :highlighted-identifiers="highlightedIdentifiers"
+      :selection="selection"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
       @edit-event="emit('edit-event', $event)"

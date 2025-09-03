@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
+import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import { get } from '@vueuse/shared';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { DIALOG_TYPES, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/components/history/events/HistoryEventsDialogContainer.vue';
@@ -13,6 +15,8 @@ import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/hi
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
+import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
+import { useHistoryEventsSelectionMode } from '@/modules/history/events/composables/use-selection-mode';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
@@ -125,6 +129,46 @@ const actions = useHistoryEventsActions({
   shouldFetchEventsRegularly,
 });
 
+const selectionMode = useHistoryEventsSelectionMode();
+
+// Store grouped events for checking complete EVM transactions
+const groupedEventsByTxHash = ref<Record<string, HistoryEventRow[]>>({});
+
+const deletion = useHistoryEventsDeletion(
+  selectionMode,
+  groupedEventsByTxHash,
+  groups,
+  () => actions.fetch.dataAndLocations(),
+);
+
+// Handle updating available event IDs from the table
+function handleUpdateEventIds({ eventIds, groupedEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]> }): void {
+  // Create mock event entries with just the identifiers
+  const events: HistoryEventEntry[] = eventIds.map(id => ({ identifier: id } as HistoryEventEntry));
+  selectionMode.setAvailableIds(events);
+
+  // Store the grouped events for checking complete transactions
+  set(groupedEventsByTxHash, groupedEvents);
+}
+
+// Handle selection-related actions
+async function handleSelectionAction(action: string): Promise<void> {
+  switch (action) {
+    case 'delete':
+      await deletion.deleteSelected();
+      break;
+    case 'toggle-mode':
+      selectionMode.actions.toggle();
+      break;
+    case 'exit':
+      selectionMode.actions.exit();
+      break;
+    case 'toggle-all':
+      selectionMode.actions.toggleAll();
+      break;
+  }
+}
+
 watchImmediate(route, async (route) => {
   if (!route.query.openDecodingStatusDialog) {
     return;
@@ -185,8 +229,10 @@ onMounted(async () => {
           :export-params="pageParams"
           :hide-redecode-buttons="!mainPage"
           :hide-account-selector="useExternalAccountFilter"
+          :selection="selectionMode.state.value"
           @update:accounts="onFilterAccountsChanged($event)"
           @redecode="actions.redecode.by($event)"
+          @selection:action="handleSelectionAction($event)"
         />
 
         <HistoryEventsFiltersChips />
@@ -200,10 +246,12 @@ onMounted(async () => {
           :exclude-ignored="!toggles.showIgnoredAssets"
           :identifiers="identifiers"
           :highlighted-identifiers="highlightedIdentifiers"
+          :selection="selectionMode"
           @show:dialog="dialogContainer?.show($event)"
           @refresh="actions.fetch.dataAndRedecode($event)"
           @refresh:block-event="actions.redecode.blocks($event)"
           @set-page="setPage($event)"
+          @update-event-ids="handleUpdateEventIds($event)"
         >
           <template #query-status="{ colspan }">
             <HistoryQueryStatus

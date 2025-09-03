@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventsTableEmitFn } from './types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import { flatten } from 'es-toolkit';
