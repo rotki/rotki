@@ -35,12 +35,22 @@ class AccountingRulesManager:
             filter_query=AccountingRulesFilterQuery.make(),
         )
         for rule_info in rules_info:
-            key = get_event_type_identifier(
-                event_type=rule_info.event_key[0],
-                event_subtype=rule_info.event_key[1],
-                counterparty=rule_info.event_key[2],
-            )
-            self.event_settings[key] = rule_info.rule
+            if rule_info.event_ids is not None:   # event-specific rules
+                for event_id in rule_info.event_ids:
+                    key = get_event_type_identifier(
+                        event_id=event_id,
+                        event_type=rule_info.event_key[0],
+                        event_subtype=rule_info.event_key[1],
+                        counterparty=rule_info.event_key[2],
+                    )
+                    self.event_settings[key] = rule_info.rule
+            else:  # type-based rules
+                key = get_event_type_identifier(
+                    event_type=rule_info.event_key[0],
+                    event_subtype=rule_info.event_key[1],
+                    counterparty=rule_info.event_key[2],
+                )
+                self.event_settings[key] = rule_info.rule
 
     def get_event_settings(
             self,
@@ -50,6 +60,10 @@ class AccountingRulesManager:
         Return a matching rule for the event if it exists and an optional callback defined for
         the rule that should be executed
         """
+        # Check for event-specific rule first before falling back to type-based rules
+        if event_specific_rule := self.event_settings.get(event.get_accounting_rule_key()):
+            return event_specific_rule, None
+
         event_id = event.get_type_identifier()
         rule = self.event_settings.get(event_id, None)
         if (callback_data := self.event_callbacks.get(event_id)) is not None:

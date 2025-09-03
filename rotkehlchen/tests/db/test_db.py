@@ -151,6 +151,7 @@ TABLES_AT_INIT = [
     'evm_events_info',
     'eth_staking_events_info',
     'skipped_external_events',
+    'accounting_rule_events',
     'accounting_rules',
     'linked_rules_properties',
     'unresolved_remote_conflicts',

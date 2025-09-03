@@ -78,9 +78,7 @@ def test_managing_accounting_rules(database: DBHandler) -> None:
     db.remove_accounting_rule(rule_id=2)
     with database.conn.read_ctx() as cursor:
         entries = cursor.execute(query_all_rules).fetchall()
-        assert entries == [
-            (1, 'trade', 'receive', 'uniswap', 1, 1, 0, None),
-        ]
+        assert entries == [(1, 'trade', 'receive', 'uniswap', 1, 1, 0, None)]
 
     # and now delete all the rules
     db.remove_accounting_rule(rule_id=1)
@@ -146,6 +144,7 @@ def test_accounting_rules_linking(database: 'DBHandler', counterparty: str) -> N
     assert len(rules) == 1
     assert rules[0] == {
         'identifier': 1,
+        'event_ids': None,
         'event_type': HistoryEventType.SPEND.serialize(),
         'event_subtype': HistoryEventSubType.FEE.serialize(),
         'counterparty': counterparty,

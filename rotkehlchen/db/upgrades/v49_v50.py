@@ -28,4 +28,18 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         )
 
+    @progress_step(description='Create table for linking accounting rules to specific events.')
+    def _create_accounting_rule_events_table(write_cursor: 'DBCursor') -> None:
+        """Create a table to link accounting rules to specific events."""
+        write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS accounting_rule_events(
+            identifier INTEGER NOT NULL PRIMARY KEY,
+            rule_id INTEGER NOT NULL,
+            event_id INTEGER NOT NULL,
+            FOREIGN KEY(event_id) REFERENCES history_events(identifier) ON DELETE CASCADE,
+            FOREIGN KEY(rule_id) REFERENCES accounting_rules(identifier) ON DELETE CASCADE,
+            UNIQUE(rule_id, event_id)
+        );
+        """)
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

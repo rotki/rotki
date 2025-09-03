@@ -12800,6 +12800,7 @@ Managing custom accounting rules
             "count_entire_amount_spend":{"value": false},
             "accounting_treatment":null,
             "identifier":2,
+            "event_ids": [3234554],
             "event_type":"staking",
             "event_subtype":"spend",
             "counterparty":"compound"
@@ -12839,6 +12840,7 @@ Managing custom accounting rules
          "count_cost_basis_pnl":{"value": true},
          "event_type":"staking",
          "event_subtype":"spend",
+         "event_ids": [12345],
          "counterparty": "compound",
          "accounting_treatment":"swap"
       }
@@ -12853,6 +12855,7 @@ Managing custom accounting rules
   :reqjsonarr string event_subtype: The event subtype that the rule targets.
   :reqjsonarr optional[string] counterparty: The counterparty that the rule targets.
   :reqjsonarr accounting_treatment: Special rule to handle pairs of events. Can be ``swap`` or ``swap with fee``
+  :reqjsonarr optional[list[int]] event_ids: The identifiers (integer IDs) for a specified group of events. Only required when the rule should apply to certain events.
 
   **Example Response**:
 
