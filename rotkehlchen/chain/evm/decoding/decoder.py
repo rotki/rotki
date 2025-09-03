@@ -762,6 +762,8 @@ class EVMTransactionDecoder(ABC):
                     continue  # since the input data rule found events for this log
 
             decoding_output = self.decode_by_address_rules(context)
+            if decoding_output.stop_processing is True:
+                return [], False, None  # We determined this transaction is full of unnecessary log events and should all be skipped. Saves processing time.  # noqa: E501
             if decoding_output.refresh_balances is True:
                 refresh_balances = True
             if decoding_output.reload_decoders is not None:
