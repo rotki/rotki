@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { HistoryEventsTableEmits } from '../composables/types';
+import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import type { HistoryEventsTableEmits } from '@/modules/history/events/types';
 import type { Collection } from '@/types/collection';
 import type {
   HistoryEventEntry,
@@ -32,6 +33,7 @@ const props = defineProps<{
   groupLoading: boolean;
   identifiers?: string[];
   highlightedIdentifiers?: string[];
+  selection: UseHistoryEventsSelectionModeReturn;
 }>();
 
 const emit = defineEmits<HistoryEventsTableEmits>();
@@ -63,6 +65,12 @@ const {
   identifiers: toRef(props, 'identifiers'),
   pageParams,
 }, emit);
+
+// Emit all event IDs and grouped events when events change
+watch([events, eventsGroupedByEventIdentifier], ([newEvents, groupedEvents]) => {
+  const eventIds = newEvents.map(event => event.identifier);
+  emit('update-event-ids', { eventIds, groupedEvents });
+}, { immediate: true });
 
 // Event operations (delete, redecode, etc.)
 const {
@@ -190,6 +198,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
         :loading="sectionLoading || eventsLoading"
         :has-ignored-event="hasIgnoredEvent"
         :highlighted-identifiers="highlightedIdentifiers"
+        :selection="selection"
         @edit-event="editEvent($event, row);"
         @delete-event="confirmDelete($event)"
         @show:missing-rule-action="addMissingRule($event, row);"

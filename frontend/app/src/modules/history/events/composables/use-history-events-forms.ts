@@ -1,4 +1,4 @@
-import type { HistoryEventsTableEmitFn } from './types';
+import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type {
   HistoryEventEntry,
   StandaloneEditableEvents,
