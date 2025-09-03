@@ -157,12 +157,15 @@ function dismiss(): void {
   });
 }
 
-const showSection = useRefWithDebounce(logicOr(
-  logicAnd(
-    hasTxAccounts,
-    logicOr(processingMessage, showMessage),
+const showSection = useRefWithDebounce(logicAnd(
+  logicOr(
+    logicAnd(
+      hasTxAccounts,
+      processingMessage,
+    ),
+    balanceProgress,
   ),
-  balanceProgress,
+  showMessage,
 ), 300);
 
 onMounted(async () => {

@@ -23,7 +23,6 @@ declare module 'vue-router/auto-routes' {
     'accounts': RouteRecordInfo<'accounts', '/accounts', Record<never, never>, Record<never, never>>,
     'accounts-bitcoin': RouteRecordInfo<'accounts-bitcoin', '/accounts/bitcoin', Record<never, never>, Record<never, never>>,
     'accounts-evm': RouteRecordInfo<'accounts-evm', '/accounts/evm/:tab?', { tab?: ParamValueZeroOrOne<true> }, { tab?: ParamValueZeroOrOne<false> }>,
-    'accounts-solana': RouteRecordInfo<'accounts-solana', '/accounts/solana', Record<never, never>, Record<never, never>>,
     'accounts-substrate': RouteRecordInfo<'accounts-substrate', '/accounts/substrate', Record<never, never>, Record<never, never>>,
     '/address-book-manager/': RouteRecordInfo<'/address-book-manager/', '/address-book-manager', Record<never, never>, Record<never, never>>,
     '/airdrops/': RouteRecordInfo<'/airdrops/', '/airdrops', Record<never, never>, Record<never, never>>,
@@ -112,10 +111,6 @@ declare module 'vue-router/auto-routes' {
       routes: 'accounts-evm'
       views: never
     }
-    'src/pages/accounts/solana/index.vue': {
-      routes: 'accounts-solana'
-      views: never
-    }
     'src/pages/accounts/substrate/index.vue': {
       routes: 'accounts-substrate'
       views: never
@@ -157,7 +152,7 @@ declare module 'vue-router/auto-routes' {
       views: never
     }
     'src/pages/asset-manager/more.vue': {
-      routes: 'asset-manager-more' | 'asset-manager-cex-mapping' | 'asset-manager-newly-detected' | 'asset-manager-missing-mappings' | 'asset-manager-counterparty-mapping' | 'asset-manager-solana-token-migration' | '/asset-manager/more/cex-mapping' | '/asset-manager/more/counterparty-mapping' | '/asset-manager/more/missing-mappings' | '/asset-manager/more/newly-detected' | '/asset-manager/more/solana-token-migration'
+      routes: 'asset-manager-more' | 'asset-manager-cex-mapping' | 'asset-manager-counterparty-mapping' | 'asset-manager-missing-mappings' | 'asset-manager-newly-detected' | 'asset-manager-solana-token-migration' | '/asset-manager/more/cex-mapping' | '/asset-manager/more/counterparty-mapping' | '/asset-manager/more/missing-mappings' | '/asset-manager/more/newly-detected' | '/asset-manager/more/solana-token-migration'
       views: 'default'
     }
     'src/pages/asset-manager/more/cex-mapping/index.vue': {
@@ -265,7 +260,7 @@ declare module 'vue-router/auto-routes' {
       views: never
     }
     'src/pages/settings.vue': {
-      routes: '/settings' | '/settings/account/' | '/settings/accounting/' | '/settings/database/' | '/settings/general/' | '/settings/interface/' | '/settings/oracle/' | '/settings/modules/' | '/settings/rpc/' | '/settings/account' | '/settings/accounting' | '/settings/database' | '/settings/general' | '/settings/interface' | '/settings/modules' | '/settings/oracle' | '/settings/rpc'
+      routes: '/settings' | '/settings/account/' | '/settings/accounting/' | '/settings/database/' | '/settings/general/' | '/settings/interface/' | '/settings/oracle/' | '/settings/rpc/' | '/settings/modules/' | '/settings/account' | '/settings/accounting' | '/settings/database' | '/settings/general' | '/settings/interface' | '/settings/modules' | '/settings/oracle' | '/settings/rpc'
       views: 'default'
     }
     'src/pages/settings/account/index.vue': {

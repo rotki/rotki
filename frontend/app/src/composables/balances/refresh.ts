@@ -8,7 +8,6 @@ import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 import { arrayify } from '@/utils/array';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 
 export const useRefresh = createSharedComposable(() => {
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
@@ -36,12 +35,13 @@ export const useRefresh = createSharedComposable(() => {
     const chains = chain ? arrayify(chain) : get(txEvmChains).map(chain => chain.id);
 
     set(massDetecting, chain || 'all');
-    await awaitParallelExecution(
-      chains,
-      chain => chain,
-      async chain => useTokenDetection(chain).detectTokensOfAllAddresses(),
-      1,
+
+    // Call all detections - they're queued internally anyway
+    const detectionPromises = chains.map(async chain =>
+      useTokenDetection(chain).detectTokensOfAllAddresses(),
     );
+    await Promise.allSettled(detectionPromises);
+
     set(massDetecting, undefined);
   };
 
