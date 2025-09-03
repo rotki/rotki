@@ -82,6 +82,9 @@ class DecodingOutput:
     changed (for example if the user has deposited / withdrawn funds from a curve gauge).
     - reload_decoders can be None in which case nothing happens. Or a set of decoders names for which to reload data. The decoder's name is the class name without the Decoder suffix. For example Eigenlayer for EigenlayerDecoder
     - process_swaps indicates whether there are swaps that need to be converted into EvmSwapEvents.
+    - stop_processing if true will stop processing log events for the transaction and clear
+        any processed events. Used when we want to stop iterating over certain transactions
+        because we have determined it's full of unnecessary log events and should all be skipped.
     """  # noqa: E501
     events: list['EvmEvent'] | None = None
     action_items: list[ActionItem] = field(default_factory=list)
@@ -89,6 +92,7 @@ class DecodingOutput:
     refresh_balances: bool = False
     reload_decoders: set[str] | None = None
     process_swaps: bool = False
+    stop_processing: bool = False
 
 
 class TransferEnrichmentOutput(NamedTuple):

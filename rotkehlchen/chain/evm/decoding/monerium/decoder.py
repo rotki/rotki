@@ -53,8 +53,18 @@ class MoneriumCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         self.monerium_api = init_monerium(database=self.base.database)
         return self.addresses_to_decoders()
 
+    def _v1_to_v2_migration_hashes(self) -> set[str]:
+        """Hashes of the transactions minting v2 tokens by Monerium for the v1 to v2 migration
+        Events in those transactions shouldn't be decoded as mints.
+        Present in gnosis, polygon and ethereum.
+        """
+        return set()
+
     def _decode_mint_and_burn(self, context: DecoderContext) -> DecodingOutput:
         """Decode mint and burn events for monerium"""
+        if context.transaction.tx_hash.hex() in self._v1_to_v2_migration_hashes():
+            # stop processing the transaction if it is a migration from v1 to v2
+            return DecodingOutput(stop_processing=True)
 
         if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return DEFAULT_DECODING_OUTPUT
