@@ -22,6 +22,8 @@ HISTORY_MAPPING_STATE_CUSTOMIZED = 1
 EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS = 'last_queried_timestamp'
 EVM_ACCOUNTS_DETAILS_TOKENS = 'tokens'
 
+# sqlite treats NULLs as different values in UNIQUE checks.
+# we use "NONE" instead of NULL so that only one "no value" row can exist.
 NO_ACCOUNTING_COUNTERPARTY = 'NONE'
 LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[
     'include_gas_costs',

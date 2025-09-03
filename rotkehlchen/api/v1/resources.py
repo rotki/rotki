@@ -3095,15 +3095,24 @@ class ExportHistoryDownloadResource(BaseMethodView):
 
 class AccountingRulesResource(BaseMethodView):
 
-    put_schema = CreateAccountingRuleSchema()
     delete_schema = IntegerIdentifierSchema()
     post_schema = AccountingRulesQuerySchema()
-    patch_schema = EditAccountingRuleSchema()
+
+    def make_put_schema(self) -> CreateAccountingRuleSchema:
+        return CreateAccountingRuleSchema(
+            database=self.rest_api.rotkehlchen.data.db,
+        )
+
+    def make_patch_schema(self) -> EditAccountingRuleSchema:
+        return EditAccountingRuleSchema(
+            database=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_loggedin_user()
-    @use_kwargs(put_schema, location='json_and_query')
+    @resource_parser.use_kwargs(make_put_schema, location='json_and_query')
     def put(
             self,
+            event_ids: list[int] | None,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
@@ -3111,6 +3120,7 @@ class AccountingRulesResource(BaseMethodView):
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> Response:
         return self.rest_api.add_accounting_rule(
+            event_ids=event_ids,
             event_type=event_type,
             event_subtype=event_subtype,
             counterparty=counterparty,
@@ -3119,9 +3129,10 @@ class AccountingRulesResource(BaseMethodView):
         )
 
     @require_loggedin_user()
-    @use_kwargs(patch_schema, location='json_and_query')
+    @resource_parser.use_kwargs(make_patch_schema, location='json_and_query')
     def patch(
             self,
+            event_ids: list[int] | None,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
@@ -3130,6 +3141,7 @@ class AccountingRulesResource(BaseMethodView):
             identifier: int,
     ) -> Response:
         return self.rest_api.update_accounting_rule(
+            event_ids=event_ids,
             event_type=event_type,
             event_subtype=event_subtype,
             counterparty=counterparty,

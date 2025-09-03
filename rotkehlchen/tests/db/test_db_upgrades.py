@@ -27,7 +27,11 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.importers.constants import ROTKI_EVENT_PREFIX
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.checks import sanity_check_impl
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    NO_ACCOUNTING_COUNTERPARTY,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -3354,7 +3358,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == set()
+    assert new_tables == {'accounting_rule_events'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -3665,6 +3669,12 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
             'SELECT COUNT(*) FROM history_events_mappings WHERE parent_identifier=? AND name=? AND value=?',  # noqa: E501
             (2, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0] == 1  # TEST_EVENT_2 is customized.
+        assert not table_exists(cursor=cursor, name='accounting_rule_events')
+        assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules').fetchall() == (rules := [  # noqa: E501
+            ('deposit', 'deposit asset', NO_ACCOUNTING_COUNTERPARTY),
+            ('receive', 'reward', 'aave-v1'),
+            ('spend', 'return wrapped', 'aave-v1'),
+        ])
 
     db_v49.logout()
     db = _init_db_with_target_version(
@@ -3681,5 +3691,7 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
             (2, 'TEST_EVENT_2', None),  # Customized events are not updated since they may not be for the app account.  # noqa: E501
             (3, 'TEST_EVENT_3', 'Cryptocom 1'),
         ]
+        assert table_exists(cursor=cursor, name='accounting_rule_events')
+        assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules').fetchall() == rules  # noqa: E501
 
     db.logout()

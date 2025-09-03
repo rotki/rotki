@@ -18,9 +18,12 @@ from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAcc
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
+from rotkehlchen.db.accounting_rules import DBAccountingRules
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -34,6 +37,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.cost_basis.base import AverageCostBasisMethod
@@ -1080,6 +1084,91 @@ def test_swaps_taxability(
     assert pot.processed_events[1].free_amount == ONE
     assert pot.processed_events[1].pnl.taxable == ZERO
     assert pot.processed_events[1].pnl.free == ZERO
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_event_specific_accounting_rules(accountant: Accountant) -> None:
+    """Test that accounting rules tied to specific events override default rules."""
+    pot = accountant.pots[0]
+    pot.settings.include_crypto2crypto = True
+    history, user = [], make_evm_address()
+    for idx, (tx_hash, timestamp) in enumerate([
+        (make_evm_tx_hash(), TimestampMS(1469020840000)),
+        (make_evm_tx_hash(), TimestampMS(1569020840000)),
+    ], start=1):
+        history.extend([EvmSwapEvent(
+            identifier=idx,
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            location_label=user,
+            asset=A_ETH,
+            amount=ONE,
+            notes='Swap ETH in uniswap-v2',
+            event_subtype=HistoryEventSubType.SPEND,
+            counterparty=CPT_UNISWAP_V2,
+        ), EvmSwapEvent(
+            identifier=idx + 1,
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            location_label=user,
+            asset=A_3CRV,
+            amount=ONE,
+            notes='Receive 3CRV in uniswap-v2',
+            event_subtype=HistoryEventSubType.RECEIVE,
+            counterparty=CPT_UNISWAP_V2,
+        )])
+    with accountant.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(accountant.db).add_history_events(
+            write_cursor=write_cursor,
+            history=history,
+        )
+    DBAccountingRules(accountant.db).add_accounting_rule(
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        counterparty=CPT_UNISWAP_V2,
+        rule=BaseEventSettings(
+            taxable=False,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=True,
+            accounting_treatment=TxAccountingTreatment.SWAP,
+        ),
+        links={},
+        event_ids=[history[0].identifier],  # type: ignore[list-item]  # identifier is not None in this case
+    )
+
+    add_in_event(pot=pot, amount=FVal(50), price=Price(FVal(10)), taxable=True)
+    accounting_history_process(
+        accountant=accountant,
+        start_ts=ts_ms_to_sec(history[0].timestamp),
+        end_ts=ts_ms_to_sec(history[-1].timestamp),
+        history_list=history,
+    )
+
+    # Only the second swap should be taxable (1 ETH gain)
+    expected_pnl_totals = PnlTotals(
+        totals={AccountingEventType.TRADE: PNL(taxable=ONE)},
+    )
+
+    assert pot.pnls == expected_pnl_totals
+    assert len(pot.processed_events) == 4  # 2 swaps * 2 events each
+
+    # First swap (non-taxable due to event-specific rule)
+    assert pot.processed_events[0].pnl.taxable == ZERO
+    assert pot.processed_events[0].pnl.free == ZERO
+    assert pot.processed_events[1].pnl.taxable == ZERO
+    assert pot.processed_events[1].pnl.free == ZERO
+
+    # Second swap (taxable due to default rule)
+    assert pot.processed_events[2].pnl.taxable == ONE
+    assert pot.processed_events[2].pnl.free == ZERO
+    assert pot.processed_events[3].pnl.taxable == ZERO
+    assert pot.processed_events[3].pnl.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{A_ETH: {A_EUR: {1469020840: ONE}}}])

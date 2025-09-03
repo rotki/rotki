@@ -262,6 +262,10 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             event_subtype=self.event_subtype,
         )
 
+    def get_accounting_rule_key(self) -> int:
+        """Returns the unique key used for event-specific accounting rules."""
+        return hash(self.identifier)
+
     def serialize(self) -> dict[str, Any]:
         """Serialize the event alone for api"""
         serialized_data = {
@@ -551,7 +555,16 @@ def get_event_type_identifier(
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,
         counterparty: str | None = None,
+        event_id: int | None = None,
 ) -> int:
+    """Returns a unique hash identifier for an event type combination.
+
+    If event_id is provided, uses that directly. Otherwise, combines
+    event type, subtype, and counterparty.
+    """
+    if event_id is not None:
+        return hash(event_id)
+
     key = f'{event_type.serialize()}{event_subtype.serialize()}'
     if counterparty is not None:
         key += counterparty

@@ -1726,6 +1726,7 @@ class RestAPI:
 
         for rule_info in json_data['accounting_rules'].values():
             self._invalidate_cache_for_accounting_rule(
+                event_ids=rule_info['event_ids'],
                 event_type=HistoryEventType.deserialize(rule_info['event_type']),
                 event_subtype=HistoryEventSubType.deserialize(rule_info['event_subtype']),
                 counterparty=rule_info['counterparty'],
@@ -5011,19 +5012,31 @@ class RestAPI:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
+            event_ids: list[int] | None = None,
     ) -> None:
+        if event_ids is None:
+            cache_keys = [get_event_type_identifier(
+                event_type=event_type,
+                event_subtype=event_subtype,
+                counterparty=counterparty,
+            )]
+        else:
+            cache_keys = [get_event_type_identifier(
+                event_type=event_type,
+                event_subtype=event_subtype,
+                counterparty=counterparty,
+                event_id=event_id,
+            ) for event_id in event_ids]
+
         accountant = self.rotkehlchen.accountant
-        type_identifier = get_event_type_identifier(
-            event_type=event_type,
-            event_subtype=event_subtype,
-            counterparty=counterparty,
-        )
-        affected_events = accountant.processable_events_cache_signatures.get(type_identifier)
-        for event_id in affected_events:
-            accountant.processable_events_cache.remove(event_id)
+        for cache_key in cache_keys:
+            affected_events = accountant.processable_events_cache_signatures.get(cache_key)
+            for event_idx in affected_events:
+                accountant.processable_events_cache.remove(event_idx)
 
     def add_accounting_rule(
             self,
+            event_ids: list[int] | None,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
@@ -5033,6 +5046,7 @@ class RestAPI:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
             db.add_accounting_rule(
+                event_ids=event_ids,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 counterparty=counterparty,
@@ -5043,6 +5057,7 @@ class RestAPI:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         self._invalidate_cache_for_accounting_rule(
+            event_ids=event_ids,
             event_type=event_type,
             event_subtype=event_subtype,
             counterparty=counterparty,
@@ -5051,6 +5066,7 @@ class RestAPI:
 
     def update_accounting_rule(
             self,
+            event_ids: list[int] | None,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
@@ -5061,6 +5077,7 @@ class RestAPI:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
             db.update_accounting_rule(
+                event_ids=event_ids,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 counterparty=counterparty,
@@ -5072,6 +5089,7 @@ class RestAPI:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         self._invalidate_cache_for_accounting_rule(
+            event_ids=event_ids,
             event_type=event_type,
             event_subtype=event_subtype,
             counterparty=counterparty,
@@ -5081,11 +5099,12 @@ class RestAPI:
     def delete_accounting_rule(self, rule_id: int) -> Response:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
-            event_type, event_subtype, counterparty = db.remove_accounting_rule(rule_id=rule_id)
+            event_ids, event_type, event_subtype, counterparty = db.remove_accounting_rule(rule_id=rule_id)  # noqa: E501
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         self._invalidate_cache_for_accounting_rule(
+            event_ids=event_ids,
             event_type=event_type,
             event_subtype=event_subtype,
             counterparty=counterparty,

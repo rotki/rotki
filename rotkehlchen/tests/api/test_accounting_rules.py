@@ -14,7 +14,11 @@ from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.constants.assets import A_CUSDC, A_USDC
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.db.constants import LINKABLE_ACCOUNTING_PROPERTIES
+from rotkehlchen.db.constants import (
+    LINKABLE_ACCOUNTING_PROPERTIES,
+    NO_ACCOUNTING_COUNTERPARTY,
+)
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -27,7 +31,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.tests.utils.history_base_entry import store_and_retrieve_events
+from rotkehlchen.tests.utils.history_base_entry import add_entries, store_and_retrieve_events
 from rotkehlchen.types import Location, TimestampMS
 
 
@@ -118,6 +122,7 @@ def test_manage_rules(rotkehlchen_api_server: 'APIServer', db_settings: dict[str
         'event_type': HistoryEventType.DEPOSIT.serialize(),
         'event_subtype': HistoryEventSubType.SPEND.serialize(),
         'counterparty': 'uniswap',
+        'event_ids': None,
     }
     rule_2: dict[str, Any] = {
         'taxable': {'value': True},
@@ -126,6 +131,7 @@ def test_manage_rules(rotkehlchen_api_server: 'APIServer', db_settings: dict[str
         'event_type': HistoryEventType.STAKING.serialize(),
         'event_subtype': HistoryEventSubType.SPEND.serialize(),
         'counterparty': None,
+        'event_ids': None,
         'accounting_treatment': 'swap',
     }
     response = requests.put(
@@ -530,6 +536,81 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
     )
 
 
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_manage_rules_with_event_key(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test operations with accounting rules that have event_key"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    existing_entries = add_entries(DBHistoryEvents(rotki.data.db))
+
+    base_rule: dict[str, Any] = {
+        'taxable': {'value': True},
+        'count_entire_amount_spend': {'value': False},
+        'count_cost_basis_pnl': {'value': True},
+        'event_type': HistoryEventType.TRADE.serialize(),
+        'event_subtype': HistoryEventSubType.SPEND.serialize(),
+        'counterparty': 'uniswap-v2',
+        'accounting_treatment': TxAccountingTreatment.SWAP.serialize(),
+    }
+
+    # Test various invalid event field cases
+    for event_ids, expected_error in [
+        ([50_000], 'One or more of the specified rule event identifiers could not be found in the database'),  # noqa: E501
+        ([-100], 'Must be greater than or equal to 0'),
+        (['420'], 'Not a valid integer'),
+    ]:
+        invalid_rule = base_rule.copy()
+        invalid_rule['event_ids'] = event_ids
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+            json=invalid_rule,
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg=expected_error,
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+    # Test adding rule with valid event_id and sequence_index
+    valid_rule = base_rule.copy()
+    valid_rule['event_ids'] = [existing_entries[0].identifier]
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json=valid_rule,
+    ))
+    valid_rule.update({'identifier': 1})
+    assert (entries := assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+    ))['entries']) == [valid_rule]
+
+    # Test updating rule with event_id and sequence_index
+    updated_rule = valid_rule.copy()
+    another_event = existing_entries[3]
+    updated_rule['event_ids'].append(another_event.identifier)
+    updated_rule['taxable'] = {'value': False}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={
+            'identifier': (rule_id := entries[0]['identifier']),  # since we've only added one entry  # noqa: E501
+            **updated_rule,
+        },
+    )
+    assert_simple_ok_response(response)
+    updated_rule['identifier'] = rule_id
+    assert assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+    ))['entries'] == [updated_rule]
+
+    # Test removing the rule
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'identifier': rule_id},
+    )
+    assert_simple_ok_response(response)
+    assert len(assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+    ))['entries']) == 0
+
+
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that exporting and importing accounting rules works fine."""
@@ -574,6 +655,7 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         assert len(rules_data['accounting_rules']) == all_rules_num
         assert rules_data['accounting_rules']['1'] == {
             'event_type': 'deposit',
+            'event_ids': None,
             'event_subtype': 'deposit asset',
             'counterparty': 'aave-v1',
             'rule': {
@@ -586,6 +668,7 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         assert rules_data['accounting_rules']['82'] == {
             'event_type': 'deposit',
             'event_subtype': 'fee',
+            'event_ids': None,
             'counterparty': None,
             'rule': {
                 'taxable': {'value': True},
@@ -659,7 +742,7 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
             'SELECT * FROM accounting_rules WHERE identifier IN (1, 82);',
         ).fetchall() == [
             (1, 'deposit', 'deposit asset', 'aave-v1', 0, 0, 1, 'A'),
-            (82, 'deposit', 'fee', 'NONE', 1, 0, 1, None),
+            (82, 'deposit', 'fee', NO_ACCOUNTING_COUNTERPARTY, 1, 0, 1, None),
         ] == initial_rules
 
         assert cursor.execute('SELECT * FROM linked_rules_properties').fetchall() == [

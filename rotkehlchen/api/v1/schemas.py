@@ -72,7 +72,7 @@ from rotkehlchen.db.filtering import (
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import DBAssetBalance, LocationData
+from rotkehlchen.db.utils import DBAssetBalance, LocationData, get_query_chunks
 from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import (
@@ -3673,6 +3673,33 @@ class AccountingRuleIdSchema(Schema):
     event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
     event_subtype = SerializableEnumField(enum_class=HistoryEventSubType, required=True)
     counterparty = EmptyAsNoneStringField(required=False, load_default=None)
+    event_ids = DelimitedOrNormalList(fields.Integer(
+        required=False,
+        load_default=None,
+        strict=True,
+        validate=webargs.validate.Range(min=0),
+    ), load_default=None)
+
+    def __init__(self, database: 'DBHandler') -> None:
+        super().__init__()
+        self.database = database
+
+    @validates_schema
+    def validate_event_fields(self, data: dict[str, Any], **kwargs: Any) -> None:  # pylint: disable=unused-argument
+        """Validate that event_id exist in database.
+        May raise:
+            - ValidationError if event doesn't exist.
+        """
+        if (event_ids := data['event_ids']) is None:
+            return
+
+        with self.database.conn.read_ctx() as cursor:
+            total_found = 0
+            for chunk, placeholders in get_query_chunks(event_ids):
+                total_found += cursor.execute(f'SELECT COUNT(*) FROM history_events WHERE identifier IN ({placeholders})', chunk).fetchone()[0]  # noqa: E501
+
+            if total_found != len(event_ids):
+                raise ValidationError(message='One or more of the specified rule event identifiers could not be found in the database.')  # noqa: E501
 
 
 class LinkedAccountingSetting(Schema):
@@ -3712,6 +3739,7 @@ class CreateAccountingRuleSchema(AccountingRuleIdSchema):
         }
         return {
             'rule': rule,
+            'event_ids': data['event_ids'],
             'event_type': data['event_type'],
             'event_subtype': data['event_subtype'],
             'counterparty': data['counterparty'],
