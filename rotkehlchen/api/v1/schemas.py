@@ -3183,6 +3183,7 @@ class QueryAddressbookSchema(
     """Schema for querying addressbook entries"""
     name_substring = EmptyAsNoneStringField(load_default=None)
     blockchain = BlockchainField(load_default=None)
+    strict_blockchain = fields.Boolean(load_default=True)
 
     @post_load
     def make_get_addressbook_query(
@@ -3190,16 +3191,16 @@ class QueryAddressbookSchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        filter_query = AddressbookFilterQuery.make(
-            limit=data['limit'],
-            offset=data['offset'],
-            blockchain=data['blockchain'],
-            substring_search=data['name_substring'],
-            optional_chain_addresses=data['addresses'],
-            order_by_rules=create_order_by_rules_list(data=data),
-        )
         return {
-            'filter_query': filter_query,
+            'filter_query': AddressbookFilterQuery.make(
+                limit=data['limit'],
+                offset=data['offset'],
+                blockchain=data['blockchain'],
+                strict_blockchain=data['strict_blockchain'],
+                substring_search=data['name_substring'],
+                optional_chain_addresses=data['addresses'],
+                order_by_rules=create_order_by_rules_list(data=data),
+            ),
             'book_type': data['book_type'],
         }
 

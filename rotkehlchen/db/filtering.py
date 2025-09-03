@@ -30,6 +30,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     SUPPORTED_CHAIN_IDS,
     CacheType,
     ChainID,
@@ -1350,9 +1351,15 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
 
 class AddressbookFilterQuery(DBFilterQuery):
-    """
-    Filter used to find the paginated addressbook entries using the blockchain,
-    name and optional chain addresses as a filter.
+    """Filter used to find paginated addressbook entries.
+
+    - Filters by `blockchain`, `name` substring and optional chain-address pairs.
+    - `strict_blockchain` controls how the `blockchain` filter behaves:
+        - When True (default), matches entries whose `blockchain` exactly equals
+        the provided chain (e.g., `eth`).
+        - When False, matches all blockchains where the address format is valid
+        for the chain family of the provided chain. For example, providing an
+        EVM chain such as `eth` will match any EVM-based blockchain group.
     """
     @classmethod
     def make(
@@ -1361,6 +1368,7 @@ class AddressbookFilterQuery(DBFilterQuery):
             limit: int | None = None,
             offset: int | None = None,
             blockchain: SupportedBlockchain | None = None,
+            strict_blockchain: bool = True,
             optional_chain_addresses: list[OptionalChainAddress] | None = None,
             substring_search: str | None = None,
             order_by_rules: list[tuple[str, bool]] | None = None,
@@ -1379,11 +1387,19 @@ class AddressbookFilterQuery(DBFilterQuery):
                 search_string=substring_search,
             ))
         if blockchain is not None:
-            filters.append(DBEqualsFilter(
-                and_op=True,
-                column='blockchain',
-                value=blockchain.value,
-            ))
+            if strict_blockchain is True:
+                filters.append(DBEqualsFilter(
+                    and_op=True,
+                    column='blockchain',
+                    value=blockchain.value,
+                ))
+            else:
+                filters.append(DBEqualsFilter(
+                    and_op=True,
+                    column='blockchain',
+                    value=f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}{blockchain.get_chain_type().name}',
+                ))
+
         if optional_chain_addresses is not None:
             filters.append(DBOptionalChainAddressesFilter(
                 and_op=False,
