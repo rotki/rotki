@@ -14,7 +14,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
@@ -62,6 +62,7 @@ from rotkehlchen.types import (
     ChainID,
     Location,
     Price,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -1208,3 +1209,43 @@ def test_query_liquity_balances(rotkehlchen_api_server: 'APIServer', ethereum_ac
         CPT_LIQUITY: {'amount': '4.08915844880891399', 'usd_value': '6.133737673213370985'},
     }}
     assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'usd_value': '3283.0103582835479670825'}}}  # noqa: E501
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('solana_accounts', [[
+    '8comvKwUxq6x2KV6bqZeU695a1d4R2UFuVJZxH2raTYf',
+    '9oAgKbKmrQ6t1MSn5mNgYwhogeXkAqtzAuFdtBtwf7xr',
+    'Bt26YqVLJJ233frMxvvo9uL1mPu7YdBFgFPe6Rwh3AqB',
+]])
+def test_solana_balances_multiple_accounts(
+        rotkehlchen_api_server: 'APIServer',
+        solana_accounts: list['SolanaAddress'],
+) -> None:
+    """Test that querying balances for multiple solana accounts works and check the
+    balances for several common tokens (one token from each account).
+    """
+    # TODO: remove this patch after rate limits are properly handled
+    # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=127427720
+    with patch.object(  # Use publicnode rpc for better rate limits
+        target=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.solana,
+        attribute='default_call_order',
+        return_value=[WeightedNode(
+            node_info=NodeName(
+                name='publicnode',
+                endpoint='https://solana-rpc.publicnode.com',
+                owned=False,
+                blockchain=SupportedBlockchain.SOLANA,
+            ),
+            active=True,
+            weight=ONE,
+        )],
+    ):
+        result = assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'allbalancesresource'),
+        ))
+
+    assert result['assets']['solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v']['amount'] == '160556.002808'  # USDC  # noqa: E501
+    assert result['assets']['solana/token:2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv']['amount'] == '370905.246821'  # PENGU  # noqa: E501
+    assert result['assets']['solana/token:WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g']['amount'] == '50122.11'  # WLFI  # noqa: E501

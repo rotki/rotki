@@ -1,23 +1,49 @@
 import logging
+from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, TypeVar
 
+from construct import ConstructError
 from httpx import HTTPError
 from solana.rpc.api import Client
 from solana.rpc.core import RPCException
+from solana.rpc.types import TokenAccountOpts
 from solders.pubkey import Pubkey
+from spl.token._layouts import ACCOUNT_LAYOUT
+from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
+from rotkehlchen.assets.asset import Asset, SolanaToken
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import SolanaRPCMixin
-from rotkehlchen.chain.solana.utils import lamports_to_sol
+from rotkehlchen.chain.solana.utils import (
+    ExtensionType,
+    MetadataInfo,
+    MintInfo,
+    decode_metadata_pointer,
+    decode_token_metadata,
+    get_extension_data,
+    get_metadata_account,
+    lamports_to_sol,
+    unpack_mint,
+)
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import solana_address_to_identifier
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SolanaAddress, SupportedBlockchain
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain, TokenKind
+from rotkehlchen.utils.misc import bytes_to_solana_address
+
+from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
 
 if TYPE_CHECKING:
+    from solders.solders import GetTokenAccountsByOwnerResp
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.greenlets.manager import GreenletManager
 
@@ -42,9 +68,14 @@ class SolanaManager(SolanaRPCMixin):
     def _query(
             self,
             method: Callable[[Client], R],
-            call_order: Sequence[WeightedNode],
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> R:
-        """Use the provided call order to request method from solana"""
+        """Request a method from solana using the provided or default call order.
+        May raise RemoteError if unable to get a response from any node.
+        """
+        if call_order is None:
+            call_order = self.default_call_order()
+
         for weighted_node in call_order:
             node_info = weighted_node.node_info
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
@@ -78,7 +109,6 @@ class SolanaManager(SolanaRPCMixin):
             method=lambda client: client.get_multiple_accounts(
                 pubkeys=[Pubkey.from_string(addr) for addr in accounts],
             ),
-            call_order=self.default_call_order(),
         )
 
         result = {}
@@ -90,3 +120,166 @@ class SolanaManager(SolanaRPCMixin):
                 result[account] = lamports_to_sol(entry.lamports)
 
         return result
+
+    def get_token_balances(self, account: SolanaAddress) -> dict[Asset, FVal]:
+        """Query the token balances of the given account.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        balances: defaultdict[Asset, FVal] = defaultdict(lambda: ZERO)
+        for token_program_id in (TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID):
+            log.debug(f'Querying token balances for {account} with program id {token_program_id}')
+            response: GetTokenAccountsByOwnerResp = self._query(
+                method=lambda client, pid=token_program_id: client.get_token_accounts_by_owner(  # type: ignore
+                    owner=Pubkey.from_string(account),
+                    opts=TokenAccountOpts(program_id=pid),
+                ),
+            )
+            for account_info in response.value:
+                try:
+                    decoded = ACCOUNT_LAYOUT.parse(account_info.account.data)
+                except ConstructError as e:
+                    log.error(f'Failed to parse solana token account data for {account} due to {e}')  # noqa: E501
+                    continue
+
+                try:
+                    token_address = bytes_to_solana_address(decoded.mint)
+                except DeserializationError as e:
+                    log.error(f'Failed to deserialize a solana token address for {account} due to {e}')  # noqa: E501
+                    continue
+
+                if decoded.amount == ZERO:
+                    log.debug(f'Found solana token {token_address} with zero balance for {account}. Skipping.')  # noqa: E501
+                    continue
+
+                try:
+                    token = Asset(
+                        identifier=solana_address_to_identifier(token_address),
+                    ).resolve_to_solana_token()
+                except UnknownAsset:
+                    if (token := self._create_token(token_address)) is None:  # type: ignore[assignment]
+                        log.error(f'Failed to create solana token with address {token_address}')
+                        continue
+
+                # Add to existing balances since there may be multiple ATAs
+                # (Associated Token Account) for the same token.
+                balances[token] += (amount := token_normalized_value(
+                    token=token,
+                    token_amount=decoded.amount,
+                ))
+                log.debug(f'Found {token} token balance for solana account {account} with balance {amount}')  # noqa: E501
+
+        return balances
+
+    def _create_token(self, token_address: SolanaAddress) -> SolanaToken | None:
+        """Creates a solana token from the given token address.
+        Queries the mint info for the token which contains supply, decimals, and extensions.
+        Then queries the metadata (name, symbol, etc.) from either the extensions or
+        the known metadata programs.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        log.debug(f'Creating solana token with address {token_address}')
+        if (
+            (raw_mint := self._get_raw_account_info(pubkey=Pubkey.from_string(token_address))) is None or  # noqa: E501
+            (mint_info := unpack_mint(raw_mint)) is None
+        ):
+            log.error(f'Failed to get token mint info for {token_address}')
+            return None
+
+        if (
+            (metadata := self._get_metadata_from_extensions(
+                token_address=token_address,
+                mint_info=mint_info,
+            )) is None and
+            (metadata := self._get_metadata_from_pdas(token_address)) is None
+        ):
+            log.error(f'Failed to get token metadata for {token_address}')
+            return None
+
+        GlobalDBHandler().add_asset(token := SolanaToken.initialize(
+            address=token_address,
+            # TODO: Add better nft detection. Some nfts have supply > 1 and some tokens have decimals == 0  # noqa: E501
+            # Use tokenStandard from the metaplex metadata (if present) or check edition accounts,
+            # and maybe check for null mint authority
+            # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=126837936
+            token_kind=TokenKind.SPL_NFT if mint_info.supply == 1 and mint_info.decimals == 0 else TokenKind.SPL_TOKEN,  # noqa: E501
+            name=metadata.name,
+            symbol=metadata.symbol,
+            decimals=mint_info.decimals,
+        ))
+        return token
+
+    def _get_raw_account_info(self, pubkey: Pubkey) -> bytes | None:
+        """Query the raw account info for the given pubkey.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        if (response := self._query(
+            method=lambda client: client.get_account_info(pubkey),
+        ).value) is None:
+            log.error(f'Failed to get raw account info for {pubkey!s}')
+            return None
+
+        return response.data
+
+    def _query_metadata_account(self, metadata_account: Pubkey) -> MetadataInfo | None:
+        """Query the parsed legacy metadata for the given metadata account.
+        Returns a tuple with the name and symbol of the token.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        if (
+            (raw_data := self._get_raw_account_info(pubkey=metadata_account)) is None or
+            (metadata := decode_token_metadata(data=raw_data, layout=METADATA_LAYOUT_LEGACY)) is None  # noqa: E501
+        ):
+            log.error(f'Failed to get legacy token metadata for {metadata_account}')
+            return None
+
+        return metadata
+
+    def _get_metadata_from_extensions(
+            self,
+            token_address: SolanaAddress,
+            mint_info: MintInfo,
+    ) -> MetadataInfo | None:
+        """Attempt to get the metadata from token extensions in the mint info.
+        If the extensions include a MetadataPointer there are two possibilities:
+        - points to its own mint address - gets metadata from the TokenMetadata extension
+        - points to a separate metadata account - queries metadata from that account
+
+        Returns the metadata if found, otherwise returns None.
+        """
+        if mint_info.tlv_data is None or (raw_metadata_pointer := get_extension_data(
+                extension_type=ExtensionType.METADATA_POINTER,
+                tlv_data=mint_info.tlv_data,
+        )) is None:
+            return None  # This token doesn't have metadata extensions.
+
+        if (metadata_address := decode_metadata_pointer(raw_metadata_pointer)) is None:
+            log.error(f'Failed to decode metadata pointer extension for {token_address}')
+            return None
+
+        if metadata_address == token_address:  # Token uses the TokenMetadata extension
+            if (
+                (raw_data := get_extension_data(extension_type=ExtensionType.TOKEN_METADATA, tlv_data=mint_info.tlv_data)) is None or  # noqa: E501
+                (metadata := decode_token_metadata(data=raw_data, layout=METADATA_LAYOUT_2022)) is None  # noqa: E501
+            ):
+                log.error(f'Failed to decode token metadata extension for {token_address}')
+                return None
+
+        else:  # Token uses a separate metadata account (uncommon)
+            metadata = self._query_metadata_account(Pubkey.from_string(metadata_address))
+
+        return metadata
+
+    def _get_metadata_from_pdas(self, token_address: SolanaAddress) -> MetadataInfo | None:
+        """Query token metadata from PDAs (Program Derived Addresses) using known metadata
+        programs, such as Metaplex.
+        """
+        for metadata_program in METADATA_PROGRAM_IDS:
+            log.debug(f'Querying metadata for solana token {token_address} using program {metadata_program}')  # noqa: E501
+            metadata_account = get_metadata_account(token_address, metadata_program)
+            if (metadata := self._query_metadata_account(metadata_account)) is not None:
+                break
+        else:
+            log.error(f'Failed to query token metadata for {token_address} from any known metadata program.')  # noqa: E501
+            return None
+
+        return metadata
