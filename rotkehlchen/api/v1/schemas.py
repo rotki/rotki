@@ -3241,6 +3241,10 @@ class AddressbookUpdateSchema(BaseAddressbookSchema):
     entries = NonEmptyList(fields.Nested(AddressbookEntrySchema), required=True)
 
 
+class AddressbookInsertSchema(AddressbookUpdateSchema):
+    update_existing = fields.Boolean(load_default=False)
+
+
 class SnapshotImportingSchema(Schema):
     balances_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
     location_data_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)

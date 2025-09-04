@@ -280,14 +280,22 @@ def test_insert_into_addressbook(
                 blockchain=SupportedBlockchain.ETHEREUM,
             ),
         ]
+        # Check for error without the update_existing flag
         response = requests.put(
-            api_url_for(
-                rotkehlchen_api_server,
-                'addressbookresource',
-                book_type=book_type,
-            ),
+            api_url_for(rotkehlchen_api_server, 'addressbookresource', book_type=book_type),
+            json={'entries': [entry.serialize() for entry in existing_entries]},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg=f'Entry with address {generated_entries[0].address} and blockchain ethereum already exists in the address book.',  # noqa: E501
+            status_code=HTTPStatus.CONFLICT,
+        )
+        # Check that existing entries are updated with the update_existing flag
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'addressbookresource', book_type=book_type),
             json={
                 'entries': [entry.serialize() for entry in existing_entries],
+                'update_existing': True,
             },
         )
         assert_proper_response(response=response)
