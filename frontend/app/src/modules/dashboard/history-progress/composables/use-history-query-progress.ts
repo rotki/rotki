@@ -1,63 +1,127 @@
 import type { ComputedRef } from 'vue';
+import type { CommonQueryProgressData, HistoryQueryProgressType } from '@/modules/dashboard/history-progress/types';
 import { get } from '@vueuse/shared';
 import { HistoryEventsQueryStatus, TransactionsQueryStatus } from '@/modules/messaging/types';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { truncateAddress } from '@/utils/truncate';
 
-interface HistoryQueryProgress {
-  currentStep: number;
-  totalSteps: number;
-  percentage: number;
-  currentOperation: string | null;
-  currentOperationData: {
-    type: 'transaction' | 'event';
-    address?: string;
-    chain?: string;
-    location?: string;
-    name?: string;
-    status: string;
-  } | null;
+interface HistoryQueryProgressOperationData {
+  type: HistoryQueryProgressType;
+  address?: string;
+  chain?: string;
+  location?: string;
+  name?: string;
+  status: string;
 }
+
+interface HistoryQueryProgress extends CommonQueryProgressData<HistoryQueryProgressOperationData> {}
 
 interface UseHistoryQueryProgressReturn {
   progress: ComputedRef<HistoryQueryProgress | null>;
 }
 
 function getTransactionStatusDescription(status: TransactionsQueryStatus, t: ReturnType<typeof useI18n>['t']): string {
-  switch (status) {
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED:
-      return t('dashboard.history_query_indicator.transaction_status.querying_transactions_started');
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS:
-      return t('dashboard.history_query_indicator.transaction_status.querying_transactions');
-    case TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED:
-      return t('dashboard.history_query_indicator.transaction_status.querying_transactions_finished');
-    case TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS:
-      return t('dashboard.history_query_indicator.transaction_status.querying_internal_transactions');
-    case TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS:
-      return t('dashboard.history_query_indicator.transaction_status.querying_evm_tokens_transactions');
-    case TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED:
-      return t('dashboard.history_query_indicator.transaction_status.decoding_transactions_started');
-    case TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED:
-      return t('dashboard.history_query_indicator.transaction_status.decoding_transactions_finished');
-    case TransactionsQueryStatus.ACCOUNT_CHANGE:
-      return t('dashboard.history_query_indicator.transaction_status.querying_transactions_started');
-    default:
-      return t('dashboard.history_query_indicator.transaction_status.default');
-  }
+  const statusDescriptions: Record<TransactionsQueryStatus, string> = {
+    [TransactionsQueryStatus.ACCOUNT_CHANGE]: t('dashboard.history_query_indicator.transaction_status.querying_transactions_started'),
+    [TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED]: t('dashboard.history_query_indicator.transaction_status.decoding_transactions_finished'),
+    [TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED]: t('dashboard.history_query_indicator.transaction_status.decoding_transactions_started'),
+    [TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: t('dashboard.history_query_indicator.transaction_status.querying_evm_tokens_transactions'),
+    [TransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: t('dashboard.history_query_indicator.transaction_status.querying_internal_transactions'),
+    [TransactionsQueryStatus.QUERYING_TRANSACTIONS]: t('dashboard.history_query_indicator.transaction_status.querying_transactions'),
+    [TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED]: t('dashboard.history_query_indicator.transaction_status.querying_transactions_finished'),
+    [TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: t('dashboard.history_query_indicator.transaction_status.querying_transactions_started'),
+  };
+
+  return statusDescriptions[status] || t('dashboard.history_query_indicator.transaction_status.default');
 }
 
 function getEventStatusDescription(status: HistoryEventsQueryStatus, t: ReturnType<typeof useI18n>['t']): string {
-  switch (status) {
-    case HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED:
-      return t('dashboard.history_query_indicator.event_status.querying_events_started');
-    case HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE:
-      return t('dashboard.history_query_indicator.event_status.querying_events_status_update');
-    case HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED:
-      return t('dashboard.history_query_indicator.event_status.querying_events_finished');
-    default:
-      return t('dashboard.history_query_indicator.event_status.default');
+  const statusDescriptions: Record<HistoryEventsQueryStatus, string> = {
+    [HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED]: t('dashboard.history_query_indicator.event_status.querying_events_finished'),
+    [HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED]: t('dashboard.history_query_indicator.event_status.querying_events_started'),
+    [HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE]: t('dashboard.history_query_indicator.event_status.querying_events_status_update'),
+  };
+
+  return statusDescriptions[status] || t('dashboard.history_query_indicator.event_status.default');
+}
+
+interface TransactionProgressData {
+  currentOperation: string;
+  currentOperationData: HistoryQueryProgressOperationData;
+}
+
+interface EventProgressData {
+  currentOperation: string;
+  currentOperationData: HistoryQueryProgressOperationData;
+}
+
+function isTransactionActive(status: any): boolean {
+  if (status.subtype === 'bitcoin') {
+    return status.status !== TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
   }
+  return status.status !== TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+}
+
+function isTransactionFinished(status: any): boolean {
+  if (status.subtype === 'bitcoin') {
+    return status.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
+  }
+  return status.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+}
+
+function createTransactionProgress(
+  activeTxStatus: any,
+  t: ReturnType<typeof useI18n>['t'],
+): TransactionProgressData {
+  const statusDesc = getTransactionStatusDescription(activeTxStatus.status, t);
+  const address = truncateAddress(activeTxStatus.address, 6);
+  const chain = activeTxStatus.chain.toUpperCase();
+
+  return {
+    currentOperation: `${statusDesc} for ${address} on ${chain}`,
+    currentOperationData: {
+      address: activeTxStatus.address,
+      chain: activeTxStatus.chain,
+      status: statusDesc,
+      type: 'transaction',
+    },
+  };
+}
+
+function createEventProgress(
+  activeEventStatus: any,
+  t: ReturnType<typeof useI18n>['t'],
+): EventProgressData {
+  const statusDesc = getEventStatusDescription(activeEventStatus.status, t);
+  const location = activeEventStatus.location;
+  const name = activeEventStatus.name;
+
+  return {
+    currentOperation: `${statusDesc} for ${name} (${location})`,
+    currentOperationData: {
+      location: activeEventStatus.location,
+      name: activeEventStatus.name,
+      status: statusDesc,
+      type: 'event',
+    },
+  };
+}
+
+function calculateProgressMetrics(
+  txStatuses: any[],
+  eventStatuses: any[],
+): { completedSteps: number; totalItems: number; percentage: number } {
+  const finishedTxItems = txStatuses.filter(isTransactionFinished).length;
+  const finishedEventItems = eventStatuses.filter(
+    status => status.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED,
+  ).length;
+
+  const completedSteps = finishedTxItems + finishedEventItems;
+  const totalItems = txStatuses.length + eventStatuses.length;
+  const percentage = totalItems > 0 ? Math.round((completedSteps / totalItems) * 100) : 0;
+
+  return { completedSteps, percentage, totalItems };
 }
 
 export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
@@ -69,78 +133,51 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
     const txStatuses = Object.values(get(txQueryStatus));
     const eventStatuses = Object.values(get(eventsQueryStatus));
 
-    const totalItems = txStatuses.length + eventStatuses.length;
-
-    if (totalItems === 0) {
+    if (txStatuses.length === 0 && eventStatuses.length === 0) {
       return null;
     }
 
-    // Find current operation (first non-finished item)
-    let currentOperation: string | null = null;
-    let currentOperationData: HistoryQueryProgress['currentOperationData'] = null;
-
-    // Check transaction statuses for current operation
-    const activeTxStatus = txStatuses.find((status) => {
-      if (status.subtype === 'bitcoin') {
-        return status.status !== TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
-      }
-      return status.status !== TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
-    });
-
+    // Check for active transaction
+    const activeTxStatus = txStatuses.find(isTransactionActive);
     if (activeTxStatus) {
-      const statusDesc = getTransactionStatusDescription(activeTxStatus.status, t);
-      const address = truncateAddress(activeTxStatus.address, 6);
-      const chain = activeTxStatus.chain.toUpperCase();
-      currentOperation = `${statusDesc} for ${address} on ${chain}`;
-      currentOperationData = {
-        address: activeTxStatus.address,
-        chain: activeTxStatus.chain,
-        status: statusDesc,
-        type: 'transaction',
+      const { currentOperation, currentOperationData } = createTransactionProgress(activeTxStatus, t);
+      const metrics = calculateProgressMetrics(txStatuses, eventStatuses);
+
+      return {
+        currentOperation,
+        currentOperationData,
+        currentStep: metrics.completedSteps,
+        percentage: metrics.percentage,
+        totalSteps: metrics.totalItems,
       };
     }
 
-    // If no active tx, check event statuses
-    if (!currentOperation) {
-      const activeEventStatus = eventStatuses.find(
-        status => status.status !== HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED,
-      );
+    // Check for active event
+    const activeEventStatus = eventStatuses.find(
+      status => status.status !== HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED,
+    );
 
-      if (activeEventStatus) {
-        const statusDesc = getEventStatusDescription(activeEventStatus.status, t);
-        const location = activeEventStatus.location;
-        const name = activeEventStatus.name;
-        currentOperation = `${statusDesc} for ${name} (${location})`;
-        currentOperationData = {
-          location: activeEventStatus.location,
-          name: activeEventStatus.name,
-          status: statusDesc,
-          type: 'event',
-        };
-      }
+    if (activeEventStatus) {
+      const { currentOperation, currentOperationData } = createEventProgress(activeEventStatus, t);
+      const metrics = calculateProgressMetrics(txStatuses, eventStatuses);
+
+      return {
+        currentOperation,
+        currentOperationData,
+        currentStep: metrics.completedSteps,
+        percentage: metrics.percentage,
+        totalSteps: metrics.totalItems,
+      };
     }
 
-    // Count finished items
-    const finishedTxItems = txStatuses.filter((status) => {
-      if (status.subtype === 'bitcoin') {
-        return status.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
-      }
-      return status.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
-    }).length;
-
-    const finishedEventItems = eventStatuses.filter(
-      status => status.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED,
-    ).length;
-
-    const completedSteps = finishedTxItems + finishedEventItems;
-    const percentage = totalItems > 0 ? Math.round((completedSteps / totalItems) * 100) : 0;
-
+    // No active operations
+    const metrics = calculateProgressMetrics(txStatuses, eventStatuses);
     return {
-      currentOperation,
-      currentOperationData,
-      currentStep: completedSteps,
-      percentage,
-      totalSteps: totalItems,
+      currentOperation: null,
+      currentOperationData: null,
+      currentStep: metrics.completedSteps,
+      percentage: metrics.percentage,
+      totalSteps: metrics.totalItems,
     };
   });
 

@@ -1,21 +1,13 @@
+import type { BalanceQueryQueueItem } from '@/modules/dashboard/history-progress/types';
 import { TaskType } from '@/types/task-type';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
-
-interface QueueItem {
-  id: string;
-  type: TaskType.FETCH_DETECTED_TOKENS | TaskType.QUERY_BLOCKCHAIN_BALANCES;
-  chain: string;
-  address?: string;
-  status: 'pending' | 'running' | 'completed';
-  addedAt: number;
-}
 
 export const useBalanceQueueStore = defineStore('balances/queue', () => {
   // Create queue instance inside the store
   const queue = new LimitedParallelizationQueue(2);
 
   // Track all items in the queue
-  const items = ref<Map<string, QueueItem>>(new Map());
+  const items = ref<Map<string, BalanceQueryQueueItem>>(new Map());
 
   // Track operation batches
   const currentBatch = ref<string>();
@@ -23,7 +15,7 @@ export const useBalanceQueueStore = defineStore('balances/queue', () => {
   // Track pending promises for batch operations
   const batchPromises = new Map<string, { resolve: () => void; totalItems: number; completedItems: number }>();
 
-  const queueItems = computed<QueueItem[]>(() => Array.from(get(items).values()));
+  const queueItems = computed<BalanceQueryQueueItem[]>(() => Array.from(get(items).values()));
 
   const totalItems = computed<number>(() => get(items).size);
 
@@ -49,8 +41,8 @@ export const useBalanceQueueStore = defineStore('balances/queue', () => {
     get(runningItems) > 0 || get(pendingItems) > 0,
   );
 
-  const addToQueue = (item: Omit<QueueItem, 'status' | 'addedAt'>, fn: () => Promise<void>, batchId?: string): void => {
-    const queueItem: QueueItem = {
+  const addToQueue = (item: Omit<BalanceQueryQueueItem, 'status' | 'addedAt'>, fn: () => Promise<void>, batchId?: string): void => {
+    const queueItem: BalanceQueryQueueItem = {
       ...item,
       addedAt: Date.now(),
       status: 'pending',

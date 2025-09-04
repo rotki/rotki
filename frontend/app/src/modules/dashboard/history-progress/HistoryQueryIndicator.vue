@@ -114,7 +114,7 @@ const processingPercentage = computed<number>(() => {
 
 const showMessage = computed<boolean>(() => {
   const status = get(transactionStatus);
-  if (!isDefined(status) || get(processing) || get(isBalanceQuerying)) {
+  if (!isDefined(status)) {
     return false;
   }
 
@@ -227,7 +227,7 @@ onMounted(async () => {
           class="inline gap-2"
         >
           {{ processingMessage }}
-          <template v-if="balanceProgress?.currentOperationData && balanceProgress.type === TaskType.FETCH_DETECTED_TOKENS">
+          <template v-if="balanceProgress?.currentOperationData && balanceProgress.currentOperationData.type === TaskType.FETCH_DETECTED_TOKENS">
             <span class="inline-flex items-center gap-1">
               <span>&nbsp;</span>
               <ChainIcon

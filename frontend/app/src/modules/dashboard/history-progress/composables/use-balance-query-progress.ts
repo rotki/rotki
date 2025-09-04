@@ -1,27 +1,129 @@
 import type { ComputedRef } from 'vue';
+import type {
+  BalanceQueryProgressType,
+  BalanceQueryQueueItem,
+  CommonQueryProgressData,
+} from '@/modules/dashboard/history-progress/types';
 import { get } from '@vueuse/shared';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBalanceQueueStore } from '@/store/balances/balance-queue';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-interface BalanceQueryProgress {
-  type: TaskType.FETCH_DETECTED_TOKENS | TaskType.QUERY_BLOCKCHAIN_BALANCES;
-  currentStep: number;
-  totalSteps: number;
-  percentage: number;
-  currentOperation: string | null;
-  currentOperationData: {
-    type: TaskType.FETCH_DETECTED_TOKENS | TaskType.QUERY_BLOCKCHAIN_BALANCES;
-    chain?: string;
-    address?: string;
-    status: string;
-  } | null;
+interface BalanceQueryProgressOperationData {
+  type: BalanceQueryProgressType;
+  chain?: string;
+  address?: string;
+  status: string;
 }
+
+interface BalanceQueryProgress extends CommonQueryProgressData<BalanceQueryProgressOperationData> {}
 
 interface UseBalanceQueryProgressReturn {
   balanceProgress: ComputedRef<BalanceQueryProgress | null>;
   isBalanceQuerying: ComputedRef<boolean>;
+}
+
+function createPendingItemProgress(
+  item: BalanceQueryQueueItem,
+  completed: number,
+  total: number,
+  progress: number,
+  t: ReturnType<typeof useI18n>['t'],
+): BalanceQueryProgress {
+  const isTokenDetection = item.type === TaskType.FETCH_DETECTED_TOKENS;
+  return {
+    currentOperation: isTokenDetection
+      ? t('dashboard.history_query_indicator.token_detection_status.detecting')
+      : t('dashboard.history_query_indicator.balance_status.querying_balances'),
+    currentOperationData: {
+      address: item.address,
+      chain: item.chain,
+      status: 'pending',
+      type: item.type,
+    },
+    currentStep: completed,
+    percentage: progress,
+    totalSteps: total,
+  };
+}
+
+function createTokenDetectionProgress(
+  item: BalanceQueryQueueItem,
+  currentStep: number,
+  total: number,
+  progress: number,
+  t: ReturnType<typeof useI18n>['t'],
+): BalanceQueryProgress {
+  const currentOperation = item.address
+    ? t('dashboard.history_query_indicator.token_detection_status.detecting_with_details', {
+        current: currentStep,
+        total,
+      })
+    : t('dashboard.history_query_indicator.token_detection_status.detecting');
+
+  return {
+    currentOperation,
+    currentOperationData: {
+      address: item.address,
+      chain: item.chain,
+      status: t('dashboard.history_query_indicator.token_detection_status.detecting'),
+      type: TaskType.FETCH_DETECTED_TOKENS,
+    },
+    currentStep,
+    percentage: progress,
+    totalSteps: total,
+  };
+}
+
+function createBalanceQueryProgress(
+  item: BalanceQueryQueueItem,
+  currentStep: number,
+  total: number,
+  progress: number,
+  chainName: string,
+  t: ReturnType<typeof useI18n>['t'],
+): BalanceQueryProgress {
+  const currentOperation = total > 1
+    ? t('dashboard.history_query_indicator.balance_status.querying_chain_balances_with_progress', {
+        chain: chainName,
+        current: currentStep,
+        total,
+      })
+    : t('dashboard.history_query_indicator.balance_status.querying_chain_balances', {
+        chain: chainName,
+      });
+
+  return {
+    currentOperation,
+    currentOperationData: {
+      chain: item.chain,
+      status: t('dashboard.history_query_indicator.balance_status.querying_chain_balances', { chain: chainName }),
+      type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+    },
+    currentStep,
+    percentage: progress,
+    totalSteps: total,
+  };
+}
+
+function createRunningItemProgress(
+  item: BalanceQueryQueueItem,
+  completed: number,
+  total: number,
+  progress: number,
+  getChainName: ReturnType<typeof useSupportedChains>['getChainName'],
+  t: ReturnType<typeof useI18n>['t'],
+): BalanceQueryProgress {
+  const currentStep = completed + 1;
+  const isTokenDetection = item.type === TaskType.FETCH_DETECTED_TOKENS;
+
+  if (isTokenDetection) {
+    return createTokenDetectionProgress(item, currentStep, total, progress, t);
+  }
+
+  const chainName = get(getChainName(item.chain));
+  return createBalanceQueryProgress(item, currentStep, total, progress, chainName, t);
 }
 
 export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
@@ -34,13 +136,14 @@ export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
   const isBalanceQuerying = logicOr(
     useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
     useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS),
-    computed(() => get(runningItems) > 0),
+    computed<boolean>(() => get(runningItems) > 0),
   );
 
   const balanceProgress = computed<BalanceQueryProgress | null>(() => {
     const items = get(queueItems);
     const total = get(totalItems);
     const completed = get(completedItems);
+    const progressValue = get(progress);
 
     if (total === 0) {
       return null;
@@ -48,91 +151,17 @@ export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
 
     // Find current running item
     const runningItem = items.find(item => item.status === 'running');
-
-    if (!runningItem) {
-      // No running item but items in queue
-      if (items.length > 0) {
-        // Show pending status
-        const firstPending = items.find(item => item.status === 'pending');
-        if (firstPending) {
-          const isTokenDetection = firstPending.type === TaskType.FETCH_DETECTED_TOKENS;
-          return {
-            currentOperation: isTokenDetection
-              ? t('dashboard.history_query_indicator.token_detection_status.detecting')
-              : t('dashboard.history_query_indicator.balance_status.querying_balances'),
-            currentOperationData: {
-              address: firstPending.address,
-              chain: firstPending.chain,
-              status: 'pending',
-              type: firstPending.type,
-            },
-            currentStep: completed,
-            percentage: get(progress),
-            totalSteps: total,
-            type: firstPending.type,
-          };
-        }
-      }
-      return null;
+    if (runningItem) {
+      return createRunningItemProgress(runningItem, completed, total, progressValue, getChainName, t);
     }
 
-    const currentStep = completed + 1;
-    const isTokenDetection = runningItem.type === TaskType.FETCH_DETECTED_TOKENS;
-
-    let currentOperation: string;
-    let currentOperationData: BalanceQueryProgress['currentOperationData'];
-
-    if (isTokenDetection && runningItem.address) {
-      currentOperation = t('dashboard.history_query_indicator.token_detection_status.detecting_with_details', {
-        current: currentStep,
-        total,
-      });
-
-      currentOperationData = {
-        address: runningItem.address,
-        chain: runningItem.chain,
-        status: t('dashboard.history_query_indicator.token_detection_status.detecting'),
-        type: TaskType.FETCH_DETECTED_TOKENS,
-      };
-    }
-    else if (!isTokenDetection) {
-      const chainName = get(getChainName(runningItem.chain));
-
-      if (total > 1) {
-        currentOperation = t('dashboard.history_query_indicator.balance_status.querying_chain_balances_with_progress', {
-          chain: chainName,
-          current: currentStep,
-          total,
-        });
-      }
-      else {
-        currentOperation = t('dashboard.history_query_indicator.balance_status.querying_chain_balances', {
-          chain: chainName,
-        });
-      }
-
-      currentOperationData = {
-        chain: runningItem.chain,
-        status: t('dashboard.history_query_indicator.balance_status.querying_chain_balances', { chain: chainName }),
-        type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
-      };
-    }
-    else {
-      currentOperation = t('dashboard.history_query_indicator.token_detection_status.detecting');
-      currentOperationData = {
-        status: t('dashboard.history_query_indicator.token_detection_status.detecting'),
-        type: TaskType.FETCH_DETECTED_TOKENS,
-      };
+    // Check for pending items
+    const firstPending = items.find(item => item.status === 'pending');
+    if (firstPending) {
+      return createPendingItemProgress(firstPending, completed, total, progressValue, t);
     }
 
-    return {
-      currentOperation,
-      currentOperationData,
-      currentStep,
-      percentage: get(progress),
-      totalSteps: total,
-      type: runningItem.type,
-    };
+    return null;
   });
 
   return {
