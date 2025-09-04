@@ -1913,7 +1913,7 @@
       },
       "decimal_separator": {
         "error": "设置小数点分隔符错误",
-        "success": "十进制分隔符设置为 {decimalSeparator}"
+        "success": "十进制分隔符设置为 \"{decimalSeparator}\""
       },
       "floating_precision": {
         "error": "将浮动精度设置为 {precision} 时出错",
@@ -1922,7 +1922,7 @@
       },
       "thousand_separator": {
         "error": "千位分隔符设置错误",
-        "success": "千位分隔符设置为 {thousandSeparator}"
+        "success": "千位分隔符设置为 \"{thousandSeparator}\""
       },
       "treat_eth2_as_eth": {
         "error": "将 ETH2 视为 ETH 的错误更改设置"
