@@ -31,7 +31,7 @@ export function useMessageHandling(): UseMessageHandling {
     const parseResult = WebsocketMessage.safeParse(camelCaseTransformer(JSON.parse(data)));
 
     if (!parseResult.success) {
-      logger.warn(`Invalid websocket message format:`, parseResult.error);
+      logger.warn(`Invalid websocket message format:`, parseResult.error, data);
       return;
     }
 
