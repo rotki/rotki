@@ -957,7 +957,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     usd_value=balance * native_token_usd_price,
                 )
 
-        # TODO: query token balances
+        for account in accounts:
+            token_balances = self.solana.get_token_balances(account)
+            token_prices = Inquirer.find_usd_prices(list(token_balances))
+            for token, balance in token_balances.items():
+                chain_balances[account].assets[token][DEFAULT_BALANCE_LABEL] = Balance(
+                    amount=balance,
+                    usd_value=balance * token_prices[token],
+                )
 
     @staticmethod
     def _update_balances_after_token_query(

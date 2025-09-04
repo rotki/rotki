@@ -58,7 +58,10 @@ def strethaddress_to_identifier(address: str) -> str:
     )
 
 
-def solana_address_to_identifier(address: SolanaAddress, token_type: SOLANA_TOKEN_KINDS) -> str:
+def solana_address_to_identifier(
+        address: SolanaAddress,
+        token_type: SOLANA_TOKEN_KINDS = TokenKind.SPL_TOKEN,
+) -> str:
     """Converts a Solana address and token type into a CAIP-19 identifier.
 
     Uses 'solana' prefix instead of full CAIP-2 chain reference to save database space.

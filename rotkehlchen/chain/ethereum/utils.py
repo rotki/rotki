@@ -11,7 +11,7 @@ from eth_utils import to_checksum_address
 from requests.exceptions import RequestException
 from web3 import Web3
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken, SolanaToken
 from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_XDAI
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH, HOUR_IN_SECONDS
@@ -63,7 +63,7 @@ def token_raw_value_decimals(token_amount: FVal, token_decimals: int | None) -> 
 
 def token_normalized_value(
         token_amount: int,
-        token: EvmToken,
+        token: EvmToken | SolanaToken,
 ) -> FVal:
     return token_normalized_value_decimals(token_amount, token.decimals)
 
