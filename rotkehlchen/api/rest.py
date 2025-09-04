@@ -4141,12 +4141,20 @@ class RestAPI:
             self,
             book_type: AddressbookType,
             entries: list[AddressbookEntry],
+            update_existing: bool,
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
-        with db_addressbook.write_ctx(book_type) as write_cursor:
-            db_addressbook.add_or_update_addressbook_entries(
-                write_cursor=write_cursor,
-                entries=entries,
+        try:
+            with db_addressbook.write_ctx(book_type) as write_cursor:
+                db_addressbook.add_or_update_addressbook_entries(
+                    write_cursor=write_cursor,
+                    entries=entries,
+                    update_existing=update_existing,
+                )
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
             )
 
         return api_response(result=OK_RESULT)

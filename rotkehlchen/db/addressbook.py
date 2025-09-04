@@ -73,15 +73,26 @@ class DBAddressbook:
             self,
             write_cursor: 'DBCursor',
             entries: list[AddressbookEntry],
+            update_existing: bool = True,
     ) -> None:
-        """Adds new or updates existing addressbook entries.
-
+        """Adds new addressbook entries.
+        If update_existing is set and the entry is already present, it will be updated.
         If blockchain is None then make sure that the same address doesn't appear in combination
         with other blockchain values.
+        May raise InputError if the entry already exists in the DB and update_existing is False.
         """
         # We iterate here with for loop instead of executemany in order to catch
         # which identifier is duplicated
         for entry in entries:
+            if not update_existing and write_cursor.execute(
+                'SELECT COUNT(*) FROM address_book WHERE address=? AND blockchain=?;',
+                (entry.address, entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),  # noqa: E501
+            ).fetchone()[0] != 0:
+                raise InputError(
+                    f'Entry with address {entry.address} and blockchain {entry.blockchain} '
+                    'already exists in the address book.',
+                )
+
             # in the case of given blockchain being None delete any other entry for that
             # address since they are rendered redundant
             if entry.blockchain is None:
