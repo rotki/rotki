@@ -1,9 +1,10 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { EvmTransactionStatus } from '@/composables/api/history/events';
 import type { BlockchainAccount } from '@/types/blockchain/accounts';
-import { get, isDefined } from '@vueuse/shared';
+import { get, isDefined, set } from '@vueuse/shared';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefWithDebounce } from '@/composables/ref';
+import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { type BalanceQueryProgress, useBalanceQueryProgress } from '@/modules/dashboard/progress/composables/use-balance-query-progress';
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
@@ -29,10 +30,18 @@ interface UseUnifiedProgressReturn {
   processingMessage: ComputedRef<string>;
   processingPercentage: ComputedRef<number>;
   refreshing: ComputedRef<boolean>;
+  resetQueryStatus: () => void;
   sectionLoading: ComputedRef<boolean>;
   shouldFetchEventsRegularly: ComputedRef<boolean>;
   showIdleMessage: ComputedRef<boolean>;
   transactionStatus: Ref<EvmTransactionStatus | undefined>;
+  queryStatus: Ref<QueryStatusDismissal>;
+}
+
+interface QueryStatusDismissal {
+  lastBalanceProgressDismissedTs: number;
+  lastDismissedTs: number;
+  lastUsedVersion: string | null;
 }
 
 /**
@@ -42,6 +51,14 @@ interface UseUnifiedProgressReturn {
  */
 export function useUnifiedProgress(): UseUnifiedProgressReturn {
   const { t } = useI18n({ useScope: 'global' });
+
+  const userId = useLoggedUserIdentifier();
+
+  const queryStatus = useLocalStorage<QueryStatusDismissal>(`${get(userId)}.rotki_query_status`, {
+    lastBalanceProgressDismissedTs: 0,
+    lastDismissedTs: 0,
+    lastUsedVersion: null,
+  });
 
   // Use existing composables
   const { progress: historyProgress } = useHistoryQueryProgress();
@@ -147,6 +164,14 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
     return isDefined(status) && status.undecodedTxCount === 0 && now - status.lastQueriedTs > HUNDRED_EIGHTY_DAYS;
   });
 
+  const resetQueryStatus = (): void => {
+    set(queryStatus, {
+      lastBalanceProgressDismissedTs: 0,
+      lastDismissedTs: 0,
+      lastUsedVersion: null,
+    });
+  };
+
   return {
     balanceProgress,
     dismissalThresholdMs,
@@ -160,7 +185,9 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
     processing,
     processingMessage,
     processingPercentage,
+    queryStatus,
     refreshing,
+    resetQueryStatus,
     sectionLoading,
     shouldFetchEventsRegularly,
     showIdleMessage,

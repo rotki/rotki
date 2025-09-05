@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { useRefWithDebounce } from '@/composables/ref';
-import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import BalanceQuerySection from '@/modules/dashboard/progress/components/BalanceQuerySection.vue';
 import HistoryQuerySection from '@/modules/dashboard/progress/components/HistoryQuerySection.vue';
 import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
 import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
 import { useMainStore } from '@/store/main';
-
-interface QueryStatus {
-  lastDismissedTs: number;
-  lastUsedVersion: string | null;
-}
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -19,7 +13,6 @@ const justUpdated = ref<boolean>(false);
 const { appVersion } = storeToRefs(useMainStore());
 
 const router = useRouter();
-const userId = useLoggedUserIdentifier();
 
 const {
   balanceProgress,
@@ -33,26 +26,41 @@ const {
   processing,
   processingMessage,
   processingPercentage,
+  queryStatus,
   showIdleMessage,
   transactionStatus,
 } = useUnifiedProgress();
 
-const queryStatus = useLocalStorage<QueryStatus>(`${get(userId)}.rotki_query_status`, { lastDismissedTs: 0, lastUsedVersion: null });
-
-const dismissedRecently = computed(() => {
+const historyStatusDismissedRecently = computed(() => {
   const now = Date.now();
   const dismissalMs = get(dismissalThresholdMs);
   const { lastDismissedTs } = get(queryStatus);
   return now - lastDismissedTs < dismissalMs;
 });
 
+const balanceStatusDismissedRecently = computed(() => {
+  const now = Date.now();
+  const dismissalMs = get(dismissalThresholdMs);
+  const { lastBalanceProgressDismissedTs } = get(queryStatus);
+  return now - lastBalanceProgressDismissedTs < dismissalMs;
+});
+
 function navigateToHistory(): void {
   router.push('/history');
 }
 
-function dismiss(): void {
+function dismissHistoryProgress(): void {
   set(queryStatus, {
+    ...get(queryStatus),
     lastDismissedTs: Date.now(),
+    lastUsedVersion: get(appVersion),
+  });
+}
+
+function dismissBalanceProgress(): void {
+  set(queryStatus, {
+    ...get(queryStatus),
+    lastBalanceProgressDismissedTs: Date.now(),
     lastUsedVersion: get(appVersion),
   });
 }
@@ -63,16 +71,22 @@ const hasHistoryProgress = logicAnd(
   processing,
 );
 
-const showSection = useRefWithDebounce(
-  logicAnd(
-    logicOr(
-      hasHistoryProgress,
-      balanceProgress,
-      showIdleMessage,
-    ),
-    logicNot(dismissedRecently),
-  ),
-  300,
+const showHistoryProgress = logicAnd(
+  useRefWithDebounce(logicOr(
+    hasHistoryProgress,
+    showIdleMessage,
+  ), 300),
+  logicNot(historyStatusDismissedRecently),
+);
+
+const showBalanceProgress = logicAnd(
+  useRefWithDebounce(logicAnd(balanceProgress), 300),
+  logicNot(balanceStatusDismissedRecently),
+);
+
+const showSection = logicOr(
+  showHistoryProgress,
+  showBalanceProgress,
 );
 
 onMounted(async () => {
@@ -80,7 +94,8 @@ onMounted(async () => {
     return;
   }
   set(queryStatus, {
-    lastDismissedTs: get(queryStatus, 'lastDismissedTs'),
+    lastBalanceProgressDismissedTs: get(queryStatus, 'lastBalanceProgressDismissedTs') || 0,
+    lastDismissedTs: get(queryStatus, 'lastDismissedTs') || 0,
     lastUsedVersion: get(appVersion),
   });
   set(justUpdated, true);
@@ -103,7 +118,7 @@ onMounted(async () => {
       <div class="flex items-center gap-2">
         <!-- Balance Query Section -->
         <BalanceQuerySection
-          v-if="balanceProgress"
+          v-if="showBalanceProgress && balanceProgress"
           :progress="balanceProgress"
           :processing-message="processingMessage"
           :processing-percentage="processingPercentage"
@@ -111,7 +126,7 @@ onMounted(async () => {
 
         <!-- History Query Section -->
         <HistoryQuerySection
-          v-else-if="hasHistoryProgress && historyProgress"
+          v-else-if="showHistoryProgress && historyProgress"
           :progress="historyProgress"
           :processing-message="processingMessage"
           :processing-percentage="processingPercentage"
@@ -143,7 +158,7 @@ onMounted(async () => {
           variant="text"
           icon
           size="sm"
-          @click="dismiss()"
+          @click="showBalanceProgress ? dismissBalanceProgress () : dismissHistoryProgress()"
         >
           <RuiIcon
             name="lu-x"

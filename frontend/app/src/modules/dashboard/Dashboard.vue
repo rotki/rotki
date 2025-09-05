@@ -8,7 +8,7 @@ import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
-import HistoryQueryIndicator from '@/modules/dashboard/progress/HistoryQueryIndicator.vue';
+import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
@@ -80,7 +80,7 @@ const paddingTop = computed(() => get(floatingHeight) || 0);
         :messages="activeDashboardMessages"
         @dismiss="dismissedMessage = true"
       />
-      <HistoryQueryIndicator />
+      <DashboardProgressIndicator />
     </div>
     <div
       class="container"

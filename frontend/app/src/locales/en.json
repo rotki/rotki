@@ -2542,7 +2542,13 @@
           "non_empty": "Please enter the number of hours"
         }
       },
-      "title": "History Query Indicator"
+      "reset_dismissal_status": {
+        "button": "Reset dismissal status",
+        "subtitle": "Click the button to reset the dismissal status. All query progress indicators will be shown again immediately.",
+        "success": "Dismissal status has been reset successfully",
+        "title": "Reset dismissal status"
+      },
+      "title": "Progress Query Indicator on Dashboard"
     },
     "periodic_query": {
       "hint": "How often (in seconds) the backend will be checked for messages,",
