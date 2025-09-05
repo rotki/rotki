@@ -2,15 +2,14 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V4
+from rotkehlchen.chain.evm.decoding.quickswap.v3.decoder import Quickswapv3LikeLPDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.v4.utils import decode_uniswap_v4_like_swaps
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
-from .constants import QUICKSWAP_SWAP_TOPIC
+from .constants import CPT_QUICKSWAP_V4_ROUTER, QUICKSWAP_NFT_MANAGER_V4_ABI, QUICKSWAP_SWAP_TOPIC
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -24,7 +23,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Quickswapv4CommonDecoder(DecoderInterface):
+class Quickswapv4CommonDecoder(Quickswapv3LikeLPDecoder):
+    """Common decoder for Quickswap v4.
+    Quickswap V4 is actually more closely related to Uniswap V3 than V4 despite the version number.
+    So we inherit from Quickswapv3LikeLPDecoder which handles the Uniswap V3 like LP decoding but
+    use decode_uniswap_v4_like_swaps to decode the swaps which are slightly different from both
+    Uniswap V3 and V4, but can still be handled by the V4 function.
+    """
 
     def __init__(
             self,
@@ -32,13 +37,17 @@ class Quickswapv4CommonDecoder(DecoderInterface):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             swap_router: 'ChecksumEvmAddress',
+            nft_manager: 'ChecksumEvmAddress',
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            nft_manager=nft_manager,
+            nft_manager_abi=QUICKSWAP_NFT_MANAGER_V4_ABI,
+            counterparty=CPT_QUICKSWAP_V4,
+            version_string='V4',
         )
-        self.wrapped_native_currency = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
         self.swap_router = swap_router
 
     def _router_post_decoding(
@@ -62,10 +71,12 @@ class Quickswapv4CommonDecoder(DecoderInterface):
     # -- DecoderInterface methods
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {CPT_QUICKSWAP_V4: [(0, self._router_post_decoding)]}
+        return super().post_decoding_rules() | {
+            CPT_QUICKSWAP_V4_ROUTER: [(0, self._router_post_decoding)],
+        }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return {self.swap_router: CPT_QUICKSWAP_V4}
+        return {self.swap_router: CPT_QUICKSWAP_V4_ROUTER}
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
