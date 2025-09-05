@@ -73,7 +73,7 @@ async function save() {
   try {
     if (get(isEdit))
       success = await updateAddressBook(location, [payload]);
-    else success = await addAddressBook(location, [payload]);
+    else success = await addAddressBook(location, [payload], props.root);
   }
   catch (error: any) {
     success = false;

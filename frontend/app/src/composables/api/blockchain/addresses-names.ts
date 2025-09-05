@@ -20,7 +20,7 @@ interface UseAddressesNamesApiReturn {
   getEnsNamesTask: (ethAddresses: string[]) => Promise<PendingTask>;
   getEnsNames: (ethAddresses: string[]) => Promise<EthNames>;
   fetchAddressBook: (location: AddressBookLocation, payload: AddressBookRequestPayload) => Promise<Collection<AddressBookEntry>>;
-  addAddressBook: (location: AddressBookLocation, entries: AddressBookEntries) => Promise<boolean>;
+  addAddressBook: (location: AddressBookLocation, entries: AddressBookEntries, updateExisting?: boolean) => Promise<boolean>;
   updateAddressBook: (location: AddressBookLocation, entries: AddressBookEntries) => Promise<boolean>;
   deleteAddressBook: (location: AddressBookLocation, addresses: AddressBookSimplePayload[]) => Promise<boolean>;
   getAddressesNames: (addresses: AddressBookSimplePayload[]) => Promise<AddressBookEntries>;
@@ -89,10 +89,13 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
     return mapCollectionResponse(AddressBookCollectionResponse.parse(handleResponse(response)));
   };
 
-  const addAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries): Promise<boolean> => {
+  const addAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries, updateExisting = false): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       `/names/addressbook/${location}`,
-      { entries },
+      snakeCaseTransformer({
+        entries,
+        updateExisting,
+      }),
       {
         validateStatus: validWithSessionAndExternalService,
       },
