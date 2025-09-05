@@ -4,7 +4,7 @@ import type { EthDetectedTokensInfo } from '@/types/balances';
 import { assert } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { useBalanceQueueStore } from '@/store/balances/balance-queue';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -50,7 +50,7 @@ export function useTokenDetection(chain: MaybeRef<string>, accountAddress: Maybe
     const usedAddresses = (address ? [address] : addresses).filter(address => !get(isDetectingTaskRunning(address)));
 
     const blockchain = get(chain);
-    const { queueTokenDetection } = useBalanceQueueStore();
+    const { queueTokenDetection } = useBalanceQueue();
     await queueTokenDetection(blockchain, usedAddresses, fetchDetectedTokens);
   };
 

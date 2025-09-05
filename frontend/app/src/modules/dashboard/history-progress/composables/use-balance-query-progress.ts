@@ -5,8 +5,8 @@ import type {
   CommonQueryProgressData,
 } from '@/modules/dashboard/history-progress/types';
 import { get } from '@vueuse/shared';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useBalanceQueueStore } from '@/store/balances/balance-queue';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -130,8 +130,13 @@ export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName } = useSupportedChains();
   const { useIsTaskRunning } = useTaskStore();
-  const balanceQueue = useBalanceQueueStore();
-  const { completedItems, progress, queueItems, runningItems, totalItems } = storeToRefs(balanceQueue);
+  const {
+    completedItems,
+    progress,
+    queueItems,
+    runningItems,
+    totalItems,
+  } = useBalanceQueue();
 
   const isBalanceQuerying = logicOr(
     useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),

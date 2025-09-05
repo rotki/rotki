@@ -9,7 +9,7 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalanceQueueStore } from '@/store/balances/balance-queue';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -101,7 +101,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const fetchDetected = async (chain: string, addresses: string[]): Promise<void> => {
-    const { queueTokenDetection } = useBalanceQueueStore();
+    const { queueTokenDetection } = useBalanceQueue();
     await queueTokenDetection(chain, addresses, async address => fetchDetectedTokens(chain, address));
   };
 

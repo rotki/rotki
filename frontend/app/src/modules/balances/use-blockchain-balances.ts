@@ -1,7 +1,7 @@
 import type { BlockchainBalancePayload } from '@/types/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
-import { useBalanceQueueStore } from '@/store/balances/balance-queue';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useStatusStore } from '@/store/status';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
@@ -44,7 +44,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const { blockchain, ignoreCache = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
-    const { queueBalanceQueries } = useBalanceQueueStore();
+    const { queueBalanceQueries } = useBalanceQueue();
     await queueBalanceQueries(chains, async chain => fetchSingleChain(chain, ignoreCache, periodic));
   };
 

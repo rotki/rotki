@@ -157,16 +157,21 @@ function dismiss(): void {
   });
 }
 
-const showSection = useRefWithDebounce(logicAnd(
-  logicOr(
-    logicAnd(
-      hasTxAccounts,
-      processingMessage,
+const hasHistoryProgress = logicAnd(
+  hasTxAccounts,
+  historyProgress,
+);
+
+const showSection = useRefWithDebounce(
+  logicAnd(
+    logicOr(
+      hasHistoryProgress,
+      balanceProgress,
     ),
-    balanceProgress,
+    showMessage,
   ),
-  showMessage,
-), 300);
+  300,
+);
 
 onMounted(async () => {
   if (get(appVersion) === get(queryStatus, 'lastUsedVersion')) {
