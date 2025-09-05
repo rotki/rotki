@@ -1,4 +1,4 @@
-import type { BalanceQueryProgressType } from '@/modules/dashboard/history-progress/types';
+import type { BalanceQueryProgressType } from '@/modules/dashboard/progress/types';
 import { startPromise } from '@shared/utils';
 
 export interface QueueItemMetadata {

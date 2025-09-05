@@ -4,14 +4,14 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import BalanceQuerySection from '@/modules/dashboard/progress/components/BalanceQuerySection.vue';
+import HistoryQuerySection from '@/modules/dashboard/progress/components/HistoryQuerySection.vue';
+import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
+import { useBalanceQueryProgress } from '@/modules/dashboard/progress/composables/use-balance-query-progress';
 import {
   useHistoryQueryIndicatorSettings,
-} from '@/modules/dashboard/history-events/composables/use-history-query-indicator-settings';
-import BalanceQuerySection from '@/modules/dashboard/history-progress/components/BalanceQuerySection.vue';
-import HistoryQuerySection from '@/modules/dashboard/history-progress/components/HistoryQuerySection.vue';
-import IdleQuerySection from '@/modules/dashboard/history-progress/components/IdleQuerySection.vue';
-import { useBalanceQueryProgress } from '@/modules/dashboard/history-progress/composables/use-balance-query-progress';
-import { useHistoryQueryProgress } from '@/modules/dashboard/history-progress/composables/use-history-query-progress';
+} from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
+import { useHistoryQueryProgress } from '@/modules/dashboard/progress/composables/use-history-query-progress';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';

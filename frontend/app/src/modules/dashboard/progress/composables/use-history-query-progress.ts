@@ -1,5 +1,5 @@
 import type { ComputedRef } from 'vue';
-import type { CommonQueryProgressData, HistoryQueryProgressType } from '@/modules/dashboard/history-progress/types';
+import type { CommonQueryProgressData, HistoryQueryProgressType } from '@/modules/dashboard/progress/types';
 import { get } from '@vueuse/shared';
 import { HistoryEventsQueryStatus, TransactionsQueryStatus } from '@/modules/messaging/types';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';

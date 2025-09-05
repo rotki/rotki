@@ -3,7 +3,7 @@ import type {
   BalanceQueryProgressType,
   BalanceQueryQueueItem,
   CommonQueryProgressData,
-} from '@/modules/dashboard/history-progress/types';
+} from '@/modules/dashboard/progress/types';
 import { get } from '@vueuse/shared';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';

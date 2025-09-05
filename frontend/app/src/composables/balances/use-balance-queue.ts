@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type {
   BalanceQueryQueueItem,
-} from '@/modules/dashboard/history-progress/types';
+} from '@/modules/dashboard/progress/types';
 import { get, set, watchDebounced } from '@vueuse/shared';
 import { BalanceQueueService, type QueueItem, type QueueItemMetadata, type QueueStats } from '@/services/balance-queue';
 import { TaskType } from '@/types/task-type';

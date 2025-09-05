@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BalanceQueryProgressType, CommonQueryProgressData } from '@/modules/dashboard/history-progress/types';
+import type { BalanceQueryProgressType, CommonQueryProgressData } from '@/modules/dashboard/progress/types';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { TaskType } from '@/types/task-type';

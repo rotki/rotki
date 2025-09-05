@@ -8,7 +8,7 @@ import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
-import HistoryQueryIndicator from '@/modules/dashboard/history-progress/HistoryQueryIndicator.vue';
+import HistoryQueryIndicator from '@/modules/dashboard/progress/HistoryQueryIndicator.vue';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
