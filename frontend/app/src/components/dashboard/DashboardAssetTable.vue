@@ -1,30 +1,18 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import { type AssetBalance, type AssetBalanceWithPrice, type BigNumber, type Nullable, Zero } from '@rotki/common';
-import ManualBalanceMissingAssetWarning
-  from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
+import type { AssetBalanceWithPrice } from '@rotki/common';
+import DashboardAssetWarnings from '@/components/dashboard/DashboardAssetWarnings.vue';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
-import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { useDashboardAssetData } from '@/composables/dashboard/use-dashboard-asset-data';
+import { useDashboardAssetOperations } from '@/composables/dashboard/use-dashboard-asset-operations';
+import { useDashboardStores } from '@/composables/dashboard/use-dashboard-stores';
+import { useDashboardTableConfig } from '@/composables/dashboard/use-dashboard-table-config';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
-import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { Routes } from '@/router/routes';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
-import { isEvmNativeToken } from '@/types/asset';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { TableColumn } from '@/types/table-column';
-import { assetFilterByKeyword } from '@/utils/assets';
-import { sortAssetBalances } from '@/utils/balances';
-import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
 
 const props = withDefaults(defineProps<{
   title: string;
@@ -36,174 +24,29 @@ const props = withDefaults(defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { balances, tableType, title } = toRefs(props);
-const search = ref('');
-const debouncedSearch = debouncedRef(search, 200);
 
-const expanded = ref<AssetBalanceWithPrice[]>([]);
+// Stores
+const { currencySymbol, totalNetWorth } = useDashboardStores();
 
-const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-  column: 'usdValue',
-  direction: 'desc' as const,
-});
+// Use composables - sort needs to be defined first for the computed dependency
+const { pagination, setPage, setTablePagination, sort, tableHeaders } = useDashboardTableConfig(
+  tableType,
+  title,
+  totalNetWorth,
+);
 
-const pagination = ref({
-  itemsPerPage: 10,
-  page: 1,
-});
+const {
+  isAssetMissing,
+  percentageOfCurrentGroup,
+  percentageOfTotalNetValue,
+  search,
+  sorted,
+  total,
+} = useDashboardAssetData(balances, sort);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { useExchangeRate } = usePriceUtils();
-const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();
-const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
-const { missingCustomAssets } = useManualBalanceData();
-const statisticsStore = useStatisticsStore();
-const { totalNetWorth } = storeToRefs(statisticsStore);
-const router = useRouter();
+const { expanded, isRowExpandable, redirectToManualBalance } = useDashboardAssetOperations(tableType);
 
-function assetFilter(item: Nullable<AssetBalance>) {
-  return assetFilterByKeyword(item, get(debouncedSearch), assetName, assetSymbol);
-}
-
-function isAssetMissing(item: AssetBalanceWithPrice) {
-  return get(missingCustomAssets).includes(item.asset);
-}
-
-const total = computed<BigNumber>(() => {
-  const currency = get(currencySymbol);
-  const rate = get(useExchangeRate(currency)) ?? Zero;
-  return aggregateTotal(get(balances), currency, rate);
-});
-
-function percentageOfTotalNetValue({ amount, asset, usdValue }: AssetBalanceWithPrice) {
-  const currency = get(currencySymbol);
-  const netWorth = get(totalNetWorth);
-  const rate = get(useExchangeRate(currency)) ?? Zero;
-  const value = currency === asset ? amount : usdValue.multipliedBy(rate);
-  const totalWorth = netWorth.lt(0) ? get(total) : netWorth;
-  return calculatePercentage(value, totalWorth);
-}
-
-function percentageOfCurrentGroup({ amount, asset, usdValue }: AssetBalanceWithPrice) {
-  const currency = get(currencySymbol);
-  const rate = get(useExchangeRate(currency)) ?? Zero;
-  const value = currency === asset ? amount : usdValue.multipliedBy(rate);
-  return calculatePercentage(value, get(total));
-}
-
-function setPage(page: number) {
-  set(pagination, {
-    ...get(pagination),
-    page,
-  });
-}
-
-function setTablePagination(event: TablePaginationData | undefined) {
-  if (!isDefined(event))
-    return;
-
-  const { limit, page } = event;
-  set(pagination, {
-    itemsPerPage: limit,
-    page,
-  });
-}
-
-const sorted = computed<AssetBalanceWithPrice[]>(() => {
-  const filteredBalances = get(balances).filter(assetFilter);
-  return sortAssetBalances(filteredBalances, get(sort), assetInfo);
-});
-
-const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
-  const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
-
-  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [{
-    cellClass: 'py-0',
-    class: 'text-no-wrap w-full',
-    key: 'asset',
-    label: t('common.asset'),
-    sortable: true,
-  }, {
-    align: 'end',
-    cellClass: 'py-0',
-    class: 'text-no-wrap w-full',
-    key: 'protocol',
-    label: t('common.location'),
-    sortable: true,
-  }, {
-    align: 'end',
-    cellClass: 'py-0',
-    class: 'text-no-wrap',
-    key: 'usdPrice',
-    label: t('common.price_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
-    sortable: true,
-  }, {
-    align: 'end',
-    cellClass: 'py-0',
-    key: 'amount',
-    label: t('common.amount'),
-    sortable: true,
-  }, {
-    align: 'end',
-    cellClass: 'py-0',
-    class: 'text-no-wrap',
-    key: 'usdValue',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
-    sortable: true,
-  }];
-
-  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
-    headers.push({
-      align: 'end',
-      cellClass: 'py-0',
-      class: 'text-no-wrap',
-      key: 'percentageOfTotalNetValue',
-      label: get(totalNetWorth).gt(0)
-        ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
-        : t('dashboard_asset_table.headers.percentage_total'),
-    });
-  }
-
-  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
-    headers.push({
-      align: 'end',
-      cellClass: 'py-0',
-      class: 'text-no-wrap',
-      key: 'percentageOfTotalCurrentGroup',
-      label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
-        group: get(title),
-      }),
-    });
-  }
-
-  return headers;
-});
-
-useRememberTableSorting<AssetBalanceWithPrice>(TableId.DASHBOARD_ASSET, sort, tableHeaders);
-
-function redirectToManualBalance(item: AssetBalanceWithPrice) {
-  const tableType = props.tableType;
-  if ([DashboardTableType.ASSETS, DashboardTableType.LIABILITIES].includes(tableType)) {
-    router.push({
-      path: `${Routes.BALANCES_MANUAL}/${tableType.toLowerCase()}`,
-      query: {
-        asset: item.asset,
-      },
-    });
-  }
-}
-
-function isRowExpandable(row: AssetBalanceWithPrice): boolean {
-  const hasBreakdown = Boolean(row.breakdown);
-  const isNativeToken = isEvmNativeToken(row.asset);
-  const hasMultipleProtocols = (row.perProtocol?.length ?? 0) > 1;
-
-  return hasBreakdown || isNativeToken || hasMultipleProtocols;
-}
-
+// Watch search to reset pagination
 watch(search, () => setPage(1));
 </script>
 
@@ -260,15 +103,10 @@ watch(search, () => setPage(1));
       @update:pagination="setTablePagination($event)"
     >
       <template #item.asset="{ row }">
-        <ManualBalanceMissingAssetWarning
-          v-if="isAssetMissing(row)"
-          @click="redirectToManualBalance(row)"
-        />
-
-        <AssetDetails
-          v-else
-          :asset="row.asset"
-          :is-collection-parent="!!row.breakdown"
+        <DashboardAssetWarnings
+          :asset="row"
+          :is-asset-missing="isAssetMissing(row)"
+          @missing-asset-click="redirectToManualBalance($event)"
         />
       </template>
       <template #item.protocol="{ row }">
