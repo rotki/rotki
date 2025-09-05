@@ -36,7 +36,7 @@ export function useAddressBookImport(): UseAddressBookImport {
           const formattedRows = items.map(item => omit(item, ['location']));
           if (formattedRows.length > 0) {
             locationPromises.push({
-              promise: addAddressBook(location, formattedRows),
+              promise: addAddressBook(location, formattedRows, true),
               rowCount: formattedRows.length,
             });
           }
