@@ -781,22 +781,6 @@ class CreateHistoryEventSchema(Schema):
         extra_data = fields.Dict(load_default=None)
         location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
 
-        @validates_schema
-        def validate_tx_hash(self, data: dict[str, Any], **_kwargs: Any) -> None:
-            """Check if the provided tx_hash is present in the db.
-            Raises ValidationError if tx_hash is missing.
-            """
-            with CreateHistoryEventSchema.history_event_context.get()['schema'].database.conn.read_ctx() as cursor:  # noqa: E501
-                table = 'zksynclite_transactions' if data['location'].is_evmlike() else 'evm_transactions'  # noqa: E501
-                if cursor.execute(
-                    f'SELECT COUNT(*) FROM {table} WHERE tx_hash=?',
-                    (data['tx_hash'],),
-                ).fetchone()[0] == 0:
-                    raise ValidationError(
-                        message='The provided transaction hash does not exist in the DB.',
-                        field_name='tx_hash',
-                    )
-
     class CreateBaseHistoryEventSchema(BaseEventSchema):
         event_identifier = NonEmptyStringField(required=True)
         location = LocationField(required=True)
