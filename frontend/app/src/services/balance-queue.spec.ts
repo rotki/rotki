@@ -95,8 +95,8 @@ describe('balanceQueueService', () => {
       ];
 
       // Start enqueueing items
-      const promises = items.map(item => queue.enqueue(item));
-      
+      const promises = items.map(async item => queue.enqueue(item));
+
       // Wait a bit to check concurrency
       await new Promise(resolve => setTimeout(resolve, 10));
       expect(queue.getStats().running).toBeLessThanOrEqual(2);
@@ -264,28 +264,28 @@ describe('balanceQueueService', () => {
       expect(queue.isProcessing()).toBe(false);
 
       let resolveWait: (() => void) | null = null;
-      const waitPromise = new Promise<void>(resolve => {
+      const waitPromise = new Promise<void>((resolve) => {
         resolveWait = resolve;
       });
       const item: QueueItem<TestMetadata> = {
-        executeFn: () => waitPromise,
+        executeFn: async () => waitPromise,
         id: 'test-1',
         metadata: { chain: 'eth' },
         type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
       };
 
       const enqueuePromise = queue.enqueue(item);
-      
+
       // Wait a bit to ensure the item is running
       await new Promise(resolve => setTimeout(resolve, 10));
       expect(queue.isProcessing()).toBe(true);
 
       // Resolve the wait promise to complete the item
       resolveWait!();
-      
+
       // Wait for the item to complete
       await enqueuePromise;
-      
+
       // Small delay to ensure cleanup
       await new Promise(resolve => setTimeout(resolve, 10));
       expect(queue.isProcessing()).toBe(false);
@@ -456,4 +456,3 @@ describe('balanceQueueService', () => {
     });
   });
 });
-

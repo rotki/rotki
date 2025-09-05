@@ -23,7 +23,6 @@ declare module 'vue-router/auto-routes' {
     'accounts': RouteRecordInfo<'accounts', '/accounts', Record<never, never>, Record<never, never>>,
     'accounts-bitcoin': RouteRecordInfo<'accounts-bitcoin', '/accounts/bitcoin', Record<never, never>, Record<never, never>>,
     'accounts-evm': RouteRecordInfo<'accounts-evm', '/accounts/evm/:tab?', { tab?: ParamValueZeroOrOne<true> }, { tab?: ParamValueZeroOrOne<false> }>,
-    'accounts-solana': RouteRecordInfo<'accounts-solana', '/accounts/solana', Record<never, never>, Record<never, never>>,
     'accounts-substrate': RouteRecordInfo<'accounts-substrate', '/accounts/substrate', Record<never, never>, Record<never, never>>,
     '/address-book-manager/': RouteRecordInfo<'/address-book-manager/', '/address-book-manager', Record<never, never>, Record<never, never>>,
     '/airdrops/': RouteRecordInfo<'/airdrops/', '/airdrops', Record<never, never>, Record<never, never>>,
@@ -110,10 +109,6 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/accounts/evm/[[tab]].vue': {
       routes: 'accounts-evm'
-      views: never
-    }
-    'src/pages/accounts/solana/index.vue': {
-      routes: 'accounts-solana'
       views: never
     }
     'src/pages/accounts/substrate/index.vue': {
@@ -265,7 +260,7 @@ declare module 'vue-router/auto-routes' {
       views: never
     }
     'src/pages/settings.vue': {
-      routes: '/settings' | '/settings/account/' | '/settings/accounting/' | '/settings/general/' | '/settings/modules/' | '/settings/interface/' | '/settings/database/' | '/settings/oracle/' | '/settings/rpc/' | '/settings/account' | '/settings/accounting' | '/settings/database' | '/settings/general' | '/settings/interface' | '/settings/modules' | '/settings/oracle' | '/settings/rpc'
+      routes: '/settings' | '/settings/account/' | '/settings/accounting/' | '/settings/database/' | '/settings/general/' | '/settings/interface/' | '/settings/oracle/' | '/settings/rpc/' | '/settings/modules/' | '/settings/account' | '/settings/accounting' | '/settings/database' | '/settings/general' | '/settings/interface' | '/settings/modules' | '/settings/oracle' | '/settings/rpc'
       views: 'default'
     }
     'src/pages/settings/account/index.vue': {

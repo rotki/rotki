@@ -1,7 +1,7 @@
 import type { BlockchainBalancePayload } from '@/types/blockchain/accounts';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
-import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useStatusStore } from '@/store/status';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
