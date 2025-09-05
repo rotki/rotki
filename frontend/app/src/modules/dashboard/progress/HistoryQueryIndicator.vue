@@ -1,145 +1,49 @@
 <script setup lang="ts">
-import type { BlockchainAccount } from '@/types/blockchain/accounts';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import BalanceQuerySection from '@/modules/dashboard/progress/components/BalanceQuerySection.vue';
 import HistoryQuerySection from '@/modules/dashboard/progress/components/HistoryQuerySection.vue';
 import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
-import { useBalanceQueryProgress } from '@/modules/dashboard/progress/composables/use-balance-query-progress';
-import {
-  useHistoryQueryIndicatorSettings,
-} from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
-import { useHistoryQueryProgress } from '@/modules/dashboard/progress/composables/use-history-query-progress';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useHistoryStore } from '@/store/history';
+import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
 import { useMainStore } from '@/store/main';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
-
-const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
 
 interface QueryStatus {
   lastDismissedTs: number;
   lastUsedVersion: string | null;
 }
 
-const justUpdated = ref<boolean>(false);
-
 const { t } = useI18n({ useScope: 'global' });
 
-const historyStore = useHistoryStore();
-const { evmTransactionStatus: transactionStatus } = storeToRefs(historyStore);
+const justUpdated = ref<boolean>(false);
+
 const { appVersion } = storeToRefs(useMainStore());
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 
 const router = useRouter();
-const { processing: rawProcessing } = useHistoryEventsStatus();
-const processing = useRefWithDebounce(rawProcessing, 400);
-const { progress: historyProgress } = useHistoryQueryProgress();
-const { balanceProgress, isBalanceQuerying } = useBalanceQueryProgress();
-const { allTxChainsInfo } = useSupportedChains();
 const userId = useLoggedUserIdentifier();
-const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();
+
+const {
+  balanceProgress,
+  dismissalThresholdMs,
+  hasTxAccounts,
+  historyProgress,
+  isNeverQueried,
+  lastQueriedDisplay,
+  lastQueriedTimestamp,
+  longQuery,
+  processing,
+  processingMessage,
+  processingPercentage,
+  showIdleMessage,
+  transactionStatus,
+} = useUnifiedProgress();
 
 const queryStatus = useLocalStorage<QueryStatus>(`${get(userId)}.rotki_query_status`, { lastDismissedTs: 0, lastUsedVersion: null });
 
-const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
-
-const accounts = computed<BlockchainAccount[]>(() =>
-  Object.values(get(accountsPerChain))
-    .flatMap(x => x)
-    .filter(hasAccountAddress),
-);
-
-const hasTxAccounts = computed<boolean>(() => {
-  const { hasEvmAccounts = false } = get(transactionStatus) ?? {};
-  if (!hasEvmAccounts) {
-    return false;
-  }
-  const filteredChains = get(txChainIds);
-  return get(accounts).some(({ chain }) => filteredChains.includes(chain));
-});
-
-const lastQueriedTimestamp = computed<number>(() => {
-  const status = get(transactionStatus);
-  if (!status || status.lastQueriedTs === 0)
-    return 0;
-
-  // Convert seconds to milliseconds for useTimeAgo
-  return status.lastQueriedTs * 1000;
-});
-
-const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);
-
-const processingMessage = computed<string>(() => {
-  // Prioritize balance/token detection over history events
-  const balanceProgressData = get(balanceProgress);
-  if (balanceProgressData && balanceProgressData.currentOperation) {
-    return balanceProgressData.currentOperation;
-  }
-
-  // Only show history events progress if no balance queries are running
-  if (get(processing) && !get(isBalanceQuerying)) {
-    const progressData = get(historyProgress);
-    if (progressData && progressData.totalSteps > 0) {
-      return t('dashboard.history_query_indicator.processing_with_progress', {
-        current: progressData.currentStep,
-        total: progressData.totalSteps,
-      });
-    }
-    return t('dashboard.history_query_indicator.processing');
-  }
-  return '';
-});
-
-const processingPercentage = computed<number>(() => {
-  // Prioritize balance/token detection percentage
-  const balanceProgressData = get(balanceProgress);
-  if (balanceProgressData) {
-    return balanceProgressData.percentage;
-  }
-
-  // Use history progress if no balance queries
-  if (!get(isBalanceQuerying)) {
-    const progressData = get(historyProgress);
-    return progressData?.percentage ?? 0;
-  }
-
-  return 0;
-});
-
-const showIdleMessage = computed<boolean>(() => {
-  const status = get(transactionStatus);
-  if (!isDefined(status)) {
-    return false;
-  }
-
-  const now = Date.now();
-  const lastQueriedTs = get(lastQueriedTimestamp);
-  const minOutOfSyncMs = get(minOutOfSyncPeriodMs);
-
-  // Don't show if not out of sync enough
-  return now - lastQueriedTs >= minOutOfSyncMs;
-});
-
 const dismissedRecently = computed(() => {
-  // Don't show if dismissed recently
   const now = Date.now();
   const dismissalMs = get(dismissalThresholdMs);
   const { lastDismissedTs } = get(queryStatus);
   return now - lastDismissedTs < dismissalMs;
-});
-
-const isNeverQueried = computed<boolean>(() => {
-  const status = get(transactionStatus);
-  return isDefined(status) && status.lastQueriedTs === 0;
-});
-
-const longQuery = computed<boolean>(() => {
-  const status = get(transactionStatus);
-  const now = Date.now();
-  return isDefined(status) && status.undecodedTxCount === 0 && now - status.lastQueriedTs > HUNDRED_EIGHTY_DAYS;
 });
 
 function navigateToHistory(): void {
@@ -207,7 +111,7 @@ onMounted(async () => {
 
         <!-- History Query Section -->
         <HistoryQuerySection
-          v-else-if="!isBalanceQuerying && historyProgress"
+          v-else-if="hasHistoryProgress && historyProgress"
           :progress="historyProgress"
           :processing-message="processingMessage"
           :processing-percentage="processingPercentage"

@@ -1,10 +1,13 @@
 import type { ComputedRef } from 'vue';
 import type { CommonQueryProgressData, HistoryQueryProgressType } from '@/modules/dashboard/progress/types';
 import { get } from '@vueuse/shared';
-import { HistoryEventsQueryStatus, TransactionsQueryStatus } from '@/modules/messaging/types';
+import {
+  type HistoryEventsQueryData,
+  HistoryEventsQueryStatus,
+  TransactionsQueryStatus,
+} from '@/modules/messaging/types';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { truncateAddress } from '@/utils/truncate';
+import { type TxQueryStatusData, useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 
 interface HistoryQueryProgressOperationData {
   type: HistoryQueryProgressType;
@@ -15,10 +18,10 @@ interface HistoryQueryProgressOperationData {
   status: string;
 }
 
-interface HistoryQueryProgress extends CommonQueryProgressData<HistoryQueryProgressOperationData> {}
+export interface HistoryQueryProgress extends CommonQueryProgressData<HistoryQueryProgressOperationData> {}
 
 interface UseHistoryQueryProgressReturn {
-  progress: ComputedRef<HistoryQueryProgress | null>;
+  progress: ComputedRef<HistoryQueryProgress | undefined>;
 }
 
 function getTransactionStatusDescription(status: TransactionsQueryStatus, t: ReturnType<typeof useI18n>['t']): string {
@@ -56,14 +59,14 @@ interface EventProgressData {
   currentOperationData: HistoryQueryProgressOperationData;
 }
 
-function isTransactionActive(status: any): boolean {
+function isTransactionActive(status: TxQueryStatusData): boolean {
   if (status.subtype === 'bitcoin') {
     return status.status !== TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
   }
   return status.status !== TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
 }
 
-function isTransactionFinished(status: any): boolean {
+function isTransactionFinished(status: TxQueryStatusData): boolean {
   if (status.subtype === 'bitcoin') {
     return status.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
   }
@@ -71,15 +74,13 @@ function isTransactionFinished(status: any): boolean {
 }
 
 function createTransactionProgress(
-  activeTxStatus: any,
+  activeTxStatus: TxQueryStatusData,
   t: ReturnType<typeof useI18n>['t'],
 ): TransactionProgressData {
   const statusDesc = getTransactionStatusDescription(activeTxStatus.status, t);
-  const address = truncateAddress(activeTxStatus.address, 6);
-  const chain = activeTxStatus.chain.toUpperCase();
 
   return {
-    currentOperation: `${statusDesc} for ${address} on ${chain}`,
+    currentOperation: statusDesc,
     currentOperationData: {
       address: activeTxStatus.address,
       chain: activeTxStatus.chain,
@@ -90,7 +91,7 @@ function createTransactionProgress(
 }
 
 function createEventProgress(
-  activeEventStatus: any,
+  activeEventStatus: HistoryEventsQueryData,
   t: ReturnType<typeof useI18n>['t'],
 ): EventProgressData {
   const statusDesc = getEventStatusDescription(activeEventStatus.status, t);
@@ -109,8 +110,8 @@ function createEventProgress(
 }
 
 function calculateProgressMetrics(
-  txStatuses: any[],
-  eventStatuses: any[],
+  txStatuses: TxQueryStatusData[],
+  eventStatuses: HistoryEventsQueryData[],
 ): { completedSteps: number; totalItems: number; percentage: number } {
   const finishedTxItems = txStatuses.filter(isTransactionFinished).length;
   const finishedEventItems = eventStatuses.filter(
@@ -129,12 +130,12 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
   const { queryStatus: eventsQueryStatus } = storeToRefs(useEventsQueryStatusStore());
   const { t } = useI18n({ useScope: 'global' });
 
-  const progress = computed<HistoryQueryProgress | null>(() => {
+  const progress = computed<HistoryQueryProgress | undefined>(() => {
     const txStatuses = Object.values(get(txQueryStatus));
     const eventStatuses = Object.values(get(eventsQueryStatus));
 
     if (txStatuses.length === 0 && eventStatuses.length === 0) {
-      return null;
+      return undefined;
     }
 
     // Check for active transaction

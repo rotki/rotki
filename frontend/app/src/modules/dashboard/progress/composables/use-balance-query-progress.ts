@@ -17,10 +17,10 @@ interface BalanceQueryProgressOperationData {
   status: string;
 }
 
-interface BalanceQueryProgress extends CommonQueryProgressData<BalanceQueryProgressOperationData> {}
+export interface BalanceQueryProgress extends CommonQueryProgressData<BalanceQueryProgressOperationData> {}
 
 interface UseBalanceQueryProgressReturn {
-  balanceProgress: ComputedRef<BalanceQueryProgress | null>;
+  balanceProgress: ComputedRef<BalanceQueryProgress | undefined>;
   isBalanceQuerying: ComputedRef<boolean>;
 }
 
@@ -144,14 +144,14 @@ export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
     computed<boolean>(() => get(runningItems) > 0),
   );
 
-  const balanceProgress = computed<BalanceQueryProgress | null>(() => {
+  const balanceProgress = computed<BalanceQueryProgress | undefined>(() => {
     const items = get(queueItems);
     const total = get(totalItems);
     const completed = get(completedItems);
     const progressValue = get(progress);
 
     if (total === 0) {
-      return null;
+      return undefined;
     }
 
     // Find current running item
@@ -166,7 +166,7 @@ export function useBalanceQueryProgress(): UseBalanceQueryProgressReturn {
       return createPendingItemProgress(firstPending, completed, total, progressValue, t);
     }
 
-    return null;
+    return undefined;
   });
 
   return {
