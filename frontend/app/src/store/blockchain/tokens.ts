@@ -4,6 +4,7 @@ import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';
 import { isEqual } from 'es-toolkit';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -100,12 +101,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const fetchDetected = async (chain: string, addresses: string[]): Promise<void> => {
-    await awaitParallelExecution(
-      addresses,
-      address => address,
-      async address => fetchDetectedTokens(chain, address),
-      2,
-    );
+    const { queueTokenDetection } = useBalanceQueue();
+    await queueTokenDetection(chain, addresses, async address => fetchDetectedTokens(chain, address));
   };
 
   const getTokens = (balances: BlockchainAssetBalances, address: string): string[] => {

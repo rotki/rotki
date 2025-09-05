@@ -1,20 +1,20 @@
 import type { BlockchainBalancePayload } from '@/types/blockchain/accounts';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
 import { useStatusStore } from '@/store/status';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { arrayify } from '@/utils/array';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
 import { useLoopringBalanceService } from './services/use-loopring-balance-service';
 
-interface UseBlockchainbalancesReturn {
+interface UseBlockchainBalancesReturn {
   fetchBlockchainBalances: (payload?: BlockchainBalancePayload, periodic?: boolean) => Promise<void>;
   fetchLoopringBalances: (refresh: boolean) => Promise<void>;
 }
 
-export function useBlockchainBalances(): UseBlockchainbalancesReturn {
+export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { supportedChains } = useSupportedChains();
   const { isLoading } = useStatusStore();
   const usdValueThreshold = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
@@ -44,12 +44,8 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
     const { blockchain, ignoreCache = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
-    await awaitParallelExecution(
-      chains,
-      chain => chain,
-      async chain => fetchSingleChain(chain, ignoreCache, periodic),
-      2,
-    );
+    const { queueBalanceQueries } = useBalanceQueue();
+    await queueBalanceQueries(chains, async chain => fetchSingleChain(chain, ignoreCache, periodic));
   };
 
   return {

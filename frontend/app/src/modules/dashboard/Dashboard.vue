@@ -8,7 +8,7 @@ import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
-import HistoryQueryIndicator from '@/modules/dashboard/history-progress/HistoryQueryIndicator.vue';
+import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
@@ -40,7 +40,7 @@ watch(width, (newWidth) => {
 
 const showDynamicMessage = computed(() => get(activeDashboardMessages).length > 0 && !get(dismissedMessage));
 
-const { height: floatingHeight } = useElementSize(floatingRef);
+const { height: floatingHeight } = useElementBounding(floatingRef);
 
 watch(floatingHeight, (newHeight, oldHeight) => {
   const diff = newHeight - oldHeight;
@@ -72,7 +72,7 @@ const paddingTop = computed(() => get(floatingHeight) || 0);
   >
     <div
       ref="floatingRef"
-      class="fixed z-[7] top-14 md:top-16 shadow-sm"
+      class="fixed z-[7] top-14 md:top-16 shadow-sm overflow-hidden"
       :style="{ width: `${dashboardWidth}px` }"
     >
       <DynamicMessageDisplay
@@ -80,7 +80,7 @@ const paddingTop = computed(() => get(floatingHeight) || 0);
         :messages="activeDashboardMessages"
         @dismiss="dismissedMessage = true"
       />
-      <HistoryQueryIndicator />
+      <DashboardProgressIndicator />
     </div>
     <div
       class="container"

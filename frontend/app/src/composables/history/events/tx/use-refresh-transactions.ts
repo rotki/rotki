@@ -7,9 +7,11 @@ import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/u
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useHistoryStore } from '@/store/history';
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
 import { useNotificationsStore } from '@/store/notifications';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import {
   type BitcoinChainAddress,
@@ -38,7 +40,8 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
+  const { initializeQueryStatus, removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
+  const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus } = useEventsQueryStatusStore();
   const { getChain, getChainName, isEvmLikeChains } = useSupportedChains();
   const { getBitcoinAccounts, getEvmAccounts, getEvmLikeAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
@@ -195,6 +198,8 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     const { accounts, exchanges, queries } = payload;
     const fullRefresh = Object.keys(payload).length === 0;
 
+    const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+
     // Get current accounts first to check if we have new ones
     let currentEvmAccounts: EvmChainAddress[] = [];
     let currentEvmLikeAccounts: EvmChainAddress[] = [];
@@ -282,6 +287,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       initializeQueryStatus(evmAccounts);
       resetUndecodedTransactionsStatus();
     }
+    else {
+      resetQueryStatus();
+    }
 
     try {
       if (!disableEvmEvents && (fullRefresh || evmAccounts.length > 0))
@@ -302,7 +310,11 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       }
 
       if (fullRefresh || disableEvmEvents || exchanges) {
+        initializeExchangeEventsQueryStatus(exchanges || get(connectedExchanges));
         asyncOperations.push(queryAllExchangeEvents(exchanges));
+      }
+      else {
+        resetExchangesQueryStatus();
       }
 
       const queriesToExecute: OnlineHistoryEventsQueryType[] | undefined = fullRefresh || disableEvmEvents

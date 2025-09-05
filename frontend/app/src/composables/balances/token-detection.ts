@@ -2,12 +2,12 @@ import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 import type { EthDetectedTokensInfo } from '@/types/balances';
 import { assert } from '@rotki/common';
+import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 
 interface UseTokenDetectionReturn {
   detectingTokens: ComputedRef<boolean>;
@@ -48,7 +48,10 @@ export function useTokenDetection(chain: MaybeRef<string>, accountAddress: Maybe
     const address = get(accountAddress);
     assert(address || addresses.length > 0);
     const usedAddresses = (address ? [address] : addresses).filter(address => !get(isDetectingTaskRunning(address)));
-    await awaitParallelExecution(usedAddresses, item => item, fetchDetectedTokens, 2);
+
+    const blockchain = get(chain);
+    const { queueTokenDetection } = useBalanceQueue();
+    await queueTokenDetection(blockchain, usedAddresses, fetchDetectedTokens);
   };
 
   const detectTokensOfAllAddresses = async (): Promise<void> => {
