@@ -14,9 +14,11 @@ const props = withDefaults(
   defineProps<{
     editMode?: boolean;
     loading?: boolean;
+    eventIds?: number[];
   }>(),
   {
     editMode: false,
+    eventIds: undefined,
     loading: false,
   },
 );
@@ -53,9 +55,16 @@ async function save() {
   const editMode = props.editMode;
   set(submitting, true);
   try {
-    if (editMode)
+    if (editMode) {
       success = await editAccountingRule(data);
-    else success = await addAccountingRule(omit(data, ['identifier']));
+    }
+    else {
+      const ruleData = omit(data, ['identifier']);
+      // Include eventIds if provided (for custom accounting rules)
+      if (props.eventIds)
+        ruleData.eventIds = props.eventIds;
+      success = await addAccountingRule(ruleData);
+    }
   }
   catch (error: any) {
     success = false;

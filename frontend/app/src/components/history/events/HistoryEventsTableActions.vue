@@ -32,7 +32,7 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'redecode': [payload: 'all' | 'page' | string[]];
-  'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all'];
+  'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all' | 'create-rule'];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -43,6 +43,10 @@ const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
 function handleDelete(): void {
   emit('selection:action', 'delete');
+}
+
+function handleCreateRule(): void {
+  emit('selection:action', 'create-rule');
 }
 
 function handleExit(): void {
@@ -127,6 +131,21 @@ function handleToggleAll(): void {
         {{ t('transactions.events.selection_mode.delete_selected') }}
       </RuiButton>
       <RuiButton
+        color="primary"
+        variant="outlined"
+        class="h-10"
+        :disabled="selection.selectedCount === 0"
+        @click="handleCreateRule()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-settings"
+            size="20"
+          />
+        </template>
+        {{ t('transactions.events.selection_mode.create_rule') }}
+      </RuiButton>
+      <RuiButton
         variant="text"
         class="h-10"
         @click="handleExit()"
@@ -140,18 +159,18 @@ function handleToggleAll(): void {
           <RuiButton
             variant="text"
             class="!h-10"
+            :disabled="!selection.hasAvailableEvents"
             @click="handleToggleMode()"
           >
             <template #prepend>
               <RuiIcon
-                class="text-rui-text-secondary"
                 name="lu-copy-check"
                 size="24"
               />
             </template>
           </RuiButton>
         </template>
-        {{ t('transactions.events.selection_mode.tooltip') }}
+        {{ selection.hasAvailableEvents ? t('transactions.events.selection_mode.tooltip') : t('transactions.events.selection_mode.no_events') }}
       </RuiTooltip>
 
       <HistoryRedecodeButton

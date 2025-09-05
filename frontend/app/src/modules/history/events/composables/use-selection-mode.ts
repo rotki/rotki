@@ -8,6 +8,7 @@ export interface SelectionState {
   isPartiallySelected: boolean;
   selectedCount: number;
   selectedIds: Set<number>;
+  hasAvailableEvents: boolean;
 }
 
 interface SelectionActions {
@@ -43,6 +44,7 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
       && get(selectedIds).size < get(availableIds).length,
     selectedCount: get(selectedIds).size,
     selectedIds: get(selectedIds),
+    hasAvailableEvents: get(availableIds).length > 0,
   }));
 
   const actions: SelectionActions = {

@@ -20,6 +20,7 @@ export const AccountingRule = z.object({
   countCostBasisPnl: AccountingRuleWithLinkedProperty,
   countEntireAmountSpend: AccountingRuleWithLinkedProperty,
   counterparty: z.string().nullable(),
+  eventIds: z.array(z.number()).nullish(),
   eventSubtype: z.string(),
   eventType: z.string(),
   taxable: AccountingRuleWithLinkedProperty,

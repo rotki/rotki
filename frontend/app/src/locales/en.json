@@ -4944,7 +4944,9 @@
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
       "selection_mode": {
+        "create_rule": "Set custom accounting rule",
         "delete_selected": "Delete selected events",
+        "no_events": "There is no event to select",
         "selected_count": "{count} selected",
         "tooltip": "Select multiple events"
       },
