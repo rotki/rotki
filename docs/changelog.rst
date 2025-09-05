@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10570` Adding/editing an EVM event with a transaction hash not present in the DB will now pull the transaction from onchain.
 * :bug:`-` Balancer V2 swaps that swap multiple times before reaching the desired token or that swap to the chain's native token will now be properly decoded.
 * :bug:`10556` Editing ZKSync lite history events will be possible again.
 * :bug:`-` Beefy Finance reward pool and boost vault tokens will now be properly priced.

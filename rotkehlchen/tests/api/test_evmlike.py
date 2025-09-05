@@ -466,6 +466,7 @@ def test_decode_pending_evmlike(
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_add_edit_evmlike_event(
         rotkehlchen_api_server: 'APIServer',
@@ -528,14 +529,26 @@ def test_add_edit_evmlike_event(
             entries_limit=None,
         ) == [event]
 
-    # Try to edit with a tx hash that is not in the db
-    entry['tx_hash'] = make_evm_tx_hash().hex()  # pylint: disable=no-member
+    # Try to edit with a tx hash that is not in the db or onchain
+    entry['tx_hash'] = f'0x{"0" * 64}'  # don't use make_evm_tx_hash so this is always the same for the vcr.  # noqa: E501
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=entry,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        contained_in_msg='The provided transaction hash does not exist for zksync_lite.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # Check that setting a real tx hash that's only missing from the DB pulls the tx from onchain.
+    entry['tx_hash'] = '0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb'
+    assert_simple_ok_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    ))
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM zksynclite_transactions WHERE tx_hash=?',
+            (deserialize_evm_tx_hash(entry['tx_hash']),),
+        ).fetchone()[0] == 1
