@@ -1,6 +1,8 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
+
+from eth_typing.abi import ABI
 
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -42,36 +44,29 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Quickswapv3CommonDecoder(DecoderInterface):
+class Quickswapv3LikeLPDecoder(DecoderInterface):
+    """Common decoder for Quickswap v3 and v4 LP deposits and withdrawals."""
 
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            router_address: 'ChecksumEvmAddress',
             nft_manager: 'ChecksumEvmAddress',
+            nft_manager_abi: ABI,
+            counterparty: Literal['quickswap-v3', 'quickswap-v4'],
+            version_string: Literal['V3', 'V4'],
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.router_address = router_address
         self.nft_manager = nft_manager
+        self.nft_manager_abi = nft_manager_abi
+        self.counterparty = counterparty
+        self.version_string = version_string
         self.wrapped_native_currency = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
-
-    def _v3_router_post_decoding(
-            self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
-        for tx_log in all_logs:
-            if tx_log.topics[0] == UNISWAP_V3_SWAP_SIGNATURE:
-                return decode_quickswap_swap(tx_log=tx_log, decoded_events=decoded_events)
-
-        return decoded_events
 
     def _decode_deposits_and_withdrawals(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == QUICKSWAP_INCREASE_LIQUIDITY_TOPIC:
@@ -87,20 +82,20 @@ class Quickswapv3CommonDecoder(DecoderInterface):
 
         position_id = int.from_bytes(context.tx_log.topics[1])
         try:
-            # Returns the following LP position info in a tuple:
-            # (nonce, operator, token0, token1, tickLower, tickUpper, liquidity,
-            # feeGrowthInside0LastX128, feeGrowthInside1LastX128, tokensOwed0, tokensOwed1)
-            # https://docs.quickswap.exchange/technical-reference/smart-contracts/v3/position-manager#positions  # noqa: E501
-            # This differs from uniswap in that it does not include a `fee` field.
+            # Returns LP position info in a tuple starting as follows:
+            # nonce, operator, token0, token1, ...
+            # The other values differ depending on the version (we only use token0 & token1).
+            # V3: https://docs.quickswap.exchange/technical-reference/smart-contracts/v3/position-manager#positions  # noqa: E501
+            # V4: see QUICKSWAP_NFT_MANAGER_V4_ABI (the quickswap docs do not yet include V4 technical reference)  # noqa: E501
             lp_position_info = self.evm_inquirer.call_contract(
                 contract_address=self.nft_manager,
-                abi=QUICKSWAP_NFT_MANAGER_ABI,
+                abi=self.nft_manager_abi,
                 method_name='positions',
                 arguments=[position_id],
             )
         except RemoteError as e:
             log.error(
-                'Failed to query quickswap v3 nft contract for '
+                f'Failed to query {self.counterparty} nft contract for '
                 f'position {position_id} due to {e!s}',
             )
             return DEFAULT_DECODING_OUTPUT
@@ -108,7 +103,7 @@ class Quickswapv3CommonDecoder(DecoderInterface):
         return decode_uniswap_v3_like_deposit_or_withdrawal(
             context=context,
             is_deposit=is_deposit,
-            counterparty=CPT_QUICKSWAP_V3,
+            counterparty=self.counterparty,
             token0_raw_address=lp_position_info[2],
             token1_raw_address=lp_position_info[3],
             amount0_raw=amount0_raw,
@@ -125,32 +120,68 @@ class Quickswapv3CommonDecoder(DecoderInterface):
             all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
     ) -> list['EvmEvent']:
         """Update the lp position creation event and position token.
-        Note that Quickswap v3 uses Algebra dynamic fees (https://docs.algebra.finance/algebra-integral-documentation)
+        Note that Quickswap v3/v4 use Algebra dynamic fees (https://docs.algebra.finance/algebra-integral-documentation)
         and the original token name and symbol are `Algebra Positions NFT-V1 (ALGB-POS)`.
-        To clarify what protocol this token is actually from, we add quickswap v3 to the name and symbol.
+        To clarify what protocol this token is actually from, we add quickswap to the name and symbol.
         """  # noqa: E501
         return decode_uniswap_v3_like_position_create_or_exit(
             decoded_events=decoded_events,
             evm_inquirer=self.evm_inquirer,
             nft_manager=self.nft_manager,
-            counterparty=CPT_QUICKSWAP_V3,
-            token_symbol='QKSWP-V3-ALGB-POS',
-            token_name='Quickswap V3 Algebra Positions',
+            counterparty=self.counterparty,
+            token_symbol=f'QKSWP-{self.version_string}-ALGB-POS',
+            token_name=f'Quickswap {self.version_string} Algebra Positions',
         )
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {self.nft_manager: (self._decode_deposits_and_withdrawals,)}
+
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {self.counterparty: [(0, self._lp_post_decoding)]}
+
+
+class Quickswapv3CommonDecoder(Quickswapv3LikeLPDecoder):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            router_address: 'ChecksumEvmAddress',
+            nft_manager: 'ChecksumEvmAddress',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+            nft_manager=nft_manager,
+            nft_manager_abi=QUICKSWAP_NFT_MANAGER_ABI,
+            counterparty=CPT_QUICKSWAP_V3,
+            version_string='V3',
+        )
+        self.router_address = router_address
+
+    def _v3_router_post_decoding(
+            self,
+            transaction: 'EvmTransaction',
+            decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],
+    ) -> list['EvmEvent']:
+        for tx_log in all_logs:
+            if tx_log.topics[0] == UNISWAP_V3_SWAP_SIGNATURE:
+                return decode_quickswap_swap(tx_log=tx_log, decoded_events=decoded_events)
+
+        return decoded_events
 
     # -- DecoderInterface methods
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {
-            CPT_QUICKSWAP_V3: [(0, self._lp_post_decoding)],
+        return super().post_decoding_rules() | {
             CPT_QUICKSWAP_V3_ROUTER: [(0, self._v3_router_post_decoding)],
         }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return {self.router_address: CPT_QUICKSWAP_V3_ROUTER}
-
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {self.nft_manager: (self._decode_deposits_and_withdrawals,)}
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
