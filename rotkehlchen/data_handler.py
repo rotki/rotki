@@ -71,6 +71,12 @@ class DataHandler:
         """
         user_data_dir = self.data_directory / USERSDIR_NAME / username
         if create_new:
+            if user_data_dir.parent != self.data_directory / USERSDIR_NAME:
+                raise SystemPermissionError(
+                    f'Data dir for user {username} is not in the users directory. '
+                    'Usernames may not contain path separators.',
+                )
+
             try:
                 if (user_data_dir / USERDB_NAME).exists():
                     raise AuthenticationError(

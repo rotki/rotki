@@ -394,6 +394,19 @@ def test_user_creation_errors(
             contained_in_msg='Not a valid string',
         )
 
+        # name containing slashes (gets interpreted as a path)
+        assert_error_response(
+            response=requests.put(
+                url=api_url_for(rotkehlchen_api_server, 'usersresource'),
+                json={'name': 'john/doe', 'password': '1234'},
+            ),
+            contained_in_msg=(
+                'Data dir for user john/doe is not in the users directory. '
+                'Usernames may not contain path separators.',
+            ),
+            status_code=HTTPStatus.CONFLICT,
+        )
+
         # Invalid type for password
         data = {
             'name': username,
