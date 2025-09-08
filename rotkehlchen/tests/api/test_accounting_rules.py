@@ -751,3 +751,72 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
             (3, 65, 'count_entire_amount_spend', 'include_gas_costs'),
             (4, 65, 'count_cost_basis_pnl', 'include_crypto2crypto'),
         ] == initial_properties
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that querying accounting rules by identifiers works"""
+    rules: list[dict[str, Any]] = [{  # create two rules
+        'taxable': {'value': True},
+        'count_entire_amount_spend': {'value': False},
+        'count_cost_basis_pnl': {'value': True},
+        'event_type': HistoryEventType.DEPOSIT.serialize(),
+        'event_subtype': HistoryEventSubType.SPEND.serialize(),
+        'counterparty': 'uniswap',
+    }, {
+        'taxable': {'value': False},
+        'count_entire_amount_spend': {'value': True},
+        'count_cost_basis_pnl': {'value': False},
+        'event_type': HistoryEventType.WITHDRAWAL.serialize(),
+        'event_subtype': HistoryEventSubType.RECEIVE.serialize(),
+        'counterparty': 'compound',
+    }]
+
+    for rule in rules:
+        assert_simple_ok_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+            json=rule,
+        ))
+
+    response = requests.post(  # get all rules to find their IDs
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == len(rules)
+
+    rule_1_id, rule_2_id = None, None
+    for entry in result['entries']:
+        if entry['counterparty'] == 'uniswap':
+            rule_1_id = entry['identifier']
+        elif entry['counterparty'] == 'compound':
+            rule_2_id = entry['identifier']
+
+    assert all([rule_1_id, rule_2_id])
+
+    # Test querying by single identifier
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'identifiers': [rule_1_id]},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries'][0]['identifier'] == rule_1_id
+    assert result['entries'][0]['counterparty'] == 'uniswap'
+
+    # Test querying by multiple identifiers
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'identifiers': [rule_1_id, rule_2_id]},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == len(rules)
+    assert {entry['identifier'] for entry in result['entries']} == {rule_1_id, rule_2_id}
+
+    # Test querying by non-existent identifier
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'identifiers': [99999]},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == 0
+    assert result['entries_found'] == 0

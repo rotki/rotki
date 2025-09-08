@@ -316,15 +316,15 @@ class DBAccountingRules:
 
         with self.db.conn.read_ctx() as cursor:
             query, bindings = filter_query.prepare(with_pagination=False)
-            query = 'SELECT COUNT(*) from accounting_rules ' + query
+            query = 'SELECT COUNT(*) from accounting_rules AS ar ' + query
             total_found_result = cursor.execute(query, bindings).fetchone()[0]
 
             # check the settings linked to the rule using the defined filter
             settings = self.db.get_settings(cursor)
             cursor.execute(
                 'SELECT accounting_rule, property_name, setting_name FROM '
-                'linked_rules_properties WHERE accounting_rule IN (SELECT identifier FROM '
-                f'accounting_rules {filter_query_str})',
+                'linked_rules_properties WHERE accounting_rule IN (SELECT ar.identifier FROM '
+                f'accounting_rules AS ar {filter_query_str})',
                 bindings,
             )
             for (accounting_rule_id, property_name, setting_name) in cursor:
