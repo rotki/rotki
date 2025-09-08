@@ -3772,6 +3772,10 @@ class AccountingRulesQuerySchema(
         DBPaginationSchema,
         DBOrderBySchema,
 ):
+    identifiers = DelimitedOrNormalList(
+        fields.Integer(load_default=None, strict=True),
+        load_default=None,
+    )
 
     @post_load
     def make_rules_query(
@@ -3790,6 +3794,7 @@ class AccountingRulesQuerySchema(
             event_types=data['event_types'],
             event_subtypes=data['event_subtypes'],
             counterparties=data['counterparties'],
+            identifiers=data['identifiers'],
         )
         return {
             'filter_query': filter_query,

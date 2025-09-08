@@ -1862,6 +1862,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             event_types: list[HistoryEventType] | None = None,
             event_subtypes: list[HistoryEventSubType] | None = None,
             counterparties: list[str | None] | None = None,
+            identifiers: list[int] | None = None,
     ) -> 'AccountingRulesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('identifier', False)]
@@ -1905,6 +1906,12 @@ class AccountingRulesFilterQuery(DBFilterQuery):
                     values=non_null_counterparties,
                     operator='IN',
                 ))
+        if identifiers is not None:
+            filters.append(DBMultiIntegerFilter(
+                and_op=True,
+                column='ar.identifier',
+                values=identifiers,
+            ))
 
         filter_query.filters = filters
         return filter_query
