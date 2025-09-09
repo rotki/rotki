@@ -696,6 +696,14 @@ class DBNullFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBAccountingRuleWithEventIdsFilter(DBFilter):
+    """Filter that finds accounting rules that have specific event IDs associated"""
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        return ['EXISTS (SELECT 1 FROM accounting_rule_events WHERE rule_id = ar.identifier)'], []
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
     """This join finds customized history events (exclusively)."""
     def prepare(self) -> tuple[list[str], list[Any]]:
@@ -1863,6 +1871,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             counterparties: list[str | None] | None = None,
             identifiers: list[int] | None = None,
+            only_with_event_ids: bool = False,
     ) -> 'AccountingRulesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('identifier', False)]
@@ -1911,6 +1920,10 @@ class AccountingRulesFilterQuery(DBFilterQuery):
                 and_op=True,
                 column='ar.identifier',
                 values=identifiers,
+            ))
+        if only_with_event_ids:
+            filters.append(DBAccountingRuleWithEventIdsFilter(
+                and_op=True,
             ))
 
         filter_query.filters = filters

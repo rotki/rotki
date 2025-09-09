@@ -820,3 +820,46 @@ def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServe
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
     assert result['entries_found'] == 0
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test filtering accounting rules by only_with_event_ids parameter"""
+    # First create some history events using the existing test helper
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    existing_entries = add_entries(DBHistoryEvents(rotki.data.db))
+    for rule in [{
+        'taxable': {'value': True},
+        'count_entire_amount_spend': {'value': False},
+        'count_cost_basis_pnl': {'value': True},
+        'event_type': HistoryEventType.DEPOSIT.serialize(),
+        'event_subtype': HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+        'event_ids': [existing_entries[3].identifier],
+        'counterparty': 'somewhere',
+    }, {
+        'taxable': {'value': False},
+        'count_entire_amount_spend': {'value': True},
+        'count_cost_basis_pnl': {'value': False},
+        'event_type': HistoryEventType.WITHDRAWAL.serialize(),
+        'event_subtype': HistoryEventSubType.RECEIVE.serialize(),
+    }]:
+        assert_simple_ok_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+            json=rule,
+        ))
+
+    # Test: Get all rules (default behavior - only_with_event_ids=False)
+    response = requests.post(api_url_for(rotkehlchen_api_server, 'accountingrulesresource'))
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == 2  # Should get both rules
+
+    # Test: Get only rules with event_ids (event-specific rules only)
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'only_with_event_ids': True},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == 1  # Should get only the event-specific rule
+    assert result['entries'][0]['event_ids'] == [existing_entries[3].identifier]
+    assert result['entries'][0]['counterparty'] == 'somewhere'
+    assert result['entries'][0]['event_type'] == HistoryEventType.DEPOSIT.serialize()
