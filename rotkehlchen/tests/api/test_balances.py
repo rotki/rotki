@@ -14,7 +14,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
@@ -1226,26 +1226,9 @@ def test_solana_balances_multiple_accounts(
     """Test that querying balances for multiple solana accounts works and check the
     balances for several common tokens (one token from each account).
     """
-    # TODO: remove this patch after rate limits are properly handled
-    # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=127427720
-    with patch.object(  # Use publicnode rpc for better rate limits
-        target=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.solana,
-        attribute='default_call_order',
-        return_value=[WeightedNode(
-            node_info=NodeName(
-                name='publicnode',
-                endpoint='https://solana-rpc.publicnode.com',
-                owned=False,
-                blockchain=SupportedBlockchain.SOLANA,
-            ),
-            active=True,
-            weight=ONE,
-        )],
-    ):
-        result = assert_proper_sync_response_with_result(requests.get(
-            api_url_for(rotkehlchen_api_server, 'allbalancesresource'),
-        ))
-
+    result = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'allbalancesresource'),
+    ))
     assert result['assets']['solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v']['amount'] == '160556.002808'  # USDC  # noqa: E501
     assert result['assets']['solana/token:2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv']['amount'] == '370905.246821'  # PENGU  # noqa: E501
-    assert result['assets']['solana/token:WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g']['amount'] == '50122.11'  # WLFI  # noqa: E501
+    assert result['assets']['solana/token:WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g']['amount'] == '70122.11'  # WLFI  # noqa: E501

@@ -1,12 +1,13 @@
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Final, TypeVar
 
+import gevent
 from construct import ConstructError
-from httpx import HTTPError
+from httpx import HTTPStatusError, ReadTimeout
+from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
-from solana.rpc.core import RPCException
 from solana.rpc.types import TokenAccountOpts
 from solders.pubkey import Pubkey
 from spl.token._layouts import ACCOUNT_LAYOUT
@@ -52,6 +53,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+INITIAL_BACKOFF: Final = 4
+BACKOFF_MULTIPLIER: Final = 2
+MAX_RETRIES: Final = 3
+
+
 class SolanaManager(SolanaRPCMixin):
 
     def __init__(
@@ -91,10 +97,35 @@ class SolanaManager(SolanaRPCMixin):
                     log.error(f'Unexpected missing node {node_info} at Solana')
                     continue
 
-            try:
-                return method(rpc_node.rpc_client)
-            except (HTTPError, RPCException) as e:
-                log.error(f'Failed to call {node_info.name} due to {e}')
+            backoff = INITIAL_BACKOFF
+            attempts = 0
+            while True:
+                try:
+                    return method(rpc_node.rpc_client)
+                except SolanaRpcException as e:
+                    if attempts > MAX_RETRIES:
+                        log.error(f'Maximum retries reached for solana node {node_info.name}. Giving up.')  # noqa: E501
+                        break
+
+                    attempts += 1
+                    ratelimit_response = None
+                    if (
+                        (
+                            isinstance(e.__cause__, HTTPStatusError) and
+                            (ratelimit_response := e.__cause__.response).status_code == 429  # pylint: disable=no-member  # cause is a HTTPStatusError here.
+                        ) or
+                        isinstance(e.__cause__, ReadTimeout)  # Some RPCs (publicnode.com) do a read timeout instead of a proper 429 response  # noqa: E501
+                    ):
+                        if ratelimit_response is not None and (retry_after := ratelimit_response.headers.get('retry-after')) is not None:  # noqa: E501
+                            backoff = int(retry_after) + 1
+
+                        log.warning(f'Got rate limited from solana node {node_info.name}. Backing off {backoff} seconds...')  # noqa: E501
+                        gevent.sleep(backoff)
+                        backoff *= BACKOFF_MULTIPLIER
+                        continue
+
+                    log.error(f'Failed to call solana node {node_info.name} due to {e}')
+                    break
 
         log.error(f'Tried all solana nodes in {call_order} for {method} but did not get any response')  # noqa: E501
         raise RemoteError(f'Failed to get {method}')
@@ -114,7 +145,7 @@ class SolanaManager(SolanaRPCMixin):
         result = {}
         for account, entry in zip(accounts, response.value, strict=False):
             if entry is None or entry.lamports == 0:
-                log.debug(f'Found no account entry in balances for {account}. Skipping')
+                log.debug(f'Found no account entry in balances for solana account {account}. Skipping')  # noqa: E501
                 result[account] = ZERO
             else:
                 result[account] = lamports_to_sol(entry.lamports)
@@ -127,7 +158,7 @@ class SolanaManager(SolanaRPCMixin):
         """
         balances: defaultdict[Asset, FVal] = defaultdict(lambda: ZERO)
         for token_program_id in (TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID):
-            log.debug(f'Querying token balances for {account} with program id {token_program_id}')
+            log.debug(f'Querying solana token balances for {account} with program id {token_program_id}')  # noqa: E501
             response: GetTokenAccountsByOwnerResp = self._query(
                 method=lambda client, pid=token_program_id: client.get_token_accounts_by_owner(  # type: ignore
                     owner=Pubkey.from_string(account),
@@ -182,7 +213,7 @@ class SolanaManager(SolanaRPCMixin):
             (raw_mint := self._get_raw_account_info(pubkey=Pubkey.from_string(token_address))) is None or  # noqa: E501
             (mint_info := unpack_mint(raw_mint)) is None
         ):
-            log.error(f'Failed to get token mint info for {token_address}')
+            log.error(f'Failed to get mint info for solana token {token_address}')
             return None
 
         if (
@@ -192,7 +223,7 @@ class SolanaManager(SolanaRPCMixin):
             )) is None and
             (metadata := self._get_metadata_from_pdas(token_address)) is None
         ):
-            log.error(f'Failed to get token metadata for {token_address}')
+            log.error(f'Failed to get metadata for solana token {token_address}')
             return None
 
         GlobalDBHandler().add_asset(token := SolanaToken.initialize(
@@ -215,7 +246,7 @@ class SolanaManager(SolanaRPCMixin):
         if (response := self._query(
             method=lambda client: client.get_account_info(pubkey),
         ).value) is None:
-            log.error(f'Failed to get raw account info for {pubkey!s}')
+            log.error(f'Failed to get raw solana account info for {pubkey!s}')
             return None
 
         return response.data
@@ -229,7 +260,7 @@ class SolanaManager(SolanaRPCMixin):
             (raw_data := self._get_raw_account_info(pubkey=metadata_account)) is None or
             (metadata := decode_token_metadata(data=raw_data, layout=METADATA_LAYOUT_LEGACY)) is None  # noqa: E501
         ):
-            log.error(f'Failed to get legacy token metadata for {metadata_account}')
+            log.error(f'Failed to get solana token legacy metadata from {metadata_account}')
             return None
 
         return metadata
@@ -253,7 +284,7 @@ class SolanaManager(SolanaRPCMixin):
             return None  # This token doesn't have metadata extensions.
 
         if (metadata_address := decode_metadata_pointer(raw_metadata_pointer)) is None:
-            log.error(f'Failed to decode metadata pointer extension for {token_address}')
+            log.error(f'Failed to decode metadata pointer extension for solana token {token_address}')  # noqa: E501
             return None
 
         if metadata_address == token_address:  # Token uses the TokenMetadata extension
@@ -261,7 +292,7 @@ class SolanaManager(SolanaRPCMixin):
                 (raw_data := get_extension_data(extension_type=ExtensionType.TOKEN_METADATA, tlv_data=mint_info.tlv_data)) is None or  # noqa: E501
                 (metadata := decode_token_metadata(data=raw_data, layout=METADATA_LAYOUT_2022)) is None  # noqa: E501
             ):
-                log.error(f'Failed to decode token metadata extension for {token_address}')
+                log.error(f'Failed to decode token metadata extension for solana token {token_address}')  # noqa: E501
                 return None
 
         else:  # Token uses a separate metadata account (uncommon)
@@ -279,7 +310,7 @@ class SolanaManager(SolanaRPCMixin):
             if (metadata := self._query_metadata_account(metadata_account)) is not None:
                 break
         else:
-            log.error(f'Failed to query token metadata for {token_address} from any known metadata program.')  # noqa: E501
+            log.error(f'Failed to query metadata for solana token {token_address} from any known metadata program.')  # noqa: E501
             return None
 
         return metadata
