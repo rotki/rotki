@@ -756,7 +756,14 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
 def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that querying accounting rules by identifiers works"""
-    rules: list[dict[str, Any]] = [{  # create two rules
+    for rule in (rules := [{  # create three rules
+        'taxable': {'value': False},
+        'count_entire_amount_spend': {'value': True},
+        'count_cost_basis_pnl': {'value': False},
+        'event_type': HistoryEventType.WITHDRAWAL.serialize(),
+        'event_subtype': HistoryEventSubType.RECEIVE.serialize(),
+        'counterparty': 'compound',
+    }, {
         'taxable': {'value': True},
         'count_entire_amount_spend': {'value': False},
         'count_cost_basis_pnl': {'value': True},
@@ -769,10 +776,8 @@ def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServe
         'count_cost_basis_pnl': {'value': False},
         'event_type': HistoryEventType.WITHDRAWAL.serialize(),
         'event_subtype': HistoryEventSubType.RECEIVE.serialize(),
-        'counterparty': 'compound',
-    }]
-
-    for rule in rules:
+        'counterparty': 'curve',
+    }]):
         assert_simple_ok_response(requests.put(
             api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
             json=rule,
@@ -786,9 +791,9 @@ def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServe
 
     rule_1_id, rule_2_id = None, None
     for entry in result['entries']:
-        if entry['counterparty'] == 'uniswap':
+        if entry['counterparty'] == 'compound':
             rule_1_id = entry['identifier']
-        elif entry['counterparty'] == 'compound':
+        elif entry['counterparty'] == 'uniswap':
             rule_2_id = entry['identifier']
 
     assert all([rule_1_id, rule_2_id])
@@ -801,15 +806,15 @@ def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServe
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries'][0]['identifier'] == rule_1_id
-    assert result['entries'][0]['counterparty'] == 'uniswap'
+    assert result['entries'][0]['counterparty'] == 'compound'
 
     # Test querying by multiple identifiers
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
-        json={'identifiers': [rule_1_id, rule_2_id]},
+        json={'identifiers': [rule_1_id, rule_2_id], 'counterparties': ['uniswap', 'compound']},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == len(rules)
+    assert len(result['entries']) == len(rules) - 1
     assert {entry['identifier'] for entry in result['entries']} == {rule_1_id, rule_2_id}
 
     # Test querying by non-existent identifier
@@ -851,15 +856,26 @@ def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: 'A
     # Test: Get all rules (default behavior - only_with_event_ids=False)
     response = requests.post(api_url_for(rotkehlchen_api_server, 'accountingrulesresource'))
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == 2  # Should get both rules
+    assert len(result['entries']) == 2, 'Should have gotten both rules'
 
     # Test: Get only rules with event_ids (event-specific rules only)
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
-        json={'only_with_event_ids': True},
+        json={'only_custom_rules': True},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == 1  # Should get only the event-specific rule
+    assert len(result['entries']) == 1, 'Should only get the event-specific rule'
     assert result['entries'][0]['event_ids'] == [existing_entries[3].identifier]
     assert result['entries'][0]['counterparty'] == 'somewhere'
     assert result['entries'][0]['event_type'] == HistoryEventType.DEPOSIT.serialize()
+
+    # Test mutual exclusion validation
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'only_custom_rules': True, 'event_ids': [existing_entries[3].identifier]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Cannot use both only_custom_rules and event_ids parameters together',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

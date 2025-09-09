@@ -700,7 +700,7 @@ class DBAccountingRuleWithEventIdsFilter(DBFilter):
     """Filter that finds accounting rules that have specific event IDs associated"""
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        return ['EXISTS (SELECT 1 FROM accounting_rule_events WHERE rule_id = ar.identifier)'], []
+        return ['EXISTS (SELECT 1 FROM accounting_rule_events WHERE rule_id = accounting_rules.identifier)'], []  # noqa: E501
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -1858,7 +1858,11 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
 
 
 class AccountingRulesFilterQuery(DBFilterQuery):
-    """Filter accounting rules using pagination by type, subtype and counterparty"""
+    """Filter accounting rules using pagination by type, subtype and counterparty.
+
+    If `only_custom_rules` is provided as True, filter only rules that apply to specific event IDs.
+    If `event_ids` is provided, only_custom_rules cannot be True (they are mutually exclusive).
+    """
 
     @classmethod
     def make(
@@ -1871,10 +1875,11 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             counterparties: list[str | None] | None = None,
             identifiers: list[int] | None = None,
-            only_with_event_ids: bool = False,
+            only_custom_rules: bool = False,
+            event_ids: list[int] | None = None,
     ) -> 'AccountingRulesFilterQuery':
         if order_by_rules is None:
-            order_by_rules = [('identifier', False)]
+            order_by_rules = [('accounting_rules.identifier', False)]
 
         filter_query = cls.create(
             and_op=and_op,
@@ -1918,12 +1923,16 @@ class AccountingRulesFilterQuery(DBFilterQuery):
         if identifiers is not None:
             filters.append(DBMultiIntegerFilter(
                 and_op=True,
-                column='ar.identifier',
+                column='accounting_rules.identifier',
                 values=identifiers,
             ))
-        if only_with_event_ids:
-            filters.append(DBAccountingRuleWithEventIdsFilter(
+        if only_custom_rules:
+            filters.append(DBAccountingRuleWithEventIdsFilter(and_op=True))
+        if event_ids is not None:
+            filters.append(DBMultiIntegerFilter(
                 and_op=True,
+                column='event_id',
+                values=event_ids,
             ))
 
         filter_query.filters = filters
