@@ -6,7 +6,9 @@ from web3.types import BlockIdentifier
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V2
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.constants import ZERO
@@ -25,8 +27,11 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from eth_typing import ABI
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.protocol_constants import LP_TOKEN_AS_POOL_CONTRACT_ABIS
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -38,6 +43,8 @@ LP_TOKEN_AS_POOL_PROTOCOL_TO_ABI_NAME: Final[dict[str, 'LP_TOKEN_AS_POOL_CONTRAC
     CPT_VELODROME: 'VELO_V2_LP',
     CPT_AERODROME: 'VELO_V2_LP',
     CPT_UNISWAP_V2: 'UNISWAP_V2_LP',
+    CPT_QUICKSWAP_V2: 'UNISWAP_V2_LP',
+    CPT_SUSHISWAP_V2: 'UNISWAP_V2_LP',
 }
 FVAL_ERROR_NAME: Final = 'token supply'
 FVAL_ERROR_LOCATION: Final = 'uniswap-like pool price query'
@@ -235,3 +242,42 @@ def maybe_notify_new_pools_status(
         processed=0,  # 0 because here we only query pools to find their total number. It will be incremented while processing the pools later  # noqa: E501
         total=get_new_pools_count(),  # notifying the increase in pool count every 5 seconds as we query them  # noqa: E501
     )
+
+
+def query_contract_response_as_dict(
+        evm_inquirer: 'EvmNodeInquirer',
+        contract_address: 'ChecksumEvmAddress',
+        abi: 'ABI',
+        method: str,
+        arguments: list | None = None,
+) -> dict | None:
+    """Query a contract method and return the response as a dictionary mapping the ABI output
+    names to the returned values. This is useful in cases where there are different versions
+    of a contract, with the versions containing some of the same outputs at different indexes.
+
+    Returns the response dict or logs an error and returns None if there was a problem querying
+    or decoding the response.
+    """
+    try:
+        data = evm_inquirer.call_contract(
+            contract_address=contract_address,
+            abi=abi,
+            method_name=method,
+            arguments=arguments,
+        )
+    except RemoteError as e:
+        log.error(f'Failed to query {method} on contract {contract_address} due to {e!s}')
+        return None
+
+    for func_abi in abi:
+        if func_abi.get('name') != method:
+            continue
+
+        outputs = [x.get('name') for x in func_abi.get('outputs', [])]  # type: ignore  # outputs will be an iterable list
+        try:
+            return dict(zip(outputs, data, strict=True))
+        except ValueError:  # data doesn't have the length expected by the ABI.
+            break
+
+    log.error(f'Failed to decode response from {method} on contract {contract_address}.')
+    return None

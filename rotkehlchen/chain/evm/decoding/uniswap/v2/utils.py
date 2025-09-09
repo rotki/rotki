@@ -25,7 +25,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import get_versioned_counterparty_label
-from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
@@ -252,7 +251,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
 
     # determine the pool address from the pair of token addresses, if it matches
     # the one found earlier, mutate the decoded event or create an action item where necessary.
-    pool_address = _compute_uniswap_v2_like_pool_address(
+    pool_address = compute_uniswap_v2_like_pool_address(
         token0=token0,
         token1=token1,
         factory_address=factory_address,
@@ -277,7 +276,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             evm_inquirer=evm_inquirer,
             encounter=TokenEncounterInfo(tx_hash=tx_hash),
             underlying_tokens=underlying_tokens,
-            protocol=CPT_UNISWAP_V2 if counterparty == CPT_UNISWAP_V2 else None,
+            protocol=counterparty,
         )
 
         if (symbol := pool_token.symbol) in (UNISWAP_V2_LP_SYMBOL, SUSHISWAP_LP_SYMBOL):
@@ -399,7 +398,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
     return DecodingOutput(action_items=new_action_items)
 
 
-def _compute_uniswap_v2_like_pool_address(
+def compute_uniswap_v2_like_pool_address(
         token0: CryptoAsset,
         token1: CryptoAsset,
         factory_address: ChecksumEvmAddress,

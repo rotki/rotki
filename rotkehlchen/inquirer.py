@@ -55,6 +55,9 @@ from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.decoding.morpho.utils import get_morpho_vault_token_price
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.pendle.utils import query_pendle_price
+from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V3, CPT_QUICKSWAP_V4
+from rotkehlchen.chain.evm.decoding.quickswap.v3.utils import get_quickswap_v3_position_price
+from rotkehlchen.chain.evm.decoding.quickswap.v4.utils import get_quickswap_v4_position_price
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3, CPT_UNISWAP_V4
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
 from rotkehlchen.chain.evm.decoding.uniswap.v4.utils import get_uniswap_v4_position_price
@@ -267,6 +270,10 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
             price_func=Inquirer.find_usd_price,
         )
+    elif token.protocol == CPT_QUICKSWAP_V3 and token.chain_id == ChainID.POLYGON_POS:  # V3 is only in polygon  # noqa: E501
+        price = get_quickswap_v3_position_price(inquirer=Inquirer(), token=token)
+    elif token.protocol == CPT_QUICKSWAP_V4 and token.chain_id == ChainID.BASE:  # V4 is only in base  # noqa: E501
+        price = get_quickswap_v4_position_price(inquirer=Inquirer(), token=token)
     elif token.protocol == CPT_PENDLE:
         price = query_pendle_price(token)
     elif token.protocol == CPT_BEEFY_FINANCE:

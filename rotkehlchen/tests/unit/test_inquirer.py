@@ -15,6 +15,7 @@ from web3 import HTTPProvider, Web3
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V3
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
@@ -29,6 +30,11 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
 )
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
+from rotkehlchen.chain.evm.decoding.quickswap.constants import (
+    CPT_QUICKSWAP_V2,
+    CPT_QUICKSWAP_V3,
+    CPT_QUICKSWAP_V4,
+)
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
 from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     CPT_UNISWAP_V2,
@@ -426,6 +432,52 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     price = inquirer.find_lp_price_from_uniswaplike_pool(token=EvmToken(identifier))
     assert price is not None
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_uniswap_v2_like_lp_token_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+    """Tests that LP token prices are correctly found for protocols
+    similar to Uniswap V2 (Sushiswap & Quickswap V2).
+    """
+    assert inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x397FF1542f962076d0BFE58eA045FfA2d347ACa0'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        protocol=CPT_SUSHISWAP_V2,
+    )).is_close('259718796.476933')
+    assert inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x6EeFA7f8136B5BfB260BdfF148206668216D8A73'),
+        chain_id=ChainID.POLYGON_POS,
+        token_kind=TokenKind.ERC20,
+        protocol=CPT_QUICKSWAP_V2,
+    )).is_close('0.040227')
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_quickswap_algrebra_lp_token_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+    """Tests that Quickswap V3/V4 Algebra LP token prices are correctly found."""
+    assert inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x8eF88E4c7CfbbaC1C163f7eddd4B578792201de6'),
+        chain_id=ChainID.POLYGON_POS,
+        token_kind=TokenKind.ERC721,
+        collectible_id='170952',
+        protocol=CPT_QUICKSWAP_V3,
+    )).is_close('2150.137434')
+    assert inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x84715977598247125C3D6E2e85370d1F6fDA1eaF'),
+        chain_id=ChainID.BASE,
+        token_kind=TokenKind.ERC721,
+        collectible_id='584',
+        protocol=CPT_QUICKSWAP_V4,
+    )).is_close('10953.387601')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

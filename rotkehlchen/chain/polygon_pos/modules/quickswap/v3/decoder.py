@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.decoding.quickswap.v3.decoder import Quickswapv3CommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
+from .constants import QUICKSWAP_V3_NFT_MANAGER
+
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
@@ -22,5 +24,5 @@ class Quickswapv3Decoder(Quickswapv3CommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             router_address=string_to_evm_address('0xf5b509bB0909a69B1c207E495f687a596C168E12'),
-            nft_manager=string_to_evm_address('0x8eF88E4c7CfbbaC1C163f7eddd4B578792201de6'),
+            nft_manager=QUICKSWAP_V3_NFT_MANAGER,
         )
