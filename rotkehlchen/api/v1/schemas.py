@@ -3776,6 +3776,7 @@ class AccountingRulesQuerySchema(
         fields.Integer(load_default=None, strict=True),
         load_default=None,
     )
+    only_with_event_ids = fields.Boolean(load_default=False)
 
     @post_load
     def make_rules_query(
@@ -3795,6 +3796,7 @@ class AccountingRulesQuerySchema(
             event_subtypes=data['event_subtypes'],
             counterparties=data['counterparties'],
             identifiers=data['identifiers'],
+            only_with_event_ids=data['only_with_event_ids'],
         )
         return {
             'filter_query': filter_query,
