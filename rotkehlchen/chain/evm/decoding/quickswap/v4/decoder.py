@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.decoding.uniswap.v4.utils import decode_uniswap_v4_li
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
-from .constants import CPT_QUICKSWAP_V4_ROUTER, QUICKSWAP_NFT_MANAGER_V4_ABI, QUICKSWAP_SWAP_TOPIC
+from .constants import CPT_QUICKSWAP_V4_ROUTER, QUICKSWAP_SWAP_TOPIC, QUICKSWAP_V4_NFT_MANAGER_ABI
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -44,7 +44,7 @@ class Quickswapv4CommonDecoder(Quickswapv3LikeLPDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             nft_manager=nft_manager,
-            nft_manager_abi=QUICKSWAP_NFT_MANAGER_V4_ABI,
+            nft_manager_abi=QUICKSWAP_V4_NFT_MANAGER_ABI,
             counterparty=CPT_QUICKSWAP_V4,
             version_string='V4',
         )

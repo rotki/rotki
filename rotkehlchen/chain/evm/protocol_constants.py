@@ -1,10 +1,16 @@
 from typing import Final, Literal
 
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V2
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
+from rotkehlchen.chain.evm.decoding.quickswap.constants import (
+    CPT_QUICKSWAP_V2,
+    CPT_QUICKSWAP_V3,
+    CPT_QUICKSWAP_V4,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     CPT_UNISWAP_V2,
     CPT_UNISWAP_V3,
@@ -25,12 +31,18 @@ EVM_PROTOCOLS_WITH_PRICE_LOGIC: Final = (
     CPT_UNISWAP_V3,
     CPT_UNISWAP_V4,
     CPT_BEEFY_FINANCE,
+    CPT_SUSHISWAP_V2,
+    CPT_QUICKSWAP_V2,
+    CPT_QUICKSWAP_V3,
+    CPT_QUICKSWAP_V4,
 )
 
 LP_TOKEN_AS_POOL_PROTOCOLS: Final = (  # In these protocols the LP token of a pool and the pool itself are the same contract  # noqa: E501
     CPT_UNISWAP_V2,
     CPT_VELODROME,
     CPT_AERODROME,
+    CPT_QUICKSWAP_V2,
+    CPT_SUSHISWAP_V2,
 )
 
 LP_TOKEN_AS_POOL_CONTRACT_ABIS = Literal['VELO_V2_LP', 'UNISWAP_V2_LP']  # These contract are both the pool and the LP token of the pool  # noqa: E501

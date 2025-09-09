@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9972` rotki will now properly handle Quickswap transactions and LP balances in all supported chains.
 * :feature:`10321` Users can now delete multiple events in the history events section.
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.

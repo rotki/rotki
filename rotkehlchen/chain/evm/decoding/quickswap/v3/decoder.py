@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.quickswap.v3.constants import (
     CPT_QUICKSWAP_V3_ROUTER,
     QUICKSWAP_COLLECT_LIQUIDITY_TOPIC,
     QUICKSWAP_INCREASE_LIQUIDITY_TOPIC,
-    QUICKSWAP_NFT_MANAGER_ABI,
+    QUICKSWAP_V3_NFT_MANAGER_ABI,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -86,7 +86,7 @@ class Quickswapv3LikeLPDecoder(DecoderInterface):
             # nonce, operator, token0, token1, ...
             # The other values differ depending on the version (we only use token0 & token1).
             # V3: https://docs.quickswap.exchange/technical-reference/smart-contracts/v3/position-manager#positions  # noqa: E501
-            # V4: see QUICKSWAP_NFT_MANAGER_V4_ABI (the quickswap docs do not yet include V4 technical reference)  # noqa: E501
+            # V4: see QUICKSWAP_V4_NFT_MANAGER_ABI (the quickswap docs do not yet include V4 technical reference)  # noqa: E501
             lp_position_info = self.evm_inquirer.call_contract(
                 contract_address=self.nft_manager,
                 abi=self.nft_manager_abi,
@@ -155,7 +155,7 @@ class Quickswapv3CommonDecoder(Quickswapv3LikeLPDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             nft_manager=nft_manager,
-            nft_manager_abi=QUICKSWAP_NFT_MANAGER_ABI,
+            nft_manager_abi=QUICKSWAP_V3_NFT_MANAGER_ABI,
             counterparty=CPT_QUICKSWAP_V3,
             version_string='V3',
         )
