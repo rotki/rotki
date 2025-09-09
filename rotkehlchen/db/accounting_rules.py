@@ -276,10 +276,10 @@ class DBAccountingRules:
         """Query the accounting rules from the database using the provided filter. Returns
         the dict of identifier -> accounting rules."""
         query = (
-            'SELECT ar.identifier AS identifier, ar.type AS type, ar.subtype AS subtype, ar.counterparty AS counterparty, ar.taxable, '  # noqa: E501
-            'ar.count_entire_amount_spend, ar.count_cost_basis_pnl, ar.accounting_treatment, '
-            'are.event_id FROM accounting_rules ar '
-            'LEFT JOIN accounting_rule_events are ON ar.identifier = are.rule_id '
+            'SELECT accounting_rules.identifier, type, subtype, counterparty, taxable, '
+            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment, event_id '
+            'FROM accounting_rules '
+            'LEFT JOIN accounting_rule_events ON accounting_rules.identifier = accounting_rule_events.rule_id '  # noqa: E501
         )
         rules = {}
         with self.db.conn.read_ctx() as cursor:
@@ -316,15 +316,15 @@ class DBAccountingRules:
 
         with self.db.conn.read_ctx() as cursor:
             query, bindings = filter_query.prepare(with_pagination=False)
-            query = 'SELECT COUNT(*) from accounting_rules AS ar ' + query
+            query = 'SELECT COUNT(*) from accounting_rules ' + query
             total_found_result = cursor.execute(query, bindings).fetchone()[0]
 
             # check the settings linked to the rule using the defined filter
             settings = self.db.get_settings(cursor)
             cursor.execute(
                 'SELECT accounting_rule, property_name, setting_name FROM '
-                'linked_rules_properties WHERE accounting_rule IN (SELECT ar.identifier FROM '
-                f'accounting_rules AS ar {filter_query_str})',
+                'linked_rules_properties WHERE accounting_rule IN (SELECT accounting_rules.identifier FROM '  # noqa: E501
+                f'accounting_rules {filter_query_str})',
                 bindings,
             )
             for (accounting_rule_id, property_name, setting_name) in cursor:
@@ -484,21 +484,25 @@ def _events_to_consume(
     event_subtype = event.event_subtype.serialize()
     cache_identifier = event.get_type_identifier()  # default to type-based identifier
     if (raw_treatment := cursor.execute(  # try event-specific rule first
-        'SELECT ar.accounting_treatment FROM accounting_rules ar '
-        'JOIN accounting_rule_events are ON ar.identifier = are.rule_id '
-        'WHERE are.event_id=?',
+        'SELECT accounting_treatment FROM accounting_rules '
+        'JOIN accounting_rule_events ON accounting_rules.identifier = rule_id '
+        'WHERE event_id=?',
         (event.identifier,),
     ).fetchone()) is not None:
         cache_identifier = event.get_accounting_rule_key()
     else:  # if no event-specific rule found, try type-based rules
         queries = [(  # 2. Type-based rule with counterparty
-            'SELECT accounting_treatment FROM accounting_rules ar WHERE type=? AND subtype=? AND counterparty=? AND NOT EXISTS (SELECT 1 FROM accounting_rule_events WHERE rule_id = ar.identifier)',  # noqa: E501
+            'SELECT accounting_treatment FROM accounting_rules '
+            'WHERE type=? AND subtype=? AND counterparty=? AND NOT EXISTS '
+            '(SELECT 1 FROM accounting_rule_events WHERE rule_id = accounting_rules.identifier)',
             (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY if counterparty is None else counterparty),  # noqa: E501
         )]
 
         if counterparty is not None:
             queries.append((  # 3. Type-based rule without counterparty
-                'SELECT accounting_treatment FROM accounting_rules ar WHERE type=? AND subtype=? AND counterparty=? AND NOT EXISTS (SELECT 1 FROM accounting_rule_events WHERE rule_id = ar.identifier)',  # noqa: E501
+                'SELECT accounting_treatment FROM accounting_rules '
+                'WHERE type=? AND subtype=? AND counterparty=? AND NOT EXISTS '
+                '(SELECT 1 FROM accounting_rule_events WHERE rule_id = accounting_rules.identifier)',  # noqa: E501
                 (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY),
             ))
 
@@ -578,10 +582,10 @@ def query_missing_accounting_rules(
         )
 
     query = """
-    SELECT COUNT(DISTINCT ar.identifier)
-    FROM accounting_rules ar
-    LEFT JOIN accounting_rule_events are ON ar.identifier = are.rule_id
-    WHERE are.event_id = ? OR (ar.type = ? AND ar.subtype = ? AND (ar.counterparty = ? OR ar.counterparty = ?) AND are.event_id IS NULL)
+    SELECT COUNT(DISTINCT accounting_rules.identifier)
+    FROM accounting_rules
+    LEFT JOIN accounting_rule_events ON accounting_rules.identifier = accounting_rule_events.rule_id
+    WHERE event_id = ? OR (type = ? AND subtype = ? AND (counterparty = ? OR counterparty = ?) AND event_id IS NULL)
     """  # noqa: E501
     bindings = [
         (

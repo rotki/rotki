@@ -3776,7 +3776,16 @@ class AccountingRulesQuerySchema(
         fields.Integer(load_default=None, strict=True),
         load_default=None,
     )
-    only_with_event_ids = fields.Boolean(load_default=False)
+    only_custom_rules = fields.Boolean(load_default=False)
+    event_ids = DelimitedOrNormalList(
+        fields.Integer(load_default=None, strict=True),
+        load_default=None,
+    )
+
+    @validates_schema
+    def validate_mutual_exclusion(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        if data['only_custom_rules'] and data['event_ids'] is not None:
+            raise ValidationError('Cannot use both only_custom_rules and event_ids parameters together')  # noqa: E501
 
     @post_load
     def make_rules_query(
@@ -3787,7 +3796,7 @@ class AccountingRulesQuerySchema(
         filter_query = AccountingRulesFilterQuery.make(
             order_by_rules=create_order_by_rules_list(
                 data=data,
-                default_order_by_fields=['identifier', 'type', 'subtype', 'counterparty'],
+                default_order_by_fields=['accounting_rules.identifier', 'type', 'subtype', 'counterparty'],  # noqa: E501
                 default_ascending=[False, True, True, True],
             ),
             limit=data['limit'],
@@ -3796,7 +3805,8 @@ class AccountingRulesQuerySchema(
             event_subtypes=data['event_subtypes'],
             counterparties=data['counterparties'],
             identifiers=data['identifiers'],
-            only_with_event_ids=data['only_with_event_ids'],
+            only_custom_rules=data['only_custom_rules'],
+            event_ids=data['event_ids'],
         )
         return {
             'filter_query': filter_query,
