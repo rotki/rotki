@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.globaldb.migrations.migration2 import globaldb_data_migration_2
+from rotkehlchen.globaldb.migrations.migration3 import globaldb_data_migration_3
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from ..utils import globaldb_get_setting_value
@@ -25,6 +26,7 @@ class MigrationRecord(NamedTuple):
 MIGRATIONS_LIST = [
     MigrationRecord(version=1, function=globaldb_data_migration_1),
     MigrationRecord(version=2, function=globaldb_data_migration_2),
+    MigrationRecord(version=3, function=globaldb_data_migration_3),
 ]
 LAST_DATA_MIGRATION = len(MIGRATIONS_LIST)
 

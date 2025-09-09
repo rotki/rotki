@@ -43,7 +43,6 @@ from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.database import column_exists, index_exists
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     CacheType,
     ChainID,
     Location,
@@ -842,8 +841,8 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler, messages_aggregator):
             'SELECT * FROM address_book WHERE address IN (?, ?)',
             (bad_address, tether_address),
         ).fetchall() == [
-            (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
-            (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
+            (tether_address, 'NONE', 'Black Tether'),
+            (bad_address, 'NONE', 'yabirgb.eth'),
         ]
         assert len(cursor.execute(
             "SELECT * FROM price_history_source_types WHERE type IN ('G', 'H') AND seq IN (7, 8);",

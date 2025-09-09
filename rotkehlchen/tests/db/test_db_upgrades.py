@@ -57,7 +57,6 @@ from rotkehlchen.tests.utils.database import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     ChainID,
     Location,
     SupportedBlockchain,
@@ -2568,8 +2567,8 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             'SELECT * FROM address_book WHERE address IN (?, ?)',
             (bad_address, tether_address),
         ).fetchall()) == {
-            (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
-            (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
+            (tether_address, 'NONE', 'Black Tether'),
+            (bad_address, 'NONE', 'yabirgb.eth'),
         }
         assert cursor.execute(
             "SELECT value FROM settings WHERE name='historical_price_oracles'",

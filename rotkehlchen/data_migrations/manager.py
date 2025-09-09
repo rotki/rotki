@@ -10,6 +10,7 @@ from rotkehlchen.data_migrations.migrations.migration_5 import data_migration_5
 from rotkehlchen.data_migrations.migrations.migration_10 import data_migration_10
 from rotkehlchen.data_migrations.migrations.migration_11 import data_migration_11
 from rotkehlchen.data_migrations.migrations.migration_20 import data_migration_20
+from rotkehlchen.data_migrations.migrations.migration_21 import data_migration_21
 from rotkehlchen.data_migrations.migrations.migrations_13 import data_migration_13
 from rotkehlchen.data_migrations.migrations.migrations_14 import data_migration_14
 from rotkehlchen.data_migrations.migrations.migrations_18 import data_migration_18
@@ -43,6 +44,7 @@ MIGRATION_LIST = [  # remember to bump LAST_DATA_MIGRATION if editing this
     MigrationRecord(version=18, function=data_migration_18),
     MigrationRecord(version=19, function=data_migration_19),
     MigrationRecord(version=20, function=data_migration_20),
+    MigrationRecord(version=21, function=data_migration_21),
 ]
 
 

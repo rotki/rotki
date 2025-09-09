@@ -62,3 +62,38 @@ def test_migration2(globaldb: 'GlobalDBHandler'):
 
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',)).fetchone() is None  # noqa: E501
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+def test_migration3_updates_address_book(globaldb: 'GlobalDBHandler') -> None:
+    """Test that migration 3 replaces 'NONE' with ecosystem key in address_book"""
+    evm_addr = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
+    eth_addr = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
+    polkadot_addr = '12uFGYC47mG8PCjyT9DrBW4HkhPYuREcii2ao5YPYQQsdgK7'
+    bitcoin_addr = 'bc1qnpme4ak6rs9nhustupr6rdhrfydtnytezt86aa'
+
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM address_book')
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES(?, ?, ?)',
+            [
+                (eth_addr, 'ETH', 'yabir.eth'),
+                (evm_addr, 'NONE', 'Bitfinex'),
+                (polkadot_addr, 'NONE', 'SUBSTRATE'),
+                (bitcoin_addr, 'NONE', 'saylor'),
+            ],
+        )
+
+    with ExitStack() as stack:
+        patch_for_globaldb_migrations(stack, [MIGRATIONS_LIST[2]])
+        maybe_apply_globaldb_migrations(globaldb.conn)
+
+    with globaldb.conn.read_ctx() as cursor:
+        rows = list(cursor.execute('SELECT address, blockchain, name FROM address_book ORDER BY blockchain').fetchall())  # noqa: E501
+        assert rows == [
+            (eth_addr, 'ETH', 'yabir.eth'),
+            (bitcoin_addr, 'TYPE_BITCOIN', 'saylor'),
+            (evm_addr, 'TYPE_EVMLIKE', 'Bitfinex'),
+            (polkadot_addr, 'TYPE_SUBSTRATE', 'SUBSTRATE'),
+        ]
