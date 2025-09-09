@@ -964,8 +964,7 @@ class CostBasisMethod(SerializableEnumNameMixin):
     ACB = auto()
 
 
-ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE: Final = 'NONE'  # blockchain value used to mark in the DB that the address entry is valid for any blockchain TODO: remove  # noqa: E501
-ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX: Final = 'TYPE_'  # prefix used along the address chain type to mark in the DB that the address entry is valid for any blockchain TODO: remove  # noqa: E501
+ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX: Final = 'TYPE_'  # prefix used along the address chain type to mark in the DB that the address entry is valid for any blockchain  # noqa: E501
 
 
 class AddressbookEntry(NamedTuple):
