@@ -1,5 +1,6 @@
 import typing
 from collections.abc import Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum, StrEnum, auto
 from typing import (
@@ -17,7 +18,7 @@ from typing import (
 )
 
 from eth_typing import ChecksumAddress
-from eth_utils import is_checksum_address
+from eth_utils.address import to_checksum_address
 from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.constants import ZERO
@@ -988,9 +989,11 @@ class AddressbookEntry(NamedTuple):
         """Get the chain ecosystem for the provided address.
         TODO: Add solana in develop
         """
-        if is_checksum_address(address):
+        with suppress(ValueError):
+            to_checksum_address(address)
             return ChainType.EVMLIKE
-        elif is_valid_btc_address(address) or is_valid_bitcoin_cash_address(address):
+
+        if is_valid_btc_address(address) or is_valid_bitcoin_cash_address(address):
             return ChainType.BITCOIN
         elif (
             is_valid_ss58_address(value=address, valid_ss58_format=0) or  # Polkadot
