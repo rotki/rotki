@@ -6,10 +6,14 @@ from typing import TYPE_CHECKING, overload
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
@@ -25,6 +29,7 @@ log = RotkehlchenLogsAdapter(logger)
 class ProxyType(StrEnum):
     DS = 'ds'
     LIQUITY = 'liquity'
+    SUMMER_FI = 'summer_fi'
 
 
 class EvmProxiesInquirer:
@@ -155,6 +160,36 @@ class EvmProxiesInquirer:
                 log.error(msg)
         return mapping
 
+    def get_or_query_summer_fi_proxy(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+        """Return summer.fi proxies if they exist for the list of addresses.
+        Finds proxy addresses by inspecting the decoded history events.
+        """
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            events = DBHistoryEvents(self.node_inquirer.database).get_history_events_internal(
+                cursor=cursor,
+                filter_query=EvmEventFilterQuery.make(
+                    event_types=[HistoryEventType.INFORMATIONAL],
+                    event_subtypes=[HistoryEventSubType.CREATE],
+                    counterparties=[CPT_SUMMER_FI],
+                    location_labels=list(addresses),
+                ),
+            )
+
+        mapping: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+        for event in events:
+            if (
+                event.extra_data is None or
+                (proxy_address := event.extra_data.get('proxy_address')) is None
+            ):
+                continue
+
+            mapping[event.location_label] = proxy_address  # type: ignore  # location_label and proxy_address should be valid addresses here
+
+        return mapping
+
     def query_address_for_proxies(self, address: ChecksumEvmAddress) -> None:
         """
         Checks the given address for all proxies and if found having one adds them to the mappings
@@ -192,18 +227,13 @@ class EvmProxiesInquirer:
         with self.node_inquirer.database.conn.read_ctx() as cursor:
             accounts = self.node_inquirer.database.get_blockchain_accounts(cursor)
 
-        ds_mapping, liquity_mapping = {}, {}
-        if proxy_type is None or proxy_type == ProxyType.DS:
-            ds_mapping = self.get_or_query_ds_proxy(accounts.get(self.node_inquirer.blockchain))
-            self.address_to_proxy[ProxyType.DS] = ds_mapping
-            self.proxy_to_address[ProxyType.DS] = {v: k for k, v in ds_mapping.items()}
-
-        if proxy_type is None or proxy_type == ProxyType.LIQUITY:
-            liquity_mapping = self.get_or_query_liquity_proxy(
-                accounts.get(self.node_inquirer.blockchain),
-            )
-            self.address_to_proxy[ProxyType.LIQUITY] = liquity_mapping
-            self.proxy_to_address[ProxyType.LIQUITY] = {v: k for k, v in liquity_mapping.items()}
+        for _type in ProxyType:
+            if proxy_type is None or proxy_type == _type:
+                mapping = getattr(self, f'get_or_query_{_type}_proxy')(
+                    addresses=accounts.get(self.node_inquirer.blockchain),
+                )
+                self.address_to_proxy[_type] = mapping
+                self.proxy_to_address[_type] = {v: k for k, v in mapping.items()}
 
         self.last_proxy_mapping_query_ts = ts_now()
         if proxy_type is not None:  # return a copy to avoid "dictionary modified during iteration errors"  # noqa: E501
