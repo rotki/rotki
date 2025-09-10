@@ -87,7 +87,7 @@ from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -1229,6 +1229,7 @@ class Rotkehlchen:
                         data=result_dict,
                         timestamp=timestamp,
                     )
+                self._save_manual_prices_as_historical(result_dict)
                 log.debug('query_balances data saved')
             else:
                 log.debug(
@@ -1244,6 +1245,36 @@ class Rotkehlchen:
         # migrations and asset updates.
         self.task_manager.should_schedule = True  # type: ignore[union-attr]  # should exist here
         return result_dict
+
+    @staticmethod
+    def _save_manual_prices_as_historical(result_dict: dict[str, Any]) -> None:
+        """Save manual prices as historical prices
+
+        Takes manual prices for assets in the balance snapshot and saves them
+        as historical prices for use in charts and historical data.
+        """
+        all_assets: set[Asset] = set()
+        for assets_dict in (result_dict['assets'], result_dict['liabilities']):
+            all_assets.update(assets_dict)
+
+        if len(all_assets) == 0:
+            return
+
+        historical_prices, current_ts = [], ts_now()
+        for asset in all_assets:
+            # Only save assets that have manual prices
+            if (manual_price_info := GlobalDBHandler.get_manual_current_price(asset)) is not None:
+                manual_to_asset, manual_price = manual_price_info
+                historical_prices.append(HistoricalPrice(
+                    from_asset=asset,
+                    to_asset=manual_to_asset,
+                    source=HistoricalPriceOracle.MANUAL,
+                    timestamp=current_ts,
+                    price=manual_price,
+                ))
+
+        if len(historical_prices) > 0:
+            GlobalDBHandler.add_historical_prices(historical_prices)
 
     def set_settings(self, settings: ModifiableDBSettings) -> tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
