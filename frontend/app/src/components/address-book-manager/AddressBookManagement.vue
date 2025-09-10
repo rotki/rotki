@@ -21,7 +21,7 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 const { t } = useI18n({ useScope: 'global' });
 
 const selectedChain = ref<string>();
-const strictBlockchain = ref<boolean>(true);
+const strictBlockchain = ref<boolean>(false);
 const tab = ref<number>(0);
 
 const locations: AddressBookLocation[] = ['global', 'private'];
