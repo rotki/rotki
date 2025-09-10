@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import WrappedContainer from '@/components/wrapped/WrappedContainer.vue';
 import WrappedContainerPlaceholder from '@/components/wrapped/WrappedContainerPlaceholder.vue';
 import { usePremium } from '@/composables/premium';
+import WrappedContainer from '@/modules/statistics/wrapped/components/WrappedContainer.vue';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
