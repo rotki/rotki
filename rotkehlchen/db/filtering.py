@@ -1397,7 +1397,7 @@ class AddressbookFilterQuery(DBFilterQuery):
                 filters.append(DBEqualsFilter(
                     and_op=True,
                     column='blockchain',
-                    value=f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}{blockchain.get_chain_type().name}',
+                    value=f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}{blockchain.get_address_chain_group().name}',
                 ))
 
         if optional_chain_addresses is not None:
