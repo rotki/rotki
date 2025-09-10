@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10585` Token balances on mainnet Summer.fi proxy accounts will now be detected properly.
 * :bug:`-` Manual current prices are now properly saved as historical prices for use in balance graphs and charts.
 * :bug:`10578` rotki now has improved checks on usernames.
 * :bug:`10570` Adding/editing an EVM event with a transaction hash not present in the DB will now pull the transaction from onchain.
