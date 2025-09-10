@@ -962,6 +962,10 @@
         "message": "{length} entries successfully added to the address book"
       },
       "title": "Import Address Book Entries"
+    },
+    "strict_blockchain_filter": {
+      "hint": "When true, the provided 'blockchain filter' must match exactly. When false, include all blockchains where the address format is valid for the same chain family (e.g., any EVM-based chain when 'blockchain filter' is an EVM chain).",
+      "label": "Strict blockchain filter"
     }
   },
   "airdrops": {

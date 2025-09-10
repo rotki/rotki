@@ -55,7 +55,7 @@ export function getAccountLabel(account: { data: BlockchainAccountData; label?: 
 export function getChain(account: { chain: string } | { chains: string[] }): string | undefined {
   if ('chain' in account)
     return account.chain;
-  else if ('chains' in account && account.chains.length === 1)
+  else if ('chains' in account && account.chains.length > 0)
     return account.chains[0];
   return undefined;
 }

@@ -58,4 +58,5 @@ export interface AddressBookRequestPayload extends PaginationRequestPayload<Addr
   nameSubstring?: string;
   address?: string[];
   blockchain?: Blockchain;
+  strictBlockchain?: boolean;
 }
