@@ -15,7 +15,7 @@ const props = defineProps<{
   events: HistoryEventEntry[];
   allEvents: HistoryEventEntry[];
   highlightedIdentifiers?: string[];
-  selection: UseHistoryEventsSelectionModeReturn;
+  selection?: UseHistoryEventsSelectionModeReturn;
 }>();
 
 const emit = defineEmits<{
@@ -34,7 +34,7 @@ const { getAssetSymbol } = useAssetInfoRetrieval();
 
 const isSwapSelected = computed<boolean>({
   get() {
-    const selectedEvents = get(props.selection.selectedEvents);
+    const selectedEvents = get(props.selection?.selectedEvents);
     if (!selectedEvents || props.events.length === 0)
       return false;
 
@@ -44,7 +44,7 @@ const isSwapSelected = computed<boolean>({
   set() {
     // Toggle all event IDs in the swap group
     const eventIds = props.events.map(event => event.identifier);
-    props.selection.actions.toggleSwap(eventIds);
+    props.selection?.actions.toggleSwap(eventIds);
   },
 });
 
@@ -143,7 +143,7 @@ watch(expanded, () => {
 <template>
   <div class="flex items-start">
     <RuiCheckbox
-      v-if="selection.isSelectionMode.value"
+      v-if="selection?.isSelectionMode.value"
       v-model="isSwapSelected"
       color="primary"
       hide-details
@@ -158,7 +158,7 @@ watch(expanded, () => {
         'grid grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start @5xl:min-h-[80px]': !expanded,
         'flex flex-col': expanded,
         'transition-wrapper': !isInitialRender,
-        'md:pl-3': !expanded && !selection.isSelectionMode.value,
+        'md:pl-3': !expanded && !selection?.isSelectionMode.value,
       }"
     >
       <LazyLoader

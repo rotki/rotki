@@ -107,12 +107,19 @@ async function save() {
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
+    <template
+      v-if="eventIds && eventIds.length > 0 "
+      #subtitle
+    >
+      {{ t('accounting_settings.rule.custom_events_info', { count: eventIds.length }) }}
+    </template>
     <AccountingRuleForm
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
+      :event-ids="eventIds"
     />
   </BigDialog>
 </template>

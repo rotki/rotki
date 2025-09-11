@@ -33,7 +33,7 @@ const props = defineProps<{
   groupLoading: boolean;
   identifiers?: string[];
   highlightedIdentifiers?: string[];
-  selection: UseHistoryEventsSelectionModeReturn;
+  selection?: UseHistoryEventsSelectionModeReturn;
 }>();
 
 const emit = defineEmits<HistoryEventsTableEmits>();

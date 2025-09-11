@@ -49,7 +49,7 @@ function handleRefreshIgnored() {
 </script>
 
 <template>
-  <div class="flex flex-row flex-wrap items-center gap-2 mb-4">
+  <div class="flex flex-row flex-wrap items-center gap-2 md:mb-4">
     <div class="flex flex-row gap-3">
       <IgnoreButtons
         :disabled="selected.length === 0"

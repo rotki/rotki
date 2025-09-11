@@ -179,10 +179,14 @@
         "title": "Resolve accounting rules conflicts"
       },
       "current_setting_value": "Current setting value:",
+      "custom_events_info": "Creating a custom accounting rule for {count} selected event(s)",
       "delete": "Delete accounting rule",
       "delete_error": "Could not delete accounting rule: {message}",
       "edit": "Edit accounting rule",
       "edit_error": "Could not edit accounting rule: {message}",
+      "events_dialog": {
+        "title": "History Events ({count})"
+      },
       "export": "Export accounting rules",
       "fetch_error": {
         "message": "Failed retrieving accounting rules: {message}",
@@ -200,6 +204,7 @@
         "count_cost_basis_pnl_subtitle": "Whether we have to count any profit/loss the asset may have had compared to when it was acquired.",
         "count_entire_amount_spend": "Count entire amount spend",
         "count_entire_amount_spend_subtitle": "Whether the entire amount is counted as a spend, which means an expense (negative pnl)",
+        "event_ids": "Event IDs",
         "event_subtype": "Event Sub Type",
         "event_type": "Event Type",
         "taxable": "Taxable",
@@ -208,6 +213,10 @@
       "overwrite_by_setting": "Overwrite by value from other accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
       "subtitle": "Manage and view your event accounting rules",
+      "tabs": {
+        "custom": "Special rules for certain events",
+        "regular": "Regular Rules",
+      },
       "title": "Accounting Rules",
       "value_overwritten": "The value is overwritten by this setting:"
     },

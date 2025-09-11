@@ -6,6 +6,7 @@ import { required } from '@vuelidate/validators';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import AccountingRuleWithLinkedSetting from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { refOptional, useRefPropVModel } from '@/utils/model';
@@ -15,7 +16,16 @@ const modelValue = defineModel<AccountingRuleEntry>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
+const props = defineProps<{
+  eventIds?: number[];
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
+
+const {
+  historyEventSubTypesData,
+  historyEventTypesData,
+} = useHistoryEventMappings();
 
 const counterparty = refOptional(useRefPropVModel(modelValue, 'counterparty'), '');
 const accountingTreatment = useRefPropVModel(modelValue, 'accountingTreatment');
@@ -52,6 +62,26 @@ const v$ = useVuelidate(
 
 useFormStateWatcher(states, stateUpdated);
 
+// When eventIds are present, automatically set first values
+watchEffect(() => {
+  if (props.eventIds && props.eventIds.length > 0) {
+    const eventTypes = get(historyEventTypesData);
+
+    // Set first event type if not set
+    if (!get(eventType) && eventTypes.length > 0) {
+      set(eventType, eventTypes[0].identifier);
+    }
+
+    // Set first event subtype if not set
+    if (!get(eventSubtype)) {
+      const subtypes = get(historyEventSubTypesData);
+      if (subtypes.length > 0) {
+        set(eventSubtype, subtypes[0].identifier);
+      }
+    }
+  }
+});
+
 const accountingTreatments = Object.values(AccountingTreatment).map(identifier => ({
   identifier,
   label: toSentenceCase(identifier),
@@ -64,21 +94,23 @@ defineExpose({
 
 <template>
   <form>
-    <HistoryEventTypeForm
-      v-model:event-type="eventType"
-      v-model:event-subtype="eventSubtype"
-      :counterparty="counterparty"
-      :v$="v$"
-      disable-warning
-    />
+    <template v-if="!eventIds || eventIds.length === 0">
+      <HistoryEventTypeForm
+        v-model:event-type="eventType"
+        v-model:event-subtype="eventSubtype"
+        :counterparty="counterparty"
+        :v$="v$"
+        disable-warning
+      />
 
-    <CounterpartyInput
-      v-model="counterparty"
-      class="md:w-1/2"
-      :label="t('common.counterparty')"
-      :error-messages="toMessages(v$.counterparty)"
-      @blur="v$.counterparty.$touch()"
-    />
+      <CounterpartyInput
+        v-model="counterparty"
+        class="md:w-1/2"
+        :label="t('common.counterparty')"
+        :error-messages="toMessages(v$.counterparty)"
+        @blur="v$.counterparty.$touch()"
+      />
+    </template>
 
     <AccountingRuleWithLinkedSetting
       v-model="taxable"

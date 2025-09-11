@@ -14,7 +14,7 @@ interface HistoryEventsListTableProps {
   loading: boolean;
   total: number;
   highlightedIdentifiers?: string[];
-  selection: UseHistoryEventsSelectionModeReturn;
+  selection?: UseHistoryEventsSelectionModeReturn;
 }
 
 const props = defineProps<HistoryEventsListTableProps>();

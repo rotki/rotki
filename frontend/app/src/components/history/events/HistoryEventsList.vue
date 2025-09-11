@@ -17,7 +17,7 @@ const props = withDefaults(defineProps<{
   hasIgnoredEvent?: boolean;
   loading?: boolean;
   highlightedIdentifiers?: string[];
-  selection: UseHistoryEventsSelectionModeReturn;
+  selection?: UseHistoryEventsSelectionModeReturn;
 }>(), {
   loading: false,
 });

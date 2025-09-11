@@ -44,6 +44,7 @@ export interface AccountingRuleRequestPayload extends PaginationRequestPayload<A
   readonly eventTypes?: string[];
   readonly eventSubtypes?: string[];
   readonly counterparties?: (string | null)[];
+  readonly onlyCustomRules?: boolean;
 }
 
 export interface AccountingRuleLinkedSettingMap {
