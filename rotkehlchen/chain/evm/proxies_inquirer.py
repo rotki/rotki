@@ -4,6 +4,8 @@ from collections.abc import Sequence
 from enum import StrEnum
 from typing import TYPE_CHECKING, overload
 
+from mypy.checkpattern import defaultdict
+
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
@@ -42,13 +44,15 @@ class EvmProxiesInquirer:
     ) -> None:
         self.node_inquirer = node_inquirer
         self.dsproxy_registry = dsproxy_registry
-        self.address_to_proxy: dict[ProxyType, dict[ChecksumEvmAddress, ChecksumEvmAddress]] = {
+        self.address_to_proxies: dict[ProxyType, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]] = {  # noqa: E501
             ProxyType.DS: {},
             ProxyType.LIQUITY: {},
+            ProxyType.SUMMER_FI: {},
         }
         self.proxy_to_address: dict[ProxyType, dict[ChecksumEvmAddress, ChecksumEvmAddress]] = {
             ProxyType.DS: {},
             ProxyType.LIQUITY: {},
+            ProxyType.SUMMER_FI: {},
         }
         self.reset_last_query_ts()
         self.lqtyv2_router = EvmContract(
@@ -92,7 +96,7 @@ class EvmProxiesInquirer:
             raise RemoteError(msg) from e
 
         if result != ZERO_ADDRESS:
-            self.address_to_proxy[ProxyType.DS][address] = result
+            self.address_to_proxies[ProxyType.DS][address] = {result}
             self.proxy_to_address[ProxyType.DS][result] = address
             return result
 
@@ -101,7 +105,7 @@ class EvmProxiesInquirer:
     def get_or_query_ds_proxy(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+    ) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
         """
         Returns DSProxy (Now called Sky proxies) if it exists for a list
         of addresses using only one call
@@ -125,7 +129,7 @@ class EvmProxiesInquirer:
             )[0]
             try:
                 if (proxy_address := deserialize_evm_address(result)) != ZERO_ADDRESS:
-                    mapping[address] = proxy_address
+                    mapping[address] = {proxy_address}
             except DeserializationError as e:
                 msg = f'Failed to deserialize {result} DSproxy for address {address}. {e!s}'
                 log.error(msg)
@@ -134,7 +138,7 @@ class EvmProxiesInquirer:
     def get_or_query_liquity_proxy(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+    ) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
         """Return liquity v2 proxies if they exist for the list of addresses
         This should only be called if the chain is ethereum and lqtyv2_router is set.
         """
@@ -154,7 +158,7 @@ class EvmProxiesInquirer:
             )[0]
             try:
                 if (proxy_address := deserialize_evm_address(result)) != ZERO_ADDRESS:
-                    mapping[address] = proxy_address
+                    mapping[address] = {proxy_address}
             except DeserializationError as e:
                 msg = f'Failed to deserialize {result} liquity proxy for address {address}. {e!s}'
                 log.error(msg)
@@ -163,7 +167,7 @@ class EvmProxiesInquirer:
     def get_or_query_summer_fi_proxy(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+    ) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
         """Return summer.fi proxies if they exist for the list of addresses.
         Finds proxy addresses by inspecting the decoded history events.
         """
@@ -178,7 +182,7 @@ class EvmProxiesInquirer:
                 ),
             )
 
-        mapping: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+        mapping: defaultdict[ChecksumEvmAddress, set[ChecksumEvmAddress]] = defaultdict(set)
         for event in events:
             if (
                 event.extra_data is None or
@@ -186,7 +190,7 @@ class EvmProxiesInquirer:
             ):
                 continue
 
-            mapping[event.location_label] = proxy_address  # type: ignore  # location_label and proxy_address should be valid addresses here
+            mapping[event.location_label].add(proxy_address)  # type: ignore  # location_label and proxy_address should be valid addresses here
 
         return mapping
 
@@ -197,18 +201,19 @@ class EvmProxiesInquirer:
         """
         for proxy_type in ProxyType:
             if len(mapping := getattr(self, f'get_or_query_{proxy_type}_proxy')([address])) != 0:
-                self.address_to_proxy[proxy_type][address] = (proxy_address := mapping[address])
-                self.proxy_to_address[proxy_type][proxy_address] = address
+                self.address_to_proxies[proxy_type][address] = (proxy_addresses := mapping[address])  # noqa: E501
+                for proxy_address in proxy_addresses:
+                    self.proxy_to_address[proxy_type][proxy_address] = address
 
     @overload
-    def get_accounts_having_proxy(self, proxy_type: None = None) -> dict[ProxyType, dict[ChecksumEvmAddress, ChecksumEvmAddress]]:  # noqa: E501
+    def get_accounts_having_proxy(self, proxy_type: None = None) -> dict[ProxyType, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]]:  # noqa: E501
         ...
 
     @overload
-    def get_accounts_having_proxy(self, proxy_type: ProxyType) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:  # noqa: E501
+    def get_accounts_having_proxy(self, proxy_type: ProxyType) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:  # noqa: E501
         ...
 
-    def get_accounts_having_proxy(self, proxy_type: ProxyType | None = None) -> dict[ChecksumEvmAddress, ChecksumEvmAddress] | dict[ProxyType, dict[ChecksumEvmAddress, ChecksumEvmAddress]]:  # noqa: E501
+    def get_accounts_having_proxy(self, proxy_type: ProxyType | None = None) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]] | dict[ProxyType, dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]]:  # noqa: E501
         """Returns a mapping of accounts that have proxies to their proxies. Either all proxies or
         specific ones if the proxy types argument is given.
 
@@ -222,7 +227,7 @@ class EvmProxiesInquirer:
         """
         now = ts_now()
         if now - self.last_proxy_mapping_query_ts < DAY_IN_SECONDS:  # refresh daily
-            return self.address_to_proxy if proxy_type is None else self.address_to_proxy[proxy_type]  # noqa: E501
+            return self.address_to_proxies if proxy_type is None else self.address_to_proxies[proxy_type]  # noqa: E501
 
         with self.node_inquirer.database.conn.read_ctx() as cursor:
             accounts = self.node_inquirer.database.get_blockchain_accounts(cursor)
@@ -232,11 +237,11 @@ class EvmProxiesInquirer:
                 mapping = getattr(self, f'get_or_query_{_type}_proxy')(
                     addresses=accounts.get(self.node_inquirer.blockchain),
                 )
-                self.address_to_proxy[_type] = mapping
-                self.proxy_to_address[_type] = {v: k for k, v in mapping.items()}
+                self.address_to_proxies[_type] = mapping
+                self.proxy_to_address[_type] = {proxy: addr for addr, proxies in mapping.items() for proxy in proxies}  # noqa: E501
 
         self.last_proxy_mapping_query_ts = ts_now()
         if proxy_type is not None:  # return a copy to avoid "dictionary modified during iteration errors"  # noqa: E501
-            return self.address_to_proxy[proxy_type].copy()
+            return self.address_to_proxies[proxy_type].copy()
         # else again copy but the whole thing
-        return self.address_to_proxy.copy()
+        return self.address_to_proxies.copy()
