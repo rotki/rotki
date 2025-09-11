@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -10,15 +10,20 @@ from typing import Any, Final, NamedTuple
 
 import polars as pl
 import requests
+from eth_typing import ABI
 from requests import Response
+from web3 import Web3
+from web3.exceptions import Web3Exception
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, SolanaToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME, APPDIR_NAME
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -41,7 +46,7 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-from rotkehlchen.utils.misc import is_production
+from rotkehlchen.utils.misc import get_chunks, is_production
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -52,6 +57,14 @@ AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v3.json'
 ETAG_CACHE_KEY: Final = 'ETag'
 JSON_PATH_SEPARATOR_API_AIRDROPS: Final = '/'
 AIRDROP_IDENTIFIER_KEY: Final = 'airdrop_identifier'
+
+LINEA_RPC_URL: Final = 'https://linea-rpc.publicnode.com'
+LINEA_AIRDROP_CUTOFF: Final = Timestamp(1765324740)  # Dec 9 2025 23:59
+LINEA_AIRDROP_CONTRACT: Final = string_to_evm_address('0x87bAa1694381aE3eCaE2660d97fe60404080Eb64')
+LINEA_AIRDROP_CONTRACT_ABI: Final[ABI] = [{'inputs': [{'name': '_account', 'type': 'address'}], 'name': 'calculateAllocation', 'outputs': [{'name': 'tokenAllocation', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'user', 'type': 'address'}], 'name': 'hasClaimed', 'outputs': [{'name': 'claimed', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+LINEA_MULTICALL_CONTRACT: Final = string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')  # noqa: E501
+LINEA_MULTICALL_CONTRACT_ABI: Final[ABI] = [{'inputs': [{'components': [{'name': 'target', 'type': 'address'}, {'name': 'callData', 'type': 'bytes'}], 'name': 'calls', 'type': 'tuple[]'}], 'name': 'aggregate', 'outputs': [{'name': 'blockNumber', 'type': 'uint256'}, {'name': 'returnData', 'type': 'bytes[]'}], 'stateMutability': 'payable', 'type': 'function'}]  # noqa: E501
+LINEA_TOKEN_ADDRESS: Final = string_to_evm_address('0x1789e0043623282D5DCc7F213d703C6D8BAfBB04')
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=True)  # noqa: E501
@@ -607,7 +620,7 @@ def check_airdrops(
     May raise:
         - RemoteError if the remote request fails
     """
-    found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
+    found_data: defaultdict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     airdrop_tuples = []
     airdrops, poap_airdrops = fetch_airdrops_metadata(database=database)
     data_dir = database.user_data_dir.parent.parent
@@ -656,4 +669,124 @@ def check_airdrops(
                     'name': poap_airdrop_data[2],
                 })
 
+    found_data = check_linea_airdrop(addresses=addresses, database=database, found_data=found_data)
     return dict(found_data)
+
+
+def check_linea_airdrop(
+        addresses: Sequence[ChecksumEvmAddress],
+        database: DBHandler,
+        found_data: defaultdict[ChecksumEvmAddress, dict],
+) -> defaultdict[ChecksumEvmAddress, dict]:
+    """Check if the given addresses are eligible for the Linea Airdrop by querying onchain data.
+    Returns the updated found_data dictionary.
+    """
+    addresses_allocations = {}
+    addresses_to_query = []
+    with database.conn.read_ctx() as cursor:
+        for address in addresses:
+            if (allocation_str := database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LINEA_AIRDROP_ALLOCATION,
+                address=address,
+            )) is None:
+                addresses_to_query.append(address)
+            elif (allocation := FVal(allocation_str)) != ZERO:
+                addresses_allocations[address] = allocation
+
+    if len(addresses_to_query) != 0:
+        if (response := _query_linea_airdrop_contract(
+            addresses=addresses_to_query,
+            method='calculateAllocation',
+        )) is None:
+            log.error(f'Failed to query linea airdrop allocations for addresses {addresses_to_query}')  # noqa: E501
+            return found_data
+
+        with database.conn.write_ctx() as write_cursor:
+            for address, raw_allocation_bytes in response:
+                try:
+                    raw_allocation_int = int.from_bytes(raw_allocation_bytes)
+                except ValueError:
+                    log.error(f'Failed to decode linea airdrop allocation data for address {address!s}')  # noqa: E501
+                    continue
+
+                database.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LINEA_AIRDROP_ALLOCATION,
+                    value=str(allocation := token_normalized_value_decimals(
+                        token_amount=raw_allocation_int,
+                        token_decimals=DEFAULT_TOKEN_DECIMALS,
+                    )),
+                    address=address,
+                )
+                if allocation != ZERO:
+                    addresses_allocations[address] = allocation
+
+    if len(addresses_allocations) == 0:
+        return found_data  # no addresses qualify for the linea airdrop
+
+    addresses_claims = defaultdict(lambda: False)
+    addresses_has_decoder = defaultdict(lambda: False)
+    if (response := _query_linea_airdrop_contract(addresses=addresses, method='hasClaimed')) is None:  # noqa: E501
+        log.warning(f'Failed to query linea airdrop claims for addresses {addresses}')
+        # Don't return - the airdrop status will simply show as `Unknown`
+    else:
+        for address, raw_claimed_bytes in response:
+            try:
+                addresses_claims[address] = bool.from_bytes(raw_claimed_bytes)
+                addresses_has_decoder[address] = True  # Make the status show as Claimed/Unclaimed.
+            except TypeError:
+                log.error(f'Failed to decode linea airdrop claim data for address {address}')
+
+    a_linea = get_or_create_evm_token(
+        userdb=database,
+        evm_address=LINEA_TOKEN_ADDRESS,
+        chain_id=ChainID.LINEA,
+        symbol='LINEA',
+        name='Linea',
+        decimals=DEFAULT_TOKEN_DECIMALS,
+        started=Timestamp(1753894536),
+        coingecko='linea',
+        cryptocompare='LINEA',
+        encounter=TokenEncounterInfo(should_notify=False),
+    )
+    for address, allocation in addresses_allocations.items():
+        found_data[address]['linea'] = {
+            'amount': str(allocation),
+            'asset': a_linea,
+            'link': 'https://linea.build/hub/airdrop',
+            'icon': 'linea.svg',
+            'claimed': addresses_claims[address],
+            'has_decoder': addresses_has_decoder[address],
+            'cutoff_time': LINEA_AIRDROP_CUTOFF,
+        }
+
+    return found_data
+
+
+def _query_linea_airdrop_contract(
+        addresses: Sequence[ChecksumEvmAddress],
+        method: str,
+) -> Iterator[tuple[ChecksumEvmAddress, Any]] | None:
+    """Queries the specified method on the linea airdrop contract for the given addresses
+    using a multicall.
+    Returns a list of tuples with the address and the raw bytes of the method's result or
+    None if there was an error.
+    """
+    log.debug(f'Querying {method} on linea contract {LINEA_AIRDROP_CONTRACT} with addresses {addresses}')  # noqa: E501
+    web3 = Web3(Web3.HTTPProvider(LINEA_RPC_URL))
+    airdrop_contract = web3.eth.contract(address=LINEA_AIRDROP_CONTRACT, abi=LINEA_AIRDROP_CONTRACT_ABI)  # noqa: E501
+    multicall_contract = web3.eth.contract(address=LINEA_MULTICALL_CONTRACT, abi=LINEA_MULTICALL_CONTRACT_ABI)  # noqa: E501
+    output = []
+    try:
+        for call_chunk in get_chunks([
+            (airdrop_contract.address, airdrop_contract.encode_abi(method, [address]))
+            for address in addresses
+        ], n=MULTICALL_CHUNKS):
+            _, chunk_output = multicall_contract.functions.aggregate(call_chunk).call()
+            output += chunk_output
+
+        return zip(addresses, output, strict=True)
+    except (ValueError, Web3Exception) as e:
+        log.error(f'Failed to perform multicall on linea due to {e!s}')
+        return None

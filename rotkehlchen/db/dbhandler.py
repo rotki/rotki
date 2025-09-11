@@ -819,6 +819,15 @@ class DBHandler:
     ) -> int | None:
         ...
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LINEA_AIRDROP_ALLOCATION],
+            **kwargs: Unpack[AddressArgType],
+    ) -> str | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
@@ -952,6 +961,16 @@ class DBHandler:
             write_cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LINEA_AIRDROP_ALLOCATION],
+            value: str,
             **kwargs: Unpack[AddressArgType],
     ) -> None:
         ...

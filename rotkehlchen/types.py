@@ -225,6 +225,7 @@ class ChainID(Enum):
     PULSECHAIN = 369
     SCROLL = 534352
     SONIC = 146
+    LINEA = 59144
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> 'ChainID':

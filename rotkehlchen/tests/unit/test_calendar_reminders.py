@@ -258,7 +258,10 @@ def test_airdrop_claim_calendar_reminders(
     assert myso_airdrop_file.exists() is False
     reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
 
-    with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(user_address)):  # noqa: E501
+    with (
+        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(user_address)),  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.airdrops.check_linea_airdrop', side_effect=lambda addresses, database, found_data: found_data),  # noqa: E501
+    ):
         reminder_creator.maybe_create_airdrop_claim_reminder()
 
     assert (database.user_data_dir / APPDIR_NAME / AIRDROPSDIR_NAME).exists() is False  # regression check for an issue creating the airdrops folder in the wrong directory.  # noqa: E501
