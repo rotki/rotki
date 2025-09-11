@@ -4745,6 +4745,12 @@
       }
     },
     "events": {
+      "accounting_rule": {
+        "different_types_error": "Cannot create an accounting rule for events with different types or subtypes. Please select events with the same event type and subtype combination.",
+        "error": "Accounting Rule Error",
+        "incompatible_selection": "Incompatible Event Selection",
+        "no_events_found": "No events found for the selected IDs."
+      },
       "actions": {
         "delete": "Delete event",
         "edit": "Edit event"
@@ -4758,6 +4764,8 @@
           "delete_transaction": "Delete Transaction",
           "message": "Are you sure you want to delete the event?",
           "message_multiple": "Are you sure you want to delete {count} selected events?",
+          "partial_swap_title": "Partial Swap Selection",
+          "partial_swap_warning": "You have selected {selectedCount} out of {totalCount} events from {groupCount} swap group(s). Deleting any event from a swap will delete the entire swap group. All {totalCount} events will be deleted. Do you want to continue?",
           "title": "Delete Event"
         },
         "ignore": {

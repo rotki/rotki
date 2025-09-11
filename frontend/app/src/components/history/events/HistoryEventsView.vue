@@ -2,7 +2,7 @@
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import { get } from '@vueuse/shared';
+import { get, set } from '@vueuse/shared';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { DIALOG_TYPES, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/components/history/events/HistoryEventsDialogContainer.vue';
@@ -20,6 +20,7 @@ import HistoryEventsTable from '@/modules/history/events/components/HistoryEvent
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
 import { useHistoryEventsSelectionMode } from '@/modules/history/events/composables/use-selection-mode';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { useConfirmStore } from '@/store/confirm';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -54,6 +55,7 @@ const props = withDefaults(defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
+const { show: showConfirm } = useConfirmStore();
 
 const {
   entryTypes,
@@ -139,22 +141,26 @@ const selectionMode = useHistoryEventsSelectionMode();
 
 // Store grouped events for checking complete EVM transactions
 const groupedEventsByTxHash = ref<Record<string, HistoryEventRow[]>>({});
+// Store original groups data to preserve swap groups
+const originalGroups = ref<HistoryEventRow[]>([]);
 
 const deletion = useHistoryEventsDeletion(
   selectionMode,
   groupedEventsByTxHash,
-  groups,
+  originalGroups,
   () => actions.fetch.dataAndLocations(),
 );
 
 // Handle updating available event IDs from the table
-function handleUpdateEventIds({ eventIds, groupedEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]> }): void {
+function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
   // Create mock event entries with just the identifiers
   const events: HistoryEventEntry[] = eventIds.map(id => ({ identifier: id } as HistoryEventEntry));
   selectionMode.setAvailableIds(events);
 
   // Store the grouped events for checking complete transactions
   set(groupedEventsByTxHash, groupedEvents);
+  // Store the original groups data - prefer rawEvents if available, otherwise use groups.data
+  set(originalGroups, rawEvents || get(groups).data);
 }
 
 // Handle accounting rule refresh
@@ -171,21 +177,64 @@ async function handleSelectionAction(action: string): Promise<void> {
     case 'delete':
       await deletion.deleteSelected();
       break;
-    case 'create-rule':
-      // Gather selected event IDs and open the accounting rule dialog
+    case 'create-rule': {
+      // Get all selected events to validate they have the same type/subtype
+      const allEvents = get(originalGroups).flat();
+      const selectedEvents = allEvents.filter(event =>
+        !Array.isArray(event) && selectedIds.includes(event.identifier),
+      );
+
+      if (selectedEvents.length === 0) {
+        // Show confirmation dialog about no events found
+        showConfirm({
+          message: t('transactions.events.accounting_rule.no_events_found'),
+          primaryAction: t('common.actions.ok'),
+          singleAction: true,
+          title: t('transactions.events.accounting_rule.error'),
+        }, () => {
+          // User acknowledged the message
+        });
+        break;
+      }
+
+      // Check if all selected events have the same eventType and eventSubtype
+      const firstEvent = selectedEvents[0];
+      const firstEventType = firstEvent.eventType;
+      const firstEventSubtype = firstEvent.eventSubtype;
+
+      const allSameType = selectedEvents.every(event =>
+        event.eventType === firstEventType &&
+        event.eventSubtype === firstEventSubtype,
+      );
+
+      if (!allSameType) {
+        // Show confirmation dialog about incompatible selection
+        showConfirm({
+          message: t('transactions.events.accounting_rule.different_types_error'),
+          primaryAction: t('common.actions.ok'),
+          singleAction: true,
+          title: t('transactions.events.accounting_rule.incompatible_selection'),
+        }, () => {
+          // User acknowledged the message
+        });
+        break;
+      }
+
+      // All events have the same type/subtype, proceed with rule creation
       set(selectedEventIds, selectedIds);
-      // Initialize with an empty rule
+      // Initialize with the common event type and subtype
       set(accountingRuleToEdit, {
         accountingTreatment: null,
         countCostBasisPnl: { value: false },
         countEntireAmountSpend: { value: false },
         counterparty: null,
-        eventSubtype: '',
-        eventType: '',
+        eventSubtype: firstEventSubtype || '',
+        eventType: firstEventType || '',
         identifier: 0,
         taxable: { value: false },
       });
       break;
+    }
     case 'toggle-mode':
       selectionMode.actions.toggle();
       break;

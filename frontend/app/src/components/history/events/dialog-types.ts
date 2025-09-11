@@ -21,7 +21,7 @@ export const DIALOG_TYPES = {
 export type DialogType = typeof DIALOG_TYPES[keyof typeof DIALOG_TYPES];
 
 export type DialogShowOptions =
-  | { type: typeof DIALOG_TYPES.ADD_MISSING_RULE; data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'> & { identifier: number } }
+  | { type: typeof DIALOG_TYPES.ADD_MISSING_RULE; data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty' | 'identifier'> }
   | { type: typeof DIALOG_TYPES.EVENT_FORM; data: GroupEventData | StandaloneEventData }
   | { type: typeof DIALOG_TYPES.TRANSACTION_FORM; data?: AddTransactionHashPayload }
   | { type: typeof DIALOG_TYPES.REPULLING_TRANSACTION }

@@ -17,6 +17,13 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getPlaceholderRule } from '@/utils/settings';
 
+const CUSTOM_RULE_HANDLING = {
+  /** Show regular rules (exclude event-specific rules) */
+  EXCLUDE: 'exclude',
+  /** Show only event-specific rules */
+  ONLY: 'only',
+} as const;
+
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
@@ -24,7 +31,7 @@ const route = useRoute();
 const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
 
 const editMode = ref<boolean>(false);
-const customRuleHandling = ref<string>('exclude');
+const customRuleHandling = ref<string>(CUSTOM_RULE_HANDLING.EXCLUDE);
 
 const modelValue = ref<AccountingRuleEntry>();
 const eventIdsForRule = ref<number[]>();
@@ -390,10 +397,10 @@ const importFileDialog = ref<boolean>(false);
               color="primary"
               class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
             >
-              <RuiTab value="exclude">
+              <RuiTab :value="CUSTOM_RULE_HANDLING.EXCLUDE">
                 {{ t('accounting_settings.rule.tabs.regular') }}
               </RuiTab>
-              <RuiTab value="only">
+              <RuiTab :value="CUSTOM_RULE_HANDLING.ONLY">
                 {{ t('accounting_settings.rule.tabs.custom') }}
               </RuiTab>
             </RuiTabs>
@@ -410,10 +417,11 @@ const importFileDialog = ref<boolean>(false);
       </template>
 
       <AccountingRuleTable
+        :key="customRuleHandling"
         v-model:pagination="pagination"
         :state="state"
         :is-loading="isLoading"
-        :is-custom="customRuleHandling === 'only'"
+        :is-custom="customRuleHandling === CUSTOM_RULE_HANDLING.ONLY"
         @set-page="setPage($event)"
         @delete-click="showDeleteConfirmation($event)"
         @edit-click="edit($event)"

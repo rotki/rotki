@@ -86,7 +86,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 }
 
 const showCheckbox = computed<boolean>(() => {
-  if (!props.selection || props.compact) {
+  if (!props.selection) {
     return false;
   }
   return get(props.selection.isSelectionMode);

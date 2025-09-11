@@ -10,7 +10,7 @@ const modelValue = defineModel<HistoryEventEditData | undefined>({ required: tru
 const emit = defineEmits<{
   'redecode': [data: LocationAndTxHash];
   'edit-event': [event: HistoryEventEditData];
-  'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'> & { identifier: number }];
+  'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty' | 'identifier'>];
   'dismiss': [];
 }>();
 

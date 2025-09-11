@@ -57,6 +57,7 @@ const {
   hasIgnoredEvent,
   limit,
   loading,
+  rawEvents,
   sectionLoading,
   showUpgradeRow,
   total,
@@ -69,9 +70,9 @@ const {
 }, emit);
 
 // Emit all event IDs and grouped events when events change
-watch([events, allEventsMapped], ([newEvents, groupedEvents]) => {
+watch([events, allEventsMapped, rawEvents], ([newEvents, groupedEvents, rawEventsData]) => {
   const eventIds = newEvents.map(event => event.identifier);
-  emit('update-event-ids', { eventIds, groupedEvents });
+  emit('update-event-ids', { eventIds, groupedEvents, rawEvents: rawEventsData });
 }, { immediate: true });
 
 // Event operations (delete, redecode, etc.)

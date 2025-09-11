@@ -56,72 +56,64 @@ const showEventsList = ref<boolean>(false);
             {{ t('accounting_settings.rule.action_dialog.event_specific_exists') }}
           </div>
 
-          <RuiCard
-            variant="outlined"
-            class="!rounded-md"
-          >
-            <div class="space-y-3">
-              <div
-                class="flex gap-2"
-              >
-                <RuiButton
-                  variant="outlined"
-                  color="primary"
-                  class="w-full justify-start"
-                  @click="onSelect('edit-event-specific')"
-                >
-                  <template #prepend>
-                    <RuiIcon
-                      size="20"
-                      name="lu-pencil"
-                    />
-                  </template>
-                  <div class="text-left ml-1">
-                    <div>{{ t('accounting_settings.rule.action_dialog.edit_event_specific') }}</div>
-                    <div class="text-xs text-rui-text-secondary mb-1">
-                      {{ t('accounting_settings.rule.action_dialog.affects_events', { count: affectedEventsCount }) }}
-                    </div>
-                  </div>
-                </RuiButton>
-                <RuiButton
-                  variant="text"
-                  size="sm"
-                  color="primary"
-                  class="!px-4"
-                  @click="showEventsList = true"
-                >
-                  {{ t('accounting_settings.rule.action_dialog.view_affected_events') }}
-                  <template #append>
-                    <RuiIcon
-                      name="lu-arrow-right"
-                      size="20"
-                    />
-                  </template>
-                </RuiButton>
-              </div>
-
+          <div class="space-y-2">
+            <div class="flex gap-2 relative">
               <RuiButton
-                v-if="affectedEventsCount > 1"
                 variant="outlined"
                 color="primary"
                 class="w-full justify-start"
-                @click="onSelect('add-event-specific')"
+                @click="onSelect('edit-event-specific')"
               >
                 <template #prepend>
                   <RuiIcon
                     size="20"
-                    name="lu-plus"
+                    name="lu-pencil"
                   />
                 </template>
                 <div class="text-left ml-1">
-                  <div>{{ t('accounting_settings.rule.action_dialog.add_new_event_specific') }}</div>
+                  <div>{{ t('accounting_settings.rule.action_dialog.edit_event_specific') }}</div>
                   <div class="text-xs text-rui-text-secondary mb-1">
-                    {{ t('accounting_settings.rule.action_dialog.only_this_event') }}
+                    {{ t('accounting_settings.rule.action_dialog.affects_events', { count: affectedEventsCount }) }}
                   </div>
                 </div>
               </RuiButton>
+              <RuiButton
+                size="sm"
+                color="primary"
+                class="absolute rounded-full top-1/2 -transform -translate-y-1/2 right-3"
+                @click="showEventsList = true"
+              >
+                {{ t('accounting_settings.rule.action_dialog.view_affected_events') }}
+                <template #append>
+                  <RuiIcon
+                    name="lu-arrow-right"
+                    size="20"
+                  />
+                </template>
+              </RuiButton>
             </div>
-          </RuiCard>
+
+            <RuiButton
+              v-if="affectedEventsCount > 1"
+              variant="outlined"
+              color="primary"
+              class="w-full justify-start"
+              @click="onSelect('add-event-specific')"
+            >
+              <template #prepend>
+                <RuiIcon
+                  size="20"
+                  name="lu-plus"
+                />
+              </template>
+              <div class="text-left ml-1">
+                <div>{{ t('accounting_settings.rule.action_dialog.add_new_event_specific') }}</div>
+                <div class="text-xs text-rui-text-secondary mb-1">
+                  {{ t('accounting_settings.rule.action_dialog.only_this_event') }}
+                </div>
+              </div>
+            </RuiButton>
+          </div>
         </div>
 
         <div
@@ -132,52 +124,47 @@ const showEventsList = ref<boolean>(false);
             {{ t('accounting_settings.rule.action_dialog.general_rule_exists') }}
           </div>
 
-          <RuiCard
-            variant="outlined"
-            class="!rounded-md"
-          >
-            <div class="space-y-3">
-              <RuiButton
-                variant="outlined"
-                color="primary"
-                class="w-full justify-start"
-                @click="onSelect('edit-general')"
-              >
-                <template #prepend>
-                  <RuiIcon
-                    size="20"
-                    name="lu-pencil"
-                  />
-                </template>
-                <div class="text-left ml-1">
-                  <div>{{ t('accounting_settings.rule.action_dialog.edit_general') }}</div>
-                  <div class="text-xs text-rui-text-secondary mb-1">
-                    {{ t('accounting_settings.rule.action_dialog.affects_all_similar') }}
-                  </div>
+          <div class="space-y-2">
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              class="w-full justify-start"
+              @click="onSelect('edit-general')"
+            >
+              <template #prepend>
+                <RuiIcon
+                  size="20"
+                  name="lu-pencil"
+                />
+              </template>
+              <div class="text-left ml-1">
+                <div>{{ t('accounting_settings.rule.action_dialog.edit_general') }}</div>
+                <div class="text-xs text-rui-text-secondary mb-1">
+                  {{ t('accounting_settings.rule.action_dialog.affects_all_similar') }}
                 </div>
-              </RuiButton>
+              </div>
+            </RuiButton>
 
-              <RuiButton
-                variant="outlined"
-                color="primary"
-                class="w-full justify-start"
-                @click="onSelect('add-event-specific')"
-              >
-                <template #prepend>
-                  <RuiIcon
-                    size="20"
-                    name="lu-plus"
-                  />
-                </template>
-                <div class="text-left ml-1">
-                  <div>{{ t('accounting_settings.rule.action_dialog.add_event_specific') }}</div>
-                  <div class="text-xs text-rui-text-secondary mb-1">
-                    {{ t('accounting_settings.rule.action_dialog.override_general') }}
-                  </div>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              class="w-full justify-start"
+              @click="onSelect('add-event-specific')"
+            >
+              <template #prepend>
+                <RuiIcon
+                  size="20"
+                  name="lu-plus"
+                />
+              </template>
+              <div class="text-left ml-1">
+                <div>{{ t('accounting_settings.rule.action_dialog.add_event_specific') }}</div>
+                <div class="text-xs text-rui-text-secondary mb-1">
+                  {{ t('accounting_settings.rule.action_dialog.override_general') }}
                 </div>
-              </RuiButton>
-            </div>
-          </RuiCard>
+              </div>
+            </RuiButton>
+          </div>
         </div>
 
         <div
@@ -188,52 +175,47 @@ const showEventsList = ref<boolean>(false);
             {{ t('accounting_settings.rule.action_dialog.no_rule_exists') }}
           </div>
 
-          <RuiCard
-            variant="outlined"
-            class="!rounded-md"
-          >
-            <div class="space-y-3">
-              <RuiButton
-                variant="outlined"
-                color="primary"
-                class="w-full justify-start"
-                @click="onSelect('add-general')"
-              >
-                <template #prepend>
-                  <RuiIcon
-                    size="20"
-                    name="lu-plus"
-                  />
-                </template>
-                <div class="text-left ml-1">
-                  <div>{{ t('accounting_settings.rule.action_dialog.add_general') }}</div>
-                  <div class="text-xs text-rui-text-secondary mb-1">
-                    {{ t('accounting_settings.rule.action_dialog.for_all_similar') }}
-                  </div>
+          <div class="space-y-2">
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              class="w-full justify-start"
+              @click="onSelect('add-general')"
+            >
+              <template #prepend>
+                <RuiIcon
+                  size="20"
+                  name="lu-plus"
+                />
+              </template>
+              <div class="text-left ml-1">
+                <div>{{ t('accounting_settings.rule.action_dialog.add_general') }}</div>
+                <div class="text-xs text-rui-text-secondary mb-1">
+                  {{ t('accounting_settings.rule.action_dialog.for_all_similar') }}
                 </div>
-              </RuiButton>
+              </div>
+            </RuiButton>
 
-              <RuiButton
-                variant="outlined"
-                color="primary"
-                class="w-full justify-start"
-                @click="onSelect('add-event-specific')"
-              >
-                <template #prepend>
-                  <RuiIcon
-                    size="20"
-                    name="lu-plus"
-                  />
-                </template>
-                <div class="text-left ml-1">
-                  <div>{{ t('accounting_settings.rule.action_dialog.add_event_specific') }}</div>
-                  <div class="text-xs text-rui-text-secondary mb-1">
-                    {{ t('accounting_settings.rule.action_dialog.only_this_event') }}
-                  </div>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              class="w-full justify-start"
+              @click="onSelect('add-event-specific')"
+            >
+              <template #prepend>
+                <RuiIcon
+                  size="20"
+                  name="lu-plus"
+                />
+              </template>
+              <div class="text-left ml-1">
+                <div>{{ t('accounting_settings.rule.action_dialog.add_event_specific') }}</div>
+                <div class="text-xs text-rui-text-secondary mb-1">
+                  {{ t('accounting_settings.rule.action_dialog.only_this_event') }}
                 </div>
-              </RuiButton>
-            </div>
-          </RuiCard>
+              </div>
+            </RuiButton>
+          </div>
         </div>
       </div>
 

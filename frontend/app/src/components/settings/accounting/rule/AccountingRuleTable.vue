@@ -67,6 +67,28 @@ const eventsDialogOpen = ref<boolean>(false);
 const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
   const baseColumns: DataTableColumn<AccountingRuleEntry>[] = [];
 
+  // Regular view columns
+  baseColumns.push(
+    {
+      cellClass: 'py-4',
+      class: 'whitespace-pre-line',
+      key: 'eventTypeAndSubtype',
+      label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
+        'accounting_settings.rule.labels.event_subtype',
+      )}`,
+    },
+    {
+      key: 'resultingCombination',
+      label: t('transactions.events.form.resulting_combination.label'),
+    },
+    {
+      cellClass: props.isCustom ? '' : 'border-r border-default',
+      class: props.isCustom ? '' : 'border-r border-default',
+      key: 'counterparty',
+      label: t('common.counterparty'),
+    },
+  );
+
   // For special rules view (custom rules with eventIds), show event IDs instead of event type/subtype/counterparty
   if (props.isCustom) {
     baseColumns.push({
@@ -75,29 +97,6 @@ const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
       key: 'eventIds',
       label: t('accounting_settings.rule.labels.event_ids'),
     });
-  }
-  else {
-    // Regular view columns
-    baseColumns.push(
-      {
-        cellClass: 'py-4',
-        class: 'whitespace-pre-line',
-        key: 'eventTypeAndSubtype',
-        label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
-          'accounting_settings.rule.labels.event_subtype',
-        )}`,
-      },
-      {
-        key: 'resultingCombination',
-        label: t('transactions.events.form.resulting_combination.label'),
-      },
-      {
-        cellClass: 'border-r border-default',
-        class: 'border-r border-default',
-        key: 'counterparty',
-        label: t('common.counterparty'),
-      },
-    );
   }
 
   // Common columns for both views

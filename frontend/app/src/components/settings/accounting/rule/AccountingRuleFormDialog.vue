@@ -61,8 +61,9 @@ async function save() {
     else {
       const ruleData = omit(data, ['identifier']);
       // Include eventIds if provided (for custom accounting rules)
-      if (props.eventIds)
+      if (props.eventIds) {
         ruleData.eventIds = props.eventIds;
+      }
       success = await addAccountingRule(ruleData);
     }
   }

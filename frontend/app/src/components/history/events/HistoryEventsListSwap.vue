@@ -27,27 +27,13 @@ const emit = defineEmits<{
 }>();
 
 const isInitialRender = ref<boolean>(true);
-const expanded = ref<boolean>(false);
+const rawExpanded = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const { getChain } = useSupportedChains();
 const { getAssetSymbol } = useAssetInfoRetrieval();
 
-const isSwapSelected = computed<boolean>({
-  get() {
-    const selectedEvents = get(props.selection?.selectedEvents);
-    if (!selectedEvents || props.events.length === 0)
-      return false;
-
-    // Check if all events in the swap are selected
-    return props.events.every(event => selectedEvents.has(event.identifier));
-  },
-  set() {
-    // Toggle all event IDs in the swap group
-    const eventIds = props.events.map(event => event.identifier);
-    props.selection?.actions.toggleSwap(eventIds);
-  },
-});
+const expanded = computed(() => get(rawExpanded) || (props.selection && get(props.selection.isSelectionMode)));
 
 const usedEvents = computed(() => {
   if (get(expanded)) {
@@ -143,14 +129,6 @@ watch(expanded, () => {
 
 <template>
   <div class="flex items-start">
-    <RuiCheckbox
-      v-if="selection?.isSelectionMode.value"
-      v-model="isSwapSelected"
-      color="primary"
-      hide-details
-      class="ml-2 mt-4 transition-all"
-      :class="{ 'mr-3': !expanded }"
-    />
     <TransitionGroup
       tag="div"
       name="list"
@@ -159,7 +137,7 @@ watch(expanded, () => {
         'grid grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start @5xl:min-h-[80px]': !expanded,
         'flex flex-col': expanded,
         'transition-wrapper': !isInitialRender,
-        'md:pl-3': !expanded && !selection?.isSelectionMode.value,
+        'md:pl-3': !expanded,
       }"
     >
       <LazyLoader
@@ -168,11 +146,12 @@ watch(expanded, () => {
         class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative"
       >
         <RuiButton
+          v-if="!selection?.isSelectionMode.value"
           size="sm"
           icon
           color="primary"
           class="absolute top-2.5 -left-1 size-5 z-[6]"
-          @click="expanded = !expanded"
+          @click="rawExpanded = !rawExpanded"
         >
           <RuiIcon
             class="hidden group-hover:block"
@@ -197,12 +176,12 @@ watch(expanded, () => {
         }"
       >
         <RuiButton
-          v-if="expanded"
+          v-if="expanded && !selection?.isSelectionMode.value"
           size="sm"
           icon
           color="primary"
           class="absolute top-3 -left-2 md:left-1.5 size-5 z-[6]"
-          @click="expanded = !expanded"
+          @click="rawExpanded = !rawExpanded"
         >
           <RuiIcon
             class="hidden group-hover:block"
@@ -229,6 +208,7 @@ watch(expanded, () => {
             :hide-actions="hideActions"
             :is-last="eventIndex === events.length - 1"
             :is-highlighted="highlightedIdentifiers?.includes(event.identifier.toString())"
+            :selection="selection"
             @edit-event="emit('edit-event', $event)"
             @delete-event="emit('delete-event', $event)"
             @show:missing-rule-action="emit('show:missing-rule-action', $event)"
