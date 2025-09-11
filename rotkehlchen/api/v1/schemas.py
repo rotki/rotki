@@ -3686,20 +3686,31 @@ class AccountingRuleIdSchema(Schema):
 
     @validates_schema
     def validate_event_fields(self, data: dict[str, Any], **kwargs: Any) -> None:  # pylint: disable=unused-argument
-        """Validate that event_id exist in database.
+        """Validate that event_id exist in database and have matching event type and subtype.
         May raise:
-            - ValidationError if event doesn't exist.
+            - ValidationError if event doesn't exist or has mismatching type/subtype.
         """
         if (event_ids := data['event_ids']) is None:
             return
 
-        with self.database.conn.read_ctx() as cursor:
-            total_found = 0
-            for chunk, placeholders in get_query_chunks(event_ids):
-                total_found += cursor.execute(f'SELECT COUNT(*) FROM history_events WHERE identifier IN ({placeholders})', chunk).fetchone()[0]  # noqa: E501
+        event_type = data['event_type'].serialize()
+        event_subtype = data['event_subtype'].serialize()
 
-            if total_found != len(event_ids):
-                raise ValidationError(message='One or more of the specified rule event identifiers could not be found in the database.')  # noqa: E501
+        with self.database.conn.read_ctx() as cursor:
+            found_ids: set[int] = set()
+            for chunk, placeholders in get_query_chunks(event_ids):
+                result = cursor.execute(
+                    f'SELECT identifier FROM history_events WHERE identifier IN ({placeholders}) AND type = ? AND subtype = ?',  # noqa: E501
+                    (*chunk, event_type, event_subtype),
+                ).fetchall()
+                found_ids.update(row[0] for row in result)
+
+            if len(found_ids) != len(event_ids):
+                invalid_ids = set(event_ids) - found_ids
+                raise ValidationError(
+                    f'Event identifiers {invalid_ids} are nonexistent or do '
+                    f'not match the specified event type/subtype combination.',
+                )
 
 
 class LinkedAccountingSetting(Schema):
@@ -3776,7 +3787,10 @@ class AccountingRulesQuerySchema(
         fields.Integer(load_default=None, strict=True),
         load_default=None,
     )
-    only_custom_rules = fields.Boolean(load_default=False)
+    custom_rule_handling = NonEmptyStringField(
+        load_default='all',
+        validate=validate.OneOf(['all', 'only', 'exclude']),
+    )
     event_ids = DelimitedOrNormalList(
         fields.Integer(load_default=None, strict=True),
         load_default=None,
@@ -3784,8 +3798,8 @@ class AccountingRulesQuerySchema(
 
     @validates_schema
     def validate_mutual_exclusion(self, data: dict[str, Any], **_kwargs: Any) -> None:
-        if data['only_custom_rules'] and data['event_ids'] is not None:
-            raise ValidationError('Cannot use both only_custom_rules and event_ids parameters together')  # noqa: E501
+        if data['custom_rule_handling'] != 'all' and data['event_ids'] is not None:
+            raise ValidationError('Cannot use both custom_rule_handling and event_ids parameters together')  # noqa: E501
 
     @post_load
     def make_rules_query(
@@ -3805,7 +3819,7 @@ class AccountingRulesQuerySchema(
             event_subtypes=data['event_subtypes'],
             counterparties=data['counterparties'],
             identifiers=data['identifiers'],
-            only_custom_rules=data['only_custom_rules'],
+            custom_rule_handling=data['custom_rule_handling'],
             event_ids=data['event_ids'],
         )
         return {

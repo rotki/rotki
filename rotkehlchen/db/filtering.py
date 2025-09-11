@@ -696,11 +696,31 @@ class DBNullFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBAccountingRuleWithEventIdsFilter(DBFilter):
-    """Filter that finds accounting rules that have specific event IDs associated"""
+class DBAccountingRuleHasEventIdsFilter(DBFilter):
+    """Filter rules based on whether they have associated event IDs."""
+
+    has_event_ids: bool  # True = only with, False = only without
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        return ['EXISTS (SELECT 1 FROM accounting_rule_events WHERE rule_id = accounting_rules.identifier)'], []  # noqa: E501
+        exists_clause = (
+            'EXISTS (SELECT 1 FROM accounting_rule_events '
+            'WHERE rule_id = accounting_rules.identifier)'
+        )
+        return [exists_clause if self.has_event_ids else f'NOT {exists_clause}'], []
+
+
+@dataclass
+class DBAccountingRuleEventIdFilter(DBFilter):
+    """Filter rules that are linked to specific event IDs."""
+    values: list[int]
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        placeholders = ','.join('?' for _ in self.values)
+        return [(
+            f'EXISTS (SELECT 1 FROM accounting_rule_events '
+            f'WHERE rule_id = accounting_rules.identifier '
+            f'AND event_id IN ({placeholders}))'
+        )], self.values
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -1860,9 +1880,10 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
 class AccountingRulesFilterQuery(DBFilterQuery):
     """Filter accounting rules using pagination by type, subtype and counterparty.
 
-    If `only_custom_rules` is provided as True, filter only rules that apply to specific event IDs.
-    If `event_ids` is provided, only_custom_rules cannot be True (they are mutually exclusive).
-    """
+    If `custom_rule_handling` is 'only', filter only rules that apply to specific event IDs.
+    If `custom_rule_handling` is 'exclude', filter only rules that do not apply to specific event IDs.
+    If `event_ids` is provided, custom_rule_handling cannot be 'only' or 'exclude' (they are mutually exclusive).
+    """  # noqa: E501
 
     @classmethod
     def make(
@@ -1875,7 +1896,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             event_subtypes: list[HistoryEventSubType] | None = None,
             counterparties: list[str | None] | None = None,
             identifiers: list[int] | None = None,
-            only_custom_rules: bool = False,
+            custom_rule_handling: Literal['all', 'only', 'exclude'] = 'all',
             event_ids: list[int] | None = None,
     ) -> 'AccountingRulesFilterQuery':
         if order_by_rules is None:
@@ -1926,12 +1947,13 @@ class AccountingRulesFilterQuery(DBFilterQuery):
                 column='accounting_rules.identifier',
                 values=identifiers,
             ))
-        if only_custom_rules:
-            filters.append(DBAccountingRuleWithEventIdsFilter(and_op=True))
+        if custom_rule_handling == 'only':
+            filters.append(DBAccountingRuleHasEventIdsFilter(and_op=True, has_event_ids=True))
+        elif custom_rule_handling == 'exclude':
+            filters.append(DBAccountingRuleHasEventIdsFilter(and_op=True, has_event_ids=False))
         if event_ids is not None:
-            filters.append(DBMultiIntegerFilter(
+            filters.append(DBAccountingRuleEventIdFilter(
                 and_op=True,
-                column='event_id',
                 values=event_ids,
             ))
 

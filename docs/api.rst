@@ -12784,8 +12784,8 @@ Managing custom accounting rules
   :reqjsonarr optional[array[string]] event_subtypes: List of possible event subtypes to use while filtering.
   :reqjsonarr optional[array[string]] counterparties: List of possible counterparties to use while filtering. Instead of a string a null value can also be given to mean counterparty being None.
   :reqjsonarr optional[array[int]] identifiers: List of rule identifiers to filter by. Only rules with these identifiers will be returned.
-  :reqjsonarr optional[bool] only_custom_rules: If true, only returns rules that have specific event IDs associated with them. Default is false. Cannot be used together with event_ids.
-  :reqjsonarr optional[array[int]] event_ids: List of specific event identifiers to filter accounting rules by. Only rules that apply to these specific events will be returned. Cannot be used together with only_custom_rules.
+  :reqjsonarr optional[string] custom_rule_handling: Controls filtering of rules by event ID association. Possible values: 'all' (default - no filtering), 'only' (only rules with event IDs), 'exclude' (only rules without event IDs). Cannot be used together with event_ids when set to 'only' or 'exclude'.
+  :reqjsonarr optional[array[int]] event_ids: List of specific event identifiers to filter accounting rules by. Only rules that apply to these specific events will be returned. Cannot be used together with custom_rule_handling when it's set to 'only' or 'exclude'.
 
 
   **Example Response**
