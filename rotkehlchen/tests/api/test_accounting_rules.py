@@ -537,8 +537,8 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_manage_rules_with_event_key(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test operations with accounting rules that have event_key"""
+def test_manage_rules_with_event_ids(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test operations with accounting rules that have event_ids"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     existing_entries = add_entries(DBHistoryEvents(rotki.data.db))
 
@@ -546,15 +546,15 @@ def test_manage_rules_with_event_key(rotkehlchen_api_server: 'APIServer') -> Non
         'taxable': {'value': True},
         'count_entire_amount_spend': {'value': False},
         'count_cost_basis_pnl': {'value': True},
-        'event_type': HistoryEventType.TRADE.serialize(),
-        'event_subtype': HistoryEventSubType.SPEND.serialize(),
+        'event_type': HistoryEventType.INFORMATIONAL.serialize(),
+        'event_subtype': HistoryEventSubType.APPROVE.serialize(),
         'counterparty': 'uniswap-v2',
         'accounting_treatment': TxAccountingTreatment.SWAP.serialize(),
     }
 
     # Test various invalid event field cases
     for event_ids, expected_error in [
-        ([50_000], 'One or more of the specified rule event identifiers could not be found in the database'),  # noqa: E501
+        ([50_000], 'Event identifiers {50000} are nonexistent or do not match the specified event type/subtype combination.'),  # noqa: E501
         ([-100], 'Must be greater than or equal to 0'),
         (['420'], 'Not a valid integer'),
     ]:
@@ -584,7 +584,7 @@ def test_manage_rules_with_event_key(rotkehlchen_api_server: 'APIServer') -> Non
 
     # Test updating rule with event_id and sequence_index
     updated_rule = valid_rule.copy()
-    another_event = existing_entries[3]
+    another_event = existing_entries[1]  # Use another INFORMATIONAL/APPROVE event
     updated_rule['event_ids'].append(another_event.identifier)
     updated_rule['taxable'] = {'value': False}
     response = requests.patch(
@@ -829,7 +829,7 @@ def test_query_accounting_rules_by_identifiers(rotkehlchen_api_server: 'APIServe
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
 def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test filtering accounting rules by only_with_event_ids parameter"""
+    """Test filtering accounting rules by event ids & custom_rule_handling parameter"""
     # First create some history events using the existing test helper
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     existing_entries = add_entries(DBHistoryEvents(rotki.data.db))
@@ -853,15 +853,15 @@ def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: 'A
             json=rule,
         ))
 
-    # Test: Get all rules (default behavior - only_with_event_ids=False)
+    # Test: Get all rules (default behavior - custom_rule_handling=all)
     response = requests.post(api_url_for(rotkehlchen_api_server, 'accountingrulesresource'))
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2, 'Should have gotten both rules'
 
-    # Test: Get only rules with event_ids (event-specific rules only)
+    # Test: Get only rules with event_ids
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
-        json={'only_custom_rules': True},
+        json={'custom_rule_handling': 'only'},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1, 'Should only get the event-specific rule'
@@ -869,13 +869,83 @@ def test_query_accounting_rules_with_event_ids_filter(rotkehlchen_api_server: 'A
     assert result['entries'][0]['counterparty'] == 'somewhere'
     assert result['entries'][0]['event_type'] == HistoryEventType.DEPOSIT.serialize()
 
+    # Test: Get only rules without event_ids
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'custom_rule_handling': 'exclude'},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == 1, 'Should only get the generic rule'
+    assert result['entries'][0]['event_ids'] is None
+    assert result['entries'][0]['counterparty'] is None
+    assert result['entries'][0]['event_type'] == HistoryEventType.WITHDRAWAL.serialize()
+
+    # Test: Get rules by filtering the with event_ids
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'event_ids': [existing_entries[3].identifier]},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == 1, 'Should only get the specific rule'
+    assert result['entries'][0]['event_ids'] == [existing_entries[3].identifier]
+    assert result['entries'][0]['counterparty'] == 'somewhere'
+    assert result['entries'][0]['event_type'] == HistoryEventType.DEPOSIT.serialize()
+
     # Test mutual exclusion validation
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
-        json={'only_custom_rules': True, 'event_ids': [existing_entries[3].identifier]},
+        json={'custom_rule_handling': 'only', 'event_ids': [existing_entries[3].identifier]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Cannot use both only_custom_rules and event_ids parameters together',
+        contained_in_msg='Cannot use both custom_rule_handling and event_ids parameters together',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_pagination_with_multiple_event_ids(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that pagination works correctly with accounting rules that have multiple event IDs"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    existing_entries = add_entries(DBHistoryEvents(rotki.data.db))
+    for rule in [{  # Add both rules
+        'taxable': {'value': True},
+        'count_entire_amount_spend': {'value': False},
+        'count_cost_basis_pnl': {'value': True},
+        'event_type': HistoryEventType.INFORMATIONAL.serialize(),
+        'event_subtype': HistoryEventSubType.APPROVE.serialize(),
+        'event_ids': [existing_entries[i].identifier for i in range(2)],
+        'counterparty': (event_specific_cpt := 'uniswap'),
+    }, {
+        'taxable': {'value': False},
+        'count_entire_amount_spend': {'value': True},
+        'count_cost_basis_pnl': {'value': False},
+        'event_type': HistoryEventType.WITHDRAWAL.serialize(),
+        'event_subtype': HistoryEventSubType.RECEIVE.serialize(),
+        'counterparty': (regular_rule_cpt := 'compound'),
+    }]:
+        assert_simple_ok_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+            json=rule,
+        ))
+
+    # Test pagination with limit=1 to ensure each rule is counted as 1, not by number of events
+    for offset, counterparty in [(0, regular_rule_cpt), (1, event_specific_cpt)]:
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+            json={'limit': 1, 'offset': offset},
+        ))
+        assert len(result['entries']) == 1
+        assert result['entries_total'] == 2
+        assert result['entries'][0]['counterparty'] == counterparty
+
+    # test getting all rules at once
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'limit': 10, 'offset': 0},
+    ))
+    assert len(result['entries']) == result['entries_found'] == result['entries_total'] == 2
+    # Verify one rule has multiple event IDs and one has none
+    rules_by_counterparty = {rule['counterparty']: rule for rule in result['entries']}
+    assert len(rules_by_counterparty['uniswap']['event_ids']) == 2
+    assert rules_by_counterparty['compound']['event_ids'] is None

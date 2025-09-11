@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from more_itertools import peekable
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -20,6 +21,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DEFAULT_INCLUDE_CRYPTO2CRYPTO, DEFAULT_INCLUDE_GAS_COSTS
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -40,7 +42,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class RuleInformation(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class RuleInformation:
     """
     Represent a rule and the events it applies to.
 
@@ -273,35 +276,46 @@ class DBAccountingRules:
             filter_query_str: str,
             bindings: Sequence[Any],
     ) -> dict[int, RuleInformation]:
-        """Query the accounting rules from the database using the provided filter. Returns
-        the dict of identifier -> accounting rules."""
+        """Query the accounting rules from the database using the provided filter.
+        Returns a dict of identifier -> accounting rules."""
         query = (
             'SELECT accounting_rules.identifier, type, subtype, counterparty, taxable, '
-            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment, event_id '
+            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment '
             'FROM accounting_rules '
-            'LEFT JOIN accounting_rule_events ON accounting_rules.identifier = accounting_rule_events.rule_id '  # noqa: E501
         )
-        rules = {}
+        rules: dict[int, RuleInformation] = {}
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(query + filter_query_str, bindings)
             for entry in cursor:
-                event_id = entry[8]
-                if (rule_id := entry[0]) not in rules:
-                    rules[rule_id] = RuleInformation(
-                        identifier=rule_id,
-                        event_ids=[event_id] if event_id is not None else None,
-                        event_key=(
-                            HistoryEventType.deserialize(entry[1]),
-                            HistoryEventSubType.deserialize(entry[2]),
-                            None if entry[3] == NO_ACCOUNTING_COUNTERPARTY else entry[3],
-                        ),
-                        rule=BaseEventSettings.deserialize_from_db(entry[4:8]),
-                        links={},
-                    )
-                elif event_id is not None and rules[rule_id].event_ids is not None:
-                    rules[rule_id].event_ids.append(event_id)  # type: ignore[union-attr]  # we check that above.
+                rule_id = entry[0]
+                rules[rule_id] = RuleInformation(
+                    identifier=rule_id,
+                    event_ids=None,  # populated later
+                    event_key=(
+                        HistoryEventType.deserialize(entry[1]),
+                        HistoryEventSubType.deserialize(entry[2]),
+                        None if entry[3] == NO_ACCOUNTING_COUNTERPARTY else entry[3],
+                    ),
+                    rule=BaseEventSettings.deserialize_from_db(entry[4:8]),
+                    links={},
+                )
 
-            return rules
+            if len(rules) == 0:
+                return rules
+
+            for chunk, placeholders in get_query_chunks(list(rules)):
+                cursor.execute(
+                    f'SELECT rule_id, event_id FROM accounting_rule_events '
+                    f'WHERE rule_id IN ({placeholders})',
+                    chunk,
+                )
+                for rule_id, event_id in cursor:
+                    if rules[rule_id].event_ids is None:
+                        rules[rule_id].event_ids = [event_id]
+                    else:
+                        rules[rule_id].event_ids.append(event_id)  # type: ignore[union-attr]  # cannot be None due to check above.
+
+        return rules
 
     def query_rules(
             self,
