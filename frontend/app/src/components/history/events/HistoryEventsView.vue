@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { get } from '@vueuse/shared';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
-import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import { DIALOG_TYPES, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/components/history/events/HistoryEventsDialogContainer.vue';
 import HistoryEventsFiltersChips from '@/components/history/events/HistoryEventsFiltersChips.vue';
@@ -12,6 +11,7 @@ import HistoryEventsTableActions from '@/components/history/events/HistoryEvents
 import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
 import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
@@ -165,13 +165,14 @@ function handleAccountingRuleRefresh(): void {
 
 // Handle selection-related actions
 async function handleSelectionAction(action: string): Promise<void> {
+  const selectedIds = Array.from(get(selectionMode.state).selectedIds);
+
   switch (action) {
     case 'delete':
       await deletion.deleteSelected();
       break;
     case 'create-rule':
       // Gather selected event IDs and open the accounting rule dialog
-      const selectedIds = Array.from(selectionMode.state.value.selectedIds);
       set(selectedEventIds, selectedIds);
       // Initialize with an empty rule
       set(accountingRuleToEdit, {

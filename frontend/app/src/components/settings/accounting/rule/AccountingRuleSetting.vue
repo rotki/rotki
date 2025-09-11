@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
-import { startPromise } from '@shared/utils';
+import AccountingRuleActionDialog from '@/components/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
 import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
@@ -24,9 +24,19 @@ const route = useRoute();
 const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
 
 const editMode = ref<boolean>(false);
-const onlyCustomRules = ref<string>('regular');
+const customRuleHandling = ref<string>('exclude');
 
 const modelValue = ref<AccountingRuleEntry>();
+const eventIdsForRule = ref<number[]>();
+const actionDialog = ref<boolean>(false);
+const actionDialogProps = ref<{
+  hasEventSpecificRule: boolean;
+  hasGeneralRule: boolean;
+  eventId: number;
+  generalRule?: AccountingRuleEntry;
+  eventSpecificRule?: AccountingRuleEntry;
+  eventIds?: number[];
+}>();
 
 const {
   fetchData,
@@ -44,7 +54,7 @@ const {
   Matcher
 >(getAccountingRules, {
   extraParams: computed(() => ({
-    onlyCustomRules: get(onlyCustomRules) === 'custom',
+    customRuleHandling: get(customRuleHandling),
   })),
   filterSchema: useAccountingRuleFilter,
   history: 'router',
@@ -93,14 +103,16 @@ function createNewEntry() {
   );
 }
 
-function add(rule?: AccountingRuleEntry) {
+function add(rule?: AccountingRuleEntry, eventIds?: number[]) {
   set(modelValue, rule || createNewEntry());
   set(editMode, false);
+  set(eventIdsForRule, eventIds);
 }
 
-function edit(rule: AccountingRuleEntry) {
+function edit(rule: AccountingRuleEntry, eventIds?: number[]) {
   set(modelValue, rule);
   set(editMode, true);
+  set(eventIdsForRule, eventIds);
 }
 
 const { show } = useConfirmStore();
@@ -136,9 +148,53 @@ function showDeleteConfirmation(item: AccountingRuleEntry) {
   );
 }
 
+async function handleRuleAction(action: 'add-general' | 'add-event-specific' | 'edit-general' | 'edit-event-specific') {
+  const props = get(actionDialogProps);
+  if (!props)
+    return;
+
+  const { eventId, eventSpecificRule, generalRule } = props;
+
+  switch (action) {
+    case 'add-general': {
+      const { query } = get(route);
+      const { counterparty, eventSubtype, eventType } = query;
+      add({
+        ...getPlaceholderRule(),
+        counterparty: counterparty?.toString() ?? null,
+        eventSubtype: eventSubtype?.toString() ?? '',
+        eventType: eventType?.toString() ?? '',
+      });
+      break;
+    }
+    case 'add-event-specific': {
+      const { query } = get(route);
+      const { counterparty, eventSubtype, eventType } = query;
+      add({
+        ...getPlaceholderRule(),
+        counterparty: counterparty?.toString() ?? null,
+        eventSubtype: eventSubtype?.toString() ?? '',
+        eventType: eventType?.toString() ?? '',
+      }, [eventId]);
+      break;
+    }
+    case 'edit-general':
+      if (generalRule)
+        edit(generalRule);
+      break;
+    case 'edit-event-specific':
+      if (eventSpecificRule)
+        edit(eventSpecificRule, eventSpecificRule.eventIds ?? undefined);
+      break;
+  }
+
+  set(actionDialog, false);
+  await router.replace({ query: {} });
+}
+
 onMounted(async () => {
   const { query } = get(route);
-  const { 'add-rule': addRule, counterparty, 'edit-rule': editRule, eventSubtype, eventType } = query;
+  const { 'add-rule': addRule, counterparty, 'edit-rule': editRule, eventId, eventSubtype, eventType } = query;
 
   const ruleData = {
     counterparty: counterparty?.toString() ?? null,
@@ -146,26 +202,66 @@ onMounted(async () => {
     eventType: eventType?.toString() ?? '',
   };
 
-  async function openDialog(rule?: AccountingRuleEntry, forceAdd = false) {
-    if (rule) {
-      startPromise(nextTick(() => forceAdd ? add(rule) : edit(rule)));
-    }
-    await router.replace({ query: {} });
-  }
+  const eventIdNum = eventId ? Number(eventId) : undefined;
 
   if (addRule) {
-    await openDialog({
-      ...getPlaceholderRule(),
-      ...ruleData,
-    }, true);
+    if (eventIdNum) {
+      set(actionDialogProps, {
+        eventId: eventIdNum,
+        hasEventSpecificRule: false,
+        hasGeneralRule: false,
+      });
+      set(actionDialog, true);
+    }
+    else {
+      add({
+        ...getPlaceholderRule(),
+        ...ruleData,
+      });
+      await router.replace({ query: {} });
+    }
   }
   else if (editRule) {
-    await openDialog(await getAccountingRule({
-      eventSubtypes: [ruleData.eventSubtype],
-      eventTypes: [ruleData.eventType],
-      limit: 2,
-      offset: 0,
-    }, ruleData.counterparty));
+    if (eventIdNum) {
+      const [generalRule, eventSpecificRules] = await Promise.all([
+        getAccountingRule({
+          eventSubtypes: [ruleData.eventSubtype],
+          eventTypes: [ruleData.eventType],
+          limit: 2,
+          offset: 0,
+        }, ruleData.counterparty),
+        getAccountingRules({
+          eventIds: [eventIdNum],
+          limit: 10,
+          offset: 0,
+        }),
+      ]);
+
+      const eventSpecificRule = eventSpecificRules.data.length > 0 ? eventSpecificRules.data[0] : undefined;
+      const hasEventSpecificRule = !!eventSpecificRule;
+      const hasGeneralRule = !!generalRule;
+
+      set(actionDialogProps, {
+        eventId: eventIdNum,
+        eventIds: eventSpecificRule?.eventIds ?? undefined,
+        eventSpecificRule,
+        generalRule,
+        hasEventSpecificRule,
+        hasGeneralRule,
+      });
+      set(actionDialog, true);
+    }
+    else {
+      const rule = await getAccountingRule({
+        eventSubtypes: [ruleData.eventSubtype],
+        eventTypes: [ruleData.eventType],
+        limit: 2,
+        offset: 0,
+      }, ruleData.counterparty);
+      if (rule)
+        edit(rule);
+      await router.replace({ query: {} });
+    }
   }
   await refresh();
 });
@@ -290,14 +386,14 @@ const importFileDialog = ref<boolean>(false);
           </template>
           <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-between">
             <RuiTabs
-              v-model="onlyCustomRules"
+              v-model="customRuleHandling"
               color="primary"
               class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
             >
-              <RuiTab value="regular">
+              <RuiTab value="exclude">
                 {{ t('accounting_settings.rule.tabs.regular') }}
               </RuiTab>
-              <RuiTab value="custom">
+              <RuiTab value="only">
                 {{ t('accounting_settings.rule.tabs.custom') }}
               </RuiTab>
             </RuiTabs>
@@ -317,7 +413,7 @@ const importFileDialog = ref<boolean>(false);
         v-model:pagination="pagination"
         :state="state"
         :is-loading="isLoading"
-        :is-custom="onlyCustomRules === 'custom'"
+        :is-custom="customRuleHandling === 'only'"
         @set-page="setPage($event)"
         @delete-click="showDeleteConfirmation($event)"
         @edit-click="edit($event)"
@@ -326,7 +422,15 @@ const importFileDialog = ref<boolean>(false);
       <AccountingRuleFormDialog
         v-model="modelValue"
         :edit-mode="editMode"
+        :event-ids="eventIdsForRule"
         @refresh="fetchData()"
+      />
+
+      <AccountingRuleActionDialog
+        v-if="actionDialog && actionDialogProps"
+        v-bind="actionDialogProps"
+        @close="actionDialog = false"
+        @select="handleRuleAction($event)"
       />
 
       <AccountingRuleImportDialog

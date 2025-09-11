@@ -37,6 +37,7 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
 
   // Unified state object
   const state = computed<SelectionState>(() => ({
+    hasAvailableEvents: get(availableIds).length > 0,
     isActive: get(isActive),
     isAllSelected: get(availableIds).length > 0
       && get(availableIds).every(id => get(selectedIds).has(id)),
@@ -44,7 +45,6 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
       && get(selectedIds).size < get(availableIds).length,
     selectedCount: get(selectedIds).size,
     selectedIds: get(selectedIds),
-    hasAvailableEvents: get(availableIds).length > 0,
   }));
 
   const actions: SelectionActions = {

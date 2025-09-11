@@ -66,6 +66,7 @@ watch(display, (value) => {
       <HistoryEventsTable
         v-model:sort="sort"
         v-model:pagination="pagination"
+        hide-actions
         :groups="groups"
         :exclude-ignored="false"
         :group-loading="groupLoading"

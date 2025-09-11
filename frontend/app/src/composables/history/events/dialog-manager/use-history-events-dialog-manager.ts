@@ -59,12 +59,14 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
           type: DIALOG_TYPES.TRANSACTION_FORM,
         });
         break;
-      case DIALOG_TYPES.ADD_MISSING_RULE:
+      case DIALOG_TYPES.ADD_MISSING_RULE: {
+        const { identifier, ...restData } = options.data;
         await router.push({
           path: '/settings/accounting',
-          query: { 'add-rule': 'true', ...options.data },
+          query: { 'add-rule': 'true', 'eventId': identifier.toString(), ...restData },
         });
         break;
+      }
       default:
         break;
     }

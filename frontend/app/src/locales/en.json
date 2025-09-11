@@ -161,6 +161,23 @@
   },
   "accounting_settings": {
     "rule": {
+      "action_dialog": {
+        "add_event_specific": "Add rule for this event only",
+        "add_general": "Add general accounting rule",
+        "add_new_event_specific": "Add new rule for this event only",
+        "affects_all_similar": "Affects all events with similar type, subtype, and counterparty",
+        "affects_events": "This rule affects {count} events",
+        "edit_event_specific": "Edit event-specific rule",
+        "edit_general": "Edit general accounting rule",
+        "event_specific_exists": "An event-specific rule already exists for this event.",
+        "for_all_similar": "For all events with this type, subtype, and counterparty",
+        "general_rule_exists": "A general accounting rule exists for this event type.",
+        "no_rule_exists": "No accounting rule exists for this event.",
+        "only_this_event": "Only applies to this specific event",
+        "override_general": "Override the general rule for this specific event",
+        "title": "Choose Accounting Rule Action",
+        "view_affected_events": "View affected events"
+      },
       "add": "Add accounting rule",
       "add_error": "Could not add accounting rule: {message}",
       "confirm_delete": "Are you sure you want to delete this custom accounting rule?",
@@ -185,7 +202,7 @@
       "edit": "Edit accounting rule",
       "edit_error": "Could not edit accounting rule: {message}",
       "events_dialog": {
-        "title": "History Events ({count})"
+        "title": "Events affected by the accounting rule ({count})"
       },
       "export": "Export accounting rules",
       "fetch_error": {
@@ -215,7 +232,7 @@
       "subtitle": "Manage and view your event accounting rules",
       "tabs": {
         "custom": "Special rules for certain events",
-        "regular": "Regular Rules",
+        "regular": "Regular Rules"
       },
       "title": "Accounting Rules",
       "value_overwritten": "The value is overwritten by this setting:"

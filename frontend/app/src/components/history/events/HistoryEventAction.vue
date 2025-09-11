@@ -16,6 +16,7 @@ function onEditRule() {
 
   const data = {
     counterparty: '',
+    eventId: entry.identifier.toString(),
     eventSubtype: entry.eventSubtype,
     eventType: entry.eventType,
   };

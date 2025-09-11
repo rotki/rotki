@@ -16,6 +16,7 @@ const props = defineProps<{
   allEvents: HistoryEventEntry[];
   highlightedIdentifiers?: string[];
   selection?: UseHistoryEventsSelectionModeReturn;
+  hideActions?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -225,6 +226,7 @@ watch(expanded, () => {
             :events="usedEvents"
             :compact="!expanded"
             :event-group="events[0]"
+            :hide-actions="hideActions"
             :is-last="eventIndex === events.length - 1"
             :is-highlighted="highlightedIdentifiers?.includes(event.identifier.toString())"
             @edit-event="emit('edit-event', $event)"
@@ -261,7 +263,7 @@ watch(expanded, () => {
       </LazyLoader>
 
       <LazyLoader
-        v-if="!expanded"
+        v-if="!expanded && !hideActions"
         key="history-event-actions"
         class="py-2 @5xl:!py-4 col-span-10 @md:col-span-3"
         min-height="40"

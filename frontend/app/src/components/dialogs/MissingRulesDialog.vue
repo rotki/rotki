@@ -10,7 +10,7 @@ const modelValue = defineModel<HistoryEventEditData | undefined>({ required: tru
 const emit = defineEmits<{
   'redecode': [data: LocationAndTxHash];
   'edit-event': [event: HistoryEventEditData];
-  'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>];
+  'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'> & { identifier: number }];
   'dismiss': [];
 }>();
 
@@ -60,12 +60,13 @@ function onEdit(data: HistoryEventEditData) {
 
 function onAddRule(data: HistoryEventEditData) {
   const event = data.type === 'edit' ? data.event : data.eventsInGroup[0];
-  const { eventSubtype, eventType } = event;
+  const { eventSubtype, eventType, identifier } = event;
 
   emit('add', {
     counterparty: 'counterparty' in event ? event.counterparty : null,
     eventSubtype,
     eventType,
+    identifier,
   });
   close();
 }

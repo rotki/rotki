@@ -13,6 +13,7 @@ interface HistoryEventsListTableProps {
   eventGroup: HistoryEventEntry;
   loading: boolean;
   total: number;
+  hideActions?: boolean;
   highlightedIdentifiers?: string[];
   selection?: UseHistoryEventsSelectionModeReturn;
 }
@@ -48,6 +49,7 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           :key="`swap-${index}`"
           :events="item"
           :all-events="findAllEventsFromArrayItem(item) || item"
+          :hide-actions="hideActions"
           :highlighted-identifiers="highlightedIdentifiers"
           :selection="selection"
           @edit-event="emit('edit-event', $event)"
@@ -60,6 +62,7 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           :key="item.identifier"
           class="flex-1"
           :item="item"
+          :hide-actions="hideActions"
           :index="index"
           :events="flatten(allEvents)"
           :event-group="eventGroup"

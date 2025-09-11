@@ -23,6 +23,7 @@ const props = defineProps<{
   isLast: boolean;
   isHighlighted?: boolean;
   compact?: boolean;
+  hideActions?: boolean;
   selection?: UseHistoryEventsSelectionModeReturn;
 }>();
 
@@ -168,7 +169,7 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
         />
 
         <HistoryEventsListItemAction
-          v-if="!compact"
+          v-if="!compact && !hideActions"
           class="col-span-10 @md:col-span-3"
           :item="item"
           :index="index"
