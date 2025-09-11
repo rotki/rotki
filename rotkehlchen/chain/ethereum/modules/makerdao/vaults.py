@@ -290,10 +290,11 @@ class MakerdaoVaults(EthereumModule):
             self.vault_mappings = defaultdict(list)
             proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # noqa: E501
             vaults = []
-            for user_address, proxy in proxy_mappings.items():
-                vaults.extend(
-                    self._get_vaults_of_address(user_address=user_address, proxy_address=proxy),
-                )
+            for user_address, proxies in proxy_mappings.items():
+                for proxy in proxies:
+                    vaults.extend(
+                        self._get_vaults_of_address(user_address=user_address, proxy_address=proxy),  # noqa: E501
+                    )
 
             self.last_vault_mapping_query_ts = ts_now()
             # Returns vaults sorted. Oldest identifier first
@@ -312,8 +313,8 @@ class MakerdaoVaults(EthereumModule):
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return
         # Check if it has been added to the mapping
-        proxy_address = self.ethereum.proxies_inquirer.address_to_proxy[ProxyType.DS].get(address)
-        if proxy_address:
+        proxy_addresses = self.ethereum.proxies_inquirer.address_to_proxies[ProxyType.DS].get(address, set())  # noqa: E501
+        for proxy_address in proxy_addresses:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
 

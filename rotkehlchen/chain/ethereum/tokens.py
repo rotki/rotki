@@ -42,7 +42,7 @@ class EthereumTokens(EvmTokensWithProxies):
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
         proxy_addresses = set()
         for proxy_type in ProxyType:
-            proxy_addresses |= {v for k, v in proxies_mapping[proxy_type].items() if k in addresses}  # noqa: E501
+            proxy_addresses |= {proxy for addr, proxies in proxies_mapping[proxy_type].items() for proxy in proxies if addr in addresses}  # noqa: E501
 
         if len(proxy_addresses) == 0:
             return

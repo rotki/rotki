@@ -567,15 +567,16 @@ class EvmTokensWithProxies(EvmTokens, ABC):
                 proxy_last_queried_timestamp = None
                 for proxy_type in ProxyType:
                     proxy_detected_tokens: set[EvmToken] = set()
-                    if (proxy_address := proxies_mapping.get(proxy_type, {}).get(address, None)):
-                        single_proxy_detected_tokens, proxy_last_queried_timestamp = self.db.get_tokens_for_address(  # noqa: E501
-                            cursor=cursor,
-                            address=proxy_address,
-                            blockchain=self.evm_inquirer.blockchain,
-                            token_exceptions=self._per_chain_token_exceptions(),
-                        )
-                        if single_proxy_detected_tokens:
-                            proxy_detected_tokens |= set(single_proxy_detected_tokens)
+                    if (proxy_addresses := proxies_mapping.get(proxy_type, {}).get(address)) is not None:  # noqa: E501
+                        for proxy_address in proxy_addresses:
+                            single_proxy_detected_tokens, proxy_last_queried_timestamp = self.db.get_tokens_for_address(  # noqa: E501
+                                cursor=cursor,
+                                address=proxy_address,
+                                blockchain=self.evm_inquirer.blockchain,
+                                token_exceptions=self._per_chain_token_exceptions(),
+                            )
+                            if single_proxy_detected_tokens:
+                                proxy_detected_tokens |= set(single_proxy_detected_tokens)
 
                     if len(proxy_detected_tokens) != 0:
                         if detected_tokens_without_proxies is None:
