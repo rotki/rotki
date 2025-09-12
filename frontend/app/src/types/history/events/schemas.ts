@@ -68,6 +68,7 @@ export const AssetMovementEvent = CommonHistoryEvent.extend({
   entryType: z.literal(HistoryEventEntryType.ASSET_MOVEMENT_EVENT),
   extraData: z.object({
     address: z.string().nullish(),
+    blockchain: z.string().nullish(),
     reference: z.string().nullish(),
     transactionId: z.string().nullish(),
   }).nullable(),
@@ -219,6 +220,8 @@ export interface EditAssetMovementEventPayload {
   feeAsset: string | null;
   userNotes: [string, string] | [string];
   uniqueId: string;
+  transactionId: string;
+  blockchain: string;
 }
 
 export type NewAssetMovementEventPayload = Omit<EditAssetMovementEventPayload, 'identifier'>;

@@ -118,9 +118,9 @@ const key = computed(() => {
         :class="$style.wrapper"
         :text="assetMovementTransactionId"
         type="transaction"
+        :location="assetMovementEvent?.extraData?.blockchain || undefined"
         :truncate-length="is2xlAndUp ? 0 : 8"
-        display-mode="copy"
-        hide-text
+        :display-mode="assetMovementEvent?.extraData?.blockchain ? 'default' : 'copy'"
       />
     </template>
 
