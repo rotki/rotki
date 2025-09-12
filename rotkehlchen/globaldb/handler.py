@@ -1278,7 +1278,7 @@ class GlobalDBHandler:
                     'UPDATE assets SET name=?, type=? WHERE identifier=?;',
                     (
                         entry.name,
-                        AssetType.EVM_TOKEN.serialize_for_db(),
+                        entry.asset_type.serialize_for_db(),
                         entry.identifier,
                     ),
                 )

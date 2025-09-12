@@ -9,7 +9,7 @@ from polyleven import levenshtein
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.assets.asset import CryptoAsset, CustomAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -1317,3 +1317,36 @@ def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
             'token_kind': ' '.join(payload['token_kind'].split('_')),  # type: ignore[attr-defined]  # it is a string
         },
     ]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('coingecko_cache_coinlist', [{'some-token': {}}])
+@pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'WIF': {}}])
+def test_edit_solana_token(
+        rotkehlchen_api_server: 'APIServer',
+        cache_coinlist: list[dict[str, dict]],
+) -> None:
+    """Test that editing a solana token via the api works correctly.
+    Regression test for a problem where editing a token changed its asset type to EVM token and
+    resulted in unknown asset errors.
+    """
+    token_dict = (a_dogwifhat := Asset(
+        identifier='solana/token:EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm',
+    )).resolve_to_solana_token().to_dict()
+    del token_dict['identifier']
+    del token_dict['forked']
+    token_dict['name'] = 'Some Token'
+    token_dict['symbol'] = 'ST'
+    token_dict['coingecko'] = 'some-token'
+    assert_proper_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=token_dict,
+    ))
+    # Reload the token from the db and check that only the edited attributes have changed.
+    token_after_edit = Asset(a_dogwifhat.identifier).resolve_to_solana_token()
+    assert token_after_edit.asset_type == AssetType.SOLANA_TOKEN
+    assert token_after_edit.cryptocompare == 'WIF'
+    assert token_after_edit.decimals == 6
+    assert token_after_edit.name == 'Some Token'
+    assert token_after_edit.symbol == 'ST'
+    assert token_after_edit.coingecko == 'some-token'
