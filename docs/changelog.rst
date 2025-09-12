@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Users will now be able to see the transaction hash of the deposit/withdrawal for the exchange asset movement event.
 * :bug:`10585` Token balances on mainnet Summer.fi proxy accounts will now be detected properly.
 * :bug:`-` Manual current prices are now properly saved as historical prices for use in balance graphs and charts.
 * :bug:`10578` rotki now has improved checks on usernames.

@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { chain } = toRefs(props);
 
-const { getChainImageUrl } = useSupportedChains();
+const { getChainImageUrl, matchChain } = useSupportedChains();
 
 const src = getChainImageUrl(chain);
 </script>
@@ -22,6 +22,7 @@ const src = getChainImageUrl(chain);
 <template>
   <AdaptiveWrapper>
     <AppImage
+      v-if="matchChain(chain)"
       :key="src"
       :src="src"
       :width="size"
@@ -29,6 +30,12 @@ const src = getChainImageUrl(chain);
       :height="size"
       :max-height="size"
       contain
+    />
+    <RuiIcon
+      v-else
+      :size="size"
+      name="lu-link"
+      class="text-rui-grey-400 dark:text-rui-grey-600"
     />
   </AdaptiveWrapper>
 </template>

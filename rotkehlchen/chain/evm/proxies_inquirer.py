@@ -1,10 +1,9 @@
 
 import logging
+from collections import defaultdict
 from collections.abc import Sequence
 from enum import StrEnum
 from typing import TYPE_CHECKING, overload
-
-from mypy.checkpattern import defaultdict
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
