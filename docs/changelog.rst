@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Editing a solana token will no longer set the asset type incorrectly.
 * :feature:`10591` rotki will now detect eligibility for the Linea Airdrop.
 * :bug:`-` Users will now be able to see the transaction hash of the deposit/withdrawal for the exchange asset movement event.
 * :bug:`10585` Token balances on mainnet Summer.fi proxy accounts will now be detected properly.
