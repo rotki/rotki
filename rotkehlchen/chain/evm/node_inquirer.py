@@ -445,6 +445,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint}'  # noqa: E501
             log.warning(message)
             return False, message
+        except json.JSONDecodeError as e:
+            message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint} due to invalid JSON response: {e!s}'  # noqa: E501
+            log.warning(message)
+            return False, message
         except AssertionError:
             # Terrible, terrible hack but needed due to https://github.com/rotki/rotki/issues/1817
             is_connected = False
@@ -583,6 +587,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     TypeError,  # happened at the web3 level calling `apply_result_formatters` when the RPC node returned `None` in the response's result # noqa: E501
                     ValueError,  # not removing yet due to possibility of raising from missing trie error  # noqa: E501
                     AttributeError,  # happened at the web3 level when response is a string instead of dict # noqa: E501
+                    json.JSONDecodeError,  # happens when RPC returns empty or invalid JSON responses # noqa: E501
             ) as e:
                 log.warning(
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
