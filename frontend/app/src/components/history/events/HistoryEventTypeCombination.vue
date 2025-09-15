@@ -43,7 +43,7 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiIcon
         size="20"
         :name="icon || type.icon"
-        :color="type.color"
+        :color="highlight ? undefined : type.color"
       />
       <RuiIcon
         v-if="showInfo"

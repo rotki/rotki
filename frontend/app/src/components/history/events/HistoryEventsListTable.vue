@@ -7,6 +7,7 @@ import HistoryEventsListItem from '@/components/history/events/HistoryEventsList
 import HistoryEventsListSwap from '@/components/history/events/HistoryEventsListSwap.vue';
 
 interface HistoryEventsListTableProps {
+  allEvents: HistoryEventRow[];
   events: HistoryEventRow[];
   eventGroup: HistoryEventEntry;
   loading: boolean;
@@ -14,7 +15,7 @@ interface HistoryEventsListTableProps {
   highlightedIdentifiers?: string[];
 }
 
-defineProps<HistoryEventsListTableProps>();
+const props = defineProps<HistoryEventsListTableProps>();
 
 const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
@@ -24,6 +25,16 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEntry[] | undefined {
+  if (items.length === 0)
+    return undefined;
+
+  const firstId = items[0].identifier;
+
+  const arrayOnly: HistoryEventEntry[][] = props.allEvents.filter(event => Array.isArray(event));
+  return arrayOnly.find(event => event.map(item => item.identifier).includes(firstId));
+}
 </script>
 
 <template>
@@ -34,6 +45,7 @@ const { t } = useI18n({ useScope: 'global' });
           v-if="Array.isArray(item)"
           :key="`swap-${index}`"
           :events="item"
+          :all-events="findAllEventsFromArrayItem(item) || item"
           :highlighted-identifiers="highlightedIdentifiers"
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
@@ -46,7 +58,7 @@ const { t } = useI18n({ useScope: 'global' });
           class="flex-1"
           :item="item"
           :index="index"
-          :events="flatten(events)"
+          :events="flatten(allEvents)"
           :event-group="eventGroup"
           :is-last="index === events.length - 1"
           :is-highlighted="highlightedIdentifiers?.includes(item.identifier.toString())"

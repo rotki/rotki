@@ -44,9 +44,10 @@ const { groupLoading, groups: rawGroups, pageParams } = toRefs(props);
 
 // Event data management
 const {
+  allEventsMapped,
+  displayedEventsMapped,
   entriesFoundTotal,
   events,
-  eventsGroupedByEventIdentifier,
   eventsLoading,
   found,
   groups,
@@ -76,7 +77,7 @@ const {
   suggestNextSequenceId,
   toggle,
 } = useHistoryEventsOperations({
-  eventsGroupedByEventIdentifier,
+  allEventsMapped,
   flattenedEvents: events,
 }, emit);
 
@@ -185,7 +186,8 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
       <HistoryEventsList
         class="-my-4"
         :class="{ 'opacity-50': row.ignoredInAccounting }"
-        :all-events="eventsGroupedByEventIdentifier[row.eventIdentifier] || []"
+        :all-events="allEventsMapped[row.eventIdentifier] || []"
+        :displayed-events="displayedEventsMapped[row.eventIdentifier] || []"
         :event-group="row"
         :loading="sectionLoading || eventsLoading"
         :has-ignored-event="hasIgnoredEvent"
