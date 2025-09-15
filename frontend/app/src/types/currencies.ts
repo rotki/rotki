@@ -94,11 +94,11 @@ export const useCurrencies = createSharedComposable(() => {
     new Currency(t('currencies.inr'), CURRENCY_INR, '₹'),
     new Currency(t('currencies.dkk'), CURRENCY_DKK, 'kr'),
     new Currency(t('currencies.pln'), CURRENCY_PLN, 'zł'),
-    new Currency(t('currencies.ngn'), CURRENCY_NGN, '฿'),
+    new Currency(t('currencies.ngn'), CURRENCY_NGN, '₦'),
     new Currency(t('currencies.aed'), CURRENCY_AED, 'Dh'),
     new Currency(t('currencies.czk'), CURRENCY_CZK, 'Kč'),
     new Currency(t('currencies.ils'), CURRENCY_ILS, '₪'),
-    new Currency(t('currencies.mxn'), CURRENCY_MXN, '¢'),
+    new Currency(t('currencies.mxn'), CURRENCY_MXN, 'Mex$'),
     new Currency('Bitcoin', CURRENCY_BTC, '₿', true),
     new Currency('Ether', CURRENCY_ETH, 'Ξ', true),
   ]);
