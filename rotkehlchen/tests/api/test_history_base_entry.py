@@ -704,7 +704,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
                 amount=FVal('2.5'),
                 location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
                 address=(address := string_to_evm_address('0xA7C8F1e13eDC5FBfB768f55ECF2Fee5d4C5BF964')),  # noqa: E501,
-                notes=f'Send 2.5 ETH to {address}',
+                notes=f'Send 2.5 ETH to {address}',  # type: ignore
             ), EvmEvent(
                 tx_hash=deserialize_evm_tx_hash('0x9a76e51e6feb83690b4f0ecb257adbceb73b6f8b38d7d5c5d3f5e22fd10e3c72'),
                 sequence_index=100,

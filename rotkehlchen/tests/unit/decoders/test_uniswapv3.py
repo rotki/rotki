@@ -618,7 +618,7 @@ def test_uniswap_v3_create_lp_position_with_native_refund(
         amount=FVal(approve_amount := '1157920892373161954235709850086879078532699846656405640394575840079131.29623426'),  # noqa: E501
         location_label=user_address,
         address=(nft_manager := string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88')),  # noqa: E501
-        notes=f'Set WBTC spending approval of {user_address} by {nft_manager} to {approve_amount}',
+        notes=f'Set WBTC spending approval of {user_address} by {nft_manager} to {approve_amount}',  # type: ignore
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=5,

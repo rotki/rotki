@@ -206,8 +206,8 @@ def configure_logging(args: argparse.Namespace) -> None:
     logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': False,
-        'filters': filters,  # type: ignore [typeddict-item]
-        'formatters': formatters,  # type: ignore [typeddict-item]
+        'filters': filters,
+        'formatters': formatters,
         'handlers': handlers,
         'loggers': loggers,
     })
