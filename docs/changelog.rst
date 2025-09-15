@@ -2,15 +2,14 @@
 Changelog
 =========
 
+* :bug:`-` Users will now be able to add EVM and EVM swap events from the "Add new event" button on top.
 * :feature:`-` Users will now be able to see the balance in these currencies: AED (United Arab Emirates Dirham), CZK (Czech koruna), ILS (Israeli new shekel), and MXN (Mexican Peso)
 * :bug:`-` Blockchain queries will no longer fail when certain nodes return empty responses.
 * :bug:`-` Editing a solana token will no longer set the asset type incorrectly.
 * :feature:`10591` rotki will now detect eligibility for the Linea Airdrop.
 * :bug:`-` Users will now be able to see the transaction hash of the deposit/withdrawal for the exchange asset movement event.
-* :bug:`-` Batched Aave v3 liquidity pool actions are now decoded properly.
 * :bug:`10585` Token balances on mainnet Summer.fi proxy accounts will now be detected properly.
 * :bug:`-` Manual current prices are now properly saved as historical prices for use in balance graphs and charts.
-* :bug:`10602` rotki will now track BTC (Xbt) and OmiseGO (Omg) trades in Independent Reserve correctly.
 * :bug:`10578` rotki now has improved checks on usernames.
 * :bug:`-` rotki will now properly decode Paraswap swaps made using smart wallets.
 * :bug:`10570` Adding/editing an EVM event with a transaction hash not present in the DB will now pull the transaction from onchain.
