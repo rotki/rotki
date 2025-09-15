@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.constants.assets import A_ETC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETC, A_ETH, A_OMG
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.data_structures import Location
 from rotkehlchen.exchanges.independentreserve import (
@@ -48,6 +48,14 @@ def test_assets_are_known():
                 f'Found unknown secondary asset {currency} in IndependentReserve. '
                 f'Support for it has to be added',
             ))
+
+
+def test_missing_mapping_assets():
+    """Regression test for #10602. TODO: @yabirgb remove in develop
+    https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=128888662
+    """
+    assert independentreserve_asset('Xbt') == A_BTC
+    assert independentreserve_asset('Omg') == A_OMG
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
