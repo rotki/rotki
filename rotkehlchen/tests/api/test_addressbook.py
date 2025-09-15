@@ -987,3 +987,36 @@ def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> N
             name='new name',
             blockchain=None,
         )]
+
+
+@pytest.mark.parametrize('empty_global_addressbook', [True])
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+def test_insert_unsupported_ecosystem_address_with_none_blockchain(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
+    """Trying to add an address with blockchain=None from an unsupported ecosystem fails.
+
+    Uses a SUI-style 32-byte hex address which is not supported by the addressbook
+    ecosystems. The API should reject it with a 400 and an appropriate error message.
+    """
+    sui_address = '0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04'
+    unsupported_entry = AddressbookEntry(
+        address=sui_address,  # type: ignore
+        name='My sui address',
+        blockchain=None,
+    )
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={'entries': [unsupported_entry.serialize()]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Given address is from an unsupported ecosystem',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

@@ -1527,6 +1527,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         new_tracked_chains, new_failed_chains = self.track_evm_address(account, active_chains)
         failed_to_query_chains += new_failed_chains
         if len(new_tracked_chains) > 0:
+            # AddressNotSupported doesn't raise because we have only EVM addresses
             DBAddressbook(self.database).maybe_make_entry_name_multichain(address=account)
 
         return (

@@ -96,3 +96,7 @@ class AccountingError(Exception):
         """
         super().__init__(message)
         self.report_id = report_id
+
+
+class AddressNotSupported(Exception):
+    """Used when we detect an address with a unknown format for the addressbook"""

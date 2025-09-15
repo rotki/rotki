@@ -82,6 +82,7 @@ def test_migration3_updates_address_book(globaldb: 'GlobalDBHandler') -> None:
                 (evm_addr, 'NONE', 'Bitfinex'),
                 (polkadot_addr, 'NONE', 'SUBSTRATE'),
                 (bitcoin_addr, 'NONE', 'saylor'),
+                ('0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04', 'NONE', 'My sui address'),  # noqa: E501
             ],
         )
 

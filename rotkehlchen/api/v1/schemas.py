@@ -73,7 +73,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
-from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
+from rotkehlchen.errors.misc import AddressNotSupported, InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
@@ -3126,6 +3126,14 @@ class AddressWithOptionalBlockchainSchema(Schema):
                 address = data['address']
         else:
             address = data['address']
+
+        try:
+            AddressbookEntry.check_chain_ecosystem(address)
+        except AddressNotSupported as e:
+            raise ValidationError(
+                'Given address is from an unsupported ecosystem',
+                field_name='address',
+            ) from e
 
         return OptionalChainAddress(
             address=address,
