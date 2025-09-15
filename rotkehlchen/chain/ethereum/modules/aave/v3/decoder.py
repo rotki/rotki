@@ -30,6 +30,7 @@ class Aavev3Decoder(Aavev3LikeCommonDecoder):
             native_gateways=(
                 string_to_evm_address('0x893411580e590D62dDBca8a703d61Cc4A8c7b2b9'),
                 string_to_evm_address('0xA434D495249abE33E031Fe71a969B81f3c07950D'),
+                string_to_evm_address('0xd01607c3C5eCABa394D8be377a08590149325722'),
             ),
             treasury=string_to_evm_address('0x464C71f6c2F760DdA6093dCB91C24c39e5d6e18c'),
             incentives=string_to_evm_address('0x8164Cc65827dcFe994AB23944CBC90e0aa80bFcb'),

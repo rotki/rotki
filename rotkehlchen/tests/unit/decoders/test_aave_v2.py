@@ -941,7 +941,7 @@ def test_aave_v2_supply_ether(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=FVal(0.1),
             location_label=ethereum_accounts[0],
-            notes='Deposit 0.1 WETH into AAVE v2',
+            notes='Deposit 0.1 ETH into AAVE v2',
             counterparty=CPT_AAVE_V2,
             identifier=None,
             extra_data=None,
