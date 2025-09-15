@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now be able to see the balance in these currencies: AED (United Arab Emirates Dirham), CZK (Czech koruna), ILS (Israeli new shekel), and MXN (Mexican Peso)
 * :bug:`-` Blockchain queries will no longer fail when certain nodes return empty responses.
 * :bug:`-` Editing a solana token will no longer set the asset type incorrectly.
 * :feature:`10591` rotki will now detect eligibility for the Linea Airdrop.
