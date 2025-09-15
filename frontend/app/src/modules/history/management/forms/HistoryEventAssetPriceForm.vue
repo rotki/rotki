@@ -180,6 +180,7 @@ defineExpose({
         <AssetSelect
           v-model="asset"
           outlined
+          show-ignored
           :disabled="disabled || disableAsset"
           :data-cy="type ? `${type}-asset` : 'asset'"
           :label="type && t('transactions.events.form.asset_price.asset_label', { type: toSentenceCase((type)) })"

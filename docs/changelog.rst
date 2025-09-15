@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10602` Users will be able to edit EVM swap events, even if the asset is ignored.
 * :bug:`-` Users will now be able to add EVM and EVM swap events from the "Add new event" button on top.
 * :feature:`-` Users will now be able to see the balance in these currencies: AED (United Arab Emirates Dirham), CZK (Czech koruna), ILS (Israeli new shekel), and MXN (Mexican Peso)
 * :bug:`-` Blockchain queries will no longer fail when certain nodes return empty responses.

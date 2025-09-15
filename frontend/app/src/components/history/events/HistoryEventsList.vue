@@ -12,6 +12,7 @@ import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
 const props = withDefaults(defineProps<{
   eventGroup: HistoryEventEntry;
   allEvents: HistoryEventRow[];
+  displayedEvents: HistoryEventRow[];
   hasIgnoredEvent?: boolean;
   loading?: boolean;
   highlightedIdentifiers?: string[];
@@ -34,42 +35,49 @@ const containerRef = ref<HTMLElement>();
 
 const {
   allEvents,
+  displayedEvents,
   eventGroup,
   hasIgnoredEvent,
   highlightedIdentifiers,
   loading,
 } = toRefs(props);
 
-const combinedAllEvents = computed<HistoryEventRow[]>(() => {
-  const all = get(allEvents);
-  const group = get(eventGroup);
-  if (all.length === 0) {
+function combineEvents(events: HistoryEventRow[], group: HistoryEventEntry): HistoryEventRow[] {
+  if (events.length === 0) {
     return [group];
   }
 
   if (isSwapEvent(group)) {
-    const allFlattened = flatten(all);
+    const allFlattened = flatten(events);
     if (allFlattened.length === 1 && Array.isArray(allFlattened[0])) {
       return [allFlattened[0]];
     }
     return [allFlattened];
   }
 
-  return all.map((item) => {
+  return events.map((item) => {
     if (Array.isArray(item) && item.length === 1) {
       return item[0];
     }
     return item;
   });
-});
+}
+
+const combinedDisplayedEvents = computed<HistoryEventRow[]>(() =>
+  combineEvents(get(displayedEvents), get(eventGroup)),
+);
+
+const combinedAllEvents = computed<HistoryEventRow[]>(() =>
+  combineEvents(get(allEvents), get(eventGroup)),
+);
 
 const limitedEvents = computed<HistoryEventRow[]>(() => {
   const limit = get(currentLimit);
-  const arr = get(combinedAllEvents);
+  const arr = get(combinedDisplayedEvents);
   return arr.slice(0, limit);
 });
 
-const totalBlocks = computed<number>(() => get(combinedAllEvents).length);
+const totalBlocks = computed<number>(() => get(combinedDisplayedEvents).length);
 
 const hasMoreEvents = computed<boolean>(() => get(limitedEvents).length < get(totalBlocks));
 
@@ -126,6 +134,7 @@ watch(() => get(eventGroup), () => {
       :key="eventGroup.eventIdentifier"
       :event-group="eventGroup"
       :events="limitedEvents"
+      :all-events="combinedAllEvents"
       :total="totalBlocks"
       :loading="loading"
       :highlighted-identifiers="highlightedIdentifiers"

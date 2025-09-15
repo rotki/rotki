@@ -12,6 +12,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 
 const props = defineProps<{
   events: HistoryEventEntry[];
+  allEvents: HistoryEventEntry[];
   highlightedIdentifiers?: string[];
 }>();
 
@@ -56,6 +57,10 @@ const usedEvents = computed(() => {
   // Add remaining spend events if any
   if (spendEvents.length > receiveEvents.length) {
     const remainingSpend = spendEvents.slice(receiveEvents.length);
+    alternating.push(...remainingSpend);
+  }
+  else if (receiveEvents.length > spendEvents.length) {
+    const remainingSpend = receiveEvents.slice(spendEvents.length);
     alternating.push(...remainingSpend);
   }
 
@@ -202,7 +207,7 @@ watch(expanded, () => {
         />
 
         <LazyLoader
-          v-if="!expanded && eventIndex === 0 && usedEvents.length > 0"
+          v-if="!expanded && eventIndex === 0 && usedEvents.length > 1"
           key="swap-arrow"
           class="flex items-center px-2 @md:pl-0 h-14 col-start-5"
         >
@@ -216,12 +221,13 @@ watch(expanded, () => {
     </div>
 
     <LazyLoader
-      v-if="!expanded && getCompactNotes(events)"
+      v-if="!expanded"
       key="history-event-notes"
       class="py-2 pt-4 md:pl-0 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4"
       min-height="80"
     >
       <HistoryEventNote
+        v-if="getCompactNotes(events)"
         :notes="getCompactNotes(events)"
         :amount="events.map(item => item.amount)"
       />
@@ -236,7 +242,7 @@ watch(expanded, () => {
       <HistoryEventsListItemAction
         :item="events[0]"
         :index="0"
-        :events="events"
+        :events="allEvents"
         @edit-event="emit('edit-event', $event)"
         @delete-event="emit('delete-event', $event)"
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"
