@@ -43,7 +43,7 @@ const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
   if (get(isEvmGroupAdd)) {
     return [...EVM_EVENTS];
   }
-  return Object.values(HistoryEventEntryType).filter(value => !isEvmTypeEvent(value));
+  return Object.values(HistoryEventEntryType);
 });
 
 const formComponents: Record<HistoryEventEntryType, Component> = {
