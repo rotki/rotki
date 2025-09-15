@@ -22,7 +22,7 @@ from eth_utils.address import to_checksum_address
 from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import AddressNotSupported, InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
@@ -989,6 +989,9 @@ class AddressbookEntry(NamedTuple):
     ]:
         """Get the chain ecosystem for the provided address.
         TODO: Add solana in develop
+
+        May raise:
+            - AddressNotSupported
         """
         with suppress(ValueError):
             to_checksum_address(address)
@@ -1003,15 +1006,20 @@ class AddressbookEntry(NamedTuple):
             return ChainType.SUBSTRATE
 
         # Whenever we add a new ecosystem we need to update this function.
-        # TODO: Add it for solana in develop
-        assert False, 'Unknown address chainType when identifying ecosystem'  # noqa: B011,PT015
+        raise AddressNotSupported(f'Unsupported address {address}')
 
     @staticmethod
     def get_ecosystem_key_by_address(address: 'BlockchainAddress') -> str:
+        """May raise:
+            - AddressNotSupported
+        """
         ecosystem = AddressbookEntry.check_chain_ecosystem(address)
         return f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}{ecosystem.name}'
 
     def get_ecosystem_key(self) -> str:
+        """May raise:
+            - AddressNotSupported
+        """
         return self.get_ecosystem_key_by_address(self.address)
 
     def serialize_for_db(self) -> tuple[str, str, str]:

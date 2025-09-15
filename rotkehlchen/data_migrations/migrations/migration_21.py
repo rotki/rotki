@@ -17,6 +17,9 @@ def data_migration_21(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
 
     @progress_step(description='Upgrading adderess book ecosystem names')
     def _migrate_ecosystem_names(rotki: 'Rotkehlchen') -> None:
-        migrate_addressbook_none_to_ecosystem_key(rotki.data.db.conn)
+        migrate_addressbook_none_to_ecosystem_key(
+            connection=rotki.data.db.conn,
+            msg_aggregator=rotki.msg_aggregator,
+        )
 
     perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=True)
