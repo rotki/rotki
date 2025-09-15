@@ -58,8 +58,11 @@ async function selectFirst() {
   start();
 }
 
-function calculateFontSize(symbol: string) {
+function calculateFontSize(symbol: string, small = false) {
   const length = symbol.length;
+  if (small) {
+    return `${1.8 - length * 0.25}em`;
+  }
   return `${2.4 - length * 0.4}em`;
 }
 
@@ -86,6 +89,9 @@ watch(visible, (isVisible, wasVisible) => {
         class-name="text-[1.375rem] font-bold"
         data-cy="currency-dropdown"
         v-bind="attrs"
+        :style="{
+          fontSize: calculateFontSize(currency.unicodeSymbol, true),
+        }"
       >
         {{ currency.unicodeSymbol }}
       </MenuTooltipButton>

@@ -119,6 +119,7 @@ onMounted(() => {
       >
         <AmountDisplay
           xl
+          no-truncate
           show-currency="symbol"
           :fiat-currency="currencySymbol"
           :value="totalNetWorth"
