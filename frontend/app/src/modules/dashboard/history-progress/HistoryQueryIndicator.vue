@@ -12,6 +12,7 @@ import { useHistoryEventsStatus } from '@/modules/history/events/use-history-eve
 import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
+import { isMajorOrMinorUpdate } from '@/utils/version';
 
 const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
 
@@ -120,14 +121,22 @@ function dismiss(): void {
 }
 
 onMounted(async () => {
-  if (get(appVersion) === get(queryStatus, 'lastUsedVersion')) {
+  const currentVersion = get(appVersion);
+  const lastVersion = get(queryStatus, 'lastUsedVersion');
+
+  if (currentVersion === lastVersion) {
     return;
   }
+
   set(queryStatus, {
     lastDismissedTs: get(queryStatus, 'lastDismissedTs'),
-    lastUsedVersion: get(appVersion),
+    lastUsedVersion: currentVersion,
   });
-  set(justUpdated, true);
+
+  // Only set justUpdated to true for major/minor updates, not patch releases
+  if (isMajorOrMinorUpdate(currentVersion, lastVersion)) {
+    set(justUpdated, true);
+  }
 });
 </script>
 
