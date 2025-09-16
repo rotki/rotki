@@ -26,6 +26,7 @@ from rotkehlchen.chain.solana.utils import (
     decode_token_metadata,
     get_extension_data,
     get_metadata_account,
+    is_token_nft,
     lamports_to_sol,
     unpack_mint,
 )
@@ -226,13 +227,16 @@ class SolanaManager(SolanaRPCMixin):
             log.error(f'Failed to get metadata for solana token {token_address}')
             return None
 
+        # TODO: Maybe use metadata.uri to query the token image as well?
+        # Note that is_token_nft already may query the offchain metadata, so don't query it twice
+        # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=127649813
         GlobalDBHandler().add_asset(token := SolanaToken.initialize(
             address=token_address,
-            # TODO: Add better nft detection. Some nfts have supply > 1 and some tokens have decimals == 0  # noqa: E501
-            # Use tokenStandard from the metaplex metadata (if present) or check edition accounts,
-            # and maybe check for null mint authority
-            # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=126837936
-            token_kind=TokenKind.SPL_NFT if mint_info.supply == 1 and mint_info.decimals == 0 else TokenKind.SPL_TOKEN,  # noqa: E501
+            token_kind=TokenKind.SPL_NFT if is_token_nft(
+                token_address=token_address,
+                mint_info=mint_info,
+                metadata=metadata,
+            ) else TokenKind.SPL_TOKEN,
             name=metadata.name,
             symbol=metadata.symbol,
             decimals=mint_info.decimals,

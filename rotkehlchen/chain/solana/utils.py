@@ -1,3 +1,4 @@
+import logging
 from enum import IntEnum
 from typing import Final, NamedTuple
 
@@ -6,10 +7,16 @@ from construct.core import ConstructError
 from solders.solders import Pubkey
 from spl.token._layouts import MINT_LAYOUT
 
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SolanaAddress
 from rotkehlchen.utils.misc import bytes_to_solana_address
+from rotkehlchen.utils.network import request_get_dict
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 # AccountType is u8 (1 byte)
 # https://github.com/solana-program/token-2022/blob/main/interface/src/extension/mod.rs#L1033
@@ -36,6 +43,17 @@ class ExtensionType(IntEnum):
     TOKEN_METADATA = 19
 
 
+class TokenStandard(IntEnum):
+    """Token standards used in Metaplex metadata.
+    https://developers.metaplex.com/token-metadata/token-standard
+    """
+    NON_FUNGIBLE = 0
+    FUNGIBLE_ASSET = 1  # Also called semi-fungible, generally classed as an NFT
+    FUNGIBLE = 2  # Normal token
+    NON_FUNGIBLE_EDITION = 3
+    PROGRAMMABLE_NON_FUNGIBLE = 4
+
+
 class MintInfo(NamedTuple):
     """Mint information. Only including the fields we use for now.
     See unpack_mint for the full structure.
@@ -51,6 +69,8 @@ class MetadataInfo(NamedTuple):
     """
     name: str
     symbol: str
+    uri: str
+    token_standard: TokenStandard | None = None  # only present for metaplex metadata
 
 
 def unpack_mint(mint_data: bytes) -> MintInfo | None:
@@ -120,17 +140,30 @@ def decode_metadata_pointer(data: bytes) -> SolanaAddress | None:
 
 def decode_token_metadata(data: bytes, layout: Struct) -> MetadataInfo | None:
     """Decodes raw token metadata using the specified layout.
-    Returns a tuple with the name and symbol or None if the data is invalid.
-    TODO: Maybe include raw_metadata.uri and use it to query the token image as well?
-    https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=127649813
+    If the token_standard field is not present, it is set to None.
+    Returns the decoded metadata info or None if the data is invalid.
     """
     try:
         raw_metadata = layout.parse(data)
+        token_standard = None
+        if (raw_token_standard := raw_metadata.get('token_standard')) is not None:
+            try:
+                token_standard = TokenStandard(raw_token_standard)
+            except ValueError:
+                log.error(
+                    f'Unknown token standard value {raw_token_standard} '
+                    f'found in solana token metadata',
+                )
+                # Don't return here. The token_standard will be set to None, and other heuristics
+                # will be used to determine if the token is an NFT.
+
         return MetadataInfo(
             name=raw_metadata.name.decode('utf-8').strip('\x00'),
             symbol=raw_metadata.symbol.decode('utf-8').strip('\x00'),
+            uri=raw_metadata.uri.decode('utf-8').strip('\x00'),
+            token_standard=token_standard,
         )
-    except ConstructError:
+    except (ConstructError, UnicodeDecodeError):
         return None
 
 
@@ -140,6 +173,54 @@ def get_metadata_account(token_address: SolanaAddress, metadata_program: Pubkey)
         seeds=[b'metadata', bytes(metadata_program), bytes(Pubkey.from_string(token_address))],
         program_id=metadata_program,
     )[0]  # return only address from tuple[address, nonce]
+
+
+def is_token_nft(
+        token_address: SolanaAddress,
+        mint_info: MintInfo,
+        metadata: MetadataInfo,
+) -> bool:
+    """Determine if a solana token is an NFT using the provided mint info and metadata.
+
+    Uses the following heuristics to determine if the token is an NFT:
+    - the token_standard field in the metadata if present (only in Metaplex metadata)
+    - if the decimals are not zero then it is not an NFT
+    - if the decimals are zero and supply is one then it is an NFT
+    - if decimals are zero but supply is greater than one, check if the offchain metadata
+      looks like a semi-fungible NFT.
+
+    Returns a boolean indicating if the token is an NFT.
+    """
+    if metadata.token_standard is not None:
+        return metadata.token_standard != TokenStandard.FUNGIBLE  # all other standards are NFTs
+    if mint_info.decimals != 0:  # decimals > 0 is always a normal fungible token
+        return False
+    if mint_info.supply == 1:  # decimals = 0 and supply = 1 is always an NFT
+        return True
+
+    # decimals == 0 and supply > 1 - could be either a semi-fungible (classed as NFT) or
+    # simply a normal fungible token with zero decimals (rare but possible)
+    # Check if the offchain metadata contains NFT specific data.
+    try:
+        offchain_metadata = request_get_dict(metadata.uri)
+    except (RemoteError, UnableToDecryptRemoteData) as e:
+        # Since normal fungible tokens with zero decimals are quite rare, assume it's an NFT
+        # if the offchain metadata is unavailable.
+        log.warning(
+            f'Failed to query offchain metadata for solana token {token_address} due to {e}. '
+            f'Assuming it is a semi-fungible NFT since it has 0 decimals and supply > 1.',
+        )
+        return True
+
+    if any(k in offchain_metadata for k in ('attributes', 'collection', 'properties')):
+        return True
+
+    log.debug(
+        f'Found solana token {token_address} with 0 decimals and supply > 1 but its '
+        f'offchain metadata does not look like a semi-fungible NFT. '
+        f'Classing it as a normal fungible token.',
+    )
+    return False
 
 
 def lamports_to_sol(amount: int) -> FVal:
