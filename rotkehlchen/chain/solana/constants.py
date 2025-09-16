@@ -1,6 +1,18 @@
 from typing import Final
 
-from construct import Bytes, GreedyBytes, Int8ul, Int32ul, Prefixed, Struct
+from construct import (
+    Array,
+    Bytes,
+    Flag,
+    GreedyBytes,
+    If,
+    Int8ul,
+    Int16ul,
+    Int32ul,
+    Prefixed,
+    Struct,
+    this,
+)
 from solders.pubkey import Pubkey
 
 # Used to derive the metadata PDA (Program Derived Address) for tokens in get_metadata_account
@@ -24,4 +36,20 @@ METADATA_LAYOUT_2022: Final = Struct(
 METADATA_LAYOUT_LEGACY: Final = Struct(
     'key' / Int8ul,
     *METADATA_LAYOUT_2022.subcons,
+    'seller_fee_basis_points' / Int16ul,
+    'creators_flag' / Flag,
+    'creators' / If(this.creators_flag, Struct(
+        'count' / Int32ul,
+        'items' / Array(this.count, Struct(
+            'address' / Bytes(32),
+            'verified' / Flag,
+            'share' / Int8ul,
+        )),
+    )),
+    'primary_sale_happened' / Flag,
+    'is_mutable' / Flag,
+    'edition_nonce_flag' / Flag,
+    'edition_nonce' / If(this.edition_nonce_flag, Int8ul),
+    'token_standard_flag' / Flag,
+    'token_standard' / If(this.token_standard_flag, Int8ul),
 )

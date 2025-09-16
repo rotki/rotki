@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_token_nft
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.makerdao import FVal
@@ -36,14 +37,19 @@ def test_solana_token_balances(
         solana_accounts: list['SolanaAddress'],
 ) -> None:
     """Test that the solana token balances are returned correctly.
-    The address tested currently holds 4 tokens and 11 NFTs. 1 token (catwifhat) is from the
-    new Token 2022 Program, and the others are from the original Token Program.
+    The address tested currently holds 4 tokens and 11 NFTs according to solscan.
+
+    1 token (JUPDROP) appears to be a scam token, with a token_standard of 2 (normal token) but
+    with zero decimals and is classified as an NFT on solscan. We simply stick to the
+    token_standard for this and class it as a normal token.
+
+    1 token (catwifhat) is from the new Token 2022 Program, and the others are from the original
+    Token Program.
     """
     balances = solana_manager.get_token_balances(account=solana_accounts[0])
     assert len(balances) == 15
-    # TODO: update these token/nft counts after improving nft detection.
-    assert len([x for x in balances if '/token:' in x.identifier]) == 6
-    assert len([x for x in balances if '/nft:' in x.identifier]) == 9
+    assert len([x for x in balances if '/token:' in x.identifier]) == 5
+    assert len([x for x in balances if '/nft:' in x.identifier]) == 10
     # Check several token and nft balances
     assert balances[Asset('solana/token:EG1Y8goUGa7y4iRYRgLgwBmSHc4Lxc91qL35cdDNBiRc')] == FVal('392143.986634')  # noqa: E501
     assert balances[Asset('solana/token:6XLSXS1HDXsTbq53onqAUeCqU6fxuMSgu7JkfZ9kbonk')] == FVal('322811.321023')  # noqa: E501
@@ -90,3 +96,20 @@ def test_solana_query_token_metadata(
     assert a_pxwl.symbol == 'PXWL'
     assert a_pxwl.decimals == ZERO
     assert a_pxwl.token_kind == TokenKind.SPL_NFT
+
+
+@pytest.mark.vcr
+def test_is_nft_via_offchain_metadata() -> None:
+    """Test that NFTs are still correctly identified when using the offchain metadata.
+    Calls is_token_nft with decimals == 0, supply > 1 and token_standard == None, which forces it
+    to use the offchain metadata from the given uri to determine if it's an NFT or not.
+    """
+    for uri, is_nft in (
+        ('https://gateway.pinit.io/ipfs/QmSTAhtdaqJmm9FTxWEdjQwKqvvjf99uGvN3vQaxzhRGqP/1089.json', True),  # Pixie Willie NFT  # noqa: E501
+        ('https://bafkreib5jykd5ehlvmi7f253jdjzzknj6eqlnqhzenfmdc6okrwksqfu6a.ipfs.nftstorage.link', False),  # catwifhat token  # noqa: E501
+    ):
+        assert is_token_nft(
+            token_address=SolanaAddress('Cg4noWpzmDHhPZZXDwmCLJns43PJpLmd6E8aYL1pRcRJ'),
+            mint_info=MintInfo(supply=100, decimals=0, tlv_data=None),
+            metadata=MetadataInfo(name='Some Token', symbol='ST', uri=uri, token_standard=None),
+        ) == is_nft
