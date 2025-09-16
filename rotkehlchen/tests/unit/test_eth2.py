@@ -402,6 +402,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('premium_limits_override', [{'eth_staked_limit': 8096}])
 def test_eth_accumulating_validators_performance(
         eth2: 'Eth2',
         database: 'DBHandler',
@@ -425,7 +426,6 @@ def test_eth_accumulating_validators_performance(
     - exit of validator 4
     - block reward of 0.05 ETH for validator 1
     """
-    eth2.premium._cached_limits = {'eth_staked_limit': 8096}  # type: ignore  # todo: Set those by fixture. ignore is since we only set the one relevant limit
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
     validators = [(validator1 := ValidatorDetails(

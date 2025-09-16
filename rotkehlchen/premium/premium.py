@@ -77,6 +77,22 @@ class UserLimits(TypedDict):
     reports_lookup_limit: int
     # Maximum amount of ETH that can be staked (validator balance limit)
     eth_staked_limit: int
+    # tier capabilities
+    eth_staking_view: bool
+    assets_graphs_view: bool
+    statistics_view: bool
+
+
+# keys that will be returned as part of the capabilities
+PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this due to https://github.com/python/mypy/issues/19961  # noqa: E501
+    'eth_staking_view',
+    'assets_graphs_view',
+    'statistics_view',
+], ...]] = (
+    'eth_staking_view',
+    'assets_graphs_view',
+    'statistics_view',
+)
 
 
 class UserLimitType(Enum):
@@ -821,6 +837,13 @@ class Premium:
         self._cached_limits = cast('UserLimits', _process_dict_response(response))
         log.debug(f'Fetched user limits from server: {self._cached_limits}')
         return self._cached_limits
+
+    def get_capabilities(self) -> dict[str, bool]:
+        limits = self.fetch_limits()
+        return {
+            feature_label: limits.get(feature_label, False)  # default to False in case we deprecate the key  # noqa: E501
+            for feature_label in PREMIUM_CAPABILITIES_KEYS
+        }
 
     def watcher_query(
             self,

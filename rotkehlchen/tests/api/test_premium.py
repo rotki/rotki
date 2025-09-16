@@ -292,3 +292,26 @@ def test_delete_current_device_fails(rotkehlchen_api_server: APIServer) -> None:
 
         # The external request should not be made because validation fails first
         mock_delete.assert_not_called()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
+    """Test the GET /premium/capabilities endpoint."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with patch.object(
+        rotki.premium,
+        'fetch_limits',
+        return_value=(capabilities := {
+            'eth_staking_view': True,
+            'assets_graphs_view': True,
+            'statistics_view': False,
+        }),
+    ):
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            'premiumcapabilitiesresource',
+        ))
+        result = assert_proper_sync_response_with_result(response)
+
+        assert result == capabilities
