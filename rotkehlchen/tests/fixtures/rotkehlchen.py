@@ -90,8 +90,18 @@ def fixture_rotki_premium_credentials() -> PremiumCredentials:
     )
 
 
+@pytest.fixture(name='premium_limits_override')
+def fixture_premium_limits_override() -> dict[str, int]:
+    """Override specific premium limits. Return empty dict for defaults."""
+    return {}
+
+
 @pytest.fixture(name='rotki_premium_object')
-def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium:
+def fixture_rotki_premium_object(
+        rotki_premium_credentials,
+        username,
+        premium_limits_override: dict[str, int],
+) -> Premium:
     """Create an active rotki premium object with valid credentials"""
     premium = Premium(
         credentials=rotki_premium_credentials,
@@ -100,7 +110,7 @@ def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium
         db=None,  # type: ignore # Since the fixture loads before others it was causing errors with the api fixture since the user folder already exists. Needs a bit of work to be figured out but is only used for the premium devices
     )
     premium.status = SubscriptionStatus.ACTIVE
-    premium._cached_limits = {
+    default_limits = {
         'limit_of_devices': TEST_PREMIUM_DEVICE_LIMIT,
         'max_backup_size_mb': TEST_PREMIUM_DB_SIZE_LIMIT,
         'pnl_events_limit': TEST_PREMIUM_PNL_EVENTS_LIMIT,
@@ -108,6 +118,8 @@ def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium
         'reports_lookup_limit': TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
         'eth_staked_limit': TEST_PREMIUM_ETH_STAKED_LIMIT,
     }
+    default_limits.update(premium_limits_override)
+    premium._cached_limits = default_limits  # type: ignore[assignment]
     return premium
 
 

@@ -1,7 +1,6 @@
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.mock import patch_eth2_requests
 
 
@@ -21,22 +20,14 @@ def fixture_eth2(
         database,
         messages_aggregator,
         start_with_valid_premium,
-        rotki_premium_credentials,
+        rotki_premium_object,
         beaconchain,
         network_mocking,
         eth2_mock_data,
-        username,
         beacon_rpc_endpoint,
         inquirer,  # pylint: disable=unused-argument
 ):
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(
-            credentials=rotki_premium_credentials,
-            username=username,
-            msg_aggregator=messages_aggregator,
-            db=database,
-        )
+    premium = rotki_premium_object if start_with_valid_premium else None
     eth2 = Eth2(
         ethereum_inquirer=ethereum_inquirer,
         database=database,

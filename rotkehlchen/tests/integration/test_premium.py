@@ -798,7 +798,7 @@ def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
     premium._cached_limits = None
     assert premium._cached_limits is None
 
-    limits_data = {  # mock limits response
+    limits_data = {  # mock server response for limits endpoint
         'history_events': 10000,
         'pnl_reports': 50,
         'devices': 3,
@@ -807,23 +807,12 @@ def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
         premium.session,
         'get',
         return_value=MockResponse(200, json.dumps(limits_data)),
-    ) as mock_get:
-        # First call should hit the API
-        limits1 = premium.fetch_limits()
-        assert limits1 == limits_data
-        assert premium._cached_limits == limits_data
-        assert mock_get.call_count == 1
-
-        # Second call should use cache, not hit API
-        limits2 = premium.fetch_limits()
-        assert limits2 == limits_data
-        assert premium._cached_limits == limits_data
-        assert mock_get.call_count == 1  # Should still be 1, not 2
-
-        # Third call should also use cache
-        limits3 = premium.fetch_limits()
-        assert limits3 == limits_data
-        assert mock_get.call_count == 1  # Should still be 1, not 2
+    ) as mock_get:  # multiple calls should use cache after first API hit
+        for _i in range(3):
+            limits = premium.fetch_limits()
+            assert limits == limits_data
+            assert premium._cached_limits == limits_data
+            assert mock_get.call_count == 1  # should always be 1 after first call
 
     # check that cache is cleared when credentials are reset
     premium.reset_credentials(premium.credentials)
@@ -837,6 +826,7 @@ def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
         limits4 = premium.fetch_limits()
         assert limits4 == limits_data
         assert premium._cached_limits == limits_data
+        assert mock_get.call_count == 1
 
 
 def test_docker_device_version_update(rotki_premium_object, database):

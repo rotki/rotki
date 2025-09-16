@@ -3524,3 +3524,10 @@ class PremiumDevicesResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, device_identifier: str) -> Response:
         return self.rest_api.delete_premium_registered_device(device_identifier=device_identifier)
+
+
+class PremiumCapabilitiesResource(BaseMethodView):
+
+    @require_premium_user(active_check=False)
+    def get(self) -> Response:
+        return self.rest_api.get_premium_capabilities()

@@ -5943,6 +5943,16 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(result))
 
+    def get_premium_capabilities(self) -> Response:
+        """Get capabilities for the premium account."""
+        assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
+        try:
+            capabilities = self.rotkehlchen.premium.get_capabilities()
+        except (PremiumAuthenticationError, RemoteError) as e:
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(capabilities))
+
     def delete_premium_registered_device(self, device_identifier: str) -> Response:
         """Delete a device from the premium account by identifier."""
         assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501

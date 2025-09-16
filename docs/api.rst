@@ -519,6 +519,46 @@ Deleting premium devices
    :statuscode 403: Logged in user does not have premium.
    :statuscode 409: The external premium service could not be reached or returned unexpected response.
 
+Querying premium capabilities
+==============================
+
+.. http:get:: /api/(version)/premium/capabilities
+
+   By doing a ``GET`` at this endpoint you can query the capabilities available for your premium account. The currently returned attributes are:
+
+   - `assets_graphs_view`: Boolean. Enables the graphs displayed for each asset containing historical balances and values.
+   - `eth_staking_view`: Boolean. Enables the Ethereum staking view.
+   - `statistics_view`: Boolean. Enables the statistics view and the historical analytics based on events.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/premium/capabilities HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+            "assets_graphs_view": true,
+            "eth_staking_view": false,
+            "statistics_view": true
+          },
+          "message": ""
+      }
+
+   :resjson object result: Object containing capabilities and their enabled/disabled status
+   :statuscode 200: capabilities successfully queried
+   :statuscode 401: User is not logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: The external premium service could not be reached or returned unexpected response.
+
 Modify user password
 ========================
 
