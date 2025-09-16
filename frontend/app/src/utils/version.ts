@@ -1,25 +1,4 @@
-interface SemanticVersion {
-  major: number;
-  minor: number;
-  patch: number;
-}
-
-/**
- * Parses a semantic version string (e.g., "1.40.1") into its components
- * @param version The version string to parse
- * @returns The parsed version components or null if invalid
- */
-export function parseVersion(version: string): SemanticVersion | null {
-  const match = version.match(/^(\d+)\.(\d+)\.(\d+)/);
-  if (!match)
-    return null;
-
-  return {
-    major: Number.parseInt(match[1]),
-    minor: Number.parseInt(match[2]),
-    patch: Number.parseInt(match[3]),
-  };
-}
+import semver from 'semver';
 
 /**
  * Checks if the version change is a major or minor update (not just a patch)
@@ -31,11 +10,11 @@ export function isMajorOrMinorUpdate(currentVersion: string | null, lastVersion:
   if (!lastVersion || !currentVersion)
     return false;
 
-  const current = parseVersion(currentVersion);
-  const last = parseVersion(lastVersion);
+  const current = semver.coerce(currentVersion);
+  const last = semver.coerce(lastVersion);
 
   if (!current || !last)
     return false;
 
-  return current.major !== last.major || current.minor !== last.minor;
+  return semver.diff(last, current) === 'major' || semver.diff(last, current) === 'minor';
 }
