@@ -7,6 +7,7 @@ import { requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -56,6 +57,8 @@ const hasFee = ref<boolean>(false);
 const fee = ref<string>('');
 const feeAsset = ref<string>('');
 const uniqueId = ref<string>('');
+const transactionId = ref<string>('');
+const blockchain = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -65,6 +68,7 @@ const commonRules = createCommonRules();
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
   asset: commonRules.createRequiredAssetRule(),
+  blockchain: commonRules.createExternalValidationRule(),
   eventIdentifier: commonRules.createExternalValidationRule(),
   eventType: commonRules.createRequiredEventTypeRule(),
   fee: commonRules.createRequiredFeeRule(requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
@@ -73,6 +77,7 @@ const rules = {
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
   timestamp: commonRules.createExternalValidationRule(),
+  transactionId: commonRules.createExternalValidationRule(),
   uniqueId: commonRules.createExternalValidationRule(),
 };
 
@@ -84,6 +89,7 @@ const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStat
 const states = {
   amount,
   asset,
+  blockchain,
   eventIdentifier,
   eventType,
   fee,
@@ -93,6 +99,7 @@ const states = {
   locationLabel,
   notes,
   timestamp,
+  transactionId,
   uniqueId,
 };
 
@@ -131,6 +138,8 @@ function reset() {
   set(notes, ['']);
   set(errorMessages, {});
   set(uniqueId, '');
+  set(blockchain, '');
+  set(transactionId, '');
 
   get(assetPriceForm)?.reset();
 }
@@ -161,6 +170,14 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
     set(uniqueId, entry.extraData.reference);
   }
 
+  if (entry.extraData?.transactionId) {
+    set(transactionId, entry.extraData.transactionId);
+  }
+
+  if (entry.extraData?.blockchain) {
+    set(blockchain, entry.extraData.blockchain);
+  }
+
   // Capture state snapshot for edit mode comparison
   captureEditModeStateFromRefs(states);
 }
@@ -176,6 +193,7 @@ async function save(): Promise<boolean> {
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
+    blockchain: get(blockchain),
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
     eventIdentifier: get(eventIdentifier),
     eventType: get(eventType),
@@ -184,6 +202,7 @@ async function save(): Promise<boolean> {
     location: get(location),
     locationLabel: get(locationLabel),
     timestamp: get(timestamp),
+    transactionId: get(transactionId),
     uniqueId: get(uniqueId),
     userNotes: get(notes),
   };
@@ -312,16 +331,6 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <RuiTextField
-      v-model="uniqueId"
-      variant="outlined"
-      data-cy="unique-id"
-      color="primary"
-      :label="t('transactions.events.form.unique_id.label')"
-    />
-
-    <RuiDivider class="mb-6 mt-2" />
-
     <RuiCheckbox
       v-model="hasFee"
       data-cy="has-fee"
@@ -404,6 +413,37 @@ defineExpose({
             :label="t('transactions.events.form.event_identifier.label')"
             :error-messages="toMessages(v$.eventIdentifier)"
             @blur="v$.eventIdentifier.$touch()"
+          />
+
+          <RuiTextField
+            v-model="uniqueId"
+            variant="outlined"
+            data-cy="unique-id"
+            color="primary"
+            :label="t('transactions.events.form.unique_id.label')"
+            :error-messages="toMessages(v$.uniqueId)"
+            @blur="v$.uniqueId.$touch()"
+          />
+
+          <RuiTextField
+            v-model="transactionId"
+            variant="outlined"
+            color="primary"
+            data-cy="tx-hash"
+            :label="t('common.tx_hash')"
+            :error-messages="toMessages(v$.transactionId)"
+            @blur="v$.transactionId.$touch()"
+          />
+
+          <ChainSelect
+            v-model="blockchain"
+            variant="outlined"
+            data-cy="blockchain-id"
+            color="primary"
+            custom-value
+            :label="t('common.blockchain')"
+            :error-messages="toMessages(v$.blockchain)"
+            @blur="v$.blockchain.$touch()"
           />
         </div>
       </RuiAccordion>

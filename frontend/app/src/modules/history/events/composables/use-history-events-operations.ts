@@ -19,7 +19,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { isTaskCancelled } from '@/utils';
 
 interface UseHistoryEventsOperationsOptions {
-  eventsGroupedByEventIdentifier: ComputedRef<Record<string, HistoryEventRow[]>>;
+  allEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
   flattenedEvents: ComputedRef<HistoryEventEntry[]>;
 }
 
@@ -42,7 +42,7 @@ export function useHistoryEventsOperations(
   options: UseHistoryEventsOperationsOptions,
   emit: HistoryEventsTableEmitFn,
 ): UseHistoryEventsOperationsReturn {
-  const { eventsGroupedByEventIdentifier, flattenedEvents } = options;
+  const { allEventsMapped, flattenedEvents } = options;
 
   const selected = ref<HistoryEventEntry[]>([]);
   const showRedecodeConfirmation = ref<boolean>(false);
@@ -146,7 +146,7 @@ export function useHistoryEventsOperations(
       return;
     }
 
-    const groupedEvents = get(eventsGroupedByEventIdentifier)[eventIdentifier] || [];
+    const groupedEvents = get(allEventsMapped)[eventIdentifier] || [];
     const childEvents = flatten(groupedEvents);
     const isAnyCustom = childEvents.some(item => item.customized);
 

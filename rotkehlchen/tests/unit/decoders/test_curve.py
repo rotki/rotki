@@ -5,7 +5,6 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.base.modules.curve.constants import CURVE_SWAP_ROUTER_NG
 from rotkehlchen.chain.binance_sc.modules.curve.constants import (
     CURVE_SWAP_ROUTER_NG as CURVE_SWAP_ROUTER_NG_BSC,
 )
@@ -61,6 +60,7 @@ from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -68,6 +68,7 @@ if TYPE_CHECKING:
 
 
 EXP18: Final = FVal(1e18)
+CURVE_SWAP_ROUTER_NG: Final = string_to_evm_address('0xd6681e74eEA20d196c15038C580f721EF2aB6320')
 
 
 @pytest.fixture(name='populate_eure_pool')
@@ -2006,7 +2007,7 @@ def test_curve_swap_router_base(base_inquirer, base_accounts):
             location_label=base_accounts[0],
             notes=f'Swap {swap_amount} ETH in curve',
             counterparty=CPT_CURVE,
-            address=string_to_evm_address(CURVE_SWAP_ROUTER_NG),
+            address=CURVE_SWAP_ROUTER_NG,
         ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -2018,7 +2019,7 @@ def test_curve_swap_router_base(base_inquirer, base_accounts):
             location_label=base_accounts[0],
             notes=f'Receive {receive_amount} USDC as the result of a swap in curve',
             counterparty=CPT_CURVE,
-            address=string_to_evm_address(CURVE_SWAP_ROUTER_NG),
+            address=CURVE_SWAP_ROUTER_NG,
         ),
     ]
     assert events == expected_events
@@ -2996,3 +2997,50 @@ def test_mint_crv_arb(
             address=CHILD_LIQUIDITY_GAUGE_FACTORY,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x77BDF564A1f9cE5A5785a36Fc77cC4fFbEcD3a19']])
+def test_curve_router_v1_2(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x72e4c09bd07884df800dea65063b5a2cff22ec697f5644bb17dea14db5cb99e1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755723805000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000006112533736574')),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0xDBFeFD2e8460a6Ee4955A68582F85708BAEA60A3'),
+        amount=(swap_amount := FVal('0.000045')),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} superOETHb in curve',
+        counterparty=CPT_CURVE,
+        address=string_to_evm_address('0x4f37A9d177470499A2dD084621020b023fcffc1F'),
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:8453/erc20:0x4200000000000000000000000000000000000006'),
+        amount=(receive_amount := FVal('0.000044989534642181')),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} WETH as the result of a swap in curve',
+        counterparty=CPT_CURVE,
+        address=string_to_evm_address('0x4f37A9d177470499A2dD084621020b023fcffc1F'),
+    )]

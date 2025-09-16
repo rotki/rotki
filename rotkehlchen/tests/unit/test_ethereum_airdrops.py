@@ -1,9 +1,11 @@
 import datetime
 import json
+from collections import defaultdict
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO, StringIO
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import polars as pl
@@ -18,6 +20,7 @@ from rotkehlchen.chain.ethereum.airdrops import (
     ETAG_CACHE_KEY,
     _parse_airdrops,
     check_airdrops,
+    check_linea_airdrop,
     fetch_airdrops_metadata,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -37,6 +40,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import CacheType, Location, TimestampMS
 from rotkehlchen.utils.serialization import rlk_jsondumps
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 TEST_ADDR1 = string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')
 TEST_ADDR2 = string_to_evm_address('0x51985CE8BB9AB1708746b24e22e37CD7A980Ec24')
@@ -383,6 +389,7 @@ def test_check_airdrops(
     freezer.move_to(datetime.datetime.fromtimestamp(1721000000, tz=datetime.UTC))
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get),
+        patch('rotkehlchen.chain.ethereum.airdrops.check_linea_airdrop', side_effect=lambda addresses, database, found_data: found_data),  # noqa: E501
         patch('rotkehlchen.globaldb.handler.GlobalDBHandler.packaged_db_conn', side_effect=lambda: GlobalDBHandler().conn),  # not using packaged DB to ensure that new tokens are created  # noqa: E501
     ):
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -525,6 +532,7 @@ def test_check_airdrops(
     freezer.move_to(datetime.datetime.fromtimestamp(1721000001 + 12 * HOUR_IN_SECONDS, tz=datetime.UTC))  # noqa: E501
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=update_mock_requests_get) as mock_get,  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.airdrops.check_linea_airdrop', side_effect=lambda addresses, database, found_data: found_data),  # noqa: E501
     ):
         data = check_airdrops(
             addresses=[TEST_ADDR2],
@@ -602,3 +610,36 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
         )
         if remote_etag != database_etag:  # check if the value is updated
             assert metadata[0]['diva'].name == 'new_name'
+
+
+@pytest.mark.vcr
+def test_check_linea_airdrop(database: 'DBHandler') -> None:
+    """Test that the Linea airdrop is correctly detected."""
+    assert check_linea_airdrop(
+        addresses=[
+            string_to_evm_address('0xf1952F8622949F6B865497459453BE7ee0Ae1753'),  # unclaimed
+            string_to_evm_address('0x706A70067BE19BdadBea3600Db0626859Ff25D74'),  # no allocation
+            string_to_evm_address('0xcD1b393e15e2E6A4b8DF0aED618E6C18221BfD10'),  # claimed
+        ],
+        database=database,
+        found_data=defaultdict(lambda: defaultdict(dict)),
+    ) == {
+        '0xf1952F8622949F6B865497459453BE7ee0Ae1753': {'linea': {
+            'amount': '95894.881636554',
+            'asset': (a_linea := Asset('eip155:59144/erc20:0x1789e0043623282D5DCc7F213d703C6D8BAfBB04')),  # noqa: E501
+            'link': 'https://linea.build/hub/airdrop',
+            'icon': 'linea.svg',
+            'claimed': False,
+            'has_decoder': True,
+            'cutoff_time': 1765324740,
+        }},
+        '0xcD1b393e15e2E6A4b8DF0aED618E6C18221BfD10': {'linea': {
+            'amount': '1045.355540128',
+            'asset': a_linea,
+            'link': 'https://linea.build/hub/airdrop',
+            'icon': 'linea.svg',
+            'claimed': True,
+            'has_decoder': True,
+            'cutoff_time': 1765324740,
+        }},
+    }

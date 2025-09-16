@@ -1,13 +1,13 @@
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SDAI, A_WXDAI, A_XDAI
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -125,6 +125,16 @@ def test_deposit_to_spark(ethereum_inquirer, ethereum_accounts):
         chain_id=ethereum_inquirer.chain_id,
         protocol=CPT_SPARK,
         token_kind=TokenKind.ERC20,
+        underlying_tokens=[UnderlyingToken(
+            weight=ONE,
+            address=get_or_create_evm_token(
+                evm_inquirer=ethereum_inquirer,
+                chain_id=ethereum_inquirer.chain_id,
+                evm_address=string_to_evm_address('0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),
+                userdb=ethereum_inquirer.database,
+            ).evm_address,
+            token_kind=TokenKind.ERC20,
+        )],
     )
     tx_hash = deserialize_evm_tx_hash('0xe7ae42aa6b3815b135c5dfe62222421e43013d30ec132f18d52b396229ce5c6a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -196,6 +206,16 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
         chain_id=gnosis_inquirer.chain_id,
         protocol=CPT_SPARK,
         token_kind=TokenKind.ERC20,
+        underlying_tokens=[UnderlyingToken(
+            weight=ONE,
+            address=get_or_create_evm_token(
+                evm_inquirer=gnosis_inquirer,
+                chain_id=gnosis_inquirer.chain_id,
+                evm_address=string_to_evm_address('0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'),
+                userdb=gnosis_inquirer.database,
+            ).evm_address,
+            token_kind=TokenKind.ERC20,
+        )],
     )
     tx_hash = deserialize_evm_tx_hash('0x783c3199d405cbf9a9f95ac31e6aeeb0c092d405d4abd56ec2cd3c62b760b3e8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

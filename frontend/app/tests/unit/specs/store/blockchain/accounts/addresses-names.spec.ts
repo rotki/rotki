@@ -135,13 +135,13 @@ describe('store::blockchain/accounts/addresses-names', () => {
     ];
 
     it('default', async () => {
-      await store.addAddressBook('global', entries);
+      await store.addAddressBook('global', entries, false);
 
-      expect(api.addAddressBook).toHaveBeenCalledWith('global', entries);
+      expect(api.addAddressBook).toHaveBeenCalledWith('global', entries, false);
 
-      await store.addAddressBook('private', entries);
+      await store.addAddressBook('private', entries, true);
 
-      expect(api.addAddressBook).toHaveBeenCalledWith('private', entries);
+      expect(api.addAddressBook).toHaveBeenCalledWith('private', entries, true);
     });
   });
 

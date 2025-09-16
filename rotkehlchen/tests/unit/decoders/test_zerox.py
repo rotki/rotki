@@ -1626,3 +1626,47 @@ def test_swap_via_settler_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accou
         counterparty=CPT_ZEROX,
         address=settler_address,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x602CB34cE1B1d3133219D8a79c773fe9FAe3656e']])
+def test_swap_via_another_settler_on_base(base_inquirer, base_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x78a911888adf24a8e321eb4f068e53d9562daad75ed2652e9fa5bb50a355f6e0')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1757707441000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000001263283055064')),
+        location_label=(user := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0x18b6f6049A0af4Ed2BBe0090319174EeeF89f53a'),
+        amount=(out_amount := FVal('33.3')),
+        location_label=user,
+        notes=f'Swap {out_amount} RUNNER via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0xf525fF21C370Beb8D9F5C12DC0DA2B583f4b949F'),
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+        amount=(in_amount := FVal('7.408379')),
+        location_label=user,
+        notes=f'Receive {in_amount} USDC as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0xf525fF21C370Beb8D9F5C12DC0DA2B583f4b949F'),
+    )]

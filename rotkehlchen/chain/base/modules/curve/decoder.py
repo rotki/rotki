@@ -4,7 +4,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CHILD_LIQUIDITY_GAUGE
 from rotkehlchen.chain.evm.decoding.curve.decoder import CurveCommonDecoder
 from rotkehlchen.constants.assets import A_ETH
 
-from .constants import CURVE_SWAP_ROUTER_NG, DEPOSIT_AND_STAKE_ZAP
+from .constants import CURVE_SWAP_ROUTERS_NG, DEPOSIT_AND_STAKE_ZAP
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -27,6 +27,6 @@ class CurveDecoder(CurveCommonDecoder):
             native_currency=A_ETH,
             aave_pools=set(),
             curve_deposit_contracts={DEPOSIT_AND_STAKE_ZAP},
-            curve_swap_routers={CURVE_SWAP_ROUTER_NG},
+            curve_swap_routers=CURVE_SWAP_ROUTERS_NG,
             crv_minter_addresses={CHILD_LIQUIDITY_GAUGE_FACTORY},
         )

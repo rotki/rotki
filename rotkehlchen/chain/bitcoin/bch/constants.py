@@ -9,3 +9,4 @@ HASKOIN_BATCH_SIZE: Final = 100
 
 # Combined with the tx id to create the event identifiers for bitcoin cash transactions.
 BCH_EVENT_IDENTIFIER_PREFIX: Final = 'bch_'
+CASHADDR_PREFIX: Final = 'bitcoincash'  # standard prefix used by bip_utils and other APIs

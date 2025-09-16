@@ -39,7 +39,7 @@ interface WrapStatisticsApi {
 export function useWrapStatisticsApi(): WrapStatisticsApi {
   const fetchWrapStatistics = async ({ end, start }: { end: number; start: number }): Promise<WrapStatisticsResult> => {
     const response = await api.instance.post<ActionResult<WrapStatisticsResult>>(
-      '/statistics/wrap',
+      '/statistics/events',
       snakeCaseTransformer(nonEmptyProperties({
         from_timestamp: start,
         to_timestamp: end,

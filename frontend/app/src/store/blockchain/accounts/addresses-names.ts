@@ -226,8 +226,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   const addAddressBook = async (
     location: AddressBookLocation,
     entries: AddressBookEntries,
+    updateExisting = false,
   ): Promise<boolean> => {
-    const result = await addAddressBookCaller(location, entries);
+    const result = await addAddressBookCaller(location, entries, updateExisting);
 
     if (result)
       resetAddressNamesData(entries);

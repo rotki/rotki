@@ -106,9 +106,12 @@ class Liquity(EthereumModule):
         """Query liquity contract to detect open troves and
         query total collateral ratio of the protocol"""
         addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
-        proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # At least v1 had only DS proxy # noqa: E501
-        proxies_to_address = {v: k for k, v in proxied_addresses.items()}
-        addresses += proxied_addresses.values()
+        proxy_mapping = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # At least v1 had only DS proxy # noqa: E501
+        proxies_to_address = {}
+        for user_address, proxy_addresses in proxy_mapping.items():
+            addresses.extend(proxy_addresses)
+            for proxy_address in proxy_addresses:
+                proxies_to_address[proxy_address] = user_address
 
         calls = [
             (self.trove_manager_contract.address, self.trove_manager_contract.encode(method_name='Troves', arguments=[x]))  # noqa: E501
@@ -203,7 +206,8 @@ class Liquity(EthereumModule):
         """
         addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
         for proxy_mappings in self.ethereum.proxies_inquirer.get_accounts_having_proxy().values():
-            addresses += proxy_mappings.values()
+            for proxy_addresses in proxy_mappings.values():
+                addresses.extend(proxy_addresses)
 
         # Build the calls that need to be made in order to get the status in the SP
         calls = [

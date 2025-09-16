@@ -89,7 +89,6 @@ const {
 const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
 const {
-  accounts,
   fetchData,
   filters,
   groupLoading,
@@ -97,9 +96,10 @@ const {
   highlightedIdentifiers,
   identifiers,
   includes,
+  locationLabels,
   locations,
   matchers,
-  onFilterAccountsChanged,
+  onLocationLabelsChanged,
   pageParams,
   pagination,
   setPage,
@@ -223,14 +223,14 @@ onMounted(async () => {
         <HistoryEventsTableActions
           v-model:filters="filters"
           v-model:toggles="toggles"
-          :accounts="accounts"
+          :location-labels="locationLabels"
           :processing="processing"
           :matchers="matchers"
           :export-params="pageParams"
           :hide-redecode-buttons="!mainPage"
           :hide-account-selector="useExternalAccountFilter"
           :selection="selectionMode.state.value"
-          @update:accounts="onFilterAccountsChanged($event)"
+          @update:location-labels="onLocationLabelsChanged($event)"
           @redecode="actions.redecode.by($event)"
           @selection:action="handleSelectionAction($event)"
         />

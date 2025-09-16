@@ -1,37 +1,14 @@
-from typing import Final, Literal
+from typing import Literal
 
 from base58 import b58decode_check, b58encode_check
 from bip_utils.bech32.bch_bech32 import BchBech32Decoder, BchBech32Encoder
 from eth_typing import ChecksumAddress
 from marshmallow import ValidationError
 
-from rotkehlchen.chain.bitcoin.utils import is_valid_base58_address
+from rotkehlchen.chain.bitcoin.bch.constants import CASHADDR_PREFIX
+from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
+from rotkehlchen.chain.bitcoin.validation import is_valid_base58_address
 from rotkehlchen.types import BTCAddress
-
-# CashAddr format main net prefix.
-# See https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/cashaddr.md
-CASHADDR_PREFIX: Final = 'bitcoincash'
-
-
-def is_valid_bitcoin_cash_address(address: str) -> bool:
-    """Validates a Bitcoin Cash's CashAddr format
-    e.g bitcoincash:qpmmlusvvrjj9ha2xdgv8xcrpfwsqn5rngt3k26ve2
-    """
-    if address.upper() != address and address.lower() != address:
-        return False
-    address = address.lower()
-    colon_count = address.count(':')
-    if colon_count == 0:
-        address = CASHADDR_PREFIX + ':' + address
-    elif colon_count > 1:
-        return False
-
-    try:
-        BchBech32Decoder.Decode(hrp=CASHADDR_PREFIX, addr=address)
-    except ValueError:
-        return False
-
-    return True
 
 
 def convert_version(version: int, target_type: Literal['legacy', 'cash']) -> int:

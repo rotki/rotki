@@ -21,6 +21,7 @@ from rotkehlchen.constants.assets import (
     A_WETH_BASE,
     A_WETH_OPT,
     A_WETH_POLYGON,
+    A_WETH_SCROLL,
     A_WXDAI,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -231,6 +232,23 @@ def get_token(
         )
     except (UnknownAsset, WrongAssetType):
         return None
+
+
+def get_single_underlying_token(token: 'EvmToken') -> 'EvmToken | None':
+    """Get a token's single underlying token.
+    Returns the underlying token or None if the token has no/multiple underlying tokens.
+    """
+    if (
+        token.underlying_tokens is not None and
+        len(token.underlying_tokens) == 1 and
+        (underlying_token := get_token(
+            evm_address=token.underlying_tokens[0].address,
+            chain_id=token.chain_id,
+        )) is not None
+    ):
+        return underlying_token
+
+    return None
 
 
 def get_or_create_evm_token(
@@ -446,4 +464,5 @@ CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.GNOSIS: A_WXDAI,
     SupportedBlockchain.POLYGON_POS: A_WETH_POLYGON,
     SupportedBlockchain.BINANCE_SC: A_WBNB,
+    SupportedBlockchain.SCROLL: A_WETH_SCROLL,
 }

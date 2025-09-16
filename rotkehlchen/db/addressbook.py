@@ -1,11 +1,13 @@
+import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import AddressNotSupported, InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+    ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     AddressbookEntry,
     AddressbookType,
     ChecksumEvmAddress,
@@ -17,6 +19,10 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.filtering import AddressbookFilterQuery
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class DBAddressbook:
@@ -64,7 +70,7 @@ class DBAddressbook:
             AddressbookEntry(
                 address=ChecksumEvmAddress(address),
                 name=name,
-                blockchain=SupportedBlockchain(blockchain_str) if blockchain_str != ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE else None,  # noqa: E501
+                blockchain=SupportedBlockchain(blockchain_str) if not blockchain_str.startswith(ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX) else None,  # noqa: E501
             ) for address, name, blockchain_str in cursor
         ]
         return entries, total_found_result
@@ -73,27 +79,42 @@ class DBAddressbook:
             self,
             write_cursor: 'DBCursor',
             entries: list[AddressbookEntry],
+            update_existing: bool = True,
     ) -> None:
-        """Adds new or updates existing addressbook entries.
-
+        """Adds new addressbook entries.
+        If update_existing is set and the entry is already present, it will be updated.
         If blockchain is None then make sure that the same address doesn't appear in combination
         with other blockchain values.
+        May raise InputError if the entry already exists in the DB and update_existing is False or
+        if the address is from a unknown ecosystem.
         """
         # We iterate here with for loop instead of executemany in order to catch
         # which identifier is duplicated
         for entry in entries:
+            if not update_existing and write_cursor.execute(
+                'SELECT COUNT(*) FROM address_book WHERE address=? AND blockchain=?;',
+                (entry.address, entry.blockchain.value if entry.blockchain else entry.get_ecosystem_key()),  # noqa: E501
+            ).fetchone()[0] != 0:
+                raise InputError(
+                    f'Entry with address {entry.address} and blockchain {entry.blockchain} '
+                    'already exists in the address book.',
+                )
+
             # in the case of given blockchain being None delete any other entry for that
             # address since they are rendered redundant
             if entry.blockchain is None:
                 write_cursor.execute(
                     'DELETE FROM address_book where address=? AND blockchain IS NOT ?',
-                    (entry.address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),
+                    (entry.address, entry.get_ecosystem_key()),
                 )
 
-            write_cursor.execute(
-                'INSERT OR REPLACE INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
-                entry.serialize_for_db(),
-            )
+            try:
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',  # noqa: E501
+                    entry.serialize_for_db(),
+                )
+            except AddressNotSupported as e:
+                raise InputError(f'Address {entry.address} is from a unknown ecosystem') from e
 
     def update_addressbook_entries(
             self,
@@ -108,10 +129,14 @@ class DBAddressbook:
         with self.write_ctx(book_type) as write_cursor:
             for entry in entries:
                 if entry.name == '':   # Handle deletion case
-                    entry_blockchain_value = (
-                        entry.blockchain.value if entry.blockchain
-                        else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
-                    )
+                    try:
+                        entry_blockchain_value = (
+                            entry.blockchain.value if entry.blockchain
+                            else entry.get_ecosystem_key()
+                        )
+                    except AddressNotSupported as e:
+                        raise InputError(f'Address {entry.address} is not supported.') from e
+
                     write_cursor.execute(
                         'DELETE FROM address_book WHERE address = ? AND blockchain = ?',
                         (entry.address, entry_blockchain_value),
@@ -182,12 +207,20 @@ class DBAddressbook:
         instead of the NULL one.
         """
         with self.read_ctx(book_type) as read_cursor:
+            try:
+                ecosystem_key = AddressbookEntry.get_ecosystem_key_by_address(
+                    address=chain_address.address,
+                )
+            except AddressNotSupported:
+                log.error(f'Address {chain_address.address} is from an unknown ecosystem. Skipping')  # noqa: E501
+                return None
+
             read_cursor.execute(
                 'SELECT name FROM address_book WHERE address=? AND (blockchain IS ? OR blockchain IS ?) ORDER BY blockchain DESC',  # noqa: E501
                 (
                     chain_address.address,
-                    chain_address.blockchain.value if chain_address.blockchain is not None else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,  # noqa: E501
-                    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+                    chain_address.blockchain.value if chain_address.blockchain is not None else ecosystem_key,  # noqa: E501
+                    ecosystem_key,
                 ),
             )
             result = read_cursor.fetchone()
@@ -202,6 +235,9 @@ class DBAddressbook:
         """Make the existing name for the specified address apply to all chains.
         If there is no existing name or if there are different names for it in different chains,
         then no action is taken.
+
+        May raise:
+            - AddressNotSupported
         """
         with self.read_ctx(book_type) as cursor:
             if (entry_count := len(names := cursor.execute(
@@ -215,7 +251,7 @@ class DBAddressbook:
             if entry_count == 1:  # Only one entry. Just update it.
                 write_cursor.execute(
                     'UPDATE address_book SET blockchain=? WHERE address=?',
-                    (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, address),
+                    (AddressbookEntry.get_ecosystem_key_by_address(address), address),
                 )
             else:  # Same label is set on multiple chains. Delete existing entries and add new one.
                 self.add_or_update_addressbook_entries(

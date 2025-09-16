@@ -69,7 +69,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.types import EVMTxHash
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
 
 def assert_editing_works(
@@ -176,9 +176,13 @@ def add_test_evm_tx(database: 'DBHandler', tx_hash: 'EVMTxHash') -> None:
         )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])  # so we can run redecode after add/edit/delete
 @pytest.mark.parametrize('ethereum_accounts', [['0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990']])
-def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_edit_delete_entries(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = predefined_events_to_insert()
@@ -189,7 +193,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entries_to_input_dict(grouped_entries[0], include_identifier=False),
         ),
-        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        contained_in_msg='The provided transaction hash does not exist for ethereum.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -263,7 +267,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='Failed to add event to the DB. It already exists',
         status_code=HTTPStatus.CONFLICT,
     )
-    # test setting tx_hash to a hash not in the db fails.
+    # test that setting tx_hash to a hash not in the db and not present onchain fails.
     original_tx_hash = entry.tx_hash
     entry.tx_hash = deserialize_evm_tx_hash('0x51a331dc069f6f7ed6e02e259ff31131799e1fad632c72d15b9d138ec43e2a87')  # noqa: E501
     assert_error_response(
@@ -271,10 +275,24 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entries_to_input_dict(entries=[entry], include_identifier=True),
         ),
-        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        contained_in_msg='The provided transaction hash does not exist for ethereum.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # test that setting a real tx_hash that's only missing from the DB pulls the tx from onchain.
+    entry.tx_hash = deserialize_evm_tx_hash('0x0deecc90c9d172b77ea52ebc13b929f219bf47f22a8a875bb6e2fedf3e3b74e1')  # noqa: E501
+    original_location_label = entry.location_label
+    entry.location_label = ethereum_accounts[0]  # associated address must be tracked when pulling new tx  # noqa: E501
+    assert_simple_ok_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entries_to_input_dict(entries=[entry], include_identifier=True),
+    ))
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=?',
+            (entry.tx_hash,),
+        ).fetchone()[0] == 1
     entry.tx_hash = original_tx_hash
+    entry.location_label = original_location_label
     # test setting asset to something other than BTC fails for bitcoin history events
     assert isinstance((history_event_entry := entries[5]), HistoryEvent)
     json_data = entries_to_input_dict(entries=[history_event_entry], include_identifier=True)
@@ -1229,7 +1247,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=entry,
         ),
-        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        contained_in_msg='The provided transaction hash does not exist for ethereum.',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     entry['tx_hash'] = tx_hash_str

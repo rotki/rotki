@@ -1,5 +1,6 @@
 from typing import Final
 
+from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_SWAP_ROUTER_V1
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 GAUGE_BRIBE_V2: Final = string_to_evm_address('0x7893bbb46613d7a4FbcC31Dab4C9b823FfeE1026')
@@ -58,7 +59,12 @@ CURVE_DEPOSIT_CONTRACTS: Final = {
 }
 DEPOSIT_AND_STAKE_ZAP: Final = string_to_evm_address('0x56C526b0159a258887e0d79ec3a80dfb940d0cD7')
 GAUGE_CONTROLLER: Final = string_to_evm_address('0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB')
-CURVE_SWAP_ROUTER: Final = string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f')
+CURVE_SWAP_ROUTERS: Final = {
+    string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
+    CURVE_SWAP_ROUTER_V1,
+    string_to_evm_address('0x16C6521Dff6baB339122a0FE25a9116693265353'),  # Curve Router v1.1
+    string_to_evm_address('0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e'),  # Curve Router v1.2
+}
 AAVE_POOLS: Final = {
     string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),  # aDAI + aUSDC + aUSDT
     string_to_evm_address('0xEB16Ae0052ed37f479f7fe63849198Df1765a733'),  # aDAI + aSUSD

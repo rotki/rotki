@@ -1,4 +1,5 @@
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/messaging/types';
+import type { LocationLabel } from '@/types/location';
 import { useHistoryApi } from '@/composables/api/history';
 import { type EvmTransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -10,6 +11,7 @@ import { logger } from '@/utils/logging';
 
 export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = ref<string[]>([]);
+  const locationLabels = ref<LocationLabel[]>([]);
   const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
   const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
   const evmTransactionStatus = ref<EvmTransactionStatus>();
@@ -96,7 +98,7 @@ export const useHistoryStore = defineStore('history', () => {
     set(receivingProtocolCacheStatus, false);
   };
 
-  const { fetchAssociatedLocations: fetchAssociatedLocationsApi } = useHistoryApi();
+  const { fetchAssociatedLocations: fetchAssociatedLocationsApi, fetchLocationLabels: fetchLocationLabelsApi } = useHistoryApi();
   const { notify } = useNotificationsStore();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -128,6 +130,21 @@ export const useHistoryStore = defineStore('history', () => {
     }
   };
 
+  const fetchLocationLabels = async (): Promise<void> => {
+    try {
+      set(locationLabels, await fetchLocationLabelsApi());
+    }
+    catch (error: any) {
+      logger.error(error);
+      const message = error?.message ?? error ?? '';
+      notify({
+        display: true,
+        message: t('actions.history.fetch_location_labels.error.message', { message }),
+        title: t('actions.history.fetch_location_labels.error.title'),
+      });
+    }
+  };
+
   watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
     if (!curr && prev) {
       resetProtocolCacheUpdatesStatus();
@@ -141,7 +158,9 @@ export const useHistoryStore = defineStore('history', () => {
     evmTransactionStatus,
     fetchAssociatedLocations,
     fetchEvmTransactionStatus,
+    fetchLocationLabels,
     getUndecodedTransactionStatus,
+    locationLabels,
     protocolCacheStatus,
     receivingProtocolCacheStatus,
     resetProtocolCacheUpdatesStatus,

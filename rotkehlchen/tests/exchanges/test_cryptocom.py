@@ -21,7 +21,7 @@ from rotkehlchen.utils.misc import ts_now
 
 EMPTY_BALANCES_RESPONSE: Final = {'id': 1, 'method': 'private/user-balance', 'code': 0, 'result': {'data': [{'total_available_balance': '0', 'total_margin_balance': '0', 'total_initial_margin': '0.00000000', 'total_haircut': '0.00000000', 'total_position_im': '0', 'total_maintenance_margin': '0', 'total_position_cost': '0', 'total_cash_balance': '0', 'total_session_unrealized_pnl': '0', 'instrument_name': 'USD', 'total_session_realized_pnl': '0', 'position_balances': [], 'credit_limits': [], 'total_effective_leverage': '0', 'position_limit': '0', 'used_position_limit': '0', 'total_borrow': '0', 'margin_score': '0', 'is_liquidating': False, 'has_risk': False, 'terminatable': True}]}}  # noqa: E501
 BALANCES_RESPONSE: Final = {'id': 1, 'method': 'private/user-balance', 'code': 0, 'result': {'data': [{'total_available_balance': '98.70225541', 'total_margin_balance': '99.93901911', 'total_initial_margin': '1.23676370', 'total_haircut': '1.23676370', 'total_position_im': '0', 'total_maintenance_margin': '0.61838185', 'total_position_cost': '0', 'total_cash_balance': '99.93901911', 'total_collateral_value': '98.70225541', 'total_session_unrealized_pnl': '0', 'instrument_name': 'USD', 'total_session_realized_pnl': '0', 'position_balances': [{'quantity': '0.00016915', 'reserved_qty': '0', 'collateral_amount': '18.55145541', 'haircut': '0.0625', 'collateral_eligible': True, 'market_value': '19.78821911', 'max_withdrawal_balance': '0.00016915', 'instrument_name': 'BTC', 'hourly_interest_rate': '0'}, {'quantity': '80.1508', 'reserved_qty': '0', 'collateral_amount': '80.1508', 'haircut': '0', 'collateral_eligible': True, 'market_value': '80.1508', 'max_withdrawal_balance': '80.1508', 'instrument_name': 'USD', 'hourly_interest_rate': '0'}], 'credit_limits': [], 'total_effective_leverage': '0.198003', 'position_limit': '1998.78038226', 'used_position_limit': '19.78821912', 'total_borrow': '0', 'margin_score': '0', 'is_liquidating': False, 'has_risk': False, 'terminatable': True}]}}  # noqa: E501
-DEPOSITS_RESPONSE: Final = {'id': 1, 'method': 'private/get-deposit-history', 'code': 0, 'result': {'deposit_list': [{'currency': 'USDC', 'fee': 0, 'create_time': 1755883811000, 'id': '8626791', 'update_time': 1755884808000, 'amount': 100, 'address': 'REDACTED', 'status': '1', 'txid': 'REDACTED'}]}}  # noqa: E501
+DEPOSITS_RESPONSE: Final = {'id': 1, 'method': 'private/get-deposit-history', 'code': 0, 'result': {'deposit_list': [{'currency': 'USDC', 'fee': 0, 'create_time': 1755883811000, 'id': '8626791', 'update_time': 1755884808000, 'amount': 100, 'address': 'REDACTED', 'status': '1', 'txid': '0xa6fc2f080597f3a599d335a90eb6032872525dfcfdd8f5fabb49e76973418cdf/27'}]}}  # noqa: E501
 WITHDRAWALS_RESPONSE: Final = {'id': 11, 'method': 'private/get-withdrawal-history', 'code': 0, 'result': {'withdrawal_list': [{'currency': 'USDT', 'client_wid': 'my_withdrawal_002', 'fee': 1.0, 'create_time': 1607063412000, 'id': '2220', 'update_time': 1607063460000, 'amount': 25, 'address': 'REDACTED', 'status': '1', 'txid': '', 'network_id': None}]}}  # noqa: E501
 TRADES_RESPONSE: Final = {'id': 1, 'method': 'private/get-trades', 'code': 0, 'result': {'data': [{'account_id': 'REDACTED', 'event_date': '2025-08-22', 'journal_type': 'TRADING', 'side': 'BUY', 'instrument_name': 'SOL_USD', 'fees': '-0.00025', 'trade_id': '6242909981674131791', 'trade_match_id': '4311686018497604499', 'create_time': 1755892532063, 'traded_price': '199.17', 'traded_quantity': '0.050', 'fee_instrument_name': 'SOL', 'client_oid': 'REDACTED', 'taker_side': 'TAKER', 'order_id': '6142909939312653446', 'match_count': 1, 'create_time_ns': '1755892532063684632', 'transact_time_ns': '1755892532063937846'}, {'account_id': 'REDACTED', 'event_date': '2025-08-22', 'journal_type': 'TRADING', 'side': 'BUY', 'instrument_name': 'BTC_USD', 'fees': '-0.00000085', 'trade_id': '6242909981648392989', 'trade_match_id': '4311686018635217937', 'create_time': 1755885101119, 'traded_price': '116760.00', 'traded_quantity': '0.00017', 'fee_instrument_name': 'BTC', 'client_oid': 'REDACTED', 'taker_side': 'TAKER', 'order_id': '6142909939299440672', 'match_count': 1, 'create_time_ns': '1755885101119164986', 'transact_time_ns': '1755885101119383557'}]}}  # noqa: E501
 
@@ -191,16 +191,20 @@ def test_query_deposits_withdrawals(mock_cryptocom):
         )
         assert events == [AssetMovement(
             event_identifier='b8c8a7320bd804ebd989a2b602186716d217b0dfde736add740d13f709146239',
-            timestamp=TimestampMS(1755884808000),
+            timestamp=TimestampMS(1755883811000),
             location=Location.CRYPTOCOM,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_USDC,
             amount=FVal(100),
             location_label=mock_cryptocom.name,
-            extra_data={'reference': '8626791', 'address': 'REDACTED', 'transaction_id': 'REDACTED'},  # noqa: E501
+            extra_data={
+                'reference': '8626791',
+                'address': 'REDACTED',
+                'transaction_id': '0xa6fc2f080597f3a599d335a90eb6032872525dfcfdd8f5fabb49e76973418cdf',  # noqa: E501
+            },
         ), AssetMovement(
             event_identifier='36dc8fa45695e0fdbc31612faaf5841eb181e8e1a5139363fabe2ba7f182759f',
-            timestamp=TimestampMS(1607063460000),
+            timestamp=TimestampMS(1607063412000),
             location=Location.CRYPTOCOM,
             event_type=HistoryEventType.WITHDRAWAL,
             asset=A_USDT,
@@ -209,7 +213,7 @@ def test_query_deposits_withdrawals(mock_cryptocom):
             extra_data={'reference': '2220', 'address': 'REDACTED', 'transaction_id': ''},
         ), AssetMovement(
             event_identifier='36dc8fa45695e0fdbc31612faaf5841eb181e8e1a5139363fabe2ba7f182759f',
-            timestamp=TimestampMS(1607063460000),
+            timestamp=TimestampMS(1607063412000),
             location=Location.CRYPTOCOM,
             event_type=HistoryEventType.WITHDRAWAL,
             asset=A_USDT,

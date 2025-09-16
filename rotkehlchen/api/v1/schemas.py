@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 import marshmallow
 import webargs
 from eth_utils import is_checksum_address, is_hexstr, to_checksum_address
-from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates, validates_schema
+from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
 
@@ -73,7 +73,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, get_query_chunks
-from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
+from rotkehlchen.errors.misc import AddressNotSupported, InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
@@ -780,21 +780,6 @@ class CreateHistoryEventSchema(Schema):
         address = EvmAddressField(load_default=None)
         extra_data = fields.Dict(load_default=None)
         location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
-
-        @validates('tx_hash')
-        def validate_tx_hash(self, tx_hash: str, data_key: str) -> None:  # pylint: disable=unused-argument
-            """Check if the provided tx_hash is present in the db.
-            Raises ValidationError if tx_hash is missing.
-            """
-            with CreateHistoryEventSchema.history_event_context.get()['schema'].database.conn.read_ctx() as cursor:  # noqa: E501
-                if cursor.execute(
-                    'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=?',
-                    (tx_hash,),
-                ).fetchone()[0] == 0:
-                    raise ValidationError(
-                        message='The provided transaction hash does not exist in the DB.',
-                        field_name='tx_hash',
-                    )
 
     class CreateBaseHistoryEventSchema(BaseEventSchema):
         event_identifier = NonEmptyStringField(required=True)
@@ -3142,6 +3127,14 @@ class AddressWithOptionalBlockchainSchema(Schema):
         else:
             address = data['address']
 
+        try:
+            AddressbookEntry.check_chain_ecosystem(address)
+        except AddressNotSupported as e:
+            raise ValidationError(
+                'Given address is from an unsupported ecosystem',
+                field_name='address',
+            ) from e
+
         return OptionalChainAddress(
             address=address,
             blockchain=data['blockchain'],
@@ -3198,6 +3191,7 @@ class QueryAddressbookSchema(
     """Schema for querying addressbook entries"""
     name_substring = EmptyAsNoneStringField(load_default=None)
     blockchain = BlockchainField(load_default=None)
+    strict_blockchain = fields.Boolean(load_default=True)
 
     @post_load
     def make_get_addressbook_query(
@@ -3205,16 +3199,16 @@ class QueryAddressbookSchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        filter_query = AddressbookFilterQuery.make(
-            limit=data['limit'],
-            offset=data['offset'],
-            blockchain=data['blockchain'],
-            substring_search=data['name_substring'],
-            optional_chain_addresses=data['addresses'],
-            order_by_rules=create_order_by_rules_list(data=data),
-        )
         return {
-            'filter_query': filter_query,
+            'filter_query': AddressbookFilterQuery.make(
+                limit=data['limit'],
+                offset=data['offset'],
+                blockchain=data['blockchain'],
+                strict_blockchain=data['strict_blockchain'],
+                substring_search=data['name_substring'],
+                optional_chain_addresses=data['addresses'],
+                order_by_rules=create_order_by_rules_list(data=data),
+            ),
             'book_type': data['book_type'],
         }
 
@@ -3238,6 +3232,10 @@ class AddressbookEntrySchema(AddressWithOptionalBlockchainSchema):
 
 class AddressbookUpdateSchema(BaseAddressbookSchema):
     entries = NonEmptyList(fields.Nested(AddressbookEntrySchema), required=True)
+
+
+class AddressbookInsertSchema(AddressbookUpdateSchema):
+    update_existing = fields.Boolean(load_default=False)
 
 
 class SnapshotImportingSchema(Schema):

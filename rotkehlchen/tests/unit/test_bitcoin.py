@@ -8,7 +8,6 @@ import pytest
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
     WitnessVersion,
-    is_valid_btc_address,
     is_valid_derivation_path,
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
@@ -16,6 +15,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_p2pkh_address,
     scriptpubkey_to_p2sh_address,
 )
+from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS, SupportedBlockchain
 from rotkehlchen.errors.misc import RemoteError, XPUBError

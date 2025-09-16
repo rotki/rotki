@@ -11,8 +11,10 @@ const props = withDefaults(defineProps<{
   useAliasName?: boolean;
   truncate?: boolean;
   hideChainIcon?: boolean;
+  size?: string;
 }>(), {
   hideChainIcon: false,
+  size: '24px',
   truncate: true,
   useAliasName: true,
 });
@@ -82,6 +84,7 @@ const aliasName = computed<string | null>(() => {
         :address="address"
         avatar
         class="mr-2"
+        :size="size"
       />
 
       <div

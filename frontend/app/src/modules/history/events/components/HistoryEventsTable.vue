@@ -46,9 +46,10 @@ const { groupLoading, groups: rawGroups, pageParams } = toRefs(props);
 
 // Event data management
 const {
+  allEventsMapped,
+  displayedEventsMapped,
   entriesFoundTotal,
   events,
-  eventsGroupedByEventIdentifier,
   eventsLoading,
   found,
   groups,
@@ -67,7 +68,7 @@ const {
 }, emit);
 
 // Emit all event IDs and grouped events when events change
-watch([events, eventsGroupedByEventIdentifier], ([newEvents, groupedEvents]) => {
+watch([events, allEventsMapped], ([newEvents, groupedEvents]) => {
   const eventIds = newEvents.map(event => event.identifier);
   emit('update-event-ids', { eventIds, groupedEvents });
 }, { immediate: true });
@@ -84,7 +85,7 @@ const {
   suggestNextSequenceId,
   toggle,
 } = useHistoryEventsOperations({
-  eventsGroupedByEventIdentifier,
+  allEventsMapped,
   flattenedEvents: events,
 }, emit);
 
@@ -193,7 +194,8 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
       <HistoryEventsList
         class="-my-4"
         :class="{ 'opacity-50': row.ignoredInAccounting }"
-        :all-events="eventsGroupedByEventIdentifier[row.eventIdentifier] || []"
+        :all-events="allEventsMapped[row.eventIdentifier] || []"
+        :displayed-events="displayedEventsMapped[row.eventIdentifier] || []"
         :event-group="row"
         :loading="sectionLoading || eventsLoading"
         :has-ignored-event="hasIgnoredEvent"

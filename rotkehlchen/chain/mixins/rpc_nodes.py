@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 from abc import ABC, abstractmethod
@@ -265,6 +266,10 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
             is_connected = web3.is_connected()
         except requests.RequestException:
             message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint}'  # noqa: E501
+            log.warning(message)
+            return False, message
+        except json.JSONDecodeError as e:
+            message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint} due to invalid JSON response: {e!s}'  # noqa: E501
             log.warning(message)
             return False, message
         except AssertionError:

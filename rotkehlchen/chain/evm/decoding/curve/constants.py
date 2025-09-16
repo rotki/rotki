@@ -95,7 +95,15 @@ CURVE_METAREGISTRY_METHODS = [
 ]
 # The address provider address is same for all the supported chains
 CURVE_ADDRESS_PROVIDER: Final = string_to_evm_address('0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98')
-CURVE_SWAP_ROUTER_NG: Final = string_to_evm_address('0xF0d4c12A5768D806021F80a262B4d39d26C58b8D')
+# This is used in these evm chains(ethereum, optimism, gnosis, polygon, arbitrum)
+# https://github.com/curvefi/curve-router-ng/blob/1014d3691bd9df935dc06fc5988484b0614d1fd5/v1.0/README.md
+CURVE_SWAP_ROUTER_V1: Final = string_to_evm_address('0xF0d4c12A5768D806021F80a262B4d39d26C58b8D')
+# This is used in gnosis, optimism and polygon
+# https://github.com/curvefi/curve-router-ng/blob/1014d3691bd9df935dc06fc5988484b0614d1fd5/README.md
+CURVE_SWAP_ROUTERS_NG: Final = {
+    CURVE_SWAP_ROUTER_V1,
+    string_to_evm_address('0x0DCDED3545D565bA3B19E683431381007245d983'),  # CurveRouter v1.1
+}
 DEPOSIT_AND_STAKE_ZAP: Final = string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD')
 CHILD_LIQUIDITY_GAUGE_FACTORY: Final = string_to_evm_address('0xabC000d88f23Bb45525E447528DBF656A9D55bf5')  # noqa: E501
 # Maximum number of pools to query from the onchain metaregistry. Querying too many pools onchain

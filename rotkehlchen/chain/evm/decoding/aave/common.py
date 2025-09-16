@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, get_single_underlying_token
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -63,6 +64,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
         self.repay_signature = repay_signature
         self.native_gateways = native_gateways
         self.label = label
+        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
         DecoderInterface.__init__(
             self,
             evm_inquirer=evm_inquirer,
@@ -143,10 +145,6 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             asset=token,
         )
         deposit_event, receive_event = None, None
-        notes = f'Deposit {amount} {token.symbol} into {self.label}'
-        if on_behalf_of is not None and user not in self.native_gateways and on_behalf_of != user:
-            notes += f' on behalf of {on_behalf_of}'
-
         for event in decoded_events:
             if (
                 event.address is not None and
@@ -160,16 +158,23 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             ):
                 if (
                     event.event_type == HistoryEventType.SPEND and
+                    (event.asset == token or (user in self.native_gateways and event.asset == self.evm_inquirer.native_token)) and  # noqa: E501
                     event.address != ZERO_ADDRESS
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                    event.notes = notes
+                    event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} into {self.label}'  # noqa: E501
+                    if on_behalf_of is not None and user not in self.native_gateways and on_behalf_of != user:  # noqa: E501
+                        event.notes += f' on behalf of {on_behalf_of}'
                     event.counterparty = self.counterparty
                     deposit_event = event
                 elif (
                     event.address == ZERO_ADDRESS and
-                    self._token_is_aave_contract(event.asset)
+                    self._token_is_aave_contract(event.asset) and
+                    (
+                        (underlying_token := get_single_underlying_token(event.asset.resolve_to_evm_token())) is not None and  # noqa: E501
+                        (underlying_token == token or (user in self.native_gateways and underlying_token == self.wrapped_native_token))  # noqa: E501
+                    )
                 ):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()

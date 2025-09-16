@@ -28,6 +28,7 @@ from rotkehlchen.api.v1.schemas import (
     AccountingRuleConflictsPagination,
     AccountingRulesQuerySchema,
     AddressbookAddressesSchema,
+    AddressbookInsertSchema,
     AddressbookUpdateSchema,
     AllBalancesQuerySchema,
     AppInfoSchema,
@@ -2778,6 +2779,7 @@ class AddressbookResource(BaseMethodView):
     delete_schema = AddressbookAddressesSchema()
     post_schema = QueryAddressbookSchema()
     update_schema = AddressbookUpdateSchema()
+    insert_schema = AddressbookInsertSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_view_args')
@@ -2792,13 +2794,18 @@ class AddressbookResource(BaseMethodView):
         )
 
     @require_loggedin_user()
-    @use_kwargs(update_schema, location='json_and_view_args')
+    @use_kwargs(insert_schema, location='json_and_view_args')
     def put(
             self,
             book_type: AddressbookType,
             entries: list[AddressbookEntry],
+            update_existing: bool,
     ) -> Response:
-        return self.rest_api.add_addressbook_entries(book_type=book_type, entries=entries)
+        return self.rest_api.add_addressbook_entries(
+            book_type=book_type,
+            entries=entries,
+            update_existing=update_existing,
+        )
 
     @require_loggedin_user()
     @use_kwargs(update_schema, location='json_and_view_args')
@@ -3324,7 +3331,7 @@ class GoogleCalendarResource(BaseMethodView):
         return self.rest_api.disconnect_google_calendar()
 
 
-class StatsWrapResource(BaseMethodView):
+class EventsAnalysisResource(BaseMethodView):
     """Endpoint for the wrap stats. It is temporary and will be removed."""
 
     query_schema = TimestampRangeSchema()

@@ -120,6 +120,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Sky',
         'SocketBridgeDecoder',
         'Stakedao',
+        'SummerFi',
         'Sushiswap',
         'Thegraph',
         'Uniswapv1',
@@ -244,6 +245,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'uphold',
         'magpie',
         'merkl',
+        'summer-fi',
     }
 
 

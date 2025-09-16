@@ -27,11 +27,13 @@ const stateUpdated = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const form = useTemplateRef<InstanceType<typeof HistoryEventForm>>('form');
 
-const title = computed<string>(() =>
-  get(modelValue) !== undefined
-    ? t('transactions.events.dialog.edit.title')
-    : t('transactions.events.dialog.add.title'),
-);
+const title = computed<string>(() => {
+  const value = get(modelValue);
+  if (value === undefined || value.type === 'add' || value.type === 'group-add') {
+    return t('transactions.events.dialog.add.title');
+  }
+  return t('transactions.events.dialog.edit.title');
+});
 
 async function save() {
   set(loading, true);

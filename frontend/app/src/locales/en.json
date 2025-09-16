@@ -963,6 +963,10 @@
         "message": "{length} entries successfully added to the address book"
       },
       "title": "Import Address Book Entries"
+    },
+    "strict_blockchain_filter": {
+      "hint": "If true, results are limited to an exact match with the 'blockchain filter.' If false, results include all blockchains from the same chain family that accept the address format (e.g., all EVM-based chains if the filter is set to an EVM chain).",
+      "label": "Strict blockchain filter"
     }
   },
   "airdrops": {
@@ -1790,17 +1794,21 @@
     }
   },
   "currencies": {
+    "aed": "Uni Arab Emirates Dirham",
     "aud": "Australian Dollar",
     "brl": "Brazilian Real",
     "cad": "Canadian Dollar",
     "chf": "Swiss Franc",
     "cny": "Chinese Yuan",
+    "czk": "Czech koruna",
     "dkk": "Danish krone",
     "eur": "Euro",
     "gbp": "British Pound",
+    "ils": "Israeli new shekel",
     "inr": "Indian rupee",
     "jpy": "Japanese Yen",
     "krw": "Korean Won",
+    "mxn": "Mexican Peso",
     "ngn": "Nigerian naira",
     "nok": "Norwegian krone",
     "nzd": "New Zealand Dollar",
@@ -2664,7 +2672,8 @@
       "validation": {
         "cannot_be_numeric_character": "The decimal separator cannot be numeric character",
         "cannot_be_the_same": "The decimal separator cannot be the same as the thousand separator",
-        "empty": "The decimal separator cannot be empty"
+        "empty": "The decimal separator cannot be empty",
+        "single_character": "The decimal separator must be a single character"
       }
     },
     "display_date_in_localtime": {
@@ -2773,7 +2782,8 @@
       "validation": {
         "cannot_be_numeric_character": "The thousand separator cannot be numeric character",
         "cannot_be_the_same": "The thousand separator cannot be the same as the decimal separator",
-        "empty": "The thousand separator cannot be empty"
+        "empty": "The thousand separator cannot be empty",
+        "single_character": "The thousand separator must be a single character"
       }
     },
     "title": "General Settings",
@@ -2817,7 +2827,7 @@
       },
       "decimal_separator": {
         "error": "Error setting decimal separator",
-        "success": "Decimal separator set to {decimalSeparator}"
+        "success": "Decimal separator set to \"{decimalSeparator}\""
       },
       "floating_precision": {
         "error": "Error setting floating precision to {precision}",
@@ -2826,7 +2836,7 @@
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
-        "success": "Thousand separator set to {thousandSeparator}"
+        "success": "Thousand separator set to \"{thousandSeparator}\""
       },
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"

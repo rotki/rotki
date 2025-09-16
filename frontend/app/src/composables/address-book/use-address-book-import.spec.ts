@@ -54,7 +54,7 @@ describe('useAddressBookImport', () => {
     expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('private', [
       { address: 'address1', blockchain: 'eth', name: 'Name1' },
       { address: 'address2', blockchain: 'btc', name: 'Name2' },
-    ]);
+    ], true);
   });
 
   it('throws an error when rows are missing address or name', async () => {
@@ -121,10 +121,10 @@ describe('useAddressBookImport', () => {
     expect(result).toBe(2);
     expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('private', [
       { address: 'address1', blockchain: 'eth', name: 'Name1' },
-    ]);
+    ], true);
     expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('global', [
       { address: 'address2', blockchain: 'btc', name: 'Name2' },
-    ]);
+    ], true);
   });
 
   it('ignores invalid location values', async () => {
@@ -143,6 +143,6 @@ describe('useAddressBookImport', () => {
     expect(addressesNameStore.addAddressBook).toHaveBeenCalledTimes(1);
     expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('private', [
       { address: 'address2', blockchain: 'btc', name: 'Name2' },
-    ]);
+    ], true);
   });
 });

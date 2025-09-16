@@ -63,7 +63,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     eventSubtype: 'remove asset',
     eventType: 'withdrawal',
     extraData: {
+      blockchain: 'optimism',
       reference: 'TEST123',
+      transactionId: '0x9834594deca004e626ea06c287abab60003f3752402a2b09ca88657db50292cf',
     },
     identifier: 449,
     location: 'kraken',
@@ -185,6 +187,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(addHistoryEventMock).toHaveBeenCalledWith({
       amount: bigNumberify('2.5'),
       asset: 'BTC',
+      blockchain: '',
       entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
       eventIdentifier: 'TEST123',
       eventType: 'deposit',
@@ -193,6 +196,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       location: 'kraken',
       locationLabel: 'Kraken 1',
       timestamp: nowInMs,
+      transactionId: '',
       uniqueId: '1234567890',
       userNotes: fee ? ['Test deposit transaction', ''] : ['Test deposit transaction'],
     });
@@ -304,6 +308,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(editHistoryEventMock).toHaveBeenCalledWith({
       amount: bigNumberify('10'),
       asset: 'ETH',
+      blockchain: event.extraData?.blockchain,
       entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
       eventIdentifier: event.eventIdentifier,
       eventType: event.eventType,
@@ -313,7 +318,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
       location: event.location,
       locationLabel: event.locationLabel,
       timestamp: event.timestamp,
-      uniqueId: 'TEST123',
+      transactionId: event.extraData?.transactionId,
+      uniqueId: event.extraData?.reference,
       userNotes: ['History event notes', ''],
     });
   });

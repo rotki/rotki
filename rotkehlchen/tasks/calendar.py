@@ -430,11 +430,15 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 pretty_name = airdrop_name.replace('_', ' ').capitalize()
                 entry_name = f'{pretty_name} airdrop claim deadline'
 
-                # TODO: Add zksync era to SupportedBlockchain - https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=81788541  # noqa: E501
-                if asset.chain_id == ChainID.ZKSYNC_ERA:
-                    continue  # Skip airdrops on zksync era
+                try:
+                    blockchain = asset.chain_id.to_blockchain()
+                except KeyError:
+                    log.warning(
+                        f'Unsupported blockchain {asset.chain_id} for {airdrop_name} airdrop. '
+                        'Skipping reminder creation.',
+                    )
+                    continue
 
-                blockchain = asset.chain_id.to_blockchain()
                 if address not in self.blockchain_accounts.get(blockchain):
                     continue  # skip if address hasn't been added to this chain in rotki
 

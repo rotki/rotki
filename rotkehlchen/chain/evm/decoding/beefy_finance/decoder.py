@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     should_update_protocol_cache,
@@ -20,7 +21,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTransaction, Timestamp
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -64,6 +65,23 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )
         self.vaults: set[ChecksumEvmAddress] = set()
         self.zap_contract_address = SUPPORTED_BEEFY_CHAINS[self.evm_inquirer.chain_id]
+
+        # TODO: Remove this in major release 1.41.0
+        # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=126605278
+        # Workaround to add the BIFI token in a bugfixes release without an asset update.
+        get_or_create_evm_token(
+            userdb=self.base.database,
+            evm_inquirer=self.evm_inquirer,
+            evm_address=string_to_evm_address('0xB1F1ee126e9c96231Cc3d3fAD7C08b4cf873b1f1'),
+            chain_id=ChainID.ETHEREUM,
+            symbol='BIFI',
+            name='Beefy',
+            decimals=18,
+            started=Timestamp(1692902591),
+            coingecko='beefy-finance',
+            cryptocompare='BIFI',
+            encounter=TokenEncounterInfo(should_notify=False),
+        )
 
     def _process_beefy_events(
             self,

@@ -12,6 +12,8 @@ import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 const props = defineProps<{
   item: HistoryEventEntry;
@@ -30,6 +32,8 @@ const emit = defineEmits<{
   'show:missing-rule-action': [data: HistoryEventEditData];
   'refresh': [];
 }>();
+
+const { item } = toRefs(props);
 
 const { getChain } = useSupportedChains();
 
@@ -100,6 +104,11 @@ const isSelected = computed<boolean>({
     }
   },
 });
+
+const eventAsset = useRefMap(item, ({ asset }) => asset);
+
+const { useIsAssetIgnored } = useIgnoredAssetsStore();
+const isIgnoredAsset = useIsAssetIgnored(eventAsset);
 </script>
 
 <template>
@@ -109,6 +118,7 @@ const isSelected = computed<boolean>({
     :class="{
       'bg-rui-error/[0.05]': isHighlighted,
       'border-b': !isLast && !compact,
+      '!opacity-50': isIgnoredAsset,
     }"
   >
     <div

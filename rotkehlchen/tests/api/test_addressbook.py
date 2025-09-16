@@ -25,7 +25,7 @@ from rotkehlchen.tests.utils.factories import (
     make_addressbook_entries,
 )
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+    ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     AddressbookEntry,
     AddressbookType,
     BTCAddress,
@@ -280,14 +280,22 @@ def test_insert_into_addressbook(
                 blockchain=SupportedBlockchain.ETHEREUM,
             ),
         ]
+        # Check for error without the update_existing flag
         response = requests.put(
-            api_url_for(
-                rotkehlchen_api_server,
-                'addressbookresource',
-                book_type=book_type,
-            ),
+            api_url_for(rotkehlchen_api_server, 'addressbookresource', book_type=book_type),
+            json={'entries': [entry.serialize() for entry in existing_entries]},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg=f'Entry with address {generated_entries[0].address} and blockchain ethereum already exists in the address book.',  # noqa: E501
+            status_code=HTTPStatus.CONFLICT,
+        )
+        # Check that existing entries are updated with the update_existing flag
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'addressbookresource', book_type=book_type),
             json={
                 'entries': [entry.serialize() for entry in existing_entries],
+                'update_existing': True,
             },
         )
         assert_proper_response(response=response)
@@ -511,6 +519,61 @@ def test_update_addressbook(
             filter_query=AddressbookFilterQuery.make(optional_chain_addresses=optional_chain_addresses),
         )
         assert names[0].name == 'super name ray'
+
+
+@pytest.mark.parametrize('empty_global_addressbook', [True])
+def test_blockchain_type_query_filters(rotkehlchen_api_server: 'APIServer') -> None:
+    """Add the same address to BTC and BCH, then ensure queries return a multichain entry.
+
+    - Add label valid both for BTC and BCH
+    - Query filtering by BTC, BCH and None should return the multichain entry
+    - Query filtering by unrelated chain (e.g. Polkadot) should return nothing
+    """
+    db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    book_type = AddressbookType.PRIVATE
+
+    # Use a valid Bitcoin Cash CashAddr which also classifies under the BITCOIN ecosystem key
+    btc_like_address = BTCAddress('bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g')
+
+    # Insert same label for both BTC and BCH for the same address
+    with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=(expected_output := [
+                AddressbookEntry(address=btc_like_address, name='Satoshi', blockchain=None),
+            ]),
+        )
+
+    def query(blockchain: SupportedBlockchain | None, strict_blockchain: bool = False) -> list[dict]:  # noqa: E501
+        payload: dict[str, object] = {
+            'addresses': [{'address': btc_like_address}],
+        }
+        if blockchain is not None:
+            payload['blockchain'] = blockchain.serialize()
+            payload['strict_blockchain'] = strict_blockchain
+
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'addressbookresource', book_type=book_type),
+            json=payload,
+        )
+        result = assert_proper_sync_response_with_result(response)
+        return result['entries']
+
+    # Filtering by BTC should return the multichain entry when not strict
+    result_entries = query(SupportedBlockchain.BITCOIN, strict_blockchain=False)
+    assert [AddressbookEntry.deserialize(x) for x in result_entries] == expected_output
+
+    # Filtering by BCH should also return the multichain entry when not strict
+    result_entries = query(SupportedBlockchain.BITCOIN_CASH, strict_blockchain=False)
+    assert [AddressbookEntry.deserialize(x) for x in result_entries] == expected_output
+
+    # Filtering with blockchain=None should return the multichain entry
+    result_entries = query(None)
+    assert [AddressbookEntry.deserialize(x) for x in result_entries] == expected_output
+
+    # Filtering by an unrelated chain type should not return the entry
+    result_entries = query(SupportedBlockchain.POLKADOT, strict_blockchain=False)
+    assert result_entries == []
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
@@ -885,7 +948,7 @@ def test_insert_into_addressbook_no_blockchain(
             cursor.execute('SELECT * FROM address_book')
             result = cursor.fetchall()
 
-    assert result == [(test_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'my address')]
+    assert result == [(test_address, f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}EVMLIKE', 'my address')]  # noqa: E501
 
 
 def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> None:
@@ -924,3 +987,36 @@ def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> N
             name='new name',
             blockchain=None,
         )]
+
+
+@pytest.mark.parametrize('empty_global_addressbook', [True])
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+def test_insert_unsupported_ecosystem_address_with_none_blockchain(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
+    """Trying to add an address with blockchain=None from an unsupported ecosystem fails.
+
+    Uses a SUI-style 32-byte hex address which is not supported by the addressbook
+    ecosystems. The API should reject it with a 400 and an appropriate error message.
+    """
+    sui_address = '0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04'
+    unsupported_entry = AddressbookEntry(
+        address=sui_address,  # type: ignore
+        name='My sui address',
+        blockchain=None,
+    )
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={'entries': [unsupported_entry.serialize()]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Given address is from an unsupported ecosystem',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

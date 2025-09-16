@@ -292,7 +292,6 @@ class EVMTransactionDecoder(ABC):
         self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
-        self._add_single_decoder(class_name='OpenOcean', decoder_class=OpenOceanDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
 
@@ -324,6 +323,13 @@ class EVMTransactionDecoder(ABC):
             self._add_single_decoder(
                 class_name='Stakedao',
                 decoder_class=StakedaoCommonDecoder,
+                rules=rules,
+            )
+
+        if self.evm_inquirer.chain_id != ChainID.ARBITRUM_ONE:
+            self._add_single_decoder(  # in arbitrum one openocean has extra logic
+                class_name='OpenOcean',
+                decoder_class=OpenOceanDecoder,
                 rules=rules,
             )
 
@@ -570,8 +576,18 @@ class EVMTransactionDecoder(ABC):
         """
         maybe_modified = False
         if transaction.to_address is not None:
-            address_counterparty = self.rules.addresses_to_counterparties.get(transaction.to_address)  # noqa: E501
-            if address_counterparty is not None:
+            # in delegation transactions, to_address can be the user's wallet, not
+            # the actual contract. look at event addresses to find possible protocols that were actually used.  # noqa: E501
+            # TODO: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=126845644
+            # add a test for this once we merge bugfixes into develop.
+            if (
+                transaction.authorization_list is not None and
+                len(transaction.authorization_list) > 0
+            ):
+                for addy in {event.address for event in decoded_events if event.address is not None}:  # noqa: E501
+                    if (address_counterparty := self.rules.addresses_to_counterparties.get(addy)) is not None:  # noqa: E501
+                        counterparties.add(address_counterparty)
+            elif (address_counterparty := self.rules.addresses_to_counterparties.get(transaction.to_address)) is not None:  # noqa: E501
                 counterparties.add(address_counterparty)
 
         rules = self._chain_specific_post_decoding_rules(transaction)
@@ -755,6 +771,8 @@ class EVMTransactionDecoder(ABC):
                     continue  # since the input data rule found events for this log
 
             decoding_output = self.decode_by_address_rules(context)
+            if decoding_output.stop_processing is True:
+                return [], False, None  # We determined this transaction is full of unnecessary log events and should all be skipped. Saves processing time.  # noqa: E501
             if decoding_output.refresh_balances is True:
                 refresh_balances = True
             if decoding_output.reload_decoders is not None:

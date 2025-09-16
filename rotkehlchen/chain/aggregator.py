@@ -1224,10 +1224,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             proxy_mappings = self.ethereum.node_inquirer.proxies_inquirer.get_accounts_having_proxy()  # noqa: E501
             for single_proxy_mappings in proxy_mappings.values():
                 proxy_to_address = {}
-                proxy_addresses = []
-                for user_address, proxy_address in single_proxy_mappings.items():
-                    proxy_to_address[proxy_address] = user_address
-                    proxy_addresses.append(proxy_address)
+                proxy_addresses: list[ChecksumEvmAddress] = []
+                for user_address, single_proxy_addresses in single_proxy_mappings.items():
+                    proxy_addresses.extend(single_proxy_addresses)
+                    for proxy_address in single_proxy_addresses:
+                        proxy_to_address[proxy_address] = user_address
 
                 evmtokens = self.get_chain_manager(SupportedBlockchain.ETHEREUM).tokens
                 try:
@@ -1561,6 +1562,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         new_tracked_chains, new_failed_chains = self.track_evm_address(account, active_chains)
         failed_to_query_chains += new_failed_chains
         if len(new_tracked_chains) > 0:
+            # AddressNotSupported doesn't raise because we have only EVM addresses
             DBAddressbook(self.database).maybe_make_entry_name_multichain(address=account)
 
         return (

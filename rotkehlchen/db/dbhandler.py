@@ -116,7 +116,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+    ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
@@ -819,6 +819,15 @@ class DBHandler:
     ) -> int | None:
         ...
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LINEA_AIRDROP_ALLOCATION],
+            **kwargs: Unpack[AddressArgType],
+    ) -> str | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
@@ -952,6 +961,16 @@ class DBHandler:
             write_cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LINEA_AIRDROP_ALLOCATION],
+            value: str,
             **kwargs: Unpack[AddressArgType],
     ) -> None:
         ...
@@ -1553,7 +1572,7 @@ class DBHandler:
             "LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account "
             "LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS ?) "  # noqa: E501
             "WHERE A.blockchain=? GROUP BY account;",
-            (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, blockchain.value),
+            (f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}{blockchain.get_address_chain_group().name}', blockchain.value),  # noqa: E501
         )
 
         data = []

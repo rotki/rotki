@@ -2,11 +2,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.polygon_pos import (
     ALCHEMY_RPC_ENDPOINT,
     POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
 )
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
@@ -38,3 +40,18 @@ def test_polygon_pos_nodes_prune_and_archive_status(
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
     assert len(polygon_pos_inquirer.rpc_mapping) == len(polygon_pos_manager_connect_at_start)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_json_decode_error_handling(polygon_pos_inquirer):
+    """Test that a JSON decode error from a bad RPC node is handled properly"""
+    success, msg = polygon_pos_inquirer.attempt_connect(
+        node=NodeName(
+            name='bad_polygon_rpc',
+            endpoint='https://polygon.meowrpc.com',
+            owned=False,
+            blockchain=SupportedBlockchain.POLYGON_POS,
+        ),
+    )
+    assert success is False
+    assert 'polygon.meowrpc.com' in msg

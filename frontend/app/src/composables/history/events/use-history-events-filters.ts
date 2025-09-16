@@ -2,7 +2,6 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import { type Account, type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
@@ -10,9 +9,7 @@ import { isEqual } from 'es-toolkit';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { RouterAccountsSchema } from '@/types/route';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { RouterLocationLabelsSchema } from '@/types/route';
 import {
   isEvmEventType,
   isOnlineHistoryEventType,
@@ -21,22 +18,20 @@ import {
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
 interface HistoryEventsFiltersOptions {
-  entryTypes?: Ref<HistoryEventEntryType[] | undefined>;
-  eventSubTypes?: Ref<string[]>;
-  eventTypes?: Ref<string[]>;
-  externalAccountFilter?: Ref<Account[]>;
-  location?: Ref<string | undefined>;
-  mainPage?: Ref<boolean>;
-  period?: Ref<Period | undefined>;
-  protocols?: Ref<string[]>;
-  useExternalAccountFilter?: Ref<boolean | undefined>;
-  validators?: Ref<number[] | undefined>;
-  eventIdentifiers?: Ref<string[] | undefined>;
-  identifiers?: Ref<string[] | undefined>;
+  entryTypes: Ref<HistoryEventEntryType[] | undefined>;
+  eventSubTypes: Ref<string[]>;
+  eventTypes: Ref<string[]>;
+  externalAccountFilter: Ref<Account[]>;
+  location: Ref<string | undefined>;
+  mainPage: Ref<boolean>;
+  period: Ref<Period | undefined>;
+  protocols: Ref<string[]>;
+  useExternalAccountFilter: Ref<boolean | undefined>;
+  validators: Ref<number[] | undefined>;
 }
 
 interface UseHistoryEventsFiltersReturn {
-  accounts: Ref<BlockchainAccount<AddressData>[]>;
+  locationLabels: Ref<string[]>;
   eventIdentifiers: ComputedRef<string[] | undefined>;
   fetchData: () => Promise<void>;
   filters: ComputedRef<Filters>;
@@ -48,13 +43,13 @@ interface UseHistoryEventsFiltersReturn {
   locationOverview: Ref<string | undefined>;
   locations: ComputedRef<string[]>;
   matchers: ComputedRef<Matcher[]>;
-  onFilterAccountsChanged: (acc: BlockchainAccount<AddressData>[]) => void;
+  onLocationLabelsChanged: (locationLabels: string[]) => void;
   pageParams: ComputedRef<HistoryEventRequestPayload>;
   pagination: ComputedRef<TablePaginationData>;
   setPage: (page: number, action?: boolean) => void;
   sort: ComputedRef<DataTableSortData<HistoryEventRow>>;
   updateFilter: (newFilter: Filters) => void;
-  usedAccounts: ComputedRef<Account[]>;
+  usedLocationLabels: ComputedRef<string[]>;
   userAction: Ref<boolean>;
 }
 
@@ -75,12 +70,11 @@ export function useHistoryEventsFilters(
     validators,
   } = options;
 
-  const accounts = ref<BlockchainAccount<AddressData>[]>([]);
+  const locationLabels = ref<string[]>([]);
   const locationOverview = ref(get(location));
 
   const route = useRoute();
   const { fetchHistoryEvents } = useHistoryEvents();
-  const { getAccountByAddress } = useBlockchainAccountsStore();
 
   // Define these early since they're used in extraParams
   const identifiersFromQuery = computed<string[] | undefined>(() => {
@@ -93,15 +87,11 @@ export function useHistoryEventsFilters(
     return eventIdentifiers ? [eventIdentifiers as string] : undefined;
   });
 
-  const usedAccounts = computed<Account[]>(() => {
-    if (isDefined(useExternalAccountFilter) && get(externalAccountFilter))
-      return get(externalAccountFilter) || [];
+  const usedLocationLabels = computed<string[]>(() => {
+    if (isDefined(useExternalAccountFilter))
+      return get(externalAccountFilter).map(account => account.address);
 
-    const accountData = get(accounts).map(account => ({
-      address: getAccountAddress(account),
-      chain: account.chain,
-    }));
-    return accountData.length > 0 ? [accountData[0]] : accountData;
+    return get(locationLabels);
   });
 
   const {
@@ -148,15 +138,15 @@ export function useHistoryEventsFilters(
     }, entryTypes),
     history: get(mainPage) ? 'router' : false,
     onUpdateFilters(query) {
-      const parsedAccounts = RouterAccountsSchema.parse(query);
-      const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed || accountsParsed.length === 0)
-        set(accounts, []);
+      const parsedLocationLabels = RouterLocationLabelsSchema.parse(query);
+      const locationLabelsParsed = parsedLocationLabels.locationLabels;
+      if (!locationLabelsParsed || locationLabelsParsed.length === 0)
+        set(locationLabels, []);
       else
-        set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
+        set(locationLabels, locationLabelsParsed);
     },
     queryParamsOnly: computed(() => ({
-      accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
+      locationLabels: get(usedLocationLabels),
     })),
     requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
       const params: Writeable<Partial<HistoryEventRequestPayload>> = {
@@ -166,20 +156,18 @@ export function useHistoryEventsFilters(
         groupByEventIds: true,
       };
 
-      const accountsValue = get(usedAccounts);
+      const accountsValue = get(usedLocationLabels);
 
       if (isDefined(locationOverview))
         params.location = toSnakeCase(get(locationOverview));
 
       if (accountsValue.length > 0)
-        params.locationLabels = accountsValue.map(account => account.address);
+        params.locationLabels = get(usedLocationLabels);
 
-      if (isDefined(period) && get(period)) {
-        const periodValue = get(period);
-        if (periodValue) {
-          params.fromTimestamp = periodValue.fromTimestamp;
-          params.toTimestamp = periodValue.toTimestamp;
-        }
+      if (isDefined(period)) {
+        const { fromTimestamp, toTimestamp } = get(period);
+        params.fromTimestamp = fromTimestamp;
+        params.toTimestamp = toTimestamp;
       }
 
       if (isDefined(validators) && get(validators))
@@ -216,20 +204,19 @@ export function useHistoryEventsFilters(
     };
   });
 
-  function onFilterAccountsChanged(acc: BlockchainAccount<AddressData>[]): void {
+  function onLocationLabelsChanged(labels: string[]): void {
     set(userAction, true);
-    set(accounts, acc.length > 0 ? [acc[0]] : []);
+    set(locationLabels, labels);
   }
 
-  // Watch filters and accounts changes
-  watch([filters, usedAccounts], ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
+  watch([filters, locationLabels], ([filters, locationLabels], [oldFilters, oldLocationLabels]) => {
     const filterChanged = !isEqual(filters, oldFilters);
-    const accountsChanged = !isEqual(usedAccounts, oldAccounts);
+    const accountsChanged = !isEqual(locationLabels, oldLocationLabels);
 
     if (!(filterChanged || accountsChanged))
       return;
 
-    if (accountsChanged && usedAccounts.length > 0) {
+    if (accountsChanged && get(usedLocationLabels).length > 0) {
       const updatedFilter = { ...get(filters) };
       updateFilter(updatedFilter);
     }
@@ -241,7 +228,6 @@ export function useHistoryEventsFilters(
   });
 
   return {
-    accounts,
     eventIdentifiers: eventIdentifiersFromQuery,
     fetchData,
     filters,
@@ -250,16 +236,17 @@ export function useHistoryEventsFilters(
     highlightedIdentifiers,
     identifiers: identifiersFromQuery,
     includes,
+    locationLabels,
     locationOverview,
     locations,
     matchers,
-    onFilterAccountsChanged,
+    onLocationLabelsChanged,
     pageParams,
     pagination,
     setPage,
     sort,
     updateFilter,
-    usedAccounts,
+    usedLocationLabels,
     userAction,
   };
 }

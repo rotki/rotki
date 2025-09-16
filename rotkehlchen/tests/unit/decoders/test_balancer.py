@@ -66,7 +66,7 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             asset=A_ETH,
             amount=FVal(0.001),
             location_label=user_address,
-            notes='Swap 0.001 ETH in Balancer v2',
+            notes='Swap 0.001 ETH via Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmSwapEvent(
@@ -342,7 +342,7 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             tx_hash=tx_hash,
-            sequence_index=56,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
@@ -354,7 +354,7 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             address=VAULT_ADDRESS,
         ), EvmSwapEvent(
             tx_hash=tx_hash,
-            sequence_index=57,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -1117,3 +1117,50 @@ def test_balancer_gauge_withdrawal(
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
+    """This tests a swap from a token to the native token where there are also two swap tx_logs
+    So the tokens are swapped/unwrapped as follows (GIV -> GNO -> WXDAI -> xDAI).
+    """
+    tx_hash = deserialize_evm_tx_hash('0x014d174e4f479e9712f877b0fd7db5011d6669cf7843700384da1997410312cf')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1717171565000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal(gas_amount := '0.000221913136376337'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Burn {gas_amount} XDAI for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:100/erc20:0x4f4F9b8D5B4d0Dc10506e5551B0513B61fD59e75'),
+        amount=FVal(spend_amount := '100'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} GIV via Balancer v2',
+        counterparty=CPT_BALANCER_V2,
+        address=VAULT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_XDAI,
+        amount=FVal(receive_amount := '1.154255223159359515'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} XDAI as the result of a swap via Balancer v2',
+        counterparty=CPT_BALANCER_V2,
+        address=VAULT_ADDRESS,
+    )]

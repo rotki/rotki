@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
 from rotkehlchen.chain.evm.decoding.paraswap.v6.constants import PARASWAP_AUGUSTUS_V6_ROUTER
+from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
     A_DAI,
@@ -994,3 +995,49 @@ def test_curve_deposit_interfering_with_paraswap_swap(
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0BeBD2FcA9854F657329324aA7dc90F656395189']])
+def test_safe_swap(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x6e7e6f477190ed84058fbef9c7ce3301ea4f18850bef6cd9a61acbaf1f24afff')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=592,
+            timestamp=(timestamp := TimestampMS(1757542415000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label='0x9531C059098e3d194fF87FebB587aB07B30B1306',
+            notes='Successfully executed safe transaction 0x0000000000000000000000000000000000000000000000000000000000000000 for multisig 0x0BeBD2FcA9854F657329324aA7dc90F656395189',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address='0x0BeBD2FcA9854F657329324aA7dc90F656395189',
+        ), EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=593,
+            timestamp=(timestamp := TimestampMS(1757542415000)),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_DAI,
+            amount=FVal(swap_amount := 840),
+            location_label=(user_address := '0x0BeBD2FcA9854F657329324aA7dc90F656395189'),
+            notes=f'Swap {swap_amount} DAI in paraswap',
+            counterparty=CPT_PARASWAP,
+            address=PARASWAP_AUGUSTUS_V6_ROUTER,
+        ), EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=594,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDC,
+            amount=FVal(swap_amount),
+            location_label=user_address,
+            notes=f'Receive {swap_amount} USDC as the result of a swap in paraswap',
+            counterparty=CPT_PARASWAP,
+            address=PARASWAP_AUGUSTUS_V6_ROUTER,
+        ),
+    ]

@@ -2,20 +2,18 @@
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { SelectionState } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
 import HistoryEventsExport from '@/components/history/events/HistoryEventsExport.vue';
 import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
+import LocationLabelSelector from '@/components/history/LocationLabelSelector.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { useSupportedChains } from '@/composables/info/chains';
 import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
 import { useRefPropVModel } from '@/utils/model';
 
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
 
-const accounts = defineModel<BlockchainAccount<AddressData>[]>('accounts', { required: true });
+const locationLabels = defineModel<string[]>('locationLabels', { required: true });
 
 const toggles = defineModel<HistoryEventsToggles>('toggles', { required: true });
 
@@ -43,10 +41,6 @@ const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
-const { allTxChainsInfo } = useSupportedChains();
-const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
-
-// Event handlers
 function handleDelete(): void {
   emit('selection:action', 'delete');
 }
@@ -171,17 +165,9 @@ function handleToggleAll(): void {
         :filters="exportParams"
       />
 
-      <BlockchainAccountSelector
+      <LocationLabelSelector
         v-if="!hideAccountSelector"
-        v-model="accounts"
-        class="w-[18rem]"
-        :chains="txChainIds"
-        dense
-        :label="t('transactions.filter.account')"
-        outlined
-        multichain
-        hide-chain-icon
-        unique
+        v-model="locationLabels"
       />
     </template>
   </HistoryTableActions>

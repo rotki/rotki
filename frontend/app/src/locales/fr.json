@@ -2113,7 +2113,7 @@
       },
       "decimal_separator": {
         "error": "Erreur lors de la configuration du séparateur décimal",
-        "success": "Le séparateur décimal est défini sur {decimalSeparator}"
+        "success": "Le séparateur décimal est défini sur \"{decimalSeparator}\""
       },
       "floating_precision": {
         "error": "Erreur lors de la configuration de la précision flottante sur {precision}",
@@ -2122,7 +2122,7 @@
       },
       "thousand_separator": {
         "error": "Erreur lors de la configuration du séparateur de milliers",
-        "success": "Le séparateur de milliers est défini sur {thousandSeparator}"
+        "success": "Le séparateur de milliers est défini sur \"{thousandSeparator}\""
       },
       "treat_eth2_as_eth": {
         "error": "Erreur lors de la modification du paramètre pour traiter ETH2 (Staked ETH) comme ETH"

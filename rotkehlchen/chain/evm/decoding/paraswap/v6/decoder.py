@@ -5,7 +5,14 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
 from rotkehlchen.chain.evm.decoding.paraswap.decoder import ParaswapCommonDecoder
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext
+from rotkehlchen.chain.evm.decoding.structures import (
+    FAILED_ENRICHMENT_OUTPUT,
+    DecoderContext,
+    EnricherContext,
+    TransferEnrichmentOutput,
+)
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
@@ -47,7 +54,18 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
         """Decode Paraswap v6 swaps in post decoding
         since they don't have any relevant log event.
         """
-        if transaction.input_data[:4] not in PARASWAP_METHODS or len(all_logs) == 0:  # length check is to protect due to all_logs[-1] below  # noqa: E501
+        transfer_event = next(  # detect paraswap labeled events by the enricher logic
+            (
+                event for event in decoded_events
+                if event.counterparty == CPT_PARASWAP and event.event_type == HistoryEventType.SPEND  # noqa: E501
+            ),
+            None,
+        )
+
+        if ((
+                transfer_event is None and
+                transaction.input_data[:4] not in PARASWAP_METHODS
+        ) or len(all_logs) == 0):  # length check is to protect due to all_logs[-1] below
             return decoded_events
 
         self._decode_swap(
@@ -58,10 +76,41 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
                 decoded_events=decoded_events,
                 all_logs=all_logs,
             ),
-            sender=transaction.from_address,
+            sender=(
+                string_to_evm_address(transfer_event.location_label)
+                if transfer_event is not None and transfer_event.location_label is not None
+                else transaction.from_address
+            ),
         )
 
         return decoded_events
+
+    def _maybe_enrich_swap_transfer(
+            self,
+            context: 'EnricherContext',
+    ) -> TransferEnrichmentOutput:
+        """Label ParaSwap V6 swap transfers with the ParaSwap counterparty.
+
+        ParaSwap V6 does not emit a dedicated swap event; swaps surface only as
+        two ERC-20 transfers to/from the Augustus V6 router. Our usual decoding
+        (based on calldata plus post-decode heuristics) can fail when the caller
+        is a smart contract (such as Gnosis Safe), since they wrap the underlying call.
+
+        If the transfer's `address` is the ParaSwap router, this enricher:
+            - sets `context.event.counterparty` to `CPT_PARASWAP`, and
+            - returns `TransferEnrichmentOutput(matched_counterparty=CPT_PARASWAP)`.
+
+        This makes non-EoA ParaSwap swaps discoverable by post decoding logic
+        that depends on counterparty/location labels.
+        """
+        if (
+            context.event.address != PARASWAP_AUGUSTUS_V6_ROUTER or
+            context.event.event_type != HistoryEventType.SPEND
+        ):
+            return FAILED_ENRICHMENT_OUTPUT
+
+        context.event.counterparty = CPT_PARASWAP
+        return TransferEnrichmentOutput(matched_counterparty=CPT_PARASWAP)
 
     # -- DecoderInterface methods
 
@@ -70,3 +119,6 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_PARASWAP: [(0, self._handle_post_decoding)]}
+
+    def enricher_rules(self) -> list[Callable]:
+        return [self._maybe_enrich_swap_transfer]

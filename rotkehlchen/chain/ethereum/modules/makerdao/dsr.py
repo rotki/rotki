@@ -69,8 +69,11 @@ class MakerdaoDsr(EthereumModule):
                 current_dai_price = Inquirer.find_usd_price(A_DAI)
             except RemoteError:
                 current_dai_price = Price(ONE)
-            for account, proxy in proxy_mappings.items():
-                guy_slice = self.makerdao_pot.call(self.ethereum, 'pie', arguments=[proxy])
+            for account, proxies in proxy_mappings.items():
+                if len(proxies) == 0:
+                    continue
+
+                guy_slice = self.makerdao_pot.call(self.ethereum, 'pie', arguments=[next(iter(proxies))])  # noqa: E501
                 if guy_slice == 0:
                     # no current DSR balance for this proxy
                     continue

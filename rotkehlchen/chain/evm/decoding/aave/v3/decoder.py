@@ -3,7 +3,7 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import get_single_underlying_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -144,31 +145,31 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
            receive/return amount, because the interest event is created separately.
 
         Returns the final list of the decoded events."""
-        supply_event, withdraw_event, return_event, receive_event, migrateout_event, migratein_event, maybe_earned_event = None, None, None, None, None, None, None  # noqa: E501
-        swap_event = swap_receive_event = None
+        supply_events, withdraw_events, return_events, receive_events = [], [], [], []
+        swap_event = migrateout_event = migratein_event = swap_receive_event = maybe_earned_event = None  # noqa: E501
         for event in decoded_events:  # identify the events decoded till now
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
                     event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
             ):
-                supply_event = event
+                supply_events.append(event)
             elif (
                     event.event_type == HistoryEventType.WITHDRAWAL and
                     event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED
             ):
-                withdraw_event = event
+                withdraw_events.append(event)
             elif (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED and
                     self._token_is_aave_contract(event.asset)
             ):
-                receive_event = event
+                receive_events.append(event)
             elif (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and
                     self._token_is_aave_contract(event.asset)
             ):
-                return_event = event
+                return_events.append(event)
             elif (
                     event.event_type == HistoryEventType.MIGRATE and
                     event.event_subtype == HistoryEventSubType.SPEND
@@ -233,18 +234,18 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
             return decoded_events
 
         # categorize the events, based on token_event and wrapped_event
-        if supply_event is not None and receive_event is not None:
-            token_event = supply_event
-            wrapped_event = receive_event
-        elif withdraw_event is not None:
-            token_event = withdraw_event
-            if return_event is not None:
-                wrapped_event = return_event
-            elif receive_event is not None:
-                wrapped_event = receive_event
+        if len(supply_events) != 0 and len(receive_events) != 0:
+            token_events = supply_events
+            wrapped_events = receive_events
+        elif len(withdraw_events) != 0:
+            token_events = withdraw_events
+            if len(return_events) != 0:
+                wrapped_events = return_events
+            elif len(receive_events) != 0:
+                wrapped_events = receive_events
             elif maybe_earned_event is not None:
-                wrapped_event = maybe_earned_event
-                receive_event = maybe_earned_event
+                wrapped_events = [maybe_earned_event]
+                receive_events = [maybe_earned_event]
             else:
                 log.error(f'Could not categorize the {self.label} events during interest decoding for transaction {transaction}')  # noqa: E501
                 return decoded_events
@@ -252,48 +253,32 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         else:  # if not identified, return the decoded events
             return decoded_events
 
-        token = token_event.asset.resolve_to_evm_token() if token_event.asset != self.evm_inquirer.native_token else self.evm_inquirer.native_token  # noqa: E501
-        a_token = wrapped_event.asset.resolve_to_evm_token()
-        earned_event, corrected_amount = None, None
+        user_address = token_events[0].location_label  # cannot be empty here.
+        wrapped_events_assets = {evt.asset for evt in wrapped_events}
+        earned_event = None
         for _log in all_logs:
             if (  # find the mint or burn event of aToken
                 _log.topics[0] in (MINT, BURN) and (
                     # topics[2] is on_behalf_of, should be equal to the value we got above
-                    bytes_to_address(_log.topics[2]) == token_event.location_label
+                    bytes_to_address(_log.topics[2]) == user_address
                 ) and (
                     balance_increase := asset_normalized_value(
                         amount=int.from_bytes(_log.data[32:64]),
-                        asset=token,
+                        asset=(earned_token := self.base.get_or_create_evm_token(
+                            address=_log.address,
+                        )),
                     )
                 ) > 0
             ):  # parse the mint amount and balance_increase
-                earned_token_address = a_token.evm_address
-                if _log.topics[0] == BURN:
-                    # when we get some interest less than the total token to be returned,
-                    # the net burned token is slightly less. So save its corrected
-                    # amount and assign it later
-                    corrected_amount = asset_normalized_value(
-                        amount=int.from_bytes(_log.data[:32]),
-                        asset=token,
-                    )
-                    if not isinstance(token, EvmToken):
-                        log.error(f'At {self.label} {transaction} got a BURN event for a native token. Should not happen')  # noqa: E501
-                        return decoded_events  # error out
-
-                    earned_token_address = token.evm_address
-
-                earned_token = get_or_create_evm_token(
-                    userdb=self.evm_inquirer.database,
-                    evm_address=earned_token_address,
-                    chain_id=self.evm_inquirer.chain_id,
-                    evm_inquirer=self.evm_inquirer,
-                )
+                if _log.topics[0] == BURN and (earned_token := get_single_underlying_token(earned_token)) is None:  # type: ignore[assignment]  # we ignore if None  # noqa: E501
+                    log.error(f'Failed to find underlying token for Aave v3 token {earned_token}. Skipping')  # noqa: E501
+                    continue
 
                 if (  # check if we need to create the earned event
                         maybe_earned_event is None or
-                        a_token != maybe_earned_event.asset or
+                        maybe_earned_event.asset not in wrapped_events_assets or
                         balance_increase != maybe_earned_event.amount or
-                        token_event.location_label != maybe_earned_event.location_label
+                        user_address != maybe_earned_event.location_label
                 ):
                     decoded_events.append(earned_event := self.base.make_event_from_transaction(
                         transaction=transaction,
@@ -302,41 +287,106 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                         event_subtype=HistoryEventSubType.INTEREST,
                         asset=earned_token,
                         amount=balance_increase,
-                        location_label=token_event.location_label,
+                        location_label=user_address,
                         notes=f'Receive {balance_increase} {earned_token.symbol} as interest earned from {self.label}',  # noqa: E501
                         counterparty=self.counterparty,
                     ))
 
-        if supply_event is not None and receive_event is not None and earned_event:  # re-assign the receive amount  # noqa: E501
-            receive_event.amount = supply_event.amount
-            receive_event.notes = f'Receive {supply_event.amount} {a_token.symbol} from {self.label}'  # noqa: E501
+        if len(supply_events) != 0 and len(receive_events) != 0 and earned_event is not None:  # re-assign the receive amount  # noqa: E501
+            for receive_event in receive_events:
+                if receive_event.asset != earned_event.asset:
+                    continue
 
-        if withdraw_event is not None and earned_event is not None:
-            if return_event is not None:  # re-assign the withdraw amount
-                withdraw_event.amount = return_event.amount
-                withdraw_event.notes = f'Withdraw {return_event.amount} {token.symbol} from {self.label}'  # noqa: E501
-            elif receive_event is not None:
-                # receiving aToken, while withdrawing means interest > returned amount
-                return_event = receive_event  # save it as return event
-                receive_event = None  # remove the receive event
-                # re-assign the values to the return event
-                return_event.amount = withdraw_event.amount
-                return_event.event_type = HistoryEventType.SPEND
-                return_event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                return_event.notes = f'Return {withdraw_event.amount} {a_token.symbol} to {self.label}'  # noqa: E501
+                receive_event.amount = FVal((receive_event.amount - earned_event.amount).num.normalize())  # noqa: E501
+                receive_event.notes = f'Receive {receive_event.amount} {receive_event.asset.resolve_to_asset_with_symbol().symbol} from {self.label}'  # noqa: E501
 
-        if (
-            (maybe_earned_event is not None or earned_event is not None) and
-            corrected_amount is not None and
-            return_event is not None
-        ):
-            return_event.amount = corrected_amount
+        if len(withdraw_events) != 0 and earned_event is not None:
+            if len(return_events) != 0:  # re-assign the withdraw amounts
+                for withdraw_event in withdraw_events:
+                    if withdraw_event.asset != earned_event.asset:
+                        continue
+
+                    withdraw_event.amount = FVal((withdraw_event.amount - earned_event.amount).num.normalize())  # noqa: E501
+                    withdraw_event.notes = f'Withdraw {withdraw_event.amount} {withdraw_event.asset.resolve_to_asset_with_symbol().symbol} from {self.label}'  # noqa: E501
+
+            if len(receive_events) != 0:
+                for receive_event in receive_events[:]:
+                    if (withdraw_asset := get_single_underlying_token(receive_event.asset.resolve_to_evm_token())) is None:  # noqa: E501
+                        log.error(f'Failed to find underlying token for Aave v3 token {receive_event.asset}. Skipping')  # noqa: E501
+                        continue
+
+                    # receiving aToken, while withdrawing means interest > returned amount
+                    receive_events.remove(receive_event)
+                    return_event = receive_event
+                    return_events.append(return_event)
+                    # re-assign the values to the return event
+                    if (matching_withdraw := next((x for x in withdraw_events if x.asset == withdraw_asset), None)) is None:  # noqa: E501
+                        log.error(f'Failed to find matching withdraw event for asset {withdraw_asset} in transaction {transaction}. Skipping')  # noqa: E501
+                        continue
+
+                    return_event.amount = matching_withdraw.amount
+                    return_event.event_type = HistoryEventType.SPEND
+                    return_event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                    return_event.notes = f'Return {return_event.amount} {return_event.asset.resolve_to_asset_with_symbol().symbol} to {self.label}'  # noqa: E501
+
+        ordered_events: list[EvmEvent] = []
+        if len(supply_events) > 0 and len(receive_events) > 0:  # group supply/receive pairs by asset  # noqa: E501
+            self._pair_events_by_asset(
+                primary_events=supply_events,
+                secondary_events=receive_events,
+                ordered_events=ordered_events,
+                maybe_earned_event=maybe_earned_event,
+                earned_event=earned_event,
+                match_fn=lambda primary, secondary: (
+                    (underlying_token := get_single_underlying_token(secondary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
+                    (underlying_token == primary.asset or (underlying_token == self.wrapped_native_token and primary.asset == self.evm_inquirer.native_token))  # noqa: E501
+                ),
+            )
+
+        if len(withdraw_events) > 0 and len(return_events) > 0:  # group withdraw/return pairs by asset  # noqa: E501
+            self._pair_events_by_asset(
+                primary_events=return_events,
+                secondary_events=withdraw_events,
+                ordered_events=ordered_events,
+                maybe_earned_event=maybe_earned_event,
+                earned_event=earned_event,
+                match_fn=lambda primary, secondary: (
+                    (underlying_token := get_single_underlying_token(primary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
+                    (underlying_token == secondary.asset or (underlying_token == self.wrapped_native_token and secondary.asset == self.evm_inquirer.native_token))  # noqa: E501
+                ),
+            )
 
         maybe_reshuffle_events(
-            ordered_events=[supply_event, maybe_earned_event, return_event, withdraw_event, receive_event, earned_event],  # noqa: E501
+            ordered_events=ordered_events,
             events_list=decoded_events,
         )
         return decoded_events
+
+    @staticmethod
+    def _pair_events_by_asset(
+            primary_events: list['EvmEvent'],
+            secondary_events: list['EvmEvent'],
+            ordered_events: list['EvmEvent'],
+            maybe_earned_event: 'EvmEvent | None',
+            earned_event: 'EvmEvent | None',
+            match_fn: 'Callable[["EvmEvent", "EvmEvent"], bool]',
+    ) -> None:
+        """Helper to pair events by underlying asset and track assets for interest events."""
+        for primary_event in primary_events:
+            matched_assets = set()
+            matched_assets.add(primary_event.asset)
+            for secondary_event in secondary_events:
+                if match_fn(primary_event, secondary_event):
+                    matched_assets.add(secondary_event.asset)
+                    ordered_events.extend([primary_event, secondary_event])
+
+            # add matching interest events for this asset pair
+            if len(matched_assets) > 0:
+                ordered_events.extend(
+                    earn_event for earn_event in (maybe_earned_event, earned_event)
+                    if earn_event is not None and earn_event.asset in matched_assets and earn_event not in ordered_events  # noqa: E501
+                )
+                matched_assets = set()
 
     def _collateral_swap(self, context: 'DecoderContext') -> DecodingOutput:
         """Decode a collateral swap event from aave.

@@ -48,6 +48,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             bundlers: set['ChecksumEvmAddress'],
+            adapters: set['ChecksumEvmAddress'],
             weth: 'Asset',
     ) -> None:
         super().__init__(
@@ -57,6 +58,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )
         self.vaults: set[ChecksumEvmAddress] = set()
         self.bundlers = bundlers
+        self.adapters = adapters
         self.rewards_distributors: list[ChecksumEvmAddress] = []
         self.weth = weth
 
@@ -317,8 +319,10 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             event for event in decoded_events if not (
                 event.event_type in {HistoryEventType.SPEND, HistoryEventType.RECEIVE} and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.address in self.bundlers and
-                event.address == transaction.to_address
+                (
+                    (event.address in self.bundlers and event.address == transaction.to_address) or
+                    event.address in self.adapters
+                )
             )
         ]
 

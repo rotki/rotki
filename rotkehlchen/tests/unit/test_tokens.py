@@ -6,13 +6,15 @@ from unittest.mock import MagicMock, call, patch
 import gevent
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
+from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
 from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies, generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_CRV, A_DAI, A_OMG, A_WETH
+from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import A_CRV, A_DAI, A_ETH, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -20,10 +22,11 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE, A_LPT
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ChainID,
@@ -81,8 +84,29 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     """
     addr1, addr2, addr3 = ethereum_accounts
     addr3_proxy = string_to_evm_address('0x394C1D68498DEB24AC9F5502DD5450a0353e17dc')
-
+    addr1_proxy = string_to_evm_address('0x32C50edBF3ffEC14Fc345A399d1e52B2A9eFAAb3')
+    a_aave_weth = Asset('eip155:1/erc20:0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8')
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Add a summer.fi proxy account creation event for proxy address detection
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_hash=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.CREATE,
+                asset=A_ETH,
+                amount=ZERO,
+                location_label=addr1,
+                counterparty=CPT_SUMMER_FI,
+                extra_data={'proxy_address': addr1_proxy},
+            ),
+        )
+
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
     Inquirer.find_usd_prices = MagicMock(side_effect=Inquirer.find_usd_prices)
@@ -114,6 +138,10 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
                     identifier=A_DAI.identifier,
                     address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
                     decimals=18,
+                ), EvmTokenDetectionData(
+                    identifier=a_aave_weth.identifier,
+                    address=string_to_evm_address('0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8'),
+                    decimals=18,
                 ),
             ], []),
         ),
@@ -121,13 +149,14 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
         detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
 
     assert query_new_tokens_patch.call_count == 2  # once for normal addresses, once for the proxy
-    assert query_new_tokens_patch.call_args_list == [
-        call([addr1, addr2, addr3]),  # first called for normal addresses (uses positional arg)
-        call(addresses=[addr3_proxy]),  # then called for the proxy address
-    ]
+    # first called for normal addresses (uses positional arg)
+    assert query_new_tokens_patch.call_args_list[0] == call([addr1, addr2, addr3])
+    # then called for the proxy addresses (uses kwarg, addresses may not always be in the same order)  # noqa: E501
+    assert set(query_new_tokens_patch.call_args_list[1].kwargs['addresses']) == {addr1_proxy, addr3_proxy}  # noqa: E501
     assert maybe_detect_proxies_tokens_patch.call_count == 1  # ensure this isn't called again when detecting tokens for the proxy.  # noqa: E501
 
     assert A_WETH in detection_result[addr3][0], 'WETH is owned by the proxy, but should be returned in the proxy owner address'  # noqa: E501
+    assert a_aave_weth in detection_result[addr1][0], 'aave WETH is owned by the summer fi proxy but should be returned in the proxy owner address'  # noqa: E501
     assert tokens.evm_inquirer.multicall.call_count == 0, 'multicall should not be used for tokens detection'  # noqa: E501
 
     with rotki.data.db.conn.write_ctx() as write_cursor:

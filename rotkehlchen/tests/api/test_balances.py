@@ -30,6 +30,8 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -1209,6 +1211,68 @@ def test_query_liquity_balances(rotkehlchen_api_server: 'APIServer', ethereum_ac
         CPT_LIQUITY: {'amount': '4.08915844880891399', 'usd_value': '6.133737673213370985'},
     }}
     assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'usd_value': '3283.0103582835479670825'}}}  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_balance_snapshot_saves_manual_prices_as_historical(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that saving balance snapshots saves manual prices as historical data."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # add a manual current price for ETH to EUR
+    GlobalDBHandler.add_manual_latest_price(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        price=Price(ONE),
+    )
+
+    # Get initial count of historical prices for ETH -> EUR
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        initial_prices = cursor.execute(
+            'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
+            'WHERE from_asset=? AND to_asset=?',
+            (A_ETH.identifier, A_EUR.identifier),
+        ).fetchall()
+        assert len(initial_prices) == 1
+
+    # Setup balances with some ETH
+    setup = setup_balances(
+        rotki=rotki,
+        btc_accounts=None,
+        ethereum_accounts=ethereum_accounts,
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+
+        # Query balances which should trigger the price saving
+        result = assert_proper_sync_response_with_result(requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'allbalancesresource',
+            ),
+            json={'save_data': True},  # Ensure data is saved
+        ))
+        assert A_ETH in result['assets']
+
+        # Check that a new historical price was saved
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            new_prices = cursor.execute(
+                'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
+                'WHERE from_asset=? AND to_asset=?',
+                (A_ETH.identifier, A_EUR.identifier),
+            ).fetchall()
+
+        # Should have one more price than before
+        assert len(new_prices) == len(initial_prices) + 1
+        # Find the newly added price
+        from_asset, to_asset, source_type, _, price_str = new_prices[-1]
+        assert from_asset == A_ETH.identifier
+        assert to_asset == A_EUR.identifier
+        assert source_type == HistoricalPriceOracle.MANUAL.serialize_for_db()
+        assert FVal(price_str) == ONE
 
 
 @pytest.mark.vcr

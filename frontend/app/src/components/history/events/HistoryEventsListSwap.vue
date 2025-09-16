@@ -13,6 +13,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 
 const props = defineProps<{
   events: HistoryEventEntry[];
+  allEvents: HistoryEventEntry[];
   highlightedIdentifiers?: string[];
   selection: UseHistoryEventsSelectionModeReturn;
 }>();
@@ -76,6 +77,10 @@ const usedEvents = computed(() => {
     const remainingSpend = spendEvents.slice(receiveEvents.length);
     alternating.push(...remainingSpend);
   }
+  else if (receiveEvents.length > spendEvents.length) {
+    const remainingSpend = receiveEvents.slice(spendEvents.length);
+    alternating.push(...remainingSpend);
+  }
 
   return alternating;
 });
@@ -88,10 +93,12 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
     return undefined;
   }
 
+  const options = { collectionParent: false };
+
   const receiveNotes = receive.length === 1
     ? {
         receiveAmount: receive[0].amount,
-        receiveAsset: getAssetSymbol(receive[0].asset),
+        receiveAsset: getAssetSymbol(receive[0].asset, options),
       }
     : {
         receiveAmount: receive.length,
@@ -101,7 +108,7 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
   const spendNotes = spend.length === 1
     ? {
         spendAmount: spend[0].amount,
-        spendAsset: getAssetSymbol(spend[0].asset),
+        spendAsset: getAssetSymbol(spend[0].asset, options),
       }
     : {
         spendAmount: spend.length,
@@ -115,7 +122,7 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
 
   const fee = props.events.filter(item => item.eventSubtype === 'fee');
   if (fee.length > 0) {
-    const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset)}`).join('; ');
+    const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset, options)}`).join('; ');
     notes = t('history_events_list_swap.fee_description', {
       feeText,
       notes,
@@ -227,7 +234,7 @@ watch(expanded, () => {
           />
 
           <LazyLoader
-            v-if="!expanded && eventIndex === 0 && usedEvents.length > 0"
+            v-if="!expanded && eventIndex === 0 && usedEvents.length > 1"
             key="swap-arrow"
             class="flex items-center px-2 @md:pl-0 h-14 col-start-5"
           >
@@ -241,12 +248,13 @@ watch(expanded, () => {
       </div>
 
       <LazyLoader
-        v-if="!expanded && getCompactNotes(events)"
+        v-if="!expanded"
         key="history-event-notes"
         class="py-2 pt-4 md:pl-0 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4"
         min-height="80"
       >
         <HistoryEventNote
+          v-if="getCompactNotes(events)"
           :notes="getCompactNotes(events)"
           :amount="events.map(item => item.amount)"
         />
@@ -261,7 +269,7 @@ watch(expanded, () => {
         <HistoryEventsListItemAction
           :item="events[0]"
           :index="0"
-          :events="events"
+          :events="allEvents"
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"

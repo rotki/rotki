@@ -10,6 +10,7 @@ import AddressBookFormDialog from '@/components/address-book-manager/AddressBook
 import AddressBookManagementMore from '@/components/address-book-manager/AddressBookManagementMore.vue';
 import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
 import EthNamesHint from '@/components/EthNamesHint.vue';
+import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { type Filters, type Matcher, useAddressBookFilter } from '@/composables/filters/address-book';
@@ -20,6 +21,7 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 const { t } = useI18n({ useScope: 'global' });
 
 const selectedChain = ref<string>();
+const strictBlockchain = ref<boolean>(false);
 const tab = ref<number>(0);
 
 const locations: AddressBookLocation[] = ['global', 'private'];
@@ -50,6 +52,7 @@ const {
   }],
   extraParams: computed(() => ({
     blockchain: get(selectedChain),
+    strictBlockchain: get(strictBlockchain),
   })),
   filterSchema: useAddressBookFilter,
   history: 'router',
@@ -88,23 +91,34 @@ watchImmediate(location, async () => {
         </template>
         {{ t('address_book.dialog.add_title') }}
       </RuiButton>
-      <AddressBookManagementMore
-        @refresh="fetchData()"
-      />
+      <AddressBookManagementMore @refresh="fetchData()" />
     </template>
 
     <RuiCard>
       <div class="flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3">
-        <ChainSelect
-          v-model="selectedChain"
-          hide-details
-          class="lg:w-[18rem]"
-          clearable
-          dense
-          exclude-eth-staking
-        />
+        <div class="flex gap-3 w-full lg:w-[24rem]">
+          <TableStatusFilter>
+            <div class="p-1 max-w-[20rem] pb-4">
+              <RuiCheckbox
+                v-model="strictBlockchain"
+                color="primary"
+                class="px-3 mt-0"
+                :label="t('address_book.strict_blockchain_filter.label')"
+                :hint="t('address_book.strict_blockchain_filter.hint')"
+              />
+            </div>
+          </TableStatusFilter>
 
-        <div class="lg:w-[26rem]">
+          <ChainSelect
+            v-model="selectedChain"
+            hide-details
+            clearable
+            dense
+            exclude-eth-staking
+          />
+        </div>
+
+        <div class="w-full lg:w-[26rem]">
           <TableFilter
             v-model:matches="filters"
             :matchers="matchers"

@@ -7,9 +7,33 @@ Changelog
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
+
+* :release:`1.40.1 <2025-09-15>`
+* :bug:`10602` Users will be able to edit EVM swap events, even if the asset is ignored.
+* :bug:`-` Users will now be able to add EVM and EVM swap events from the "Add new event" button on top.
+* :feature:`-` Users will now be able to see the balance in these currencies: AED (United Arab Emirates Dirham), CZK (Czech koruna), ILS (Israeli new shekel), and MXN (Mexican Peso)
+* :bug:`-` Blockchain queries will no longer fail when certain nodes return empty responses.
+* :bug:`-` Editing a solana token will no longer set the asset type incorrectly.
+* :feature:`10591` rotki will now detect eligibility for the Linea Airdrop.
+* :bug:`-` Users will now be able to see the transaction hash of the deposit/withdrawal for the exchange asset movement event.
+* :bug:`10585` Token balances on mainnet Summer.fi proxy accounts will now be detected properly.
+* :bug:`-` Manual current prices are now properly saved as historical prices for use in balance graphs and charts.
+* :bug:`10578` rotki now has improved checks on usernames.
+* :bug:`-` rotki will now properly decode Paraswap swaps made using smart wallets.
+* :bug:`10570` Adding/editing an EVM event with a transaction hash not present in the DB will now pull the transaction from onchain.
+* :bug:`-` Balancer V2 swaps that swap multiple times before reaching the desired token or that swap to the chain's native token will now be properly decoded.
+* :bug:`10556` Editing ZKSync lite history events will be possible again.
+* :bug:`-` Beefy Finance reward pool and boost vault tokens will now be properly priced.
+* :bug:`-` Account delegation transactions will now be properly decoded and processed.
+* :feature:`-` OpenOcean arbitrum rewards transactions will now be decoded correctly.
+* :bug:`-` Curve swap transactions that use the new router will now be decoded properly across supported EVM chains.
+* :bug:`-` Fix an issue where the buttons to refresh Gnosis Pay and Monerium events were always disabled initially.
+* :bug:`10517` Morpho transactions that perform multiple actions in one go are now decoded properly.
+* :feature:`-` Users will now be able to filter history events by location labels, including account addresses and exchange labels.
+* :bug:`-` Analytics of transactions by protocol will now properly respect the selected date range.
 * :bug:`-` All single token curve pool withdrawals should decode properly now.
 * :bug:`10468` Crypto.com exchange integration should now be working properly.
-* :bug:`-` Crypto.com mobile app events imported via a CSV file will now have their location label set.
+* :bug:`-` Crypto.com mobile app events imported via a CSV file will now have their location label set.``
 * :bug:`-` Users can now access the Solana token migration guide using the correct link.
 * :bug:`10499` Crypto.com mobile app CSV imports will now properly handle limit order transactions that were previously failing to import.
 * :bug:`-` Fix an issue where some amounts in the history event notes are not scrambled/blurred when the privacy mode/scramble setting is activated.

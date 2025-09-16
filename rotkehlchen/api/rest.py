@@ -7,6 +7,7 @@ import tempfile
 import traceback
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overload
@@ -205,7 +206,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     get_event_type_identifier,
 )
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import (
     generate_events_export_filename,
@@ -231,6 +232,7 @@ from rotkehlchen.premium.premium import (
     has_premium_check,
 )
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.assets import (
     update_aave_v3_underlying_assets,
@@ -942,10 +944,59 @@ class RestAPI:
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
+    def _ensure_event_tx_existence(self, event: 'HistoryBaseEntry') -> Response | None:
+        """Check if an evm/evmlike event tx is present in the DB and if not, query it from onchain.
+        Returns None if the tx was successfully found, or if the event is not an evm event,
+        otherwise returns an error response.
+        """
+        if not isinstance(event, EvmEvent):
+            return None  # don't try to check the tx if we're not add/editing an EVM event.
+
+        blockchain = SupportedBlockchain.from_location(event.location)  # type: ignore[arg-type]  # EVM event locations will work with from_location
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            table = 'zksynclite_transactions' if blockchain.is_evmlike() else 'evm_transactions'
+            if cursor.execute(
+                f'SELECT COUNT(*) FROM {table} WHERE tx_hash=?',
+                (event.tx_hash,),
+            ).fetchone()[0] != 0:
+                return None
+
+        try:
+            associated_address = deserialize_evm_address(event.location_label)  # type: ignore  # if label is None TypeError will be caught
+        except (DeserializationError, TypeError):
+            return api_response(
+                result=wrap_in_fail_result('The location_label must be set to a valid EVM address to pull the tx for the given hash from onchain.'),  # noqa: E501
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+
+        if blockchain.is_evmlike():
+            if self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
+                tx_hash=event.tx_hash,
+                concerning_address=associated_address,
+            ) is not None:
+                return None
+        else:  # chain is EVM
+            with suppress(KeyError, DeserializationError, RemoteError, AlreadyExists, InputError):
+                self.rotkehlchen.chains_aggregator.get_chain_manager(
+                    blockchain=blockchain,  # type: ignore[arg-type]  # Will only be EVM chains
+                ).transactions.add_transaction_by_hash(
+                    tx_hash=event.tx_hash,
+                    associated_address=associated_address,
+                )
+                return None
+
+        return api_response(
+            result=wrap_in_fail_result(f'The provided transaction hash does not exist for {event.location.name.lower()}.'),  # noqa: E501
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
     def add_history_events(self, events: list['HistoryBaseEntry']) -> Response:
         """Add list of history events to DB. Returns identifier of first event.
         The first event is the main event, subsequent events are related (e.g. fees).
         """
+        if (error_response := self._ensure_event_tx_existence(events[0])) is not None:
+            return error_response
+
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         main_identifier = None
         try:
@@ -977,6 +1028,9 @@ class RestAPI:
             events: list['HistoryBaseEntry'],
             identifiers: list[int] | None,
     ) -> Response:
+        if (error_response := self._ensure_event_tx_existence(events[0])) is not None:
+            return error_response
+
         events_db = DBHistoryEvents(self.rotkehlchen.data.db)
         if (events_type := events[0].entry_type) in {
             HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
@@ -3659,7 +3713,18 @@ class RestAPI:
 
     def get_location_labels(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            labels = [x[0] for x in cursor.execute('SELECT DISTINCT location_label FROM history_events')]  # noqa: E501
+            # Get distinct location_labels with their corresponding location
+            # Ordered by frequency (most frequent first)
+            # When multiple locations exist for a label, we take the first one
+            labels = [{
+                'location_label': row[0],
+                'location': Location.deserialize_from_db(row[1]).serialize(),
+            } for row in cursor.execute(
+                'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
+                'FROM history_events WHERE location_label IS NOT NULL '
+                'GROUP BY location_label '
+                'ORDER BY frequency DESC',
+            )]
 
         return api_response(
             result=_wrap_in_ok_result(labels),
@@ -4129,12 +4194,20 @@ class RestAPI:
             self,
             book_type: AddressbookType,
             entries: list[AddressbookEntry],
+            update_existing: bool,
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
-        with db_addressbook.write_ctx(book_type) as write_cursor:
-            db_addressbook.add_or_update_addressbook_entries(
-                write_cursor=write_cursor,
-                entries=entries,
+        try:
+            with db_addressbook.write_ctx(book_type) as write_cursor:
+                db_addressbook.add_or_update_addressbook_entries(
+                    write_cursor=write_cursor,
+                    entries=entries,
+                    update_existing=update_existing,
+                )
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
             )
 
         return api_response(result=OK_RESULT)
