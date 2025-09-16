@@ -42,7 +42,7 @@ class ResourceReadingParser(FlaskParser):
         if isinstance(argmap, Mapping):
             if not isinstance(argmap, dict):
                 argmap = dict(argmap)
-            argmap = Schema.from_dict(argmap)()  # type: ignore [arg-type]
+            argmap = Schema.from_dict(argmap)()
 
         def decorator(func: Callable) -> Callable:
             req_ = request_obj
