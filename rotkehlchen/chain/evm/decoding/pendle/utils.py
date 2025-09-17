@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import requests
 
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_evm_token, get_or_create_evm_token
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
@@ -93,7 +93,7 @@ def query_pendle_yield_tokens(evm_inquirer: 'EvmNodeInquirer') -> None:
     encounter = TokenEncounterInfo(should_notify=False, description='Querying Pendle yield tokens')
     for token in all_tokens:
         try:
-            if (cached_token := get_token(evm_address=token, chain_id=evm_inquirer.chain_id)) is not None:  # noqa: E501
+            if (cached_token := get_evm_token(evm_address=token, chain_id=evm_inquirer.chain_id)) is not None:  # noqa: E501
                 get_or_create_evm_token(
                     name=cached_token.name,
                     symbol=cached_token.symbol,

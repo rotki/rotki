@@ -14,6 +14,7 @@ from spl.token._layouts import ACCOUNT_LAYOUT
 from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
 from rotkehlchen.assets.asset import Asset, SolanaToken
+from rotkehlchen.assets.utils import get_solana_token
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.types import WeightedNode
@@ -31,8 +32,6 @@ from rotkehlchen.chain.solana.utils import (
     unpack_mint,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import solana_address_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -183,14 +182,12 @@ class SolanaManager(SolanaRPCMixin):
                     log.debug(f'Found solana token {token_address} with zero balance for {account}. Skipping.')  # noqa: E501
                     continue
 
-                try:
-                    token = Asset(
-                        identifier=solana_address_to_identifier(token_address),
-                    ).resolve_to_solana_token()
-                except UnknownAsset:
-                    if (token := self._create_token(token_address)) is None:  # type: ignore[assignment]
-                        log.error(f'Failed to create solana token with address {token_address}')
-                        continue
+                if (
+                    (token := get_solana_token(token_address)) is None and
+                    (token := self._create_token(token_address)) is None
+                ):
+                    log.error(f'Failed to create solana token with address {token_address}')
+                    continue
 
                 # Add to existing balances since there may be multiple ATAs
                 # (Associated Token Account) for the same token.

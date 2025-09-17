@@ -17,7 +17,7 @@ from more_itertools import peekable
 from web3.exceptions import Web3Exception
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_evm_token, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
@@ -788,7 +788,10 @@ class EVMTransactionDecoder(ABC):
                 continue
 
             rules_decoding_output = self.try_all_rules(
-                token=get_token(evm_address=tx_log.address, chain_id=self.evm_inquirer.chain_id),
+                token=get_evm_token(
+                    evm_address=tx_log.address,
+                    chain_id=self.evm_inquirer.chain_id,
+                ),
                 tx_log=tx_log,
                 transaction=transaction,
                 decoded_events=events,

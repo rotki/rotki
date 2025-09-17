@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.utils import get_token
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     CPT_UMAMI,
     UMAMI_MASTERCHEF_ABI,
@@ -104,7 +104,7 @@ class UmamiBalances(ProtocolWithBalance):
                     if balance == 0:
                         continue
 
-                    if (gm_vault_token := get_token(
+                    if (gm_vault_token := get_evm_token(
                             evm_address=(gm_vault_token_address := gm_vault_addresses[idx]),
                             chain_id=self.evm_inquirer.chain_id,
                     )) is None:

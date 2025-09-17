@@ -3,7 +3,7 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token, get_token
+from rotkehlchen.assets.utils import get_evm_token, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
@@ -308,7 +308,7 @@ class BaseDecoderTools:
 
     def get_evm_token(self, address: ChecksumEvmAddress) -> EvmToken | None:
         """Query a token from the DB or cache. If it does not exist there return None"""
-        return get_token(evm_address=address, chain_id=self.evm_inquirer.chain_id)
+        return get_evm_token(evm_address=address, chain_id=self.evm_inquirer.chain_id)
 
     def get_or_create_evm_token(
             self,
