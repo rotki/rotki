@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import get_token
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.base.modules.uniswap.v3.constants import UNISWAP_UNIVERSAL_ROUTER
 from rotkehlchen.chain.binance_sc.modules.uniswap.v3.constants import (
     UNISWAP_UNIVERSAL_ROUTER as UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
@@ -573,7 +573,7 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
     assert events == expected_events
 
     # Ensure the position token's name and symbol are set correctly
-    position_token = get_token(
+    position_token = get_evm_token(
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         chain_id=ChainID.ETHEREUM,
         token_kind=TokenKind.ERC721,

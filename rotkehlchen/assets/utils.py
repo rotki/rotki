@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithOracles,
     EvmToken,
+    SolanaToken,
     UnderlyingToken,
     WrongAssetType,
 )
@@ -24,7 +25,7 @@ from rotkehlchen.constants.assets import (
     A_WETH_SCROLL,
     A_WXDAI,
 )
-from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.constants.resolver import evm_address_to_identifier, solana_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
@@ -32,10 +33,12 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     EVM_TOKEN_KINDS,
+    SOLANA_TOKEN_KINDS,
     SPAM_PROTOCOL,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     TokenKind,
@@ -208,16 +211,14 @@ class TokenEncounterInfo(NamedTuple):
     should_notify: bool = True
 
 
-def get_token(
+def get_evm_token(
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
         token_kind: EVM_TOKEN_KINDS = TokenKind.ERC20,
         collectible_id: str | None = None,
 ) -> EvmToken | None:
-    """
-    Query a token from the cache of the AssetResolver or the GlobalDB if
-    it is not in the cache. If the token doesn't exist this function returns
-    None.
+    """Query an EVM token from the cache of the AssetResolver or the GlobalDB if
+    it is not in the cache. If the token doesn't exist this function returns None.
     """
     identifier = evm_address_to_identifier(
         address=evm_address,
@@ -234,6 +235,27 @@ def get_token(
         return None
 
 
+def get_solana_token(
+        address: SolanaAddress,
+        token_kind: SOLANA_TOKEN_KINDS | None = None,
+) -> SolanaToken | None:
+    """Query a solana token from the cache of the AssetResolver or the GlobalDB if
+    it is not in the cache. If the token_kind isn't specified, both types will be tried to allow
+    loading both tokens and nfts from only a token address.
+    Returns the token or None if the token doesn't exist.
+    """
+    for token_type in (TokenKind.SPL_TOKEN, TokenKind.SPL_NFT) if token_kind is None else (token_kind,):  # noqa: E501
+        try:
+            return Asset(solana_address_to_identifier(
+                address=address,
+                token_type=token_type,
+            )).resolve_to_solana_token()
+        except (UnknownAsset, WrongAssetType):
+            continue
+
+    return None
+
+
 def get_single_underlying_token(token: 'EvmToken') -> 'EvmToken | None':
     """Get a token's single underlying token.
     Returns the underlying token or None if the token has no/multiple underlying tokens.
@@ -241,7 +263,7 @@ def get_single_underlying_token(token: 'EvmToken') -> 'EvmToken | None':
     if (
         token.underlying_tokens is not None and
         len(token.underlying_tokens) == 1 and
-        (underlying_token := get_token(
+        (underlying_token := get_evm_token(
             evm_address=token.underlying_tokens[0].address,
             chain_id=token.chain_id,
         )) is not None

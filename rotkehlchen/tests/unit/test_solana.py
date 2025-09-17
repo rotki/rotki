@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_solana_token
 from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_token_nft
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError
@@ -13,6 +14,11 @@ from rotkehlchen.types import SolanaAddress, TokenKind
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.manager import SolanaManager
     from rotkehlchen.globaldb.handler import GlobalDBHandler
+
+
+def identifier_to_address(identifier: str) -> SolanaAddress:
+    """Extract the address from a solana token identifier."""
+    return SolanaAddress(identifier.split(':')[1])
 
 
 @pytest.mark.vcr
@@ -64,38 +70,44 @@ def test_solana_query_token_metadata(
         solana_manager: 'SolanaManager',
         globaldb: 'GlobalDBHandler',
 ) -> None:
-    """Test that the solana token metadata is queried correctly for different types of tokens."""
+    """Test that the solana token metadata is queried correctly for different types of tokens.
+    Also check that get_solana_token can load tokens and nfts from the db using only the address.
+    """
     for asset in (
-        (a_amep := Asset('solana/token:6XLSXS1HDXsTbq53onqAUeCqU6fxuMSgu7JkfZ9kbonk')),
-        (a_cwif := Asset('solana/token:7atgF8KQo4wJrD5ATGX7t1V2zVvykPJbFfNeVf1icFv1')),
-        (a_img := Asset('solana/token:znv3FZt2HFAvzYf5LxzVyryh3mBXWuTRRng25gEZAjh')),
-        (a_pxwl := Asset('solana/nft:Cg4noWpzmDHhPZZXDwmCLJns43PJpLmd6E8aYL1pRcRJ')),
+        (a_amep := Asset('solana/token:6XLSXS1HDXsTbq53onqAUeCqU6fxuMSgu7JkfZ9kbonk')),  # legacy token using metaplex  # noqa: E501
+        (a_cwif := Asset('solana/token:7atgF8KQo4wJrD5ATGX7t1V2zVvykPJbFfNeVf1icFv1')),  # token 2022 using metaplex  # noqa: E501
+        (a_img := Asset('solana/token:znv3FZt2HFAvzYf5LxzVyryh3mBXWuTRRng25gEZAjh')),  # token 2022 using token extensions  # noqa: E501
+        (a_pxwl := Asset('solana/nft:Cg4noWpzmDHhPZZXDwmCLJns43PJpLmd6E8aYL1pRcRJ')),  # nft using metaplex  # noqa: E501
     ):
         with suppress(InputError):  # Ensure it's not in the db so it queries the metadata
             globaldb.delete_asset_by_identifier(identifier=asset.identifier)
 
         solana_manager._create_token(token_address=SolanaAddress(asset.identifier.split(':')[1]))
 
-    a_amep = a_amep.resolve_to_solana_token()  # legacy token using metaplex
-    assert a_amep.name == 'America Party'
-    assert a_amep.symbol == 'AMEP'
-    assert a_amep.decimals == 6
-    assert a_amep.token_kind == TokenKind.SPL_TOKEN
-    a_cwif = a_cwif.resolve_to_solana_token()  # token 2022 using metaplex
-    assert a_cwif.name == 'catwifhat'
-    assert a_cwif.symbol == '$CWIF'
-    assert a_cwif.decimals == 2
-    assert a_cwif.token_kind == TokenKind.SPL_TOKEN
-    a_img = a_img.resolve_to_solana_token()  # token 2022 using token extensions
-    assert a_img.name == 'Infinite Money Glitch'
-    assert a_img.symbol == 'IMG'
-    assert a_img.decimals == 6
-    assert a_img.token_kind == TokenKind.SPL_TOKEN
-    a_pxwl = a_pxwl.resolve_to_solana_token()  # nft using metaplex
-    assert a_pxwl.name == 'Pixie Willie #1089'
-    assert a_pxwl.symbol == 'PXWL'
-    assert a_pxwl.decimals == ZERO
-    assert a_pxwl.token_kind == TokenKind.SPL_NFT
+    amep_token = get_solana_token(identifier_to_address(a_amep.identifier))
+    assert amep_token is not None
+    assert amep_token.name == 'America Party'
+    assert amep_token.symbol == 'AMEP'
+    assert amep_token.decimals == 6
+    assert amep_token.token_kind == TokenKind.SPL_TOKEN
+    cwif_token = get_solana_token(identifier_to_address(a_cwif.identifier))
+    assert cwif_token is not None
+    assert cwif_token.name == 'catwifhat'
+    assert cwif_token.symbol == '$CWIF'
+    assert cwif_token.decimals == 2
+    assert cwif_token.token_kind == TokenKind.SPL_TOKEN
+    img_token = get_solana_token(identifier_to_address(a_img.identifier))
+    assert img_token is not None
+    assert img_token.name == 'Infinite Money Glitch'
+    assert img_token.symbol == 'IMG'
+    assert img_token.decimals == 6
+    assert img_token.token_kind == TokenKind.SPL_TOKEN
+    pxwl_token = get_solana_token(identifier_to_address(a_pxwl.identifier))
+    assert pxwl_token is not None
+    assert pxwl_token.name == 'Pixie Willie #1089'
+    assert pxwl_token.symbol == 'PXWL'
+    assert pxwl_token.decimals == ZERO
+    assert pxwl_token.token_kind == TokenKind.SPL_NFT
 
 
 @pytest.mark.vcr

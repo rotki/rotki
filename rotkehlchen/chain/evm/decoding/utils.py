@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 from eth_typing import ABI
 
 from rotkehlchen.assets.asset import AssetWithSymbol
-from rotkehlchen.assets.utils import get_token
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
@@ -246,7 +246,7 @@ def get_vault_price(
     if (
         vault_token.underlying_tokens is None or
         len(vault_token.underlying_tokens) == 0 or
-        (underlying_token := get_token(
+        (underlying_token := get_evm_token(
             evm_address=vault_token.underlying_tokens[0].address,
             chain_id=evm_inquirer.chain_id,
         )) is None

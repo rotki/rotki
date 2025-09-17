@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import get_token
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.ens.constants import (
@@ -152,7 +152,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             address=ENS_REGISTRAR_CONTROLLER_1,
         ),
     ]
-    ens_nft = get_token(
+    ens_nft = get_evm_token(
         evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
         chain_id=ChainID.ETHEREUM,
         token_kind=TokenKind.ERC721,
