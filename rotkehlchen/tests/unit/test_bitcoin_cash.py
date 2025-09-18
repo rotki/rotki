@@ -22,6 +22,7 @@ from rotkehlchen.utils.network import request_get
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
+    from rotkehlchen.inquirer import Inquirer
     from rotkehlchen.types import BTCAddress
 
 
@@ -92,6 +93,7 @@ def test_validate_bch_address_input():
 def test_query_bch_has_transactions_and_balances(
         bitcoin_cash_manager: 'BitcoinCashManager',
         bch_accounts: list['BTCAddress'],
+        inquirer: 'Inquirer',
 ) -> None:
     """Test that the bch have_transactions and get_balances work correctly from all apis."""
     user_address, expected_balance = bch_accounts[0], FVal('5.33798911')
@@ -117,9 +119,9 @@ def test_query_bch_has_transactions_and_balances(
             assert bitcoin_cash_manager.have_transactions(
                 accounts=bch_accounts,
             ) == {user_address: (True, expected_balance)}
-            assert bitcoin_cash_manager.get_balances(
-                accounts=bch_accounts,
-            ) == {user_address: expected_balance}
+            assert bitcoin_cash_manager.query_balances(
+                addresses=bch_accounts,
+            )[user_address].amount == expected_balance
 
         # reset health status so it tries to query health again in the next loop iteration
         bitcoin_cash_manager.last_haskoin_health = {}

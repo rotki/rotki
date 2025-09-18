@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING
@@ -7,7 +8,7 @@ import pytest
 import requests
 from eth_utils import to_checksum_address
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
@@ -108,15 +109,21 @@ def test_evmlike_blockchain_balances(
 
     def mocked_get_balances(
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, dict[Asset, Balance]]:
+    ) -> dict[ChecksumEvmAddress, BalanceSheet]:
         return {
-            addresses[0]: addy_0_balances,
-            addresses[1]: addy_1_balances,
+            addresses[0]: BalanceSheet(assets=defaultdict(lambda: defaultdict(Balance), (
+                (k, defaultdict(Balance, {DEFAULT_BALANCE_LABEL: v}))
+                for k, v in addy_0_balances.items()
+            ))),
+            addresses[1]: BalanceSheet(assets=defaultdict(lambda: defaultdict(Balance), (
+                (k, defaultdict(Balance, {DEFAULT_BALANCE_LABEL: v}))
+                for k, v in addy_1_balances.items()
+            ))),
         }
 
     with patch.object(
             rotki.chains_aggregator.zksync_lite,
-            'get_balances',
+            'query_balances',
             wraps=mocked_get_balances,
     ) as balance_query:
         response = requests.get(

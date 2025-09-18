@@ -10,13 +10,14 @@ import gevent
 import requests
 from pysqlcipher3.dbapi2 import IntegrityError
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.constants import ZERO
+from rotkehlchen.chain.manager import ChainManagerWithTransactions
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -35,6 +36,7 @@ from rotkehlchen.types import (
     EvmlikeChain,
     EVMTxHash,
     Location,
+    Timestamp,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
@@ -53,7 +55,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ZksyncLiteManager:
+class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress]):
 
     def __init__(
             self,
@@ -559,20 +561,29 @@ class ZksyncLiteManager:
                 f'from zksync api. Transactions not added to the DB. {address=}',
             )
 
-    def get_balances(
+    def query_transactions(
+            self,
+            addresses: list[ChecksumEvmAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> None:
+        for address in addresses:
+            self.fetch_transactions(address=address)
+
+    def query_balances(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, dict[Asset, Balance]]:
+    ) -> dict[ChecksumEvmAddress, BalanceSheet]:
         """Get ZKSync Lite balances
 
         May raise:
         - RemoteError
         """
-        balances: defaultdict[ChecksumEvmAddress, dict[Asset, Balance]] = defaultdict(dict)
+        balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
         for address in addresses:
             result = self._query_api(url=f'accounts/{address}')
             if (finalized_result := result.get('finalized', None)) is None:
-                balances[address] = {}
+                balances[address] = BalanceSheet()
                 continue
 
             try:
@@ -595,7 +606,10 @@ class ZksyncLiteManager:
                         )
                         continue
 
-                    balances[address][asset] = Balance(amount, usd_price * amount)
+                    balances[address].assets[asset][DEFAULT_BALANCE_LABEL] = Balance(
+                        amount=amount,
+                        usd_value=usd_price * amount,
+                    )
 
             except (KeyError, DeserializationError, RemoteError) as e:
                 msg = str(e)  # Catching RemoteError here too due to self._get_token_by_symbol

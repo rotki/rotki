@@ -3,7 +3,7 @@ from typing import get_args
 from substrateinterface import Keypair
 from substrateinterface.utils.ss58 import is_valid_ss58_address
 
-from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS, SupportedBlockchain
+from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, SupportedBlockchain
 
 from .types import KusamaNodeName, PolkadotNodeName, SubstrateAddress, SubstratePublicKey
 
@@ -27,7 +27,7 @@ POLKADOT_NODES_TO_CONNECT_AT_START = (
 SUBSTRATE_NODE_CONNECTION_TIMEOUT = 60
 
 
-def is_valid_substrate_address(chain: SUPPORTED_SUBSTRATE_CHAINS, value: str) -> bool:
+def is_valid_substrate_address(chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE, value: str) -> bool:
     return is_valid_ss58_address(
         value=value,
         valid_ss58_format=2 if chain == SupportedBlockchain.KUSAMA else 0,
@@ -35,7 +35,7 @@ def is_valid_substrate_address(chain: SUPPORTED_SUBSTRATE_CHAINS, value: str) ->
 
 
 def get_substrate_address_from_public_key(
-        chain: SUPPORTED_SUBSTRATE_CHAINS,
+        chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
         public_key: SubstratePublicKey,
 ) -> SubstrateAddress:
     """Return a valid address for the given Substrate chain and public key.
@@ -48,7 +48,7 @@ def get_substrate_address_from_public_key(
     - ValueError: if public key is not 32 bytes long or the ss58_format is not
     a valid int.
     """
-    assert chain in get_args(SUPPORTED_SUBSTRATE_CHAINS)
+    assert chain in get_args(SUPPORTED_SUBSTRATE_CHAINS_TYPE)
     if chain == SupportedBlockchain.KUSAMA:
         ss58_format = 2
     else:  # polkadot

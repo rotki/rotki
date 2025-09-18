@@ -120,6 +120,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Price,
+    SupportedBlockchain,
     TokenKind,
     deserialize_evm_tx_hash,
 )
@@ -656,7 +657,10 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
         attribute='query_tokens_for_addresses',
         new=mock_new_balances,
     ):
-        blockchain.query_evm_tokens(manager=ethereum_manager, balances=balances)
+        balances = ethereum_manager.query_evm_tokens(
+            accounts=blockchain.accounts.eth,
+            balances=balances,
+        )
 
     # Check individual balances instead of full BalanceSheet comparison
     assert balances[blockchain.accounts.eth[0]].assets[a_eth_usdc][CPT_AAVE_V3] == Balance(
@@ -749,7 +753,7 @@ def test_compound_v3_token_balances_liabilities(
         target='rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses',
         side_effect=mock_query_tokens,
     ):
-        blockchain.query_eth_balances()
+        blockchain._query_chain_balances(blockchain=SupportedBlockchain.ETHEREUM)
 
     def get_balance(amount: str):
         return Balance(

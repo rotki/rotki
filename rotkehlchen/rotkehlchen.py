@@ -107,7 +107,7 @@ from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
-    SUPPORTED_SUBSTRATE_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -801,7 +801,7 @@ class Rotkehlchen:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_SUBSTRATE_CHAINS,
+            chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
     ) -> None:
         ...

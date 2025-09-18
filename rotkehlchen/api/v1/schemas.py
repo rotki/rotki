@@ -114,7 +114,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_LOCATIONS,
     NON_EVM_CHAINS,
-    SUPPORTED_SUBSTRATE_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
     AssetAmount,
@@ -2135,7 +2135,7 @@ def _transform_evm_address(
 def _transform_substrate_address(
         ethereum_inquirer: EthereumInquirer,
         given_address: str,
-        chain: SUPPORTED_SUBSTRATE_CHAINS,
+        chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
 ) -> SubstrateAddress:
     """Returns a DOT or KSM address (if exists) given an ENS domain. At this point any
     given address has been already validated either as an ENS name or as a

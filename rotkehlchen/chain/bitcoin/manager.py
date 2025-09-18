@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
     TransactionStatusSubType,
@@ -19,6 +20,7 @@ from rotkehlchen.chain.bitcoin.types import (
 )
 from rotkehlchen.chain.bitcoin.utils import OpCodes
 from rotkehlchen.chain.decoding.utils import decode_transfer_direction
+from rotkehlchen.chain.manager import ChainManagerWithTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -27,6 +29,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
@@ -38,7 +41,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BitcoinCommonManager:
+class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
     def __init__(
             self,
@@ -136,11 +139,22 @@ class BitcoinCommonManager:
         serialized_errors = ', '.join(f'{source} error is: "{error}"' for (source, error) in errors.items())  # noqa: E501
         raise RemoteError(f'External {self.blockchain!s} request failed for all available APIs. {serialized_errors}')  # noqa: E501
 
-    def get_balances(self, accounts: Sequence[BTCAddress]) -> dict[BTCAddress, FVal]:
+    def query_balances(self, addresses: Sequence[BTCAddress]) -> dict[BTCAddress, Balance]:
         """Queries bitcoin balances for the specified accounts.
         May raise RemoteError if the query fails.
         """
-        return self._query(action=BtcQueryAction.BALANCES, accounts=accounts)
+        balances = {}
+        btc_usd_price = Inquirer.find_usd_price(self.asset)
+        for account, balance in self._query(
+                action=BtcQueryAction.BALANCES,
+                accounts=addresses,
+        ).items():
+            balances[account] = Balance(
+                amount=balance,
+                usd_value=balance * btc_usd_price,
+            )
+
+        return balances
 
     def have_transactions(self, accounts: list[BTCAddress]) -> dict[BTCAddress, tuple[bool, FVal]]:
         """Takes a list of addresses and returns a mapping of which addresses have had transactions
@@ -167,9 +181,9 @@ class BitcoinCommonManager:
 
     def query_transactions(
             self,
+            addresses: list[BTCAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            addresses: list[BTCAddress],
     ) -> None:
         """Query transactions in the time range for the specified accounts,
         decode them into HistoryEvents, and save the results to the db.
