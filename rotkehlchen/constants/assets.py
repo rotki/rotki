@@ -70,6 +70,10 @@ A_WXDAI: Final = Asset('eip155:100/erc20:0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a
 A_SHU: Final = Asset('eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7')
 A_GMX: Final = Asset('eip155:42161/erc20:0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a')
 A_WBNB: Final = Asset('eip155:56/erc20:0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c')
+# Added in v1.41.0 to ensure BIFI ethereum token availability after removing bugfix workaround
+# See: https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=126605278
+# Can be safely removed after a couple of major releases
+A_BIFI: Final = Asset('eip155:1/erc20:0xB1F1ee126e9c96231Cc3d3fAD7C08b4cf873b1f1')
 
 # used as underlying assets of aave v1 tokens
 A_ENJ: Final = Asset('eip155:1/erc20:0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c')
