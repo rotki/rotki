@@ -33,6 +33,7 @@ from .v9_v10 import migrate_to_v10
 from .v10_v11 import migrate_to_v11
 from .v11_v12 import migrate_to_v12
 from .v12_v13 import migrate_to_v13
+from .v13_v14 import migrate_to_v14
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
@@ -88,6 +89,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=12,
         function=migrate_to_v13,
+    ),
+    UpgradeRecord(
+        from_version=13,
+        function=migrate_to_v14,
     ),
 ]
 

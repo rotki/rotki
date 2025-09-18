@@ -1336,6 +1336,99 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v13_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [13])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
+    """Test the global DB upgrade from v13 to v14 (SOL-2 to SOL migration)"""
+    # Check the state before upgrading
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb.get_setting_value('version', 0) == 13
+        assert cursor.execute('SELECT identifier, name FROM assets WHERE identifier = ?', ((old_solana_id := 'SOL-2'),)).fetchall() == [  # noqa: E501
+            (old_solana_id, 'Solana'),
+        ]
+        assert cursor.execute('SELECT identifier, symbol FROM common_asset_details WHERE identifier = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            (old_solana_id, 'SOL'),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', ((new_solana_id := 'SOL'),)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM common_asset_details WHERE identifier = ?', (new_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT location, exchange_symbol, local_id FROM location_asset_mappings WHERE local_id = ? ORDER BY location, exchange_symbol', (old_solana_id,)).fetchall() == [  # noqa: E501
+            (None, 'SOL', old_solana_id),
+            ('C', 'SOL', old_solana_id),
+            (']', 'Sol', old_solana_id),
+        ]
+        assert cursor.execute('SELECT collection_id, asset FROM multiasset_mappings WHERE asset = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            (999, old_solana_id),
+        ]
+        assert cursor.execute('SELECT id, name, symbol, main_asset FROM asset_collections WHERE main_asset = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            (888, 'Test Solana Collection', 'TSOL', old_solana_id),
+        ]
+        assert cursor.execute('SELECT asset_id FROM user_owned_assets WHERE asset_id = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            (old_solana_id,),
+        ]
+        assert cursor.execute('SELECT from_asset, to_asset FROM price_history WHERE from_asset = ? OR to_asset = ? ORDER BY timestamp', (old_solana_id, old_solana_id)).fetchall() == [  # noqa: E501
+            (old_solana_id, 'USD'),
+            ('BTC', old_solana_id),
+        ]
+        assert cursor.execute('SELECT pair, base_asset, quote_asset FROM binance_pairs WHERE base_asset = ? OR quote_asset = ? ORDER BY pair', (old_solana_id, old_solana_id)).fetchall() == [  # noqa: E501
+            ('BTCSOL', 'BTC', old_solana_id),
+            ('SOLUSD', old_solana_id, 'USD'),
+        ]
+        assert cursor.execute('SELECT counterparty, symbol, local_id FROM counterparty_asset_mappings WHERE local_id = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            ('solana', 'SOL', old_solana_id),
+        ]
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 14)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 14
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM common_asset_details WHERE identifier = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT identifier, name FROM assets WHERE identifier = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            (new_solana_id, 'Solana'),
+        ]
+        assert cursor.execute('SELECT identifier, symbol FROM common_asset_details WHERE identifier = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            (new_solana_id, 'SOL'),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings WHERE local_id = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT location, exchange_symbol, local_id FROM location_asset_mappings WHERE local_id = ? ORDER BY location, exchange_symbol', (new_solana_id,)).fetchall() == [  # noqa: E501
+            (None, 'SOL', new_solana_id),
+            ('C', 'SOL', new_solana_id),
+            (']', 'Sol', new_solana_id),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM multiasset_mappings WHERE asset = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT collection_id, asset FROM multiasset_mappings WHERE asset = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            (999, new_solana_id),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM asset_collections WHERE main_asset = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT id, name, symbol, main_asset FROM asset_collections WHERE main_asset = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            (888, 'Test Solana Collection', 'TSOL', new_solana_id),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM user_owned_assets WHERE asset_id = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM user_owned_assets WHERE asset_id = ?', (new_solana_id,)).fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM price_history WHERE from_asset = ? OR to_asset = ?', (old_solana_id, old_solana_id)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT from_asset, to_asset FROM price_history WHERE from_asset = ? OR to_asset = ? ORDER BY timestamp', (new_solana_id, new_solana_id)).fetchall() == [  # noqa: E501
+            (new_solana_id, 'USD'),
+            ('BTC', new_solana_id),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM binance_pairs WHERE base_asset = ? OR quote_asset = ?', (old_solana_id, old_solana_id)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT pair, base_asset, quote_asset FROM binance_pairs WHERE base_asset = ? OR quote_asset = ? ORDER BY pair', (new_solana_id, new_solana_id)).fetchall() == [  # noqa: E501
+            ('BTCSOL', 'BTC', new_solana_id),
+            ('SOLUSD', new_solana_id, 'USD'),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM counterparty_asset_mappings WHERE local_id = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT counterparty, symbol, local_id FROM counterparty_asset_mappings WHERE local_id = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            ('solana', 'SOL', new_solana_id),
+        ]
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])

@@ -2148,7 +2148,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             amount=FVal('0.0001057'),
             identifier=24,
         ), SwapEvent(
-            event_identifier='BNC_577fa5ca63cae7f3f33c594f1c3e3c9493415243344a4d2753acdae78d26fd81',
+            event_identifier='BNC_a07a0997d480a1079f5935cb7d774dedf2e9f2761bfbb90e41e7d8a1b0e919dc',
             timestamp=TimestampMS(1605903740000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -2157,7 +2157,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             identifier=25,
         ), SwapEvent(
-            event_identifier='BNC_577fa5ca63cae7f3f33c594f1c3e3c9493415243344a4d2753acdae78d26fd81',
+            event_identifier='BNC_a07a0997d480a1079f5935cb7d774dedf2e9f2761bfbb90e41e7d8a1b0e919dc',
             timestamp=TimestampMS(1605903740000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -2165,7 +2165,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             amount=FVal('0.00072724'),
             identifier=26,
         ), SwapEvent(
-            event_identifier='BNC_63058e64402a3caf220ea07c36ae4e77a34f56c41dd7b5ed8cc0968f3910e34d',
+            event_identifier='BNC_07f05dbef1c4ff56c8ad52fdf5dc0379380dcc67322f33a79be6545d53ebc562',
             timestamp=TimestampMS(1605903740000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -2174,7 +2174,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             identifier=27,
         ), SwapEvent(
-            event_identifier='BNC_63058e64402a3caf220ea07c36ae4e77a34f56c41dd7b5ed8cc0968f3910e34d',
+            event_identifier='BNC_07f05dbef1c4ff56c8ad52fdf5dc0379380dcc67322f33a79be6545d53ebc562',
             timestamp=TimestampMS(1605903740000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -2537,7 +2537,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             amount=FVal('2641.26410000'),
             identifier=64,
         ), SwapEvent(
-            event_identifier='BNC_143f8cfd2308c8909131f969b4e748c5094f6c988f3df4285655f68f4d65e843',
+            event_identifier='BNC_ba9b1f8e6e23a05dcc5755dd4bc5056d8b707fc3cc41cc7d140c7e6ee581efd2',
             timestamp=TimestampMS(1690570138000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -2546,7 +2546,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             identifier=65,
         ), SwapEvent(
-            event_identifier='BNC_143f8cfd2308c8909131f969b4e748c5094f6c988f3df4285655f68f4d65e843',
+            event_identifier='BNC_ba9b1f8e6e23a05dcc5755dd4bc5056d8b707fc3cc41cc7d140c7e6ee581efd2',
             timestamp=TimestampMS(1690570138000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -2554,7 +2554,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             amount=FVal('26.82490000'),
             identifier=66,
         ), SwapEvent(
-            event_identifier='BNC_143f8cfd2308c8909131f969b4e748c5094f6c988f3df4285655f68f4d65e843',
+            event_identifier='BNC_ba9b1f8e6e23a05dcc5755dd4bc5056d8b707fc3cc41cc7d140c7e6ee581efd2',
             timestamp=TimestampMS(1690570138000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.FEE,

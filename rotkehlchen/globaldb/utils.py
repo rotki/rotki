@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 # 1. Go to assets repo and tweak the min/max schema of the updates
 # 2. Tweak ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS
 # 3. Add the previous version to GLOBAL_DB_ASSETS_BREAKING_VERSIONS if it breaks asset updates compatibility  # noqa: E501
-GLOBAL_DB_VERSION = 13
+GLOBAL_DB_VERSION = 14
 ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS = (3, GLOBAL_DB_VERSION)
 MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
 # Global DB versions that break compatibility with existing asset updates.

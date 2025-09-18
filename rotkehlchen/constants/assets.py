@@ -16,7 +16,7 @@ A_BSQ: Final = Asset('BSQ')
 A_KFEE: Final = Asset('KFEE')
 A_XDAI: Final = Asset('XDAI')
 A_BSC_BNB: Final = Asset('BNB')
-A_SOL: Final = Asset('SOL-2')
+A_SOL: Final = Asset('SOL')
 
 A_OP: Final = Asset('eip155:10/erc20:0x4200000000000000000000000000000000000042')
 A_OPTIMISM_ETH: Final = Asset('eip155:10/erc20:0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000')
