@@ -21,6 +21,7 @@ from eth_typing import ChecksumAddress
 from eth_utils.address import to_checksum_address
 from hexbytes import HexBytes as Web3HexBytes
 
+from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import AddressNotSupported, InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -1000,9 +1001,9 @@ class AddressbookEntry(NamedTuple):
         ChainType.BITCOIN,
         ChainType.EVMLIKE,
         ChainType.SUBSTRATE,
+        ChainType.SOLANA,
     ]:
         """Get the chain ecosystem for the provided address.
-        TODO: Add solana in develop
 
         May raise:
             - AddressNotSupported
@@ -1018,6 +1019,8 @@ class AddressbookEntry(NamedTuple):
             is_valid_ss58_address(value=address, valid_ss58_format=2)     # Kusama
         ):
             return ChainType.SUBSTRATE
+        if is_valid_solana_address(address=address):
+            return ChainType.SOLANA
 
         # Whenever we add a new ecosystem we need to update this function.
         raise AddressNotSupported(f'Unsupported address {address}')
