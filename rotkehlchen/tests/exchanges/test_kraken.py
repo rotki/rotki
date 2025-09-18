@@ -113,7 +113,7 @@ def test_coverage_of_kraken_balances():
         'FLOWH.S': Asset('FLOW'),
         'FLOWH': Asset('FLOW'),
         'ADA.S': A_ADA,
-        'SOL.S': Asset('SOL-2'),
+        'SOL.S': Asset('SOL'),
         'KSM.P': A_KSM,  # kusama bonded for parachains
         'ALGO.S': Asset('ALGO'),
         'DOT.P': A_DOT,
@@ -136,7 +136,7 @@ def test_coverage_of_kraken_balances():
         'SCRT21.S': Asset('SCRT'),
         'KAVA21.S': Asset('KAVA'),
         'ATOM21.S': Asset('ATOM'),
-        'SOL03.S': Asset('SOL-2'),
+        'SOL03.S': Asset('SOL'),
         'FLOW14.S': Asset('FLOW'),
         'MATIC04.S': strethaddress_to_identifier('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
         'KSM07.S': A_KSM,

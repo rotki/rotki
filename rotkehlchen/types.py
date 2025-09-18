@@ -509,7 +509,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         if self == SupportedBlockchain.BINANCE_SC:
             return 'BNB'
         if self == SupportedBlockchain.SOLANA:
-            return 'SOL-2'
+            return 'SOL'
 
         return self.value
 

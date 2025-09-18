@@ -47,7 +47,14 @@ INDEX = '_index'
 
 
 def hash_binance_csv_row(csv_row: BinanceCsvRow) -> str:
-    """Hash the CSV row excluding the INDEX"""
+    """Hash the CSV row excluding the INDEX
+
+    NOTE: This creates unique event identifiers by hashing CSV data. If asset
+    identifiers change (e.g., SOL-2 to SOL), the same CSV will produce different
+    hashes, breaking duplicate detection. We can't fix this because we don't store
+    the original CSV data. This happens because the 'Coin' column is converted to
+    actual assets before hashing to avoid repeated conversions.
+    """
     return hash_csv_row({k: v for k, v in csv_row.items() if k != INDEX})
 
 

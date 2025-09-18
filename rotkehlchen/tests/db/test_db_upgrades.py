@@ -152,7 +152,7 @@ def _init_db_with_target_version(
         stack.enter_context(target_patch(target_version=target_version))
         stack.enter_context(mock_db_schema_sanity_check())
         stack.enter_context(no_tables_created_after_init)
-        if target_version <= 48:
+        if target_version <= 50:
             stack.enter_context(mock_dbhandler_update_owned_assets())
             stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         return DBHandler(
@@ -3675,6 +3675,22 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
             ('spend', 'return wrapped', 'aave-v1'),
         ])
 
+        # Check that SOL-2 exists in the respective tables
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', ((old_solana_id := 'SOL-2'),)).fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT currency, amount FROM timed_balances WHERE currency = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            (old_solana_id, '25.5'),
+        ]
+        assert cursor.execute('SELECT asset, label FROM manually_tracked_balances WHERE asset = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            (old_solana_id, 'Test SOL-2 Manual Balance'),
+        ]
+        assert cursor.execute('SELECT location, pl_currency FROM margin_positions WHERE pl_currency = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            ('A', old_solana_id),
+        ]
+        assert cursor.execute('SELECT event_identifier, asset FROM history_events WHERE asset = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
+            ('test_sol_event', old_solana_id),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', ((new_solana_id := 'SOL'),)).fetchone()[0] == 0  # noqa: E501
+
     db_v49.logout()
     db = _init_db_with_target_version(
         target_version=50,
@@ -3692,5 +3708,25 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
         ]
         assert table_exists(cursor=cursor, name='accounting_rule_events')
         assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules').fetchall() == rules  # noqa: E501
+
+        # Check that SOL-2 no longer exists in assets table
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        # Check that SOL now exists in assets table
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', (new_solana_id,)).fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM timed_balances WHERE currency = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT currency, amount FROM timed_balances WHERE currency = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            (new_solana_id, '25.5'),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM manually_tracked_balances WHERE asset = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT asset, label FROM manually_tracked_balances WHERE asset = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            (new_solana_id, 'Test SOL-2 Manual Balance'),
+        ]
+        assert cursor.execute('SELECT COUNT(*) FROM margin_positions WHERE pl_currency = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT location, pl_currency FROM margin_positions WHERE pl_currency = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            ('A', new_solana_id),
+        ]
+        assert cursor.execute('SELECT event_identifier, asset FROM history_events WHERE asset = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
+            ('test_sol_event', new_solana_id),
+        ]
 
     db.logout()

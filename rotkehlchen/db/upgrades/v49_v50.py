@@ -42,4 +42,12 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );
         """)
 
+    @progress_step(description='Swap SOL-2 to SOL asset identifier.')
+    def _swap_sol2_to_sol(write_cursor: 'DBCursor') -> None:
+        """Swap SOL-2 to SOL throughout the user database."""
+        write_cursor.execute(
+            'UPDATE assets SET identifier = ? WHERE identifier = ?',
+            ('SOL', 'SOL-2'),
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
