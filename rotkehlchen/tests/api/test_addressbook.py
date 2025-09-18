@@ -31,6 +31,7 @@ from rotkehlchen.types import (
     BTCAddress,
     ChainType,
     OptionalChainAddress,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
 )
@@ -1020,3 +1021,27 @@ def test_insert_unsupported_ecosystem_address_with_none_blockchain(
         contained_in_msg='Given address is from an unsupported ecosystem',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('empty_global_addressbook', [True])
+@pytest.mark.parametrize('book_type', [AddressbookType.PRIVATE])
+def test_insert_solana_address(
+        rotkehlchen_api_server: 'APIServer',
+        book_type: AddressbookType,
+) -> None:
+    """Check that adding a solana address works fine"""
+    solana_entry = AddressbookEntry(
+        address=SolanaAddress('Fpys8GRa5RBWfyeN7AaDUwFGD1zkDCA4z3t4CJLV8dfL'),
+        name='My solana address',
+        blockchain=None,
+    )
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={'entries': [solana_entry.serialize()]},
+    )
+    assert assert_proper_sync_response_with_result(response)

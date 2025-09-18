@@ -40,6 +40,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_potential_ens_name
+from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -144,7 +145,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import create_order_by_rules_list, is_valid_solana_address, ts_now
+from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
 
 from .fields import (
     AmountField,
