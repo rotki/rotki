@@ -1,14 +1,14 @@
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Literal, NamedTuple
+from typing import Any, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    EVM_CHAINS_WITH_CHAIN_MANAGER,
+    CHAINS_WITH_NODES,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
@@ -34,7 +34,7 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
-    blockchain: EVM_CHAINS_WITH_CHAIN_MANAGER | Literal[SupportedBlockchain.SOLANA]
+    blockchain: CHAINS_WITH_NODES
 
     def serialize(self) -> dict[str, Any]:
         return {

@@ -22,7 +22,7 @@ class LockableQueryMixIn:
         self.query_locks_map_lock = Semaphore()
 
 
-def protect_with_lock(arguments_matter: bool = False) -> Callable:
+def protect_with_lock(arguments_matter: bool = False, skip_ignore_cache: bool = False) -> Callable:
     """ This is a decorator for protecting a call of an object with a lock
     The objects must adhere to the interface of having:
         - A mapping of ids to query_lock objects
@@ -38,7 +38,7 @@ def protect_with_lock(arguments_matter: bool = False) -> Callable:
             lock_key = function_sig_key(
                 f.__name__,        # name
                 arguments_matter,  # arguments_matter
-                False,             # skip_ignore_cache
+                skip_ignore_cache,  # skip_ignore_cache
                 *args,
                 **kwargs,
             )

@@ -13,7 +13,7 @@ from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_NON_BITCOIN_CHAINS,
-    SUPPORTED_SUBSTRATE_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     BTCAddress,
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -67,7 +67,7 @@ class BlockchainBalances:
         ...
 
     @overload
-    def get(self, chain: SUPPORTED_SUBSTRATE_CHAINS) -> dict[SubstrateAddress, BalanceSheet]:
+    def get(self, chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE) -> dict[SubstrateAddress, BalanceSheet]:
         ...
 
     @overload
@@ -81,6 +81,34 @@ class BlockchainBalances:
     def get(self, chain: SupportedBlockchain) -> ALL_BALANCE_TYPES:
         """Get the appropriate balances dict corresponding to the given chain"""
         return getattr(self, chain.get_key())
+
+    @overload
+    def set(self, chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
+        ...
+
+    @overload
+    def set(self, chain: SUPPORTED_BITCOIN_CHAINS_TYPE, balances: dict[BTCAddress, Balance]) -> None:  # noqa: E501
+        ...
+
+    @overload
+    def set(self, chain: Literal[SupportedBlockchain.ETHEREUM_BEACONCHAIN], balances: defaultdict[Eth2PubKey, BalanceSheet]) -> None:  # noqa: E501
+        ...
+
+    @overload
+    def set(self, chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE, balances: dict[SubstrateAddress, BalanceSheet]) -> None:  # noqa: E501
+        ...
+
+    @overload
+    def set(self, chain: Literal[SupportedBlockchain.SOLANA], balances: dict[SolanaAddress, BalanceSheet]) -> None:  # noqa: E501
+        ...
+
+    @overload
+    def set(self, chain: SupportedBlockchain, balances: ALL_BALANCE_TYPES) -> None:
+        ...
+
+    def set(self, chain: SupportedBlockchain, balances: ALL_BALANCE_TYPES) -> None:
+        """Set the balances dict for the given chain"""
+        return setattr(self, chain.get_key(), balances)
 
     def __iter__(self) -> Iterator[tuple[str, dict]]:
         """Easy way to iterate through all chains

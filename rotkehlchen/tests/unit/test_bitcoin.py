@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
     WitnessVersion,
@@ -19,7 +20,6 @@ from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS, SupportedBlockchain
 from rotkehlchen.errors.misc import RemoteError, XPUBError
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
@@ -509,7 +509,7 @@ def test_bitcoin_balance_api_resolver(
         "tx_count": 0}}}}"""
         return MockResponse(200, contents)
 
-    def check_balances(balances_to_check: dict[BTCAddress, FVal]) -> None:
+    def check_balances(balances_to_check: dict[BTCAddress, Balance]) -> None:
         for addr in addresses:
             assert addr in balances_to_check
 
@@ -524,7 +524,7 @@ def test_bitcoin_balance_api_resolver(
 
     # Test balances are returned properly if first source works
     with blockchain_info_mock:
-        balances = bitcoin_manager.get_balances(addresses)
+        balances = bitcoin_manager.query_balances(addresses)
     check_balances(balances)
 
     def mock_query_blockstream_or_mempool(only_blockstream: bool, **kwargs):
@@ -539,7 +539,7 @@ def test_bitcoin_balance_api_resolver(
             MagicMock(side_effect=KeyError('someProperty')),
     ):
         with blockstream_mempool_mock:
-            balances = bitcoin_manager.get_balances(addresses)
+            balances = bitcoin_manager.query_balances(addresses)
         check_balances(balances)
 
         # Second source fails
@@ -551,7 +551,7 @@ def test_bitcoin_balance_api_resolver(
             ),
         ):
             with blockstream_mempool_mock:
-                balances = bitcoin_manager.get_balances(addresses)
+                balances = bitcoin_manager.query_balances(addresses)
             check_balances(balances)
 
             # Third source fails - FATALITY!!!
@@ -562,4 +562,4 @@ def test_bitcoin_balance_api_resolver(
                     **kwargs,
                 ),
             ):
-                bitcoin_manager.get_balances(addresses)
+                bitcoin_manager.query_balances(addresses)

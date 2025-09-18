@@ -255,7 +255,7 @@ from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_EVMLIKE_CHAINS_TYPE,
-    SUPPORTED_SUBSTRATE_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -1014,8 +1014,8 @@ class RestAPI:
                 return None
         else:  # chain is EVM
             with suppress(KeyError, DeserializationError, RemoteError, AlreadyExists, InputError):
-                self.rotkehlchen.chains_aggregator.get_chain_manager(
-                    blockchain=blockchain,  # type: ignore[arg-type]  # Will only be EVM chains
+                self.rotkehlchen.chains_aggregator.get_chain_manager(  # type: ignore[call-overload]  # Will only be EVM chains
+                    blockchain=blockchain,
                 ).transactions.add_transaction_by_hash(
                     tx_hash=event.tx_hash,
                     associated_address=associated_address,
@@ -1989,7 +1989,7 @@ class RestAPI:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_SUBSTRATE_CHAINS,
+            chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
     ) -> dict[str, Any]:
         ...
@@ -2874,7 +2874,7 @@ class RestAPI:
             to_timestamp: Timestamp,
             accounts: list[OptionalBlockchainAccount] | None,
     ) -> dict[str, Any]:
-        blockchain_addresses: dict[SupportedBlockchain, ListOfBlockchainAddresses]
+        blockchain_addresses: dict[CHAINS_WITH_TRANSACTIONS_TYPE, ListOfBlockchainAddresses]
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if accounts is None or len(accounts) == 0:  # No accounts specified. Get all accounts from DB.  # noqa: E501
                 blockchain_addresses = {
@@ -2888,8 +2888,8 @@ class RestAPI:
                 blockchain_addresses = defaultdict(list)
                 unspecified_chain_addresses: list[BlockchainAddress] = []
                 for account in accounts:
-                    if account.chain is not None:
-                        blockchain_addresses[account.chain].append(account.address)  # type: ignore[arg-type]  # accounts with the same chain will have the same type of address
+                    if account.chain is not None and account.chain in CHAINS_WITH_TRANSACTIONS:
+                        blockchain_addresses[account.chain].append(account.address)  # type: ignore  # there will only be accounts for chains with transactions here
                     else:
                         unspecified_chain_addresses.append(account.address)
 
@@ -2898,37 +2898,26 @@ class RestAPI:
                         cursor=cursor,
                         accounts=unspecified_chain_addresses,
                     ):
-                        blockchain_addresses[chain].append(address)  # type: ignore[arg-type]  # same as above
+                        if chain not in CHAINS_WITH_TRANSACTIONS:
+                            continue
+
+                        blockchain_addresses[chain].append(address)  # type: ignore  # same as above
 
         result, message, status_code = True, '', HTTPStatus.OK
         for blockchain, addresses in blockchain_addresses.items():
             try:
-                if blockchain.is_evm():
-                    self.rotkehlchen.chains_aggregator.get_chain_manager(
-                        blockchain=blockchain,  # type: ignore[arg-type]  # will be evm blockchain
-                    ).transactions.query_chain(
-                        from_timestamp=from_timestamp,
-                        to_timestamp=to_timestamp,
-                        addresses=addresses,
-                    )
-                elif blockchain.is_evmlike():  # currently only zksync lite
-                    for address in addresses:
-                        self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(address)  # type: ignore[arg-type]  # all evmlike will be ChecksumEvmAddress
-                elif blockchain.is_bitcoin():
-                    self.rotkehlchen.chains_aggregator.get_chain_manager(
-                        blockchain=blockchain,  # type: ignore[arg-type]  # will be btc or bch
-                    ).query_transactions(
-                        from_timestamp=from_timestamp,
-                        to_timestamp=to_timestamp,
-                        addresses=addresses,
-                    )
-                elif blockchain == SupportedBlockchain.SOLANA:
-                    self.rotkehlchen.chains_aggregator.solana.query_transactions(addresses)  # type: ignore[arg-type]  # will be solana addresses
-                else:
-                    result = False
-                    message = f'Transaction querying for {blockchain} is not implemented.'
-                    status_code = HTTPStatus.BAD_REQUEST
-                    break
+                self.rotkehlchen.chains_aggregator.get_chain_manager(
+                    blockchain=blockchain,
+                ).query_transactions(
+                    addresses=addresses,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                )
+            except AttributeError:
+                result = False
+                message = f'Transaction querying for {blockchain} is not implemented.'
+                status_code = HTTPStatus.BAD_REQUEST
+                break
             except RemoteError as e:
                 result, message, status_code = False, str(e), HTTPStatus.BAD_GATEWAY
                 break
@@ -5833,7 +5822,7 @@ class RestAPI:
             chain: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
             amount: FVal,
     ) -> dict[str, Any]:
-        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(chain.to_blockchain())  # type: ignore[arg-type]
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(chain.to_blockchain())  # type: ignore[call-overload]
 
         try:
             payload = manager.active_management.transfer_native_token(

@@ -16,6 +16,7 @@ from solders.solders import (
 from spl.token._layouts import ACCOUNT_LAYOUT
 from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
     TransactionStatusSubType,
@@ -24,16 +25,20 @@ from rotkehlchen.api.websockets.typedefs import (
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.manager import ChainManagerWithTransactions
 from rotkehlchen.chain.solana.utils import (
     deserialize_solana_instruction_from_rpc,
     lamports_to_sol,
 )
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
+from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.misc import MissingAPIKey, NotSPLConformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp
@@ -59,7 +64,7 @@ SIGNATURES_PAGE_SIZE: Final = 1000
 RPC_TX_BATCH_SIZE: Final = 10
 
 
-class SolanaManager:
+class SolanaManager(ChainManagerWithTransactions[SolanaAddress]):
 
     def __init__(
             self,
@@ -146,6 +151,33 @@ class SolanaManager:
 
         return balances
 
+    def query_balances(
+            self,
+            addresses: Sequence[SolanaAddress],
+    ) -> dict[SolanaAddress, BalanceSheet]:
+        """Query the balances of the given addresses.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        chain_balances: defaultdict[SolanaAddress, BalanceSheet] = defaultdict(BalanceSheet)
+        native_token_usd_price = Inquirer.find_usd_price(A_SOL)
+        for account, balance in self.get_multi_balance(addresses).items():
+            if balance != ZERO:
+                chain_balances[account].assets[A_SOL][DEFAULT_BALANCE_LABEL] = Balance(
+                    amount=balance,
+                    usd_value=balance * native_token_usd_price,
+                )
+
+        for account in addresses:
+            token_balances = self.get_token_balances(account)
+            token_prices = Inquirer.find_usd_prices(list(token_balances))
+            for token, balance in token_balances.items():
+                chain_balances[account].assets[token][DEFAULT_BALANCE_LABEL] = Balance(
+                    amount=balance,
+                    usd_value=balance * token_prices[token],
+                )
+
+        return dict(chain_balances)
+
     def query_tx_signatures_for_address(
             self,
             address: SolanaAddress,
@@ -172,7 +204,12 @@ class SolanaManager:
 
         return signatures
 
-    def query_transactions(self, addresses: list[SolanaAddress]) -> None:
+    def query_transactions(
+            self,
+            addresses: list[SolanaAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> None:
         """Query the transactions for the given addresses and save them to the DB.
         Only queries new transactions if there are already transactions in the DB.
         May raise RemoteError if there is a problem with querying the external service.

@@ -438,7 +438,7 @@ class ChainType(SerializableEnumNameMixin):
             return SUPPORTED_BITCOIN_CHAINS
 
         if self == ChainType.SUBSTRATE:
-            return get_args(SUPPORTED_SUBSTRATE_CHAINS)
+            return get_args(SUPPORTED_SUBSTRATE_CHAINS_TYPE)
 
         if self == ChainType.SOLANA:
             return [SupportedBlockchain.SOLANA]
@@ -494,7 +494,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         return self in SUPPORTED_BITCOIN_CHAINS
 
     def is_substrate(self) -> bool:
-        return self in get_args(SUPPORTED_SUBSTRATE_CHAINS)
+        return self in get_args(SUPPORTED_SUBSTRATE_CHAINS_TYPE)
 
     def get_image_name(self) -> str:
         return SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING[self]
@@ -709,10 +709,11 @@ SUPPORTED_BITCOIN_CHAINS_TYPE = Literal[
 ]
 SUPPORTED_BITCOIN_CHAINS: tuple[SUPPORTED_BITCOIN_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_BITCOIN_CHAINS_TYPE)  # noqa: E501
 
-SUPPORTED_SUBSTRATE_CHAINS = Literal[
+SUPPORTED_SUBSTRATE_CHAINS_TYPE = Literal[
     SupportedBlockchain.POLKADOT,
     SupportedBlockchain.KUSAMA,
 ]
+SUPPORTED_SUBSTRATE_CHAINS: tuple[SUPPORTED_SUBSTRATE_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_SUBSTRATE_CHAINS_TYPE)  # noqa: E501
 
 SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.ETHEREUM: ChainID.ETHEREUM,
@@ -731,25 +732,8 @@ CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
 }
 NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
 
-EVM_CHAINS_WITH_CHAIN_MANAGER = Literal[
-    SupportedBlockchain.ETHEREUM,
-    SupportedBlockchain.OPTIMISM,
-    SupportedBlockchain.POLYGON_POS,
-    SupportedBlockchain.ARBITRUM_ONE,
-    SupportedBlockchain.BASE,
-    SupportedBlockchain.AVALANCHE,
-    SupportedBlockchain.POLKADOT,
-    SupportedBlockchain.KUSAMA,
-    SupportedBlockchain.GNOSIS,
-    SupportedBlockchain.SCROLL,
-    SupportedBlockchain.ZKSYNC_LITE,
-    SupportedBlockchain.BINANCE_SC,
-]
-
-CHAINS_WITH_CHAIN_MANAGER = EVM_CHAINS_WITH_CHAIN_MANAGER | Literal[
-    SupportedBlockchain.BITCOIN,
-    SupportedBlockchain.BITCOIN_CASH,
-]
+CHAINS_WITH_NODES = SUPPORTED_EVM_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA]
+CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA]  # noqa: E501
 
 
 class Location(DBCharEnumMixIn):

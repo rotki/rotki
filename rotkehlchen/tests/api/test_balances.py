@@ -59,7 +59,6 @@ from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRES
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 from rotkehlchen.types import (
-    CHAIN_IDS_WITH_BALANCE_PROTOCOLS,
     SUPPORTED_EVM_CHAINS,
     ChainID,
     Location,
@@ -283,14 +282,14 @@ def test_query_all_balances_ignore_cache(
         wraps=rotki.chains_aggregator.query_eth_balances,
     )
     btc_query_patch = patch.object(
-        rotki.chains_aggregator,
-        'query_btc_balances',
-        wraps=rotki.chains_aggregator.query_btc_balances,
+        rotki.chains_aggregator.bitcoin,
+        'query_balances',
+        wraps=rotki.chains_aggregator.bitcoin.query_balances,
     )
     tokens_query_patch = patch.object(
-        rotki.chains_aggregator,
+        rotki.chains_aggregator.ethereum,
         'query_evm_tokens',
-        wraps=rotki.chains_aggregator.query_evm_tokens,
+        wraps=rotki.chains_aggregator.ethereum.query_evm_tokens,
     )
     original_binance_query_dict = binance.api_query_dict
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
@@ -538,24 +537,16 @@ def test_protocol_balances_all_chains(rotkehlchen_api_server: 'APIServer') -> No
             address=string_to_evm_address('0x706A70067BE19BdadBea3600Db0626859Ff25D74'),
         )
 
-    queried_chains = []
-
-    def mock_query_protocols_with_balance(chain_id: CHAIN_IDS_WITH_BALANCE_PROTOCOLS) -> None:
-        queried_chains.append(chain_id)
-
-    # patch _query_protocols_with_balance to record chains queried,
-    # and also patch a couple other functions since we don't need them taking time here.
-    with (patch.object(
-            rotki.chains_aggregator,
-            '_query_protocols_with_balance',
-            side_effect=mock_query_protocols_with_balance,
-        ),
-        patch.object(rotki.chains_aggregator, 'query_evm_chain_balances'),
+    # patch _query_protocols_with_balance to record how many chains are queried,
+    # and also patch query_evm_chain_balances since we don't need it taking time here.
+    with (patch(
+            'rotkehlchen.chain.evm.manager.EvmManager.query_protocols_with_balance',
+        ) as mock_query_protocols_with_balance,
+        patch('rotkehlchen.chain.evm.manager.EvmManager.query_evm_chain_balances'),
     ):
         rotki.chains_aggregator.query_balances()
 
-    for key in CHAIN_TO_BALANCE_PROTOCOLS:
-        assert key in queried_chains
+    assert len(CHAIN_TO_BALANCE_PROTOCOLS) == mock_query_protocols_with_balance.call_count
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -684,8 +675,8 @@ def test_multiple_balance_queries_not_concurrent(
         wraps=rotki.chains_aggregator.ethereum.node_inquirer.get_multi_balance,
     )
     btc_balances_patch = patch(
-        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager.get_balances',
-        wraps=rotki.chains_aggregator.bitcoin.get_balances,
+        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager.query_balances',
+        wraps=rotki.chains_aggregator.bitcoin.query_balances,
     )
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
     assert binance is not None

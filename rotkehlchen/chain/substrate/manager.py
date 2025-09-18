@@ -12,17 +12,21 @@ from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import BlockNotFound, SubstrateRequestException
 from websocket import WebSocketException
 
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.constants import ZERO
+from rotkehlchen.chain.manager import ChainManager
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
+from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
-from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS, SupportedBlockchain
+from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -114,10 +118,10 @@ def request_available_nodes(func: Callable) -> Callable:
     return wrapper
 
 
-class SubstrateManager:
+class SubstrateManager(ChainManager[SubstrateAddress]):
     def __init__(
             self,
-            chain: SUPPORTED_SUBSTRATE_CHAINS,
+            chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
             greenlet_manager: GreenletManager,
             msg_aggregator: MessagesAggregator,
             connect_at_start: Sequence[NodeName],
@@ -573,6 +577,31 @@ class SubstrateManager:
         trying with all the available nodes.
         """
         return {account: self.get_account_balance(account) for account in accounts}
+
+    def query_balances(
+            self,
+            addresses: Sequence[SubstrateAddress],
+    ) -> dict[SubstrateAddress, BalanceSheet]:
+        usd_price = Inquirer.find_usd_price(
+            asset=(asset := A_DOT if self.chain == SupportedBlockchain.POLKADOT else A_KSM),
+        )
+
+        wait_until_a_node_is_available(
+            substrate_manager=self,
+            seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
+        )
+
+        balances = {}
+        account_amount = self.get_accounts_balance(addresses)
+        for account, amount in account_amount.items():
+            balance = Balance(
+                amount=amount,
+                usd_value=amount * usd_price,
+            )
+            balances[account] = BalanceSheet()
+            balances[account].assets[asset][DEFAULT_BALANCE_LABEL] = balance
+
+        return balances
 
     @request_available_nodes
     def get_chain_id(

@@ -127,7 +127,7 @@ from rotkehlchen.types import (
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_EVMLIKE_CHAINS,
     SUPPORTED_EVMLIKE_CHAINS_TYPE,
-    SUPPORTED_SUBSTRATE_CHAINS,
+    SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     AnyBlockchainAddress,
     ApiKey,
     ApiSecret,
@@ -1607,7 +1607,7 @@ class DBHandler:
     def get_single_blockchain_addresses(
             self,
             cursor: 'DBCursor',
-            blockchain: SUPPORTED_SUBSTRATE_CHAINS,
+            blockchain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     ) -> list[SubstrateAddress]:
         ...
 

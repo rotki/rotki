@@ -226,7 +226,7 @@ def test_native_token_balance(
             only_cache=False,
             addresses=[address],
         )
-        blockchain.query_polygon_pos_balances()
+        blockchain._query_chain_balances(blockchain=SupportedBlockchain.POLYGON_POS)
         balances = blockchain.balances.polygon_pos[address].assets
         assert balances == {
             pol: {DEFAULT_BALANCE_LABEL: Balance(
