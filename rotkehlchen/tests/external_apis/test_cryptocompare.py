@@ -82,7 +82,7 @@ def check_cc_result(result: list, forward: bool):
             raise AssertionError(f'Unexpected time entry {entry.time}')
 
 
-@pytest.mark.freeze_time
+@pytest.mark.vcr
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_forward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
@@ -135,7 +135,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
     assert data_range[1] == 1289174400  # that's the closest ts to now_ts cc returns
 
 
-@pytest.mark.freeze_time
+@pytest.mark.vcr
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_backward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
@@ -317,6 +317,7 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
     assert price is not None
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_starknet_historical_price_after_ticker_change(cryptocompare: 'Cryptocompare') -> None:
     """Check that Starknet token price query after Cryptocompare ticker change is accurate.
