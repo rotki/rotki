@@ -366,6 +366,73 @@ def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xa37478676A7A86a6Fb9e8D57D3e543EAc8140A95']])
+def test_aave_v3_monerium_order(gnosis_inquirer, gnosis_accounts) -> None:
+    """Regression test for https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=129465997
+
+    The reason this happened was that the matching logic was comparing assets and monerium has
+    multiple versions of the same asset that are being moved in the same transaction
+    """
+    tx_hash = deserialize_evm_tx_hash('0x4a8e7cde236b18a4f07e1cd0dbba9e46d3fff75d608a30d6c1db8a5a2b328284')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    timestamp, return_amount, interest_amount, gas_fees = TimestampMS(1758276410000), '154.130057505168834584', '0.000037471160600675', '0.0000406106'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_fees),
+            location_label=gnosis_accounts[0],
+            notes=f'Burn {gas_fees} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=EvmToken('eip155:100/erc20:0xEdBC7449a9b594CA4E053D9737EC5Dc4CbCcBfb2'),
+            amount=FVal(return_amount),
+            location_label=gnosis_accounts[0],
+            notes=f'Return {return_amount} aGnoEURe to AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=EvmToken('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+            amount=FVal(return_amount),
+            location_label=gnosis_accounts[0],
+            notes=f'Withdraw {return_amount} EURe from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0xEdBC7449a9b594CA4E053D9737EC5Dc4CbCcBfb2'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=EvmToken('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+            amount=FVal(interest_amount),
+            location_label=gnosis_accounts[0],
+            notes=f'Receive {interest_amount} EURe as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x430431aE62cD20F0D519ee9fF7E26c2005b50AAf']])
 def test_aave_v3_withdraw_with_bigger_interest(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8ed7c1ed348212c6b9aa615a2c13857dd801dfac103f01852a303e62cc58b24f')  # noqa: E501
@@ -1893,7 +1960,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
 def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xbdc74d91e713209a666daf25a97da7c73aca646a7e7c0e126954e6a4c644eb72')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    assert events == [EvmEvent(
+    expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1751201820000)),
@@ -1944,6 +2011,7 @@ def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts) -> None:
         notes=f'Receive {interest_amount} aGnoWXDAI as interest earned from AAVE v3',
         counterparty=CPT_AAVE_V3,
     )]
+    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -2033,7 +2101,7 @@ def test_aave_v3_collateral_swap(base_inquirer, base_accounts) -> None:
 def test_batch_aave3_operations_via_safe(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcb42b04cf1b8dbc70c21c07f150107a500da4f19753b07a14ffa9b6f84645d33')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    assert events == [EvmEvent(
+    expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=900,
         timestamp=(timestamp := TimestampMS(1757542811000)),
@@ -2111,3 +2179,4 @@ def test_batch_aave3_operations_via_safe(ethereum_inquirer, ethereum_accounts) -
         notes=f'Receive {interest_amount} aEthUSDC as interest earned from AAVE v3',
         counterparty=CPT_AAVE_V3,
     )]
+    assert events == expected_events
