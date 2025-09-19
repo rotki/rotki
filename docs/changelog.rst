@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Monerium aave v3 events will now always have the earn event at the end.
+
 * :release:`1.40.1 <2025-09-15>`
 * :bug:`10602` Users will be able to edit EVM swap events, even if the asset is ignored.
 * :bug:`-` Users will now be able to add EVM and EVM swap events from the "Add new event" button on top.
