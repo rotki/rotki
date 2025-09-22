@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
 
 from eth_utils import to_checksum_address
+from solders.solders import Pubkey
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2_CHAINIDS_WITH_L1_FEES,
@@ -25,6 +26,7 @@ from rotkehlchen.types import (
     EvmTransactionAuthorization,
     EVMTxHash,
     HexColorCode,
+    SolanaAddress,
     Timestamp,
     TimestampMS,
     TradePair,
@@ -343,9 +345,17 @@ def deserialize_evm_address(symbol: str) -> ChecksumEvmAddress:
     try:
         return to_checksum_address(symbol)
     except ValueError as e:
-        raise DeserializationError(
-            f'Invalid evm address: {symbol}',
-        ) from e
+        raise DeserializationError(f'Invalid evm address: {symbol}') from e
+
+
+def deserialize_solana_address(value: str) -> SolanaAddress:
+    """Deserializes a Solana address from the given data.
+    May raise DeserializationError if the value is not a valid Solana address.
+    """
+    try:
+        return SolanaAddress(str(Pubkey.from_string(value)))
+    except ValueError as e:
+        raise DeserializationError(f'Invalid solana address: {value}') from e
 
 
 def deserialize_int_from_str(symbol: str, location: str) -> int:

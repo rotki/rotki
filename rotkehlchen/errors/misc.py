@@ -100,3 +100,7 @@ class AccountingError(Exception):
 
 class AddressNotSupported(Exception):
     """Used when we detect an address with a unknown format for the addressbook"""
+
+
+class MissingAPIKey(Exception):
+    """Raised when an API key is missing for a service"""
