@@ -167,6 +167,22 @@ def test_combine_asset_balances():
         'evm_transaction',
         'EVM transaction with hash 0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd and chain id 10',  # noqa: E501
     ), (
+        (12345, 67890, 1674510513, True, b'\x12\x34\x56\x78\x9a\xbc\xde\xf0\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff\x00'),  # noqa: E501
+        'solana_transaction',
+        'Solana transaction with signature 123456789abcdef0...',
+    ), (
+        (1, 5, -1, 2, b'\x01\x02\x03'),
+        'solana_instruction',
+        'Solana instruction with execution_index 5 in transaction 1',
+    ), (
+        (1, 0, b'address_bytes_here'),
+        'solana_account_key',
+        'Solana account key at index 0 for transaction 1',
+    ), (
+        (1, 1, 0, 5, 1),
+        'solana_instruction_account',
+        'Solana instruction account at order 0 for instruction 1',
+    ), (
         ('what', 'ever'), 'invalid_db_tuple_type', None,
     )],
 )

@@ -748,6 +748,68 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 );
 """
 
+DB_CREATE_SOLANA_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS solana_transactions (
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    slot INTEGER NOT NULL,
+    fee INTEGER NOT NULL,
+    block_time INTEGER NOT NULL,
+    success INTEGER NOT NULL CHECK(success IN (0, 1)),
+    signature BLOB NOT NULL UNIQUE
+);
+"""
+
+# stores all accounts involved in the transaction
+# account_index maintains original position in transaction
+DB_CREATE_SOLANA_TX_ACCOUNT_KEYS = """
+CREATE TABLE IF NOT EXISTS solana_tx_account_keys (
+    tx_id INTEGER NOT NULL,
+    account_index INTEGER NOT NULL,
+    address BLOB NOT NULL,
+    PRIMARY KEY(tx_id, account_index),
+    FOREIGN KEY(tx_id) REFERENCES solana_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
+# stores all instructions (top-level and inner/cross-program invocation)
+# execution_index: flat execution order within transaction
+# parent_execution_index: uses TOP_LEVEL_PARENT constant for top-level instructions
+DB_CREATE_SOLANA_TX_INSTRUCTIONS = """
+CREATE TABLE IF NOT EXISTS solana_tx_instructions (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    tx_id INTEGER NOT NULL,
+    execution_index INTEGER NOT NULL,
+    parent_execution_index INTEGER NOT NULL,
+    program_id_index INTEGER NOT NULL,
+    data BLOB,
+    FOREIGN KEY(tx_id) REFERENCES solana_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(tx_id, program_id_index) REFERENCES solana_tx_account_keys(tx_id, account_index) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
+# maps which accounts each instruction uses and in what order
+# references instructions by instruction identifier
+DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS = """
+CREATE TABLE IF NOT EXISTS solana_tx_instruction_accounts (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    instruction_id INTEGER NOT NULL,
+    account_order INTEGER NOT NULL,
+    account_index INTEGER NOT NULL,
+    tx_id INTEGER NOT NULL,
+    FOREIGN KEY(instruction_id) REFERENCES solana_tx_instructions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(tx_id, account_index) REFERENCES solana_tx_account_keys(tx_id, account_index) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
+DB_CREATE_SOLANA_ADDRESS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS solanatx_address_mappings (
+    tx_id INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    PRIMARY KEY(tx_id, address),
+    FOREIGN KEY(tx_id) REFERENCES solana_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
 # Shown below are before/after query speeds we observed for each index:
 # idx_history_events_entry_type: Before: 12951ms, After: 0ms
@@ -825,6 +887,11 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
 {DB_CREATE_GNOSISPAY_DATA}
+{DB_CREATE_SOLANA_TRANSACTIONS}
+{DB_CREATE_SOLANA_TX_ACCOUNT_KEYS}
+{DB_CREATE_SOLANA_TX_INSTRUCTIONS}
+{DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS}
+{DB_CREATE_SOLANA_ADDRESS_MAPPINGS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

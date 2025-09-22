@@ -1999,3 +1999,52 @@ class PaginatedFilterQuery(DBFilterQuery):
         )
         filter_query.filters = []
         return filter_query
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
+    """Filter query for Solana transactions.
+    If `signature` is provided, other filter parameters (timestamp, success) are ignored.
+    """
+
+    @classmethod
+    def make(
+            cls: type['SolanaTransactionsFilterQuery'],
+            and_op: bool = True,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            signature: bytes | None = None,
+            success: bool | None = None,
+    ) -> 'SolanaTransactionsFilterQuery':
+        """May raise:
+        - InvalidFilter for invalid combination of filters
+        """
+        if order_by_rules is None:
+            order_by_rules = [('block_time', True)]
+
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        # Create the timestamp filter so that from/to ts works. But add it only if needed
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            timestamp_field='block_time',
+        )
+        filters: list[DBFilter] = []
+        if signature is not None:  # signature means single result so make it as single filter
+            filters.append(DBEqualsFilter(and_op=True, column='signature', value=signature))
+        else:
+            filters.append(filter_query.timestamp_filter)
+            if success is not None:
+                filters.append(DBEqualsFilter(and_op=True, column='success', value=int(success)))
+
+        filter_query.filters = filters
+        return filter_query

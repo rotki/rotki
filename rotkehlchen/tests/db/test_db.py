@@ -162,6 +162,11 @@ TABLES_AT_INIT = [
     'calendar_reminders',
     'cowswap_orders',
     'gnosispay_data',
+    'solana_transactions',
+    'solana_tx_account_keys',
+    'solana_tx_instruction_accounts',
+    'solana_tx_instructions',
+    'solanatx_address_mappings',
 ]
 
 
