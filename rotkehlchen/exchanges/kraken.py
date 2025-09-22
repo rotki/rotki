@@ -770,7 +770,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     f'Failed to read timestamp in kraken event group '
                     f'due to {e!s}. For more information read the logs. Skipping event',
                 )
-                log.error(f'Failed to read timestamp for {raw_events}')
+                log.error(f'Failed to read timestamp for {raw_events} from {events_source}')
                 continue
 
             group_events, skipped, found_unknown_event = self.history_event_from_kraken(
