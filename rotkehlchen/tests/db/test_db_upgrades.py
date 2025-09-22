@@ -3357,7 +3357,14 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'accounting_rule_events'}
+    assert new_tables == {
+        'accounting_rule_events',
+        'solana_transactions',
+        'solana_tx_account_keys',
+        'solana_tx_instruction_accounts',
+        'solana_tx_instructions',
+        'solanatx_address_mappings',
+    }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()

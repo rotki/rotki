@@ -4,6 +4,7 @@ import string
 from typing import TYPE_CHECKING, Any
 
 from eth_utils.address import to_checksum_address
+from solders.solders import Pubkey
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -27,6 +28,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     HexColorCode,
     Location,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -302,3 +304,7 @@ def make_google_calendar_entry(
         auto_delete=auto_delete,
         identifier=identifier,
     )
+
+
+def make_solana_address() -> SolanaAddress:
+    return SolanaAddress(str(Pubkey(make_random_bytes(32))))

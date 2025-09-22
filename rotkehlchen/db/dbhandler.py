@@ -142,6 +142,7 @@ from rotkehlchen.types import (
     ListOfBlockchainAddresses,
     Location,
     PurgeableModuleName,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     UserNote,
@@ -2077,7 +2078,7 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             tuples: Sequence[tuple[Any, ...]],
-            **kwargs: ChecksumEvmAddress | None,
+            **kwargs: SolanaAddress | ChecksumEvmAddress | None,
     ) -> None:
         """
         Helper function to help write multiple tuples of some kind of entry and
@@ -2131,9 +2132,10 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             entry: tuple[Any, ...],
-            relevant_address: ChecksumEvmAddress | None,
+            relevant_address: SolanaAddress | ChecksumEvmAddress | None,
     ) -> int | None:
         """Helper to write an entry of a tuple type and handle address mapping"""
+        tx_id = None
         try:
             write_cursor.execute(query, entry)
             if tuple_type == 'evm_transaction':
@@ -2141,15 +2143,24 @@ class DBHandler:
                     'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
                     (entry[0], entry[1]),
                 ).fetchone()[0]
+                mapping_table = 'evmtx_address_mappings'
+            elif tuple_type == 'solana_transaction':
+                tx_id = write_cursor.execute(
+                    'SELECT identifier FROM solana_transactions WHERE signature=?',
+                    (entry[4],),  # signature is the 5th element (index 4) in the entry tuple
+                ).fetchone()[0]
+                mapping_table = 'solanatx_address_mappings'
+            elif tuple_type == 'solana_instruction':
+                return write_cursor.lastrowid  # return the auto-generated instruction ID
+            else:
+                return tx_id
 
-                # add address mapping if relevant_address is provided and transaction exists
-                if relevant_address is not None and tx_id is not None:
-                    write_cursor.execute(
-                        'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) VALUES (?, ?)',  # noqa: E501
-                        (tx_id, relevant_address),
-                    )
-
-                return tx_id  # return the transaction id (new or existing)
+            # add address mapping if relevant_address is provided and transaction exists
+            if relevant_address is not None and tx_id is not None:
+                write_cursor.execute(
+                    f'INSERT OR IGNORE INTO {mapping_table}(tx_id, address) VALUES (?, ?)',
+                    (tx_id, relevant_address),
+                )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             string_repr = db_tuple_to_str(entry, tuple_type)
             log.warning(
@@ -2159,7 +2170,7 @@ class DBHandler:
         except sqlcipher.InterfaceError:  # pylint: disable=no-member
             log.critical(f'Interface error with tuple: {entry}')
 
-        return None
+        return tx_id  # return the transaction id (new or existing or None)
 
     def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
         margin_tuples: list[tuple[Any, ...]] = []

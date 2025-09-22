@@ -336,6 +336,10 @@ DBTupleType = Literal[
     'evm_internal_transaction',
     'zksynclite_transaction',
     'evm_transactions_authorization',
+    'solana_transaction',
+    'solana_account_key',
+    'solana_instruction',
+    'solana_instruction_account',
 ]
 
 
@@ -354,6 +358,15 @@ def db_tuple_to_str(
         )
     if tuple_type == 'zksynclite_transaction':
         return f'ZKSyncLite transaction with hash "{data[0].hex()}"'
+
+    if tuple_type == 'solana_transaction':
+        return f'Solana transaction with signature {data[4].hex()[:16]}...'
+    if tuple_type == 'solana_instruction':
+        return f'Solana instruction with execution_index {data[1]} in transaction {data[0]}'
+    if tuple_type == 'solana_account_key':
+        return f'Solana account key at index {data[1]} for transaction {data[0]}'
+    if tuple_type == 'solana_instruction_account':
+        return f'Solana instruction account at order {data[2]} for instruction {data[1]}'
 
     # else can only be evm transaction
     assert tuple_type == 'evm_transaction', 'only DBTupleType possible here is evm_transaction'
