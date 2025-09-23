@@ -43,11 +43,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def deserialize_timestamp(timestamp: float | (str | FVal)) -> Timestamp:
+def deserialize_timestamp(timestamp: float | str | FVal | None) -> Timestamp:
     """Deserializes a timestamp from a json entry. Given entry can either be a
     string or an int.
 
-    Can throw DeserializationError if the data is not as expected
+    Can throw DeserializationError if the data is not a valid timestamp
     """
     if timestamp is None:
         raise DeserializationError('Failed to deserialize a timestamp entry from a null entry')
