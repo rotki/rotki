@@ -30,7 +30,8 @@ extend-ignore-identifiers-re = [
     "^10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007",  # event identifier in test
     "qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z",  # bitcoin cash address used in test
     "^astroid$",  # astroid library
-    "^[1-9A-HJ-NP-Za-km-z]{32,44}$"  # solana addresses
+    "^[1-9A-HJ-NP-Za-km-z]{32,44}$",  # solana addresses
+    "^[1-9A-HJ-NP-Za-km-z]{88}$",  # solana signatures
 ]
 locale = "en"
 

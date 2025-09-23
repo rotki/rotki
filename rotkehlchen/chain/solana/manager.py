@@ -10,6 +10,13 @@ from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
 from solana.rpc.types import TokenAccountOpts
 from solders.pubkey import Pubkey
+from solders.solders import (
+    LOOKUP_TABLE_META_SIZE,
+    EncodedConfirmedTransactionWithStatusMeta,
+    MessageAddressTableLookup,
+    Signature,
+    UiAddressTableLookup,
+)
 from spl.token._layouts import ACCOUNT_LAYOUT
 from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
@@ -25,6 +32,7 @@ from rotkehlchen.chain.solana.utils import (
     MintInfo,
     decode_metadata_pointer,
     decode_token_metadata,
+    deserialize_solana_instruction_from_rpc,
     get_extension_data,
     get_metadata_account,
     is_token_nft,
@@ -37,13 +45,15 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, TokenKind
 from rotkehlchen.utils.misc import bytes_to_solana_address
 
 from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
+from .types import SolanaTransaction
 
 if TYPE_CHECKING:
-    from solders.solders import GetTokenAccountsByOwnerResp
+    from solders.solders import GetSignaturesForAddressResp, GetTokenAccountsByOwnerResp
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.greenlets.manager import GreenletManager
@@ -56,6 +66,7 @@ log = RotkehlchenLogsAdapter(logger)
 INITIAL_BACKOFF: Final = 4
 BACKOFF_MULTIPLIER: Final = 2
 MAX_RETRIES: Final = 3
+SIGNATURES_PAGE_SIZE: Final = 1000
 
 
 class SolanaManager(SolanaRPCMixin):
@@ -315,3 +326,136 @@ class SolanaManager(SolanaRPCMixin):
             return None
 
         return metadata
+
+    def query_tx_signatures_for_address(self, address: SolanaAddress) -> list[Signature]:
+        """Query all the transaction signatures for the given address.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        signatures, before = [], None
+        while True:
+            response: GetSignaturesForAddressResp = self._query(
+                method=lambda client, _before=before: client.get_signatures_for_address(  # type: ignore[misc]
+                    account=Pubkey.from_string(address),
+                    limit=SIGNATURES_PAGE_SIZE,
+                    before=_before,
+                ),
+            )
+            signatures.extend([tx_sig.signature for tx_sig in response.value])
+            if len(response.value) < SIGNATURES_PAGE_SIZE:
+                break  # all signatures have been queried
+
+            before = response.value[-1].signature
+
+        return signatures
+
+    def query_rpc_for_single_tx(self, signature: Signature) -> SolanaTransaction | None:
+        """Query the transaction with the given signature.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        if (response := self._query(method=lambda client: client.get_transaction(
+            tx_sig=signature,
+            max_supported_transaction_version=0,  # include the new v0 txs
+        )).value) is None:
+            log.error(f'Failed to get solana transaction {signature} from rpc')
+            return None
+
+        try:
+            return self.deserialize_solana_tx_from_rpc(raw_tx=response)
+        except DeserializationError as e:
+            log.error(e)
+            return None
+
+    def _query_address_lookup_table(
+            self,
+            alt: MessageAddressTableLookup | UiAddressTableLookup,
+    ) -> tuple[list[SolanaAddress], list[SolanaAddress]]:
+        """Query the addresses for the given address table lookup.
+        Returns a tuple containing the writable and readonly address lists or None if the account
+        data is invalid.
+        May raise:
+        - RemoteError if there is a problem with querying the external service.
+        - DeserializationError if there is a problem deserializing the table data.
+        """
+        if (
+            (account_info := self._get_raw_account_info(pubkey=alt.account_key)) is None or
+            len(account_info) <= LOOKUP_TABLE_META_SIZE  # ensure the table data is at least as large as the lookup table meta data size  # noqa: E501
+        ):
+            raise DeserializationError(f'Invalid solana address lookup table account data for {alt.account_key}')  # noqa: E501
+
+        table_data = account_info[LOOKUP_TABLE_META_SIZE:]
+        accounts = [
+            bytes_to_solana_address(table_data[idx:idx + 32])
+            for idx in range(0, len(table_data), 32)
+        ]
+        return (
+            [accounts[idx] for idx in alt.writable_indexes],
+            [accounts[idx] for idx in alt.readonly_indexes],
+        )
+
+    def deserialize_solana_tx_from_rpc(
+            self,
+            raw_tx: EncodedConfirmedTransactionWithStatusMeta,
+    ) -> SolanaTransaction:
+        """Deserialize a solana transaction from the RPC response.
+        Note that the solders library uses some complex union types, apparently to support querying
+        using different parsing options, so we use some type ignores here since we only use the
+        default (`json`) parsing option when querying tx data.
+        May raise:
+        - DeserializationError if there is a problem deserializing.
+        - RemoteError if there is a problem with querying the Address Lookup Tables (ALTs).
+        """
+        message = raw_tx.transaction.transaction.message  # type: ignore[union-attr]
+        if raw_tx.transaction.meta is None:
+            raise DeserializationError('The tx data does not contain transaction meta')
+
+        try:
+            account_keys = [SolanaAddress(str(pubkey)) for pubkey in message.account_keys]
+            if (  # maybe resolve addresses from Address Lookup Tables (ALTs)
+                (alts := message.address_table_lookups) is not None and  # type: ignore[union-attr]
+                len(alts) > 0
+            ):
+                writable_accounts, readonly_accounts = [], []
+                for alt in alts:
+                    alt_writable, alt_readonly = self._query_address_lookup_table(alt)
+                    writable_accounts.extend(alt_writable)
+                    readonly_accounts.extend(alt_readonly)
+
+                # Account key order with ALTs is: all keys from the tx itself, then all writeable
+                # accounts from all ALTs, and then all readonly accounts from all ALTs.
+                # https://docs.anza.xyz/proposals/versioned-transactions#new-transaction-format
+                account_keys.extend(writable_accounts + readonly_accounts)
+
+            inner_instructions_dict = {}
+            if raw_tx.transaction.meta.inner_instructions is not None:
+                for inner_instructions in raw_tx.transaction.meta.inner_instructions:
+                    inner_instructions_dict[inner_instructions.index] = [
+                        deserialize_solana_instruction_from_rpc(
+                            execution_index=idx,
+                            parent_execution_index=inner_instructions.index,
+                            raw_instruction=raw_instruction,  # type: ignore[arg-type]
+                            account_keys=account_keys,
+                        ) for idx, raw_instruction in enumerate(inner_instructions.instructions)
+                    ]
+
+            instructions = []
+            for idx, raw_instruction in enumerate(message.instructions):
+                instructions.append(deserialize_solana_instruction_from_rpc(
+                    execution_index=idx,
+                    parent_execution_index=None,
+                    raw_instruction=raw_instruction,
+                    account_keys=account_keys,
+                ))
+                if (inner_instruction := inner_instructions_dict.get(idx)) is not None:
+                    instructions.extend(inner_instruction)
+
+            return SolanaTransaction(
+                fee=raw_tx.transaction.meta.fee,
+                slot=raw_tx.slot,
+                success=raw_tx.transaction.meta.err is None,
+                signature=raw_tx.transaction.transaction.signatures[0].to_bytes(),
+                block_time=deserialize_timestamp(raw_tx.block_time),
+                account_keys=account_keys,
+                instructions=instructions,
+            )
+        except (IndexError, ValueError, DeserializationError) as e:
+            raise DeserializationError(f'Failed to deserialize solana tx due to {e!s}') from e

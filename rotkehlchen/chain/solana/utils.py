@@ -2,11 +2,13 @@ import logging
 from enum import IntEnum
 from typing import Final, NamedTuple
 
+from base58 import b58decode
 from construct import Struct
 from construct.core import ConstructError
-from solders.solders import Pubkey
+from solders.solders import Pubkey, UiCompiledInstruction
 from spl.token._layouts import MINT_LAYOUT
 
+from rotkehlchen.chain.solana.types import SolanaInstruction
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -226,3 +228,23 @@ def is_token_nft(
 def lamports_to_sol(amount: int) -> FVal:
     """One SOL is 1e9 lamports. Similar concept as wei in the Ethereum ecosystem"""
     return FVal(amount / 1_000_000_000)
+
+
+def deserialize_solana_instruction_from_rpc(
+        raw_instruction: UiCompiledInstruction,
+        account_keys: list[SolanaAddress],
+        execution_index: int,
+        parent_execution_index: int | None = None,
+) -> SolanaInstruction:
+    """Deserialize a solana instruction from the RPC response.
+    May raise:
+    - IndexError if the instruction accounts or program_id_index are out of range
+    - ValueError if the data contains invalid base58 characters
+    """
+    return SolanaInstruction(
+        execution_index=execution_index,
+        parent_execution_index=parent_execution_index,
+        accounts=[account_keys[i] for i in raw_instruction.accounts],
+        data=b58decode(raw_instruction.data),
+        program_id=account_keys[raw_instruction.program_id_index],
+    )

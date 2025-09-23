@@ -2,6 +2,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import pytest
+from solders.solders import Signature
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_solana_token
@@ -9,7 +10,7 @@ from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_token_nft
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.makerdao import FVal
-from rotkehlchen.types import SolanaAddress, TokenKind
+from rotkehlchen.types import SolanaAddress, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.manager import SolanaManager
@@ -125,3 +126,47 @@ def test_is_nft_via_offchain_metadata() -> None:
             mint_info=MintInfo(supply=100, decimals=0, tlv_data=None),
             metadata=MetadataInfo(name='Some Token', symbol='ST', uri=uri, token_standard=None),
         ) == is_nft
+
+
+@pytest.mark.vcr
+def test_query_tx_from_rpc(solana_manager: 'SolanaManager') -> None:
+    tx = solana_manager.query_rpc_for_single_tx(
+        signature=(signature := Signature.from_string('58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM')),  # noqa: E501
+    )
+    assert tx is not None
+    assert tx.signature == signature.to_bytes()
+    assert tx.fee == 15001
+    assert tx.slot == 344394079
+    assert tx.block_time == Timestamp(1748974662)
+    assert tx.success is True
+    assert len(tx.account_keys) == 25
+    assert tx.account_keys[12:] == [  # Check that addresses from the address lookup tables (ALTs) are correct.  # noqa: E501
+        'src5qyZHqTqecJV4aY6Cb6zDZLMDzrDKKezs22MPHr4',  # last key from the tx's account keys
+        '81MPQqJY58rgT83sy99MkRHs2g3dyy6uWKHD24twV62F',  # first writable from ALT 1
+        '7ixaquirw9k3VNkxJ5zpbx9GTAbAvUrrNeZovw7TBqyu',
+        '2JwKVhEeJZn8bHsHVK1rFuATHni3wDft3UFAsrKKMKfP',
+        'CdaNdGvQ1mCz9kKushqgkoKy2DwETQscJuBZEP9E2sMM',
+        '8djrA5qrjHMExDfau983kZjpNdhPVLHedvjJcrjTEwkD',
+        '9yfN3qv6tKxhniWcrQi7bP1kZgXmdd4dLm84rostKvQG',  # one writable from ALT 2
+        'So11111111111111111111111111111111111111112',  # first readonly from ALT 1
+        'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        'LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo',
+        'D1ZN9Wj1fRSUQfCjhvnu1hqDMT7hzjzBBpi12nVniYD6',
+        'HJEPgYkbqjetrphNHG2W33SjG9mB4PrXorW358MzfggY',  # first readonly from ALT 2
+        '12hWR4XhwfmjMcJ2ykfwcVVbP1mW7Cdu7LUqdzzYar8m',
+    ]
+    assert len(tx.instructions) == 23
+    assert len([x for x in tx.instructions if x.parent_execution_index is None]) == 8
+    assert len([x for x in tx.instructions if x.parent_execution_index == 2]) == 4
+    assert len([x for x in tx.instructions if x.parent_execution_index == 5]) == 5
+    assert len([x for x in tx.instructions if x.parent_execution_index == 7]) == 6
+
+
+@pytest.mark.vcr
+def test_query_signatures_for_address(solana_manager: 'SolanaManager') -> None:
+    signatures = solana_manager.query_tx_signatures_for_address(
+        address=SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'),
+    )
+    assert len(signatures) == 64
+    assert signatures[0] == Signature.from_string('4awgHCjCD2Da2UbaKitSfUWExW2eVSA1x5PBrdHBi61NdCpWWxG1JbCDRbKUsQYSPZfPzMKLGrJw2XhajUUvz2Tc')  # noqa: E501
+    assert signatures[63] == Signature.from_string('Ars2bdNxYNVRDmWsGCwr9j8jHgRkb6gq7giaritpLw9yj6kiefwEUZpqz4Hr6SxRnJLTLtNnQaVNjuX6jjMAL7T')  # noqa: E501
