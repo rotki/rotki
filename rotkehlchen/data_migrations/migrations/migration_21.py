@@ -15,7 +15,7 @@ def data_migration_21(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     Replace 'NONE' blockchain marker in user address_book with ecosystem-specific key.
     """
 
-    @progress_step(description='Upgrading adderess book ecosystem names')
+    @progress_step(description='Upgrading address book ecosystem names')
     def _migrate_ecosystem_names(rotki: 'Rotkehlchen') -> None:
         migrate_addressbook_none_to_ecosystem_key(
             connection=rotki.data.db.conn,
