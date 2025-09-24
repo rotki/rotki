@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import EIGEN_TOKEN_ID
 from rotkehlchen.chain.ethereum.modules.puffer.constants import (
     CPT_PUFFER,
@@ -21,7 +22,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress

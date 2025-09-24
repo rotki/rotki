@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_single_underlying_token
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
@@ -11,7 +12,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.kyber.constants import CPT_KYBER, KYBER_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.kyber.decoder import (
@@ -12,7 +13,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChecksumEvmAddress

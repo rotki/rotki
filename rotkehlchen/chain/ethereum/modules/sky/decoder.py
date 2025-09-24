@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
@@ -11,7 +12,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_DAI, A_MKR
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType

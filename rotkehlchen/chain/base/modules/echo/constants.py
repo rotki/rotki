@@ -2,7 +2,7 @@ from typing import Final
 
 from eth_typing.abi import ABI
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 CPT_ECHO: Final = 'echo'

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import TokenEncounterInfo
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     BEACON_ETH_STRATEGY,
@@ -46,7 +47,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier

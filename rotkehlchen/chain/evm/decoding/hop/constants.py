@@ -1,6 +1,6 @@
 from typing import Final
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 
 CPT_HOP: Final = 'hop'
 HOP_CPT_DETAILS: Final = CounterpartyDetails(

@@ -1,11 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import BASE_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.superchain_bridge.l2.decoder import (
     SuperchainL2SideBridgeCommonDecoder,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter

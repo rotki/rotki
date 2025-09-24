@@ -1,6 +1,6 @@
 from typing import Final
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.types import ChainID
 
 CPT_CCTP: Final = 'cctp'

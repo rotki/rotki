@@ -18,6 +18,7 @@ from web3.exceptions import Web3Exception
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_evm_token, get_or_create_evm_token
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
@@ -39,7 +40,6 @@ from rotkehlchen.chain.evm.decoding.stakedao.constants import (
     STAKEDAO_SUPPORTED_CHAINS_WITHOUT_CLAIMS,
 )
 from rotkehlchen.chain.evm.decoding.stakedao.decoder import StakedaoCommonDecoder
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITH_SPECIAL_WETH,
     CHAINS_WITHOUT_NATIVE_ETH,

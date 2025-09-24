@@ -1,7 +1,7 @@
 from typing import Final, Literal, get_args
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ADD_LIQUIDITY_DYNAMIC_ASSETS
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
 

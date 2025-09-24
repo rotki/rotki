@@ -1,6 +1,6 @@
 from typing import Final
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 CPT_ENS: Final = 'ens'

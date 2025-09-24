@@ -6,8 +6,8 @@ from rotkehlchen.chain.base.modules.degen.constants import (
     CPT_DEGEN,
     DEGEN_TOKEN_ID,
 )
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 
 if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress

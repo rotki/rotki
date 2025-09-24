@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from eth_typing.abi import ABI
 
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V3
 from rotkehlchen.chain.evm.decoding.quickswap.utils import decode_quickswap_swap
@@ -19,7 +20,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.utils import (
     decode_uniswap_v3_like_position_create_or_exit,
 )

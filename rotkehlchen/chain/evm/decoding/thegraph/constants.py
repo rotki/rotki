@@ -3,7 +3,7 @@ from typing import Final
 
 from eth_typing import ABIEvent
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 
 CPT_THEGRAPH: Final = 'thegraph'
 THEGRAPH_CPT_DETAILS: Final = CounterpartyDetails(

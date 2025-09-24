@@ -1,4 +1,4 @@
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 
 CPT_EAS = 'eas'
 

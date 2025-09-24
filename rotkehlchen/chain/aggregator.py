@@ -131,6 +131,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
     from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
@@ -145,7 +146,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.pickle_finance.main import PickleFinance
     from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
-    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.manager import GnosisManager

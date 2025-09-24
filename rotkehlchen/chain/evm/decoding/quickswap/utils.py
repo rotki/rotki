@@ -5,9 +5,9 @@ from eth_abi import encode
 from eth_typing import ABI
 from web3 import Web3
 
+from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.decoding.quickswap.constants import UNISWAP_QUICKSWAP_COUNTERPARTY_MAP
-from rotkehlchen.chain.evm.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_underlying
 from rotkehlchen.chain.evm.utils import query_contract_response_as_dict
 from rotkehlchen.constants.prices import ZERO_PRICE
