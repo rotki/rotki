@@ -1,12 +1,14 @@
+from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
 from solders.pubkey import Pubkey
 
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
-from rotkehlchen.types import SolanaAddress
+from rotkehlchen.types import SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -78,52 +80,67 @@ class DBSolanaTx:
             cursor: 'DBCursor',
             filter_: SolanaTransactionsFilterQuery,
     ) -> list[SolanaTransaction]:
-        """Get solana transactions from the database with filtering
-
-        improve the performance of fetching solana transactions
-        TODO: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=130292187
-        """
+        """Get solana transactions from the database with filtering"""
         query, bindings = filter_.prepare()
-        query = f'SELECT identifier, signature, slot, block_time, fee, success FROM solana_transactions {query}'  # noqa: E501
+        # account keys by tx for fast lookups when building instructions
+        ak_by_tx: defaultdict[int, list[SolanaAddress]] = defaultdict(list)
+        for tx_id, address_bytes in cursor.execute(
+                'SELECT tx_id, address FROM solana_tx_account_keys '
+                f'WHERE tx_id IN (SELECT identifier FROM solana_transactions {query}) ORDER BY tx_id, account_index',  # noqa: E501
+                bindings,
+        ):
+            ak_by_tx[tx_id].append(SolanaAddress(str(Pubkey.from_bytes(address_bytes))))
 
-        transactions = []
-        for result in cursor.execute(query, bindings).fetchall():
-            tx_id = result[0]
-            account_keys: list[SolanaAddress] = []
-            account_keys.extend(SolanaAddress(str(Pubkey.from_bytes(ak_result[0]))) for ak_result in cursor.execute(  # noqa: E501
-                'SELECT address FROM solana_tx_account_keys WHERE tx_id=? ORDER BY account_index',
-                (tx_id,),
-            ))
+        # split instruction data for easier processing:
+        # inst_meta holds core fields, inst_order_by_tx preserves execution order,
+        # inst_acc_indices maps instructions to their account references
+        inst_meta: dict[int, tuple[int, int | None, int, bytes]] = {}
+        inst_order_by_tx: defaultdict[int, list[int]] = defaultdict(list)
+        inst_acc_indices: defaultdict[int, list[int]] = defaultdict(list)
 
-            # get instructions
-            instructions = [SolanaInstruction(
-                execution_index=inst_result[1],
-                parent_execution_index=None if inst_result[2] == TOP_LEVEL_PARENT else inst_result[2],  # noqa: E501
-                program_id=account_keys[inst_result[3]],  # convert index to address
-                data=inst_result[4],
-                accounts=[account_keys[acc_result[0]] for acc_result in cursor.execute(
-                    'SELECT account_index FROM solana_tx_instruction_accounts WHERE instruction_id=? ORDER BY account_order',  # noqa: E501
-                    (inst_result[0],),  # instruction identifier
-                )],
-                ) for inst_result in cursor.execute(
-                    'SELECT identifier, execution_index, parent_execution_index, program_id_index, data '  # noqa: E501
-                    'FROM solana_tx_instructions WHERE tx_id=? '
-                    # Complex ordering ensures top-level instructions come first (ordered by execution_index),  # noqa: E501
-                    # followed by sub-instructions grouped under their parent (ordered by parent_execution_index)  # noqa: E501
-                    'ORDER BY CASE WHEN parent_execution_index = ? THEN execution_index ELSE parent_execution_index END, '  # noqa: E501
-                    'parent_execution_index = ? DESC, execution_index',
-                    (tx_id, TOP_LEVEL_PARENT, TOP_LEVEL_PARENT),
-            ).fetchall()]
+        # ordering handles nested instructions: top-level first, then inner by parent
+        for (inst_id, tx_id, execution_index, parent_execution_index, program_id_index, inst_data, acc_index) in cursor.execute(  # noqa: E501
+                'SELECT i.identifier, i.tx_id, i.execution_index, i.parent_execution_index, i.program_id_index, i.data, ia.account_index '  # noqa: E501
+                'FROM solana_tx_instructions i LEFT JOIN solana_tx_instruction_accounts ia ON ia.instruction_id = i.identifier '  # noqa: E501
+                f'WHERE i.tx_id IN (SELECT identifier FROM solana_transactions {query}) ORDER BY i.tx_id, '  # noqa: E501
+                'CASE WHEN i.parent_execution_index = ? THEN i.execution_index ELSE i.parent_execution_index END, '  # noqa: E501
+                '(i.parent_execution_index = ?) DESC, i.execution_index, ia.account_order',
+                (*bindings, TOP_LEVEL_PARENT, TOP_LEVEL_PARENT),
+        ):  # save instruction data once per instruction
+            if inst_id not in inst_meta:
+                parent_value = None if parent_execution_index == TOP_LEVEL_PARENT else parent_execution_index  # noqa: E501
+                inst_meta[inst_id] = (execution_index, parent_value, program_id_index, inst_data)
+                inst_order_by_tx[tx_id].append(inst_id)
+            if acc_index is not None:  # each row in the join adds one account reference to this instruction  # noqa: E501
+                inst_acc_indices[inst_id].append(acc_index)
+
+        # build final transactions in original order
+        transactions: list[SolanaTransaction] = []
+        for tx_id, signature, slot, block_time, fee, success_int in cursor.execute(
+                f'SELECT identifier, signature, slot, block_time, fee, success FROM solana_transactions {query}',  # noqa: E501
+                bindings,
+        ):
+            account_keys = ak_by_tx[tx_id]
+            built_instructions: list[SolanaInstruction] = []
+            for inst_id in inst_order_by_tx[tx_id]:
+                exec_idx, parent_exec_idx, prog_idx, data = inst_meta[inst_id]
+                built_instructions.append(SolanaInstruction(
+                    execution_index=exec_idx,
+                    parent_execution_index=parent_exec_idx,
+                    program_id=account_keys[prog_idx],
+                    data=data,
+                    accounts=[account_keys[i] for i in inst_acc_indices[inst_id]],  # convert indices to actual addresses  # noqa: E501
+                ))
 
             transactions.append(SolanaTransaction(
-                signature=result[1],
-                slot=result[2],
-                block_time=result[3],
-                fee=result[4],
-                success=bool(result[5]),
+                signature=signature,
+                slot=slot,
+                block_time=Timestamp(block_time),
+                fee=fee,
+                success=bool(success_int),
                 account_keys=account_keys,
-                instructions=instructions,
-                db_id=result[0],
+                instructions=built_instructions,
+                db_id=tx_id,
             ))
 
         return transactions
