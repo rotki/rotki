@@ -18,6 +18,7 @@ from rotkehlchen.chain.bitcoin.types import (
     BtcTxIODirection,
 )
 from rotkehlchen.chain.bitcoin.utils import OpCodes
+from rotkehlchen.chain.decoding.utils import decode_transfer_direction
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -26,7 +27,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import decode_transfer_direction
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
