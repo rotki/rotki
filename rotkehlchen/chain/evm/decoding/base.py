@@ -1,19 +1,29 @@
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import get_evm_token, get_or_create_evm_token
+from rotkehlchen.chain.decoding.tools import BaseDecoderTools as ChainBaseDecoderTools
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
-from rotkehlchen.chain.evm.structures import EvmTxReceipt
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import decode_transfer_direction
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    EvmTransaction,
+    EVMTxHash,
+    Location,
+    Timestamp,
+    TokenKind,
+)
+from rotkehlchen.utils.misc import bytes_to_address, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -23,20 +33,15 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
-
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTransaction, EVMTxHash, Location, TokenKind
-from rotkehlchen.utils.misc import bytes_to_address, ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BaseDecoderTools:
-    """A class that keeps a common state and offers some common decoding functionality"""
+class BaseDecoderTools(ChainBaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVMTxHash, EvmEvent, EvmProduct]):  # noqa: E501
+    """A class that keeps a common state and offers some common decoding functionality
+    TODO: rename `BaseDecoderTools` to `BaseEvmDecoderTools` in a follow-up pr.
+    """
 
     def __init__(
             self,
@@ -50,39 +55,23 @@ class BaseDecoderTools:
         `exceptions_mappings` is introduced to handle the monerium exceptions. It maps the v1
         tokens to the v2 tokens and it's later used during the decoding to change the asset in
         events from v1 tokens to v2 tokens."""
-        self.database = database
+        super().__init__(
+            database=database,
+            blockchain=evm_inquirer.blockchain,
+            address_is_exchange_fn=address_is_exchange_fn,
+        )
         self.evm_inquirer = evm_inquirer
-        self.address_is_exchange = address_is_exchange_fn
         self.is_non_conformant_erc721 = is_non_conformant_erc721_fn
-        with self.database.conn.read_ctx() as cursor:
-            self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
-        self.sequence_counter = 0
-        self.sequence_offset = 0
         self.exceptions_mappings = exceptions_mappings or {}
 
-    def reset_sequence_counter(self, tx_receipt: 'EvmTxReceipt') -> None:
+    def reset_sequence_counter(self, tx_receipt: EvmTxReceipt) -> None:
         """Reset the sequence index counter before decoding a transaction.
         `sequence_offset` is set to one more than the highest tx log index, and is used in
         `get_next_sequence_index` to add new events whose sequence index will not collide with
         the sequence index of any events that have associated tx logs.
         """
-        self.sequence_counter = 0
+        super().reset_sequence_counter(tx_receipt)
         self.sequence_offset = tx_receipt.logs[-1].log_index + 1 if len(tx_receipt.logs) else 0
-        if __debug__:
-            self.get_sequence_index_called = False
-
-    def get_next_sequence_index_pre_decoding(self) -> int:
-        """Get a sequence index for a new event created prior to running the decoding rules.
-        Used for gas events, eth transfers, etc. Must never be used after `get_sequence_index`
-        or `get_next_sequence_index` has been used to prevent sequence index collisions.
-        Returns the current counter and increments it.
-        """
-        if __debug__:  # develop only test that sequence index was not called
-            assert not self.get_sequence_index_called  # Perhaps remove after some time.
-
-        value = self.sequence_counter
-        self.sequence_counter += 1
-        return value
 
     def get_sequence_index(self, tx_log: EvmTxReceiptLog) -> int:
         """Get the sequence index for an event associated with a specific tx log.
@@ -95,29 +84,6 @@ class BaseDecoderTools:
 
         return self.sequence_counter + tx_log.log_index
 
-    def get_next_sequence_index(self) -> int:
-        """Get a sequence index for a new event with no associated tx log.
-        Used during protocol decoding for things like informational or fee events that are not
-        directly associated with any specific tx log.
-        Returns the current counter added to the sequence offset, placing these events after
-        any events created using `get_sequence_index`.
-        """
-        if __debug__:
-            self.get_sequence_index_called = True
-
-        value = self.sequence_counter
-        self.sequence_counter += 1
-        return value + self.sequence_offset
-
-    def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
-        self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
-
-    def is_tracked(self, address: ChecksumEvmAddress) -> bool:
-        return address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())
-
-    def any_tracked(self, addresses: Sequence[ChecksumEvmAddress]) -> bool:
-        return set(addresses).isdisjoint(self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())) is False  # noqa: E501
-
     def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:  # pylint: disable=unused-argument
         """
         Checks whether given address is a proxy owned by any of the tracked accounts.
@@ -129,21 +95,6 @@ class BaseDecoderTools:
         """If the address is a proxy return its owner, if not return address itself"""
         owner = self.maybe_get_proxy_owner(address)
         return owner or address
-
-    def decode_direction(
-            self,
-            from_address: ChecksumEvmAddress,
-            to_address: ChecksumEvmAddress | None,
-    ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, ChecksumEvmAddress, str, str] | None:  # noqa: E501
-        """Wrapper for decode_transfer_direction automatically specifying the
-        tracked_accounts and maybe_get_exchange_fn.
-        """
-        return decode_transfer_direction(
-            from_address=from_address,
-            to_address=to_address,
-            tracked_accounts=self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain()),  # type: ignore[arg-type]
-            maybe_get_exchange_fn=self.address_is_exchange,
-        )
 
     def decode_erc20_721_transfer(
             self,
