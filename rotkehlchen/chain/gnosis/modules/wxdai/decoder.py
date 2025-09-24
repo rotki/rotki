@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoderBase
 from rotkehlchen.chain.gnosis.modules.wxdai.constants import CPT_WXDAI
 from rotkehlchen.constants.assets import A_WXDAI, A_XDAI

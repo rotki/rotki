@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.superchain_bridge.l1.decoder import (
     SuperchainL1SideCommonBridgeDecoder,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 

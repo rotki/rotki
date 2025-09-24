@@ -2,8 +2,8 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 

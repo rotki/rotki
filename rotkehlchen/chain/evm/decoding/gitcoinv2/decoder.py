@@ -2,6 +2,7 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
@@ -32,7 +33,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import get_donation_event_params
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO

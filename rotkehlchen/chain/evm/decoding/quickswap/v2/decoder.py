@@ -1,11 +1,11 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V2
 from rotkehlchen.chain.evm.decoding.quickswap.utils import decode_quickswap_swap
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v2.decoder import UNISWAP_V2_INIT_CODE_HASH
 from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (

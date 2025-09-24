@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
 from rotkehlchen.chain.evm.decoding.velodrome.decoder import VelodromeLikeDecoder
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (

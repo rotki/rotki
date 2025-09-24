@@ -5,6 +5,10 @@ from typing import TYPE_CHECKING, Any, Optional
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
+from rotkehlchen.chain.decoding.types import (
+    CounterpartyDetails,
+    get_versioned_counterparty_label,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -12,10 +16,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     DecoderContext,
     DecodingOutput,
-)
-from rotkehlchen.chain.evm.decoding.types import (
-    CounterpartyDetails,
-    get_versioned_counterparty_label,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     CPT_UNISWAP_V2,

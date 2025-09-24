@@ -1,6 +1,6 @@
 from typing import Final
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 BLUR_STAKING_CONTRACT: Final = string_to_evm_address('0xeC2432a227440139DDF1044c3feA7Ae03203933E')

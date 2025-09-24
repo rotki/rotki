@@ -1,6 +1,6 @@
 from typing import Final
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 BASENAMES_L2_RESOLVER: Final = string_to_evm_address('0xC6d566A56A1aFf6508b41f6c90ff131615583BCD')

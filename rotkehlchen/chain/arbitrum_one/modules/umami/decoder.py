@@ -6,6 +6,7 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     CPT_UMAMI,
     UMAMI_STAKING_CONTRACT,
 )
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import (
     DEPOSIT_TOPIC,
@@ -20,7 +21,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler

@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.constants import MIGRATED
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -10,7 +11,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_GLM
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType

@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_DETAILS_GIVETH, CPT_GIVETH
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -9,7 +10,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import get_donation_event_params
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter

@@ -1,12 +1,12 @@
 from typing import Final
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import (
     REWARD_PAID_TOPIC,
     REWARD_PAID_TOPIC_V2,
     WITHDRAWN_TOPIC,
 )
 from rotkehlchen.chain.evm.decoding.constants import WITHDRAWN
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 CPT_CONVEX: Final = 'convex'

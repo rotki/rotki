@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:

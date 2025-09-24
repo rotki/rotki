@@ -2,9 +2,9 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V4
 from rotkehlchen.chain.evm.decoding.quickswap.v3.decoder import Quickswapv3LikeLPDecoder
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.v4.utils import decode_uniswap_v4_like_swaps
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress

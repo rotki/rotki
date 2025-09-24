@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoderBase
 from rotkehlchen.chain.polygon_pos.modules.wmatic.constants import CPT_WMATIC
 from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC, A_WMATIC

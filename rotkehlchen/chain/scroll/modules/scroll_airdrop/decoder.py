@@ -15,8 +15,8 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import A_SCR, SCROLL_OFFCHAIN_TOKEN_DISTRIBUTOR, SCROLL_TOKEN_DISTRIBUTOR
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
-    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
