@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
 from solders.pubkey import Pubkey
+from solders.solders import Signature
 
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
@@ -37,7 +38,7 @@ class DBSolanaTx:
                 write_cursor=write_cursor,
                 tuple_type='solana_transaction',
                 query=query,
-                entry=(tx.slot, tx.fee, tx.block_time, int(tx.success), tx.signature),
+                entry=(tx.slot, tx.fee, tx.block_time, int(tx.success), tx.signature.to_bytes()),
                 relevant_address=relevant_address,
             )) is None:
                 continue
@@ -133,7 +134,7 @@ class DBSolanaTx:
                 ))
 
             transactions.append(SolanaTransaction(
-                signature=signature,
+                signature=Signature(signature),
                 slot=slot,
                 block_time=Timestamp(block_time),
                 fee=fee,

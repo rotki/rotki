@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from solders.solders import Signature
+
 from rotkehlchen.types import SolanaAddress, Timestamp
 
 
@@ -19,7 +21,7 @@ class SolanaTransaction:
     fee: int  # transaction fee paid in lamports (1 SOL = 1 billion lamports)
     slot: int  # solana blockchain slot number where transaction was included
     success: bool  # whether transaction executed successfully (false if any instruction failed)
-    signature: bytes  # unique transaction signature (64 bytes, base58 encoded when displayed)
+    signature: Signature  # unique transaction signature (64 bytes, base58 encoded when displayed)
     block_time: Timestamp  # unix timestamp when block containing this transaction was created
     account_keys: list[SolanaAddress]  # all account addresses referenced in transaction
     instructions: list[SolanaInstruction]  # all instructions executed in this transaction

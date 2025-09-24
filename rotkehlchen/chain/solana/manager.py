@@ -20,6 +20,11 @@ from solders.solders import (
 from spl.token._layouts import ACCOUNT_LAYOUT
 from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
+from rotkehlchen.api.websockets.typedefs import (
+    TransactionStatusStep,
+    TransactionStatusSubType,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import Asset, SolanaToken
 from rotkehlchen.assets.utils import get_solana_token
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
@@ -40,14 +45,16 @@ from rotkehlchen.chain.solana.utils import (
     unpack_mint,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import SolanaAddress, SupportedBlockchain, TokenKind
-from rotkehlchen.utils.misc import bytes_to_solana_address
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp, TokenKind
+from rotkehlchen.utils.misc import bytes_to_solana_address, ts_now
 
 from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
 from .types import SolanaTransaction
@@ -81,6 +88,7 @@ class SolanaManager(SolanaRPCMixin):
         self.database = database
         self.blockchain = SupportedBlockchain.SOLANA
         self.rpc_timeout = DEFAULT_RPC_TIMEOUT
+        self.helius = Helius(database=self.database)
 
     def _query(
             self,
@@ -327,17 +335,22 @@ class SolanaManager(SolanaRPCMixin):
 
         return metadata
 
-    def query_tx_signatures_for_address(self, address: SolanaAddress) -> list[Signature]:
+    def query_tx_signatures_for_address(
+            self,
+            address: SolanaAddress,
+            until: Signature | None = None,
+    ) -> list[Signature]:
         """Query all the transaction signatures for the given address.
         May raise RemoteError if there is a problem with querying the external service.
         """
         signatures, before = [], None
         while True:
             response: GetSignaturesForAddressResp = self._query(
-                method=lambda client, _before=before: client.get_signatures_for_address(  # type: ignore[misc]
+                method=lambda client, _before=before, _until=until: client.get_signatures_for_address(  # type: ignore[misc]  # noqa: E501
                     account=Pubkey.from_string(address),
                     limit=SIGNATURES_PAGE_SIZE,
                     before=_before,
+                    until=_until,
                 ),
             )
             signatures.extend([tx_sig.signature for tx_sig in response.value])
@@ -347,6 +360,78 @@ class SolanaManager(SolanaRPCMixin):
             before = response.value[-1].signature
 
         return signatures
+
+    def query_transactions(self, addresses: list[SolanaAddress]) -> None:
+        """Query the transactions for the given addresses and save them to the DB.
+        Only queries new transactions if there are already transactions in the DB.
+        """
+        for address in addresses:
+            self.query_transactions_for_address(address=address)
+
+    def query_transactions_for_address(self, address: SolanaAddress) -> None:
+        """Query the transactions for the given address and save them to the DB.
+        Only queries new transactions if there are already transactions in the DB.
+        """
+        last_existing_sig, start_ts, end_ts = None, Timestamp(0), ts_now()
+        with self.database.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT st.signature, max(st.block_time) FROM solana_transactions st '
+                'JOIN solanatx_address_mappings sam ON st.identifier == sam.tx_id '
+                'WHERE sam.address = ?',
+                (address,),
+            )
+            if (max_result := cursor.fetchone()) is not None and None not in max_result:
+                last_existing_sig = Signature.from_bytes(max_result[0])
+                start_ts = Timestamp(max_result[1])
+
+        self.database.msg_aggregator.add_message(
+            message_type=WSMessageType.TRANSACTION_STATUS,
+            data={
+                'address': address,
+                'chain': SupportedBlockchain.SOLANA.value,
+                'subtype': str(TransactionStatusSubType.SOLANA),
+                'period': [start_ts, end_ts],
+                'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+            },
+        )
+
+        # Get the list of signatures from the RPCs
+        signatures = self.query_tx_signatures_for_address(
+            address=address,
+            until=last_existing_sig,
+        )
+
+        # Query the full tx data for each signature from either Helius or the RPCs
+        if (transactions := self.helius.get_transactions(
+            signatures=[str(x) for x in signatures],
+        )) is None:
+            log.debug(
+                'Unable to query solana transactions from Helius. '
+                f'Falling back to querying from the rpc for address {address}.',
+            )
+            transactions = [
+                tx for signature in signatures
+                if (tx := self.query_rpc_for_single_tx(signature)) is not None
+            ]
+
+        # Save txs to the DB
+        with self.database.conn.write_ctx() as write_cursor:
+            DBSolanaTx(database=self.database).add_solana_transactions(
+                write_cursor=write_cursor,
+                solana_transactions=transactions,
+                relevant_address=address,
+            )
+
+        self.database.msg_aggregator.add_message(
+            message_type=WSMessageType.TRANSACTION_STATUS,
+            data={
+                'address': address,
+                'chain': SupportedBlockchain.SOLANA.value,
+                'subtype': str(TransactionStatusSubType.SOLANA),
+                'period': [start_ts, end_ts],
+                'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+            },
+        )
 
     def query_rpc_for_single_tx(self, signature: Signature) -> SolanaTransaction | None:
         """Query the transaction with the given signature.
@@ -452,7 +537,7 @@ class SolanaManager(SolanaRPCMixin):
                 fee=raw_tx.transaction.meta.fee,
                 slot=raw_tx.slot,
                 success=raw_tx.transaction.meta.err is None,
-                signature=raw_tx.transaction.transaction.signatures[0].to_bytes(),
+                signature=raw_tx.transaction.transaction.signatures[0],
                 block_time=deserialize_timestamp(raw_tx.block_time),
                 account_keys=account_keys,
                 instructions=instructions,

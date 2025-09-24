@@ -4,7 +4,7 @@ import string
 from typing import TYPE_CHECKING, Any
 
 from eth_utils.address import to_checksum_address
-from solders.solders import Pubkey
+from solders.solders import Pubkey, Signature
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -308,3 +308,7 @@ def make_google_calendar_entry(
 
 def make_solana_address() -> SolanaAddress:
     return SolanaAddress(str(Pubkey(make_random_bytes(32))))
+
+
+def make_solana_signature() -> Signature:
+    return Signature.new_unique()

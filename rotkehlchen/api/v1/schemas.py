@@ -307,6 +307,7 @@ class RequiredAddressOptionalChainSchema(Schema):
                 chain=account.chain,  # type: ignore[arg-type]  # just checked `is_substrate()`
                 value=account.address,
             )) or
+            (account.chain == SupportedBlockchain.SOLANA and not is_valid_solana_address(address=account.address)) or  # noqa: E501
             (not is_valid_bitcoin_address(chain=account.chain, value=account.address))
         )):
             raise ValidationError(

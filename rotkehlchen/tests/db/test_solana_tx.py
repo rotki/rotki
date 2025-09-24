@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
 from rotkehlchen.db.solanatx import DBSolanaTx
-from rotkehlchen.tests.utils.factories import make_random_bytes, make_solana_address
+from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
 from rotkehlchen.types import SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ def _create_test_solana_transactions() -> tuple[list[SolanaTransaction], SolanaA
     txs = []
     for idx, ts in enumerate([Timestamp(1451606400), Timestamp(1451706400), Timestamp(1452806400)], start=1):  # noqa: E501
         txs.append(SolanaTransaction(
-            signature=make_random_bytes(size=64),
+            signature=make_solana_signature(),
             slot=10000 + idx,
             block_time=ts,
             fee=5000 + idx,
@@ -151,7 +151,7 @@ def test_solana_transactions_filtering(database: 'DBHandler') -> None:
         # test query by non-existent signature
         assert len(dbsolanatx.get_solana_transactions(
             cursor=cursor,
-            filter_=SolanaTransactionsFilterQuery.make(signature=make_random_bytes(size=64)),
+            filter_=SolanaTransactionsFilterQuery.make(signature=make_solana_signature()),
         )) == 0
 
 
@@ -162,7 +162,7 @@ def test_solana_instruction_execution_order(database: 'DBHandler') -> None:
         dbsolanatx.add_solana_transactions(
             write_cursor=write_cursor,
             solana_transactions=[SolanaTransaction(
-                signature=make_random_bytes(size=64),
+                signature=make_solana_signature(),
                 slot=10000,
                 block_time=Timestamp(1453906400),
                 fee=5000,
