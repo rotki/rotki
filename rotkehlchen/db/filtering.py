@@ -6,6 +6,7 @@ from enum import Enum, auto
 from typing import Any, Final, Generic, Literal, NamedTuple, Self, TypeVar
 
 from eth_utils import is_hex_address
+from solders.solders import Signature
 
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -2016,7 +2017,7 @@ class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset: int | None = None,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
-            signature: bytes | None = None,
+            signature: Signature | None = None,
             success: bool | None = None,
     ) -> 'SolanaTransactionsFilterQuery':
         """May raise:
@@ -2040,7 +2041,7 @@ class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         )
         filters: list[DBFilter] = []
         if signature is not None:  # signature means single result so make it as single filter
-            filters.append(DBEqualsFilter(and_op=True, column='signature', value=signature))
+            filters.append(DBEqualsFilter(and_op=True, column='signature', value=signature.to_bytes()))  # noqa: E501
         else:
             filters.append(filter_query.timestamp_filter)
             if success is not None:

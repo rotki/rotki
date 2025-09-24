@@ -2885,6 +2885,8 @@ class RestAPI:
                         to_timestamp=to_timestamp,
                         addresses=addresses,
                     )
+                elif blockchain == SupportedBlockchain.SOLANA:
+                    self.rotkehlchen.chains_aggregator.solana.query_transactions(addresses)  # type: ignore[arg-type]  # will be solana addresses
                 else:
                     result = False
                     message = f'Transaction querying for {blockchain} is not implemented.'

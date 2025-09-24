@@ -62,7 +62,7 @@ def test_get_transactions(database: 'DBHandler'):
     assert txs is not None
     assert len(txs) == 1  # the mocked response only includes tx data for the jupiter swap tx
     tx = txs[0]  # Check some properties of the deserialized transaction
-    assert tx.signature == Signature.from_string(swap_tx_signature).to_bytes()
+    assert tx.signature == Signature.from_string(swap_tx_signature)
     assert tx.fee == 10195
     assert tx.slot == 367689024
     assert tx.block_time == 1758217531

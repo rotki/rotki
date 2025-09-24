@@ -134,7 +134,7 @@ def test_query_tx_from_rpc(solana_manager: 'SolanaManager') -> None:
         signature=(signature := Signature.from_string('58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM')),  # noqa: E501
     )
     assert tx is not None
-    assert tx.signature == signature.to_bytes()
+    assert tx.signature == signature
     assert tx.fee == 15001
     assert tx.slot == 344394079
     assert tx.block_time == Timestamp(1748974662)

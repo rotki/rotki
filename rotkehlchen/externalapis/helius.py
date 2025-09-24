@@ -185,7 +185,7 @@ class Helius(ExternalServiceWithApiKey):
                 fee=deserialize_int(value=raw_tx['fee'], location='solana tx fee from helius'),
                 slot=deserialize_int(value=raw_tx['slot'], location='solana tx slot from helius'),
                 success=raw_tx.get('transactionError') is None,
-                signature=Signature.from_string(raw_tx['signature']).to_bytes(),
+                signature=Signature.from_string(raw_tx['signature']),
                 block_time=deserialize_timestamp(raw_tx['timestamp']),
                 account_keys=[deserialize_solana_address(x['account']) for x in raw_tx['accountData']],  # noqa: E501
                 instructions=instructions,
