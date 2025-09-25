@@ -26,6 +26,8 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as ExtrafiBalancesBase
+from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
+from rotkehlchen.chain.base.modules.runmoney.constants import CPT_RUNMONEY
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
@@ -1400,4 +1402,27 @@ def test_pendle_locked_balances(
     assert user_balance.assets[PENDLE_TOKEN][CPT_PENDLE] == Balance(
         amount=FVal('135.60210839446895642'),
         usd_value=FVal('329.5131233985595641006'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_runmoney_balances(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list[ChecksumEvmAddress],
+        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x406c3d965008732dbbdadea2062cd3dd8c908f512ac27f7a3cbcc109d49a89c3'),
+    )
+    protocol_balances = RunmoneyBalances(
+        evm_inquirer=base_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances()
+    user_balance = protocol_balances[base_accounts[0]]
+    assert user_balance.assets[Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')][CPT_RUNMONEY] == Balance(  # noqa: E501
+        amount=FVal('102.973178'),
+        usd_value=FVal('102.942697939312'),
     )

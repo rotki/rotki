@@ -1,8 +1,11 @@
 from typing import Final
 
+from eth_typing import ABI
+
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 CPT_RUNMONEY: Final = 'runmoney'
+RUNMONEY_CONTRACT_ABI: ABI = [{'inputs': [{'name': 'walletAddress', 'type': 'address'}], 'name': 'athletes', 'outputs': [{'name': 'joinedAt', 'type': 'uint256'}, {'name': 'stakedAmount', 'type': 'uint256'}, {'name': 'tokenId', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 RUNMONEY_CONTRACT_ADDRESS: Final = string_to_evm_address('0x1089Db83561d4c9B68350E1c292279817AC6c8DA')  # noqa: E501
 RUNMONEY_MEMBERSHIP_NFT_COLLECTION_IDENTIFIER: Final = f'eip155:8453/erc721:{RUNMONEY_CONTRACT_ADDRESS}'  # noqa: E501
 CLAIM_TOPIC: Final = b'\xb9A\xdaN.\xc1\x05\xfe\xc1hI\xe53\xfb\xec.\x85\x1e\xdf\x82/&\x9d\xdb6\x0eCj\x8c5\x10\x91'  # noqa: E501
