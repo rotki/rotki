@@ -27,6 +27,8 @@ export const NotificationCategory = {
   CALENDAR_REMINDER: 'calendar_reminder',
   DEFAULT: 'default',
   ETHERSCAN: 'etherscan',
+  HELIUS: 'helius',
+  THEGRAPH: 'thegraph',
 } as const;
 
 export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];

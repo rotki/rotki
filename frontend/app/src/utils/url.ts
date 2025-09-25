@@ -58,6 +58,16 @@ export function getTheGraphRegisterUrl(): ExternalUrl {
   };
 }
 
+export function getHeliusRegisterUrl(): ExternalUrl {
+  return {
+    external: 'https://dev.helius.xyz/dashboard/app',
+    route: {
+      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      query: { service: 'helius' },
+    },
+  };
+}
+
 /**
  * Returns the registration url of a specified service and a path to the local page
  * @param {string} service
@@ -69,6 +79,8 @@ export function getServiceRegisterUrl(service: string): ExternalUrl | undefined 
       return getEtherScanRegisterUrl();
     case 'thegraph':
       return getTheGraphRegisterUrl();
+    case 'helius':
+      return getHeliusRegisterUrl();
     default:
       logger.warn(`Unsupported service: '${service}'`);
       return undefined;

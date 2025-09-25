@@ -222,6 +222,7 @@ export const ExternalServiceKeys = z.object({
   defillama: ApiKey.optional(),
   etherscan: ApiKey.optional(),
   gnosis_pay: ApiKey.optional(),
+  helius: ApiKey.optional(),
   loopring: ApiKey.optional(),
   monerium: Auth.optional(),
   opensea: ApiKey.optional(),

@@ -13,6 +13,8 @@ export const TWITTER_URL = 'https://twitter.com/rotkiapp';
 // and will be redirected to the register page instead
 export const etherscanLink = 'https://etherscan.io/myapikey';
 
+export const heliusLink = 'https://dev.helius.xyz/dashboard/app';
+
 export const blockscoutLinks = {
   ethereum: 'https://eth.blockscout.com/account/api-key',
   optimism: 'https://optimism.blockscout.com/account/api-key',
