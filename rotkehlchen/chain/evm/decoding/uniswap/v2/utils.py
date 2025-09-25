@@ -286,8 +286,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
             symbol = f'{symbol} {token0.symbol}-{token1.symbol}'
 
         edit_token_and_clean_cache(
-            evm_inquirer=None,  # we don't need to query again information from chain
-            evm_token=pool_token,
+            chain_inquirer=None,  # we don't need to query again information from chain
+            token=pool_token,
             name=pool_token.name,
             symbol=symbol,
             decimals=pool_token.decimals,

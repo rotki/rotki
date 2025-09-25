@@ -17,7 +17,7 @@ class WSMessageType(StrEnum):
     # Used for evm/evmlike address migration after new chain integration
     EVMLIKE_ACCOUNTS_DETECTION = auto()
     # Used for when a new token is found and saved via processing evm transactions
-    NEW_EVM_TOKEN_DETECTED = auto()
+    NEW_TOKEN_DETECTED = auto()
     DATA_MIGRATION_STATUS = auto()
     MISSING_API_KEY = auto()
     HISTORY_EVENTS_STATUS = auto()

@@ -21,8 +21,8 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    EVM_TOKEN_KINDS,
-    SOLANA_TOKEN_KINDS,
+    EVM_TOKEN_KINDS_TYPE,
+    SOLANA_TOKEN_KINDS_TYPE,
     ChecksumEvmAddress,
     SolanaAddress,
     Timestamp,
@@ -43,7 +43,7 @@ class UnderlyingToken(NamedTuple):
     Is used for pool tokens, tokensets etc.
     """
     address: ChecksumEvmAddress
-    token_kind: EVM_TOKEN_KINDS
+    token_kind: EVM_TOKEN_KINDS_TYPE
     weight: FVal  # Floating percentage from 0 to 1
 
     def serialize(self) -> dict[str, Any]:
@@ -516,7 +516,7 @@ SolanaTokenDBTuple = tuple[
 class EvmToken(CryptoAsset):
     evm_address: ChecksumEvmAddress = field(init=False)
     chain_id: ChainID = field(init=False)
-    token_kind: EVM_TOKEN_KINDS = field(init=False)
+    token_kind: EVM_TOKEN_KINDS_TYPE = field(init=False)
     decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
     underlying_tokens: list[UnderlyingToken] = field(init=False)
@@ -545,7 +545,7 @@ class EvmToken(CryptoAsset):
             cls: type['EvmToken'],
             address: ChecksumEvmAddress,
             chain_id: ChainID,
-            token_kind: EVM_TOKEN_KINDS,
+            token_kind: EVM_TOKEN_KINDS_TYPE,
             name: str | None = None,
             symbol: str | None = None,
             started: Timestamp | None = None,
@@ -696,7 +696,7 @@ class Nft(EvmToken):
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class SolanaToken(CryptoAsset):
     mint_address: SolanaAddress = field(init=False)
-    token_kind: SOLANA_TOKEN_KINDS = field(init=False)
+    token_kind: SOLANA_TOKEN_KINDS_TYPE = field(init=False)
     decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
 
@@ -721,7 +721,7 @@ class SolanaToken(CryptoAsset):
     def initialize(  # type: ignore  # signature is incompatible with super type
             cls: type['SolanaToken'],
             address: SolanaAddress,
-            token_kind: SOLANA_TOKEN_KINDS,
+            token_kind: SOLANA_TOKEN_KINDS_TYPE,
             name: str | None = None,
             symbol: str | None = None,
             started: Timestamp | None = None,

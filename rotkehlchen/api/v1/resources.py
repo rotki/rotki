@@ -241,7 +241,7 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-    SOLANA_TOKEN_KINDS,
+    SOLANA_TOKEN_KINDS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
     AddressbookEntry,
@@ -3469,7 +3469,7 @@ class SolanaTokenMigrationResource(BaseMethodView):
             old_asset: 'CryptoAsset',
             address: 'SolanaAddress',
             decimals: int,
-            token_kind: SOLANA_TOKEN_KINDS,
+            token_kind: SOLANA_TOKEN_KINDS_TYPE,
     ) -> Response:
         return self.rest_api.migrate_solana_token(
             old_asset=old_asset,

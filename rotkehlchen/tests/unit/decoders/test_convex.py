@@ -50,8 +50,9 @@ def test_booster_deposit(
     )
     mocked_notifier = database.msg_aggregator.rotki_notifier
     assert mocked_notifier.pop_message() == MockedWsMessage(
-        message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
+        message_type=WSMessageType.NEW_TOKEN_DETECTED,
         data={
+            'token_kind': 'evm',
             'token_identifier': 'eip155:1/erc20:0x9518c9063eB0262D791f38d8d6Eb0aca33c63ed0',  # cvxsteCRV  # noqa: E501
             'seen_tx_hash': tx_hex,
         },

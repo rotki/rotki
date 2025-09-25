@@ -275,8 +275,8 @@ def test_cache_is_per_token_type(ethereum_inquirer):
         should be retrieved from the chain (chain calls are mocked below).
         """
         return _query_or_get_given_token_info(
-            evm_inquirer=ethereum_inquirer,
-            evm_address=address,
+            chain_inquirer=ethereum_inquirer,
+            address=address,
             name=None,
             symbol=None,
             decimals=None,
@@ -308,8 +308,8 @@ def test_cache_is_per_token_type(ethereum_inquirer):
         erc20_cached_data = query_token_info(TokenKind.ERC20)
         erc721_cached_data = query_token_info(TokenKind.ERC721)
 
-    assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6)
-    assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0)
+    assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6, TokenKind.ERC20)
+    assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0, TokenKind.ERC721)
 
 
 def _do_read(database):

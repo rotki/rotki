@@ -68,7 +68,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
 from rotkehlchen.tasks.assets import maybe_detect_new_tokens
 from rotkehlchen.types import (
-    EVM_TOKEN_KINDS,
+    EVM_TOKEN_KINDS_TYPE,
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
@@ -1201,7 +1201,7 @@ class EVMTransactionDecoder(ABC):
     def _get_transfer_or_approval_token_kind_and_id(
             self,
             tx_log: EvmTxReceiptLog,
-    ) -> tuple[EVM_TOKEN_KINDS, str | None] | None:
+    ) -> tuple[EVM_TOKEN_KINDS_TYPE, str | None] | None:
         """Determine if a transfer or approval event is for an erc20 or erc721 token.
         Returns the token kind and id (or None for erc20) in a tuple, or None on error."""
         if self._is_non_conformant_erc721(tx_log.address):

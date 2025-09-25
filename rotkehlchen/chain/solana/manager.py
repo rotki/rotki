@@ -22,7 +22,7 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import get_solana_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.solana.utils import (
     deserialize_solana_instruction_from_rpc,
@@ -30,6 +30,7 @@ from rotkehlchen.chain.solana.utils import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.errors.misc import NotSPLConformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.fval import FVal
@@ -120,11 +121,15 @@ class SolanaManager:
                     log.debug(f'Found solana token {token_address} with zero balance for {account}. Skipping.')  # noqa: E501
                     continue
 
-                if (
-                    (token := get_solana_token(token_address)) is None and
-                    (token := self.node_inquirer.create_token(token_address)) is None
-                ):
-                    log.error(f'Failed to create solana token with address {token_address}')
+                try:
+                    token = get_or_create_solana_token(
+                        userdb=self.database,
+                        address=token_address,
+                        solana_inquirer=self.node_inquirer,
+                        encounter=TokenEncounterInfo(should_notify=False),
+                    )
+                except NotSPLConformant as e:
+                    log.error(f'Failed to create solana token with address {token_address} due to {e}')  # noqa: E501
                     continue
 
                 # Add to existing balances since there may be multiple ATAs

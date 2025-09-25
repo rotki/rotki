@@ -247,7 +247,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE,
-    SOLANA_TOKEN_KINDS,
+    SOLANA_TOKEN_KINDS_TYPE,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_CHAIN_IDS,
@@ -5846,7 +5846,7 @@ class RestAPI:
             old_asset: 'CryptoAsset',
             address: 'SolanaAddress',
             decimals: int,
-            token_kind: 'SOLANA_TOKEN_KINDS',
+            token_kind: 'SOLANA_TOKEN_KINDS_TYPE',
     ) -> dict[str, Any]:
         """This is a temporary endpoint to correct custom user input
         solana tokens input before release 1.40.
