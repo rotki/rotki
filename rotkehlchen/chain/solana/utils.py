@@ -75,7 +75,7 @@ class MetadataInfo(NamedTuple):
     token_standard: TokenStandard | None = None  # only present for metaplex metadata
 
 
-def unpack_mint(mint_data: bytes) -> MintInfo | None:
+def deserialize_mint(mint_data: bytes) -> MintInfo:
     """Unpacks the mint data from calling getAccountInfo on a token's mint address.
     Full structure is as follows:
     * Main mint info (82 bytes) parsed via MINT_LAYOUT:
@@ -90,11 +90,20 @@ def unpack_mint(mint_data: bytes) -> MintInfo | None:
     * Account type (1 byte)
     * Extensions data (variable size) in TLV (Type Length Value) format
     https://github.com/solana-program/token-2022/blob/main/clients/js-legacy/src/state/mint.ts#L52
+
+    May raise DeserializationError if the data is invalid.
     """
     if len(mint_data) < MINT_SIZE:
-        return None
+        raise DeserializationError(
+            f'Solana token mint data must be at least {MINT_SIZE} bytes, '
+            f'only got {len(mint_data)} bytes.',
+        )
 
-    parsed_mint_data = MINT_LAYOUT.parse(mint_data)
+    try:
+        parsed_mint_data = MINT_LAYOUT.parse(mint_data)
+    except ConstructError as e:
+        raise DeserializationError(f'Failed to parse solana token mint data due to {e!s}') from e
+
     return MintInfo(
         supply=parsed_mint_data.supply,
         decimals=parsed_mint_data.decimals,
@@ -140,10 +149,10 @@ def decode_metadata_pointer(data: bytes) -> SolanaAddress | None:
         return None
 
 
-def decode_token_metadata(data: bytes, layout: Struct) -> MetadataInfo | None:
+def decode_token_metadata(data: bytes, layout: Struct) -> MetadataInfo:
     """Decodes raw token metadata using the specified layout.
     If the token_standard field is not present, it is set to None.
-    Returns the decoded metadata info or None if the data is invalid.
+    May raise DeserializationError if the data is invalid.
     """
     try:
         raw_metadata = layout.parse(data)
@@ -165,8 +174,8 @@ def decode_token_metadata(data: bytes, layout: Struct) -> MetadataInfo | None:
             uri=raw_metadata.uri.decode('utf-8').strip('\x00'),
             token_standard=token_standard,
         )
-    except (ConstructError, UnicodeDecodeError):
-        return None
+    except (ConstructError, UnicodeDecodeError) as e:
+        raise DeserializationError(f'Failed to parse solana token metadata due to {e!s}') from e
 
 
 def get_metadata_account(token_address: SolanaAddress, metadata_program: Pubkey) -> Pubkey:

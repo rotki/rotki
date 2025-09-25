@@ -83,7 +83,7 @@ def test_solana_query_token_metadata(
         with suppress(InputError):  # Ensure it's not in the db so it queries the metadata
             globaldb.delete_asset_by_identifier(identifier=asset.identifier)
 
-        solana_manager._create_token(token_address=SolanaAddress(asset.identifier.split(':')[1]))
+        solana_manager.node_inquirer.create_token(token_address=SolanaAddress(asset.identifier.split(':')[1]))
 
     amep_token = get_solana_token(identifier_to_address(a_amep.identifier))
     assert amep_token is not None
