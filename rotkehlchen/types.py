@@ -1288,7 +1288,7 @@ class TokenKind(DBCharEnumMixIn):
     SPL_NFT = auto()  # nfts on solana - https://developers.metaplex.com/token-metadata
 
     @classmethod
-    def deserialize_evm_from_db(cls, value: Any) -> 'EVM_TOKEN_KINDS':
+    def deserialize_evm_from_db(cls, value: Any) -> 'EVM_TOKEN_KINDS_TYPE':
         """Deserialize specifically for EVM token kinds"""
         if (result := cls.deserialize_from_db(value)) not in (TokenKind.ERC20, TokenKind.ERC721):
             raise DeserializationError(f'Expected EVM token kind, got {result}')
@@ -1296,7 +1296,7 @@ class TokenKind(DBCharEnumMixIn):
         return result  # type: ignore[return-value]  # the check above ensures it's an evm token kind.
 
     @classmethod
-    def deserialize_solana_from_db(cls, value: Any) -> 'SOLANA_TOKEN_KINDS':
+    def deserialize_solana_from_db(cls, value: Any) -> 'SOLANA_TOKEN_KINDS_TYPE':
         """Deserialize specifically for Solana token kinds"""
         if (result := cls.deserialize_from_db(value)) not in (TokenKind.SPL_TOKEN, TokenKind.SPL_NFT):  # noqa: E501
             raise DeserializationError(f'Expected solana token kind, got {result}')
@@ -1304,8 +1304,10 @@ class TokenKind(DBCharEnumMixIn):
         return result  # type: ignore[return-value]  # the check above ensures it's solana token kind.
 
 
-EVM_TOKEN_KINDS = Literal[TokenKind.ERC20, TokenKind.ERC721]
-SOLANA_TOKEN_KINDS = Literal[TokenKind.SPL_TOKEN, TokenKind.SPL_NFT]
+EVM_TOKEN_KINDS_TYPE = Literal[TokenKind.ERC20, TokenKind.ERC721]
+EVM_TOKEN_KINDS: tuple[EVM_TOKEN_KINDS_TYPE, ...] = typing.get_args(EVM_TOKEN_KINDS_TYPE)
+SOLANA_TOKEN_KINDS_TYPE = Literal[TokenKind.SPL_TOKEN, TokenKind.SPL_NFT]
+SOLANA_TOKEN_KINDS: tuple[SOLANA_TOKEN_KINDS_TYPE, ...] = typing.get_args(SOLANA_TOKEN_KINDS_TYPE)
 
 
 class CacheType(Enum):

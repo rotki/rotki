@@ -1,6 +1,6 @@
 from rotkehlchen.types import (
-    EVM_TOKEN_KINDS,
-    SOLANA_TOKEN_KINDS,
+    EVM_TOKEN_KINDS_TYPE,
+    SOLANA_TOKEN_KINDS_TYPE,
     ChainID,
     ChecksumEvmAddress,
     SolanaAddress,
@@ -16,7 +16,7 @@ SOLANA_CHAIN_DIRECTIVE = 'solana'
 def evm_address_to_identifier(
         address: str,
         chain_id: ChainID,
-        token_type: EVM_TOKEN_KINDS = TokenKind.ERC20,
+        token_type: EVM_TOKEN_KINDS_TYPE = TokenKind.ERC20,
         collectible_id: str | None = None,
 ) -> str:
     """Format EVM token information into the CAIPs identifier format"""
@@ -60,7 +60,7 @@ def strethaddress_to_identifier(address: str) -> str:
 
 def solana_address_to_identifier(
         address: SolanaAddress,
-        token_type: SOLANA_TOKEN_KINDS = TokenKind.SPL_TOKEN,
+        token_type: SOLANA_TOKEN_KINDS_TYPE = TokenKind.SPL_TOKEN,
 ) -> str:
     """Converts a Solana address and token type into a CAIP-19 identifier.
 

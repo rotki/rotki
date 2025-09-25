@@ -67,6 +67,10 @@ class NotERC721Conformant(Exception):
     """An address is not conforming to the ERC721 standard"""
 
 
+class NotSPLConformant(Exception):
+    """An address is not conforming to the solana SPL token standard"""
+
+
 class BlockchainQueryError(Exception):
     """Raises when there are problems querying a blockchain node.
 

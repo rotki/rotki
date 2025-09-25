@@ -186,7 +186,7 @@ def get_metadata_account(token_address: SolanaAddress, metadata_program: Pubkey)
     )[0]  # return only address from tuple[address, nonce]
 
 
-def is_token_nft(
+def is_solana_token_nft(
         token_address: SolanaAddress,
         mint_info: MintInfo,
         metadata: MetadataInfo,

@@ -5,8 +5,8 @@ import pytest
 from solders.solders import Signature
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import get_solana_token
-from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_token_nft
+from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
+from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_solana_token_nft
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.makerdao import FVal
@@ -83,7 +83,11 @@ def test_solana_query_token_metadata(
         with suppress(InputError):  # Ensure it's not in the db so it queries the metadata
             globaldb.delete_asset_by_identifier(identifier=asset.identifier)
 
-        solana_manager.node_inquirer.create_token(token_address=SolanaAddress(asset.identifier.split(':')[1]))
+        get_or_create_solana_token(
+            userdb=solana_manager.database,
+            address=SolanaAddress(asset.identifier.split(':')[1]),
+            solana_inquirer=solana_manager.node_inquirer,
+        )
 
     amep_token = get_solana_token(identifier_to_address(a_amep.identifier))
     assert amep_token is not None
@@ -114,14 +118,14 @@ def test_solana_query_token_metadata(
 @pytest.mark.vcr
 def test_is_nft_via_offchain_metadata() -> None:
     """Test that NFTs are still correctly identified when using the offchain metadata.
-    Calls is_token_nft with decimals == 0, supply > 1 and token_standard == None, which forces it
-    to use the offchain metadata from the given uri to determine if it's an NFT or not.
+    Calls is_solana_token_nft with decimals == 0, supply > 1 and token_standard == None, which
+    forces it to use the offchain metadata from the given uri to determine if it's an NFT or not.
     """
     for uri, is_nft in (
         ('https://gateway.pinit.io/ipfs/QmSTAhtdaqJmm9FTxWEdjQwKqvvjf99uGvN3vQaxzhRGqP/1089.json', True),  # Pixie Willie NFT  # noqa: E501
         ('https://bafkreib5jykd5ehlvmi7f253jdjzzknj6eqlnqhzenfmdc6okrwksqfu6a.ipfs.nftstorage.link', False),  # catwifhat token  # noqa: E501
     ):
-        assert is_token_nft(
+        assert is_solana_token_nft(
             token_address=SolanaAddress('Cg4noWpzmDHhPZZXDwmCLJns43PJpLmd6E8aYL1pRcRJ'),
             mint_info=MintInfo(supply=100, decimals=0, tlv_data=None),
             metadata=MetadataInfo(name='Some Token', symbol='ST', uri=uri, token_standard=None),

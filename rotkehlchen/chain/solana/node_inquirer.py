@@ -8,7 +8,6 @@ from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
 from solders.pubkey import Pubkey
 
-from rotkehlchen.assets.asset import SolanaToken
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import SolanaRPCMixin
@@ -21,13 +20,11 @@ from rotkehlchen.chain.solana.utils import (
     deserialize_mint,
     get_extension_data,
     get_metadata_account,
-    is_token_nft,
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SolanaAddress, SupportedBlockchain, TokenKind
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain
 
 from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
 
@@ -83,8 +80,7 @@ class SolanaInquirer(SolanaRPCMixin):
                     log.error(f'Unexpected missing node {node_info} at Solana')
                     continue
 
-            backoff = INITIAL_BACKOFF
-            attempts = 0
+            backoff, attempts = INITIAL_BACKOFF, 0
             while True:
                 try:
                     return method(rpc_node.rpc_client)
@@ -159,36 +155,6 @@ class SolanaInquirer(SolanaRPCMixin):
             return None
 
         return metadata
-
-    def create_token(self, token_address: SolanaAddress) -> SolanaToken | None:
-        """Creates a solana token from the given token address.
-        Queries the mint info for the token which contains supply, decimals, and extensions.
-        Then queries the metadata (name, symbol, etc.) from either the extensions or
-        the known metadata programs.
-        """
-        log.debug(f'Creating solana token with address {token_address}')
-        if (
-            (mint_info := self.get_token_mint_info(token_address)) is None or
-            (metadata := self.get_token_metadata(token_address, mint_info)) is None
-        ):
-            log.error(f'Failed to create solana token from address {token_address}')
-            return None
-
-        # TODO: Maybe use metadata.uri to query the token image as well?
-        # Note that is_token_nft already may query the offchain metadata, so don't query it twice
-        # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=127649813
-        GlobalDBHandler.add_asset(token := SolanaToken.initialize(
-            address=token_address,
-            token_kind=TokenKind.SPL_NFT if is_token_nft(
-                token_address=token_address,
-                mint_info=mint_info,
-                metadata=metadata,
-            ) else TokenKind.SPL_TOKEN,
-            name=metadata.name,
-            symbol=metadata.symbol,
-            decimals=mint_info.decimals,
-        ))
-        return token
 
     def _query_metadata_account(self, metadata_account: Pubkey) -> MetadataInfo:
         """Query the parsed legacy metadata for the given metadata account.

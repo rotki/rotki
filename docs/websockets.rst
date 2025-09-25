@@ -154,18 +154,19 @@ If there are new evm / evmlike accounts detected (due to a data migration, user-
 - ``chain``: Chain of an account.
 
 
-EVM Token Detection
+Token Detection
 =======================
 
-While we are processing EVM transactions new tokens may be detected and added to the database. Some of them can be spam tokens. Using this message we can let the frontend know which tokens are detected. Then they can in turn allow the user to see an aggregated list of all detected tokens and using that list, easily mark spam assets if any.
+While we are processing transactions new tokens may be detected and added to the database. Some of them can be spam tokens. Using this message we can let the frontend know which tokens are detected. Then they can in turn allow the user to see an aggregated list of all detected tokens and using that list, easily mark spam assets if any.
 
-This also contains two optional, mutually excluded keys. If one exists the other should not. But also both can be missing.
+The `seen_tx_hash` and `seen_description` keys are optional, but mutually exclusive. If one exists the other should not. But also both can be missing.
 
 ::
 
     {
-        "type": "new_evm_token_detected",
+        "type": "new_token_detected",
         "data": {
+            "token_kind": "evm",
             "token_identifier": "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "seen_tx_hash": "0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39"
         }
@@ -174,14 +175,26 @@ This also contains two optional, mutually excluded keys. If one exists the other
 ::
 
    {
-        "type": "new_evm_token_detected",
+        "type": "new_token_detected",
         "data": {
+            "token_kind": "evm",
             "token_identifier": "eip155:1/erc20:0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE",
             "seen_description": "Querying curve pools"
         }
     }
 
+::
 
+   {
+        "type": "new_token_detected",
+        "data": {
+            "token_kind": "solana",
+            "token_identifier": "solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        }
+    }
+
+
+- ``token_kind`` Indicates what kind of token was detected. Either `evm` or `solana`.
 - ``seen_tx_hash``: A transaction hash in the same chain as the token in which the token was first seen.
 - ``seen_description``: A description of the action in which the token was first seen and added to the DB. For example, querying curve pools, querying yearn pools etc.
 - ``is_ignored`` (Optional): If it is set the backend has marked automatically the asset as ignored for the user.
