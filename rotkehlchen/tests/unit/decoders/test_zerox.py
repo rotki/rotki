@@ -1670,3 +1670,49 @@ def test_swap_via_another_settler_on_base(base_inquirer, base_accounts) -> None:
         counterparty=CPT_ZEROX,
         address=string_to_evm_address('0xf525fF21C370Beb8D9F5C12DC0DA2B583f4b949F'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x602CB34cE1B1d3133219D8a79c773fe9FAe3656e']])
+def test_farcaster_zerox_swap(base_inquirer, base_accounts):
+    """It uses a new version of the zerox settler contract"""
+    evmhash = deserialize_evm_tx_hash('0x0f9229bfaeadac5c6e8b7f6525b8e713ac848149be2ee0d98ee19732879ec14d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
+
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1758742915000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000000924521067002')),
+        location_label=(user := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0x2D57C47BC5D2432FEEEdf2c9150162A9862D3cCf'),
+        amount=(out_amount := FVal('5988.17')),
+        location_label=user,
+        notes=f'Swap {out_amount} DICKBUTT via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0x47146d81B68b737316d0636D5135849d364bB0c8'),
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+        amount=(in_amount := FVal('0.087637')),
+        location_label=user,
+        notes=f'Receive {in_amount} USDC as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0x47146d81B68b737316d0636D5135849d364bB0c8'),
+    )]
