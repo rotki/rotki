@@ -1,10 +1,10 @@
 import type { NotificationHandler } from '../interfaces';
-import type { MissingApiKey } from '../types/notification-types';
+import type { MissingApiKey } from '@/modules/messaging/types';
 import { type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
+import { createNotificationHandler } from '@/modules/messaging/utils';
 import { getServiceRegisterUrl } from '@/utils/url';
-import { createNotificationHandler } from '../utils/handler-factories';
 
 export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
   // Capture interop functions at handler creation time (in setup context)
@@ -37,16 +37,38 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       service: toHumanReadable(service, 'capitalize'),
     };
 
+    const serviceConfig: Record<string, {
+      category: NotificationCategory;
+      messageKey: string;
+      titleKey: string;
+    }> = {
+      etherscan: {
+        category: NotificationCategory.ETHERSCAN,
+        messageKey: 'notification_messages.missing_api_key.etherscan.message',
+        titleKey: 'notification_messages.missing_api_key.etherscan.title',
+      },
+      helius: {
+        category: NotificationCategory.HELIUS,
+        messageKey: 'notification_messages.missing_api_key.helius.message',
+        titleKey: 'notification_messages.missing_api_key.helius.title',
+      },
+      thegraph: {
+        category: NotificationCategory.THEGRAPH,
+        messageKey: 'notification_messages.missing_api_key.thegraph.message',
+        titleKey: 'notification_messages.missing_api_key.thegraph.title',
+      },
+    };
+
+    const config = serviceConfig[service] || serviceConfig.etherscan;
+    const { category, messageKey, titleKey } = config;
     const theGraphWarning = service === 'thegraph';
 
     return {
       action: actions,
-      category: NotificationCategory.ETHERSCAN,
+      category,
       i18nParam: {
         choice: 0,
-        message: theGraphWarning
-          ? 'notification_messages.missing_api_key.thegraph.message'
-          : 'notification_messages.missing_api_key.etherscan.message',
+        message: messageKey,
         props: {
           ...metadata,
           url: external ?? '',
@@ -56,9 +78,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       message: '',
       priority: Priority.ACTION,
       severity: Severity.WARNING,
-      title: theGraphWarning
-        ? t('notification_messages.missing_api_key.thegraph.title', metadata)
-        : t('notification_messages.missing_api_key.etherscan.title', metadata),
+      title: t(titleKey, metadata),
     };
   });
 }

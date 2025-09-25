@@ -2434,6 +2434,11 @@
       "title": "Google Calendar",
       "token_required": "Please enter a valid access token"
     },
+    "helius": {
+      "description": "Used to query Solana blockchain data including transactions and balances. An API key improves rate limits and reliability.",
+      "hint": "Enter your Helius API key",
+      "title": "Helius"
+    },
     "loopring": {
       "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
       "hint": "Enter your Loopring API key",
@@ -3615,6 +3620,10 @@
         "title": "{location} {service} API key"
       },
       "get_key": "Get API key",
+      "helius": {
+        "message": "Rotki queries for Solana chain are working slower because you dont have Helius API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "title": "{service} API key for Solana"
+      },
       "thegraph": {
         "message": "Rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",
         "title": "{service} API key for {location}"
