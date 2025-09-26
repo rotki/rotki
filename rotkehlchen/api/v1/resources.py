@@ -96,11 +96,12 @@ from rotkehlchen.api.v1.schemas import (
     EvmTransactionHashAdditionSchema,
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
+    ExchangeEventsRangeQuerySchema,
+    ExchangeLocationWithNameSchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
     ExchangesResourceEditSchema,
-    ExchangesResourceRemoveSchema,
     ExportHistoryDownloadSchema,
     ExportHistoryEventSchema,
     ExternalServicesResourceAddSchema,
@@ -534,7 +535,7 @@ class ExchangesResource(BaseMethodView):
 
     put_schema = ExchangesResourceAddSchema()
     patch_schema = ExchangesResourceEditSchema()
-    delete_schema = ExchangesResourceRemoveSchema()
+    delete_schema = ExchangeLocationWithNameSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -1212,6 +1213,29 @@ class ExchangeEventsQueryResource(BaseMethodView):
         return self.rest_api.query_exchange_history_events(
             name=name,
             location=location,
+            async_query=async_query,
+        )
+
+
+class ExchangeEventsRangeQueryResource(BaseMethodView):
+
+    post_schema = ExchangeEventsRangeQuerySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            location: Location,
+            name: str,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.query_exchange_history_events_in_range(
+            location=location,
+            name=name,
+            start_ts=from_timestamp,
+            end_ts=to_timestamp,
             async_query=async_query,
         )
 
