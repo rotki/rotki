@@ -63,7 +63,7 @@ const testDir = path.join(process.cwd(), '.e2e');
 const dataDir = path.join(testDir, 'data');
 const logDir = path.join(testDir, 'logs');
 
-function cleanupData(): void {
+function cleanupData(exit: 0 | 1): void {
   consola.info(`Cleaning up ${dataDir}`);
   const contents = fs.readdirSync(dataDir);
   for (const name of contents) {
@@ -71,9 +71,17 @@ function cleanupData(): void {
       continue;
 
     const currentPath = path.join(dataDir, name);
-    if (fs.statSync(currentPath).isDirectory())
-      fs.rmSync(currentPath, { recursive: true });
+    if (fs.statSync(currentPath).isDirectory()) {
+      try {
+        fs.rmSync(currentPath, { recursive: true, maxRetries: 3, retryDelay: 1000 });
+      }
+      catch (error: any) {
+        consola.warn(`Failed to remove directory ${currentPath}: ${error.message}`);
+      }
+    }
   }
+
+  process.exit(exit);
 }
 
 if (!fs.existsSync(dataDir)) {
@@ -143,13 +151,11 @@ async function run(): Promise<void> {
       namedArguments: { expect: 200 },
     });
     consola.info('Execution completed successfully');
-    cleanupData();
-    process.exit(0);
+    cleanupData(0);
   }
   catch (error) {
     consola.error('Command execution failed', error);
-    cleanupData();
-    process.exit(1);
+    cleanupData(1);
   }
 }
 

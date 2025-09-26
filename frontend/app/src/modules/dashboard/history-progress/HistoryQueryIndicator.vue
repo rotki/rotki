@@ -7,7 +7,7 @@ import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-iden
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import {
   useHistoryQueryIndicatorSettings,
-} from '@/modules/dashboard/history-events/composables/use-history-query-indicator-settings';
+} from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
