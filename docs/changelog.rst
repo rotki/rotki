@@ -7,6 +7,7 @@ Changelog
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
+* :bug:`-` Monerium aave v3 events will now always have the earn event at the end.
 
 * :release:`1.40.1 <2025-09-15>`
 * :bug:`10602` Users will be able to edit EVM swap events, even if the asset is ignored.

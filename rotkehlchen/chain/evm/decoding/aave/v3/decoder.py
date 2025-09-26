@@ -303,8 +303,8 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         if len(withdraw_events) != 0 and earned_event is not None:
             if len(return_events) != 0:  # re-assign the withdraw amounts
                 for withdraw_event in withdraw_events:
-                    if withdraw_event.asset != earned_event.asset:
-                        continue
+                    if withdraw_event.asset.resolve_to_crypto_asset().symbol != earned_event.asset.resolve_to_crypto_asset().symbol:  # noqa: E501
+                        continue  # we check symbols here due to monerium having multiple versions
 
                     withdraw_event.amount = FVal((withdraw_event.amount - earned_event.amount).num.normalize())  # noqa: E501
                     withdraw_event.notes = f'Withdraw {withdraw_event.amount} {withdraw_event.asset.resolve_to_asset_with_symbol().symbol} from {self.label}'  # noqa: E501
@@ -350,9 +350,9 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 ordered_events=ordered_events,
                 maybe_earned_event=maybe_earned_event,
                 earned_event=earned_event,
-                match_fn=lambda primary, secondary: (
+                match_fn=lambda primary, secondary: (  # use symbols due to Monerium and its different versions  # noqa: E501
                     (underlying_token := get_single_underlying_token(primary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
-                    (underlying_token == secondary.asset or (underlying_token == self.wrapped_native_token and secondary.asset == self.evm_inquirer.native_token))  # noqa: E501
+                    (underlying_token.symbol == secondary.asset.resolve_to_crypto_asset().symbol or (underlying_token == self.wrapped_native_token and secondary.asset == self.evm_inquirer.native_token))  # noqa: E501
                 ),
             )
 
@@ -373,20 +373,20 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
     ) -> None:
         """Helper to pair events by underlying asset and track assets for interest events."""
         for primary_event in primary_events:
-            matched_assets = set()
-            matched_assets.add(primary_event.asset)
+            matched_asset_symbols = set()  # using symbols due to Monerium and its different versions  # noqa: E501
+            matched_asset_symbols.add(primary_event.asset.resolve_to_crypto_asset().symbol)
             for secondary_event in secondary_events:
                 if match_fn(primary_event, secondary_event):
-                    matched_assets.add(secondary_event.asset)
+                    matched_asset_symbols.add(secondary_event.asset.resolve_to_crypto_asset().symbol)
                     ordered_events.extend([primary_event, secondary_event])
 
             # add matching interest events for this asset pair
-            if len(matched_assets) > 0:
+            if len(matched_asset_symbols) > 0:
                 ordered_events.extend(
                     earn_event for earn_event in (maybe_earned_event, earned_event)
-                    if earn_event is not None and earn_event.asset in matched_assets and earn_event not in ordered_events  # noqa: E501
+                    if earn_event is not None and earn_event.asset.resolve_to_crypto_asset().symbol in matched_asset_symbols and earn_event not in ordered_events  # noqa: E501
                 )
-                matched_assets = set()
+                matched_asset_symbols = set()
 
     def _collateral_swap(self, context: 'DecoderContext') -> DecodingOutput:
         """Decode a collateral swap event from aave.
