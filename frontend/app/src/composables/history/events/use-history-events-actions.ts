@@ -69,7 +69,11 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
 
   const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
-  const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
+  const {
+    fetchAssociatedLocations,
+    fetchLocationLabels,
+    resetUndecodedTransactionsStatus,
+  } = useHistoryStore();
   const { refreshTransactions } = useHistoryTransactions();
   const {
     fetchUndecodedTransactionsStatus,
@@ -81,7 +85,10 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
 
   async function fetchDataAndLocations(): Promise<void> {
     await fetchData();
-    await fetchAssociatedLocations();
+    await Promise.all([
+      fetchAssociatedLocations(),
+      fetchLocationLabels(),
+    ]);
   }
 
   async function refresh(userInitiated = false, payload?: HistoryRefreshEventData): Promise<void> {
