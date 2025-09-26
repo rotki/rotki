@@ -86,6 +86,7 @@
     "@tsconfig/node22": "22.0.2",
     "@types/argparse": "2.0.17",
     "@types/node": "22.18.0",
+    "@types/semver": "7.7.1",
     "@vitejs/plugin-vue": "6.0.1",
     "@vitest/coverage-v8": "3.2.4",
     "@vitest/ui": "3.2.4",
