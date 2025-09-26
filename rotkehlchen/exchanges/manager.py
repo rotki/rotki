@@ -6,6 +6,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras
@@ -16,6 +17,7 @@ from rotkehlchen.types import (
     ExchangeApiCredentials,
     ExchangeAuthCredentials,
     Location,
+    Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -335,3 +337,40 @@ class ExchangeManager:
 
         for exchange in exchanges_list:
             exchange.query_history_events()
+
+    def requery_exchange_history_events(
+            self,
+            location: Location,
+            name: str,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> tuple[int, int, int, Timestamp]:
+        """Query an exchange instance for certain range of time measured in seconds
+
+        May raise:
+            - InputError: if the exchange instance can't be found.
+            - DeserializationError
+            - IntegrityError
+        """
+        if (exchange := self.get_exchange(name=name, location=location)) is None:
+            raise InputError(f'{location!s} exchange {name} is not registered')
+
+        events_list, actual_end_ts = exchange.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        if (total_events := len(events_list)) == 0:
+            return 0, 0, 0, actual_end_ts
+
+        saved_events_amount = 0
+        with self.database.user_write() as write_cursor:
+            db_manager = DBHistoryEvents(self.database)
+            for event in events_list:
+                if db_manager.add_history_event(
+                    write_cursor=write_cursor,
+                    event=event,
+                ) is not None:
+                    saved_events_amount += 1
+
+        skipped_events = total_events - saved_events_amount
+        return total_events, saved_events_amount, skipped_events, actual_end_ts

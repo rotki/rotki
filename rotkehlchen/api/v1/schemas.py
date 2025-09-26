@@ -226,6 +226,18 @@ class TimestampRangeSchema(Schema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['from_timestamp'] > data['to_timestamp']:
+            raise ValidationError(
+                message='from_timestamp must be less than or equal to to_timestamp',
+                field_name='to_timestamp',
+            )
+
 
 class AsyncTaskSchema(Schema):
     task_id = fields.Integer(strict=True, load_default=None)
@@ -1726,9 +1738,17 @@ class ExchangeEventsQuerySchema(AsyncQueryArgumentSchema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
-class ExchangesResourceRemoveSchema(Schema):
+class ExchangeLocationWithNameSchema(Schema):
     name = NonEmptyStringField(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
+
+
+class ExchangeEventsRangeQuerySchema(
+    AsyncQueryArgumentSchema,
+    TimestampRangeSchema,
+    ExchangeLocationWithNameSchema,
+):
+    ...
 
 
 class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):

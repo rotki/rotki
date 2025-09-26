@@ -822,6 +822,43 @@ class RestAPI:
         return OK_RESULT
 
     @async_api_call()
+    def query_exchange_history_events_in_range(
+            self,
+            location: Location,
+            name: str,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> dict[str, Any]:
+        try:
+            total_events, stored_events, skipped_events, actual_end_ts = (
+                self.rotkehlchen.exchange_manager.requery_exchange_history_events(
+                    location=location,
+                    name=name,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                )
+            )
+        except RemoteError as e:
+            return wrap_in_fail_result(
+                message=str(e),
+                status_code=HTTPStatus.BAD_GATEWAY,
+            )
+        except (InputError, DeserializationError, sqlcipher.IntegrityError) as e:  # pylint: disable=no-member
+            return wrap_in_fail_result(
+                message=str(e),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        result = {
+            'queried_events': total_events,
+            'stored_events': stored_events,
+            'skipped_events': skipped_events,
+            'actual_end_ts': actual_end_ts,
+        }
+
+        return _wrap_in_ok_result(result)
+
+    @async_api_call()
     def query_exchange_balances(
             self,
             location: Location | None,

@@ -9,6 +9,7 @@ import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
@@ -1077,6 +1078,86 @@ def test_query_binance_events(
                if x['type'] != str(WSMessageType.HISTORY_EVENTS_STATUS)
             ] == [missing_ws_msg]
             assert len(trades_queries) == 0
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+def test_exchange_events_range_query(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
+    """Test that we can ask an exchange for a specific range of events and duplicate
+    events are ignored.
+    """
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = server.rest_api.rotkehlchen
+    exchange = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert exchange is not None
+
+    def make_events() -> list[HistoryEvent]:
+        return [
+            HistoryEvent(
+                event_identifier='evt-1',
+                sequence_index=0,
+                timestamp=TimestampMS(1),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                amount=ONE,
+            ),
+            HistoryEvent(
+                event_identifier='evt-2',
+                sequence_index=0,
+                timestamp=TimestampMS(2),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                amount=FVal('2'),
+            ),
+        ]
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        initial_events = cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0]
+
+    with patch.object(exchange, 'query_online_history_events', side_effect=[(make_events(), Timestamp(10))] * 2) as mock_query:  # noqa: E501
+        response = requests.post(
+            api_url_for(server, 'exchangeeventsrangequeryresource'),
+            json=(payload := {
+                'location': Location.KRAKEN.serialize(),
+                'name': exchange.name,
+                'from_timestamp': 0,
+                'to_timestamp': 100,
+            }),
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result == {
+            'queried_events': 2,
+            'stored_events': 2,
+            'skipped_events': 0,
+            'actual_end_ts': 10,
+        }
+
+        response = requests.post(
+            api_url_for(server, 'exchangeeventsrangequeryresource'),
+            json=payload,
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result == {
+            'queried_events': 2,
+            'stored_events': 0,
+            'skipped_events': 2,
+            'actual_end_ts': 10,
+        }
+
+    assert mock_query.call_count == 2
+    for call in mock_query.call_args_list:
+        start_argument = call.kwargs.get('start_ts', call.args[0] if call.args else None)
+        end_argument = call.kwargs.get('end_ts', call.args[1] if len(call.args) > 1 else None)
+        assert start_argument == Timestamp(0)
+        assert end_argument == Timestamp(100)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == initial_events + 2  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

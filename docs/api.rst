@@ -5840,6 +5840,62 @@ Querying exchange history events
    :statuscode 500: Internal rotki error.
    :statuscode 502: The exchange api could not be reached or returned an unexpected response.
 
+Re-querying exchange history events in a range
+==============================================
+
+.. http:post:: /api/(version)/history/events/query/exchange/range
+
+   Re-queries history events for a specific exchange between ``start_ts`` and ``end_ts`` and stores only new events.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/query/exchange/range HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": false,
+          "location": "kraken",
+          "name": "Kraken 1",
+          "from_timestamp": 0,
+          "to_timestamp": 1700000000
+      }
+
+   :reqjson bool async_query: Optional. Boolean denoting whether this is an asynchronous query or not (defaults to ``false``)
+   :reqjson string location: Exchange location identifier
+   :reqjson string name: Name of the exchange entry to query
+   :reqjson int start_ts: Start timestamp for the re-query (seconds since epoch)
+   :reqjson int end_ts: End timestamp for the re-query (seconds since epoch)
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result": {
+             "queried_events": 2,
+             "stored_events": 2,
+             "skipped_events": 0,
+             "actual_end_ts": 1700000000
+         },
+         "message": ""
+      }
+
+   :resjson int result.queried_events: Number of events returned by the exchange
+   :resjson int result.stored_events: Number of new events stored in the database
+   :resjson int result.skipped_events: Number of events skipped because they already exist
+   :resjson int result.actual_end_ts: Last timestamp successfully processed
+   :resjson str message: Error message if any errors occurred
+   :statuscode 200: Re-query completed successfully
+   :statuscode 400: Provided JSON is malformed
+   :statuscode 401: No user is currently logged in
+   :statuscode 409: Exchange entry is missing or the provided range is invalid
+
 Querying messages to show to the user
 =====================================
 
