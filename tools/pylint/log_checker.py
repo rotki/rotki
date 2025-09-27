@@ -54,5 +54,5 @@ class LogNokwargsChecker(BaseChecker):
             >>> log.debug('foo', a=1)
         """
         for inferred_func in node.func.infer():
-            if is_normal_logging_call(inferred_func) and node.keywords and len(node.keywords) != 0:
+            if is_normal_logging_call(inferred_func) and node.keywords:
                 self.add_message(LOGNOKWARGS_SYMBOL, node=node)
