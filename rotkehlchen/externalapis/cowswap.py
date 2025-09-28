@@ -96,7 +96,8 @@ class CowswapAPI:
             )
 
         return raw_fee_amount, order_type
-    
+
+
 def parse_order_data(data: dict[str, Any]) -> tuple[int, str]:
     """Parses offchain order data from an api response.
     Returns raw_fee_amount and order_type as a tuple.
