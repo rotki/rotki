@@ -93,12 +93,12 @@ class CowswapAPI:
                 order_type = data['class']
             else:
                 raw_fee_amount = int(data.get('executedSurplusFee', data.get('executedFee', 0)))
-                
+
                 try:
                     # Cowswap API sometimes returns nullish `fullAppData` so this may fail
                     metadata = json.loads(data['fullAppData'])['metadata']
                     order_type = metadata['orderClass']['orderClass'] if 'orderClass' in metadata else 'limit'  # noqa: E501
-                except:
+                except TypeError:
                     order_type = 'limit'
         except (KeyError, json.decoder.JSONDecodeError, ValueError, DeserializationError) as e:
             log.error(f'Could not process Cowswap API response: {data} due to {e!s}')
