@@ -87,21 +87,7 @@ class CowswapAPI:
 
         # else, we need to query the API
         data = self._query(f'orders/{order_uid}')
-        try:
-            if iso8601ts_to_timestamp(data['creationDate']) < ORDER_TYPE_CHANGE_TS:
-                raw_fee_amount = int(data['executedFeeAmount'])
-                order_type = data['class']
-            else:
-                raw_fee_amount = int(data.get('executedSurplusFee', data.get('executedFee', 0)))
-
-                if (full_app_data := data.get('fullAppData')) is not None:
-                    metadata = json.loads(full_app_data)['metadata']
-                    order_type = metadata['orderClass']['orderClass'] if 'orderClass' in metadata else 'limit'  # noqa: E501
-                else:
-                    order_type = 'limit'
-        except (KeyError, json.decoder.JSONDecodeError, ValueError, DeserializationError) as e:
-            log.error(f'Could not process Cowswap API response: {data} due to {e!s}')
-            raise RemoteError('Invalid data from Cowswap API response') from e
+        raw_fee_amount, order_type = parse_order_data(data)
 
         with self.database.conn.write_ctx() as write_cursor:
             write_cursor.execute(
@@ -110,3 +96,28 @@ class CowswapAPI:
             )
 
         return raw_fee_amount, order_type
+    
+def parse_order_data(data: dict[str, Any]) -> tuple[int, str]:
+    """Parses offchain order data from an api response.
+    Returns raw_fee_amount and order_type as a tuple.
+
+    May raise:
+    - RemoteError if there is a problem parsing the data
+    """
+    try:
+        if iso8601ts_to_timestamp(data['creationDate']) < ORDER_TYPE_CHANGE_TS:
+            raw_fee_amount = int(data['executedFeeAmount'])
+            order_type = data['class']
+        else:
+            raw_fee_amount = int(data.get('executedSurplusFee', data.get('executedFee', 0)))
+
+            if (full_app_data := data.get('fullAppData')) is not None:
+                metadata = json.loads(full_app_data)['metadata']
+                order_type = metadata['orderClass']['orderClass'] if 'orderClass' in metadata else 'limit'  # noqa: E501
+            else:
+                order_type = 'limit'
+    except (KeyError, json.decoder.JSONDecodeError, ValueError, DeserializationError) as e:
+        log.error(f'Could not process Cowswap API response: {data} due to {e!s}')
+        raise RemoteError('Invalid data from Cowswap API response') from e
+
+    return raw_fee_amount, order_type
