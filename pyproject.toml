@@ -30,7 +30,7 @@ dependencies = [
     "rotki-pysqlcipher3==2024.10.1",
     "rotki-sqlite==2025.8.1",
     "requests==2.32.5",
-    "urllib3==2.4.0",
+    "urllib3==2.5.0",
     "coincurve==21.0.0",
     "base58check==1.0.2",
     "bech32==1.2.0",
@@ -48,7 +48,7 @@ dependencies = [
     "cryptography==46.0.1",
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
-    "regex==2025.9.1",  # used for unicode information in detection of spam tokens
+    "regex==2025.9.18",  # used for unicode information in detection of spam tokens
     "eth-abi==5.2.0",
     "polars-lts-cpu==1.29.0",
     "eth-utils==5.3.0",
@@ -63,11 +63,11 @@ dependencies = [
     # for fuzzy search of assets
     "polyleven==0.9",
     # We used to only use this for packaging, but now use it for the version comparison functionality
-    "packaging==24.0",
+    "packaging==25.0",
     "bip-utils==2.9.3",
     # For Google Calendar integration
-    "google-api-python-client==2.166.0",
-    "google-auth==2.38.0",
+    "google-api-python-client==2.183.0",
+    "google-auth==2.40.3",
     #constraints
     "pycparser<=2.17", # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
     # To build JWT for coinbase exchange key validation
