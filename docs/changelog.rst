@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Monerium aave v3 events will now always have the earn event at the end.
+* :bug:`-` Cowswap swaps that use the new ethflow contract or route through Spark Savings now decode correctly.
 
 * :release:`1.40.1 <2025-09-15>`
 * :bug:`10602` Users will be able to edit EVM swap events, even if the asset is ignored.
