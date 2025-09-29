@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10652` Cowswap swaps with a missing `fullAppData` field will now be properly decoded.
 * :bug:`-` Monerium aave v3 events will now always have the earn event at the end.
 
 * :release:`1.40.1 <2025-09-15>`
