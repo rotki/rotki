@@ -54,7 +54,10 @@ INVALIDATE_NATIVE_ASSET_ORDER_SIGNATURE: Final = b'\xb8\xba\xd1\x02\xac\x8b\xba\
 VESTED: Final = b'\x00\xd5\x95\x87\x99\xb1\x83\xa7\xb78\xd3\xad^q\x13\x05)=\xd5\x07j7\xa4\xe3\xb7\xe6a\x1d\xeaa\x14\xf3'  # noqa: E501
 
 GPV2_SETTLEMENT_ADDRESS: Final = string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')  # noqa: E501
-NATIVE_ASSET_FLOW_ADDRESS: Final = string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187')  # noqa: E501
+NATIVE_ASSET_FLOW_ADDRESSES: Final = (
+    string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
+    string_to_evm_address('0xbA3cB449bD2B4ADddBc894D8697F5170800EAdeC'),
+)
 CLAIMED: Final = b'\xd46\xe9\x97=\x1eD\xd4\r\xb4\xd4\x11\x9e<w<\xad\xb12;&9\x81\x96\x8c\x14\xd3\xd1\x91\xc0\xe1H'  # noqa: E501
 
 
@@ -88,7 +91,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         self.native_asset = native_asset.resolve_to_crypto_asset()
         self.wrapped_native_asset = wrapped_native_asset.resolve_to_evm_token()
         self.settlement_address = GPV2_SETTLEMENT_ADDRESS
-        self.native_asset_flow_address = NATIVE_ASSET_FLOW_ADDRESS
+        self.native_asset_flow_addresses = NATIVE_ASSET_FLOW_ADDRESSES
         self.cowswap_api = CowswapAPI(
             database=self.evm_inquirer.database,
             chain=cast('SUPPORTED_COWSWAP_BLOCKCHAIN', self.evm_inquirer.blockchain),
@@ -106,7 +109,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.asset == self.native_asset and
-                    event.address == self.native_asset_flow_address
+                    event.address in self.native_asset_flow_addresses
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.PLACE_ORDER
@@ -118,7 +121,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.asset == self.native_asset and
-                    event.address == self.native_asset_flow_address
+                    event.address in self.native_asset_flow_addresses
                 ):
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.counterparty = CPT_COWSWAP
@@ -160,7 +163,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
             if (
                 from_token_address == self.wrapped_native_asset.evm_address and
-                owner_address == self.native_asset_flow_address
+                owner_address in self.native_asset_flow_addresses
             ):
                 from_asset = self.native_asset  # native asset swaps are made by eth flow contract in cowswap  # noqa: E501
             else:  # need get_or_create_evm_token because token may not exist if there was a remote error the first time that the token appeared.  # noqa: E501
@@ -337,8 +340,8 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            self.native_asset_flow_address: (self._decode_native_asset_orders,),
-            self.settlement_address:  (self._match_cowswap_counterparty,),
+            **dict.fromkeys(self.native_asset_flow_addresses, (self._decode_native_asset_orders,)),
+            self.settlement_address: (self._match_cowswap_counterparty,),
         }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
