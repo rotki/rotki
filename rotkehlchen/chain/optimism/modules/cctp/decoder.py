@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.decoding.cctp.decoder import CctpCommonDecoder
 from .constants import MESSAGE_TRANSMITTER, TOKEN_MESSENGER, USDC_IDENTIFIER_OPT
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -14,7 +14,7 @@ class CctpDecoder(CctpCommonDecoder):
     def __init__(
             self,
             evm_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

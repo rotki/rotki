@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
-    from .base import BaseDecoderTools
+    from .base import BaseEvmDecoderTools
 
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class DecoderInterface(ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         """This is the Decoder interface initialization signature"""
@@ -283,7 +283,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
             protocol: str,
             proposals_url: str,

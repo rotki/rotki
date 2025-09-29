@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_BSC_BNB
 from rotkehlchen.types import ChecksumEvmAddress
@@ -28,7 +28,7 @@ class BinanceSCTransactionDecoder(EVMTransactionDecoder):
             value_asset=A_BSC_BNB.resolve_to_asset_with_oracles(),
             event_rules=[],
             misc_counterparties=[],
-            base_tools=BaseDecoderTools(
+            base_tools=BaseEvmDecoderTools(
                 database=database,
                 evm_inquirer=binance_sc_inquirer,
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,

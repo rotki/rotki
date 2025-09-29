@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.arbitrum_one_tx import DBArbitrumOneTx
@@ -41,7 +41,7 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
             value_asset=A_ETH.resolve_to_asset_with_oracles(),
             event_rules=[],
             misc_counterparties=[],
-            base_tools=BaseDecoderTools(
+            base_tools=BaseEvmDecoderTools(
                 database=database,
                 evm_inquirer=arbitrum_inquirer,
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,

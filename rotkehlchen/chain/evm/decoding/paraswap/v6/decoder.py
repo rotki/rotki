@@ -19,7 +19,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from .constants import PARASWAP_AUGUSTUS_V6_ROUTER, PARASWAP_METHODS, PARASWAP_V6_FEE_CLAIMER
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -34,7 +34,7 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

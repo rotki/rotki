@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.polygon_pos.modules.aave.constants import V3_MIGRATION_HELPER
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -15,7 +15,7 @@ class Aavev2Decoder(Aavev2CommonDecoder):
     def __init__(
             self,
             evm_inquirer: 'PolygonPOSInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

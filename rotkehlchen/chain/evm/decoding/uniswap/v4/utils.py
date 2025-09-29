@@ -32,7 +32,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, EvmToken
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -120,7 +120,7 @@ def decode_uniswap_v4_like_swaps(
         transaction: 'EvmTransaction',
         decoded_events: list['EvmEvent'],
         all_logs: list['EvmTxReceiptLog'],
-        base_tools: 'BaseDecoderTools',
+        base_tools: 'BaseEvmDecoderTools',
         swap_topics: tuple[bytes, ...],
         counterparty: str,
         router_address: ChecksumEvmAddress,

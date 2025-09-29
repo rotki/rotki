@@ -27,7 +27,7 @@ from .constants import CPT_UNISWAP_V4_LP, MODIFY_LIQUIDITY, POSITION_MANAGER_ABI
 from .utils import decode_uniswap_v4_like_swaps
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -43,7 +43,7 @@ class Uniswapv4CommonDecoder(DecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             pool_manager: 'ChecksumEvmAddress',
             position_manager: 'ChecksumEvmAddress',

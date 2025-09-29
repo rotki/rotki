@@ -50,7 +50,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
@@ -89,7 +89,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             routers_addresses: set['ChecksumEvmAddress'],
             nft_manager: 'ChecksumEvmAddress',

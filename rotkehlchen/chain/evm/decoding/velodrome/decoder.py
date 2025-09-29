@@ -54,7 +54,7 @@ from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.optimism.manager import OptimismInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -70,7 +70,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
     def __init__(
             self,
             evm_inquirer: 'OptimismInquirer | BaseInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             counterparty: Literal['velodrome', 'aerodrome'],
             voting_escrow_address: ChecksumEvmAddress,
