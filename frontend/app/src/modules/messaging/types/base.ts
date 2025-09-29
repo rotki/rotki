@@ -27,7 +27,7 @@ export const SocketMessageType = {
   HISTORY_EVENTS_STATUS: 'history_events_status',
   LEGACY: 'legacy',
   MISSING_API_KEY: 'missing_api_key',
-  NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected',
+  NEW_TOKEN_DETECTED: 'new_token_detected',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   PROGRESS_UPDATES: 'progress_updates',
   REFRESH_BALANCES: 'refresh_balances',

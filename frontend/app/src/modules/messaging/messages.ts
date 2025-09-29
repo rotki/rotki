@@ -65,9 +65,9 @@ const MigratedAccountsMessage = z.object({
   type: z.literal(SocketMessageType.EVM_ACCOUNTS_DETECTION),
 });
 
-const NewEvmTokenDetectedMessage = z.object({
+const NewTokenDetectedMessage = z.object({
   data: NewDetectedToken,
-  type: z.literal(SocketMessageType.NEW_EVM_TOKEN_DETECTED),
+  type: z.literal(SocketMessageType.NEW_TOKEN_DETECTED),
 });
 
 const MissingApiKeyMessage = z.object({
@@ -134,7 +134,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   DbUpgradeStatusMessage,
   DataMigrationStatusMessage,
   MigratedAccountsMessage,
-  NewEvmTokenDetectedMessage,
+  NewTokenDetectedMessage,
   MissingApiKeyMessage,
   RefreshBalancesMessage,
   DbUploadResultMessage,

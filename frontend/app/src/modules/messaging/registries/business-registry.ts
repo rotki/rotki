@@ -22,7 +22,7 @@ export function createBusinessRegistry(
     [SocketMessageType.DATABASE_UPLOAD_PROGRESS]: createDbUploadProgressHandler(),
     [SocketMessageType.DB_UPLOAD_RESULT]: createDbUploadResultHandler(),
     [SocketMessageType.EXCHANGE_UNKNOWN_ASSET]: exchangeUnknownAssetHandler,
-    [SocketMessageType.NEW_EVM_TOKEN_DETECTED]: newTokenDetectedHandler,
+    [SocketMessageType.NEW_TOKEN_DETECTED]: newTokenDetectedHandler,
     [SocketMessageType.REFRESH_BALANCES]: createRefreshBalancesHandler(),
   };
 }
