@@ -11,6 +11,7 @@ from solders.solders import Signature
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalService, ExternalServiceWithApiKey
@@ -25,6 +26,7 @@ from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import SolanaAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -109,39 +111,34 @@ class Helius(ExternalServiceWithApiKey):
 
         return json_ret
 
-    def _get_raw_transactions(self, signatures: list[str]) -> list[dict[str, Any]] | None:
-        """Query Helius for the raw transactions corresponding to the given signatures.
-        Returns a list of raw transaction dicts or None if there was a problem querying the API.
+    def get_transactions(self, signatures: list[str], relevant_address: 'SolanaAddress') -> None:
+        """Query Helius for txs corresponding to the given signatures and save them in the DB.
+        May raise:
+        - RemoteError if there was a problem with the remote query.
+        - MissingAPIKey if the user has no Helius api key.
         """
-        raw_transactions = []
-        try:
-            for chunk in get_chunks(signatures, MAX_TX_BATCH_SIZE):
-                raw_transactions.extend(self._query(
-                    endpoint='transactions',
-                    params={'transactions': chunk},
-                ))
-        except (RemoteError, MissingAPIKey) as e:
-            log.error(f'Failed to query {len(signatures)} transactions from Helius due to {e!s}')
-            return None
+        solana_tx_db = DBSolanaTx(database=self.db)
+        for chunk in get_chunks(signatures, MAX_TX_BATCH_SIZE):
+            txs = []
+            for raw_tx in self._query(
+                endpoint='transactions',
+                params={'transactions': chunk},
+            ):
+                try:
+                    txs.append(self._deserialize_raw_tx(raw_tx))
+                except DeserializationError as e:
+                    log.error(e)  # the error from _deserialize_raw_tx is already descriptive.
 
-        return raw_transactions
+            if len(txs) == 0:
+                continue  # don't try to save if none of the txs were deserialized
 
-    def get_transactions(self, signatures: list[str]) -> list[SolanaTransaction] | None:
-        """Query Helius for solana transactions corresponding to the given signatures.
-        Returns a list of SolanaTransactions or None if there was a problem querying the API.
-        """
-        if (raw_transactions := self._get_raw_transactions(signatures)) is None:
-            return None
-
-        txs = []
-        for raw_tx in raw_transactions:
-            try:
-                txs.append(self._deserialize_raw_tx(raw_tx))
-            except DeserializationError as e:
-                log.error(e)
-                continue
-
-        return txs
+            # Save each chunk as it is queried to avoid losing progress if something goes wrong.
+            with self.db.conn.write_ctx() as write_cursor:
+                solana_tx_db.add_solana_transactions(
+                    write_cursor=write_cursor,
+                    solana_transactions=txs,
+                    relevant_address=relevant_address,
+                )
 
     @staticmethod
     def _deserialize_instruction(
@@ -191,4 +188,5 @@ class Helius(ExternalServiceWithApiKey):
                 instructions=instructions,
             )
         except (KeyError, ValueError, DeserializationError) as e:
-            raise DeserializationError(f'Failed to deserialize Helius raw tx due to {e!s}') from e
+            msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
+            raise DeserializationError(f'Failed to deserialize Helius raw tx due to {msg}') from e

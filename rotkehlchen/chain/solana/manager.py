@@ -30,14 +30,14 @@ from rotkehlchen.chain.solana.utils import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.solanatx import DBSolanaTx
-from rotkehlchen.errors.misc import NotSPLConformant
+from rotkehlchen.errors.misc import MissingAPIKey, NotSPLConformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp
-from rotkehlchen.utils.misc import bytes_to_solana_address, ts_now
+from rotkehlchen.utils.misc import bytes_to_solana_address, get_chunks, ts_now
 
 from .node_inquirer import SolanaInquirer
 from .types import SolanaTransaction
@@ -53,6 +53,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 SIGNATURES_PAGE_SIZE: Final = 1000
+
+# The number of txs to query from RPCs before saving progress in the DB.
+# Using the api.mainnet-beta.solana.com RPC 10 txs took ~1 minute.
+RPC_TX_BATCH_SIZE: Final = 10
 
 
 class SolanaManager:
@@ -171,6 +175,7 @@ class SolanaManager:
     def query_transactions(self, addresses: list[SolanaAddress]) -> None:
         """Query the transactions for the given addresses and save them to the DB.
         Only queries new transactions if there are already transactions in the DB.
+        May raise RemoteError if there is a problem with querying the external service.
         """
         for address in addresses:
             self.query_transactions_for_address(address=address)
@@ -178,6 +183,7 @@ class SolanaManager:
     def query_transactions_for_address(self, address: SolanaAddress) -> None:
         """Query the transactions for the given address and save them to the DB.
         Only queries new transactions if there are already transactions in the DB.
+        May raise RemoteError if there is a problem with querying the external service.
         """
         last_existing_sig, start_ts, end_ts = None, Timestamp(0), ts_now()
         with self.database.conn.read_ctx() as cursor:
@@ -208,26 +214,29 @@ class SolanaManager:
             until=last_existing_sig,
         )
 
-        # Query the full tx data for each signature from either Helius or the RPCs
-        if (transactions := self.helius.get_transactions(
-            signatures=[str(x) for x in signatures],
-        )) is None:
-            log.debug(
-                'Unable to query solana transactions from Helius. '
-                f'Falling back to querying from the rpc for address {address}.',
-            )
-            transactions = [
-                tx for signature in signatures
-                if (tx := self.query_rpc_for_single_tx(signature)) is not None
-            ]
-
-        # Save txs to the DB
-        with self.database.conn.write_ctx() as write_cursor:
-            DBSolanaTx(database=self.database).add_solana_transactions(
-                write_cursor=write_cursor,
-                solana_transactions=transactions,
+        # Query the full tx data for each signature from either Helius or the RPCs and save it.
+        try:
+            self.helius.get_transactions(
+                signatures=[str(x) for x in signatures],
                 relevant_address=address,
             )
+        except (RemoteError, MissingAPIKey) as e:
+            log.debug(
+                f'Unable to query solana transactions from Helius due to {e!s} '
+                f'Falling back to querying from the RPCs for address {address}.',
+            )
+            solana_tx_db = DBSolanaTx(database=self.database)
+            for chunk in get_chunks(signatures, RPC_TX_BATCH_SIZE):
+                transactions = [
+                    tx for signature in chunk
+                    if (tx := self.query_rpc_for_single_tx(signature)) is not None
+                ]
+                with self.database.conn.write_ctx() as write_cursor:
+                    solana_tx_db.add_solana_transactions(
+                        write_cursor=write_cursor,
+                        solana_transactions=transactions,
+                        relevant_address=address,
+                    )
 
         self.database.msg_aggregator.add_message(
             message_type=WSMessageType.TRANSACTION_STATUS,

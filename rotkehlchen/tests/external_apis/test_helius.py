@@ -4,8 +4,11 @@ from unittest.mock import call, patch
 
 from solders.solders import Signature
 
+from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.externalapis.helius import HELIUS_API_URL, Helius
+from rotkehlchen.tests.utils.factories import make_solana_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
 
@@ -43,11 +46,14 @@ def test_get_transactions(database: 'DBHandler'):
         patch('rotkehlchen.externalapis.helius.requests.post', side_effect=mock_post) as post_mock,
         patch('rotkehlchen.externalapis.helius.MAX_TX_BATCH_SIZE', new=2),  # Force pagination
     ):
-        txs = Helius(database=database).get_transactions(signatures=[
-            swap_tx_signature,
-            (other_tx_sig_1 := '4PXgKteR5ofZLbMGxNzstUc5f1GHLVoPh47FCaXLRETARUtym99DtW74EmxjazpQ94BJeMAPiYXEjiBGDeioj32y'),  # noqa: E501
-            (other_tx_sig_2 := '5LB5yWMEqGZLTQxuSmU3un4dVZoCZbXBrQJnW2zXJhZu2WaYfdtUKpzwGPZk8AdRPQ9yqfFN5HetrgpDP6DWXx5a'),  # noqa: E501
-        ])
+        Helius(database=database).get_transactions(
+            signatures=[
+                swap_tx_signature,
+                (other_tx_sig_1 := '4PXgKteR5ofZLbMGxNzstUc5f1GHLVoPh47FCaXLRETARUtym99DtW74EmxjazpQ94BJeMAPiYXEjiBGDeioj32y'),  # noqa: E501
+                (other_tx_sig_2 := '5LB5yWMEqGZLTQxuSmU3un4dVZoCZbXBrQJnW2zXJhZu2WaYfdtUKpzwGPZk8AdRPQ9yqfFN5HetrgpDP6DWXx5a'),  # noqa: E501
+            ],
+            relevant_address=make_solana_address(),
+        )
 
     # Check that requests are properly batched
     assert post_mock.call_args_list == [call(
@@ -59,7 +65,13 @@ def test_get_transactions(database: 'DBHandler'):
         json={'transactions': [other_tx_sig_2]},
         timeout=timeout,
     )]
-    assert txs is not None
+
+    with database.conn.read_ctx() as cursor:
+        txs = DBSolanaTx(database).get_solana_transactions(
+            cursor=cursor,
+            filter_=SolanaTransactionsFilterQuery.make(),
+        )
+
     assert len(txs) == 1  # the mocked response only includes tx data for the jupiter swap tx
     tx = txs[0]  # Check some properties of the deserialized transaction
     assert tx.signature == Signature.from_string(swap_tx_signature)
