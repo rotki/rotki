@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import get_evm_token, get_or_create_evm_token
-from rotkehlchen.chain.decoding.tools import BaseDecoderTools as ChainBaseDecoderTools
+from rotkehlchen.chain.decoding.tools import BaseDecoderTools
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
@@ -38,10 +38,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BaseDecoderTools(ChainBaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVMTxHash, EvmEvent, EvmProduct]):  # noqa: E501
-    """A class that keeps a common state and offers some common decoding functionality
-    TODO: rename `BaseDecoderTools` to `BaseEvmDecoderTools` in a follow-up pr.
-    """
+class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVMTxHash, EvmEvent, EvmProduct]):  # noqa: E501
+    """A class that keeps a common state and offers some common decoding functionality"""
 
     def __init__(
             self,
@@ -323,8 +321,8 @@ class BaseDecoderTools(ChainBaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, E
         )
 
 
-class BaseDecoderToolsWithProxy(BaseDecoderTools):
-    """Like BaseDecoderTools but with Proxy evm inquirers"""
+class BaseEvmDecoderToolsWithProxy(BaseEvmDecoderTools):
+    """Like BaseEvmDecoderTools but with Proxy evm inquirers"""
 
     def __init__(
             self,

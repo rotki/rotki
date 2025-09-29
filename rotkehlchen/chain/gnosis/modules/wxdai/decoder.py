@@ -6,7 +6,7 @@ from rotkehlchen.chain.gnosis.modules.wxdai.constants import CPT_WXDAI
 from rotkehlchen.constants.assets import A_WXDAI, A_XDAI
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -15,7 +15,7 @@ class WxdaiDecoder(WethDecoderBase):
     def __init__(
             self,
             gnosis_inquirer: 'GnosisInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

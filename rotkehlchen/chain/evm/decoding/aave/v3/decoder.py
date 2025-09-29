@@ -25,7 +25,7 @@ from ..constants import CPT_AAVE_V3, MINT
 from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED, SWAPPED
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -40,7 +40,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             pool_addresses: Sequence['ChecksumEvmAddress'],
             native_gateways: 'tuple[ChecksumEvmAddress, ...]',

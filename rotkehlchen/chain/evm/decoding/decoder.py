@@ -79,7 +79,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from .base import BaseDecoderTools, BaseDecoderToolsWithProxy
+from .base import BaseEvmDecoderTools, BaseEvmDecoderToolsWithProxy
 from .constants import (
     CPT_ACCOUNT_DELEGATION,
     CPT_GAS,
@@ -222,7 +222,7 @@ class EVMTransactionDecoder(ABC):
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
-            base_tools: BaseDecoderTools,
+            base_tools: BaseEvmDecoderTools,
             premium: 'Premium | None' = None,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
             addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
@@ -1605,7 +1605,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
-            base_tools: BaseDecoderToolsWithProxy,
+            base_tools: BaseEvmDecoderToolsWithProxy,
             beacon_chain: 'BeaconChain | None' = None,
             premium: 'Premium | None' = None,
     ):
@@ -1621,4 +1621,4 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             beacon_chain=beacon_chain,
         )
         self.evm_inquirer: EvmNodeInquirerWithProxies  # Set explicit type
-        self.base: BaseDecoderToolsWithProxy  # Set explicit type
+        self.base: BaseEvmDecoderToolsWithProxy  # Set explicit type

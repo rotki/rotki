@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import (
 from rotkehlchen.chain.evm.decoding.uniswap.v3.decoder import Uniswapv3CommonDecoder
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -17,7 +17,7 @@ class Uniswapv3Decoder(Uniswapv3CommonDecoder):
     def __init__(
             self,
             optimism_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

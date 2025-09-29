@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.decoding.spark.constants import (
 from rotkehlchen.chain.evm.decoding.spark.decoder import SparkCommonDecoder
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
@@ -19,7 +19,7 @@ class SparklendCommonDecoder(Aavev3LikeCommonDecoder, SparkCommonDecoder):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             pool_addresses: Sequence['ChecksumEvmAddress'],
             native_gateways: 'tuple[ChecksumEvmAddress, ...]',

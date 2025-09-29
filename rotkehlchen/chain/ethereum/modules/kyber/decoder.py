@@ -22,7 +22,7 @@ from .constants import CPT_KYBER_LEGACY
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 KYBER_TRADE_LEGACY = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\xb3\t`\xa0I\xfc\xd0e\x7f\xfe\x80\x80\x83'  # noqa: E501
@@ -37,7 +37,7 @@ class KyberDecoder(KyberCommonDecoder):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

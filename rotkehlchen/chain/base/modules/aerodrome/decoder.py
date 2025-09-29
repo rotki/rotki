@@ -15,7 +15,7 @@ from .constants import ROUTER, VOTER_CONTRACT_ADDRESS, VOTING_ESCROW_CONTRACT_AD
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class AerodromeDecoder(VelodromeLikeDecoder):
     def __init__(
             self,
             base_inquirer: 'BaseInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 UNISWAP_V2_ROUTER: Final = string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D')
@@ -16,7 +16,7 @@ class Uniswapv2Decoder(Uniswapv2CommonDecoder):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

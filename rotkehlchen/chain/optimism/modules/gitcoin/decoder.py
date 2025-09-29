@@ -4,7 +4,7 @@ from rotkehlchen.chain.evm.decoding.gitcoinv2.decoder import GitcoinV2CommonDeco
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -18,7 +18,7 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             optimism_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

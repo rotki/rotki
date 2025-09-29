@@ -37,7 +37,7 @@ from .constants import BORROW_TOPIC, CURVE_VAULT_ABI, REMOVE_COLLATERAL_TOPIC, R
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.fval import FVal
     from rotkehlchen.user_messages import MessagesAggregator
@@ -52,7 +52,7 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             evm_product: Literal[EvmProduct.LENDING, EvmProduct.MINTING],
             leverage_zap: 'ChecksumEvmAddress | None' = None,

@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -26,7 +26,7 @@ class Quickswapv2CommonDecoder(DecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             router_address: 'ChecksumEvmAddress',
             factory_address: 'ChecksumEvmAddress',

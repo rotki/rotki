@@ -47,7 +47,7 @@ from .utils import query_curve_lending_vaults
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -62,7 +62,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             leverage_zap: 'ChecksumEvmAddress | None',
     ) -> None:

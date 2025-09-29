@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.polygon_pos.modules.monerium.constants import V1_TO_V2_MONERIUM_MAPPINGS
 from rotkehlchen.chain.polygon_pos.tokens import POLYGON_MONERIUM_LEGACY_ADDRESSES
@@ -37,7 +37,7 @@ class PolygonPOSTransactionDecoder(EVMTransactionDecoder):
             value_asset=A_POLYGON_POS_MATIC.resolve_to_asset_with_oracles(),
             event_rules=[],
             misc_counterparties=[],
-            base_tools=BaseDecoderTools(
+            base_tools=BaseEvmDecoderTools(
                 database=database,
                 evm_inquirer=polygon_pos_inquirer,
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,

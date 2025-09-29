@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.decoding.odos.v1.decoder import Odosv1DecoderBase
 from .constants import ODOS_V1_ROUTER
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -14,7 +14,7 @@ class Odosv1Decoder(Odosv1DecoderBase):
     def __init__(
             self,
             evm_inquirer: 'PolygonPOSInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

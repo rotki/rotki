@@ -18,7 +18,7 @@ from .constants import BRIDGES, HOP_GOVERNOR
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 TRANSFER_TO_L2 = b'\n\x06\x07h\x8c\x86\xec\x17u\xab\xcd\xba\xb7\xb3::5\xa6\xc9\xcd\xe6w\xc9\xbe\x88\x01P\xc21\xcck\x0b'  # noqa: E501
@@ -28,7 +28,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         HopCommonDecoder.__init__(  # using direct constructor calls due to

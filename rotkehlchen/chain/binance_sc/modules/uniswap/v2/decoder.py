@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -14,7 +14,7 @@ class Uniswapv2Decoder(Uniswapv2CommonDecoder):
     def __init__(
             self,
             binance_sc_inquirer: 'BinanceSCInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(

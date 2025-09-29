@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EventDecoderFunction, EVMTransactionDecoder
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
@@ -35,7 +35,7 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             value_asset: AssetWithOracles,
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
-            base_tools: BaseDecoderTools,
+            base_tools: BaseEvmDecoderTools,
             premium: 'Premium | None' = None,
             dbevmtx_class: type[DBL2WithL1FeesTx] = DBL2WithL1FeesTx,
     ):

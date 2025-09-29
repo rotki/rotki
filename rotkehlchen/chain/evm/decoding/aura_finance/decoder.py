@@ -34,7 +34,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
@@ -63,7 +63,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             claim_zap_address: ChecksumEvmAddress,
             base_reward_tokens: tuple['Asset', 'Asset'],  # this is always the AURA and BAL tokens of the chain  # noqa: E501

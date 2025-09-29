@@ -12,7 +12,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 from .constants import CPT_QUICKSWAP_V4_ROUTER, QUICKSWAP_SWAP_TOPIC, QUICKSWAP_V4_NFT_MANAGER_ABI
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -34,7 +34,7 @@ class Quickswapv4CommonDecoder(Quickswapv3LikeLPDecoder):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
+            base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             swap_router: 'ChecksumEvmAddress',
             nft_manager: 'ChecksumEvmAddress',
