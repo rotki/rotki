@@ -252,7 +252,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                         cursor=cursor,
                         key_parts=(
                             CacheType.BALANCER_V1_POOLS,
-                            str(self.evm_inquirer.chain_id.value),
+                            str(self.node_inquirer.chain_id.value),
                         ),
                     )
                 ],

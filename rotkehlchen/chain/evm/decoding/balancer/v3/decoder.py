@@ -99,14 +99,14 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
             to_notes_template = 'Withdraw {amount} {symbol} from a Balancer v3 pool'
 
-        pool_tokens = self.evm_inquirer.call_contract(
+        pool_tokens = self.node_inquirer.call_contract(
             contract_address=(lp_token_address := bytes_to_address(context.tx_log.topics[1])),
             method_name='getTokens',
             abi=BALANCER_V3_POOL_ABI,
         )
         lp_token_identifier = evm_address_to_identifier(
             address=lp_token_address,
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
         )
         pool_token_event = None
         for event in context.decoded_events:
@@ -148,7 +148,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                     if (
                             event.event_type == from_event_type and
                             event.event_subtype == HistoryEventSubType.NONE and
-                            event.asset == self.evm_inquirer.native_token and
+                            event.asset == self.node_inquirer.native_token and
                             event.amount == amount
                     ):
                         event.event_type = to_event_type
@@ -156,7 +156,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                         event.event_subtype = to_event_subtype
                         event.notes = to_notes_template.format(
                             amount=event.amount,
-                            symbol=self.evm_inquirer.native_token.symbol,
+                            symbol=self.node_inquirer.native_token.symbol,
                         )
                         break
 
@@ -229,9 +229,9 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             # swap log amounts would miss wrapped token portions and only capture direct
             # swap amounts, leading to incomplete event matching across the full transaction flow
             if (token_out := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[2]))) == self.wrapped_native_token:  # noqa: E501
-                out_assets.add(self.evm_inquirer.native_token)
+                out_assets.add(self.node_inquirer.native_token)
             if (token_in := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[3]))) == self.wrapped_native_token:  # noqa: E501
-                in_assets.add(self.evm_inquirer.native_token)
+                in_assets.add(self.node_inquirer.native_token)
 
             in_assets.add(token_in)
             out_assets.add(token_out)

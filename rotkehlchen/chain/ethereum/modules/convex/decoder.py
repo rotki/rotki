@@ -26,7 +26,10 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, STAKED
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import (
+    EvmDecoderInterface,
+    ReloadableCacheDecoderMixin,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -55,7 +58,7 @@ log = RotkehlchenLogsAdapter(logger)
 REWARD_ADDED = b'\xde\x88\xa9"\xe0\xd3\xb8\x8b$\xe9b>\xfe\xb4d\x91\x9ck\xf9\xf6hW\xa6^+\xfc\xf2\xce\x87\xa9C='  # noqa: E501
 
 
-class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
+class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',

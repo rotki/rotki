@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, STAKING_DEPOSIT
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
 from rotkehlchen.chain.optimism.modules.walletconnect.constants import WALLETCONECT_STAKE_WEIGHT
 from rotkehlchen.constants.misc import ZERO
@@ -39,7 +39,7 @@ TOKENS_CLAIMED: Final = b'\x89n\x03If\xea\xaf\x1a\xdcT\xac\xc0\xf2W\x05o\xeb\xbd
 STAKING_WITHDRAW: Final = b"\x02\xf2Rp\xa4\xd8{\xeau\xdbT\x1c\xdf\xe5Y3J'[J#5 \xedl\n$)f|\xca\x94"
 
 
-class WalletconnectDecoder(DecoderInterface, CustomizableDateMixin):
+class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
     def __init__(
             self,

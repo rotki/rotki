@@ -1,10 +1,10 @@
 from abc import ABC
 from collections.abc import Callable
 
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 
 
-class ArbitrumDecoderInterface(DecoderInterface, ABC):
+class ArbitrumDecoderInterface(EvmDecoderInterface, ABC):
 
     def decoding_by_tx_type(self) -> dict[int, list[tuple[int, Callable]]]:
         """Subclasses may implement this Arbitrum specific decoder rule to state

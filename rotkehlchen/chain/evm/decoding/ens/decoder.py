@@ -18,7 +18,7 @@ from rotkehlchen.chain.evm.decoding.ens.constants import (
     TEXT_CHANGED_KEY_ONLY,
     TEXT_CHANGED_KEY_ONLY_ABI,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
+class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
 
     def __init__(
             self,
@@ -75,12 +75,12 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
         token = get_or_create_evm_token(
             userdb=self.database,
             evm_address=context.tx_log.address,
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
             token_kind=TokenKind.ERC721,
             symbol=symbol,
             name=name,
             collectible_id=str(collectible_id := int.from_bytes(context.tx_log.topics[3])),
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
             encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
         )
         transfer_event = self.base.decode_erc20_721_transfer(
@@ -184,7 +184,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
     def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> DecodingOutput:
         """Decode an event that modifies a content hash for the public ENS resolver"""
         node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
-        contract = self.evm_inquirer.contracts.contract_by_address(address=context.tx_log.address)
+        contract = self.node_inquirer.contracts.contract_by_address(address=context.tx_log.address)
         if contract is None:
             self.msg_aggregator.add_error(
                 f'Failed to find {self.display_name} public resolver contract with address '

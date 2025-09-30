@@ -16,7 +16,7 @@ from rotkehlchen.chain.ethereum.modules.puffer.constants import (
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class PufferDecoder(DecoderInterface):
+class PufferDecoder(EvmDecoderInterface):
 
     def _decode_unlockedtokens_claimed(self, context: DecoderContext) -> DecodingOutput:
         """Decode claiming unlocked tokens (airdrop) from puffer"""

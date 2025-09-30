@@ -32,7 +32,10 @@ from rotkehlchen.chain.evm.decoding.extrafi.constants import (
     VOTE_ESCROW,
 )
 from rotkehlchen.chain.evm.decoding.extrafi.utils import maybe_query_farm_data
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import (
+    EvmDecoderInterface,
+    ReloadableCacheDecoderMixin,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -61,7 +64,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
+class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
 
     def __init__(
             self,
@@ -141,7 +144,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
     def _farm_name(self, vault_id: int) -> str:
         _, token0, token1 = maybe_query_farm_data(
             vault_id=vault_id,
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
         )
         return f'{token0.symbol_or_name()}-{token1.symbol_or_name()} farm'
 
@@ -186,7 +189,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         user = bytes_to_address(context.tx_log.topics[1])
         token_identifier = evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[2]),
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
             token_type=TokenKind.ERC20,
         )
         amount = int.from_bytes(context.tx_log.data[0:32])
@@ -277,7 +280,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         if amount_0_borrowed != 0 or amount_1_borrowed != 0:
             _, token0, token1 = maybe_query_farm_data(
                 vault_id=vault_id,
-                evm_inquirer=self.evm_inquirer,
+                evm_inquirer=self.node_inquirer,
             )
             if amount_0_borrowed != 0:
                 borrow_token, amount = token0, asset_normalized_value(amount_0_borrowed, token0)
@@ -418,10 +421,10 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
 
         token_address = bytes_to_address(context.tx_log.topics[2])
         token = get_or_create_evm_token(
-            userdb=self.evm_inquirer.database,
+            userdb=self.node_inquirer.database,
             evm_address=token_address,
-            evm_inquirer=self.evm_inquirer,
-            chain_id=self.evm_inquirer.chain_id,
+            evm_inquirer=self.node_inquirer,
+            chain_id=self.node_inquirer.chain_id,
         )
         claimed = int.from_bytes(context.tx_log.data[0:32])
 

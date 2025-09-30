@@ -6,7 +6,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON, CPT_POLYGON_DETAILS
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -34,7 +34,7 @@ PLASMA_BRIDGE_CHILD_CHAIN: Final = string_to_evm_address('0xD9c7C4ED4B66858301D0
 POL_TOKEN_ADDRESS = string_to_evm_address('0x0000000000000000000000000000000000001010')
 
 
-class PolygonPosBridgeDecoder(DecoderInterface):
+class PolygonPosBridgeDecoder(EvmDecoderInterface):
 
     def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
         """Decodes bridge withdraw events.

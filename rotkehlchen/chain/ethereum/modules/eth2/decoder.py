@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Eth2Decoder(DecoderInterface):
+class Eth2Decoder(EvmDecoderInterface):
 
     def __init__(
             self,

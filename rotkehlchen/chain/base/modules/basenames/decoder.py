@@ -91,8 +91,8 @@ class BasenamesDecoder(EnsCommonDecoder):
 
         # Call the L2 Resolver contract's name method.
         try:
-            if not (name_to_show := self.evm_inquirer.contracts.contract(BASENAMES_L2_RESOLVER).call(  # noqa: E501
-                node_inquirer=self.evm_inquirer,
+            if not (name_to_show := self.node_inquirer.contracts.contract(BASENAMES_L2_RESOLVER).call(  # noqa: E501
+                node_inquirer=self.node_inquirer,
                 method_name='name',
                 arguments=[node],
             )):

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ZeroxCommonDecoder(DecoderInterface):
+class ZeroxCommonDecoder(EvmDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -47,7 +47,7 @@ class ZeroxCommonDecoder(DecoderInterface):
         flash_wallet_address is a contract that can execute arbitrary calls from 0x router_address.
         Docs: https://0x.org/docs/introduction/0x-cheat-sheet#exchange-proxy-addresses"""
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
-        self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
+        self.evm_txns = EvmTransactions(self.node_inquirer, self.base.database)
         self.router_address = router_address
         self.settler_routers_addresses = settler_routers_addresses
         self.flash_wallet_address = flash_wallet_address

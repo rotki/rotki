@@ -10,7 +10,7 @@ from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import (
 )
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class HyperliquidDecoder(DecoderInterface):
+class HyperliquidDecoder(EvmDecoderInterface):
     """Hyperliquid deposit/withdrawals work only with USDC"""
 
     def _process_deposit(

@@ -5,7 +5,7 @@ from eth_abi import decode as decode_abi
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -50,7 +50,7 @@ DEPOSIT_ERC20: Final = b'1\xcd;\x97nMe@"\xbf\x95\xc6\x8a,\xe5?\x1d]\x94\xaf\xab\
 FINALIZE_WITHDRAW_ERC20: Final = b'\xc6\xf9\x85\x87;7\x80W\x05\xf6\xbc\xe7V\xdc\xe3\xd1\xffK`>)\x8dPb\x88\xcc\xe4\x99\x92hF\xa7'  # noqa: E501
 
 
-class ScrollBridgeDecoder(DecoderInterface):
+class ScrollBridgeDecoder(EvmDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EthereumInquirer',

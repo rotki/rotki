@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import YGOV_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.constants.assets import A_CRVP_DAIUSDCTTUSD, A_YFI
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class YearnygovDecoder(DecoderInterface):
+class YearnygovDecoder(EvmDecoderInterface):
 
     def __init__(
             self,

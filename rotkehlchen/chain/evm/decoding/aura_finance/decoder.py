@@ -17,7 +17,7 @@ from rotkehlchen.chain.evm.constants import (
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AuraFinanceCommonDecoder(DecoderInterface):
+class AuraFinanceCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -106,20 +106,20 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.asset == self.evm_inquirer.native_token
+                event.asset == self.node_inquirer.native_token
             ):  # Refund event (if any) comes first
                 refund_event = event
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.asset == self.evm_inquirer.native_token
+                event.asset == self.node_inquirer.native_token
             ):
                 event.counterparty = CPT_AURA_FINANCE
                 event.event_subtype = HistoryEventSubType.FEE
                 # Calculate bridge fee, accounting for potential refunds
                 actual_bridge_fee = event.amount if refund_event is None else event.amount - refund_event.amount  # noqa: E501
                 event.amount = actual_bridge_fee
-                event.notes = f'Pay {actual_bridge_fee} {self.evm_inquirer.native_token.symbol} as bridge fee (to Ethereum)'  # noqa: E501
+                event.notes = f'Pay {actual_bridge_fee} {self.node_inquirer.native_token.symbol} as bridge fee (to Ethereum)'  # noqa: E501
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -315,7 +315,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        if self.evm_inquirer.chain_id == ChainID.ETHEREUM:
+        if self.node_inquirer.chain_id == ChainID.ETHEREUM:
             return {
                 AURA_ETHEREUM_BOOSTER_ADDRESS: (self._decode_booster_event,),
             }
@@ -332,9 +332,9 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             CLAIM_REWARDS_L2_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
             WITHDRAW_AND_UNWRAP_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
         }
-        if self.evm_inquirer.chain_id in (ChainID.ETHEREUM, ChainID.BASE):
+        if self.node_inquirer.chain_id in (ChainID.ETHEREUM, ChainID.BASE):
             decoders[LOCK_ETHEREUM_AND_BASE_4BYTE] = {AURA_STAKED_TOPIC: self._decode_lock_aura}
-        if self.evm_inquirer.chain_id != ChainID.ETHEREUM:
+        if self.node_inquirer.chain_id != ChainID.ETHEREUM:
             decoders[LOCK_4BYTE] = {LOCKED_TOPIC: self._decode_lock_aura_bridged}
 
         return decoders

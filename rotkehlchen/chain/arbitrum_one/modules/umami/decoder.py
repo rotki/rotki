@@ -269,7 +269,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
         return {
             token.evm_address: (self._decode_umami_vault_events,)
             for token in GlobalDBHandler.get_evm_tokens(
-                    chain_id=self.evm_inquirer.chain_id,
+                    chain_id=self.node_inquirer.chain_id,
                     protocol=CPT_UMAMI,
             )
         } | {UMAMI_STAKING_CONTRACT: (self._decode_umami_staking_events,)}

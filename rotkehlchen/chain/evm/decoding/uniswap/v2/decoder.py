@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Final
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 UNISWAP_V2_INIT_CODE_HASH: Final = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f'  # noqa: E501
 
 
-class Uniswapv2CommonDecoder(DecoderInterface):
+class Uniswapv2CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -76,7 +76,7 @@ class Uniswapv2CommonDecoder(DecoderInterface):
             decoded_events=decoded_events,
             counterparty=CPT_UNISWAP_V2,
             notify_user=self.notify_user,
-            native_currency=self.evm_inquirer.native_token,
+            native_currency=self.node_inquirer.native_token,
         )
 
     def _maybe_decode_v2_swap(
@@ -99,8 +99,8 @@ class Uniswapv2CommonDecoder(DecoderInterface):
                     transaction=transaction,
                     counterparty=CPT_UNISWAP_V2,
                     router_address=self.router_address,
-                    database=self.evm_inquirer.database,
-                    evm_inquirer=self.evm_inquirer,
+                    database=self.node_inquirer.database,
+                    evm_inquirer=self.node_inquirer,
                     notify_user=self.notify_user,
                 )
 
@@ -126,8 +126,8 @@ class Uniswapv2CommonDecoder(DecoderInterface):
                 all_logs=all_logs,
                 is_deposit=True,
                 counterparty=CPT_UNISWAP_V2,
-                evm_inquirer=self.evm_inquirer,
-                database=self.evm_inquirer.database,
+                evm_inquirer=self.node_inquirer,
+                database=self.node_inquirer.database,
                 factory_address=self.factory_address,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
@@ -139,8 +139,8 @@ class Uniswapv2CommonDecoder(DecoderInterface):
                 all_logs=all_logs,
                 is_deposit=False,
                 counterparty=CPT_UNISWAP_V2,
-                evm_inquirer=self.evm_inquirer,
-                database=self.evm_inquirer.database,
+                evm_inquirer=self.node_inquirer,
+                database=self.node_inquirer.database,
                 factory_address=self.factory_address,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,

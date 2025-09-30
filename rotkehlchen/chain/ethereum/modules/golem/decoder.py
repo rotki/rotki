@@ -5,7 +5,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.constants import MIGRATED
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GolemDecoder(DecoderInterface):
+class GolemDecoder(EvmDecoderInterface):
 
     def _decode_migration(self, context: DecoderContext) -> DecodingOutput:
         """Decode GNT -> GLM migration"""

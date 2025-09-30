@@ -37,7 +37,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     read_curve_pools_and_gauges,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import (
-    DecoderInterface,
+    EvmDecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
+class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
 
     def __init__(
             self,
@@ -410,7 +410,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 if _log.topics[0] in ADD_LIQUIDITY_EVENTS:
                     lp_and_gauge_token_addresses = get_lp_and_gauge_token_addresses(
                         pool_address=_log.address,
-                        chain_id=self.evm_inquirer.chain_id,
+                        chain_id=self.node_inquirer.chain_id,
                     )
 
             if lp_and_gauge_token_addresses is not None:
@@ -617,7 +617,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         """
         if (pool_addresses := self.pools.get(context.tx_log.address)) is None:
             log.error(
-                f'Curve pool for {self.evm_inquirer.chain_name} {context.tx_log.address} '
+                f'Curve pool for {self.node_inquirer.chain_name} {context.tx_log.address} '
                 f'not present in cache at {context.transaction.tx_hash.hex()}. Skipping',
             )
             return DEFAULT_DECODING_OUTPUT
@@ -631,7 +631,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         pool_assets = [
             Asset(evm_address_to_identifier(
                 address=address,
-                chain_id=self.evm_inquirer.chain_id,
+                chain_id=self.node_inquirer.chain_id,
                 token_type=TokenKind.ERC20,
             )) if address != ETH_SPECIAL_ADDRESS else A_ETH for address in pool_addresses
         ]
@@ -723,7 +723,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         # get pool tokens for this gauge
         lp_and_gauge_token_addresses = get_lp_and_gauge_token_addresses(
             pool_address=context.tx_log.address,
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
         )
         pool_tokens = []
         for address in lp_and_gauge_token_addresses:

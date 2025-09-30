@@ -63,7 +63,7 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 userdb=self.base.database,
                 cache_key=CacheType.CURVE_CRVUSD_CONTROLLERS,
         ) is True:
-            query_crvusd_controllers(evm_inquirer=self.evm_inquirer)
+            query_crvusd_controllers(evm_inquirer=self.node_inquirer)
         elif len(self.controllers) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
 
@@ -72,7 +72,7 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 cursor=cursor,
                 key_parts=(
                     CacheType.CURVE_CRVUSD_CONTROLLERS,
-                    str(self.evm_inquirer.chain_id.serialize_for_db()),
+                    str(self.node_inquirer.chain_id.serialize_for_db()),
                 ),
             ))
 

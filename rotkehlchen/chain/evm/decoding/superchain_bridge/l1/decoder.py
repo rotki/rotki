@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -31,7 +31,7 @@ ETH_WITHDRAWAL_FINALIZED: Final = b'*\xc6\x9e\xe8\x04\xd9\xa7\xa0\x98BI\xf5\x08\
 WITHDRAWAL_PROVEN: Final = b'g\xa6 \x8c\xfc\xc0\x80\x1dP\xf6\xcb\xe7ds?O\xdd\xf6j\xc0\xb0DB\x06\x1a\x8a\x8c\x0c\xb6\xb6?b'  # noqa: E501
 
 
-class SuperchainL1SideCommonBridgeDecoder(DecoderInterface, ABC):
+class SuperchainL1SideCommonBridgeDecoder(EvmDecoderInterface, ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',

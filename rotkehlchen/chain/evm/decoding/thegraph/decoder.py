@@ -6,7 +6,7 @@ from eth_typing.abi import ABI
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -49,7 +49,7 @@ GRAPH_TOKEN_LOCK_WALLET_ABI: Final[ABI] = [
 ]
 
 
-class ThegraphCommonDecoder(DecoderInterface):
+class ThegraphCommonDecoder(EvmDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -78,9 +78,9 @@ class ThegraphCommonDecoder(DecoderInterface):
 
     def get_user_address(self, address: ChecksumEvmAddress, address_l2: ChecksumEvmAddress | None = None) -> ChecksumEvmAddress | None:  # noqa: E501
         """Get the user address (benficiary) from the vesting contract on L2 if it exists"""
-        if self.evm_inquirer.get_code(address) != '0x':
+        if self.node_inquirer.get_code(address) != '0x':
             try:
-                raw_beneficiary_address = self.evm_inquirer.call_contract(
+                raw_beneficiary_address = self.node_inquirer.call_contract(
                     contract_address=address,  # the vesting contract
                     abi=GRAPH_TOKEN_LOCK_WALLET_ABI,
                     method_name='beneficiary',
@@ -146,8 +146,8 @@ class ThegraphCommonDecoder(DecoderInterface):
         # Reset the LAST_GRAPH_DELEGATIONS_CHECK_TS to Timestamp(0) to ensure the task runs more
         # frequently on decoding related events, rather than making users wait a whole day
         # to query event logs and get the balances detected.
-        with self.evm_inquirer.database.user_write() as write_cursor:
-            self.evm_inquirer.database.set_static_cache(
+        with self.node_inquirer.database.user_write() as write_cursor:
+            self.node_inquirer.database.set_static_cache(
                 write_cursor=write_cursor,
                 name=DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
                 value=Timestamp(0),

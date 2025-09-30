@@ -19,7 +19,10 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
     read_gearbox_data_from_cache,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import (
+    EvmDecoderInterface,
+    ReloadableCacheDecoderMixin,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -54,7 +57,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
+class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -74,7 +77,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             cache_type_to_check_for_freshness=CacheType.GEARBOX_POOL_ADDRESS,
             query_data_method=query_gearbox_data,
             read_data_from_cache_method=read_gearbox_data_from_cache,
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
         )
         self.staking_contract = staking_contract
         self.gear_token_identifier = gear_token_identifier
@@ -94,7 +97,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         May raise:
             IndexError: if there is no underlying token detected for the farming token
         """
-        return token.underlying_tokens[0].get_identifier(self.evm_inquirer.chain_id) in {
+        return token.underlying_tokens[0].get_identifier(self.node_inquirer.chain_id) in {
             A_WETH,
             A_WETH_ARB,
             A_WETH_OPT,
@@ -110,7 +113,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         try:
             pool_info = self.pools[context.tx_log.address]
         except KeyError:
-            log.error(f'Could not find {self.evm_inquirer.chain_name} Gearbox pool info for {context.tx_log.address}')  # noqa: E501
+            log.error(f'Could not find {self.node_inquirer.chain_name} Gearbox pool info for {context.tx_log.address}')  # noqa: E501
             return None
 
         token = EvmToken(pool_info.farming_pool_token)
@@ -253,7 +256,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.notes = f'Stake {amount} GEAR'
                 break
         else:
-            log.error(f'Could not find matching spend event for {self.evm_inquirer.chain_name} gearbox staking deposit {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find matching spend event for {self.node_inquirer.chain_name} gearbox staking deposit {context.transaction.tx_hash.hex()}')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -277,7 +280,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.notes = f'Unstake {amount} GEAR'
                 break
         else:
-            log.error(f'Could not find matching receive event for {self.evm_inquirer.chain_name} gearbox unstaking withdrawal {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find matching receive event for {self.node_inquirer.chain_name} gearbox unstaking withdrawal {context.transaction.tx_hash.hex()}')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 

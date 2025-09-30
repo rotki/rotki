@@ -17,7 +17,7 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import (
     ERC20_OR_ERC721_TRANSFER,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -88,33 +88,33 @@ CDPMANAGER_MOVE = b'\xf9\xf3\r\xb6\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x
 CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
 
 
-class MakerdaoDecoder(DecoderInterface):
+class MakerdaoDecoder(EvmDecoderInterface):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        DecoderInterface.__init__(
+        EvmDecoderInterface.__init__(
             self,
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.evm_inquirer: EthereumInquirer
+        self.node_inquirer: EthereumInquirer
         self.base = base_tools
         self.dai = A_DAI.resolve_to_evm_token()
         self.sai = A_SAI.resolve_to_evm_token()
-        self.makerdao_cdp_manager = self.evm_inquirer.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
-        self.makerdao_dai_join = self.evm_inquirer.contracts.contract(DAI_JOIN_ADDRESS)
+        self.makerdao_cdp_manager = self.node_inquirer.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
+        self.makerdao_dai_join = self.node_inquirer.contracts.contract(DAI_JOIN_ADDRESS)
 
     def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         if self.base.is_tracked(address):
             return address
 
         # not directly from our account. Proxy?
-        self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)
-        proxy_owner = self.evm_inquirer.proxies_inquirer.proxy_to_address[
+        self.node_inquirer.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)
+        proxy_owner = self.node_inquirer.proxies_inquirer.proxy_to_address[
             ProxyType.DS
         ].get(address)
         if proxy_owner is not None and self.base.is_tracked(proxy_owner):
@@ -135,7 +135,7 @@ class MakerdaoDecoder(DecoderInterface):
         - RemoteError if query to the node failed
         - DeserializationError if the query returns unexpected output
         """
-        output = self.evm_inquirer.multicall(
+        output = self.node_inquirer.multicall(
             calls=[(
                 self.makerdao_cdp_manager.address,
                 self.makerdao_cdp_manager.encode(method_name='urns', arguments=[cdp_id]),

@@ -5,6 +5,7 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.utils import (
@@ -29,7 +30,6 @@ from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
-    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import VelodromePoolData
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -78,7 +78,7 @@ CACHE_QUERY_METHOD_TYPE = (
 )
 
 
-class DecoderInterface(ABC):
+class EvmDecoderInterface(DecoderInterface['ChecksumEvmAddress', 'EvmNodeInquirer', 'BaseEvmDecoderTools'], ABC):  # noqa: E501
 
     def __init__(
             self,
@@ -87,20 +87,11 @@ class DecoderInterface(ABC):
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         """This is the Decoder interface initialization signature"""
-        self.base = base_tools
+        super().__init__(
+            node_inquirer=evm_inquirer,
+            base_tools=base_tools,
+        )
         self.msg_aggregator = msg_aggregator
-        self.evm_inquirer = evm_inquirer
-
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        """Subclasses may implement this to return the mappings of addresses to decode functions"""
-        return {}
-
-    @staticmethod
-    @abstractmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
-        """
-        Subclasses implement this to specify which counterparty values are introduced by the module
-        """
 
     def decoding_rules(self) -> list[Callable]:
         """
@@ -191,7 +182,7 @@ GOVERNORALPHA_PROPOSE: Final = b"}\x84\xa6&:\xe0\xd9\x8d3)\xbd{F\xbbN\x8do\x98\x
 GOVERNORALPHA_PROPOSE_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"address","name":"proposer","type":"address"},{"indexed":false,"internalType":"address[]","name":"targets","type":"address[]"},{"indexed":false,"internalType":"uint256[]","name":"values","type":"uint256[]"},{"indexed":false,"internalType":"string[]","name":"signatures","type":"string[]"},{"indexed":false,"internalType":"bytes[]","name":"calldatas","type":"bytes[]"},{"indexed":false,"internalType":"uint256","name":"startBlock","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"endBlock","type":"uint256"},{"indexed":false,"internalType":"string","name":"description","type":"string"}],"name":"ProposalCreated","type":"event"}'  # noqa: E501
 
 
-class MerkleClaimDecoderInterface(DecoderInterface, ABC):
+class MerkleClaimDecoderInterface(EvmDecoderInterface, ABC):
     """Decoders of protocols containing a merkle airdrop claim"""
 
     def _maybe_enrich_claim_transfer(
@@ -274,7 +265,7 @@ class VoteChoice(StrEnum):
     ABSTAIN = auto()
 
 
-class GovernableDecoderInterface(DecoderInterface, ABC):
+class GovernableDecoderInterface(EvmDecoderInterface, ABC):
     """Decoders of protocols that have voting in Governance
 
     Inheriting decoder classes should add the _decode_governance() method
@@ -288,7 +279,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             protocol: str,
             proposals_url: str,
     ) -> None:
-        DecoderInterface.__init__(
+        EvmDecoderInterface.__init__(
             self,
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -546,7 +537,7 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, ABC):
         return (self._decode_pool_events, self._decode_gauge_events)
 
 
-class CommonGrantsDecoderMixin(DecoderInterface, ABC):
+class CommonGrantsDecoderMixin(EvmDecoderInterface, ABC):
     """Abstracting some common functionality of grants decoders. Specifically
     gitcoin cgrants and CLRfund"""
 
@@ -593,7 +584,7 @@ class CommonGrantsDecoderMixin(DecoderInterface, ABC):
 
         else:
             log.error(
-                f'Failed to find the {counterparty} matching receive transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+                f'Failed to find the {counterparty} matching receive transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
             )
 
         return DEFAULT_DECODING_OUTPUT

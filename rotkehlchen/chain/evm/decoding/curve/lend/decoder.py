@@ -91,8 +91,8 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 cache_key=CacheType.CURVE_LENDING_VAULTS,
         ) is True:
             query_curve_lending_vaults(
-                database=self.evm_inquirer.database,
-                chain_id=self.evm_inquirer.chain_id,
+                database=self.node_inquirer.database,
+                chain_id=self.node_inquirer.chain_id,
             )
         elif len(self.vaults) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
@@ -103,7 +103,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 'ON evm_tokens.identifier = common_asset_details.identifier '
                 'WHERE protocol=? AND symbol=? AND chain=?'
             )
-            bindings = (CPT_CURVE, CURVE_LEND_VAULT_SYMBOL, self.evm_inquirer.chain_id.serialize_for_db())  # noqa: E501
+            bindings = (CPT_CURVE, CURVE_LEND_VAULT_SYMBOL, self.node_inquirer.chain_id.serialize_for_db())  # noqa: E501
 
             cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
             if cursor.fetchone()[0] == len(self.vaults):
@@ -282,7 +282,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             ).fetchone()) is None:
                 log.error(
                     'Failed to find Curve lending vault address for controller '
-                    f'{controller_address} on {self.evm_inquirer.chain_name}',
+                    f'{controller_address} on {self.node_inquirer.chain_name}',
                 )
                 return None
 
@@ -310,7 +310,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
         )) is None:
             log.error(
                 'Failed to get borrowed token for Curve lending vault '
-                f'{vault_address} on {self.evm_inquirer.chain_name}',
+                f'{vault_address} on {self.node_inquirer.chain_name}',
             )
             return None
 

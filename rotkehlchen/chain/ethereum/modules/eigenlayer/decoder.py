@@ -324,7 +324,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         """
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_EIGENLAYER],
-            location=Location.from_chain_id(self.evm_inquirer.chain_id),
+            location=Location.from_chain_id(self.node_inquirer.chain_id),
             to_ts=context.transaction.timestamp,
             event_types=[HistoryEventType.INFORMATIONAL],
             event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
@@ -398,7 +398,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
     def _decode_withdrawal_queued(self, context: DecoderContext) -> DecodingOutput:
         """Creates and adds a queued withdrawal for each withdrawal in the event"""
-        contract = self.evm_inquirer.contracts.contract(EIGENLAYER_DELEGATION)
+        contract = self.node_inquirer.contracts.contract(EIGENLAYER_DELEGATION)
         _, log_data = contract.decode_event(tx_log=context.tx_log, event_name='WithdrawalQueued', argument_names=('withdrawalRoot', 'withdrawal'))  # noqa: E501
         if not self.base.any_tracked([staker := log_data[1][0], withdrawer := log_data[1][2]]):
             return DEFAULT_DECODING_OUTPUT
@@ -472,7 +472,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
             ])
 
-        output = self.evm_inquirer.multicall(calls=calls)
+        output = self.node_inquirer.multicall(calls=calls)
         for raw_address, raw_amount in pairwise(output):
             underlying_tokens.append(underlying_token := self.base.get_or_create_evm_token(
                 address=bytes_to_address(raw_address),

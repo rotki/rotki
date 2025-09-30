@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Uniswapv4CommonDecoder(DecoderInterface):
+class Uniswapv4CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -66,7 +66,7 @@ class Uniswapv4CommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] != MODIFY_LIQUIDITY:
             return DEFAULT_DECODING_OUTPUT
 
-        if len(pool_info := self.evm_inquirer.call_contract(
+        if len(pool_info := self.node_inquirer.call_contract(
             contract_address=self.position_manager,
             abi=POSITION_MANAGER_ABI,
             method_name='poolKeys',
@@ -173,7 +173,7 @@ class Uniswapv4CommonDecoder(DecoderInterface):
         """
         return decode_uniswap_v3_like_position_create_or_exit(
             decoded_events=decoded_events,
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
             nft_manager=self.position_manager,
             counterparty=CPT_UNISWAP_V4,
             token_symbol='UNI-V4-POS',

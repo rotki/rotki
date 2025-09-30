@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL, SCROLL_CPT_DETAILS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -25,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 EXECUTION_SUCCESS_TOPIC: Final = b"D.q_bcF\xe8\xc5C\x81\x00-\xa6\x14\xf6+\xee\x8d'8e5\xb2R\x1e\xc8T\x08\x98Un"  # noqa: E501
 
 
-class ScrollAirdropDecoder(DecoderInterface):
+class ScrollAirdropDecoder(EvmDecoderInterface):
 
     def _decode_airdop_claim(self, context: 'DecoderContext') -> 'DecodingOutput':
         """Decodes scroll SCR airdrop claim event."""

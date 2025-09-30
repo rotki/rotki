@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.stakedao.utils import (
     query_stakedao_gauges,
 )
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     """Base decoder for Stake DAO protocol.
 
     Note: There is no claim contract deployed on Binance or Base chains,
@@ -81,9 +81,9 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         if should_update_protocol_cache(
                 userdb=self.base.database,
                 cache_key=CacheType.STAKEDAO_GAUGES,
-                args=(str(self.evm_inquirer.chain_id.serialize()),),
+                args=(str(self.node_inquirer.chain_id.serialize()),),
         ) is True:
-            query_stakedao_gauges(self.evm_inquirer)
+            query_stakedao_gauges(self.node_inquirer)
 
         if len(self.gauges) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
@@ -91,7 +91,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         with GlobalDBHandler().conn.read_ctx() as cursor:
             self.gauges = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
                 cursor=cursor,
-                key_parts=(CacheType.STAKEDAO_GAUGES, str(self.evm_inquirer.chain_id.serialize())),
+                key_parts=(CacheType.STAKEDAO_GAUGES, str(self.node_inquirer.chain_id.serialize())),  # noqa: E501
             ))
 
         return self.addresses_to_decoders()
@@ -111,8 +111,8 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         claimed_token = get_or_create_evm_token(
             userdb=self.base.database,
             evm_address=reward_token_address,
-            chain_id=self.evm_inquirer.chain_id,
-            evm_inquirer=self.evm_inquirer,
+            chain_id=self.node_inquirer.chain_id,
+            evm_inquirer=self.node_inquirer,
         )
         normalized_amount = token_normalized_value(amount, claimed_token)
         for event in context.decoded_events:
@@ -227,7 +227,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.notes = f'Claim {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from StakeDAO'  # noqa: E501
 
-        vault_address = deserialize_evm_address(self.evm_inquirer.call_contract(
+        vault_address = deserialize_evm_address(self.node_inquirer.call_contract(
             contract_address=context.tx_log.address,
             abi=STAKEDAO_GAUGE_ABI,
             method_name='vault',
@@ -276,7 +276,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         # retrieve the underlying token of the vault
         received_amount = asset_normalized_value(
             amount=removed_raw_amount,
-            asset=(received_token := self.base.get_or_create_evm_token(deserialize_evm_address(self.evm_inquirer.call_contract(  # noqa: E501
+            asset=(received_token := self.base.get_or_create_evm_token(deserialize_evm_address(self.node_inquirer.call_contract(  # noqa: E501
                 contract_address=vault_address,
                 abi=STAKEDAO_VAULT_ABI,
                 method_name='token',

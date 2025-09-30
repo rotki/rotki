@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Final
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
+class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -77,20 +77,20 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
 
         if l1_token_address == ZERO_ADDRESS:
             # This means that ETH was bridged
-            asset = self.evm_inquirer.native_token
+            asset = self.node_inquirer.native_token
             valid_assets = self.native_assets
         else:
             # Otherwise it is an ERC20 token bridging event
             try:
                 asset = EvmToken(identifier=evm_address_to_identifier(
                     address=l2_token_address,
-                    chain_id=self.evm_inquirer.chain_id,
+                    chain_id=self.node_inquirer.chain_id,
                     token_type=TokenKind.ERC20,
                 ))
                 valid_assets = (asset,)
             except (UnknownAsset, WrongAssetType):
                 # can't call `notify_user`` since we don't have any particular event here.
-                log.error(f'Failed to resolve asset with address {l2_token_address} to an {self.evm_inquirer.chain_name} token')  # noqa: E501
+                log.error(f'Failed to resolve asset with address {l2_token_address} to an {self.node_inquirer.chain_name} token')  # noqa: E501
                 return DEFAULT_DECODING_OUTPUT
 
         amount = asset_normalized_value(asset=asset, amount=raw_amount)
@@ -98,7 +98,7 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501
             tx_log=context.tx_log,  # args are opposite here due to the way logs are
             deposit_topics=(WITHDRAWAL_INITIATED,),
-            source_chain=self.evm_inquirer.chain_id,
+            source_chain=self.node_inquirer.chain_id,
             target_chain=ChainID.ETHEREUM,
             from_address=to_address,
             to_address=from_address,

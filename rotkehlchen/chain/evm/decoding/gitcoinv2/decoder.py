@@ -26,7 +26,7 @@ from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import (
     VOTED_WITH_ORIGIN,
     VOTED_WITHOUT_APPLICATION_IDX,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GitcoinV2CommonDecoder(DecoderInterface, ABC):
+class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
     """This is the gitcoin v2 (allo protocol) common decoder
 
     Not the same as gitcoin v1, or v1.5 (they have changed contracts many times).
@@ -113,7 +113,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         if (recipient_address := self.recipient_id_to_addr.get(recipient_id)) is not None:
             return recipient_address
 
-        result = self.evm_inquirer.call_contract(
+        result = self.node_inquirer.call_contract(
             contract_address=contract_address,
             abi=GET_RECIPIENT_ABI,
             method_name='getRecipient',
@@ -263,7 +263,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         token_address = bytes_to_address(context.tx_log.data[32:64])
         amount_raw = int.from_bytes(context.tx_log.data[:32])
         if token_address == ETH_SPECIAL_ADDRESS:
-            asset = self.evm_inquirer.native_token
+            asset = self.node_inquirer.native_token
         else:
             asset = self.base.get_or_create_evm_token(token_address)
 
@@ -346,7 +346,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         paying_contract_address = bytes_to_address(context.tx_log.topics[paying_contract_idx])
         token_address = bytes_to_address(context.tx_log.data[:32])
         if token_address == ZERO_ADDRESS:
-            asset = self.evm_inquirer.native_token
+            asset = self.node_inquirer.native_token
         else:
             asset = self.base.get_or_create_evm_token(token_address)
         amount_raw = int.from_bytes(context.tx_log.data[32:64])
@@ -374,7 +374,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         else:
             log.error(
                 f'Could not find a corresponding event for donation to {receiver}'
-                f' in {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
             )
 
         return DEFAULT_DECODING_OUTPUT
@@ -509,7 +509,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         else:
             log.error(
                 f'Could not find a corresponding event for round payout to {grantee}'
-                f' in {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
             )
 
         return DEFAULT_DECODING_OUTPUT

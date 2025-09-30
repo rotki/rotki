@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -45,7 +45,7 @@ MAKERDAO_SAITAP_CONTRACT = string_to_evm_address('0xBda109309f9FafA6Dd6A9CB9f1Df
 MAKERDAO_SAI_PROXY_CONTRACT = string_to_evm_address('0x526af336D614adE5cc252A407062B8861aF998F5')
 
 
-class MakerdaosaiDecoder(DecoderInterface):
+class MakerdaosaiDecoder(EvmDecoderInterface):
     """
     Information relating to event topics and contracts came from:
     https://github.com/makerdao/sai/blob/d28fe5074af7c661fb3aa7f117ad419fb6414b91/DEVELOPING.md

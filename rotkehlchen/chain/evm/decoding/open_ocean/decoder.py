@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OpenOceanDecoder(DecoderInterface, ABC):
+class OpenOceanDecoder(EvmDecoderInterface, ABC):
 
     def _get_asset_and_amount(
             self,
@@ -46,10 +46,10 @@ class OpenOceanDecoder(DecoderInterface, ABC):
         Uses native token if address is ZERO_ADDRESS:
         https://github.com/openocean-finance/OpenOceanExchangeV2/blob/5e83cc1cf0a29a3ab23e405f9528b876ff8b1478/contracts/libraries/UniversalERC20.sol#L62
         """
-        asset = self.base.get_or_create_evm_asset(address=asset_address) if asset_address != ZERO_ADDRESS else self.evm_inquirer.native_token  # noqa: E501
+        asset = self.base.get_or_create_evm_asset(address=asset_address) if asset_address != ZERO_ADDRESS else self.node_inquirer.native_token  # noqa: E501
         amount = token_normalized_value_decimals(
             token_amount=raw_amount,
-            token_decimals=DEFAULT_TOKEN_DECIMALS if asset == self.evm_inquirer.native_token else asset.resolve_to_evm_token().decimals,  # noqa: E501
+            token_decimals=DEFAULT_TOKEN_DECIMALS if asset == self.node_inquirer.native_token else asset.resolve_to_evm_token().decimals,  # noqa: E501
         )
         return asset, amount
 

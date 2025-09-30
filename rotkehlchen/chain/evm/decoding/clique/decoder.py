@@ -2,14 +2,14 @@ from abc import ABC
 
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 
-class CliqueAirdropDecoderInterface(DecoderInterface, ABC):
+class CliqueAirdropDecoderInterface(EvmDecoderInterface, ABC):
     """Decoders of protocols using clique airdrop claim"""
 
     def _decode_claim(self, context: DecoderContext) -> tuple[ChecksumEvmAddress, FVal] | None:

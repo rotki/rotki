@@ -89,7 +89,7 @@ class EfpDecoder(EfpCommonDecoder):
             location_label=(user_address := bytes_to_address(context.tx_log.topics[2])),
             asset=Asset(evm_address_to_identifier(  # EFP List NFT
                 address=EFP_LIST_REGISTRY,
-                chain_id=self.evm_inquirer.chain_id,
+                chain_id=self.node_inquirer.chain_id,
                 token_type=TokenKind.ERC721,
                 collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
             )),

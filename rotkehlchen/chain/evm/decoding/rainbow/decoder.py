@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     EnricherContext,
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class RainbowDecoder(DecoderInterface):
+class RainbowDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -47,7 +47,7 @@ class RainbowDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
+        self.evm_txns = EvmTransactions(self.node_inquirer, self.base.database)
 
     def _create_and_append_fee_event(
             self,
@@ -147,7 +147,7 @@ class RainbowDecoder(DecoderInterface):
         swapped_amount = out_event.amount
         # if we are dealing with eth swaps check the internal transfers of eth from/to
         # the rainbow router
-        if self.evm_inquirer.native_token in {out_event.asset, in_event.asset}:
+        if self.node_inquirer.native_token in {out_event.asset, in_event.asset}:
             for internal_tx in self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
                 tx_hash=transaction.tx_hash,
                 chain_id=self.base.evm_inquirer.chain_id,
@@ -168,18 +168,18 @@ class RainbowDecoder(DecoderInterface):
         # that the proxy sends to the swap solver
         fee_asset = fee_amount = None
         if (
-            out_event.asset == self.evm_inquirer.native_token and
+            out_event.asset == self.node_inquirer.native_token and
             (possible_fee_amount := out_event.amount - swapped_amount) > 0
         ):
             fee_amount = possible_fee_amount
             out_event.amount -= fee_amount
-            fee_asset = self.evm_inquirer.native_token
+            fee_asset = self.node_inquirer.native_token
         elif (
-            in_event.asset == self.evm_inquirer.native_token and
+            in_event.asset == self.node_inquirer.native_token and
             (possible_fee_amount := swapped_amount - in_event.amount) > 0
         ):
             fee_amount = possible_fee_amount
-            fee_asset = self.evm_inquirer.native_token
+            fee_asset = self.node_inquirer.native_token
         else:  # token transfer
             # check the event logs for the transfers made by the router to find if the fee was
             # taken from the asset sent or the asset received

@@ -5,7 +5,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import STAKED
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -30,13 +30,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class RunmoneyDecoder(DecoderInterface):
+class RunmoneyDecoder(EvmDecoderInterface):
     def _decode_join_event(self, context: DecoderContext) -> DecodingOutput:
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset == self.evm_inquirer.native_token
+                    event.asset == self.node_inquirer.native_token
             ):
                 event.counterparty = CPT_RUNMONEY
                 event.event_type = HistoryEventType.TRADE

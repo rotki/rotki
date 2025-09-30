@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import REWARD_CLAIMED
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class MerklDecoder(DecoderInterface):
+class MerklDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -67,7 +67,7 @@ class MerklDecoder(DecoderInterface):
                 protocol = get_merkl_protocol_for_token(
                     account=user_address,
                     token=claimed_asset_addr,
-                    chain_id=self.evm_inquirer.chain_id,
+                    chain_id=self.node_inquirer.chain_id,
                 )
                 from_str = f'{protocol} via Merkl' if protocol else 'Merkl'
                 event.notes = f'Claim {event.amount} {claimed_asset.symbol} from {from_str}'

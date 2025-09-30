@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.constants import (
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP, HOP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.hop.structures import HopBridgeEventData
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class HopCommonDecoder(DecoderInterface):
+class HopCommonDecoder(EvmDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -70,7 +70,7 @@ class HopCommonDecoder(DecoderInterface):
             bridges: dict[ChecksumEvmAddress, HopBridgeEventData],
             reward_contracts: set[ChecksumEvmAddress],
     ) -> None:
-        DecoderInterface.__init__(  # forced to use this instead of super
+        EvmDecoderInterface.__init__(  # forced to use this instead of super
             self,  # in ordere to "address" the diamond inheritance problem
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -380,7 +380,7 @@ class HopCommonDecoder(DecoderInterface):
                         pool_address=context.tx_log.address,
                     )
                 except (WrongAssetType, UnknownAsset) as e:
-                    log.error(f'Could not resolve {event.asset!s} in {self.evm_inquirer.chain_name} while decoding AddLiquidity in Hop: {e!s}')  # noqa: E501
+                    log.error(f'Could not resolve {event.asset!s} in {self.node_inquirer.chain_name} while decoding AddLiquidity in Hop: {e!s}')  # noqa: E501
 
         maybe_reshuffle_events(
             ordered_events=[out_event1, out_event2, in_event],
@@ -423,7 +423,7 @@ class HopCommonDecoder(DecoderInterface):
         if (swap_asset_id := self.swaps_to_asset.get(context.tx_log.address)) is None:
             log.error(
                 f'Could not find asset for the saddle swap address while decoding '
-                f'{self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',
+                f'{self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',
             )
             return None
 

@@ -7,7 +7,7 @@ from eth_abi import decode as decode_abi
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -48,7 +48,7 @@ RELAYED_MESSAGE: Final = b"FA\xdfJ\x96 q\xe1'\x19\xd8\xc8\xc8\xe5\xac\x7f\xc4\xd
 RELAY_MESSAGE: Final = b'\x8e\xf13.'
 
 
-class ScrollBridgeDecoder(DecoderInterface):
+class ScrollBridgeDecoder(EvmDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'ScrollInquirer',

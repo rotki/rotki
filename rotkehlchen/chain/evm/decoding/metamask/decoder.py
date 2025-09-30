@@ -4,7 +4,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.constants import AMM_POSSIBLE_COUNTERPARTIES
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class MetamaskCommonDecoder(DecoderInterface):
+class MetamaskCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -57,7 +57,7 @@ class MetamaskCommonDecoder(DecoderInterface):
         for log in context.all_logs:
             if log.topics[0] == METAMASK_FEE_TOPIC:
                 fee_raw = int.from_bytes(log.data)
-                fee_asset = self.evm_inquirer.native_token
+                fee_asset = self.node_inquirer.native_token
                 fee_asset_address = log.address
                 break
             if (

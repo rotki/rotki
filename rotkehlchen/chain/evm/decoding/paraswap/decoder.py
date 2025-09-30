@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ParaswapCommonDecoder(DecoderInterface, ABC):
+class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
 
     def __init__(
             self,
@@ -43,7 +43,7 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
             fee_receiver_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
-        self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
+        self.evm_txns = EvmTransactions(self.node_inquirer, self.base.database)
         self.router_address = router_address
         self.fee_receiver_address = fee_receiver_address
 
@@ -91,7 +91,7 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
                     partial_refund_event = event
 
         if in_event is None or out_event is None:
-            log.error(f'Could not find the corresponding events when decoding {self.evm_inquirer.chain_name} paraswap swap {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find the corresponding events when decoding {self.node_inquirer.chain_name} paraswap swap {context.transaction.tx_hash.hex()}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         if partial_refund_event is not None:  # if some in_asset is returned back.
@@ -131,7 +131,7 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
                     user_address=sender,
                 )
             except RemoteError as e:
-                log.error(f'Failed to get internal transactions for paraswap {self.evm_inquirer.chain_name} swap {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
+                log.error(f'Failed to get internal transactions for paraswap {self.node_inquirer.chain_name} swap {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
             else:
                 if len(internal_fee_txs) > 0:
                     fee_raw = internal_fee_txs[0].value  # assuming only one tx from router to fee claimer  # noqa: E501

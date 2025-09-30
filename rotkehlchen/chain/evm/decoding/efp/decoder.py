@@ -6,7 +6,7 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -39,7 +39,7 @@ log = RotkehlchenLogsAdapter(logger)
 LIST_OP_TOPIC: Final = b"\xb0gc\x0e9\x08\xf1f\x06\x9cwvbP\xc5SAN'E\xe7B\xa5b\xd53\xf2\x97D\xa9\x1as"  # noqa: E501
 
 
-class EfpCommonDecoder(DecoderInterface, ABC):
+class EfpCommonDecoder(EvmDecoderInterface, ABC):
 
     def __init__(
             self,
@@ -61,13 +61,13 @@ class EfpCommonDecoder(DecoderInterface, ABC):
         with GlobalDBHandler().conn.read_ctx() as cursor:
             if (address := globaldb_get_unique_cache_value(
                     cursor=cursor,
-                    key_parts=(CacheType.EFP_SLOT_ADDRESS, (chain := str(self.evm_inquirer.chain_id)), str(slot)),  # noqa: E501
+                    key_parts=(CacheType.EFP_SLOT_ADDRESS, (chain := str(self.node_inquirer.chain_id)), str(slot)),  # noqa: E501
             )) is not None:
                 return string_to_evm_address(address)
 
         try:
-            if (address := to_checksum_address(self.evm_inquirer.contracts.contract(self.list_records_contract).call(  # noqa: E501
-                node_inquirer=self.evm_inquirer,
+            if (address := to_checksum_address(self.node_inquirer.contracts.contract(self.list_records_contract).call(  # noqa: E501
+                node_inquirer=self.node_inquirer,
                 method_name='getListUser',
                 arguments=[slot],
             ))) == ZERO_ADDRESS:

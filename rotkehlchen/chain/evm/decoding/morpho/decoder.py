@@ -6,7 +6,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import REWARD_CLAIMED
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
@@ -69,14 +69,14 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         updated = False
         if should_update_protocol_cache(self.base.database, CacheType.MORPHO_VAULTS) is True:
             query_morpho_vaults(
-                database=self.evm_inquirer.database,
-                chain_id=self.evm_inquirer.chain_id,
+                database=self.node_inquirer.database,
+                chain_id=self.node_inquirer.chain_id,
             )
             updated = True
         if should_update_protocol_cache(
                 userdb=self.base.database,
                 cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
-                args=(str(self.evm_inquirer.chain_id),),
+                args=(str(self.node_inquirer.chain_id),),
         ) is True:
             query_morpho_reward_distributors()
             updated = True
@@ -85,7 +85,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             query_body = 'FROM evm_tokens WHERE protocol=? AND chain=?'
-            bindings = (CPT_MORPHO, self.evm_inquirer.chain_id.serialize_for_db())
+            bindings = (CPT_MORPHO, self.node_inquirer.chain_id.serialize_for_db())
 
             cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
             if cursor.fetchone()[0] != len(self.vaults):
@@ -98,7 +98,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                     cursor=cursor,
                     key_parts=(
                         CacheType.MORPHO_REWARD_DISTRIBUTORS,
-                        str(self.evm_inquirer.chain_id),
+                        str(self.node_inquirer.chain_id),
                     ),
                 )
             ]

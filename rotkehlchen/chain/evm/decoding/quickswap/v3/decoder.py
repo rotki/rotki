@@ -6,7 +6,7 @@ from eth_typing.abi import ABI
 
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V3
 from rotkehlchen.chain.evm.decoding.quickswap.utils import decode_quickswap_swap
 from rotkehlchen.chain.evm.decoding.quickswap.v3.constants import (
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Quickswapv3LikeLPDecoder(DecoderInterface):
+class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
     """Common decoder for Quickswap v3 and v4 LP deposits and withdrawals."""
 
     def __init__(
@@ -87,7 +87,7 @@ class Quickswapv3LikeLPDecoder(DecoderInterface):
             # The other values differ depending on the version (we only use token0 & token1).
             # V3: https://docs.quickswap.exchange/technical-reference/smart-contracts/v3/position-manager#positions  # noqa: E501
             # V4: see QUICKSWAP_V4_NFT_MANAGER_ABI (the quickswap docs do not yet include V4 technical reference)  # noqa: E501
-            lp_position_info = self.evm_inquirer.call_contract(
+            lp_position_info = self.node_inquirer.call_contract(
                 contract_address=self.nft_manager,
                 abi=self.nft_manager_abi,
                 method_name='positions',
@@ -109,7 +109,7 @@ class Quickswapv3LikeLPDecoder(DecoderInterface):
             amount0_raw=amount0_raw,
             amount1_raw=amount1_raw,
             position_id=position_id,
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
             wrapped_native_currency=self.wrapped_native_currency,
         )
 
@@ -126,7 +126,7 @@ class Quickswapv3LikeLPDecoder(DecoderInterface):
         """  # noqa: E501
         return decode_uniswap_v3_like_position_create_or_exit(
             decoded_events=decoded_events,
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
             nft_manager=self.nft_manager,
             counterparty=self.counterparty,
             token_symbol=f'QKSWP-{self.version_string}-ALGB-POS',

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class SummerFiCommonDecoder(DecoderInterface):
+class SummerFiCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -50,7 +50,7 @@ class SummerFiCommonDecoder(DecoderInterface):
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.CREATE,
-            asset=self.evm_inquirer.native_token,
+            asset=self.node_inquirer.native_token,
             amount=ZERO,
             location_label=user_address,
             notes=f'Create Summer.fi smart account {proxy_address} with id {vault_id}',
