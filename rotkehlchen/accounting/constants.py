@@ -1,7 +1,7 @@
 from typing import Final
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.history.events.structures.types import (
     EventCategory,
     EventCategoryDetails,

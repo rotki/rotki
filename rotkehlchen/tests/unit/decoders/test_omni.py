@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.omni.constants import (
     CPT_OMNI,
@@ -8,7 +9,6 @@ from rotkehlchen.chain.ethereum.modules.omni.constants import (
     OMNI_STAKING_CONTRACT,
     OMNI_TOKEN_ID,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal

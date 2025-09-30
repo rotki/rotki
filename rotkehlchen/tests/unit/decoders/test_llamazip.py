@@ -4,7 +4,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.llamazip.decoder import (
     ROUTER_ADDRESSES as ARBITRUM_ROUTER_ADDRESSES,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.llamazip.constants import CPT_LLAMAZIP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.llamazip.decoder import (

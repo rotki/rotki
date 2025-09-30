@@ -1,13 +1,13 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
     CPT_MAKERDAO_MIGRATION,
     CPT_VAULT,
     MAKERDAO_MIGRATION_ADDRESS,
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SAI, A_WETH

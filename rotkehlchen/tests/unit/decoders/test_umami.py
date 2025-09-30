@@ -6,8 +6,8 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     CPT_UMAMI,
     UMAMI_STAKING_CONTRACT,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ARB, A_ETH, Asset
 from rotkehlchen.fval import FVal

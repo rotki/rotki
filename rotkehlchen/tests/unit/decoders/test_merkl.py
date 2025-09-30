@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.merkl.constants import CPT_MERKL, MERKL_DISTRIBUTOR_ADDRESS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal

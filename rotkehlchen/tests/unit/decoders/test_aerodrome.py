@@ -2,8 +2,8 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.base.modules.aerodrome.decoder import ROUTER
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO

@@ -3,12 +3,12 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.arbitrum_one.modules.arbitrum_one_bridge.decoder import BRIDGE_ADDRESS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.arbitrum_one_bridge.decoder import (
     BRIDGE_ADDRESS_MAINNET,
     L1_GATEWAY_ROUTER,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal

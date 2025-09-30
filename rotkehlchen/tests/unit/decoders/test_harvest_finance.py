@@ -1,13 +1,13 @@
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.harvest_finance.constants import (
     CPT_HARVEST_FINANCE,
     GRAIN_TOKEN_ID,
     HARVEST_GRAIN_CLAIM,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent

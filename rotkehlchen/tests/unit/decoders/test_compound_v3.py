@@ -6,10 +6,10 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.compound.v3.constants import (
     COMPOUND_BULKER_ADDRESS as ARBITRUM_BULKER_ADDRESS,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.compound.v3.constants import COMPOUND_REWARDS_ADDRESS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.compound.v3.constants import (
     COMPOUND_BULKER_ADDRESS as OPTIMISM_BULKER_ADDRESS,

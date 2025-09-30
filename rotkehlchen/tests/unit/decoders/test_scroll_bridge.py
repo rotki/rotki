@@ -3,6 +3,7 @@ from typing import Final
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.scroll_bridge.decoder import (
     L1_ERC20_GATEWAY,
     L1_ETH_GATEWAY_PROXY,
@@ -11,7 +12,6 @@ from rotkehlchen.chain.ethereum.modules.scroll_bridge.decoder import (
     L1_USDC_GATEWAY,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL
 from rotkehlchen.chain.scroll.modules.scroll_bridge.decoder import (

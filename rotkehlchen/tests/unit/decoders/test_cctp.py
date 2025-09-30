@@ -4,9 +4,9 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.cctp.constants import USDC_IDENTIFIER_ARB
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.cctp.constants import CPT_CCTP
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.polygon_pos.modules.cctp.constants import USDC_IDENTIFIER_POLYGON
 from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC, A_USDC

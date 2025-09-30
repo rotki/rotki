@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL
 from rotkehlchen.chain.scroll.modules.scroll_airdrop.constants import (
     A_SCR,

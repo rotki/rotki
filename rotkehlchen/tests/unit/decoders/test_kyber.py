@@ -1,8 +1,8 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.kyber.constants import CPT_KYBER_LEGACY
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.kyber.constants import CPT_KYBER
 from rotkehlchen.chain.evm.decoding.kyber.decoder import KYBER_AGGREGATOR_CONTRACT
 from rotkehlchen.chain.evm.types import string_to_evm_address

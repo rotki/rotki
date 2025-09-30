@@ -51,5 +51,5 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             dbevmtx_class=dbevmtx_class,
         )
 
-    def _calculate_gas_burned(self, tx: L2WithL1FeesTransaction) -> FVal:  # type: ignore[override]
+    def _calculate_fees(self, tx: L2WithL1FeesTransaction) -> FVal:  # type: ignore[override]
         return from_wei(FVal(tx.gas_used * tx.gas_price + tx.l1_fee))

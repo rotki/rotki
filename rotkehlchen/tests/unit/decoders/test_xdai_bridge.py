@@ -2,12 +2,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.modules.xdai_bridge.decoder import (
     BRIDGE_ADDRESS,
     XDAI_BRIDGE_PERIPHERAL_PRE_USDS,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.gnosis.modules.xdai_bridge.decoder import (
     BRIDGE_ADDRESS as GNOSIS_BRIDGE_ADDRESS,
 )

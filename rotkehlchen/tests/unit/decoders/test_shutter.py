@@ -1,11 +1,11 @@
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.shutter.constants import (
     CPT_SHUTTER,
     SHUTTER_AIDROP_CONTRACT,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_SHU
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal

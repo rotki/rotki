@@ -4,9 +4,10 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION, CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants import ZERO

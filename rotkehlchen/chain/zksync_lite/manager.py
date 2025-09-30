@@ -835,7 +835,7 @@ class ZksyncLiteManager:
                     message_type=WSMessageType.PROGRESS_UPDATES,
                     data={
                         'chain': EvmlikeChain.ZKSYNC_LITE,
-                        'subtype': str(ProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
+                        'subtype': str(ProgressUpdateSubType.UNDECODED_TRANSACTIONS),
                         'total': total_transactions,
                         'processed': tx_index,
                     },
@@ -846,7 +846,7 @@ class ZksyncLiteManager:
                 message_type=WSMessageType.PROGRESS_UPDATES,
                 data={
                     'chain': EvmlikeChain.ZKSYNC_LITE,
-                    'subtype': str(ProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
+                    'subtype': str(ProgressUpdateSubType.UNDECODED_TRANSACTIONS),
                     'total': total_transactions,
                     'processed': total_transactions,
                 },

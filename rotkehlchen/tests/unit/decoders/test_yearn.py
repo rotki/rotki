@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V1,
     CPT_YEARN_V2,
@@ -11,7 +12,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_PARTNER_TRACKER,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE

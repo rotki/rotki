@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import MKR_ADDRESS
 from rotkehlchen.chain.ethereum.modules.sky.constants import (
     CPT_SKY,
@@ -10,7 +11,6 @@ from rotkehlchen.chain.ethereum.modules.sky.constants import (
     USDS_ASSET,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MKR, A_SDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent

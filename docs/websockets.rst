@@ -403,11 +403,11 @@ When the endpoint to start the task for decoding undecoded transactions is queri
 
     {
         "type": "progress_updates",
-        "data": {chain":"ethereum", "total":2, "processed":0, "subtype":"evm_undecoded_transactions"}
+        "data": {chain":"ethereum", "total":2, "processed":0, "subtype":"undecoded_transactions"}
     }
 
 
-- ``subtype``: Set to "evm_undecoded_transactions" to identify transaction decoding progress
+- ``subtype``: Set to "undecoded_transactions" to identify transaction decoding progress
 - ``chain``: Chain where the task is decoding transactions.
 - ``total``: Total number of transactions that will be decoded.
 - ``processed``: The total number of transactions that have already been decoded.

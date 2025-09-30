@@ -2,9 +2,9 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.constants import CPT_BASE
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.superchain_bridge.op.decoder import OPTIMISM_PORTAL_ADDRESS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer

@@ -1,6 +1,7 @@
 import pytest
 
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
+from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN
 from rotkehlchen.chain.evm.decoding.eas.constants import CPT_EAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH

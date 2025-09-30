@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import (
     CPT_ONEINCH_V1,
     CPT_ONEINCH_V2,
@@ -10,7 +11,6 @@ from rotkehlchen.chain.ethereum.modules.oneinch.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.oneinch.v2.constants import ONEINCH_V2_MAINNET_ROUTER
 from rotkehlchen.chain.ethereum.modules.oneinch.v3.constants import ONEINCH_V3_MAINNET_ROUTER
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6, ONEINCH_V6_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ONEINCH_V4_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import ONEINCH_V5_ROUTER

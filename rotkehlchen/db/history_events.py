@@ -315,7 +315,7 @@ class DBHistoryEvents:
         if location.is_bitcoin():
             where_str = f'WHERE event_identifier IN ({placeholders})'
             id_prefix = BTC_EVENT_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_EVENT_IDENTIFIER_PREFIX  # noqa: E501
-            bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_hashes]  # type: ignore  # tx_hashes will be strings for bitcoin
+            bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_hashes]
         else:
             where_str = (
                 f'WHERE identifier IN (SELECT identifier FROM evm_events_info '

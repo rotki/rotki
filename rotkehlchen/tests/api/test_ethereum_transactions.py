@@ -11,8 +11,8 @@ import requests
 from requests import Response
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -1329,10 +1329,10 @@ def test_decoding_missing_transactions(
     assert result['decoded_tx_number']['ethereum'] == len(transactions)
 
     websocket_connection.wait_until_messages_num(num=4, timeout=4)
-    assert websocket_connection.pop_message() == {'type': 'progress_updates', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 0, 'subtype': 'evm_undecoded_transactions'}}  # noqa: E501
+    assert websocket_connection.pop_message() == {'type': 'progress_updates', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 0, 'subtype': 'undecoded_transactions'}}  # noqa: E501
     assert websocket_connection.pop_message()
     assert websocket_connection.pop_message()
-    assert websocket_connection.pop_message() == {'type': 'progress_updates', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 2, 'subtype': 'evm_undecoded_transactions'}}  # noqa: E501
+    assert websocket_connection.pop_message() == {'type': 'progress_updates', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 2, 'subtype': 'undecoded_transactions'}}  # noqa: E501
 
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:

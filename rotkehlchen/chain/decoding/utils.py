@@ -1,7 +1,17 @@
+import logging
+import traceback
 from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import AnyBlockchainAddress
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import AnyBlockchainAddress, SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.user_messages import MessagesAggregator
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def decode_transfer_direction(
@@ -58,3 +68,40 @@ def decode_transfer_direction(
         location_label = to_address  # type: ignore  # to_address can't be None here
 
     return event_type, event_subtype, location_label, address, counterparty, verb  # type: ignore
+
+
+def decode_safely(
+        handled_exceptions: tuple[type[Exception], ...],
+        msg_aggregator: 'MessagesAggregator',
+        blockchain: SupportedBlockchain,
+        func: Callable,
+        tx_reference: str | None = None,
+        *args: tuple[Any],
+        **kwargs: Any,
+) -> tuple[Any, bool]:
+    """
+    Wrapper for methods that execute logic from decoders. It handles all known errors
+    by logging them and optionally sending them to the user.
+
+    tx_reference is used only to log more information in case of error when decoding
+    a single transaction.
+
+    It returns a tuple where the first argument is the output of func and the second is a boolean
+    set to True if an error was raised from func.
+    """
+    try:
+        return func(*args, **kwargs), False
+    except handled_exceptions as e:
+        log.error(traceback.format_exc())
+        error_prefix = (
+            f'Decoding of transaction {tx_reference} in {blockchain}'
+            if tx_reference is not None else
+            f'Post processing of decoded events in {blockchain}'
+        )
+        log.error(
+            f'{error_prefix} failed due to {e} '
+            f'when calling {func.__name__} with {args=} {kwargs=}',
+        )
+        msg_aggregator.add_error(f'{error_prefix} failed. Check logs for more details')
+
+    return None, True

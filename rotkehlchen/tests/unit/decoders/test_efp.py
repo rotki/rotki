@@ -4,8 +4,8 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.modules.efp.constants import EFP_LIST_REGISTRY
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.efp.constants import CPT_EFP
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO

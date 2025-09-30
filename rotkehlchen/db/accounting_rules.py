@@ -7,12 +7,12 @@ from more_itertools import peekable
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.accounting.structures import (
     BaseEventSettings,
     EventsAccountantCallback,
     TxAccountingTreatment,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,

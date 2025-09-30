@@ -34,7 +34,7 @@ class WSMessageType(StrEnum):
 
 
 class ProgressUpdateSubType(StrEnum):
-    EVM_UNDECODED_TRANSACTIONS = auto()
+    UNDECODED_TRANSACTIONS = auto()
     PROTOCOL_CACHE_UPDATES = auto()
     CSV_IMPORT_RESULT = auto()
     HISTORICAL_PRICE_QUERY_STATUS = auto()

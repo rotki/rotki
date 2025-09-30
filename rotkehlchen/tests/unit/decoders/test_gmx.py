@@ -7,8 +7,8 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.constants import (
     GMX_ROUTER_ADDRESS,
     GMX_VAULT_ADDRESS,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_GMX
 from rotkehlchen.fval import FVal

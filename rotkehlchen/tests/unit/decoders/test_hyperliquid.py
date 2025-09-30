@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import BRIDGE_ADDRESS, CPT_HYPER
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
