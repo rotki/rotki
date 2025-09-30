@@ -2,7 +2,10 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import (
+    asset_normalized_value,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -10,13 +13,19 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.constants.assets import A_ETH, A_STETH
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.constants.assets import A_ETH, A_STETH, A_WSTETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
-from .constants import CPT_LIDO, LIDO_STETH_SUBMITTED, STETH_MAX_ROUND_ERROR_WEI
+from .constants import (
+    CPT_LIDO,
+    LIDO_STETH_SUBMITTED,
+    LIDO_TRANSFER_SHARES,
+    STETH_MAX_ROUND_ERROR_WEI,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
@@ -41,6 +50,7 @@ class LidoDecoder(EvmDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.steth_evm_address = A_STETH.resolve_to_evm_token().evm_address
+        self.wsteth_evm_address = A_WSTETH.resolve_to_evm_token().evm_address
 
     def _decode_lido_staking_in_steth(self, context: DecoderContext, sender: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
         """Decode the submit of eth to lido contract for obtaining steth in return"""
@@ -98,15 +108,101 @@ class LidoDecoder(EvmDecoderInterface):
 
         return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_LIDO)
 
+    def _decode_deposit_event(self, context: DecoderContext) -> EvmDecodingOutput:
+        deposited_shares_raw = int.from_bytes(context.tx_log.data[:32])
+        deposited_shares = asset_normalized_value(
+            amount=deposited_shares_raw,
+            asset=A_WSTETH.resolve_to_crypto_asset(),
+        )
+
+        in_event = out_event = None
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.amount.is_close(deposited_shares) and
+                event.asset == A_WSTETH
+            ):
+                event.notes = f'Receive {deposited_shares} {A_WSTETH.resolve_to_evm_token().symbol}'  # noqa: E501
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.counterparty = CPT_LIDO
+                event.address = A_WSTETH.resolve_to_evm_token().evm_address
+                in_event = event
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                # (event.amount / deposited_shares) < FVal('0.1') and
+                event.asset == A_STETH
+            ):
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.notes = f'Wrap {event.amount} {A_STETH.resolve_to_evm_token().symbol} in {A_WSTETH.resolve_to_evm_token().symbol}'  # noqa: E501
+                event.counterparty = CPT_LIDO
+                event.address = A_STETH.resolve_to_evm_token().evm_address
+                out_event = event
+
+        if out_event is None:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
+        return EvmDecodingOutput()
+
+    def _decode_withdraw_event(self, context: DecoderContext) -> EvmDecodingOutput:
+        withdrawn_shares_raw = int.from_bytes(context.tx_log.data[:32])
+        withdrawn_shares = asset_normalized_value(
+            amount=withdrawn_shares_raw,
+            asset=A_WSTETH.resolve_to_crypto_asset(),
+        )
+
+        in_event = out_event = None
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.amount.is_close(withdrawn_shares) and
+                event.asset == A_WSTETH
+            ):
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.notes = f'Unwrap {event.amount} {A_WSTETH.resolve_to_evm_token().symbol}'
+                event.counterparty = CPT_LIDO
+                event.address = A_WSTETH.resolve_to_evm_token().evm_address
+                out_event = event
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.asset == A_STETH
+            ):
+                event.notes = f'Receive {event.amount} {A_STETH.resolve_to_evm_token().symbol}'
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.counterparty = CPT_LIDO
+                event.address = A_STETH.resolve_to_evm_token().evm_address
+                in_event = event
+
+        if out_event is None:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
+        return EvmDecodingOutput()
+
     def _decode_lido_eth_staking_contract(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode interactions with stETH ans wstETH contracts"""
+        """Decode interactions with stETH and wstETH contracts"""
         if (
             context.tx_log.topics[0] == LIDO_STETH_SUBMITTED and
             self.base.is_tracked(sender := bytes_to_address(context.tx_log.topics[1]))
         ):
             return self._decode_lido_staking_in_steth(context=context, sender=sender)
-        else:
-            return DEFAULT_EVM_DECODING_OUTPUT
+        elif context.tx_log.topics[0] == LIDO_TRANSFER_SHARES:
+            from_address = bytes_to_address(context.tx_log.topics[1])
+            to_address = bytes_to_address(context.tx_log.topics[2])
+            if self.base.is_tracked(from_address) and to_address == self.wsteth_evm_address:
+                return self._decode_deposit_event(context)
+            elif self.base.is_tracked(to_address) and from_address == self.wsteth_evm_address:
+                return self._decode_withdraw_event(context)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
