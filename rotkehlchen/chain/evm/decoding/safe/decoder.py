@@ -2,7 +2,7 @@ import logging
 from collections.abc import Callable
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -38,7 +38,7 @@ def _get_maybe_indexed_address(context: DecoderContext, details: str) -> Checksu
     return address
 
 
-class SafemultisigDecoder(DecoderInterface):
+class SafemultisigDecoder(EvmDecoderInterface):
     def _decode_added_owner(self, context: DecoderContext) -> DecodingOutput:
         if (address := _get_maybe_indexed_address(context, details='safe owner addition')) is None:
             return DEFAULT_DECODING_OUTPUT

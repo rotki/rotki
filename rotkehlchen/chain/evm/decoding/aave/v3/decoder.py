@@ -82,7 +82,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 asset=EvmToken(evm_address_to_identifier(
                     address=tx_log.address,
                     token_type=TokenKind.ERC20,
-                    chain_id=self.evm_inquirer.chain_id,
+                    chain_id=self.node_inquirer.chain_id,
                 )),
             ) for tx_log in context.all_logs
             if tx_log.topics[0] == BURN and tx_log.topics[1] == context.tx_log.topics[3]
@@ -339,7 +339,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 earned_event=earned_event,
                 match_fn=lambda primary, secondary: (
                     (underlying_token := get_single_underlying_token(secondary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
-                    (underlying_token == primary.asset or (underlying_token == self.wrapped_native_token and primary.asset == self.evm_inquirer.native_token))  # noqa: E501
+                    (underlying_token == primary.asset or (underlying_token == self.wrapped_native_token and primary.asset == self.node_inquirer.native_token))  # noqa: E501
                 ),
             )
 
@@ -352,7 +352,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 earned_event=earned_event,
                 match_fn=lambda primary, secondary: (  # use symbols due to Monerium and its different versions  # noqa: E501
                     (underlying_token := get_single_underlying_token(primary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
-                    (underlying_token.symbol == secondary.asset.resolve_to_crypto_asset().symbol or (underlying_token == self.wrapped_native_token and secondary.asset == self.evm_inquirer.native_token))  # noqa: E501
+                    (underlying_token.symbol == secondary.asset.resolve_to_crypto_asset().symbol or (underlying_token == self.wrapped_native_token and secondary.asset == self.node_inquirer.native_token))  # noqa: E501
                 ),
             )
 
@@ -442,7 +442,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(  # type: ignore[return-value]  # they are inherently strings
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
             protocol=self.counterparty,
         ), self.counterparty) | dict.fromkeys(self.pool_addresses, self.counterparty)
 

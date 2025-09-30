@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class HedgeyDecoder(DecoderInterface):
+class HedgeyDecoder(EvmDecoderInterface):
 
     def _decode_delegate_changed(
             self,
@@ -62,7 +62,7 @@ class HedgeyDecoder(DecoderInterface):
     def _decode_vault_creation(self, context: DecoderContext) -> DecodingOutput:
         vault_address = bytes_to_address(context.tx_log.data[:32])
         plan_id = int.from_bytes(context.tx_log.topics[1])
-        owner_address = deserialize_evm_address(self.evm_inquirer.call_contract(
+        owner_address = deserialize_evm_address(self.node_inquirer.call_contract(
             contract_address=VOTING_TOKEN_LOCKUPS,
             abi=VOTING_TOKEN_LOCKUPS_ABI,
             method_name='ownerOf',
@@ -111,7 +111,7 @@ class HedgeyDecoder(DecoderInterface):
             (contract.address, contract.encode(method_name='plans', arguments=[plan_id])),
             (contract.address, contract.encode(method_name='ownerOf', arguments=[plan_id])),
         ]
-        output = self.evm_inquirer.multicall(calls=calls)
+        output = self.node_inquirer.multicall(calls=calls)
         token_address = deserialize_evm_address(
             contract.decode(result=output[0], method_name='plans', arguments=[plan_id])[0],
         )

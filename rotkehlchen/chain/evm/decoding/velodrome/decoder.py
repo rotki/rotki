@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.constants import (
     ZERO_ADDRESS,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import (
-    DecoderInterface,
+    EvmDecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -64,7 +64,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
+class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
     """A decoder class for velodrome-like related events."""
 
     def __init__(
@@ -403,7 +403,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 asset=get_or_create_evm_token(
                     userdb=self.base.database,
                     evm_address=self.voting_escrow_address,
-                    chain_id=self.evm_inquirer.chain_id,
+                    chain_id=self.node_inquirer.chain_id,
                     token_kind=TokenKind.ERC721,
                     collectible_id=str(token_id),
                 ),
@@ -453,7 +453,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             asset=get_or_create_evm_token(
                 userdb=self.base.database,
                 evm_address=self.voting_escrow_address,
-                chain_id=self.evm_inquirer.chain_id,
+                chain_id=self.node_inquirer.chain_id,
                 token_kind=TokenKind.ERC721,
                 collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
             ),

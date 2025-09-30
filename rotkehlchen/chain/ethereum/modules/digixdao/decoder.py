@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.modules.digixdao.constants import (
     DIGIX_DGD_ETH_REFUND_CONTRACT,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -22,7 +22,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 REFUND_TOPIC: Final = b's\xf0J\xf9\xdc\xc5\x82\xa9#\xec\x15\xd3\xee\xa9\x90\xfe4\xad\xab\xff\xf2\x87\x9e(\xd4Er\xe0\x1aT\xab\xb6'  # noqa: E501
 
 
-class DigixdaoDecoder(DecoderInterface):
+class DigixdaoDecoder(EvmDecoderInterface):
 
     def _decode_dgd_eth_refund(self, context: DecoderContext) -> DecodingOutput:
         """Decode ETH refund for DGD tokens."""

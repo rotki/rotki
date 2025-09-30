@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
     from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
-    from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+    from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
 
@@ -59,7 +59,7 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
 
     def _chain_specific_decoder_initialization(
             self,
-            decoder: 'DecoderInterface',
+            decoder: 'EvmDecoderInterface',
     ) -> None:
         """Initialize the transaction type mappings"""
         if not isinstance(decoder, ArbitrumDecoderInterface):

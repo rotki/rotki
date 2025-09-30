@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
+class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,
@@ -143,7 +143,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
         else:
             log.error(
                 f'Could not find the transfer event for bridging to {to_address}'
-                f' in {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
             )
         return DEFAULT_DECODING_OUTPUT
 

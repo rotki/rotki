@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OdosCommonDecoderBase(DecoderInterface):
+class OdosCommonDecoderBase(EvmDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -41,9 +41,9 @@ class OdosCommonDecoderBase(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
+        self.evm_txns = EvmTransactions(self.node_inquirer, self.base.database)
         self.router_address = router_address
-        self.native_currency = self.evm_inquirer.native_token
+        self.native_currency = self.node_inquirer.native_token
         self.label = self.counterparties()[0].label
 
     def _calculate_router_fee(
@@ -63,7 +63,7 @@ class OdosCommonDecoderBase(DecoderInterface):
                 tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
                 ((identifier := evm_address_to_identifier(
                     address=tx_log.address,
-                    chain_id=self.evm_inquirer.chain_id,
+                    chain_id=self.node_inquirer.chain_id,
                     token_type=TokenKind.ERC20,
                 )) not in output_tokens)
             ):

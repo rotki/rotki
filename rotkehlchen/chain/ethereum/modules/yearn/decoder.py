@@ -24,7 +24,7 @@ from rotkehlchen.chain.evm.constants import (
 )
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -68,7 +68,7 @@ def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
     return vault_token_name
 
 
-class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
+class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',
@@ -92,8 +92,8 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
         """
         if should_update_protocol_cache(self.base.database, CacheType.YEARN_VAULTS) is True:
             query_yearn_vaults(
-                db=self.evm_inquirer.database,
-                ethereum_inquirer=cast('EthereumInquirer', self.evm_inquirer),
+                db=self.node_inquirer.database,
+                ethereum_inquirer=cast('EthereumInquirer', self.node_inquirer),
             )
         elif len(self.vaults[CPT_YEARN_V2]) != 0:
             return None  # we didn't update the globaldb cache and we have the data already

@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.llamazip.constants import CPT_LLAMAZIP, LLAMAZIP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class LlamazipCommonDecoder(DecoderInterface, abc.ABC):
+class LlamazipCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,

@@ -6,7 +6,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class MoneriumCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
@@ -73,10 +73,10 @@ class MoneriumCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         to_address = bytes_to_address(value=context.tx_log.topics[2])
 
         token = get_or_create_evm_token(
-            userdb=self.evm_inquirer.database,
+            userdb=self.node_inquirer.database,
             evm_address=context.tx_log.address,
-            chain_id=self.evm_inquirer.chain_id,
-            evm_inquirer=self.evm_inquirer,
+            chain_id=self.node_inquirer.chain_id,
+            evm_inquirer=self.node_inquirer,
         )
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data),

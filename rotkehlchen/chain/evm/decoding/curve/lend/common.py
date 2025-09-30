@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
     CURVE_COUNTERPARTY_DETAILS,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
+class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
     """Common borrow/repay event decoder for both crvUSD markets and llamalend vaults."""
 
     def __init__(
@@ -92,7 +92,7 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
                 return string_to_evm_address(value)
 
         try:
-            value = deserialize_evm_address(self.evm_inquirer.call_contract(
+            value = deserialize_evm_address(self.node_inquirer.call_contract(
                 contract_address=contract_address,
                 abi=contract_abi,
                 method_name=contract_method,
@@ -100,7 +100,7 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
         except (RemoteError, DeserializationError) as e:
             log.error(
                 f'Failed to retrieve an evm address from the {contract_method} method on the '
-                f'{self.evm_inquirer.chain_name} Curve contract {contract_address} due to {e!s}',
+                f'{self.node_inquirer.chain_name} Curve contract {contract_address} due to {e!s}',
             )
             return None
 
@@ -145,7 +145,7 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
         except (NotERC20Conformant, NotERC721Conformant) as e:
             log.error(
                 f'Failed to get or create token {token_address} associated with Curve contract '
-                f'{contract_address} on {self.evm_inquirer.chain_name} due to {e}',
+                f'{contract_address} on {self.node_inquirer.chain_name} due to {e}',
             )
             return None
 

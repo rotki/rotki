@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON, CPT_POLYGON_DETAILS
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -35,7 +35,7 @@ START_EXIT_TOPIC: Final = b'\xaaS\x03\xfd\xad\x12:\xb5\xec\xae\xfa\xf6\x917\xbf\
 PROCESS_EXIT_TOPIC: Final = b'\xfe\xb2\x00\r\xca>a|\xd6\xf3\xa8\xbb\xb60\x14\xbbT\xa1$\xaa\xc6\xcc\xbfs\xeer)\xb4\xcd\x01\xf1 '  # noqa: E501
 
 
-class PolygonPosBridgeDecoder(DecoderInterface):
+class PolygonPosBridgeDecoder(EvmDecoderInterface):
 
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
         """Decodes ETH and ERC20 bridge deposit events.

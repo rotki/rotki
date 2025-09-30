@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Final
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import BASE_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -26,7 +26,7 @@ TRANSACTION_DEPOSITED: Final = b'\xb3\x815h\xd9\x99\x1f\xc9Q\x96\x1f\xcbLxH\x93W
 WITHDRAWAL_FINALIZED: Final = b"\xdb\\vR\x85z\xa1c\xda\xad\xd6p\xe1\x16b\x8f\xb4.\x86\x9d\x8a\xc4%\x1e\xf8\x97\x1d\x9eW'\xdf\x1b"  # noqa: E501
 
 
-class BaseBridgeDecoder(DecoderInterface):
+class BaseBridgeDecoder(EvmDecoderInterface):
 
     def __init__(
             self,

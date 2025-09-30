@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.aave.v1.decoder import DEFAULT_DECODING_OUTPUT
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V1, UNISWAP_ICON
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -29,7 +29,7 @@ TOKEN_PURCHASE = b'\xcd`\xaau\xde\xa3\x07/\xbc\x07\xaem}\x85k]\xc5\xf4\xee\xe8\x
 ETH_PURCHASE = b'\x7f@\x91\xb4l3\xe9\x18\xa0\xf3\xaaB0vA\xd1{\xb6p)BzSi\xe5K59\x84#\x87\x05'
 
 
-class Uniswapv1Decoder(DecoderInterface):
+class Uniswapv1Decoder(EvmDecoderInterface):
 
     def _maybe_decode_swap(
             self,

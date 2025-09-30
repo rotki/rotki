@@ -2,7 +2,7 @@ from typing import Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED, OPTIMISM_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -19,7 +19,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 OPTIMISM_TOKEN = string_to_evm_address('0x4200000000000000000000000000000000000042')
 
 
-class OptimismDecoder(DecoderInterface):
+class OptimismDecoder(EvmDecoderInterface):
 
     def _decode_delegate_changed(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != DELEGATE_CHANGED:

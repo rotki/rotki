@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -22,7 +22,7 @@ REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92
 LIQUIDATION_CALL = b'V\x86GW\xfd[\x1f\xc9\xf3\x8f_:\x98\x1c\xd8\xaeQ,\xe4\x1b\x90,\xf7?\xc5\x06\xee6\x9ck\xc27'  # noqa: E501
 
 
-class Aavev1Decoder(DecoderInterface):
+class Aavev1Decoder(EvmDecoderInterface):
 
     def _decode_pool_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT:

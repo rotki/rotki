@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class LidoDecoder(DecoderInterface):
+class LidoDecoder(EvmDecoderInterface):
 
     def __init__(
             self,

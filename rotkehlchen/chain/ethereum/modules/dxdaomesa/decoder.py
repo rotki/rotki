@@ -7,7 +7,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -29,7 +29,7 @@ ORDER_PLACEMENT = b'\xde\xcfo\xde\x82C\x98\x12\x99\xf7\xb7\xa7v\xf2\x9a\x9f\xc6z
 WITHDRAW_REQUEST = b',bE\xafPo\x0f\xc1\x08\x99\x18\xc0,\x1d\x01\xbd\xe9\xcc\x80v\t\xb34\xb3\xe7dMm\xfbZl^'  # noqa: E501
 
 
-class DxdaomesaDecoder(DecoderInterface):
+class DxdaomesaDecoder(EvmDecoderInterface):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
@@ -141,7 +141,7 @@ class DxdaomesaDecoder(DecoderInterface):
         if not self.base.is_tracked(owner):
             return DEFAULT_DECODING_OUTPUT
 
-        result = self.evm_inquirer.multicall_specific(
+        result = self.node_inquirer.multicall_specific(
             contract=self.contract,
             method_name='tokenIdToAddressMap',
             arguments=[[topic_data[1]], [topic_data[2]]],

@@ -5,7 +5,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import RABBY_WALLET_FEE_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class MagpieCommonDecoder(DecoderInterface):
+class MagpieCommonDecoder(EvmDecoderInterface):
     """Decoder for Magpie protocol swaps"""
 
     def __init__(
@@ -69,12 +69,12 @@ class MagpieCommonDecoder(DecoderInterface):
 
         # Get tokens - handle ETH represented as zero address
         if source_token_address == ZERO_ADDRESS:
-            source_token = self.evm_inquirer.native_token
+            source_token = self.node_inquirer.native_token
         else:
             source_token = self.base.get_or_create_evm_asset(source_token_address)
 
         if destination_token_address == ZERO_ADDRESS:
-            destination_token = self.evm_inquirer.native_token
+            destination_token = self.node_inquirer.native_token
         else:
             destination_token = self.base.get_or_create_evm_asset(destination_token_address)
 

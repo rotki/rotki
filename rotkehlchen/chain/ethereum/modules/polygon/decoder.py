@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON, CPT_POLYGON_DETAILS
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -31,7 +31,7 @@ log = RotkehlchenLogsAdapter(logger)
 MIGRATED = b'\x8b\x80\xbd\x19\xae\xa7\xb75\xbcmu\xdb\x8dj\xdb\xe1\x8b(\xc3\rb\xb3URE\xebg\xb24\x0c\xae\xdc'  # noqa: E501
 
 
-class PolygonDecoder(DecoderInterface):
+class PolygonDecoder(EvmDecoderInterface):
     """General polygon related decoder for ethereum mainnet. For now matic->pol migration"""
 
     def _decode_migration(self, context: DecoderContext) -> DecodingOutput:

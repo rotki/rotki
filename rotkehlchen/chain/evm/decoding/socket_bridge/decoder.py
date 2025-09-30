@@ -5,7 +5,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import (
     BRIDGE_TOPIC,
     CPT_SOCKET,
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class SocketBridgeDecoder(DecoderInterface):
+class SocketBridgeDecoder(EvmDecoderInterface):
     """The gateway contract is deployed in all the chains with the same address"""
 
     def __init__(
@@ -60,10 +60,10 @@ class SocketBridgeDecoder(DecoderInterface):
             bridged_asset: CryptoAsset = self.eth
         else:
             bridged_asset = get_or_create_evm_token(
-                userdb=self.evm_inquirer.database,
+                userdb=self.node_inquirer.database,
                 evm_address=token_address,
-                chain_id=self.evm_inquirer.chain_id,
-                evm_inquirer=self.evm_inquirer,
+                chain_id=self.node_inquirer.chain_id,
+                evm_inquirer=self.node_inquirer,
             )
         amount = asset_normalized_value(amount=amount_raw, asset=bridged_asset)
         sender = bytes_to_address(context.tx_log.data[128:160])

@@ -103,7 +103,7 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
     from .base import BaseEvmDecoderTools, BaseEvmDecoderToolsWithProxy
-    from .interfaces import DecoderInterface
+    from .interfaces import EvmDecoderInterface
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -165,7 +165,7 @@ class EvmTransactionContext(NamedTuple):
     receipt: 'EvmTxReceipt'
 
 
-class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRules, 'DecoderInterface', 'EVMTxHash', 'EvmEvent', EvmTransactionContext, 'BaseEvmDecoderTools'], ABC):  # noqa: E501
+class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRules, 'EvmDecoderInterface', 'EVMTxHash', 'EvmEvent', EvmTransactionContext, 'BaseEvmDecoderTools'], ABC):  # noqa: E501
 
     def __init__(
             self,
@@ -291,7 +291,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
     def _add_single_decoder(
             self,
             class_name: str,
-            decoder_class: type['DecoderInterface'],
+            decoder_class: type['EvmDecoderInterface'],
             rules: EvmDecodingRules,
     ) -> None:
         """Initialize a single decoder, add it to the set of decoders to use
@@ -367,7 +367,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         return possible_products
 
-    def _reload_single_decoder(self, cursor: 'DBCursor', decoder: 'DecoderInterface') -> None:
+    def _reload_single_decoder(self, cursor: 'DBCursor', decoder: 'EvmDecoderInterface') -> None:
         """Reload data for a single decoder"""
         super()._reload_single_decoder(cursor=cursor, decoder=decoder)
         if isinstance(decoder, ReloadableDecoderMixin):
@@ -1331,7 +1331,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
     def _chain_specific_decoder_initialization(
             self,
-            decoder: 'DecoderInterface',  # pylint: disable=unused-argument
+            decoder: 'EvmDecoderInterface',  # pylint: disable=unused-argument
     ) -> None:
         """Custom initialization for each decoder, based on the type of EVM chain.
 

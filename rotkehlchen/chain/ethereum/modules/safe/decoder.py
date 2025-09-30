@@ -5,7 +5,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class SafeDecoder(DecoderInterface):
+class SafeDecoder(EvmDecoderInterface):
     """Decoder for ethereum mainnet safe (mostly token) related activities"""
 
     def __init__(  # pylint: disable=super-init-not-called

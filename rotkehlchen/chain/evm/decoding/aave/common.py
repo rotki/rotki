@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import (
     LIQUIDATION_CALL,
     WITHDRAW,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Commonv2v3LikeDecoder(DecoderInterface):
+class Commonv2v3LikeDecoder(EvmDecoderInterface):
     def __init__(
             self,
             counterparty: Literal['aave-v2', 'aave-v3', 'spark'],
@@ -65,7 +65,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
         self.native_gateways = native_gateways
         self.label = label
         self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
-        DecoderInterface.__init__(
+        EvmDecoderInterface.__init__(
             self,
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -84,7 +84,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
         return GlobalDBHandler.get_protocol_for_asset(
             asset_identifier=evm_address_to_identifier(
                 address=queried_address,
-                chain_id=self.evm_inquirer.chain_id,
+                chain_id=self.node_inquirer.chain_id,
                 token_type=TokenKind.ERC20,
             ),
         ) == self.counterparty
@@ -158,7 +158,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             ):
                 if (
                     event.event_type == HistoryEventType.SPEND and
-                    (event.asset == token or (user in self.native_gateways and event.asset == self.evm_inquirer.native_token)) and  # noqa: E501
+                    (event.asset == token or (user in self.native_gateways and event.asset == self.node_inquirer.native_token)) and  # noqa: E501
                     event.address != ZERO_ADDRESS
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
@@ -203,7 +203,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             amount=int.from_bytes(tx_log.data),
             asset=token,
         )
-        symbol = self.evm_inquirer.native_token.symbol if is_wnative_user else token.symbol
+        symbol = self.node_inquirer.native_token.symbol if is_wnative_user else token.symbol
         notes = f'Withdraw {amount} {symbol} from {self.label}'
         if to != user:
             notes += f' to {to}'
@@ -219,7 +219,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
                 )
             ):
                 if (
-                    (event.location_label == to or (event.asset == self.evm_inquirer.native_token and is_wnative_user)) and  # noqa: E501
+                    (event.location_label == to or (event.asset == self.node_inquirer.native_token and is_wnative_user)) and  # noqa: E501
                     event.event_type == HistoryEventType.RECEIVE and
                     event.address != ZERO_ADDRESS
                 ):
@@ -365,7 +365,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
         token = EvmToken(evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[1]),
             token_type=TokenKind.ERC20,
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
         ))
 
         if context.tx_log.topics[0] in (ENABLE_COLLATERAL, DISABLE_COLLATERAL):
@@ -387,7 +387,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
         if None in paired_events:
             log.warning(  # can happen in cases where one of the events comes later such as in test_aave_v3_withdraw_with_bigger_interest  # noqa: E501
                 f'Could not find all paired events in {self.counterparty} tx {context.transaction.tx_hash.hex()}'  # noqa: E501
-                f' on {self.evm_inquirer.chain_name}.',
+                f' on {self.node_inquirer.chain_name}.',
             )
 
         maybe_reshuffle_events(  # Make sure that the paired events are in order
@@ -443,7 +443,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
 
         else:
             log.error(
-                f'Failed to find the {self.label} incentive reward transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+                f'Failed to find the {self.label} incentive reward transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
             )
             return DEFAULT_DECODING_OUTPUT
 

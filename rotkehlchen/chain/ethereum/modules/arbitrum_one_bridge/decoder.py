@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Final
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -42,7 +42,7 @@ INBOX_MESSAGE_DELIVERED: Final = b'\xffd\x90_s\xa6\x7f\xb5\x94\xe0\xf9@\xa8\x07Z
 BRIDGE_CALL_TRIGGERED: Final = b'-\x9d\x11^\xf3\xe4\xa6\x06\xd6\x98\x91;\x1e\xae\x83\x1a<\xdf\xe2\r\x9a\x83\xd4\x80\x07\xb0RgI\xc3\xd4f'  # noqa: E501
 
 
-class ArbitrumOneBridgeDecoder(DecoderInterface):
+class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EthereumInquirer',

@@ -2,7 +2,7 @@ from typing import Any, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_raw_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -20,7 +20,7 @@ NEW_PRIORITY_REQUEST: Final = b'\xd0\x943r\xc0\x8bC\x8a\x88\xd4\xb3\x9dw!i\x01\x
 PENDING_WITHDRAWALS_COMPLETE: Final = b'\x9bTx\xc9\x9b\\\xa4\x1b\xee\xc4\xf6\xf6\x08A&\xd6\xf9\xe2c\x82\xd0\x17\xb4\xbbg\xc3|\x9e\x84S\xa3\x13'  # noqa: E501
 
 
-class ZksyncDecoder(DecoderInterface):
+class ZksyncDecoder(EvmDecoderInterface):
 
     def _decode_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == ONCHAIN_DEPOSIT:

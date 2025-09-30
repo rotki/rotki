@@ -135,7 +135,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
 
     def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
         return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
             protocol=CPT_AAVE_V2,
         ), CPT_AAVE_V2) | dict.fromkeys(self.pool_addresses, CPT_AAVE_V2)
 
@@ -143,6 +143,6 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
         return super().addresses_to_decoders() | {
             self.incentives: (self._decode_incentives,),
         } | dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
             protocol=CPT_AAVE_V2,
         ), (self._decode_migration,))

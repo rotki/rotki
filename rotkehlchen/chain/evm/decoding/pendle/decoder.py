@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.constants import (
     SWAPPED_TOPIC,
     ZERO_ADDRESS,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -158,7 +158,7 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         - Selling PT/YT: token_0 is received, token_1 is spent
         """
         market = bytes_to_address(context.tx_log.topics[2])
-        _, principal_token, yield_token = self.evm_inquirer.call_contract(
+        _, principal_token, yield_token = self.node_inquirer.call_contract(
             contract_address=market,
             abi=PENDLE_ROUTER_ABI,
             method_name='readTokens',
@@ -498,24 +498,24 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         if should_update_protocol_cache(
                 userdb=self.base.database,
                 cache_key=CacheType.PENDLE_POOLS,
-                args=(str(self.evm_inquirer.chain_id.serialize()),),
+                args=(str(self.node_inquirer.chain_id.serialize()),),
         ) or should_update_protocol_cache(
             userdb=self.base.database,
             cache_key=CacheType.PENDLE_SY_TOKENS,
-            args=(str(self.evm_inquirer.chain_id.serialize()),),
+            args=(str(self.node_inquirer.chain_id.serialize()),),
         ):
-            query_pendle_markets(self.evm_inquirer.chain_id)
+            query_pendle_markets(self.node_inquirer.chain_id)
         elif len(self.pools) != 0 and len(self.sy_tokens) == 0:
             return None  # we didn't update the globaldb cache, and we have the data already
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             self.pools = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
                 cursor=cursor,
-                key_parts=(CacheType.PENDLE_POOLS, str(self.evm_inquirer.chain_id.serialize())),
+                key_parts=(CacheType.PENDLE_POOLS, str(self.node_inquirer.chain_id.serialize())),
             ))
             self.sy_tokens = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
                 cursor=cursor,
-                key_parts=(CacheType.PENDLE_SY_TOKENS, str(self.evm_inquirer.chain_id.serialize())),  # noqa: E501
+                key_parts=(CacheType.PENDLE_SY_TOKENS, str(self.node_inquirer.chain_id.serialize())),  # noqa: E501
             ))
 
         return self.addresses_to_decoders()

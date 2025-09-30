@@ -10,7 +10,7 @@ from rotkehlchen.chain.decoding.types import (
     CounterpartyDetails,
     get_versioned_counterparty_label,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -84,7 +84,7 @@ def _find_from_asset_and_amount(events: list['EvmEvent']) -> tuple[Asset, FVal] 
     return from_asset, from_amount
 
 
-class Uniswapv3CommonDecoder(DecoderInterface):
+class Uniswapv3CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -163,8 +163,8 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             # 9 -> position.feeGrowthInside1LastX128,
             # 10 -> position.tokensOwed0,
             # 11 -> position.tokensOwed1
-            lp_position_info = self.evm_inquirer.contracts.contract(self.nft_manager).call(
-                node_inquirer=self.evm_inquirer,
+            lp_position_info = self.node_inquirer.contracts.contract(self.nft_manager).call(
+                node_inquirer=self.node_inquirer,
                 method_name='positions',
                 arguments=[position_id],
             )
@@ -184,7 +184,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             amount0_raw=int.from_bytes(context.tx_log.data[32:64]),
             amount1_raw=int.from_bytes(context.tx_log.data[64:96]),
             position_id=position_id,
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
             wrapped_native_currency=self.wrapped_native_currency,
         )
 
@@ -329,7 +329,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             swap_data = self._decode_token_to_token_swap(decoded_events)
 
         if swap_data is None or swap_data.from_asset is None or swap_data.to_asset is None:
-            log.error(f'Failed to decode a {self.evm_inquirer.chain_name} uniswap swap for transaction {transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Failed to decode a {self.node_inquirer.chain_name} uniswap swap for transaction {transaction.tx_hash.hex()}')  # noqa: E501
             return decoded_events
 
         # These should never raise any errors since `from_asset` and `to_asset` are either native
@@ -387,7 +387,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         """Update the lp position creation event and position token."""
         return decode_uniswap_v3_like_position_create_or_exit(
             decoded_events=decoded_events,
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
             nft_manager=self.nft_manager,
             counterparty=CPT_UNISWAP_V3,
             token_symbol='UNI-V3-POS',

@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     should_update_protocol_cache,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     """Decodes Beefy Finance vault transactions into structured history events.
 
     Handles both direct vault interactions and zap contract operations for
@@ -63,7 +63,7 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             msg_aggregator=msg_aggregator,
         )
         self.vaults: set[ChecksumEvmAddress] = set()
-        self.zap_contract_address = SUPPORTED_BEEFY_CHAINS[self.evm_inquirer.chain_id]
+        self.zap_contract_address = SUPPORTED_BEEFY_CHAINS[self.node_inquirer.chain_id]
 
     def _process_beefy_events(
             self,
@@ -141,7 +141,7 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 tx_logs = tx_receipt.logs if (tx_receipt := DBEvmTx(self.base.database).get_receipt(  # noqa: E501
                     cursor=cursor,
                     tx_hash=transaction.tx_hash,
-                    chain_id=self.evm_inquirer.chain_id,
+                    chain_id=self.node_inquirer.chain_id,
                 )) is not None else []
 
             for tx_log in tx_logs:
@@ -227,9 +227,9 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         if (is_cache_updated := should_update_protocol_cache(
                 userdb=self.base.database,
                 cache_key=CacheType.BEEFY_VAULTS,
-                args=(str(self.evm_inquirer.chain_id.serialize()),),
+                args=(str(self.node_inquirer.chain_id.serialize()),),
         )) is True:
-            query_beefy_vaults(self.evm_inquirer)
+            query_beefy_vaults(self.node_inquirer)
             is_cache_updated = True
 
         if len(self.vaults) != 0 and not is_cache_updated:  # Skip database query if we already have vault data and cache wasn't updated  # noqa: E501
@@ -238,7 +238,7 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT address FROM evm_tokens WHERE protocol=? AND chain=?',
-                (CPT_BEEFY_FINANCE, self.evm_inquirer.chain_id.serialize_for_db()),
+                (CPT_BEEFY_FINANCE, self.node_inquirer.chain_id.serialize_for_db()),
             )
             self.vaults = {string_to_evm_address(row[0]) for row in cursor}
 

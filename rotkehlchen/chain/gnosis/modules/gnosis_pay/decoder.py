@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
+class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,

@@ -7,7 +7,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -32,7 +32,7 @@ TOKENS_BRIDGING_INITIATED: Final = b'Y\xa9\xa8\x02{\x9c\x87\xb9a\xe2T\x89\x98!\x
 TOKENS_BRIDGED: Final = b'\x9a\xfdG\x90~%\x02\x8c\xda\xca\x89\xd1\x93Q\x8c0+\xbb\x12\x86\x17\xd5\xa9\x92\xc5\xab\xd4X\x15Re\x93'  # noqa: E501
 
 
-class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
+class OmnibridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,
@@ -64,10 +64,10 @@ class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
             return DEFAULT_DECODING_OUTPUT
 
         bridged_asset = get_or_create_evm_token(
-            userdb=self.evm_inquirer.database,
+            userdb=self.node_inquirer.database,
             evm_address=bytes_to_address(context.tx_log.topics[1]),
-            chain_id=self.evm_inquirer.chain_id,
-            evm_inquirer=self.evm_inquirer,
+            chain_id=self.node_inquirer.chain_id,
+            evm_inquirer=self.node_inquirer,
         )
         amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[0:32]),

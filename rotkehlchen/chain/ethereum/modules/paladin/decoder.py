@@ -4,7 +4,7 @@ from typing import Any
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class PaladinDecoder(DecoderInterface):
+class PaladinDecoder(EvmDecoderInterface):
 
     def _decode_claim_quest(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != CLAIMED:
@@ -38,7 +38,7 @@ class PaladinDecoder(DecoderInterface):
             userdb=self.base.database,
             evm_address=reward_token_address,
             chain_id=ChainID.ETHEREUM,
-            evm_inquirer=self.evm_inquirer,
+            evm_inquirer=self.node_inquirer,
         )
         normalized_amount = token_normalized_value(amount, claimed_token)
         for event in context.decoded_events:

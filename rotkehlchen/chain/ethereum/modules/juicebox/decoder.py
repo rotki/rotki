@@ -17,7 +17,7 @@ from rotkehlchen.chain.ethereum.modules.juicebox.constants import (
     TERMINAL_3_1_2,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -35,12 +35,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class JuiceboxDecoder(DecoderInterface):
+class JuiceboxDecoder(EvmDecoderInterface):
 
     def _query_project_name(self, project_id: int) -> tuple[str | None, list[str]]:
         """Query metadata for project id in ipfs"""
         try:
-            ipfs_hash = self.evm_inquirer.call_contract(
+            ipfs_hash = self.node_inquirer.call_contract(
                 contract_address=JUICEBOX_PROJECTS,
                 abi=METADATA_CONTENT_OF_ABI,
                 method_name='metadataContentOf',

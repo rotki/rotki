@@ -58,7 +58,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 cache_type=CacheType.BALANCER_V2_POOLS,
             ),
         )
-        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[self.evm_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
+        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[self.node_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
 
     def decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == V2_SWAP:
@@ -169,7 +169,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
 
             if (
                 (event_token_amount := (
-                    self.wrapped_native_token if event.asset == self.evm_inquirer.native_token else event.asset,  # noqa: E501
+                    self.wrapped_native_token if event.asset == self.node_inquirer.native_token else event.asset,  # noqa: E501
                     event.amount,
                 )) in token_amounts_spent and
                 event.event_type == HistoryEventType.SPEND

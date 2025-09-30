@@ -5,7 +5,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -28,7 +28,7 @@ SUSHISWAP_V2_FACTORY: Final = string_to_evm_address('0xC0AEe478e3658e2610c5F7A4A
 SUSHISWAP_V2_INIT_CODE_HASH: Final = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'  # noqa: E501
 
 
-class SushiswapDecoder(DecoderInterface):
+class SushiswapDecoder(EvmDecoderInterface):
 
     def _maybe_decode_v2_swap(
             self,
@@ -46,8 +46,8 @@ class SushiswapDecoder(DecoderInterface):
                 transaction=transaction,
                 counterparty=CPT_SUSHISWAP_V2,
                 router_address=SUSHISWAP_ROUTER,
-                database=self.evm_inquirer.database,
-                evm_inquirer=self.evm_inquirer,
+                database=self.node_inquirer.database,
+                evm_inquirer=self.node_inquirer,
                 notify_user=self.notify_user,
             )
         return DEFAULT_DECODING_OUTPUT
@@ -68,8 +68,8 @@ class SushiswapDecoder(DecoderInterface):
                 all_logs=all_logs,
                 is_deposit=True,
                 counterparty=CPT_SUSHISWAP_V2,
-                database=self.evm_inquirer.database,
-                evm_inquirer=self.evm_inquirer,
+                database=self.node_inquirer.database,
+                evm_inquirer=self.node_inquirer,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
@@ -81,8 +81,8 @@ class SushiswapDecoder(DecoderInterface):
                 all_logs=all_logs,
                 is_deposit=False,
                 counterparty=CPT_SUSHISWAP_V2,
-                database=self.evm_inquirer.database,
-                evm_inquirer=self.evm_inquirer,
+                database=self.node_inquirer.database,
+                evm_inquirer=self.node_inquirer,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,

@@ -127,7 +127,7 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
             encounter=(encounter := TokenEncounterInfo(should_notify=False)),
         )
         underlying_token = self.base.get_or_create_evm_token(
-            address=deserialize_evm_address(self.evm_inquirer.call_contract(
+            address=deserialize_evm_address(self.node_inquirer.call_contract(
                 contract_address=vault_token.evm_address,
                 abi=ERC4626_ABI,
                 method_name='asset',
@@ -151,7 +151,7 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.amount == underlying_amount and
                     # the native token check is for gnosis since xDAI can be deposited
-                    event.asset in (underlying_token, self.evm_inquirer.native_token)
+                    event.asset in (underlying_token, self.node_inquirer.native_token)
                 ):
                     event.counterparty = CPT_SPARK
                     event.event_type = HistoryEventType.DEPOSIT
@@ -184,7 +184,7 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.amount == underlying_amount and
                 # the native token check is for gnosis since xDAI can be deposited
-                event.asset in (underlying_token, self.evm_inquirer.native_token)
+                event.asset in (underlying_token, self.node_inquirer.native_token)
             ):
                 event.counterparty = CPT_SPARK
                 event.event_type = HistoryEventType.WITHDRAWAL

@@ -8,7 +8,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Compoundv3CommonDecoder(DecoderInterface):
+class Compoundv3CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
@@ -77,7 +77,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 try:  # if not in cached mapping, fetch from DB and add it
                     self.underlying_tokens[compound_token] = EvmToken(evm_address_to_identifier(
                         address=compound_token.underlying_tokens[0].address,
-                        chain_id=self.evm_inquirer.chain_id,
+                        chain_id=self.node_inquirer.chain_id,
                         token_type=compound_token.underlying_tokens[0].token_kind,
                     ))
                 except (WrongAssetType, UnknownAsset) as e:
@@ -156,7 +156,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 receiving_ctoken = True
                 break
 
-        may_wrap_eth = underlying_token.symbol == 'WETH' and self.evm_inquirer.native_token == A_ETH  # noqa: E501
+        may_wrap_eth = underlying_token.symbol == 'WETH' and self.node_inquirer.native_token == A_ETH  # noqa: E501
         amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data),
             asset=underlying_token,
@@ -231,7 +231,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        may_wrap_eth = underlying_token.symbol == 'WETH' and self.evm_inquirer.native_token == A_ETH  # noqa: E501
+        may_wrap_eth = underlying_token.symbol == 'WETH' and self.node_inquirer.native_token == A_ETH  # noqa: E501
         sending_ctoken = False
         for tx_log in context.all_logs:
             if (
@@ -303,7 +303,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
         """Decode compound v3 supply/withdraw collateral events"""
         collateral_asset = EvmToken(evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[3]),
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
             token_type=TokenKind.ERC20,
         ))
         collateral_amount = asset_normalized_value(
@@ -398,14 +398,14 @@ class Compoundv3CommonDecoder(DecoderInterface):
         return {self.rewards_address: (self.decode_reward_claim,)} | {
             token.evm_address: (self.decode_compound_token_movement, token)
             for token in GlobalDBHandler.get_evm_tokens(
-                chain_id=self.evm_inquirer.chain_id,
+                chain_id=self.node_inquirer.chain_id,
                 protocol=CPT_COMPOUND_V3,
             )
         }
 
     def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
         return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
-            chain_id=self.evm_inquirer.chain_id,
+            chain_id=self.node_inquirer.chain_id,
             protocol=CPT_COMPOUND_V3,
         ), CPT_COMPOUND_V3)
 

@@ -5,7 +5,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, STAKED_TOPIC
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AaveDecoder(DecoderInterface):
+class AaveDecoder(EvmDecoderInterface):
     """Aave decoder for staking and unstaking events"""
     def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode aave staking unstaking events"""

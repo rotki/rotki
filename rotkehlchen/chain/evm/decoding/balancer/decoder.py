@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import (
     CPT_BALANCER_V2,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import (
-    DecoderInterface,
+    EvmDecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin, ABC):
+class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMixin, ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
