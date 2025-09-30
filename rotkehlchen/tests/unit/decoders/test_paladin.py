@@ -1,11 +1,11 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.paladin.constants import (
     CPT_PALADIN,
     PALADIN_MERKLE_DISTRIBUTOR_V2,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct

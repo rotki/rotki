@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGEN_TOKEN_ID,
 )
@@ -9,7 +10,6 @@ from rotkehlchen.chain.ethereum.modules.puffer.constants import (
     HEDGEY_DELEGATEDCLAIMS_CAMPAIGN,
     PUFFER_TOKEN_ID,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent

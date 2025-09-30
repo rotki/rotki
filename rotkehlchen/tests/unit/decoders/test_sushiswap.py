@@ -1,8 +1,8 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.constants.resolver import evm_address_to_identifier

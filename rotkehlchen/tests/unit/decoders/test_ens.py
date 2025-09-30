@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_evm_token
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.ens.constants import (
@@ -18,7 +19,6 @@ from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_REGISTRAR_CONTROLLER_2,
     _save_hash_mappings_get_fullname,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ENS, A_ETH

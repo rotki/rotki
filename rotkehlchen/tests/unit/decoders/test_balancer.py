@@ -4,10 +4,10 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import VAULT_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAL, A_DAI, A_ETH, A_USDC, A_WETH, A_XDAI
 from rotkehlchen.constants.misc import ZERO

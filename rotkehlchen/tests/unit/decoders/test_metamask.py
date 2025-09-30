@@ -9,10 +9,10 @@ from rotkehlchen.chain.arbitrum_one.modules.metamask.constants import (
 from rotkehlchen.chain.binance_sc.modules.metamask.constants import (
     METAMASK_ROUTER as METAMASK_ROUTER_BSC,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.metamask.constants import (
     METAMASK_ROUTER as METAMASK_ROUTER_ETH,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.metamask.constants import CPT_METAMASK_SWAPS
 from rotkehlchen.chain.optimism.modules.metamask.constants import (
     METAMASK_ROUTER as METAMASK_ROUTER_OPT,

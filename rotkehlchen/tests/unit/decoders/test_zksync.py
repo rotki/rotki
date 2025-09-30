@@ -1,7 +1,7 @@
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.zksync.constants import CPT_ZKSYNC, ZKSYNC_BRIDGE
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent

@@ -12,7 +12,7 @@ from rotkehlchen.accounting.cost_basis.base import (
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.db.settings import ModifiableDBSettings

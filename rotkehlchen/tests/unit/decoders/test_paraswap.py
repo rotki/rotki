@@ -6,8 +6,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.modules.paraswap.v5.constants import (
     PARASWAP_AUGUSTUS_ROUTER as PARASWAP_AUGUSTUS_ROUTER_BASE,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.paraswap.v5.constants import PARASWAP_AUGUSTUS_ROUTER
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (

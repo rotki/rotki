@@ -83,3 +83,9 @@ class HexBytes(bytes):
     def from_bytes(cls: type['HexBytes'], value: bytes) -> 'HexBytes':
         """Creates a new HexBytes instance directly from bytes, skipping deserialization"""
         return super().__new__(cls, value)
+
+    def __str__(self) -> str:
+        """TODO(@prettyirrelevant): Remove all the .hex() calls in the codebase.
+        https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=131451129
+        """
+        return self.hex()

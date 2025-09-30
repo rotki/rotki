@@ -1,7 +1,8 @@
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNOR_ALPHA
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
+from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_SAI
 from rotkehlchen.constants.misc import ZERO

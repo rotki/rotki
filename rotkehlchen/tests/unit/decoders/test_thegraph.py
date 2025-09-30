@@ -3,11 +3,11 @@ import pytest
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.constants import (
     CONTRACT_STAKING as CONTRACT_STAKING_ARB,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import (
     CONTRACT_STAKING,
     GRAPH_L1_LOCK_TRANSFER_TOOL,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_GRT, A_GRT_ARB

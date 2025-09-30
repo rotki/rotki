@@ -5,8 +5,8 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.odos.v1.constants import ODOS_V1_ROUTER as ARB_ROUTER
 from rotkehlchen.chain.binance_sc.modules.odos.v1.constants import ODOS_V1_ROUTER as BSC_ROUTER
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.odos.v1.constants import ODOS_V1_ROUTER as ETH_ROUTER
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.odos.v1.constants import CPT_ODOS_V1
 from rotkehlchen.chain.optimism.modules.odos.v1.constants import ODOS_V1_ROUTER as OPT_ROUTER
 from rotkehlchen.chain.polygon_pos.modules.odos.v1.constants import ODOS_V1_ROUTER as POL_ROUTER

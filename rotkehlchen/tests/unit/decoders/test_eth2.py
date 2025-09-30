@@ -1,12 +1,12 @@
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     CONSOLIDATION_REQUEST_CONTRACT,
     CPT_ETH2,
     WITHDRAWAL_REQUEST_CONTRACT,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2

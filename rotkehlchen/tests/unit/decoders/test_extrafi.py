@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.extrafi.decoder import (
     CPT_EXTRAFI,
     EXTRAFI_FARMING_CONTRACT,

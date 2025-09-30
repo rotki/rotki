@@ -1,8 +1,8 @@
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YGOV
 from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import YGOV_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_CRVP_DAIUSDCTTUSD, A_ETH, A_YFI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent

@@ -1,9 +1,9 @@
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.diva.constants import CPT_DIVA
 from rotkehlchen.chain.ethereum.modules.diva.decoder import DIVA_GOVERNOR
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DIVA, A_ETH
 from rotkehlchen.constants.misc import ZERO

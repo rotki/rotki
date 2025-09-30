@@ -5,6 +5,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     CONSOLIDATION_REQUEST_CONTRACT,
     CPT_ETH2,
@@ -18,7 +19,6 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorStatus,
     ValidatorType,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH

@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.digixdao.constants import (
     A_DGD,
     CPT_DIGIXDAO,
     DIGIX_DGD_ETH_REFUND_CONTRACT,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent

@@ -1,11 +1,11 @@
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.modules.omnibridge.decoder import (
     BRIDGE_ADDRESS as ETHEREUM_BRIDGE_ADDRESS,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.omnibridge.decoder import (
     BRIDGE_ADDRESS as GNOSIS_BRIDGE_ADDRESS,

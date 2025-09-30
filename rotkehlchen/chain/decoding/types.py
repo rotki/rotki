@@ -1,4 +1,11 @@
-from typing import NamedTuple
+from typing import NamedTuple, Protocol, Self
+
+
+class SupportsAddition(Protocol):
+    """Protocol for types that support addition with the + operator.
+    Decoding rules must implement this to allow merging during recursive discovery.
+    """
+    def __add__(self, other: Self) -> Self: ...
 
 
 def get_versioned_counterparty_label(counterparty: str) -> str:

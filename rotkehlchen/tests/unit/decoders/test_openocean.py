@@ -4,7 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.open_ocean.decoder import DISTRIBUTOR_ADDR
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.open_ocean.constants import (
     CPT_OPENOCEAN,
     OPENOCEAN_EXCHANGE_ADDRESS,

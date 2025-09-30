@@ -1,7 +1,8 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.decoding.constants import CPT_BASE, CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_BASE
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal

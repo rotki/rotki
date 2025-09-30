@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE

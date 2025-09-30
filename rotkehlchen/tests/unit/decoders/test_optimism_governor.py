@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.chain.optimism.modules.optimism_governor.decoder import GOVERNOR_ADDRESS
 from rotkehlchen.constants.misc import ZERO

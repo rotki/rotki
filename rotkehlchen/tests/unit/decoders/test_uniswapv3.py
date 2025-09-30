@@ -8,9 +8,9 @@ from rotkehlchen.chain.base.modules.uniswap.v3.constants import UNISWAP_UNIVERSA
 from rotkehlchen.chain.binance_sc.modules.uniswap.v3.constants import (
     UNISWAP_UNIVERSAL_ROUTER as UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
 )
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import UNISWAP_UNIVERSAL_ROUTER_V2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3

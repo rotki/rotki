@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.polygon_pos_bridge.decoder import (
     BRIDGE_ADDRESS,
     ERC20_BRIDGE_ADDRESS,
@@ -9,7 +10,6 @@ from rotkehlchen.chain.ethereum.modules.polygon_pos_bridge.decoder import (
     PLASMA_BRIDGE_ADDRESS,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.polygon_pos.modules.polygon_pos_bridge.decoder import (

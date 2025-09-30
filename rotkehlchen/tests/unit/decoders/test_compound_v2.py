@@ -2,11 +2,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.compound.constants import (
     COMPTROLLER_PROXY_ADDRESS,
     CPT_COMPOUND,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_CBAT,
