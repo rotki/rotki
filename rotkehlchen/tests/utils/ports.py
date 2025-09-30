@@ -6,7 +6,7 @@ import psutil
 
 def get_free_port(address: str, initial_port: int) -> Iterator[int]:
     """Find an unused TCP port in a specified range. This should not
-      be used in misson-critical applications - a race condition may
+      be used in mission-critical applications - a race condition may
       occur if someone grabs the port before caller of this function
       has chance to use it.
       Parameters:

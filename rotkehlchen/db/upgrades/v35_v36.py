@@ -76,7 +76,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Upgrading account details.')
     def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
-        """Upgrade to account_defails table to evm_accounts_details"""
+        """Upgrade the account_details table to evm_accounts_details"""
         new_data = []
         last_queried_timestamp_map: dict[str, int] = {}
         if table_exists(write_cursor, 'accounts_details'):
