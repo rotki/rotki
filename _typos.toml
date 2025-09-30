@@ -31,6 +31,9 @@ extend-ignore-identifiers-re = [
     "qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z",  # bitcoin cash address used in test
     "BENGEso6uSrcCYyRsanYgmDwLi34QSpihU2FX2xvpump",  # solana address used in test
     "^astroid$",  # astroid library
+    "^[1-9A-HJ-NP-Za-km-z]{32,44}$",  # solana addresses
+    "^[1-9A-HJ-NP-Za-km-z]{88}$",  # solana signatures
+    "^TRU$",  # TrueFi asset symbol
 ]
 locale = "en"
 

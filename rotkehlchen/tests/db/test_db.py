@@ -1656,7 +1656,7 @@ def test_all_balance_types_in_db(database):
     """
     Test that all balance_category in DB deserialize to a valid BalanceType
     """
-    # Query for all balace_category rows
+    # Query for all balance_category rows
     cursor = database.conn.cursor()
     balance_types = cursor.execute('SELECT category, seq from balance_category')
 

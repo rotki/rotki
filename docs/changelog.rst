@@ -740,7 +740,7 @@ Changelog
 * :feature:`-` Transactions changing the content hash of an ENS name will now be properly decoded.
 * :feature:`5255` Pnl report assets now have an etherscan link to make it easier to identify pool assets.
 * :feature:`6179` Users will now be able to import their trades, income and spending from BitcoinTaxes.
-* :feature:`-` Ethereum transactions involing bribe claim payouts from StakeDAO will now be decoded properly.
+* :feature:`-` Ethereum transactions involving bribe claim payouts from StakeDAO will now be decoded properly.
 * :feature:`-` Ethereum transactions involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.
 * :feature:`5250` Ethereum transactions involving AAVE v1 and v2 liquidations will now be decoded properly.
 * :bug:`-` Fix issue for ledger actions with zero rate, where the rate isn't used in the PnL report.
