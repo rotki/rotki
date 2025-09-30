@@ -9,14 +9,14 @@ use std::sync::Arc;
 
 /// Used when requesting an asset locally
 #[derive(Deserialize)]
-pub struct CollectionAsssetsPayload {
+pub struct CollectionAssetsPayload {
     // id of the asset to be queried
     collection_id: u32,
 }
 
 pub async fn query_collection_assets(
     state: State<Arc<AppState>>,
-    payload: Query<CollectionAsssetsPayload>,
+    payload: Query<CollectionAssetsPayload>,
 ) -> impl IntoResponse {
     match state
         .globaldb
