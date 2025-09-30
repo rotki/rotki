@@ -58,3 +58,10 @@ export function createEvmIdentifierFromAddress(address: string, chain = '1'): st
 export function getValidSelectorFromEvmAddress(address: string): string {
   return address.replace(/[^\da-z]/gi, '');
 }
+
+export function getAddressFromSolanaIdentifier(identifier?: string): string {
+  if (!identifier)
+    return '';
+
+  return identifier.split(':')[1] ?? '';
+}

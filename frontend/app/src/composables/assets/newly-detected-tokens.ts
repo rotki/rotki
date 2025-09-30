@@ -1,5 +1,5 @@
-import type { NewDetectedToken } from '@/modules/messaging/types';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { type NewDetectedToken, NewDetectedTokens } from '@/modules/messaging/types';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
@@ -20,7 +20,7 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   const settingsStore = useFrontendSettingsStore();
   const { notifyNewNfts } = storeToRefs(settingsStore);
 
-  const tokens = computed<NewDetectedToken[]>(() => get(internalTokens));
+  const tokens = computed<NewDetectedToken[]>(() => NewDetectedTokens.parse(get(internalTokens)));
 
   const clearInternalTokens = (): void => {
     set(internalTokens, []);

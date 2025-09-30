@@ -72,6 +72,7 @@ const aliasName = computed<string | null>(() => {
             <template #activator>
               <RuiIcon
                 name="lu-link"
+                size="16px"
                 class="text-rui-text-secondary"
               />
             </template>
