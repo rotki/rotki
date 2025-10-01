@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { RepullingTransactionPayload } from '@/types/history/events';
+import type { RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
 import { assert } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useTemplateRef } from 'vue';
@@ -26,16 +26,17 @@ const emit = defineEmits<{
 }>();
 
 const formData = ref<RepullingTransactionPayload>(defaults());
+const accountType = ref<'blockchain' | 'exchange'>('blockchain');
 
 const { t } = useI18n({ useScope: 'global' });
 
 const submitting = ref<boolean>(false);
 const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof RepullingTransactionForm>>('form');
-const stateUpdated = ref(false);
+const stateUpdated = ref<boolean>(false);
 
 const { setMessage } = useMessageStore();
-const { repullingTransactions } = useHistoryTransactions();
+const { repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
 const { getEvmChainName, matchChain, txEvmChains } = useSupportedChains();
 const { useIsTaskRunning } = useTaskStore();
 
@@ -50,48 +51,68 @@ function defaults(): RepullingTransactionPayload {
   };
 }
 
-async function submit() {
+async function submit(): Promise<void> {
   const formRef = get(form);
   const valid = await formRef?.validate();
   if (!valid)
-    return false;
+    return;
 
   const data = get(formData);
-  const evmChainVal = data.evmChain;
-
-  const evmChain = evmChainVal && evmChainVal !== 'evm' ? getEvmChainName(evmChainVal) : undefined;
-  const payload: RepullingTransactionPayload = {
-    ...data,
-    address: data.address || undefined,
-    evmChain,
-  };
+  const type = get(accountType);
 
   try {
     set(submitting, true);
     set(modelValue, false);
-    const newTransactionsDetected = await repullingTransactions(payload);
-    if (newTransactionsDetected) {
-      let chains: string[];
-      if (evmChainVal === 'evm' || !evmChainVal) {
-        chains = get(txEvmChains).map(chain => chain.id);
-      }
-      else {
-        const chainId = matchChain(evmChainVal);
-        assert(chainId);
-        chains = [chainId];
-      }
 
-      emit('refresh', chains);
-      logger.debug(`New transactions detected ${chains.join(', ')}`);
+    if (type === 'exchange') {
+      const exchangeData = formRef?.getExchangeData();
+      const exchangePayload: RepullingExchangeEventsPayload = {
+        fromTimestamp: data.fromTimestamp,
+        location: exchangeData?.location || '',
+        name: exchangeData?.name || '',
+        toTimestamp: data.toTimestamp,
+      };
+
+      const newEventsDetected = await repullingExchangeEvents(exchangePayload);
+      if (newEventsDetected) {
+        emit('refresh', []);
+        logger.debug('New exchange events detected');
+      }
+    }
+    else {
+      const evmChainVal = data.evmChain;
+      const evmChain = evmChainVal && evmChainVal !== 'evm' ? getEvmChainName(evmChainVal) : undefined;
+      const blockchainPayload = {
+        address: data.address || undefined,
+        evmChain,
+        fromTimestamp: data.fromTimestamp,
+        toTimestamp: data.toTimestamp,
+      };
+
+      const newTransactionsDetected = await repullingTransactions(blockchainPayload);
+      if (newTransactionsDetected) {
+        let chains: string[];
+        if (evmChainVal === 'evm' || !evmChainVal) {
+          chains = get(txEvmChains).map(chain => chain.id);
+        }
+        else {
+          const chainId = matchChain(evmChainVal);
+          assert(chainId);
+          chains = [chainId];
+        }
+
+        emit('refresh', chains);
+        logger.debug(`New transactions detected ${chains.join(', ')}`);
+      }
     }
 
-    set(submitting, false);
     set(formData, defaults());
+    set(accountType, 'blockchain');
   }
   catch (error: any) {
     let message = error.message;
     if (error instanceof ApiValidationError)
-      message = error.getValidationErrors(payload);
+      message = error.getValidationErrors(data);
 
     if (typeof message === 'string') {
       setMessage({
@@ -123,6 +144,7 @@ async function submit() {
     <RepullingTransactionForm
       ref="form"
       v-model="formData"
+      v-model:account-type="accountType"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
     />

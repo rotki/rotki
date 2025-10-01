@@ -710,6 +710,19 @@
         }
       }
     },
+    "repulling_exchange_events": {
+      "error": {
+        "description": "Failed to re-pull events for {exchange}"
+      },
+      "success": {
+        "description": "{length} events re-pulled",
+        "no_events_description": "No events re-pulled"
+      },
+      "task": {
+        "description": "Re-pulling events for {exchange} from {from} to {to}",
+        "title": "Re-pulling exchange events"
+      }
+    },
     "repulling_transaction": {
       "error": {
         "description": "Failed to re-pull transactions for {address} ({chain}).",
@@ -5011,8 +5024,13 @@
     },
     "refresh_tooltip": "Fetch latest events",
     "repulling": {
+      "account_type": {
+        "blockchain": "Blockchain",
+        "exchange": "Exchange"
+      },
       "action": "Re-Pull Transaction",
       "address_hint": "Leave it empty to re-pull transactions from all addresses",
+      "exchange": "Exchange",
       "title": "Re-Pulling Transactions"
     },
     "title": "History Events",

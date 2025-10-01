@@ -1,6 +1,8 @@
 import type { ActionStatus } from '@/types/action';
 import type {
   AddTransactionHashPayload,
+  RepullingExchangeEventsPayload,
+  RepullingExchangeEventsResponse,
   RepullingTransactionPayload,
   RepullingTransactionResponse,
 } from '@/types/history/events';
@@ -22,12 +24,16 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { notify } = useNotificationsStore();
   const {
     addTransactionHash: addTransactionHashCaller,
+    repullingExchangeEvents: repullingExchangeEventsCaller,
     repullingTransactions: repullingTransactionsCaller,
   } = useHistoryEventsApi();
 
   const { awaitTask } = useTaskStore();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
   const { refreshTransactions } = useRefreshTransactions();
+
+  const formatTimestamp = (seconds: number): string =>
+    displayDateFormatter.format(new Date(seconds * 1000), get(dateDisplayFormat));
 
   const addTransactionHash = async (payload: AddTransactionHashPayload): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
@@ -53,8 +59,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const messagePayload = {
       address: payload.address,
       chain: payload.evmChain ? toHumanReadable(payload.evmChain) : undefined,
-      from: displayDateFormatter.format(new Date(payload.fromTimestamp * 1000), get(dateDisplayFormat)),
-      to: displayDateFormatter.format(new Date(payload.toTimestamp * 1000), get(dateDisplayFormat)),
+      from: formatTimestamp(payload.fromTimestamp),
+      to: formatTimestamp(payload.toTimestamp),
     };
 
     const isAddressSpecified = payload.address && payload.evmChain;
@@ -94,9 +100,51 @@ export const useHistoryTransactions = createSharedComposable(() => {
     return false;
   };
 
+  const repullingExchangeEvents = async (payload: RepullingExchangeEventsPayload): Promise<boolean> => {
+    const taskType = TaskType.REPULLING_TXS;
+    const { taskId } = await repullingExchangeEventsCaller(payload);
+
+    const messagePayload = {
+      exchange: `${payload.name} (${payload.location})`,
+      from: formatTimestamp(payload.fromTimestamp),
+      to: formatTimestamp(payload.toTimestamp),
+    };
+
+    const taskMeta = {
+      description: t('actions.repulling_exchange_events.task.description', messagePayload),
+      title: t('actions.repulling_exchange_events.task.title'),
+    };
+
+    try {
+      const { result } = await awaitTask<RepullingExchangeEventsResponse, TaskMeta>(taskId, taskType, taskMeta, true);
+      const { storedEvents } = result;
+      notify({
+        display: true,
+        message: storedEvents ? t('actions.repulling_exchange_events.success.description', { length: storedEvents }) : t('actions.repulling_exchange_events.success.no_events_description'),
+        severity: Severity.INFO,
+        title: t('actions.repulling_exchange_events.task.title'),
+      });
+
+      return storedEvents > 0;
+    }
+    catch (error: any) {
+      if (isTaskCancelled(error)) {
+        return false;
+      }
+      logger.error(error);
+      notify({
+        display: true,
+        message: t('actions.repulling_exchange_events.error.description', messagePayload),
+        title: t('actions.repulling_exchange_events.task.title'),
+      });
+    }
+    return false;
+  };
+
   return {
     addTransactionHash,
     refreshTransactions,
+    repullingExchangeEvents,
     repullingTransactions,
   };
 });

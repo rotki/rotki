@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`10630` Users will now be able to re-pull missed history events from exchanges.
 * :feature:`10637` rotki will now properly handle Runmoney.app transactions and balances in Base.
 * :feature:`9972` rotki will now properly handle Quickswap transactions and LP balances in all supported chains.
 * :feature:`10321` Users can now delete multiple events in the history events section.

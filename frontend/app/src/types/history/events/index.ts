@@ -68,13 +68,28 @@ export const BlockchainAddress = z.object({
 
 export type BlockchainAddress = z.infer<typeof BlockchainAddress>;
 
-export interface RepullingTransactionPayload extends Partial<EvmChainAddress> {
+interface TimeRange {
   readonly fromTimestamp: number;
   readonly toTimestamp: number;
 }
 
+export interface RepullingTransactionPayload extends Partial<EvmChainAddress>, TimeRange {
+}
+
 export interface RepullingTransactionResponse {
   newTransactionsCount: number;
+}
+
+export interface RepullingExchangeEventsPayload extends TimeRange {
+  location: string;
+  name: string;
+}
+
+export interface RepullingExchangeEventsResponse {
+  queriedEvents: number;
+  storedEvents: number;
+  skippedEvents: number;
+  actualEndTs: number;
 }
 
 export const EvmChainLikeAddress = z.object({
