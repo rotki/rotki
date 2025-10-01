@@ -16,6 +16,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.constants import (
+    CHAIN_EVENT_FIELDS,
     ETH_STAKING_EVENT_FIELDS,
     EVM_EVENT_FIELDS,
     HISTORY_BASE_ENTRY_FIELDS,
@@ -56,9 +57,12 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 ALL_EVENTS_DATA_JOIN: Final = """FROM history_events
+LEFT JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier
 LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier
 LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
-EVM_EVENT_JOIN: Final = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
+EVM_EVENT_JOIN: Final = """FROM history_events
+INNER JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier
+INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier """
 ETH_STAKING_EVENT_JOIN: Final = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
 ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
@@ -1027,7 +1031,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         if tx_hashes is not None:
             filter_query.filters.append(DBMultiBytesFilter(
                 and_op=True,
-                column='tx_hash',
+                column='tx_ref',
                 values=tx_hashes,
                 operator='IN',
             ))
@@ -1048,7 +1052,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
 
     @staticmethod
     def get_columns() -> str:
-        return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}'
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS}'
 
     @staticmethod
     def match_location_label(filters: list[DBFilter], labels: list[str]) -> None:
@@ -1307,7 +1311,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
 
     @staticmethod
     def get_columns() -> str:
-        return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'  # noqa: E501
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

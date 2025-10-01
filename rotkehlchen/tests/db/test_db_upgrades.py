@@ -3361,6 +3361,7 @@ def test_latest_upgrade_correctness(user_data_dir):
         'accounting_rule_events',
         'solana_transactions',
         'solana_tx_account_keys',
+        'chain_events_info',
         'solana_tx_instruction_accounts',
         'solana_tx_instructions',
         'solanatx_address_mappings',
@@ -3665,6 +3666,11 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db_v49.conn.read_ctx() as cursor:
+        assert not table_exists(cursor=cursor, name='chain_events_info')
+        assert cursor.execute('SELECT identifier, counterparty, address, product FROM evm_events_info').fetchall() == [  # noqa: E501
+            (5, 'uniswap-v2', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c', 'staking'),
+            (6, 'makerdao_dsr', '0xAaE2F0F2d7C77cF2A7261a75568128F0C6996319', 'loan'),
+        ]
         assert cursor.execute(
             "SELECT identifier, event_identifier, location_label FROM history_events WHERE location = 'P'",  # noqa: E501
         ).fetchall() == [
@@ -3707,6 +3713,12 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='chain_events_info')
+        assert cursor.execute('SELECT identifier, product FROM evm_events_info').fetchall() == [(5, 'staking'), (6, 'loan')]  # noqa: E501
+        assert cursor.execute('SELECT identifier, counterparty, address FROM chain_events_info').fetchall() == [  # noqa: E501
+            (5, 'uniswap-v2', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'),
+            (6, 'makerdao_dsr', '0xAaE2F0F2d7C77cF2A7261a75568128F0C6996319'),
+        ]
         assert cursor.execute(
             "SELECT identifier, event_identifier, location_label FROM history_events WHERE location = 'P'",  # noqa: E501
         ).fetchall() == [

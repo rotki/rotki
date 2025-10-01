@@ -14,6 +14,8 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import (
+    CHAIN_EVENT_FIELDS,
+    CHAIN_FIELD_LENGTH,
     ETH_STAKING_EVENT_FIELDS,
     ETH_STAKING_FIELD_LENGTH,
     EVM_EVENT_FIELDS,
@@ -253,8 +255,8 @@ class DBHistoryEvents:
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0]
         join_or_where = (
-            'INNER JOIN evm_events_info E ON H.identifier=E.identifier '
-            'AND E.tx_hash IN (SELECT tx_hash FROM evm_transactions) AND'
+            'INNER JOIN chain_events_info C ON H.identifier=C.identifier '
+            'AND C.tx_ref IN (SELECT tx_hash FROM evm_transactions) AND'
         ) if not location.is_bitcoin() else 'WHERE'
         querystr = (
             'DELETE FROM history_events WHERE identifier IN ('
@@ -318,8 +320,8 @@ class DBHistoryEvents:
             bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_hashes]
         else:
             where_str = (
-                f'WHERE identifier IN (SELECT identifier FROM evm_events_info '
-                f'WHERE tx_hash IN ({placeholders}))'
+                f'WHERE identifier IN (SELECT identifier FROM chain_events_info '
+                f'WHERE tx_ref IN ({placeholders}))'
             )
             bindings = list(tx_hashes)  # type: ignore  # different type of elements in the list
 
@@ -367,7 +369,7 @@ class DBHistoryEvents:
         """Returns the EVM event with the given identifier"""
         with self.db.conn.read_ctx() as cursor:
             event_data = cursor.execute(
-                f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE history_events.identifier=? AND entry_type=?',  # noqa: E501
+                f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE history_events.identifier=? AND entry_type=?',  # noqa: E501
                 (identifier, HistoryBaseEntryType.EVM_EVENT.value),
             ).fetchone()
             if event_data is None:
@@ -390,7 +392,7 @@ class DBHistoryEvents:
             match_exact_events: bool = True,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
-        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
         if group_by_event_ids:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
@@ -566,7 +568,7 @@ class DBHistoryEvents:
                 if entry_type == HistoryBaseEntryType.EVM_EVENT:
                     data = (
                         entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +
-                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]    # noqa: E501
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH + 1]    # noqa: E501
                     )
                     deserialized_event = EvmEvent.deserialize_from_db(data)
                 elif entry_type in (
@@ -579,7 +581,7 @@ class DBHistoryEvents:
                         location_label_tuple +
                         entry[data_start_idx + 7:data_start_idx + 8] +
                         entry[data_start_idx + 10:data_start_idx + 12] +
-                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH + 1]  # noqa: E501
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH + 1]  # noqa: E501
                     )
                     if entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
                         deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
@@ -600,7 +602,7 @@ class DBHistoryEvents:
                         entry[data_start_idx + 5:data_start_idx + 6] +
                         entry[data_start_idx + 7:data_start_idx + 9] +
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +  # noqa: E501
-                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
                     )
                     deserialized_event = EthDepositEvent.deserialize_from_db(data)
 
@@ -1050,8 +1052,8 @@ class DBHistoryEvents:
         from_ts_ms, to_ts_ms = ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT SUM(CAST(amount AS FLOAT)) FROM history_events JOIN evm_events_info '
-                'ON history_events.identifier=evm_events_info.identifier WHERE '
+                'SELECT SUM(CAST(amount AS FLOAT)) FROM history_events JOIN chain_events_info '
+                'ON history_events.identifier=chain_events_info.identifier WHERE '
                 "asset='ETH' AND type='spend' and subtype='fee' AND counterparty='gas' AND "
                 'timestamp >= ? AND timestamp <= ?',
                 (from_ts_ms, to_ts_ms),
@@ -1062,17 +1064,17 @@ class DBHistoryEvents:
                 eth_on_gas = '0'
 
             cursor.execute(
-                'SELECT location_label, SUM(CAST(amount AS FLOAT)) FROM history_events JOIN evm_events_info '  # noqa: E501
-                'ON history_events.identifier=evm_events_info.identifier WHERE '
+                'SELECT location_label, SUM(CAST(amount AS FLOAT)) FROM history_events JOIN chain_events_info '  # noqa: E501
+                'ON history_events.identifier=chain_events_info.identifier WHERE '
                 "asset='ETH' AND type='spend' and subtype='fee' AND counterparty='gas' AND "
                 'timestamp >= ? AND timestamp <= ? GROUP BY location_label',
                 (from_ts_ms, to_ts_ms),
             )
             eth_on_gas_per_address = {row[0]: str(row[1]) for row in cursor}
             cursor.execute(
-                'SELECT chain_id, COUNT(DISTINCT event_identifier) as tx_count FROM evm_events_info '  # noqa: E501
-                'JOIN history_events ON evm_events_info.identifier = history_events.identifier '
-                'JOIN evm_transactions ON evm_transactions.tx_hash = evm_events_info.tx_hash '
+                'SELECT chain_id, COUNT(DISTINCT event_identifier) as tx_count FROM chain_events_info '  # noqa: E501
+                'JOIN history_events ON chain_events_info.identifier = history_events.identifier '
+                'JOIN evm_transactions ON evm_transactions.tx_hash = chain_events_info.tx_ref '
                 'WHERE history_events.timestamp >= ? AND history_events.timestamp <= ? AND history_events.asset NOT IN '  # noqa: E501
                 "(SELECT value FROM multisettings WHERE name = 'ignored_asset') GROUP BY chain_id",
                 (from_ts_ms, to_ts_ms),
@@ -1104,7 +1106,7 @@ class DBHistoryEvents:
             ]
             cursor.execute(
                 "SELECT unixepoch(date(datetime(timestamp/1000, 'unixepoch'), 'localtime'), 'utc'), COUNT(DISTINCT event_identifier) as tx_count "  # noqa: E501
-                'FROM evm_events_info JOIN history_events ON evm_events_info.identifier = history_events.identifier '  # noqa: E501
+                'FROM chain_events_info JOIN history_events ON chain_events_info.identifier = history_events.identifier '  # noqa: E501
                 'WHERE timestamp >= ? AND timestamp <= ? AND history_events.asset NOT IN '
                 "(SELECT value FROM multisettings WHERE name = 'ignored_asset') "
                 "GROUP BY date(datetime(timestamp/1000, 'unixepoch'), 'localtime') ORDER BY "
@@ -1117,9 +1119,9 @@ class DBHistoryEvents:
             } for row in cursor]
 
             cursor.execute(
-                'SELECT counterparty, COUNT(DISTINCT tx_hash) AS unique_transaction_count '
-                'FROM evm_events_info JOIN history_events ON '
-                'evm_events_info.identifier = history_events.identifier '
+                'SELECT counterparty, COUNT(DISTINCT tx_ref) AS unique_transaction_count '
+                'FROM chain_events_info JOIN history_events ON '
+                'chain_events_info.identifier = history_events.identifier '
                 "WHERE counterparty IS NOT NULL AND counterparty != 'gas' "
                 'AND timestamp BETWEEN ? AND ? '
                 'GROUP BY counterparty ORDER BY unique_transaction_count DESC',

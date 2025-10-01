@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 QUERY_STAKING_EVENTS = """
 WHERE event_identifier IN
 (SELECT A.event_identifier FROM history_events AS A JOIN history_events AS B ON A.event_identifier = B.event_identifier
-    JOIN evm_events_info AS C ON A.identifier=C.identifier WHERE C.counterparty=? AND A.asset=?
+    JOIN chain_events_info AS C ON A.identifier=C.identifier WHERE C.counterparty=? AND A.asset=?
     AND B.asset=? AND B.subtype != ? AND B.type == ?
 ) AND type=? AND subtype=?
 """  # noqa: E501
@@ -42,10 +42,10 @@ BINDINGS_STAKING_EVENTS = [
 QUERY_STABILITY_POOL_EVENTS = """
 WHERE event_identifier IN (
     SELECT A.event_identifier FROM history_events AS A JOIN history_events AS B ON
-    A.event_identifier = B.event_identifier JOIN evm_events_info AS C ON A.identifier=C.identifier
+    A.event_identifier = B.event_identifier JOIN chain_events_info AS C ON A.identifier=C.identifier
     WHERE C.counterparty = 'liquity' AND B.asset=? AND B.subtype=?
 ) AND type=? AND subtype=?
-"""
+"""  # noqa: E501
 BINDINGS_STABILITY_POOL_EVENTS = [
     A_LQTY.identifier,
     HistoryEventSubType.REWARD.serialize(),
@@ -53,8 +53,8 @@ BINDINGS_STABILITY_POOL_EVENTS = [
     HistoryEventSubType.REWARD.serialize(),
 ]
 QUERY_STABILITY_POOL_DEPOSITS = (
-    'SELECT amount, timestamp, asset FROM history_events JOIN evm_events_info ON '
-    'history_events.identifier=evm_events_info.identifier WHERE counterparty=? '
+    'SELECT amount, timestamp, asset FROM history_events JOIN chain_events_info ON '
+    'history_events.identifier=chain_events_info.identifier WHERE counterparty=? '
     'AND asset=? AND type=? AND subtype=?'
 )
 

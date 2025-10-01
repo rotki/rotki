@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.schema import (
+    DB_CREATE_CHAIN_EVENTS_INFO,
+    DB_CREATE_EVM_EVENTS_INFO,
     DB_CREATE_SOLANA_ADDRESS_MAPPINGS,
     DB_CREATE_SOLANA_TRANSACTIONS,
     DB_CREATE_SOLANA_TX_ACCOUNT_KEYS,
@@ -65,5 +67,21 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             f'{DB_CREATE_SOLANA_TX_INSTRUCTIONS} {DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS} '
             f'{DB_CREATE_SOLANA_ADDRESS_MAPPINGS} {DB_CREATE_SOLANA_TX_MAPPINGS}',
         )
+
+    @progress_step(description='Split events metadata into chain agnostic and EVM specific tables.')  # noqa: E501
+    def _split_events_info_tables(write_cursor: 'DBCursor') -> None:
+        write_cursor.switch_foreign_keys('OFF')
+        write_cursor.execute('ALTER TABLE evm_events_info RENAME TO evm_events_info_old')
+        write_cursor.executescript(f'{DB_CREATE_CHAIN_EVENTS_INFO} {DB_CREATE_EVM_EVENTS_INFO}')
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) '
+            'SELECT identifier, tx_hash, counterparty, address FROM evm_events_info_old',
+        )
+        write_cursor.execute(
+            'INSERT INTO evm_events_info(identifier, product) '
+            'SELECT identifier, product FROM evm_events_info_old',
+        )
+        write_cursor.switch_foreign_keys('ON')
+        write_cursor.execute('DROP TABLE evm_events_info_old')
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

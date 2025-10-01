@@ -101,7 +101,7 @@ class AMMSwapPlatform:
         query, bindings = db_filter.prepare()
         address_to_pools = defaultdict(list)
         with self.database.conn.read_ctx() as cursor:
-            cursor.execute('SELECT location_label, asset FROM history_events JOIN evm_events_info ON history_events.identifier = evm_events_info.identifier ' + query, bindings)  # noqa: E501
+            cursor.execute('SELECT location_label, asset FROM history_events JOIN chain_events_info ON history_events.identifier = chain_events_info.identifier ' + query, bindings)  # noqa: E501
             for address, lp_token in cursor:
                 address_to_pools[string_to_evm_address(address)].append(Asset(lp_token))
 

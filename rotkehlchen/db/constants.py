@@ -67,13 +67,16 @@ class UpdateType(Enum):
 
 
 # Giving a name for history_events.identifier since without it in the free version case https://github.com/rotki/rotki/issues/7362 we were hitting a no such column: history_events.identifier  # noqa: E501
-HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype, extra_data, ignored '  # noqa: E501
-HISTORY_BASE_ENTRY_LENGTH = 13
+HISTORY_BASE_ENTRY_FIELDS: Final = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype, extra_data, ignored '  # noqa: E501
+HISTORY_BASE_ENTRY_LENGTH: Final = 13
 
-EVM_EVENT_FIELDS = 'tx_hash, counterparty, product, address'
-EVM_FIELD_LENGTH = 4
+CHAIN_EVENT_FIELDS: Final = 'tx_ref, counterparty, address'
+CHAIN_FIELD_LENGTH: Final = 3
 
-ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
-ETH_STAKING_FIELD_LENGTH = 2
+EVM_EVENT_FIELDS: Final = 'product'
+EVM_FIELD_LENGTH: Final = 1
+
+ETH_STAKING_EVENT_FIELDS: Final = 'validator_index, is_exit_or_blocknumber'
+ETH_STAKING_FIELD_LENGTH: Final = 2
 
 EXTRAINTERNALTXPREFIX: Final = 'extrainternaltx'

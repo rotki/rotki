@@ -121,11 +121,11 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         JOIN evmtx_receipts er ON et.identifier = er.tx_id
         JOIN evmtx_receipt_logs erl ON er.tx_id = erl.tx_id
         WHERE erl.address = '0xF55041E37E12cD407ad00CE2910B8269B01263b9'
-    ) AND tx_hash NOT IN (SELECT tx_hash from evm_events_info)"""
+    ) AND tx_hash NOT IN (SELECT tx_ref from chain_events_info)"""
         if len(to_keep_hashes) != 0:
             # we have also performed a thorough logs query above in case some were not decoded.
             # As if the transactions were not decoded yet then the
-            # tx_hash NOT IN (SELECT tx_hash from evm_events_info) won't help avoid
+            # tx_hash NOT IN (SELECT tx_hash from chain_events_info) won't help avoid
             # deleting important transactions
             to_keep_placeholders = ','.join('?' * len(to_keep_hashes))
             querystr += f' AND tx_hash NOT IN ({to_keep_placeholders})'

@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 from rotkehlchen.constants.assets import A_ETH
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE, HistoryBaseEntry, HistoryBaseEntryType
-from .evm_event import EVM_EVENT_FIELDS, EvmEvent
+from .evm_event import CHAIN_EVENT_FIELDS_TYPE, EVM_EVENT_FIELDS_TYPE, EvmEvent
 
 ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
@@ -508,12 +508,14 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
 
     def serialize_for_db(self) -> tuple[  # type: ignore  # wont match EvmEvent supertype
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
-            tuple[str, str, EVM_EVENT_FIELDS],
+            tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
+            tuple[str, str, EVM_EVENT_FIELDS_TYPE],
             tuple[str, str, tuple[int, int]],
     ]:
-        base_tuple, evm_tuple = self._serialize_evm_event_tuple_for_db()
+        base_tuple, chain_tuple, evm_tuple = self._serialize_evm_event_tuple_for_db()
         return (
             base_tuple,
+            chain_tuple,
             evm_tuple,
             (STAKING_DB_INSERT_QUERY_STR, STAKING_DB_UPDATE_QUERY_STR, (self.validator_index, 0)),
         )

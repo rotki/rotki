@@ -148,6 +148,7 @@ TABLES_AT_INIT = [
     'address_book',
     'rpc_nodes',
     'user_notes',
+    'chain_events_info',
     'evm_events_info',
     'eth_staking_events_info',
     'skipped_external_events',

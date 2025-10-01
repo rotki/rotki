@@ -489,13 +489,13 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         )
         write_cursor.execute(  # delete genesis tx events related to the provided address
             'DELETE FROM history_events WHERE identifier IN ('
-            'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
-            'ON H.identifier=E.identifier WHERE E.tx_hash=? AND H.location_label=?)',
+            'SELECT H.identifier from history_events H INNER JOIN chain_events_info C '
+            'ON H.identifier=C.identifier WHERE C.tx_ref=? AND H.location_label=?)',
             (GENESIS_HASH, address),
         )
         genesis_events_count = write_cursor.execute(
-            'SELECT COUNT (*) FROM history_events H INNER JOIN evm_events_info E'
-            ' WHERE H.identifier=E.identifier and E.tx_hash=?',
+            'SELECT COUNT (*) FROM history_events H INNER JOIN chain_events_info C'
+            ' WHERE H.identifier=C.identifier and C.tx_ref=?',
             (GENESIS_HASH,),
         ).fetchone()[0]
         if genesis_events_count == 0:
@@ -507,7 +507,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(
-            'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=? AND tx_hash NOT IN (SELECT tx_hash FROM evm_events_info)',  # noqa: E501
+            'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=? AND tx_hash NOT IN (SELECT tx_ref FROM chain_events_info)',  # noqa: E501
             [(x, chain_id_serialized) for x in tx_hashes],
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again

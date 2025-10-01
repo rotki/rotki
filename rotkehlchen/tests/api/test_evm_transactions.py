@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.constants import CHAIN_EVENT_FIELDS
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import (
@@ -201,7 +202,7 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
             address=ADDY,
             transaction_should_exist=True,
         )
-        cursor.execute(f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE tx_hash=?', (hexstring_to_bytes(tx_hash),))  # noqa: E501
+        cursor.execute(f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE tx_ref=?', (hexstring_to_bytes(tx_hash),))  # noqa: E501
         events = [EvmEvent.deserialize_from_db(entry[1:]) for entry in cursor]
         assert expected_decoded_events == events
 

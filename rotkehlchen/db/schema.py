@@ -543,15 +543,23 @@ CREATE TABLE IF NOT EXISTS history_events (
 """
 
 
-# Table that extends history_events table and stores data specific to evm events.
+# Table that extends history_events table and stores chain-agnostic transaction metadata.
+DB_CREATE_CHAIN_EVENTS_INFO = """
+CREATE TABLE IF NOT EXISTS chain_events_info (
+    identifier INTEGER PRIMARY KEY,
+    tx_ref BLOB NOT NULL,
+    counterparty TEXT,
+    address TEXT,
+    FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""  # noqa: E501
+
+# Table that stores EVM-specific metadata for events.
 DB_CREATE_EVM_EVENTS_INFO = """
 CREATE TABLE IF NOT EXISTS evm_events_info(
     identifier INTEGER PRIMARY KEY,
-    tx_hash BLOB NOT NULL,
-    counterparty TEXT,
     product TEXT,
-    address TEXT,
-    FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY(identifier) REFERENCES chain_events_info(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """  # noqa: E501
 
@@ -877,6 +885,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH2_VALIDATORS}
 {DB_CREATE_ETH_VALIDATORS_DATA_CACHE}
 {DB_CREATE_HISTORY_EVENTS}
+{DB_CREATE_CHAIN_EVENTS_INFO}
 {DB_CREATE_EVM_EVENTS_INFO}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}

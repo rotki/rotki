@@ -2355,8 +2355,8 @@ class DBHandler:
             )
             write_cursor.execute(
                 f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier '
-                f'FROM history_events H INNER JOIN evm_events_info E '
-                f'ON H.identifier=E.identifier AND E.tx_hash IN '
+                f'FROM history_events H INNER JOIN chain_events_info C '
+                f'ON H.identifier=C.identifier AND C.tx_ref IN '
                 f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
                 hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
             )

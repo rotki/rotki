@@ -100,8 +100,8 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
             tx_hash=deserialize_evm_tx_hash(entry[13]),
             counterparty=entry[14],
-            product=EvmProduct.deserialize(entry[15]) if entry[15] is not None else None,
-            address=deserialize_optional(input_val=entry[16], fn=string_to_evm_address),
+            address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
+            product=EvmProduct.deserialize(entry[16]) if entry[16] is not None else None,
         )
 
     def serialize(self) -> dict[str, Any]:
