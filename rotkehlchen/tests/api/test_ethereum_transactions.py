@@ -295,8 +295,8 @@ def _write_transactions_to_db(
     """Common function to replicate writing transactions in the DB for tests in this file"""
     with db.user_write() as cursor:
         dbevmtx = DBEvmTx(db)
-        dbevmtx.add_evm_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])
-        dbevmtx.add_evm_transactions(cursor, extra_transactions, relevant_address=ethereum_accounts[1])  # noqa: E501
+        dbevmtx.add_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])
+        dbevmtx.add_transactions(cursor, extra_transactions, relevant_address=ethereum_accounts[1])
         # Also make sure to update query ranges so as not to query etherscan at all
         for address in ethereum_accounts:
             for prefix in (SupportedBlockchain.ETHEREUM.to_range_prefix('txs'), SupportedBlockchain.ETHEREUM.to_range_prefix('internaltxs'), SupportedBlockchain.ETHEREUM.to_range_prefix('tokentxs')):  # noqa: E501
@@ -344,7 +344,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
 
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert_txlists_equal(transactions[0:8], EXPECTED_AFB7_TXS + EXPECTED_4193_TXS)
 
@@ -630,7 +630,7 @@ def test_query_transactions_removed_address(
     # Check that only the 3 remaining transactions from the other account are returned
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
     assert len(transactions) == 3
 
 
@@ -689,7 +689,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert_simple_ok_response(response)
         dbevmtx = DBEvmTx(rotki.data.db)
         with rotki.data.db.conn.read_ctx() as cursor:
-            transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+            transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
 
         assert len(transactions) == 2
 
@@ -737,7 +737,7 @@ def test_query_transactions_check_decoded_events(
     query_transactions(rotki)
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert len(transactions) == 4
 
@@ -983,7 +983,7 @@ def test_query_transactions_check_decoded_events(
     # requery all transactions and events. Assert they are the same (different event id though)
     query_transactions(rotki)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert len(transactions) == 4
     returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
@@ -1052,9 +1052,9 @@ def test_events_filter_params(
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])
-        dbevmtx.add_evm_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
-        dbevmtx.add_evm_transactions(cursor, [tx4], relevant_address=ethereum_accounts[2])
+        dbevmtx.add_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])
+        dbevmtx.add_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
+        dbevmtx.add_transactions(cursor, [tx4], relevant_address=ethereum_accounts[2])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4, event5, event6])
 
     for attribute in ('counterparties', 'products'):
@@ -1221,7 +1221,7 @@ def test_ignored_assets(
     event3 = make_ethereum_event(tx_hash=tx2.tx_hash, index=3, asset=A_MKR, timestamp=TimestampMS(1))  # noqa: E501
     event4 = make_ethereum_event(tx_hash=tx3.tx_hash, index=4, asset=A_DAI, timestamp=TimestampMS(2))  # noqa: E501
     with db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
 
     returned_events = query_events(
@@ -1286,7 +1286,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
     assert_simple_ok_response(response)
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert len(transactions) == 1
     assert transactions[0].tx_hash.hex() == tx_str
@@ -1401,7 +1401,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
             nonce=3,
         )
         with rotki.data.db.user_write() as cursor:
-            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction], relevant_address=TEST_ADDR2)  # noqa: E501
+            dbevmtx.add_transactions(cursor, evm_transactions=[transaction], relevant_address=TEST_ADDR2)  # noqa: E501
 
         expected_receipt = EvmTxReceipt(
             tx_hash=tx_hash,

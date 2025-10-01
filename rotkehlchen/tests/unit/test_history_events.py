@@ -74,7 +74,7 @@ def test_informational_events(database: 'DBHandler', base_accounts: list[Checksu
     tx = make_ethereum_transaction()
     dbevmtx = DBEvmTx(database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [tx], relevant_address=base_accounts[0])
+        dbevmtx.add_transactions(cursor, [tx], relevant_address=base_accounts[0])
 
     with database.user_write() as write_cursor:
         dbevents.add_history_events(write_cursor, [

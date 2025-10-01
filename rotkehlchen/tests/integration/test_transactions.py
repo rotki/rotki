@@ -53,7 +53,7 @@ def test_get_transaction_receipt(
     )
     dbevmtx = DBEvmTx(database)
     with database.conn.read_ctx() as cursor:
-        results = dbevmtx.get_evm_transactions(
+        results = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=filter_query,
         )

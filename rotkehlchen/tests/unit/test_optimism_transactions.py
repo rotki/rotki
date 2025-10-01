@@ -46,7 +46,7 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
         end_ts=1689113567,
     )
     with optimism_transactions.database.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(
+        transactions = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash),
         )
@@ -57,7 +57,7 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
         write_cursor.execute('DELETE FROM optimism_transactions WHERE tx_id=2')
 
     with optimism_transactions.database.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(
+        transactions = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash),
         )

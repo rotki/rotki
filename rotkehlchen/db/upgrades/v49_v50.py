@@ -8,6 +8,7 @@ from rotkehlchen.db.schema import (
     DB_CREATE_SOLANA_TX_ACCOUNT_KEYS,
     DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS,
     DB_CREATE_SOLANA_TX_INSTRUCTIONS,
+    DB_CREATE_SOLANA_TX_MAPPINGS,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
@@ -60,8 +61,9 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Add solana transaction tables')
     def _add_solana_transaction_tables(write_cursor: 'DBCursor') -> None:
         write_cursor.executescript(
-            f'{DB_CREATE_SOLANA_TRANSACTIONS} {DB_CREATE_SOLANA_TX_ACCOUNT_KEYS} {DB_CREATE_SOLANA_TX_INSTRUCTIONS} '  # noqa: E501
-            f'{DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS} {DB_CREATE_SOLANA_ADDRESS_MAPPINGS}',
+            f'{DB_CREATE_SOLANA_TRANSACTIONS} {DB_CREATE_SOLANA_TX_ACCOUNT_KEYS} '
+            f'{DB_CREATE_SOLANA_TX_INSTRUCTIONS} {DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS} '
+            f'{DB_CREATE_SOLANA_ADDRESS_MAPPINGS} {DB_CREATE_SOLANA_TX_MAPPINGS}',
         )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

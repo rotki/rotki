@@ -67,7 +67,7 @@ def test_get_transactions(database: 'DBHandler'):
     )]
 
     with database.conn.read_ctx() as cursor:
-        txs = DBSolanaTx(database).get_solana_transactions(
+        txs = DBSolanaTx(database).get_transactions(
             cursor=cursor,
             filter_=SolanaTransactionsFilterQuery.make(),
         )

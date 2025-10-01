@@ -38,7 +38,7 @@ def test_gnosischain_specific_chain_data(
         dbevmtx = DBEvmTx(database)
         with database.conn.read_ctx() as cursor:
             for tx_hash in expected_hashes:  # confirm hashes are in the DB
-                assert len(dbevmtx.get_evm_transactions(
+                assert len(dbevmtx.get_transactions(
                     cursor=cursor,
                     filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.GNOSIS),  # noqa: E501
                 )) == 1

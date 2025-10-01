@@ -37,7 +37,10 @@ from rotkehlchen.constants.timing import (
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import (
+    EvmTransactionsFilterQuery,
+    EvmTransactionsNotDecodedFilterQuery,
+)
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -439,7 +442,7 @@ class TaskManager:
         random.shuffle(shuffled_chains)
         for blockchain in shuffled_chains:
             number_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
-                chain_id=blockchain.to_chain_id(),
+                filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=blockchain.to_chain_id()),
             )
             if number_of_tx_to_decode == 0:
                 return None

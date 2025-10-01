@@ -598,7 +598,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     )
     chain_manager = rotkehlchen_instance.chains_aggregator.get_evm_manager(ChainID.ETHEREUM)
 
-    def mock_stuff(chain_id, limit):
+    def mock_stuff(filter_query):
         """Just mock get_transaction_hashes_not_decoded which is called during
         get_and_decode_undecoded_transactions() to add some DB work and some sleeping.
         This triggers the threadpool deadlock problem in 50% of the test runs"""
@@ -610,7 +610,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         return []
 
     patched_get_hashes_not_decoded = patch.object(
-        chain_manager.transactions_decoder.dbevmtx,
+        chain_manager.transactions_decoder.dbtx,
         'get_transaction_hashes_not_decoded',
         wraps=mock_stuff,
     )  # Mix in calls to decoding and calls to maybe_upload to emulate the deadlock of different threadpool greenlet that's mentioned in the docstring  # noqa: E501

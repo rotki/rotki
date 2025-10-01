@@ -496,7 +496,7 @@ def test_uniswap_v2_swap_events_order(
         transactions=eth_transactions,
     )
     with database.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)

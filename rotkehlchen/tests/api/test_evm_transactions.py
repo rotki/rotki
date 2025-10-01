@@ -121,7 +121,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
 
     dbevmtx = DBEvmTx(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     optimism_count, mainnet_count = 0, 0
     for entry in transactions:

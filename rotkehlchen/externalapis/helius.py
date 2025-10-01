@@ -134,7 +134,7 @@ class Helius(ExternalServiceWithApiKey):
 
             # Save each chunk as it is queried to avoid losing progress if something goes wrong.
             with self.db.conn.write_ctx() as write_cursor:
-                solana_tx_db.add_solana_transactions(
+                solana_tx_db.add_transactions(
                     write_cursor=write_cursor,
                     solana_transactions=txs,
                     relevant_address=relevant_address,

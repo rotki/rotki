@@ -18,10 +18,10 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.constants import (
     ETH_STAKING_EVENT_FIELDS,
     EVM_EVENT_FIELDS,
-    EVMTX_DECODED,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
+    TX_DECODED,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -195,17 +195,18 @@ class DBEvmTransactionJoinsFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTransactionsPendingDecodingFilter(DBFilter):
     """
-    This filter is used to find the ethereum transactions that have not been decoded yet
-    using the query in `TRANSACTIONS_MISSING_DECODING_QUERY`. It allows filtering by chain.
+    This filter is used to find evm or solana transactions that have not been decoded yet.
+    It allows filtering by chain when used with the evm query.
 
     Due to the joining we need to check for either value being NULL (meaning no entry
     in evm_tx_mappings) or not having the DECODED value.
     """
-    chain_id: ChainID | None
+    mappings_table_name: str
+    chain_id: ChainID | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        query_filters = ['(B.tx_id IS NULL OR B.tx_id NOT IN (SELECT tx_id FROM evm_tx_mappings WHERE value=?))']  # noqa: E501
-        bindings: list[int] = [EVMTX_DECODED]
+        query_filters = [f'(B.tx_id IS NULL OR B.tx_id NOT IN (SELECT tx_id FROM {self.mappings_table_name} WHERE value=?))']  # noqa: E501
+        bindings: list[int] = [TX_DECODED]
         if self.chain_id is not None:
             bindings.append(self.chain_id.serialize_for_db())
             query_filters.append('C.chain_id=?')
@@ -1864,7 +1865,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
         return filter_query
 
 
-class TransactionsNotDecodedFilterQuery(DBFilterQuery):
+class EvmTransactionsNotDecodedFilterQuery(DBFilterQuery):
     """
     Filter used to find the transactions that have not been decoded yet using chain and
     addresses as filter.
@@ -1873,24 +1874,41 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
     """
     @classmethod
     def make(
-            cls: type['TransactionsNotDecodedFilterQuery'],
+            cls: type['EvmTransactionsNotDecodedFilterQuery'],
             limit: int | None = None,
             chain_id: ChainID | None = None,
-    ) -> 'TransactionsNotDecodedFilterQuery':
+    ) -> 'EvmTransactionsNotDecodedFilterQuery':
         filter_query = cls.create(
             and_op=True,
             limit=limit,
             offset=None,
             order_by_rules=[('C.timestamp', True)],  # order by ascending timestamp
         )
-        filters: list[DBFilter] = []
-        if chain_id is not None:
-            filters.append(DBTransactionsPendingDecodingFilter(
-                and_op=True,
-                chain_id=chain_id,
-            ))
+        filter_query.filters = [DBTransactionsPendingDecodingFilter(
+            and_op=True,
+            mappings_table_name='evm_tx_mappings',
+            chain_id=chain_id,
+        )]
+        return filter_query
 
-        filter_query.filters = filters
+
+class SolanaTransactionsNotDecodedFilterQuery(DBFilterQuery):
+
+    @classmethod
+    def make(
+            cls: type['SolanaTransactionsNotDecodedFilterQuery'],
+            limit: int | None = None,
+    ) -> 'SolanaTransactionsNotDecodedFilterQuery':
+        filter_query = cls.create(
+            and_op=True,
+            limit=limit,
+            offset=None,
+            order_by_rules=[('A.block_time', True)],  # order by ascending timestamp
+        )
+        filter_query.filters = [DBTransactionsPendingDecodingFilter(
+            and_op=True,
+            mappings_table_name='solana_tx_mappings',
+        )]
         return filter_query
 
 

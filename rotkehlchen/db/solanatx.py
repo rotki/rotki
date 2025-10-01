@@ -5,12 +5,14 @@ from solders.pubkey import Pubkey
 from solders.solders import Signature
 
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
-from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
+from rotkehlchen.db.dbtx import DBCommonTx
+from rotkehlchen.db.filtering import (
+    SolanaTransactionsFilterQuery,
+    SolanaTransactionsNotDecodedFilterQuery,
+)
 from rotkehlchen.types import SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
-
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
@@ -19,13 +21,10 @@ if TYPE_CHECKING:
 TOP_LEVEL_PARENT: Final = -1
 
 
-class DBSolanaTx:
+class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaTransactionsFilterQuery, SolanaTransactionsNotDecodedFilterQuery]):  # noqa: E501
     """Database handler for Solana transactions"""
 
-    def __init__(self, database: 'DBHandler') -> None:
-        self.db = database
-
-    def add_solana_transactions(
+    def add_transactions(
             self,
             write_cursor: 'DBCursor',
             solana_transactions: list[SolanaTransaction],
@@ -77,7 +76,7 @@ class DBSolanaTx:
                     )
 
     @staticmethod
-    def get_solana_transactions(
+    def get_transactions(
             cursor: 'DBCursor',
             filter_: SolanaTransactionsFilterQuery,
     ) -> list[SolanaTransaction]:
@@ -145,3 +144,12 @@ class DBSolanaTx:
             ))
 
         return transactions
+
+    def deserialize_tx_hash_from_db(self, raw_tx_hash: bytes) -> Signature:
+        return Signature(raw_tx_hash)
+
+    def _get_txs_not_decoded_column_and_query(self) -> tuple[str, str]:
+        return (
+            'signature',
+            'solana_transactions AS A LEFT JOIN solana_tx_mappings AS B ON A.identifier = B.tx_id ',  # noqa: E501
+        )

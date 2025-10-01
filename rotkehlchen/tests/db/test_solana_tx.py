@@ -1,7 +1,11 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
-from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
+from rotkehlchen.db.constants import TX_DECODED
+from rotkehlchen.db.filtering import (
+    SolanaTransactionsFilterQuery,
+    SolanaTransactionsNotDecodedFilterQuery,
+)
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
 from rotkehlchen.types import SolanaAddress, Timestamp
@@ -45,7 +49,7 @@ def test_add_get_solana_transactions(database: 'DBHandler') -> None:
     with database.conn.write_ctx() as write_cursor:
         # add and retrieve the first 2 tx. All should be fine.
         dbsolanatx = DBSolanaTx(database)
-        dbsolanatx.add_solana_transactions(
+        dbsolanatx.add_transactions(
             write_cursor=write_cursor,
             solana_transactions=txs[:2],
             relevant_address=sol_address1,
@@ -53,7 +57,7 @@ def test_add_get_solana_transactions(database: 'DBHandler') -> None:
 
     with database.conn.read_ctx() as cursor:
         # Test basic retrieval
-        returned_transactions = dbsolanatx.get_solana_transactions(
+        returned_transactions = dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=(filter_query := SolanaTransactionsFilterQuery.make()),
         )
@@ -68,14 +72,14 @@ def test_add_get_solana_transactions(database: 'DBHandler') -> None:
 
     # Add the third transaction and see that tx2 is ignored since it already exists.
     with database.conn.write_ctx() as write_cursor:
-        dbsolanatx.add_solana_transactions(
+        dbsolanatx.add_transactions(
             write_cursor=write_cursor,
             solana_transactions=txs[1:],
             relevant_address=sol_address2,
         )
 
     with database.conn.read_ctx() as cursor:
-        returned_transactions = dbsolanatx.get_solana_transactions(
+        returned_transactions = dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=filter_query,
         )
@@ -87,7 +91,7 @@ def test_solana_transactions_filtering(database: 'DBHandler') -> None:
     txs, sol_address1, _, _ = _create_test_solana_transactions()
     with database.conn.write_ctx() as write_cursor:
         dbsolanatx = DBSolanaTx(database)
-        dbsolanatx.add_solana_transactions(
+        dbsolanatx.add_transactions(
             write_cursor=write_cursor,
             solana_transactions=txs,
             relevant_address=sol_address1,
@@ -96,7 +100,7 @@ def test_solana_transactions_filtering(database: 'DBHandler') -> None:
     expected_sigs = [tx.signature for tx in txs]
     with database.conn.read_ctx() as cursor:
         # Test filtering by timestamp range
-        result = dbsolanatx.get_solana_transactions(
+        result = dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=SolanaTransactionsFilterQuery.make(
                 from_ts=Timestamp(1451606400),
@@ -107,18 +111,18 @@ def test_solana_transactions_filtering(database: 'DBHandler') -> None:
 
         # Test filtering by success status - only successful transactions
         filter_query = SolanaTransactionsFilterQuery.make(success=True)
-        result = dbsolanatx.get_solana_transactions(cursor, filter_query)
+        result = dbsolanatx.get_transactions(cursor, filter_query)
         assert all(tx.success for tx in result)
         assert [tx.signature for tx in result] == expected_sigs[:2]
 
         # Test filtering by success status - only failed transactions
         filter_query = SolanaTransactionsFilterQuery.make(success=False)
-        assert len(result := dbsolanatx.get_solana_transactions(cursor, filter_query)) == 1
+        assert len(result := dbsolanatx.get_transactions(cursor, filter_query)) == 1
         assert not result[0].success
         assert result[0].signature == txs[2].signature
 
         # Test filtering with limit and ordering
-        result = dbsolanatx.get_solana_transactions(
+        result = dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=SolanaTransactionsFilterQuery.make(
                 offset=0,
@@ -130,7 +134,7 @@ def test_solana_transactions_filtering(database: 'DBHandler') -> None:
         assert [tx.signature for tx in result] == expected_sigs[-2:][::-1]
 
         # Test combining multiple filters
-        assert len(result := dbsolanatx.get_solana_transactions(
+        assert len(result := dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=SolanaTransactionsFilterQuery.make(
                 from_ts=Timestamp(1451606400),
@@ -142,14 +146,14 @@ def test_solana_transactions_filtering(database: 'DBHandler') -> None:
         assert [tx.signature for tx in result] == expected_sigs[:2]
 
         # test transaction query by signature
-        assert len(result := dbsolanatx.get_solana_transactions(
+        assert len(result := dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=SolanaTransactionsFilterQuery.make(signature=txs[1].signature),
         )) == 1
         assert result[0].signature == txs[1].signature
 
         # test query by non-existent signature
-        assert len(dbsolanatx.get_solana_transactions(
+        assert len(dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=SolanaTransactionsFilterQuery.make(signature=make_solana_signature()),
         )) == 0
@@ -159,7 +163,7 @@ def test_solana_instruction_execution_order(database: 'DBHandler') -> None:
     """Test that nested instructions are returned in correct execution order"""
     with database.conn.write_ctx() as write_cursor:
         dbsolanatx = DBSolanaTx(database)
-        dbsolanatx.add_solana_transactions(
+        dbsolanatx.add_transactions(
             write_cursor=write_cursor,
             solana_transactions=[SolanaTransaction(
                 signature=make_solana_signature(),
@@ -222,7 +226,7 @@ def test_solana_instruction_execution_order(database: 'DBHandler') -> None:
         )
 
     with database.conn.read_ctx() as cursor:
-        assert len(result := dbsolanatx.get_solana_transactions(
+        assert len(result := dbsolanatx.get_transactions(
             cursor=cursor,
             filter_=SolanaTransactionsFilterQuery.make(),
         )) == 1
@@ -249,3 +253,39 @@ def test_solana_instruction_execution_order(database: 'DBHandler') -> None:
             assert instructions[i].execution_index == expected_exec_idx
             assert instructions[i].parent_execution_index == expected_parent_idx
             assert instructions[i].data == expected_data
+
+
+def test_query_txs_not_decoded(database: 'DBHandler') -> None:
+    txs, sol_address1, _, _ = _create_test_solana_transactions()
+    dbsolanatx = DBSolanaTx(database)
+    with database.conn.write_ctx() as write_cursor:
+        dbsolanatx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=txs,
+            relevant_address=sol_address1,
+        )
+
+    # All txs are not decoded
+    undecoded_sigs = dbsolanatx.get_transaction_hashes_not_decoded(
+        filter_query=(not_decoded_filter := SolanaTransactionsNotDecodedFilterQuery.make()),
+    )
+    undecoded_sig_count = dbsolanatx.count_hashes_not_decoded(filter_query=not_decoded_filter)
+    assert len(undecoded_sigs) == undecoded_sig_count == 3
+    assert all(x.signature in undecoded_sigs for x in txs)
+
+    # Mark one tx as decoded
+    with database.conn.write_ctx() as write_cursor:
+        tx0 = dbsolanatx.get_transactions(
+            cursor=write_cursor,
+            filter_=SolanaTransactionsFilterQuery.make(signature=undecoded_sigs[0]),
+        )[0]
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO solana_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx0.db_id, TX_DECODED),
+        )
+
+    # Only the remaining two txs are not decoded
+    undecoded_sigs = dbsolanatx.get_transaction_hashes_not_decoded(filter_query=not_decoded_filter)
+    undecoded_sig_count = dbsolanatx.count_hashes_not_decoded(filter_query=not_decoded_filter)
+    assert len(undecoded_sigs) == undecoded_sig_count == 2
+    assert all(x.signature in undecoded_sigs for x in [tx for tx in txs if tx.signature != tx0.signature])  # noqa: E501

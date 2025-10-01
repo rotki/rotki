@@ -156,7 +156,7 @@ def assert_editing_works(
 def add_test_evm_tx(database: 'DBHandler', tx_hash: 'EVMTxHash') -> None:
     """Add a blank tx so evm events can be added/edited without the tx_hash validation failing."""
     with database.conn.write_ctx() as write_cursor:
-        DBEvmTx(database).add_evm_transactions(
+        DBEvmTx(database).add_transactions(
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
                 tx_hash=tx_hash,
@@ -449,7 +449,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
 
     dbevmtx = DBEvmTx(db)
     with db.user_write() as write_cursor:
-        dbevmtx.add_evm_transactions(
+        dbevmtx.add_transactions(
             write_cursor=write_cursor,
             evm_transactions=[transaction],
             relevant_address=None,

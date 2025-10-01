@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from gevent.lock import Semaphore
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
@@ -32,18 +33,19 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 T_Event = TypeVar('T_Event')
-T_TxHash = TypeVar('T_TxHash')
-T_Transaction = TypeVar('T_Transaction')
 T_DecodingRules = TypeVar('T_DecodingRules', bound=SupportsAddition)
 T_DecoderInterface = TypeVar('T_DecoderInterface')
 T_DecoderTools = TypeVar('T_DecoderTools', bound=BaseDecoderTools)
 T_TransactionDecodingContext = TypeVar('T_TransactionDecodingContext')
+T_DBTx = TypeVar('T_DBTx', bound=DBCommonTx)
 
 
-class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderInterface, T_TxHash, T_Event, T_TransactionDecodingContext, T_DecoderTools]):  # noqa: E501
+class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderInterface, T_TxHash, T_Event, T_TransactionDecodingContext, T_DecoderTools, T_DBTx, T_TxNotDecodedFilterQuery]):  # noqa: E501
     def __init__(
             self,
             database: 'DBHandler',
+            dbtx: T_DBTx,
+            tx_not_decoded_filter_query_class: type[T_TxNotDecodedFilterQuery],
             chain_name: str,
             value_asset: 'AssetWithOracles',
             rules: T_DecodingRules,
@@ -63,6 +65,8 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         `premium` is the Premium object for checking user limits
         """
         self.database = database
+        self.dbtx = dbtx
+        self.tx_not_decoded_filter_query_class = tx_not_decoded_filter_query_class
         self.premium = premium
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='lu-flame')] + misc_counterparties  # noqa: E501
         self.msg_aggregator = database.msg_aggregator
@@ -178,10 +182,6 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
 
             self._reload_single_decoder(cursor, decoder)
 
-    @abstractmethod
-    def _get_tx_hashes_not_decoded(self, limit: int | None) -> list[T_TxHash]:
-        """Return up to `limit` transaction hashes that still need decoding for this chain."""
-
     def get_and_decode_undecoded_transactions(
             self,
             limit: int | None = None,
@@ -194,7 +194,9 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         This is protected by concurrent access from a lock"""
         with self.undecoded_tx_query_lock:
             log.debug(f'Starting task to process undecoded transactions for {self.chain_name} with {limit=}')  # noqa: E501
-            hashes = self._get_tx_hashes_not_decoded(limit=limit)
+            hashes = self.dbtx.get_transaction_hashes_not_decoded(
+                filter_query=self.tx_not_decoded_filter_query_class.make(limit=limit),
+            )
             if len(hashes) != 0:
                 log.debug(f'Will decode {len(hashes)} transactions for {self.chain_name}')
                 self.decode_transaction_hashes(

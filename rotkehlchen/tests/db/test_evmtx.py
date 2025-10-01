@@ -87,37 +87,37 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
     # Add and retrieve the first 2 tx. All should be fine.
     with data.db.user_write() as cursor:
         dbevmtx = DBEvmTx(data.db)
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx2], relevant_address=ETH_ADDRESS3)
+        dbevmtx.add_transactions(cursor, [tx1, tx2], relevant_address=ETH_ADDRESS3)
         errors = msg_aggregator.consume_errors()
         warnings = msg_aggregator.consume_warnings()
         assert len(errors) == 0
         assert len(warnings) == 0
         filter_query = EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM)
-        returned_transactions = dbevmtx.get_evm_transactions(cursor, filter_query)
+        returned_transactions = dbevmtx.get_transactions(cursor, filter_query)
         assert returned_transactions == [tx1, tx2]
 
         # Add the last 2 transactions. Since tx2 already exists in the DB it should be
         # ignored (no errors shown for attempting to add already existing transaction)
-        dbevmtx.add_evm_transactions(cursor, [tx2, tx3], relevant_address=ETH_ADDRESS3)
+        dbevmtx.add_transactions(cursor, [tx2, tx3], relevant_address=ETH_ADDRESS3)
         errors = msg_aggregator.consume_errors()
         warnings = msg_aggregator.consume_warnings()
         assert len(errors) == 0
         assert len(warnings) == 0
-        returned_transactions = dbevmtx.get_evm_transactions(cursor, filter_query)
+        returned_transactions = dbevmtx.get_transactions(cursor, filter_query)
         assert returned_transactions == [tx1, tx2, tx3]
 
         # Now add same transactions but with other relevant address
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS1)
-        dbevmtx.add_evm_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
+        dbevmtx.add_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS1)
+        dbevmtx.add_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
 
         # try transaction query by tx_hash
-        result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=tx2_hash, chain_id=ChainID.ETHEREUM))  # noqa: E501
+        result = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=tx2_hash, chain_id=ChainID.ETHEREUM))  # noqa: E501
         assert result == [tx2], 'querying transaction by hash in bytes failed'
-        result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=b'dsadsad', chain_id=ChainID.ETHEREUM))  # noqa: E501
+        result = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=b'dsadsad', chain_id=ChainID.ETHEREUM))  # noqa: E501
         assert result == []
 
         # Now try transaction by relevant addresses
-        result = dbevmtx.get_evm_transactions(
+        result = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
                 accounts=[EvmAccount(ETH_ADDRESS1), EvmAccount(make_evm_address())],
@@ -262,9 +262,9 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
 
     dbevmtx = DBEvmTx(data.db)
     with data.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx3, tx4, tx5], relevant_address=ETH_ADDRESS1)
-        dbevmtx.add_evm_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS3)
+        dbevmtx.add_transactions(cursor, [tx1, tx3, tx4, tx5], relevant_address=ETH_ADDRESS1)
+        dbevmtx.add_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
+        dbevmtx.add_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS3)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx2, internal_tx3, internal_tx4], relevant_address=ETH_ADDRESS1)  # noqa: E501
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx1, internal_tx4], relevant_address=ETH_ADDRESS3)  # noqa: E501
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx1], relevant_address=address_4)
@@ -273,7 +273,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         assert len(errors) == 0
         assert len(warnings) == 0
 
-        result = dbevmtx.get_evm_transactions(
+        result = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
                 accounts=[EvmAccount(ETH_ADDRESS3, chain_id=ChainID.ETHEREUM)],
@@ -286,7 +286,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
 
         # Now try transaction query by relevant addresses and see we get more due to the
         # internal tx mappings
-        result = dbevmtx.get_evm_transactions(
+        result = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
                 accounts=[EvmAccount(ETH_ADDRESS1)],
@@ -294,7 +294,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         )
         assert result == [tx1, tx3, tx4, tx5]
 
-        result = dbevmtx.get_evm_transactions(
+        result = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
                 accounts=[EvmAccount(address_4)],
@@ -303,7 +303,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         )
         assert result == [tx3]
 
-        result = dbevmtx.get_evm_transactions(
+        result = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
                 accounts=[EvmAccount(ETH_ADDRESS3)],
