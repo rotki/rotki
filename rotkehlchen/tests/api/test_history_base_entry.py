@@ -47,7 +47,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.factories import generate_events_response
+from rotkehlchen.tests.utils.factories import generate_events_response, make_solana_signature
 from rotkehlchen.tests.utils.history_base_entry import (
     KEYS_IN_ENTRY_TYPE,
     add_entries,
@@ -1515,3 +1515,120 @@ def test_event_grouping(rotkehlchen_api_server: 'APIServer') -> None:
         assert entries[3][2]['entry']['event_subtype'] == 'receive'
         assert entries[3][3]['entry']['event_subtype'] == 'receive'
         assert entries[3][4]['entry']['event_subtype'] == 'fee'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_edit_delete_solana_events(rotkehlchen_api_server: 'APIServer') -> None:
+    """test that adding, editing, filtering, and deleting solana events works correctly"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+
+    # create test solana events with different attributes
+    entries = [{
+        'entry_type': 'solana event',
+        'timestamp': 1569924575000,
+        'amount': '1.5',
+        'event_type': 'trade',
+        'event_subtype': 'receive',
+        'sequence_index': 1,
+        'asset': 'SOL',
+        'signature': str(make_solana_signature()),
+        'location_label': '7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W',
+        'user_notes': 'solana event 1',
+    }, {
+        'entry_type': 'solana event',
+        'timestamp': 1569924576000,
+        'amount': '2.5',
+        'event_type': 'trade',
+        'event_subtype': 'spend',
+        'sequence_index': 2,
+        'asset': 'SOL',
+        'signature': str(make_solana_signature()),
+        'location_label': '8Qp42peZrPfgfORFITw2VEiZsfiyjQOUyDxFTxDVk8Y',
+        'user_notes': 'solana event 2',
+    }, {
+        'entry_type': 'solana event',
+        'timestamp': 1569924577000,
+        'amount': '3.5',
+        'event_type': 'trade',
+        'sequence_index': 3,
+        'event_subtype': 'receive',
+        'asset': 'SOL',
+        'signature': str(make_solana_signature()),
+        'location_label': '9Rq53qfAsQghgPSGJUx3WFjAtgjzkPVZEyGUyEWm9Z',
+        'user_notes': 'solana event 3',
+    }]
+    for entry in entries:  # add the events
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entry,
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert 'identifier' in result
+        entry['identifier'] = result['identifier']
+
+    # verify events were added correctly
+    with rotki.data.db.conn.read_ctx() as cursor:
+        saved_events = db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            group_by_event_ids=False,
+        )
+    assert len(saved_events) == 3
+    for idx, event in enumerate(saved_events):
+        assert str(event.amount) == entries[idx]['amount']
+        assert event.notes == entries[idx]['user_notes']
+
+    # test editing an event
+    entry = entries[0].copy()
+    entry['amount'] = '4.2'
+    entry['user_notes'] = 'edited solana event'
+    entry['counterparty'] = 'jupiter'
+    entry['timestamp'] = 1569924580000
+
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    )
+    assert_simple_ok_response(response)
+
+    # verify the edit worked
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'counterparties': 'jupiter'},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries_found'] == 1
+    edited_event = result['entries'][0]['entry']
+    assert edited_event['identifier'] == entry['identifier']
+    assert edited_event['amount'] == '4.2'
+    assert edited_event['counterparty'] == 'jupiter'
+    assert edited_event['user_notes'] == 'edited solana event'
+
+    # test deleting an event
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'identifiers': [entries[1]['identifier']]},
+    )
+    assert_simple_ok_response(response)
+
+    # verify the deletion worked
+    with rotki.data.db.conn.read_ctx() as cursor:
+        remaining_events = db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            group_by_event_ids=False,
+        )
+    assert len(remaining_events) == 2
+    assert [event.identifier for event in remaining_events] == [
+        entries[2]['identifier'],
+        entries[0]['identifier'],
+    ]
+
+    # test filtering by event subtype
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'location': 'solana', 'event_subtypes': ['receive']},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries_found'] == 2

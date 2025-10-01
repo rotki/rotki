@@ -60,9 +60,13 @@ ALL_EVENTS_DATA_JOIN: Final = """FROM history_events
 LEFT JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier
 LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier
 LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
+EVENTS_WITH_COUNTERPARTY_JOIN: Final = """FROM history_events
+INNER JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier
+LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier """
 EVM_EVENT_JOIN: Final = """FROM history_events
 INNER JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier
 INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier """
+SOLANA_EVENT_JOIN: Final = 'FROM history_events INNER JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier '  # noqa: E501
 ETH_STAKING_EVENT_JOIN: Final = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
 ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
@@ -953,10 +957,11 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
         return HISTORY_BASE_ENTRY_FIELDS
 
 
-class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
+class HistoryEventWithCounterpartyFilterQuery(HistoryBaseEntryFilterQuery):
+    """Dedicated filter for querying events by counterparties without selecting a chain-specific query."""  # noqa: E501
     @classmethod
     def make(
-            cls: type['EvmEventFilterQuery'],
+            cls,
             and_op: bool = True,
             order_by_rules: list[tuple[str, bool]] | None = None,
             limit: int | None = None,
@@ -979,14 +984,14 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
             notes_substring: str | None = None,
-            tx_hashes: list[EVMTxHash] | None = None,
             counterparties: list[str] | None = None,
-            products: list[EvmProduct] | None = None,
-            addresses: list[ChecksumEvmAddress] | None = None,
-    ) -> 'EvmEventFilterQuery':
+    ) -> Self:
         if entry_types is None:
-            entry_type_values = [HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.EVM_SWAP_EVENT]  # noqa: E501
-            entry_types = IncludeExcludeFilterData(values=entry_type_values)
+            entry_types = IncludeExcludeFilterData(values=[
+                HistoryBaseEntryType.SOLANA_EVENT,
+                HistoryBaseEntryType.EVM_EVENT,
+                HistoryBaseEntryType.EVM_SWAP_EVENT,
+            ])
 
         filter_query = super().make(
             and_op=and_op,
@@ -1019,6 +1024,192 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
                 values=counterparties,
                 operator='IN',
             ))
+
+        return filter_query
+
+    @staticmethod
+    def get_join_query() -> str:
+        return EVENTS_WITH_COUNTERPARTY_JOIN
+
+    @staticmethod
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS}'
+
+    @staticmethod
+    def match_location_label(filters: list[DBFilter], labels: list[str]) -> None:
+        filters.append(DBMultiStringFilter(
+            and_op=True,
+            column='location_label',
+            values=labels,
+            operator='IN',
+        ))
+
+
+class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
+    @classmethod
+    def make(  # type: ignore[override]
+            cls,
+            and_op: bool = True,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
+            exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
+            notes_substring: str | None = None,
+            signatures: list[Signature] | None = None,
+            counterparties: list[str] | None = None,
+            addresses: list[SolanaAddress] | None = None,
+    ) -> Self:
+        if entry_types is None:
+            entry_types = IncludeExcludeFilterData(values=[HistoryBaseEntryType.SOLANA_EVENT])
+
+        filter_query = super().make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_labels=location_labels,
+            excluded_locations=excluded_locations,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            identifiers=identifiers,
+            event_identifiers=event_identifiers,
+            entry_types=entry_types,
+            exclude_ignored_assets=exclude_ignored_assets,
+            customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
+            counterparties=counterparties,
+        )
+
+        if signatures is not None:
+            filter_query.filters.append(DBMultiBytesFilter(
+                and_op=True,
+                column='tx_ref',
+                values=[sig.to_bytes() for sig in signatures],
+                operator='IN',
+            ))
+
+        if addresses is not None:
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=addresses,
+                operator='IN',
+            ))
+
+        return filter_query
+
+    @staticmethod
+    def get_join_query() -> str:
+        return SOLANA_EVENT_JOIN
+
+    @staticmethod
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}'
+
+    @staticmethod
+    def match_location_label(filters: list[DBFilter], labels: list[str]) -> None:
+        """Check if labels match either location_label or address fields.
+        In solana events, addresses can appear in both fields, so we need to check both.
+        """
+        filters.append(DBNestedFilter(
+            and_op=False,
+            filters=[DBMultiStringFilter(
+                and_op=True,
+                column='location_label',
+                values=labels,
+                operator='IN',
+            ), DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=labels,
+                operator='IN',
+            )],
+        ))
+
+
+class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
+    @classmethod
+    def make(  # type: ignore[override]
+            cls,
+            and_op: bool = True,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
+            exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
+            notes_substring: str | None = None,
+            tx_hashes: list[EVMTxHash] | None = None,
+            counterparties: list[str] | None = None,
+            products: list[EvmProduct] | None = None,
+            addresses: list[ChecksumEvmAddress] | None = None,
+    ) -> Self:
+        if entry_types is None:
+            entry_types = IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.EVM_SWAP_EVENT])  # noqa: E501
+
+        filter_query = super().make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_labels=location_labels,
+            excluded_locations=excluded_locations,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            identifiers=identifiers,
+            event_identifiers=event_identifiers,
+            entry_types=entry_types,
+            exclude_ignored_assets=exclude_ignored_assets,
+            customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
+            counterparties=counterparties,
+        )
 
         if products is not None:
             filter_query.filters.append(DBMultiStringFilter(

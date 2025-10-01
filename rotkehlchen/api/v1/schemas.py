@@ -65,11 +65,13 @@ from rotkehlchen.db.filtering import (
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
     HistoryEventFilterQuery,
+    HistoryEventWithCounterpartyFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     PaginatedFilterQuery,
     ReportDataFilterQuery,
+    SolanaEventFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -96,6 +98,7 @@ from rotkehlchen.history.events.structures.eth2 import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
+from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.swap import SwapEventExtraData, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import (
@@ -177,6 +180,7 @@ from .fields import (
     PriceField,
     SerializableEnumField,
     SolanaAddressField,
+    SolanaSignatureField,
     StrEnumField,
     TaxFreeAfterPeriodField,
     TimestampField,
@@ -632,10 +636,14 @@ class HistoryEventSchema(
     )
     notes_substring = fields.String(load_default=None)
 
+    # SolanaEvent only
+    signatures = DelimitedOrNormalList(SolanaSignatureField(), load_default=None)
+    solana_addresses = DelimitedOrNormalList(SolanaAddressField(), load_default=None)
+
     # EvmEvent only
     tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
-    addresses = DelimitedOrNormalList(EvmAddressField(), load_default=None)
+    evm_addresses = DelimitedOrNormalList(EvmAddressField(), load_default=None)
 
     # EthStakingEvent only
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
@@ -669,9 +677,13 @@ class HistoryEventSchema(
         should_query_eth_staking_event = data['validator_indices'] is not None
         location_labels = data['location_labels']
         should_query_evm_event = (
-            any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes', 'addresses')) or  # noqa: E501
+            any(data[x] is not None for x in ('products', 'tx_hashes', 'evm_addresses')) or
             (location_labels is not None and all(is_checksum_address(x) for x in location_labels))
         )  # use evm filter when location_labels are evm addresses, so the "address" column is also included in the filter  # noqa: E501
+        should_query_solana_event = (
+            any(data[x] is not None for x in ('signatures', 'solana_addresses')) or
+            (location_labels is not None and all(is_valid_solana_address(x) for x in location_labels))  # noqa: E501
+        )  # use solana filter when location_labels are solana addresses, so the "address" column is also included in the filter  # noqa: E501
         counterparties = data['counterparties']
         entry_types = data['entry_types']
         if counterparties is not None and CPT_ETH2 in counterparties:
@@ -685,7 +697,7 @@ class HistoryEventSchema(
                     message='Filtering by counterparty ETH2 does not work in combination with entry type',  # noqa: E501
                     field_name='counterparties',
                 )
-            for x in ('products', 'tx_hashes'):
+            for x in ('products', 'tx_hashes', 'signatures'):
                 if data[x] is not None:
                     raise ValidationError(
                         message=f'Filtering by counterparty ETH2 does not work in combination with filtering by {x}',  # noqa: E501
@@ -726,13 +738,25 @@ class HistoryEventSchema(
             'notes_substring': data['notes_substring'],
         }
 
-        filter_query: HistoryEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)
+        filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)  # noqa: E501
         if should_query_evm_event:
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
                 tx_hashes=data['tx_hashes'],
                 products=data['products'],
-                addresses=data['addresses'],
+                addresses=data['evm_addresses'],
+                counterparties=counterparties,
+            )
+        elif should_query_solana_event:
+            filter_query = SolanaEventFilterQuery.make(
+                **common_arguments,
+                signatures=data['signatures'],
+                counterparties=counterparties,
+                addresses=data['solana_addresses'],
+            )
+        elif counterparties is not None and len(counterparties) != 0:
+            filter_query = HistoryEventWithCounterpartyFilterQuery.make(
+                **common_arguments,
                 counterparties=counterparties,
             )
         elif should_query_eth_staking_event:
@@ -829,6 +853,22 @@ class CreateHistoryEventSchema(Schema):
         ) -> dict[str, Any]:
             data['notes'] = data.pop('user_notes')
             return {'events': [EvmEvent(**data)]}
+
+    class CreateSolanaEventSchema(BaseEventSchema):
+        signature = SolanaSignatureField(required=True)
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        counterparty = EmptyAsNoneStringField(load_default=None)
+        address = SolanaAddressField(load_default=None)
+        extra_data = fields.Dict(load_default=None)
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            data['notes'] = data.pop('user_notes')
+            return {'events': [SolanaEvent(**data)]}
 
     class CreateEthBlockEventEventSchema(BaseSchema):
         is_mev_reward = fields.Boolean(required=True)
@@ -1152,6 +1192,7 @@ class CreateHistoryEventSchema(Schema):
         HistoryBaseEntryType.ETH_DEPOSIT_EVENT: CreateEthDepositEventEventSchema,
         HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: CreateEthWithdrawalEventEventSchema,
         HistoryBaseEntryType.EVM_EVENT: CreateEvmEventSchema,
+        HistoryBaseEntryType.SOLANA_EVENT: CreateSolanaEventSchema,
         HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: CreateAssetMovementEventSchema,
         HistoryBaseEntryType.SWAP_EVENT: CreateSwapEventSchema,
         HistoryBaseEntryType.EVM_SWAP_EVENT: CreateEvmSwapEventSchema,
