@@ -10,7 +10,7 @@ from rotkehlchen.chain.gnosis.modules.monerium.constants import (
 from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
     V1_TO_V2_MONERIUM_MAPPINGS as POLYGON_MONERIUM_MAPPINGS,
 )
-from rotkehlchen.db.constants import EVMTX_SPAM
+from rotkehlchen.db.constants import TX_SPAM
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -185,7 +185,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             write_cursor.execute(
                 'DELETE FROM evm_tx_mappings WHERE tx_id IN (SELECT tx_id FROM '
                 'evm_tx_mappings WHERE value=?)',
-                (EVMTX_SPAM,),
+                (TX_SPAM,),
             )
 
     @progress_step(description='Removing manual current price oracle.')

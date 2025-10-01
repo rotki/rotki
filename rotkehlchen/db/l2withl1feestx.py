@@ -23,7 +23,7 @@ log = RotkehlchenLogsAdapter(logger)
 class DBL2WithL1FeesTx(DBEvmTx):
     AUTHORIZATION_DATA_START_INDEX: ClassVar[int] = 14
 
-    def add_evm_transactions(
+    def add_transactions(
             self,
             write_cursor: 'DBCursor',
             evm_transactions: list[L2WithL1FeesTransaction],  # type: ignore[override]
@@ -33,7 +33,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
 
         These transactions are used by all L2 chains with an extra L1 fee structure
         """
-        super().add_evm_transactions(
+        super().add_transactions(
             write_cursor,
             evm_transactions,  # type: ignore[arg-type]
             relevant_address,

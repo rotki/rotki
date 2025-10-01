@@ -12,9 +12,13 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_SAI
-from rotkehlchen.db.constants import EVMTX_DECODED, EVMTX_SPAM
+from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import (
+    EvmEventFilterQuery,
+    EvmTransactionsFilterQuery,
+    EvmTransactionsNotDecodedFilterQuery,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.fval import FVal
@@ -102,9 +106,9 @@ def _add_transactions_to_db(
     dbevmtx = DBEvmTx(db)
     dbl2withl1feestx = DBL2WithL1FeesTx(db)
     with db.user_write() as cursor:
-        dbl2withl1feestx.add_evm_transactions(cursor, [transaction_opt], relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbevmtx.add_evm_transactions(cursor, [transaction_eth], relevant_address=ethereum_accounts[0])  # noqa: E501
-        dbevmtx.add_evm_transactions(cursor, [transaction_eth_yabir], relevant_address=ethereum_accounts[1])  # noqa: E501
+        dbl2withl1feestx.add_transactions(cursor, [transaction_opt], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_transactions(cursor, [transaction_eth], relevant_address=ethereum_accounts[0])
+        dbevmtx.add_transactions(cursor, [transaction_eth_yabir], relevant_address=ethereum_accounts[1])  # noqa: E501
 
     return evmhash_eth, evmhash_eth_yabir, evmhash_opt
 
@@ -124,7 +128,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     approve_tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     with database.conn.read_ctx() as cursor:
-        transactions = dbevmtx.get_evm_transactions(
+        transactions = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
                 accounts=[EvmAccount(addr1)],
@@ -220,32 +224,42 @@ def test_query_and_decode_transactions_works_with_different_chains(
     optimism_transactions.get_receipts_for_transactions_missing_them()
     assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_eth_yabir]  # noqa: E501
 
-    hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)  # noqa: E501
+    hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.OPTIMISM, limit=None),  # noqa: E501
+    )
     assert len(hashes) == 1
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
+    )
     assert len(hashes) == 1
 
     # get the receipts for the last address, which should mark 1 more transaction as not decoded
     eth_transactions.get_receipts_for_transactions_missing_them(addresses=[ethereum_accounts[1]])
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
+    )
     assert len(hashes) == 2
 
     # see that setting the spam attribute alone does not count it as decoded
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-            (3, EVMTX_SPAM),
+            (3, TX_SPAM),
         )
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
+    )
     assert len(hashes) == 2
 
     # see that setting the decoded attribute counts properly
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-            (3, EVMTX_DECODED),
+            (3, TX_DECODED),
         )
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
+    )
     assert len(hashes) == 1
 
 
@@ -302,7 +316,7 @@ def test_genesis_remove_address(
     assert get_genesis_events() == [], 'There should be no events at this point'
 
     with database.conn.read_ctx() as cursor:
-        genesis_tx = dbevmtx.get_evm_transactions(
+        genesis_tx = dbevmtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH),
         )

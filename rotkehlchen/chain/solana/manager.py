@@ -269,7 +269,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress]):
                     if (tx := self.query_rpc_for_single_tx(signature)) is not None
                 ]
                 with self.database.conn.write_ctx() as write_cursor:
-                    solana_tx_db.add_solana_transactions(
+                    solana_tx_db.add_transactions(
                         write_cursor=write_cursor,
                         solana_transactions=transactions,
                         relevant_address=address,

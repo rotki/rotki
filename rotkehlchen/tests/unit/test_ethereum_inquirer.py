@@ -84,7 +84,7 @@ def test_get_transaction_receipt(
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=to_addy),
             ],
         )
-        db.add_evm_transactions(
+        db.add_transactions(
             cursor,
             [EvmTransaction(  # need to add the tx first
                 tx_hash=tx_hash,

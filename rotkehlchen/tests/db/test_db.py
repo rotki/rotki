@@ -167,6 +167,7 @@ TABLES_AT_INIT = [
     'solana_tx_instruction_accounts',
     'solana_tx_instructions',
     'solanatx_address_mappings',
+    'solana_tx_mappings',
 ]
 
 

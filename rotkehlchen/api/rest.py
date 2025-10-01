@@ -144,6 +144,7 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
+    EvmTransactionsNotDecodedFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
@@ -3061,7 +3062,9 @@ class RestAPI:
             chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
             # make sure that all the receipts are already queried
             chain_manager.transactions.get_receipts_for_transactions_missing_them()
-            amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(chain_id=evm_chain)
+            amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
+                filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=evm_chain),
+            )
             if amount_of_tx_to_decode > 0:
                 hashes.extend(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(
                     send_ws_notifications=True,
@@ -3094,7 +3097,9 @@ class RestAPI:
                 [blockchain.value for blockchain in EVM_CHAINS_WITH_TRANSACTIONS],
             ).fetchone()[0] > 0
 
-        undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(chain_id=None)
+        undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
+            filter_query=EvmTransactionsNotDecodedFilterQuery.make(),
+        )
         return _wrap_in_ok_result({
             'last_queried_ts': last_queried_ts,
             'undecoded_tx_count': undecoded_count,
@@ -3129,7 +3134,9 @@ class RestAPI:
         transactions_information: dict[str, dict[str, int]] = defaultdict(dict)
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
-            if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain)) != 0:
+            if (tx_count := dbevmtx.count_hashes_not_decoded(
+                filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=chain),
+            )) != 0:
                 chain_information = transactions_information[chain.to_name()]
                 chain_information['undecoded'] = tx_count
                 chain_information['total'] = dbevmtx.count_evm_transactions(chain_id=chain)

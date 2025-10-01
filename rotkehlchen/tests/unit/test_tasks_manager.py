@@ -1343,7 +1343,7 @@ def test_graph_query_query_delegations(
                 ),
             )
 
-            dbtx.add_evm_transactions(
+            dbtx.add_transactions(
                 write_cursor=write_cursor,
                 evm_transactions=[EvmTransaction(  # fake event used to extract the block number for the query of events  # noqa: E501
                     tx_hash=tx_hash,

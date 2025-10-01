@@ -18,11 +18,11 @@ from rotkehlchen.db.constants import (
     ETH_STAKING_FIELD_LENGTH,
     EVM_EVENT_FIELDS,
     EVM_FIELD_LENGTH,
-    EVMTX_DECODED,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
+    TX_DECODED,
 )
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
@@ -280,7 +280,7 @@ class DBHistoryEvents:
         * Bitcoin - simply deletes all non-customized bitcoin events.
         * EVM and EVM-like - deletes non-customized events that also have a corresponding
           transaction in the evm_transactions table.
-        * EVM - removes the EVMTX_DECODED evm_tx_mappings to enable re-processing.
+        * EVM - removes the TX_DECODED evm_tx_mappings to enable re-processing.
         """
         DBHistoryEvents.delete_location_events(
             write_cursor=write_cursor,
@@ -293,7 +293,7 @@ class DBHistoryEvents:
         if location.is_evm():  # so only delete mappings here for evm locations
             write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
-                (EVMTX_DECODED,),
+                (TX_DECODED,),
             )
 
     def delete_events_by_tx_hash(

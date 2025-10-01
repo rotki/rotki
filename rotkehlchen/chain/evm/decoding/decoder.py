@@ -45,9 +45,9 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.constants import EVMTX_DECODED, EVMTX_SPAM
+from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
@@ -165,7 +165,7 @@ class EvmTransactionContext(NamedTuple):
     receipt: 'EvmTxReceipt'
 
 
-class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRules, 'EvmDecoderInterface', 'EVMTxHash', 'EvmEvent', EvmTransactionContext, 'BaseEvmDecoderTools'], ABC):  # noqa: E501
+class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRules, 'EvmDecoderInterface', 'EVMTxHash', 'EvmEvent', EvmTransactionContext, 'BaseEvmDecoderTools', DBEvmTx, EvmTransactionsNotDecodedFilterQuery], ABC):  # noqa: E501
 
     def __init__(
             self,
@@ -202,12 +202,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
         self.beacon_chain = beacon_chain
-        self.dbevmtx = dbevmtx_class(database)
         self.dbevents = DBHistoryEvents(database)
         self.addresses_exceptions = addresses_exceptions or {}
         TransactionDecoder.__init__(
             self=self,
             database=database,
+            dbtx=dbevmtx_class(database),
+            tx_not_decoded_filter_query_class=EvmTransactionsNotDecodedFilterQuery,
             chain_name=evm_inquirer.chain_name,
             value_asset=value_asset,
             rules=EvmDecodingRules(
@@ -813,7 +814,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-                (tx_id, EVMTX_DECODED),
+                (tx_id, TX_DECODED),
             )
 
         return events, refresh_balances, reload_decoders  # Propagate for post processing in the caller  # noqa: E501
@@ -867,13 +868,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 )
                 write_cursor.execute(
                     'DELETE from evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
-                    (tx_id, EVMTX_DECODED, EVMTX_SPAM),
+                    (tx_id, TX_DECODED, TX_SPAM),
                 )
         else:  # see if events are already decoded and return them
             with self.database.conn.read_ctx() as cursor:
                 cursor.execute(
                     'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value=?',
-                    (tx_id, EVMTX_DECODED),
+                    (tx_id, TX_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
                     events = self.dbevents.get_history_events_internal(
@@ -900,7 +901,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         if tx_receipt.status is False:
             return
 
-        internal_txs = self.dbevmtx.get_evm_internal_transactions(
+        internal_txs = self.dbtx.get_evm_internal_transactions(
             parent_tx_hash=tx.tx_hash,
             blockchain=self.evm_inquirer.blockchain,
         )
@@ -1293,12 +1294,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     'blockchain': self.evm_inquirer.chain_id.to_blockchain().serialize(),
                 },
             )
-
-    def _get_tx_hashes_not_decoded(self, limit: int | None) -> list[EVMTxHash]:
-        return self.dbevmtx.get_transaction_hashes_not_decoded(
-            chain_id=self.evm_inquirer.chain_id,
-            limit=limit,
-        )
 
     def _load_transaction_context(
             self,

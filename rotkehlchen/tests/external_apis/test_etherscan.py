@@ -152,7 +152,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     )
     dbtx = DBEvmTx(database=db)
     with db.conn.read_ctx() as cursor:
-        regular_tx_in_db = dbtx.get_evm_transactions(
+        regular_tx_in_db = dbtx.get_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(),
         )

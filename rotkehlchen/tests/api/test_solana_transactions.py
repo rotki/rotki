@@ -33,7 +33,7 @@ def test_query_solana_transactions(
     # Add a tx to the db with a recent timestamp to ensure the logic for getting the latest
     # signature from the DB only gets signatures for the queried address.
     with rotki.data.db.conn.write_ctx() as write_cursor:
-        solana_tx_db.add_solana_transactions(
+        solana_tx_db.add_transactions(
             write_cursor=write_cursor,
             solana_transactions=[SolanaTransaction(
                 fee=0,
@@ -88,7 +88,7 @@ def test_query_solana_transactions(
         assert mock_rpc_get_transaction.call_count == len(signatures_list)  # falls back to doing a single rpc query for each tx  # noqa: E501
 
         with rotki.data.db.conn.read_ctx() as cursor:
-            db_transactions = DBSolanaTx(rotki.data.db).get_solana_transactions(
+            db_transactions = DBSolanaTx(rotki.data.db).get_transactions(
                 cursor=cursor,
                 filter_=SolanaTransactionsFilterQuery.make(),
             )

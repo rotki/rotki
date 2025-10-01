@@ -1296,7 +1296,7 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
                 is_mev_reward=False,
             ),
         ])
-        dbevmtx.add_evm_transactions(  # transaction is needed for combine_block_with_tx_events
+        dbevmtx.add_transactions(  # transaction is needed for combine_block_with_tx_events
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
                 tx_hash=tx_hash,

@@ -115,7 +115,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         )
         for chain_id in (ChainID.ETHEREUM, ChainID.OPTIMISM, ChainID.GNOSIS):
             for i in range(3 if chain_id == ChainID.ETHEREUM else 2):
-                db.add_evm_transactions(
+                db.add_transactions(
                     write_cursor,
                     [EvmTransaction(
                         tx_hash=make_evm_tx_hash(),
@@ -135,7 +135,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                 )
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        result = db.get_transactions(cursor, EvmTransactionsFilterQuery.make())
         assert len(result) == 7
         response = requests.delete(
             api_url_for(
@@ -145,9 +145,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
             json={'chain': 'eth'},
         )
         assert_simple_ok_response(response)
-        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        result = db.get_transactions(cursor, EvmTransactionsFilterQuery.make())
         assert len(result) == 4
-        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM))  # noqa: E501
+        result = db.get_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM))  # noqa: E501
         assert len(result) == 0
         assert dbevents.get_history_events_count(
             cursor=cursor,
@@ -191,7 +191,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
     )
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make())
+        result = db.get_transactions(cursor, EvmTransactionsFilterQuery.make())
         assert len(result) == 0
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
 

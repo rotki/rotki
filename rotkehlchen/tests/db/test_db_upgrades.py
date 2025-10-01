@@ -3364,6 +3364,7 @@ def test_latest_upgrade_correctness(user_data_dir):
         'solana_tx_instruction_accounts',
         'solana_tx_instructions',
         'solanatx_address_mappings',
+        'solana_tx_mappings',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()

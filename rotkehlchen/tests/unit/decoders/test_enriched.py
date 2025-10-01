@@ -78,7 +78,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
     )
     with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
@@ -174,7 +174,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
     )
     with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2

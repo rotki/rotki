@@ -810,6 +810,15 @@ CREATE TABLE IF NOT EXISTS solanatx_address_mappings (
 );
 """  # noqa: E501
 
+DB_CREATE_SOLANA_TX_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS solana_tx_mappings (
+    tx_id INTEGER NOT NULL,
+    value INTEGER NOT NULL,
+    FOREIGN KEY(tx_id) references solana_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (tx_id, value)
+);
+"""  # noqa: E501
+
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
 # Shown below are before/after query speeds we observed for each index:
 # idx_history_events_entry_type: Before: 12951ms, After: 0ms
@@ -892,6 +901,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_SOLANA_TX_INSTRUCTIONS}
 {DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS}
 {DB_CREATE_SOLANA_ADDRESS_MAPPINGS}
+{DB_CREATE_SOLANA_TX_MAPPINGS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

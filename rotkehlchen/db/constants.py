@@ -11,8 +11,8 @@ USER_CREDENTIAL_MAPPING_KEYS = (KRAKEN_ACCOUNT_TYPE_KEY, BINANCE_MARKETS_KEY)
 
 
 # -- EVM transactions attributes values -- used in evm_tx_mappings
-EVMTX_DECODED = 0
-EVMTX_SPAM = 1
+TX_DECODED = 0
+TX_SPAM = 1
 
 # -- history_events_mappings values --
 HISTORY_MAPPING_KEY_STATE = 'state'

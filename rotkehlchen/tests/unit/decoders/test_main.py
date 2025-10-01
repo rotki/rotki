@@ -285,7 +285,7 @@ def test_no_logs_and_zero_eth(
     )
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -367,7 +367,7 @@ def test_simple_erc20_transfer(
     dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = tx_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -451,7 +451,7 @@ def test_eth_transfer(
     dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = tx_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -535,7 +535,7 @@ def test_eth_spend(
     dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = tx_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -611,7 +611,7 @@ def test_eth_deposit(
     )
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,

@@ -651,7 +651,7 @@ def test_combine_block_with_tx_events(eth2, database):
         ])
         database.add_blockchain_accounts(write_cursor, [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=vindex1_address)])  # noqa: E501
 
-        dbevmtx.add_evm_transactions(
+        dbevmtx.add_transactions(
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
                 tx_hash=tx_hash,

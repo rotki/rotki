@@ -93,7 +93,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -246,7 +246,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -380,7 +380,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         ethereum_transaction_decoder.reload_data(cursor)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
@@ -552,7 +552,7 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -663,7 +663,7 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -767,7 +767,7 @@ def test_makerdao_sai_deposit_peth(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -906,7 +906,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -1017,7 +1017,7 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         ethereum_transaction_decoder.reload_data(cursor)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
@@ -1117,7 +1117,7 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         ethereum_transaction_decoder.reload_data(cursor)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
@@ -1394,7 +1394,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -1657,7 +1657,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -1902,7 +1902,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -2141,7 +2141,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
     with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_10)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,

@@ -203,7 +203,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 continue
 
             with self.database.user_write() as write_cursor:
-                self.dbevmtx.add_evm_transactions(
+                self.dbevmtx.add_transactions(
                     write_cursor=write_cursor,
                     evm_transactions=new_transactions,
                     relevant_address=address,
@@ -626,7 +626,7 @@ class EvmTransactions(ABC):  # noqa: B024
         """
         tx_receipt = self.dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id)  # noqa: E501
         if tx_receipt is not None:
-            return self.dbevmtx.get_evm_transactions(
+            return self.dbevmtx.get_transactions(
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
             )[0], tx_receipt  # all good, tx receipt is in the database
@@ -634,7 +634,7 @@ class EvmTransactions(ABC):  # noqa: B024
         log.debug(f'Querying transaction data for {tx_hash=}({self.evm_inquirer.chain_name})')
         transaction, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(tx_hash)
         with self.database.conn.write_ctx() as write_cursor:
-            self.dbevmtx.add_evm_transactions(
+            self.dbevmtx.add_transactions(
                 write_cursor=write_cursor,
                 evm_transactions=[transaction],
                 relevant_address=relevant_address,
@@ -767,7 +767,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     end_ts=Timestamp(0),
                 )
 
-            added_tx = self.dbevmtx.get_evm_transactions(  # Check whether the genesis tx was added  # noqa: E501
+            added_tx = self.dbevmtx.get_transactions(  # Check whether the genesis tx was added  # noqa: E501
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
             )
@@ -889,7 +889,7 @@ class EvmTransactions(ABC):  # noqa: B024
             if associated_address not in tracked_accounts:
                 raise InputError(f'Address {associated_address} to associate with tx {tx_hash.hex()} is not tracked')  # noqa: E501
 
-            if len(self.dbevmtx.get_evm_transactions(
+            if len(self.dbevmtx.get_transactions(
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
             )) == 1 and self.dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id) is not None:  # noqa: E501
@@ -900,7 +900,7 @@ class EvmTransactions(ABC):  # noqa: B024
             raise InputError(f'Transaction data for {tx_hash.hex()} not found on chain.')
         transaction, receipt_data = tx_result
         with self.database.user_write() as write_cursor:
-            self.dbevmtx.add_evm_transactions(
+            self.dbevmtx.add_transactions(
                 write_cursor=write_cursor,
                 evm_transactions=[transaction],
                 relevant_address=associated_address,

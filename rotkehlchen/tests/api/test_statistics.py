@@ -600,7 +600,7 @@ def test_query_events_analysis(
         )
 
         dbevmtx = DBEvmTx(db)
-        dbevmtx.add_evm_transactions(
+        dbevmtx.add_transactions(
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
                 tx_hash=tx_hash,
@@ -619,7 +619,7 @@ def test_query_events_analysis(
             relevant_address=ethereum_accounts[0],
         )
 
-        dbevmtx.add_evm_transactions(
+        dbevmtx.add_transactions(
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
                 tx_hash=tx_hash1,
@@ -638,7 +638,7 @@ def test_query_events_analysis(
             relevant_address=ethereum_accounts[0],
         )
 
-        dbevmtx.add_evm_transactions(
+        dbevmtx.add_transactions(
             write_cursor=write_cursor,
             evm_transactions=[
                 EvmTransaction(
