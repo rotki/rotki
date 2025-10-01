@@ -5393,6 +5393,44 @@ Dealing with History Events
          :reqjson string withdrawal_address: an evm address field to specify the withdrawer in an "eth withdrawal event".
          :reqjson bool is_exit: true if the "eth withdrawal event" is an exit event.
 
+    .. tab:: Solana Event
+
+      **Example Request**:
+
+      .. http:put:: /api/(version)/history/events
+
+         .. http:example:: curl wget httpie python-requests
+
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+               "entry_type": "solana event",
+               "signature": "5j7s8K3nP9mL6wR2vT4xQ1zN8bY7cD5fE9gH2jK4mL6nP8rS3tV5wX7yZ9aB1cD3eF5gH7jK9mL1nP3rS5tV7wX9yZ",
+               "timestamp": 1569924575,
+               "amount": "1.5",
+               "sequence_index": 1,
+               "event_type": "trade",
+               "event_subtype": "receive",
+               "asset": "SOL",
+               "location_label": "7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W",
+               "user_notes": "received sol from swap"
+            }
+
+         :reqjson string signature: This is the transaction signature of the solana event
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson object amount: The amount of the event.
+         :reqjson string asset: The asset identifier for this entry
+         :reqjson string event_type: The main event type of the entry. Possible event types can be seen in the `HistoryEventType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L54>`_.
+         :reqjson string event_subtype: The subtype for the entry. Possible event types can be seen in the `HistoryEventSubType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L72>`_.
+         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
+         :reqjson string[optional] location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
+         :reqjson string[optional] user_notes: This is the user editable part of the description of the event entry in plain text explaining what is being done.
+         :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For a send it's the target. For a receive it's the sender. For bridged transfer it's the bridge's network identifier. For a protocol interaction it's the protocol.
+         :reqjson string[optional] address: Any relevant address that this event interacted with.
+         :reqjson object[optional] extra_data: An object containing any other data to be stored.
+
    .. tab:: Asset Movement Event
 
       **Example Request**:
@@ -5729,9 +5767,11 @@ Exporting History Events
    :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
    :reqjson string asset: The asset to optionally filter by.
    :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
-   :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query. We currently have a special exception for "eth2" as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
+   :reqjson list[string] signatures: An optional list of transaction signatures to filter for. This will make it a Solana event query.
+   :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. We currently have a special exception for "eth2" as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
    :reqjson list[string] products: An optional list of product type to filter by. List of strings. This will make it an EVM event query.
-   :reqjson list[string] addresses: An optional list of EVM addresses to filter by in the set of counterparty addresses. This will make it an EVM event query.
+   :reqjson list[string] evm_addresses: An optional list of EVM addresses to filter by in the set of counterparty addresses. This will make it an EVM event query.
+   :reqjson list[string] solana_addresses: An optional list of Solana addresses to filter by in the set of counterparty addresses. This will make it a Solana event query.
    :reqjson list[int] validator_indices: An optional list of validator indices to filter by. This makes it an EthStakingevent query.
 
 

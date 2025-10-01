@@ -1185,7 +1185,7 @@ def test_events_filter_params(
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
-            'addresses': [test_contract_address],
+            'evm_addresses': [test_contract_address],
         },
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,

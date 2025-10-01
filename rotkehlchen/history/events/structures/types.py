@@ -35,6 +35,25 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
     str | None,  # product
 ]
 
+SOLANA_EVENT_DB_TUPLE_READ = tuple[
+    int,            # identifier
+    str,            # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # location
+    str | None,  # location label
+    str,            # asset
+    str,            # amount
+    str | None,  # notes
+    str,            # type
+    str,            # subtype
+    str | None,     # extra_data
+    int,            # ignored
+    bytes,          # signature
+    str,            # address
+    str | None,  # counterparty
+]
+
 
 class HistoryEventType(SerializableEnumNameMixin):
     TRADE = 0

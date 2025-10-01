@@ -11,6 +11,7 @@ from eth_utils import to_checksum_address
 from marshmallow import fields
 from marshmallow.exceptions import ValidationError
 from marshmallow.utils import is_iterable_but_not_string
+from solders.solders import Signature
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -26,6 +27,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
+from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -720,7 +722,7 @@ class SolanaAddressField(fields.Field):
             data: Mapping[str, Any] | None,
             **_kwargs: Any,
     ) -> SolanaAddress:
-        if not SOLANA_ADDRESS_RE.match(value):
+        if not is_valid_solana_address(value):
             raise ValidationError(
                 f'Given value {value} is not a solana address',
                 field_name='address',
@@ -767,6 +769,30 @@ class EVMTransactionHashField(fields.Field):
             raise ValidationError('Transaction hash should be a string')
 
         return validate_and_deserialize_evm_tx_hash(value)
+
+
+class SolanaSignatureField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: Signature | None,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> Signature:
+        if not isinstance(value, str):
+            raise ValidationError('Transaction signature should be a string')
+
+        return Signature.from_string(value)
 
 
 class AssetTypeField(fields.Field):
