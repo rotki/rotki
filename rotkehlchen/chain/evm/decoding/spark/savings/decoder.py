@@ -122,6 +122,11 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
         ):
             return DEFAULT_DECODING_OUTPUT
 
+        if not self.base.is_tracked(bytes_to_address(
+                value=context.tx_log.topics[2 if context.tx_log.topics[0] == DEPOSIT_TOPIC else 3],
+        )):
+            return DEFAULT_DECODING_OUTPUT
+
         vault_token = self.base.get_or_create_evm_token(
             address=context.tx_log.address,
             encounter=(encounter := TokenEncounterInfo(should_notify=False)),

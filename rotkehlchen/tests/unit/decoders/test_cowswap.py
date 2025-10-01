@@ -1146,3 +1146,54 @@ def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_account
         address=GPV2_SETTLEMENT_ADDRESS,
     )]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x7904667C340601AaB73939372C016dC5102732A2']])
+def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts):
+    """This tests that native assets deposited via the new ethflow
+    contract are decoded correctly."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(evmhash := deserialize_evm_tx_hash('0xb26c5209cd2f2f68a8e35468099b3926037566c59dfafc399a94ec8525786f6c')),  # noqa: E501
+    )
+    assert events == [EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1759128085000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_XDAI,
+        amount=(out_amount := FVal('499.977274317762825657')),
+        location_label=(user := gnosis_accounts[0]),
+        notes=f'Swap {out_amount} XDAI in a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+        amount=(in_amount := FVal('426.547243238649316205')),
+        location_label=user,
+        notes=f'Receive {in_amount} EURe as the result of a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=(fee_amount := FVal('0.022725682237174343')),
+        location_label=user,
+        notes=f'Spend {fee_amount} XDAI as a cowswap fee',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    )]
