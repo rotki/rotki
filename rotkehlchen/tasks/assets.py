@@ -50,7 +50,11 @@ from rotkehlchen.chain.scroll.modules.aave.v3.constants import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
+from rotkehlchen.db.constants import (
+    CHAIN_EVENT_FIELDS,
+    EVM_EVENT_FIELDS,
+    HISTORY_BASE_ENTRY_FIELDS,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.filtering import EVM_EVENT_JOIN
@@ -439,7 +443,7 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
         # unignored asset for that account that happened on or after last_save_time.
         for event_data in cursor.execute(
             # events that are the earliest events of distinct assets after last_save_time
-            f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, '
+            f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, '
             f'{EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} LEFT JOIN multisettings ms ON '
             'asset = ms.value AND ms.name = "ignored_asset" '
             'AND timestamp >= ? GROUP BY asset, location_label;',

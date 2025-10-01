@@ -3,11 +3,15 @@ from typing import Any, Literal, NamedTuple
 
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
-EVM_EVENT_FIELDS = tuple[
-    bytes,          # tx_hash
+# Represents common blockchain metadata fields.
+CHAIN_EVENT_FIELDS_TYPE = tuple[
+    bytes,  # tx_hash
     str | None,  # counterparty
-    str | None,  # product
     str | None,  # address
+]
+
+EVM_EVENT_FIELDS_TYPE = tuple[
+    str | None,  # product
 ]
 
 

@@ -5791,8 +5791,8 @@ class RestAPI:
     ) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT COUNT(*) FROM history_events JOIN evm_events_info ON '
-                'history_events.identifier=evm_events_info.identifier WHERE '
+                'SELECT COUNT(*) FROM history_events JOIN chain_events_info ON '
+                'history_events.identifier=chain_events_info.identifier WHERE '
                 'location_label=? AND address=?',
                 (from_address, to_address),
             )

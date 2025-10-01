@@ -14,7 +14,8 @@ from rotkehlchen.history.events.structures.base import (
     get_event_type_identifier,
 )
 from rotkehlchen.history.events.structures.types import (
-    EVM_EVENT_FIELDS,
+    CHAIN_EVENT_FIELDS_TYPE,
+    EVM_EVENT_FIELDS_TYPE,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -131,28 +132,30 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
 
     def _serialize_evm_event_tuple_for_db(self) -> tuple[
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
-            tuple[str, str, EVM_EVENT_FIELDS],
+            tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
+            tuple[str, str, EVM_EVENT_FIELDS_TYPE],
     ]:
         return (
             self._serialize_base_tuple_for_db(),
             (
-                (
-                    'evm_events_info(identifier, tx_hash, counterparty, product,'
-                    'address) VALUES (?, ?, ?, ?, ?)'
-                ), (
-                    'UPDATE evm_events_info SET tx_hash=?, counterparty=?, product=?, address=?'
-                ), (
+                'chain_events_info(identifier, tx_ref, counterparty, address) VALUES (?, ?, ?, ?)',
+                'UPDATE chain_events_info SET tx_ref=?, counterparty=?, address=?', (
                     self.tx_hash,
                     self.counterparty,
-                    self.product.serialize() if self.product is not None else None,
                     self.address,
                 ),
+            ),
+            (
+                'evm_events_info(identifier, product) VALUES (?, ?)',
+                'UPDATE evm_events_info SET product=?',
+                (self.product.serialize() if self.product is not None else None,),
             ),
         )
 
     def serialize_for_db(self) -> tuple[
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
-            tuple[str, str, EVM_EVENT_FIELDS],
+            tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
+            tuple[str, str, EVM_EVENT_FIELDS_TYPE],
     ]:
         return self._serialize_evm_event_tuple_for_db()
 
@@ -202,8 +205,8 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
             tx_hash=deserialize_evm_tx_hash(entry[13]),
             counterparty=entry[14],
-            product=EvmProduct.deserialize(entry[15]) if entry[15] is not None else None,
-            address=deserialize_optional(input_val=entry[16], fn=string_to_evm_address),
+            address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
+            product=EvmProduct.deserialize(entry[16]) if entry[16] is not None else None,
         )
 
     def has_details(self) -> bool:

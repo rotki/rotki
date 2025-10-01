@@ -87,8 +87,8 @@ class DBEth2:
         for all validators that have been consolidated.
         """
         cursor.execute(
-            'SELECT e.extra_data FROM history_events AS e LEFT JOIN evm_events_info ON evm_events_info.identifier=e.identifier '  # noqa: E501
-            'WHERE evm_events_info.counterparty = ? AND e.type = ? AND e.subtype = ? ',
+            'SELECT e.extra_data FROM history_events AS e LEFT JOIN chain_events_info ON chain_events_info.identifier=e.identifier '  # noqa: E501
+            'WHERE chain_events_info.counterparty = ? AND e.type = ? AND e.subtype = ? ',
             (CPT_ETH2, HistoryEventType.INFORMATIONAL.serialize(), HistoryEventSubType.CONSOLIDATE.serialize()),  # noqa: E501
         )
         consolidation_indices = {}
@@ -803,7 +803,7 @@ class DBEth2:
                 history_events A_H JOIN eth_staking_events_info A_S ON A_H.identifier = A_S.identifier
             WHERE A_H.subtype = ?)
             SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, mev.validator_index FROM evm_transactions B_T
-            JOIN evm_events_info B_E ON B_T.tx_hash = B_E.tx_hash
+            JOIN chain_events_info B_E ON B_T.tx_hash = B_E.tx_ref
             JOIN history_events B_H ON B_E.identifier = B_H.identifier
             LEFT JOIN mev_rewards mev ON mev.is_exit_or_blocknumber = B_T.block_number
             AND mev.location_label = B_H.location_label WHERE B_H.asset = ? AND B_H.type = ?
@@ -847,8 +847,8 @@ class DBEth2:
         with self.db.user_write() as write_cursor:
             for changes_entry in changes:
                 result = write_cursor.execute(
-                    'SELECT COUNT(*) FROM history_events HE LEFT JOIN evm_events_info EE ON '
-                    'HE.identifier = EE.identifier WHERE HE.event_identifier=? AND EE.tx_hash=?',
+                    'SELECT COUNT(*) FROM history_events HE LEFT JOIN chain_events_info CE ON '
+                    'HE.identifier = CE.identifier WHERE HE.event_identifier=? AND CE.tx_ref=?',
                     (changes_entry[0], changes_entry[7]),
                 ).fetchone()[0]
                 if result == 1:  # Has already been moved.
