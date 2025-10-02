@@ -135,7 +135,6 @@ class LidoDecoder(EvmDecoderInterface):
             (steth_transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER) or
             (bytes_to_address(steth_transfer_log.topics[2]) != A_WSTETH.resolve_to_evm_token().evm_address)  # noqa: E501
             ):
-            print("Did not find the expected stETH transfer log")
             return DEFAULT_EVM_DECODING_OUTPUT
 
         deposited_steth_amount_raw = int.from_bytes(steth_transfer_log.data[:32])
