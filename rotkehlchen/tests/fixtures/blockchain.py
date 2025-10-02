@@ -38,6 +38,7 @@ from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.solana.manager import SolanaManager
+from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
@@ -858,12 +859,17 @@ def fixture_btc_derivation_gap_limit():
     return DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
-@pytest.fixture(name='solana_manager')
-def fixture_solana_manager(greenlet_manager, database):
-    return SolanaManager(
+@pytest.fixture(name='solana_inquirer')
+def fixture_solana_inquirer(greenlet_manager, database):
+    return SolanaInquirer(
         greenlet_manager=greenlet_manager,
         database=database,
     )
+
+
+@pytest.fixture(name='solana_manager')
+def fixture_solana_manager(solana_inquirer):
+    return SolanaManager(node_inquirer=solana_inquirer)
 
 
 @pytest.fixture(name='blockchain')

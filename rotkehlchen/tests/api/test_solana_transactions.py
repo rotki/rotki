@@ -58,19 +58,19 @@ def test_query_solana_transactions(
     )):
         with (
             patch.object(
-                target=rotki.chains_aggregator.solana,
+                target=rotki.chains_aggregator.solana.node_inquirer,
                 attribute='query_tx_signatures_for_address',
                 side_effect=lambda address, until, sigs=signatures_list: sigs,
             ) as mock_query_tx_signatures_for_address,
             patch.object(
-                target=rotki.chains_aggregator.solana.helius,
+                target=rotki.chains_aggregator.solana.transactions.helius,
                 attribute='get_transactions',
-                wraps=rotki.chains_aggregator.solana.helius.get_transactions,
+                wraps=rotki.chains_aggregator.solana.transactions.helius.get_transactions,
             ) as mock_helius_get_transactions,
             patch.object(
-                target=rotki.chains_aggregator.solana,
-                attribute='query_rpc_for_single_tx',
-                wraps=rotki.chains_aggregator.solana.query_rpc_for_single_tx,
+                target=rotki.chains_aggregator.solana.node_inquirer,
+                attribute='get_transaction_for_signature',
+                wraps=rotki.chains_aggregator.solana.node_inquirer.get_transaction_for_signature,
             ) as mock_rpc_get_transaction,
         ):
             response = requests.post(
