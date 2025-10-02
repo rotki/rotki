@@ -3,20 +3,23 @@ import logging
 import pkgutil
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 from gevent.lock import Semaphore
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
 from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import BLOCKCHAIN_LOCATIONS_TYPE
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import CPT_GAS
+from .structures import T_Event
 from .tools import BaseDecoderTools
 from .types import CounterpartyDetails, SupportsAddition
 
@@ -32,20 +35,21 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-T_Event = TypeVar('T_Event')
 T_DecodingRules = TypeVar('T_DecodingRules', bound=SupportsAddition)
 T_DecoderInterface = TypeVar('T_DecoderInterface')
 T_DecoderTools = TypeVar('T_DecoderTools', bound=BaseDecoderTools)
 T_TransactionDecodingContext = TypeVar('T_TransactionDecodingContext')
 T_DBTx = TypeVar('T_DBTx', bound=DBCommonTx)
+T_EventFilterQuery = TypeVar('T_EventFilterQuery')
 
 
-class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderInterface, T_TxHash, T_Event, T_TransactionDecodingContext, T_DecoderTools, T_DBTx, T_TxNotDecodedFilterQuery]):  # noqa: E501
+class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderInterface, T_TxHash, T_Event, T_TransactionDecodingContext, T_DecoderTools, T_DBTx, T_EventFilterQuery, T_TxNotDecodedFilterQuery]):  # noqa: E501
     def __init__(
             self,
             database: 'DBHandler',
             dbtx: T_DBTx,
             tx_not_decoded_filter_query_class: type[T_TxNotDecodedFilterQuery],
+            tx_mappings_table: Literal['evm_tx_mappings', 'solana_tx_mappings'],
             chain_name: str,
             value_asset: 'AssetWithOracles',
             rules: T_DecodingRules,
@@ -67,6 +71,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         self.database = database
         self.dbtx = dbtx
         self.tx_not_decoded_filter_query_class = tx_not_decoded_filter_query_class
+        self.tx_mappings_table = tx_mappings_table
         self.premium = premium
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='lu-flame')] + misc_counterparties  # noqa: E501
         self.msg_aggregator = database.msg_aggregator
@@ -285,6 +290,51 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         - `reload_decoders` lists decoder names that should be reloaded (or `None`).
         """
 
+    @abstractmethod
+    def _make_event_filter_query(self, tx_ref: T_TxHash) -> T_EventFilterQuery:
+        """Make a query to filter events by the given tx_ref."""
+
+    def _maybe_load_or_purge_events_from_db(
+            self,
+            transaction: T_Transaction,
+            tx_ref: T_TxHash,
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            ignore_cache: bool,
+            delete_customized: bool,
+    ) -> list[T_Event] | None:
+        """Load events from the DB for the given tx if they are already decoded and return them,
+        or purge them from the DB if ignore_cache is True.
+        Returns the list of events or None if the tx was not decoded or the events were purged.
+        """
+        with self.database.conn.read_ctx() as cursor:
+            tx_id = transaction.get_or_query_db_id(cursor)
+
+        if ignore_cache is True:  # delete all decoded events for the given tx ref
+            with self.database.user_write() as write_cursor:
+                self.dbevents.delete_events_by_tx_hash(
+                    write_cursor=write_cursor,
+                    tx_hashes=[tx_ref],
+                    location=location,
+                    delete_customized=delete_customized,
+                )
+                write_cursor.execute(
+                    f'DELETE from {self.tx_mappings_table} WHERE tx_id=? AND value IN (?, ?)',
+                    (tx_id, TX_DECODED, TX_SPAM),
+                )
+        else:  # see if events are already decoded and return them
+            with self.database.conn.read_ctx() as cursor:
+                cursor.execute(
+                    f'SELECT COUNT(*) from {self.tx_mappings_table} WHERE tx_id=? AND value=?',
+                    (tx_id, TX_DECODED),
+                )
+                if cursor.fetchone()[0] != 0:  # already decoded and in the DB
+                    return self.dbevents.get_history_events_internal(  # type: ignore[call-overload]
+                        cursor=cursor,
+                        filter_query=self._make_event_filter_query(tx_ref),
+                    )
+
+        return None
+
     def _decode_transaction_hashes(
             self,
             ignore_cache: bool,
@@ -311,7 +361,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         total_transactions = len(tx_hashes)
         log.debug(f'Started logic to decode {total_transactions} transactions from {self.chain_name}')  # noqa: E501
         for tx_index, tx_hash in enumerate(tx_hashes):
-            log.debug(f'Decoding logic started for {tx_hash} ({self.chain_name})')
+            log.debug(f'Decoding logic started for {tx_hash!s} ({self.chain_name})')
             if send_ws_notifications and tx_index % 10 == 0:
                 log.debug(f'Processed {tx_index} out of {total_transactions} transactions from {self.chain_name}')  # noqa: E501
                 self.msg_aggregator.add_message(
@@ -364,3 +414,11 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
     @abstractmethod
     def _calculate_fees(self, tx: T_Transaction) -> FVal:
         """Calculates the transaction fee using the chain's formula."""
+
+    if __debug__:  # for now only debug as decoders are constant
+
+        def assert_keys_are_unique(self, new_struct: dict, main_struct: dict, class_name: str, type_name: str) -> None:  # noqa: E501
+            """Asserts that some decoders keys of new rules are unique"""
+            intersection = set(new_struct).intersection(set(main_struct))
+            if len(intersection) != 0:
+                raise AssertionError(f'{type_name} duplicates found in decoding rules of {self.chain_name} {class_name}: {intersection}')  # noqa: E501

@@ -45,7 +45,7 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
+from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -165,7 +165,7 @@ class EvmTransactionContext(NamedTuple):
     receipt: 'EvmTxReceipt'
 
 
-class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRules, 'EvmDecoderInterface', 'EVMTxHash', 'EvmEvent', EvmTransactionContext, 'BaseEvmDecoderTools', DBEvmTx, EvmTransactionsNotDecodedFilterQuery], ABC):  # noqa: E501
+class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRules, 'EvmDecoderInterface', 'EVMTxHash', 'EvmEvent', EvmTransactionContext, 'BaseEvmDecoderTools', DBEvmTx, EvmEventFilterQuery, EvmTransactionsNotDecodedFilterQuery], ABC):  # noqa: E501
 
     def __init__(
             self,
@@ -209,6 +209,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             database=database,
             dbtx=dbevmtx_class(database),
             tx_not_decoded_filter_query_class=EvmTransactionsNotDecodedFilterQuery,
+            tx_mappings_table='evm_tx_mappings',
             chain_name=evm_inquirer.chain_name,
             value_asset=value_asset,
             rules=EvmDecodingRules(
@@ -855,35 +856,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         - a flag which is True if balances refresh is needed
         - A list of decoders to reload or None if no need
         """
-        with self.database.conn.read_ctx() as cursor:
-            tx_id = transaction.get_or_query_db_id(cursor)
-
-        if ignore_cache is True:  # delete all decoded events
-            with self.database.user_write() as write_cursor:
-                self.dbevents.delete_events_by_tx_hash(
-                    write_cursor=write_cursor,
-                    tx_hashes=[transaction.tx_hash],
-                    location=Location.from_chain_id(self.evm_inquirer.chain_id),
-                    delete_customized=delete_customized,
-                )
-                write_cursor.execute(
-                    'DELETE from evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
-                    (tx_id, TX_DECODED, TX_SPAM),
-                )
-        else:  # see if events are already decoded and return them
-            with self.database.conn.read_ctx() as cursor:
-                cursor.execute(
-                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value=?',
-                    (tx_id, TX_DECODED),
-                )
-                if cursor.fetchone()[0] != 0:  # already decoded and in the DB
-                    events = self.dbevents.get_history_events_internal(
-                        cursor=cursor,
-                        filter_query=EvmEventFilterQuery.make(
-                            tx_hashes=[transaction.tx_hash],
-                        ),
-                    )
-                    return events, False, None
+        if (events := self._maybe_load_or_purge_events_from_db(
+            transaction=transaction,
+            tx_ref=transaction.tx_hash,
+            location=Location.from_chain(self.evm_inquirer.blockchain),  # type: ignore[arg-type]
+            ignore_cache=ignore_cache,
+            delete_customized=delete_customized,
+        )) is not None:
+            return events, False, None
 
         # else we should decode now
         return self._decode_transaction(transaction=transaction, tx_receipt=tx_receipt)
@@ -1324,6 +1304,9 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             delete_customized=delete_customized,
         )
 
+    def _make_event_filter_query(self, tx_ref: EVMTxHash) -> EvmEventFilterQuery:
+        return EvmEventFilterQuery.make(tx_hashes=[tx_ref])
+
     def _chain_specific_decoder_initialization(
             self,
             decoder: 'EvmDecoderInterface',  # pylint: disable=unused-argument
@@ -1344,14 +1327,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
     def _calculate_fees(self, tx: EvmTransaction) -> FVal:
         """Calculates gas burn based on relevant chain's formula."""
         return from_wei(FVal(tx.gas_used * tx.gas_price))
-
-    if __debug__:  # for now only debug as decoders are constant
-
-        def assert_keys_are_unique(self, new_struct: dict, main_struct: dict, class_name: str, type_name: str) -> None:  # noqa: E501
-            """Asserts that some decoders keys of new rules are unique"""
-            intersection = set(new_struct).intersection(set(main_struct))
-            if len(intersection) != 0:
-                raise AssertionError(f'{type_name} duplicates found in decoding rules of {self.evm_inquirer.chain_name} {class_name}: {intersection}')  # noqa: E501
 
     def _enrich_protocol_transfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
         """Decode special transfers made by contract execution for example at the moment

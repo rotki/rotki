@@ -42,6 +42,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_hex_color_code,
     deserialize_timestamp,
+    deserialize_tx_signature,
 )
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
@@ -792,7 +793,7 @@ class SolanaSignatureField(fields.Field):
         if not isinstance(value, str):
             raise ValidationError('Transaction signature should be a string')
 
-        return Signature.from_string(value)
+        return deserialize_tx_signature(value)
 
 
 class AssetTypeField(fields.Field):

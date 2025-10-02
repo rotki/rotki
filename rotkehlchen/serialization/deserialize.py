@@ -3,7 +3,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
 
 from eth_utils import to_checksum_address
-from solders.solders import Pubkey
+from solders.solders import Pubkey, Signature
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2_CHAINIDS_WITH_L1_FEES,
@@ -356,6 +356,16 @@ def deserialize_solana_address(value: str) -> SolanaAddress:
         return SolanaAddress(str(Pubkey.from_string(value)))
     except ValueError as e:
         raise DeserializationError(f'Invalid solana address: {value}') from e
+
+
+def deserialize_tx_signature(value: str) -> Signature:
+    """Deserialize a solana transaction signature from a string.
+    May raise DeserializationError if the data is invalid.
+    """
+    try:
+        return Signature.from_string(value)
+    except ValueError as e:
+        raise DeserializationError(f'Failed to deserialize solana tx signature due to {e!s}') from e  # noqa: E501
 
 
 def deserialize_int_from_str(symbol: str, location: str) -> int:

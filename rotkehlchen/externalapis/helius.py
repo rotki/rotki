@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import gevent
 import requests
 from base58 import b58decode
-from solders.solders import Signature
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
@@ -20,6 +19,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int,
     deserialize_solana_address,
     deserialize_timestamp,
+    deserialize_tx_signature,
 )
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.serialization import jsonloads_list
@@ -182,7 +182,7 @@ class Helius(ExternalServiceWithApiKey):
                 fee=deserialize_int(value=raw_tx['fee'], location='solana tx fee from helius'),
                 slot=deserialize_int(value=raw_tx['slot'], location='solana tx slot from helius'),
                 success=raw_tx.get('transactionError') is None,
-                signature=Signature.from_string(raw_tx['signature']),
+                signature=deserialize_tx_signature(raw_tx['signature']),
                 block_time=deserialize_timestamp(raw_tx['timestamp']),
                 account_keys=[deserialize_solana_address(x['account']) for x in raw_tx['accountData']],  # noqa: E501
                 instructions=instructions,
