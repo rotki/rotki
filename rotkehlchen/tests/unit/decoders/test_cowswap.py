@@ -1,15 +1,17 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import GPV2_SETTLEMENT_ADDRESS
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.constants.assets import (
     A_ARB,
+    A_BSC_BNB,
     A_ETH,
     A_GNOSIS_VCOW,
     A_USDC,
@@ -19,12 +21,20 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_XDAI,
 )
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_binance_sc_inquirer import ONE_RPC_BINANCE_SC_NODE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+
+BSC_NODES_TO_CONNECT = [(WeightedNode(
+    node_info=ONE_RPC_BINANCE_SC_NODE,
+    active=True,
+    weight=ONE,
+),)]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -502,6 +512,97 @@ def test_place_xdai_order(gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_manager_connect_at_start', BSC_NODES_TO_CONNECT)
+@pytest.mark.parametrize('binance_sc_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_swap_bnb_to_aave(
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x2ef3e17313340294f80b2ac03f6e6d602da2f6617fdf9bb0aeda9d29f6a4960e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    expected_events = [
+        EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1759334123000)),
+            location=Location.BINANCE_SC,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_BSC_BNB,
+            amount=FVal(raw_amount := '0.000988114325798632'),
+            location_label=binance_sc_accounts[0],
+            notes=f'Swap {raw_amount} BNB in a cowswap market order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BINANCE_SC,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:56/erc20:0xfb6115445Bff7b52FeB98650C87f44907E58f802'),
+            amount=FVal(received := '0.003503182735898775'),
+            location_label=binance_sc_accounts[0],
+            notes=f'Receive {received} AAVE as the result of a cowswap market order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BINANCE_SC,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BSC_BNB,
+            amount=FVal(fee_amount := '0.000011885674201368'),
+            location_label=binance_sc_accounts[0],
+            notes=f'Spend {fee_amount} BNB as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_manager_connect_at_start', BSC_NODES_TO_CONNECT)
+@pytest.mark.parametrize('binance_sc_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_bnb_create_order(
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xd1bd1b511948bcbef89304a4a6004eed3e99bb36b90b19a814ab3b3719cc98ad')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1759334099000)),
+            location=Location.BINANCE_SC,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BSC_BNB,
+            amount=FVal(gas_amount := '0.000056252'),
+            location_label=binance_sc_accounts[0],
+            notes=f'Burn {gas_amount} BNB for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BINANCE_SC,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.PLACE_ORDER,
+            asset=A_BSC_BNB,
+            amount=FVal(deposited_amount := '0.001'),
+            location_label=binance_sc_accounts[0],
+            notes=f'Deposit {deposited_amount} BNB to swap it for AAVE in cowswap',
+            counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0xbA3cB449bD2B4ADddBc894D8697F5170800EAdeC'),
+        ),
+    ]
+    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
