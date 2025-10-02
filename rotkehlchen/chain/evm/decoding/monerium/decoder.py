@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
@@ -12,8 +13,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -29,6 +32,10 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class MoneriumCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
@@ -130,7 +137,13 @@ class MoneriumCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         if self.monerium_api is None or not has_premium:
             return
 
-        self.monerium_api.update_events(events=decoded_events)
+        try:
+            self.monerium_api.update_events(events=decoded_events)
+        except RemoteError as e:
+            log.error(
+                f'Failed to process monerium events in {decoded_events[0].tx_hash.hex()} on '
+                f'{decoded_events[0].location} due to {e}. Skipping monerium post processing.',
+            )
 
     # -- DecoderInterface methods
 

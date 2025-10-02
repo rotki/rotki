@@ -143,6 +143,7 @@ def decode_safely(
         ConversionError,
         Web3Exception,
         NotERC20Conformant,
+        RemoteError,
     ) as e:
         log.error(traceback.format_exc())
         error_prefix = (
