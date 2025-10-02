@@ -1,10 +1,12 @@
 import type { ActionResult } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validAuthorizedStatus, validStatus } from '@/services/utils';
+import { handleResponse, validAuthorizedStatus, validStatus, validWithParamsSessionAndExternalService } from '@/services/utils';
+import { type PremiumCapabilities, PremiumCapabilities as PremiumCapabilitiesSchema } from '@/types/session';
 
 interface UsePremiumCredentialsApiReturn {
   setPremiumCredentials: (username: string, apiKey: string, apiSecret: string) => Promise<true>;
   deletePremiumCredentials: () => Promise<true>;
+  getPremiumCapabilities: () => Promise<PremiumCapabilities>;
 }
 
 export function usePremiumCredentialsApi(): UsePremiumCredentialsApiReturn {
@@ -29,8 +31,17 @@ export function usePremiumCredentialsApi(): UsePremiumCredentialsApiReturn {
     return handleResponse(response);
   };
 
+  const getPremiumCapabilities = async (): Promise<PremiumCapabilities> => {
+    const response = await api.instance.get<ActionResult<PremiumCapabilities>>('/premium/capabilities', {
+      validateStatus: validWithParamsSessionAndExternalService,
+    });
+
+    return PremiumCapabilitiesSchema.parse(handleResponse(response));
+  };
+
   return {
     deletePremiumCredentials,
+    getPremiumCapabilities,
     setPremiumCredentials,
   };
 }

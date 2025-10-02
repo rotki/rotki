@@ -3,7 +3,7 @@ import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { wait } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useAppNavigation } from '@/composables/navigation';
-import { usePremiumReminder } from '@/composables/premium';
+import { usePremiumHelper } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useLogin } from '@/modules/account/use-login';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
@@ -27,7 +27,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const error = ref<string>('');
   const errors = ref<string[]>([]);
 
-  const { showGetPremiumButton } = usePremiumReminder();
+  const { showGetPremiumButton } = usePremiumHelper();
   const { navigateToDashboard } = useAppNavigation();
   const { createAccount, login } = useLogin();
   const { connect } = useWebsocketStore();
@@ -115,7 +115,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { connected } = storeToRefs(useMainStore());
   const { canRequestData, checkForAssetUpdate, logged } = storeToRefs(useSessionAuthStore());
   const { resetSessionBackend } = useBackendManagement();
-  const { showGetPremiumButton } = usePremiumReminder();
+  const { showGetPremiumButton } = usePremiumHelper();
 
   watch(connected, async (connected) => {
     if (!connected)

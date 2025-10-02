@@ -1,11 +1,13 @@
 import type { ActionStatus } from '@/types/action';
-import type { PremiumCredentialsPayload } from '@/types/session';
+import type { PremiumCapabilities, PremiumCredentialsPayload } from '@/types/session';
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { logger } from '@/utils/logging';
 
 export const usePremiumStore = defineStore('session/premium', () => {
-  const premium = ref(false);
-  const premiumSync = ref(false);
+  const premium = ref<boolean>(false);
+  const premiumSync = ref<boolean>(false);
+  const capabilities = ref<PremiumCapabilities | undefined>(undefined);
 
   const api = usePremiumCredentialsApi();
 
@@ -41,8 +43,10 @@ export const usePremiumStore = defineStore('session/premium', () => {
   const deletePremium = async (): Promise<ActionStatus> => {
     try {
       const success = await api.deletePremiumCredentials();
-      if (success)
+      if (success) {
         set(premium, false);
+        set(capabilities, undefined);
+      }
 
       return { success };
     }
@@ -54,7 +58,23 @@ export const usePremiumStore = defineStore('session/premium', () => {
     }
   };
 
+  watch(premium, async (isPremium: boolean, wasPremium: boolean) => {
+    if (isPremium && !wasPremium) {
+      try {
+        const result = await api.getPremiumCapabilities();
+        set(capabilities, result);
+      }
+      catch (error: any) {
+        logger.error('Failed to fetch premium capabilities:', error);
+      }
+    }
+    else if (wasPremium && !isPremium) {
+      set(capabilities, undefined);
+    }
+  });
+
   return {
+    capabilities,
     deletePremium,
     premium,
     premiumSync,

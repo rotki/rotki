@@ -13,7 +13,7 @@ import { useEthValidatorManagement } from './composables/use-eth-validator-manag
 const { t } = useI18n({ useScope: 'global' });
 
 // Access control
-const { enabled, module, premium } = useEthStakingAccess();
+const { allowed, enabled, module } = useEthStakingAccess();
 
 // Validator management
 const {
@@ -50,7 +50,7 @@ onBeforeMount(async () => {
 
 <template>
   <div>
-    <EthStakingPagePlaceholder v-if="!premium" />
+    <EthStakingPagePlaceholder v-if="!allowed" />
     <ModuleNotActive
       v-else-if="!enabled"
       :modules="[module]"

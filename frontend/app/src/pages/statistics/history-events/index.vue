@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import WrappedContainerPlaceholder from '@/components/wrapped/WrappedContainerPlaceholder.vue';
-import { usePremium } from '@/composables/premium';
+import { usePremiumHelper } from '@/composables/premium';
 import WrappedContainer from '@/modules/statistics/wrapped/components/WrappedContainer.vue';
 import { NoteLocation } from '@/types/notes';
 
@@ -11,13 +11,15 @@ definePage({
   name: 'statistics-history-events',
 });
 
-const premium = usePremium();
+const { isFeatureAllowed } = usePremiumHelper();
+
+const allowed = isFeatureAllowed('eventAnalysisView');
 </script>
 
 <template>
   <div class="container">
     <RuiCard class="max-w-[920px] mx-auto">
-      <WrappedContainer v-if="premium" />
+      <WrappedContainer v-if="allowed" />
       <WrappedContainerPlaceholder v-else />
     </RuiCard>
   </div>

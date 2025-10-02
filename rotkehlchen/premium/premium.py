@@ -79,19 +79,19 @@ class UserLimits(TypedDict):
     eth_staked_limit: int
     # tier capabilities
     eth_staking_view: bool
-    assets_graphs_view: bool
-    statistics_view: bool
+    graphs_view: bool
+    event_analysis_view: bool
 
 
 # keys that will be returned as part of the capabilities
 PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this due to https://github.com/python/mypy/issues/19961  # noqa: E501
     'eth_staking_view',
-    'assets_graphs_view',
-    'statistics_view',
+    'graphs_view',
+    'event_analysis_view',
 ], ...]] = (
     'eth_staking_view',
-    'assets_graphs_view',
-    'statistics_view',
+    'graphs_view',
+    'event_analysis_view',
 )
 
 

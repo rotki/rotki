@@ -304,8 +304,8 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
         'fetch_limits',
         return_value=(capabilities := {
             'eth_staking_view': True,
-            'assets_graphs_view': True,
-            'statistics_view': False,
+            'graphs_view': True,
+            'event_analysis_view': False,
         }),
     ):
         response = requests.get(api_url_for(
