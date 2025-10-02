@@ -1,11 +1,14 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
+
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -23,7 +26,6 @@ from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from .constants import (
     CPT_LIDO,
     LIDO_STETH_SUBMITTED,
-    LIDO_TRANSFER_SHARES,
     STETH_MAX_ROUND_ERROR_WEI,
 )
 
@@ -108,84 +110,135 @@ class LidoDecoder(EvmDecoderInterface):
 
         return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_LIDO)
 
-    def _decode_deposit_event(self, context: DecoderContext) -> EvmDecodingOutput:
-        deposited_shares_raw = int.from_bytes(context.tx_log.data[:32])
-        deposited_shares = asset_normalized_value(
-            amount=deposited_shares_raw,
+    def _decode_deposit_event(self, context: DecoderContext, depositor: ChecksumEvmAddress) -> EvmDecodingOutput:
+        minted_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
+        minted_wsteth_amount = asset_normalized_value(
+            amount=minted_wsteth_amount_raw,
             asset=A_WSTETH.resolve_to_crypto_asset(),
         )
 
-        in_event = out_event = None
-        for event in context.decoded_events:
-            if (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.amount.is_close(deposited_shares) and
-                event.asset == A_WSTETH
-            ):
-                event.notes = f'Receive {deposited_shares} {A_WSTETH.resolve_to_evm_token().symbol}'  # noqa: E501
-                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.counterparty = CPT_LIDO
-                event.address = A_WSTETH.resolve_to_evm_token().evm_address
-                in_event = event
-            if (
-                event.event_type == HistoryEventType.SPEND and
-                # (event.amount / deposited_shares) < FVal('0.1') and
-                event.asset == A_STETH
-            ):
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                event.notes = f'Wrap {event.amount} {A_STETH.resolve_to_evm_token().symbol} in {A_WSTETH.resolve_to_evm_token().symbol}'  # noqa: E501
-                event.counterparty = CPT_LIDO
-                event.address = A_STETH.resolve_to_evm_token().evm_address
-                out_event = event
+        # A steth -> wsteth wrapping event has 4 logs associated with it.
+        #
+        # 1. A transfer of wsteth to the user
+        # 2. An approval of steth to reduce the wsteth contract's allowance
+        # 3. A transfer of steth tokens from the user to the wsteth contract
+        # 4. A transfer of steth shares from the user to the wsteth contract
+        #
+        # We're currently decoding the ERC20 transfer associated with the first log
+        # so we can find the other 3 logs and pull values from them accordingly.
 
-        if out_event is None:
+        tx_start_log_index = context.all_logs[0].log_index
+        steth_transfer_log_index = (context.tx_log.log_index - tx_start_log_index) + 2
+        steth_transfer_log = context.all_logs[steth_transfer_log_index]
+
+        if (
+            (steth_transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER) or
+            (bytes_to_address(steth_transfer_log.topics[2]) != A_WSTETH.resolve_to_evm_token().evm_address)  # noqa: E501
+            ):
+            print("Did not find the expected stETH transfer log")
             return DEFAULT_EVM_DECODING_OUTPUT
+
+        deposited_steth_amount_raw = int.from_bytes(steth_transfer_log.data[:32])
+        deposited_steth_amount = asset_normalized_value(
+            amount=deposited_steth_amount_raw,
+            asset=A_STETH.resolve_to_crypto_asset(),
+        )
+
+        out_event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_STETH,
+            amount=deposited_steth_amount,
+            location_label=depositor,
+            counterparty=CPT_LIDO,
+            notes=f'Wrap {deposited_steth_amount} {A_STETH.resolve_to_evm_token().symbol} in {A_WSTETH.resolve_to_evm_token().symbol}',  # noqa: E501
+            address=context.transaction.to_address,
+        )
+
+        in_event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_WSTETH,
+            amount=minted_wsteth_amount,
+            location_label=depositor,
+            counterparty=CPT_LIDO,
+            notes=f'Receive {minted_wsteth_amount} {A_WSTETH.resolve_to_evm_token().symbol}',  # noqa: E501
+            address=context.transaction.to_address,
+        )
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
-            events_list=context.decoded_events,
+            events_list=context.decoded_events + [out_event, in_event],
         )
-        return EvmDecodingOutput()
+        return EvmDecodingOutput(events=[out_event, in_event])
 
-    def _decode_withdraw_event(self, context: DecoderContext) -> EvmDecodingOutput:
-        withdrawn_shares_raw = int.from_bytes(context.tx_log.data[:32])
-        withdrawn_shares = asset_normalized_value(
-            amount=withdrawn_shares_raw,
+    def _decode_withdraw_event(self, context: DecoderContext, withdrawer: ChecksumEvmAddress) -> EvmDecodingOutput:
+        burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
+        burned_wsteth_amount = asset_normalized_value(
+            amount=burned_wsteth_amount_raw,
             asset=A_WSTETH.resolve_to_crypto_asset(),
         )
 
-        in_event = out_event = None
-        for event in context.decoded_events:
-            if (
-                event.event_type == HistoryEventType.SPEND and
-                event.amount.is_close(withdrawn_shares) and
-                event.asset == A_WSTETH
-            ):
-                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Unwrap {event.amount} {A_WSTETH.resolve_to_evm_token().symbol}'
-                event.counterparty = CPT_LIDO
-                event.address = A_WSTETH.resolve_to_evm_token().evm_address
-                out_event = event
-            if (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.asset == A_STETH
-            ):
-                event.notes = f'Receive {event.amount} {A_STETH.resolve_to_evm_token().symbol}'
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                event.counterparty = CPT_LIDO
-                event.address = A_STETH.resolve_to_evm_token().evm_address
-                in_event = event
+        # A wsteth -> steth unwrapping event has 3 logs associated with it.
+        #
+        # 1. A burn of wsteth from the user
+        # 2. A transfer of steth tokens from the wsteth contract to the user
+        # 3. A transfer of steth shares from the wsteth contract to the user
+        #
+        # We're currently decoding the ERC20 transfer associated with the first log
+        # so we can find the other 2 logs and pull values from them accordingly.
 
-        if out_event is None:
+        tx_start_log_index = context.all_logs[0].log_index
+        steth_transfer_log_index = (context.tx_log.log_index - tx_start_log_index) + 1
+        steth_transfer_log = context.all_logs[steth_transfer_log_index]
+
+        if (
+            (steth_transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER) or
+            (bytes_to_address(steth_transfer_log.topics[1]) != A_WSTETH.resolve_to_evm_token().evm_address)  # noqa: E501
+            ):
             return DEFAULT_EVM_DECODING_OUTPUT
+
+        withdrawn_steth_amount_raw = int.from_bytes(steth_transfer_log.data[:32])
+        withdrawn_steth_amount = asset_normalized_value(
+            amount=withdrawn_steth_amount_raw,
+            asset=A_STETH.resolve_to_crypto_asset(),
+        )
+
+        out_event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_WSTETH,
+            amount=burned_wsteth_amount,
+            location_label=withdrawer,
+            counterparty=CPT_LIDO,
+            notes=f'Unwrap {burned_wsteth_amount} {A_WSTETH.resolve_to_evm_token().symbol}',
+            address=context.transaction.to_address,
+        )
+
+        in_event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_STETH,
+            amount=withdrawn_steth_amount,
+            location_label=withdrawer,
+            counterparty=CPT_LIDO,
+            notes=f'Receive {withdrawn_steth_amount} {A_STETH.resolve_to_evm_token().symbol}',
+            address=context.transaction.to_address,
+        )
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
-            events_list=context.decoded_events,
+            events_list=context.decoded_events + [out_event, in_event],
         )
-        return EvmDecodingOutput()
+        return EvmDecodingOutput(events=[out_event, in_event])
 
     def _decode_lido_eth_staking_contract(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode interactions with stETH and wstETH contracts"""
@@ -194,13 +247,18 @@ class LidoDecoder(EvmDecoderInterface):
             self.base.is_tracked(sender := bytes_to_address(context.tx_log.topics[1]))
         ):
             return self._decode_lido_staking_in_steth(context=context, sender=sender)
-        elif context.tx_log.topics[0] == LIDO_TRANSFER_SHARES:
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_lido_steth_wrapping(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode mints and burns of wstETH"""
+        if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
             from_address = bytes_to_address(context.tx_log.topics[1])
             to_address = bytes_to_address(context.tx_log.topics[2])
-            if self.base.is_tracked(from_address) and to_address == self.wsteth_evm_address:
-                return self._decode_deposit_event(context)
-            elif self.base.is_tracked(to_address) and from_address == self.wsteth_evm_address:
-                return self._decode_withdraw_event(context)
+            if self.base.is_tracked(from_address) and to_address == ZERO_ADDRESS:
+                return self._decode_withdraw_event(context, from_address)
+            elif self.base.is_tracked(to_address) and from_address == ZERO_ADDRESS:
+                return self._decode_deposit_event(context, to_address)
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -209,6 +267,7 @@ class LidoDecoder(EvmDecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             self.steth_evm_address: (self._decode_lido_eth_staking_contract,),
+            self.wsteth_evm_address: (self._decode_lido_steth_wrapping,),
         }
 
     @staticmethod
