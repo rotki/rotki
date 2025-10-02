@@ -8,6 +8,7 @@ Changelog
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
+* :feature:`-` Cowswap in BNB smart chain is now supported.
 * :bug:`10652` Cowswap swaps with a missing `fullAppData` field will now be properly decoded.
 * :bug:`-` Monerium aave v3 events will now always have the earn event at the end.
 * :bug:`-` Cowswap swaps that use the new ethflow contract or route through Spark Savings now decode correctly.
