@@ -14,6 +14,7 @@ from rotkehlchen.types import SolanaAddress, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.manager import SolanaManager
+    from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
@@ -68,7 +69,7 @@ def test_solana_token_balances(
 
 @pytest.mark.vcr
 def test_solana_query_token_metadata(
-        solana_manager: 'SolanaManager',
+        solana_inquirer: 'SolanaInquirer',
         globaldb: 'GlobalDBHandler',
 ) -> None:
     """Test that the solana token metadata is queried correctly for different types of tokens.
@@ -84,9 +85,9 @@ def test_solana_query_token_metadata(
             globaldb.delete_asset_by_identifier(identifier=asset.identifier)
 
         get_or_create_solana_token(
-            userdb=solana_manager.database,
+            userdb=solana_inquirer.database,
             address=SolanaAddress(asset.identifier.split(':')[1]),
-            solana_inquirer=solana_manager.node_inquirer,
+            solana_inquirer=solana_inquirer,
         )
 
     amep_token = get_solana_token(identifier_to_address(a_amep.identifier))
@@ -133,8 +134,8 @@ def test_is_nft_via_offchain_metadata() -> None:
 
 
 @pytest.mark.vcr
-def test_query_tx_from_rpc(solana_manager: 'SolanaManager') -> None:
-    tx = solana_manager.query_rpc_for_single_tx(
+def test_query_tx_from_rpc(solana_inquirer: 'SolanaInquirer') -> None:
+    tx = solana_inquirer.get_transaction_for_signature(
         signature=(signature := Signature.from_string('58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM')),  # noqa: E501
     )
     assert tx is not None
@@ -167,8 +168,8 @@ def test_query_tx_from_rpc(solana_manager: 'SolanaManager') -> None:
 
 
 @pytest.mark.vcr
-def test_query_signatures_for_address(solana_manager: 'SolanaManager') -> None:
-    signatures = solana_manager.query_tx_signatures_for_address(
+def test_query_signatures_for_address(solana_inquirer: 'SolanaInquirer') -> None:
+    signatures = solana_inquirer.query_tx_signatures_for_address(
         address=SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'),
     )
     assert len(signatures) == 64
