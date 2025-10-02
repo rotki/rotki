@@ -2,12 +2,11 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import call, patch
 
-from solders.solders import Signature
-
 from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.externalapis.helius import HELIUS_API_URL, Helius
+from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.factories import make_solana_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
@@ -74,7 +73,7 @@ def test_get_transactions(database: 'DBHandler'):
 
     assert len(txs) == 1  # the mocked response only includes tx data for the jupiter swap tx
     tx = txs[0]  # Check some properties of the deserialized transaction
-    assert tx.signature == Signature.from_string(swap_tx_signature)
+    assert tx.signature == deserialize_tx_signature(swap_tx_signature)
     assert tx.fee == 10195
     assert tx.slot == 367689024
     assert tx.block_time == 1758217531

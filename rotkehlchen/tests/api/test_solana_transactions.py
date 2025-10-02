@@ -4,11 +4,11 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from solders.solders import Signature
 
 from rotkehlchen.chain.solana.types import SolanaTransaction
 from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
 from rotkehlchen.types import SolanaAddress
@@ -49,12 +49,12 @@ def test_query_solana_transactions(
 
     tx_count = 1
     for signatures_list, until_sig in ((
-        (Signature.from_string('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q'),
-        Signature.from_string('2ZYFMzQMpDFcAmXo2UMhGErSitNpuZ4zeu548QvMU8k37cgetF91wTYnGmN1oZq6EG7zXaZyNPCzWtakDnSJEtgF')),
+        (deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q'),
+        deserialize_tx_signature('2ZYFMzQMpDFcAmXo2UMhGErSitNpuZ4zeu548QvMU8k37cgetF91wTYnGmN1oZq6EG7zXaZyNPCzWtakDnSJEtgF')),
         None,  # First query ignores the tx already in the DB because it's for a different address.
     ), (
-        (Signature.from_string('LLco7QQYo9HVc8w6YZeabxrdhZAjQxGRvrk1hNCJPrHGYAELjh3HwQKvTA1n8bWmkcLyKkFivieooK8C9LvYZuy'),),
-        Signature.from_string('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q'),
+        (deserialize_tx_signature('LLco7QQYo9HVc8w6YZeabxrdhZAjQxGRvrk1hNCJPrHGYAELjh3HwQKvTA1n8bWmkcLyKkFivieooK8C9LvYZuy'),),
+        deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q'),
     )):
         with (
             patch.object(

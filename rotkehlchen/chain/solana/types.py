@@ -1,8 +1,12 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from solders.solders import Signature
 
 from rotkehlchen.types import SolanaAddress, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 @dataclass(frozen=True)
@@ -11,7 +15,7 @@ class SolanaInstruction:
     execution_index: int  # sequential order of instruction execution within transaction
     parent_execution_index: int | None  # index of parent instruction (None for top-level instructions)  # noqa: E501
     program_id: SolanaAddress  # address of the program that will execute this instruction
-    data: bytes | None  # instruction data/parameters (None for instructions with no data)
+    data: bytes  # instruction data/parameters
     accounts: list[SolanaAddress]  # list of account addresses this instruction will access
 
 
@@ -26,3 +30,14 @@ class SolanaTransaction:
     account_keys: list[SolanaAddress]  # all account addresses referenced in transaction
     instructions: list[SolanaInstruction]  # all instructions executed in this transaction
     db_id: int = -1
+
+    def get_or_query_db_id(self, cursor: 'DBCursor') -> int:
+        """Returns the DB identifier for the transaction. Assumes it exists in the DB"""
+        if self.db_id == -1:
+            db_id = cursor.execute(
+                'SELECT identifier FROM solana_transactions WHERE signature=?',
+                (self.signature.to_bytes(),),
+            ).fetchone()[0]
+            object.__setattr__(self, 'db_id', db_id)
+
+        return self.db_id

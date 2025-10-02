@@ -7,13 +7,16 @@ from rotkehlchen.db.filtering import (
 )
 
 if TYPE_CHECKING:
+    from solders.solders import Signature
+
+    from rotkehlchen.chain.solana.types import SolanaTransaction
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
-
+    from rotkehlchen.types import EvmTransaction, EVMTxHash
 
 T_Address = TypeVar('T_Address')
-T_Transaction = TypeVar('T_Transaction')
-T_TxHash = TypeVar('T_TxHash')
+T_Transaction = TypeVar('T_Transaction', bound='SolanaTransaction | EvmTransaction')
+T_TxHash = TypeVar('T_TxHash', bound='EVMTxHash | Signature')
 T_TxFilterQuery = TypeVar('T_TxFilterQuery')
 T_TxNotDecodedFilterQuery = TypeVar(
     'T_TxNotDecodedFilterQuery',

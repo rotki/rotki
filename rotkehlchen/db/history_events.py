@@ -5,6 +5,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
+from solders.solders import Signature
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
@@ -304,7 +305,7 @@ class DBHistoryEvents:
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
-            tx_hashes: Sequence[EVMTxHash | BTCTxHash],
+            tx_hashes: Sequence[EVMTxHash | BTCTxHash | Signature],
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             delete_customized: bool = False,
     ) -> None:
@@ -317,6 +318,7 @@ class DBHistoryEvents:
         and won't potentially raise a too many sql variables error
         """
         placeholders = ', '.join(['?'] * len(tx_hashes))
+        bindings: list[str | bytes]
         if location.is_bitcoin():
             where_str = f'WHERE event_identifier IN ({placeholders})'
             id_prefix = BTC_EVENT_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_EVENT_IDENTIFIER_PREFIX  # noqa: E501
@@ -326,7 +328,10 @@ class DBHistoryEvents:
                 f'WHERE identifier IN (SELECT identifier FROM chain_events_info '
                 f'WHERE tx_ref IN ({placeholders}))'
             )
-            bindings = list(tx_hashes)  # type: ignore  # different type of elements in the list
+            if location == Location.SOLANA:
+                bindings = [x.to_bytes() for x in tx_hashes]  # type: ignore[union-attr]  # hashes will be solana signatures
+            else:
+                bindings = list(tx_hashes)  # type: ignore  # different type of elements in the list
 
         if (
             delete_customized is False and

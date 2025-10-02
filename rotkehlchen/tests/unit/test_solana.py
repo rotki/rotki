@@ -2,13 +2,13 @@ from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import pytest
-from solders.solders import Signature
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
 from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_solana_token_nft
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.makerdao import FVal
 from rotkehlchen.types import SolanaAddress, Timestamp, TokenKind
 
@@ -136,7 +136,7 @@ def test_is_nft_via_offchain_metadata() -> None:
 @pytest.mark.vcr
 def test_query_tx_from_rpc(solana_inquirer: 'SolanaInquirer') -> None:
     tx = solana_inquirer.get_transaction_for_signature(
-        signature=(signature := Signature.from_string('58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM')),  # noqa: E501
+        signature=(signature := deserialize_tx_signature('58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM')),  # noqa: E501
     )
     assert tx is not None
     assert tx.signature == signature
@@ -173,5 +173,5 @@ def test_query_signatures_for_address(solana_inquirer: 'SolanaInquirer') -> None
         address=SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'),
     )
     assert len(signatures) == 64
-    assert signatures[0] == Signature.from_string('4awgHCjCD2Da2UbaKitSfUWExW2eVSA1x5PBrdHBi61NdCpWWxG1JbCDRbKUsQYSPZfPzMKLGrJw2XhajUUvz2Tc')  # noqa: E501
-    assert signatures[63] == Signature.from_string('Ars2bdNxYNVRDmWsGCwr9j8jHgRkb6gq7giaritpLw9yj6kiefwEUZpqz4Hr6SxRnJLTLtNnQaVNjuX6jjMAL7T')  # noqa: E501
+    assert signatures[0] == deserialize_tx_signature('4awgHCjCD2Da2UbaKitSfUWExW2eVSA1x5PBrdHBi61NdCpWWxG1JbCDRbKUsQYSPZfPzMKLGrJw2XhajUUvz2Tc')  # noqa: E501
+    assert signatures[63] == deserialize_tx_signature('Ars2bdNxYNVRDmWsGCwr9j8jHgRkb6gq7giaritpLw9yj6kiefwEUZpqz4Hr6SxRnJLTLtNnQaVNjuX6jjMAL7T')  # noqa: E501

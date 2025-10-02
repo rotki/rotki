@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, Optional
 
+from rotkehlchen.chain.decoding.structures import CommonDecodingOutput
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
@@ -68,29 +69,20 @@ class EnricherContext(DecoderBasicContext):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class DecodingOutput:
-    """
-    Output of decoding functions
+class DecodingOutput(CommonDecodingOutput['EvmEvent']):
+    """Output of EVM decoding functions
 
-    - events can be returned if the decoding method has generated new events and they needs to be
-    added to the list of other decoded events.
     - action_items is a list of actions to be performed later automatically or to be passed
     in further decoding methods.
     - matched_counterparty is optionally set if needed for decoder rules that matched
     and is used in post-decoding rules like in the case of balancer
-    - refresh_balances may be set to True if the user's on-chain balances in some protocols has
-    changed (for example if the user has deposited / withdrawn funds from a curve gauge).
-    - reload_decoders can be None in which case nothing happens. Or a set of decoders names for which to reload data. The decoder's name is the class name without the Decoder suffix. For example Eigenlayer for EigenlayerDecoder
     - process_swaps indicates whether there are swaps that need to be converted into EvmSwapEvents.
     - stop_processing if true will stop processing log events for the transaction and clear
         any processed events. Used when we want to stop iterating over certain transactions
         because we have determined it's full of unnecessary log events and should all be skipped.
-    """  # noqa: E501
-    events: list['EvmEvent'] | None = None
+    """
     action_items: list[ActionItem] = field(default_factory=list)
     matched_counterparty: str | None = None
-    refresh_balances: bool = False
-    reload_decoders: set[str] | None = None
     process_swaps: bool = False
     stop_processing: bool = False
 
