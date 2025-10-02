@@ -5,11 +5,13 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.constants.assets import A_ETH_EURE
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
@@ -314,3 +316,45 @@ def test_monerium_token_migration(gnosis_inquirer: 'GnosisInquirer'):
         tx_hash=deserialize_evm_tx_hash('0x6241b6ef81b50e87585741362247852e6b325eb4401e5bde83e6c52ef9f2f097'),
     )
     assert events == []
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xfFd0E4eF79c0C7B427D5CA3C455DB0eBCfa2aE4D']])
+def test_monerium_post_processing_handles_remote_error(
+        arbitrum_one_transaction_decoder,
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        caplog,
+        start_with_valid_premium: bool,
+) -> None:
+    decoder = arbitrum_one_transaction_decoder.decoders['Monerium']
+    error_message = '{"code":410,"status":"Gone","message":"Endpoint deprecated. Please refer to https://monerium.dev/api-docs/v1"}'
+
+    class FailingMoneriumAPI:
+
+        def update_events(self, events: list['EvmEvent']) -> None:
+            raise RemoteError(error_message)
+
+    decoder.monerium_api = FailingMoneriumAPI()
+    decoded_events = [
+        EvmEvent(
+            tx_hash=make_evm_tx_hash(),
+            sequence_index=46,
+            timestamp=TimestampMS(1745310374000),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
+            amount=FVal(500),
+            location_label=arbitrum_one_accounts[0],
+            notes='Burn 500 EURe',
+            counterparty=CPT_MONERIUM,
+        ),
+    ]
+
+    with caplog.at_level('ERROR'):
+        decoder._handle_post_processing(
+            decoded_events=decoded_events,
+            has_premium=start_with_valid_premium,
+        )
+
+    assert error_message in caplog.text

@@ -10,6 +10,7 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVMTxHash, Location, deserialize_evm_tx_hash
@@ -90,9 +91,6 @@ class Monerium:
 
         May raise:
         - RemoteError if there is trouble contacting the api
-        - KeyError if a key is missing
-        - DeserializationError if we fail to deserialize a value
-        - DBErrors if we fail to write to the DB
 
         The way this is currently called all exceptions would kill the task and write
         a stack trace in the logs.
@@ -116,28 +114,41 @@ class Monerium:
                 log.warning(f'Found order with unexpected {kind=}. Skipping.')
                 continue
 
-            tx_hashes = order['txHashes']
+            try:  # avoid having multiple try/excepts blocks around the logic
+                tx_hashes = order['txHashes']
+                counterparty = order['counterpart']
+                chain = order['chain']
+                amount = order['amount']
+                cpt_details = counterparty['details']
+            except KeyError as e:
+                log.error(f'monerium order response {order} has missing key {e}. Skipping')
+                continue
+
             hashes_num = len(tx_hashes)
-            counterpart = order['counterpart']
+
             new_type, new_subtype = None, None
             if hashes_num == 2:  # moving from one chain to another
                 new_subtype = HistoryEventSubType.BRIDGE
-                if kind == 'redeem':
-                    idx = 0
-                    suffix = f'to {counterpart["identifier"]["chain"]}'
-                    new_type = HistoryEventType.DEPOSIT
-                else:  # issue
-                    idx = 1
-                    suffix = f'from {counterpart["identifier"]["chain"]}'
-                    new_type = HistoryEventType.WITHDRAWAL
+                try:
+                    if kind == 'redeem':
+                        idx = 0
+                        suffix = f'to {counterparty["identifier"]["chain"]}'
+                        new_type = HistoryEventType.DEPOSIT
+                    else:  # issue
+                        idx = 1
+                        suffix = f'from {counterparty["identifier"]["chain"]}'
+                        new_type = HistoryEventType.WITHDRAWAL
+                except KeyError as e:
+                    log.error(f'Missing key {e} in monerium order response {order}. Skipping')
+                    continue
 
-                tx_hash = deserialize_evm_tx_hash(tx_hashes[idx])
-                new_notes = f'Bridge {order["amount"]} EURe {suffix}'
+                tx_hash_raw = tx_hashes[idx]
+                new_notes = f'Bridge {amount} EURe {suffix}'
                 if (memo := order.get('memo')):
                     new_notes += f' with memo "{memo}"'
 
             elif hashes_num == 1:
-                tx_hash = deserialize_evm_tx_hash(tx_hashes[0])
+                tx_hash_raw = tx_hashes[0]
                 if kind == 'redeem':
                     verb = 'Send'
                     preposition = 'to'
@@ -146,14 +157,14 @@ class Monerium:
                     preposition = 'from'
 
                 details = ''
-                if (cpt_details := counterpart['details']):
+                if cpt_details:
                     name = cpt_details.get('name', '')
-                    iban = counterpart.get('identifier', {}).get('iban', '')
+                    iban = counterparty.get('identifier', {}).get('iban', '')
                     details = f'{name}'
                     if iban:
                         details += f' ({iban})'
 
-                new_notes = f'{verb} {order["amount"]} EURe via bank transfer {preposition} {details}'  # noqa: E501
+                new_notes = f'{verb} {amount} EURe via bank transfer {preposition} {details}'
                 if (memo := order.get('memo')):
                     new_notes += f' with memo "{memo}"'
 
@@ -161,7 +172,13 @@ class Monerium:
                 log.warning(f'Found order with unexpected {hashes_num=}. Skipping.')
                 continue
 
-            match order['chain']:
+            try:
+                tx_hash = deserialize_evm_tx_hash(tx_hash_raw)
+            except DeserializationError as e:
+                log.error(f'Monerium API returned an invalid tx hash {tx_hash_raw}. Skipping entry {e}')  # noqa: E501
+                continue
+
+            match chain:
                 case 'ethereum':
                     location = Location.ETHEREUM
                 case 'gnosis':
@@ -204,6 +221,9 @@ class Monerium:
         """Query and update the event txs individually.
         Skips any events that have already been edited.
         Falls back to simply querying all orders if there are too many individual queries.
+
+        May raise:
+            - RemoteError if there is trouble contacting the api
         """
         tx_hashes = set()
         for event in events:
