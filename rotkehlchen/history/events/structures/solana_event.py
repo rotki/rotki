@@ -41,7 +41,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
     Additional fields:
         - counterparty: optional protocol identifier (e.g., 'raydium', 'orca').
         - address: optional program address for filtering events by specific
-        programs or protocol versions.
+          programs or protocol versions.
     """
 
     # need explicitly define due to also changing eq: https://stackoverflow.com/a/53519136/110395
