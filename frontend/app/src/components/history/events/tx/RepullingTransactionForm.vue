@@ -31,8 +31,7 @@ const address = useRefPropVModel(modelValue, 'address');
 const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
 const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
 
-const location = ref<string>('');
-const name = ref<string>('');
+const exchange = ref<Exchange | undefined>(undefined);
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
@@ -43,23 +42,6 @@ const accountTypeOptions = computed<{ text: string; value: AccountType }[]>(() =
   { text: t('transactions.repulling.account_type.blockchain'), value: 'blockchain' },
   { text: t('transactions.repulling.account_type.exchange'), value: 'exchange' },
 ]);
-
-const selectedExchange = computed<Exchange | undefined>({
-  get: () => {
-    const locationVal = get(location);
-    const nameVal = get(name);
-    if (!locationVal || !nameVal) {
-      return undefined;
-    }
-    return get(connectedExchanges).find(
-      exchange => exchange.location === locationVal && exchange.name === nameVal,
-    );
-  },
-  set: (value: Exchange | undefined) => {
-    set(location, value?.location || '');
-    set(name, value?.name || '');
-  },
-});
 
 const chainOptions = computed(() => {
   const accountChains = Object.entries(get(accountsPerChain))
@@ -120,18 +102,16 @@ const rules = computed(() => {
     return {
       address: { externalServerValidation: () => true },
       evmChain: { required },
+      exchange: {},
       fromTimestamp: { required },
-      location: {},
-      name: {},
       toTimestamp: { required },
     };
   }
   return {
     address: {},
     evmChain: {},
+    exchange: { required },
     fromTimestamp: { required },
-    location: { required },
-    name: { required },
     toTimestamp: { required },
   };
 });
@@ -139,9 +119,8 @@ const rules = computed(() => {
 const states = {
   address,
   evmChain,
+  exchange,
   fromTimestamp,
-  location,
-  name,
   toTimestamp,
 };
 
@@ -173,7 +152,7 @@ watchImmediate(accountType, (type) => {
 });
 
 defineExpose({
-  getExchangeData: () => ({ location: get(location), name: get(name) }),
+  getExchangeData: () => get(exchange),
   validate: () => get(v$).$validate(),
 });
 </script>
@@ -182,7 +161,7 @@ defineExpose({
   <form class="flex flex-col gap-4">
     <RuiTabs
       v-model="accountType"
-      class="border rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-5"
+      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-5"
       color="primary"
     >
       <RuiTab
@@ -224,13 +203,13 @@ defineExpose({
       v-if="isExchangeType"
     >
       <RuiAutoComplete
-        v-model="selectedExchange"
+        v-model="exchange"
         :options="connectedExchanges"
         :label="t('transactions.repulling.exchange')"
         variant="outlined"
         auto-select-first
         :item-height="48"
-        :error-messages="toMessages(v$.location)"
+        :error-messages="toMessages(v$.exchange)"
       >
         <template #selection="{ item }">
           <div class="flex items-center gap-2">

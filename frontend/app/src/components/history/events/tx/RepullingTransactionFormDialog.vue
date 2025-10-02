@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { Exchange } from '@/types/exchanges';
 import type { RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
 import { assert } from '@rotki/common';
 import dayjs from 'dayjs';
@@ -22,7 +23,8 @@ withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  refresh: [chains: string[]];
+  'refresh': [chains: string[]];
+  'refresh-exchange-events': [exchanges: Exchange[]];
 }>();
 
 const formData = ref<RepullingTransactionPayload>(defaults());
@@ -65,17 +67,17 @@ async function submit(): Promise<void> {
     set(modelValue, false);
 
     if (type === 'exchange') {
-      const exchangeData = formRef?.getExchangeData();
+      const exchange = formRef?.getExchangeData();
       const exchangePayload: RepullingExchangeEventsPayload = {
         fromTimestamp: data.fromTimestamp,
-        location: exchangeData?.location || '',
-        name: exchangeData?.name || '',
+        location: exchange?.location || '',
+        name: exchange?.name || '',
         toTimestamp: data.toTimestamp,
       };
 
       const newEventsDetected = await repullingExchangeEvents(exchangePayload);
-      if (newEventsDetected) {
-        emit('refresh', []);
+      if (newEventsDetected && exchange) {
+        emit('refresh-exchange-events', [exchange]);
         logger.debug('New exchange events detected');
       }
     }

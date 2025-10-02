@@ -127,7 +127,8 @@ defineExpose({
       v-if="currentDialog.type === DIALOG_TYPES.REPULLING_TRANSACTION"
       v-model="dialogIsOpen"
       :loading="sectionLoading"
-      @refresh="eventHandlers.onRepullTransactions?.($event)"
+      @refresh-txs="eventHandlers.onRepullTransactions?.($event)"
+      @refresh-exchange-events="eventHandlers.onRepullExchangeEvents?.($event)"
     />
 
     <MissingRulesDialog

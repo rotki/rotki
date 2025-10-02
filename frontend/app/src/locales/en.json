@@ -5028,10 +5028,10 @@
         "blockchain": "Blockchain",
         "exchange": "Exchange"
       },
-      "action": "Re-Pull Transaction",
+      "action": "Re-Pull Events",
       "address_hint": "Leave it empty to re-pull transactions from all addresses",
       "exchange": "Exchange",
-      "title": "Re-Pulling Transactions"
+      "title": "Re-Pulling Events"
     },
     "title": "History Events",
     "unignore": "Unignore events in Accounting"
