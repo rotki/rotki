@@ -526,9 +526,9 @@ Querying premium capabilities
 
    By doing a ``GET`` at this endpoint you can query the capabilities available for your premium account. The currently returned attributes are:
 
-   - `assets_graphs_view`: Boolean. Enables the graphs displayed for each asset containing historical balances and values.
+   - `graphs_view`: Boolean. Enables the graphs displayed for each asset containing historical balances and values.
    - `eth_staking_view`: Boolean. Enables the Ethereum staking view.
-   - `statistics_view`: Boolean. Enables the statistics view and the historical analytics based on events.
+   - `event_analysis_view`: Boolean. Enables the statistics view and the historical analytics based on events.
 
    **Example Request**:
 
@@ -546,9 +546,9 @@ Querying premium capabilities
 
       {
           "result": {
-            "assets_graphs_view": true,
+            "graphs_view": true,
             "eth_staking_view": false,
-            "statistics_view": true
+            "event_analysis_view": true
           },
           "message": ""
       }

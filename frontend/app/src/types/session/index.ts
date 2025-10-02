@@ -54,3 +54,11 @@ export interface QueriedAddressPayload {
   readonly module: Module;
   readonly address: string;
 }
+
+export const PremiumCapabilities = z.object({
+  ethStakingView: z.boolean(),
+  eventAnalysisView: z.boolean(),
+  graphsView: z.boolean(),
+});
+
+export type PremiumCapabilities = z.infer<typeof PremiumCapabilities>;
