@@ -143,19 +143,6 @@ class LidoDecoder(EvmDecoderInterface):
             asset=A_STETH.resolve_to_crypto_asset(),
         )
 
-        out_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
-            event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
-            asset=A_STETH,
-            amount=deposited_steth_amount,
-            location_label=depositor,
-            counterparty=CPT_LIDO,
-            notes=f'Wrap {deposited_steth_amount} {A_STETH.resolve_to_evm_token().symbol} in {A_WSTETH.resolve_to_evm_token().symbol}',  # noqa: E501
-            address=context.transaction.to_address,
-        )
-
         in_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -166,14 +153,24 @@ class LidoDecoder(EvmDecoderInterface):
             location_label=depositor,
             counterparty=CPT_LIDO,
             notes=f'Receive {minted_wsteth_amount} {A_WSTETH.resolve_to_evm_token().symbol}',  # noqa: E501
-            address=context.transaction.to_address,
+            address=A_WSTETH.resolve_to_evm_token().evm_address,
         )
 
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=context.decoded_events + [out_event, in_event],
+        out_action = ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.SPEND,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=A_STETH,
+            amount=deposited_steth_amount,
+            to_event_type=HistoryEventType.DEPOSIT,
+            to_event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            to_notes=f'Wrap {deposited_steth_amount} {A_STETH.resolve_to_evm_token().symbol} in {A_WSTETH.resolve_to_evm_token().symbol}',  # noqa: E501
+            to_address=A_STETH.resolve_to_evm_token().evm_address,
+            to_counterparty=CPT_LIDO,
+            paired_events_data=((in_event,), False),
         )
-        return EvmDecodingOutput(events=[out_event, in_event])
+
+        return EvmDecodingOutput(events=[in_event], action_items=[out_action])
 
     def _decode_withdraw_event(self, context: DecoderContext, withdrawer: ChecksumEvmAddress) -> EvmDecodingOutput:
         burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
@@ -219,25 +216,19 @@ class LidoDecoder(EvmDecoderInterface):
             notes=f'Unwrap {burned_wsteth_amount} {A_WSTETH.resolve_to_evm_token().symbol}',
             address=context.transaction.to_address,
         )
-
-        in_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+        in_action = ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
             asset=A_STETH,
             amount=withdrawn_steth_amount,
-            location_label=withdrawer,
-            counterparty=CPT_LIDO,
-            notes=f'Receive {withdrawn_steth_amount} {A_STETH.resolve_to_evm_token().symbol}',
-            address=context.transaction.to_address,
+            to_notes=f'Receive {withdrawn_steth_amount} {A_STETH.resolve_to_evm_token().symbol}',
+            to_counterparty=CPT_LIDO,
+            to_address=A_STETH.resolve_to_evm_token().evm_address,
+            paired_events_data=((out_event,), True),
         )
 
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=context.decoded_events + [out_event, in_event],
-        )
-        return EvmDecodingOutput(events=[out_event, in_event])
+        return EvmDecodingOutput(events=[out_event], action_items=[in_action])
 
     def _decode_lido_eth_staking_contract(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode interactions with stETH and wstETH contracts"""
