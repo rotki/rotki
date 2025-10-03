@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import type { DialogEventHandlers } from '@/components/history/events/dialog-types';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Collection } from '@/types/collection';
+import type { Exchange } from '@/types/exchanges';
 import type {
   EvmChainAndTxHash,
   PullEthBlockEventPayload,
@@ -193,6 +194,15 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     onHistoryEventSaved: fetchDataAndLocations,
     onRedecodeAllEvents: redecodeAllEvents,
     onRedecodeTransaction: handleTransactionRecode,
+    onRepullExchangeEvents: async (exchanges: Exchange[]): Promise<void> => {
+      await refreshTransactions({
+        disableEvmEvents: true,
+        payload: {
+          exchanges,
+        },
+        userInitiated: true,
+      });
+    },
     onRepullTransactions: async (chains: string[]): Promise<void> => {
       await refreshTransactions({
         chains,

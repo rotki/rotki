@@ -20,6 +20,7 @@ import {
   HistoryEventDetail,
   type PullEthBlockEventPayload,
   type PullTransactionPayload,
+  type RepullingExchangeEventsPayload,
   type RepullingTransactionPayload,
   TransactionChainType,
   type TransactionRequestPayload,
@@ -58,6 +59,7 @@ interface UseHistoryEventsApiReturn {
   getEventDetails: (identifier: number) => Promise<HistoryEventDetail>;
   addTransactionHash: (payload: AddTransactionHashPayload) => Promise<boolean>;
   repullingTransactions: (payload: RepullingTransactionPayload) => Promise<PendingTask>;
+  repullingExchangeEvents: (payload: RepullingExchangeEventsPayload) => Promise<PendingTask>;
   getTransactionTypeMappings: () => Promise<HistoryEventTypeData>;
   getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
   getHistoryEventProductsData: () => Promise<HistoryEventProductData>;
@@ -209,6 +211,21 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       }),
       {
         validateStatus: validTaskStatus,
+      },
+    );
+
+    return handleResponse(response);
+  };
+
+  const repullingExchangeEvents = async (payload: RepullingExchangeEventsPayload): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
+      '/history/events/query/exchange/range',
+      snakeCaseTransformer({
+        ...payload,
+        asyncQuery: true,
+      }),
+      {
+        validateStatus: validStatus,
       },
     );
 
@@ -368,6 +385,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
     queryOnlineHistoryEvents,
+    repullingExchangeEvents,
     repullingTransactions,
   };
 }

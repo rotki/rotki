@@ -3,6 +3,7 @@ import type {
   HistoryEventEditData,
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
+import type { Exchange } from '@/types/exchanges';
 import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 
@@ -41,6 +42,7 @@ export interface DialogEventHandlers {
   onHistoryEventSaved?: () => void | Promise<void>;
   onTransactionAdded?: (txHash: EvmChainAndTxHash) => void | Promise<void>;
   onRepullTransactions?: (chains: string[]) => void | Promise<void>;
+  onRepullExchangeEvents?: (exchanges: Exchange[]) => Promise<void>;
   onRedecodeTransaction?: (txHash: EvmChainAndTxHash) => void | Promise<void>;
   onRedecodeAllEvents?: () => void | Promise<void>;
   onResetUndecodedTransactions?: () => void | Promise<void>;
