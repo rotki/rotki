@@ -2412,10 +2412,25 @@
       "title": "Loopring"
     },
     "monerium": {
+      "access_token": "Access token",
+      "auth_failed": "Failed to authorize with Monerium",
+      "authorizing": "Authorizing with Monerium",
+      "connect": "Get access token",
+      "connected_as": "Connected as {email}",
       "description": "Used to augment Monerium EVM transactions with banking information.",
+      "disconnect": "Disconnect",
+      "disconnected": "Disconnected from Monerium.",
+      "error": "Monerium OAuth",
+      "instructions": "Connect with Monerium to keep your rotki data in sync with your account.",
+      "opening_browser": "Opening browser to complete Monerium authorization...",
+      "refresh_token": "Refresh token",
+      "submit_token": "Submit tokens",
+      "success": "Monerium OAuth",
       "title": "Monerium",
-      "understand": "I understand the risk",
-      "warning": "At the moment, Monerium uses basic authentication only, so these are not read-only credentials."
+      "token_required": "Both access and refresh tokens are required.",
+      "unknown_email": "unknown email",
+      "warning": "Authorize Monerium to allow rotki to enrich your transactions with banking context. Tokens are stored locally and used read-only.",
+      "website_url_missing": "Monerium OAuth website URL is not configured."
     },
     "need_premium": "Upgrade to premium to use this feature.",
     "no_services_found": "No services found",

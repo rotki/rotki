@@ -95,12 +95,12 @@ export class SystemHandlers {
       return;
     }
 
-    // Check if this is a Google OAuth URL and protocol registration failed
-    const isGoogleOAuthUrl = url.includes('rotki.com/oauth/google') || (url.includes('localhost') && url.includes('/oauth/google'));
+    // Check if this is a rotki OAuth URL and protocol registration failed
+    const isRotkiOAuthUrl = /\/oauth\/(google|monerium)/.test(url);
     const protocolRegistrationFailed = this.requireCallbacks.getProtocolRegistrationFailed();
 
-    if (isGoogleOAuthUrl && protocolRegistrationFailed) {
-      this.logger.info('Protocol registration failed, opening Google OAuth URL in second window instead of external browser');
+    if (isRotkiOAuthUrl && protocolRegistrationFailed) {
+      this.logger.info('Protocol registration failed, opening OAuth URL in secondary window instead of external browser');
       await this.requireCallbacks.openOAuthInWindow(url);
       return;
     }

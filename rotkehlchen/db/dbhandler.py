@@ -660,7 +660,10 @@ class DBHandler:
     def get_static_cache(
             self,
             cursor: 'DBCursor',
-            name: Literal[DBCacheStatic.DOCKER_DEVICE_INFO],
+            name: Literal[
+                DBCacheStatic.DOCKER_DEVICE_INFO,
+                DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+            ],
     ) -> str | None:
         ...
 
@@ -710,8 +713,11 @@ class DBHandler:
         ).fetchone()) is None:
             return None
 
-        # Return string for DOCKER_DEVICE_INFO, timestamp for all others
-        if name == DBCacheStatic.DOCKER_DEVICE_INFO:
+        # Return string for DOCKER_DEVICE_INFO & MONERIUM_OAUTH_CREDENTIALS, timestamp for all others  # noqa: E501
+        if name in (
+            DBCacheStatic.DOCKER_DEVICE_INFO,
+            DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+        ):
             return value[0]
 
         return Timestamp(int(value[0]))
@@ -1004,6 +1010,12 @@ class DBHandler:
                 'DELETE FROM external_service_credentials WHERE name=?;',
                 [(service.name.lower(),) for service in services],
             )
+            # Also delete Monerium OAuth credentials if Monerium is in the services list
+            if ExternalService.MONERIUM in services:
+                cursor.execute(
+                    'DELETE FROM key_value_cache WHERE name=?',
+                    (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
+                )
 
     def get_all_external_service_credentials(self) -> list[ExternalServiceApiCredentials]:
         """Returns a list with all the external service credentials saved in the DB"""

@@ -14293,3 +14293,111 @@ Solana Token Migration
    :statuscode 401: No user is currently logged in.
    :statuscode 409: Token does not exist in user_added_solana_tokens table, or failed to create the new Solana token due to unknown asset or input error.
    :statuscode 500: Internal rotki error.
+
+Monerium OAuth
+===============
+
+.. http:get:: /api/(version)/services/monerium
+
+   Doing a GET on this endpoint returns the Monerium authentication status.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "authenticated": true,
+              "user_email": "alice@example.com",
+              "default_profile_id": "profile-123",
+              "profiles": [],
+              "expires_at": 1700000000,
+          },
+          "message": ""
+      }
+
+   :resjson object result: Status payload describing the saved Monerium OAuth credentials.
+   :resjson bool authenticated: ``true`` when access tokens are stored, ``false`` otherwise.
+   :resjson str user_email: Email address of the connected Monerium account. Present only when authenticated.
+   :resjson str default_profile_id: Identifier of the default Monerium profile. Present only when authenticated.
+   :resjson list profiles: List of available Monerium profiles with metadata. Present only when authenticated.
+   :resjson int expires_at: Unix timestamp when the cached access token expires. Present only when authenticated.
+
+   :statuscode 200: Status queried successfully.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:put:: /api/(version)/services/monerium
+
+   Doing a PUT on this endpoint stores Monerium OAuth tokens obtained from the external OAuth flow and fetches the user context.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/services/monerium HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "access_token": "access-token",
+          "refresh_token": "refresh-token",
+          "expires_in": 3600
+      }
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "success": true,
+              "message": "Successfully authenticated with Monerium",
+              "user_email": "alice@example.com",
+              "default_profile_id": "profile-123",
+              "profiles": []
+          },
+          "message": ""
+      }
+
+   :reqjson str access_token: Access token returned by the Monerium OAuth callback.
+   :reqjson str refresh_token: Refresh token returned by the OAuth callback.
+   :reqjson int expires_in: Lifetime of the access token in seconds.
+   :reqjson str client_id: OAuth client identifier that issued the tokens.
+   :reqjson str token_type: Optional token type, defaults to ``"Bearer"``.
+   :resjson object result: Confirmation payload containing the stored user context.
+   :resjson bool success: ``true`` when the credentials were stored successfully.
+   :resjson str message: Confirmation message returned by rotki.
+   :resjson str user_email: Email address retrieved from Monerium.
+   :resjson str default_profile_id: Default profile identifier fetched from Monerium.
+   :resjson list profiles: List of Monerium profiles associated with the account.
+   :statuscode 200: Credentials stored successfully.
+   :statuscode 400: Failed to validate or store the credentials, or Monerium returned an error.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/services/monerium
+
+   Doing a DELETE on this endpoint removes stored Monerium OAuth credentials.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :statuscode 200: Credentials removed successfully.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.

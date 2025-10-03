@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { getTextToken, toHumanReadable } from '@rotki/common';
+import { get, set } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useMoneriumOAuthStore } from '@/store/settings/monerium-oauth';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
@@ -20,7 +23,9 @@ const queries: OnlineHistoryEventsQueryType[] = [
 
 const { t } = useI18n();
 
-const { apiKey, credential, load } = useExternalApiKeys(t);
+const { apiKey, load } = useExternalApiKeys(t);
+const moneriumStore = useMoneriumOAuthStore();
+const { authenticated: moneriumAuthenticated } = storeToRefs(moneriumStore);
 
 interface QueryConfig {
   enabled: boolean;
@@ -29,7 +34,7 @@ interface QueryConfig {
 
 const queryConfigs = computed<Record<OnlineHistoryEventsQueryType, QueryConfig>>(() => {
   const gnosisPayEnabled = !!get(apiKey('gnosis_pay'));
-  const moneriumEnabled = !!get(credential('monerium'));
+  const moneriumEnabled = !!get(moneriumAuthenticated);
 
   return {
     [OnlineHistoryEventsQueryType.GNOSIS_PAY]: {
@@ -72,7 +77,7 @@ function updateSelection(selection: OnlineHistoryEventsQueryType[]): void {
 }
 
 onBeforeMount(async () => {
-  await load();
+  await Promise.all([load(), moneriumStore.refreshStatus()]);
 });
 
 defineExpose({

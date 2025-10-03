@@ -191,7 +191,7 @@ from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-from rotkehlchen.externalapis.monerium import init_monerium
+from rotkehlchen.externalapis.monerium import Monerium, init_monerium
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
@@ -5458,6 +5458,26 @@ class RestAPI:
             return api_response(_wrap_in_ok_result(result))
         except Exception as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+    def get_monerium_status(self) -> Response:
+        monerium = Monerium(self.rotkehlchen.data.db)
+        return api_response(_wrap_in_ok_result(monerium.oauth_client.get_status()))
+
+    def complete_monerium_oauth(self, access_token: str, refresh_token: str, expires_in: int) -> Response:  # noqa: E501
+        try:
+            result = Monerium(self.rotkehlchen.data.db).oauth_client.complete_oauth(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                expires_in=expires_in,
+            )
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(_wrap_in_ok_result(result))
+
+    def disconnect_monerium(self) -> Response:
+        Monerium(self.rotkehlchen.data.db).oauth_client.clear_credentials()
+        return api_response(OK_RESULT)
 
     def query_wrap_stats(self, from_ts: Timestamp, to_ts: Timestamp) -> Response:
         """Query starts in the time range selected.
