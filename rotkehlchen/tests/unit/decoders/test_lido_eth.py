@@ -115,7 +115,7 @@ def test_lido_wsteth_wrapping(ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_WSTETH,
             amount=FVal(amount_wsteth),
             location_label=ethereum_accounts[0],

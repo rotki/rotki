@@ -147,7 +147,7 @@ class LidoDecoder(EvmDecoderInterface):
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_WSTETH,
             amount=minted_wsteth_amount,
             location_label=depositor,
