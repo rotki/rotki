@@ -130,6 +130,7 @@ from rotkehlchen.api.v1.schemas import (
     ModuleBalanceProcessingSchema,
     ModuleBalanceWithVersionProcessingSchema,
     ModuleHistoryProcessingSchema,
+    MoneriumOAuthCredentialsSchema,
     MultipleAccountingRuleConflictsResolutionSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
@@ -3317,6 +3318,29 @@ class GoogleCalendarResource(BaseMethodView):
     def delete(self) -> Response:
         """Disconnect Google Calendar integration."""
         return self.rest_api.disconnect_google_calendar()
+
+
+class MoneriumOAuthResource(BaseMethodView):
+    """Endpoints for managing Monerium OAuth credentials."""
+
+    put_schema = MoneriumOAuthCredentialsSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_monerium_status()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, access_token: str, refresh_token: str, expires_in: int) -> Response:
+        return self.rest_api.complete_monerium_oauth(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=expires_in,
+        )
+
+    @require_loggedin_user()
+    def delete(self) -> Response:
+        return self.rest_api.disconnect_monerium()
 
 
 class EventsAnalysisResource(BaseMethodView):

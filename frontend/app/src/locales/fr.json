@@ -1926,10 +1926,25 @@
       "title": "Loopring"
     },
     "monerium": {
-      "description": "Utilisé pour afficher correctement les transactions Monerium avec les informations pertinentes.",
+      "access_token": "Jeton d'accès",
+      "auth_failed": "Échec de l'autorisation avec Monerium",
+      "authorizing": "Autorisation auprès de Monerium",
+      "connect": "Connecter",
+      "connected_as": "Connecté en tant que {email}",
+      "description": "Utilisé pour enrichir les transactions Monerium sur rotki avec les informations bancaires correspondantes.",
+      "disconnect": "Déconnecter",
+      "disconnected": "Déconnexion de Monerium effectuée.",
+      "error": "OAuth Monerium",
+      "instructions": "Connectez Monerium pour garder vos données rotki synchronisées avec votre compte.",
+      "opening_browser": "Ouverture du navigateur pour terminer l'autorisation Monerium...",
+      "refresh_token": "Jeton d'actualisation",
+      "submit_token": "Envoyer les jetons",
+      "success": "OAuth Monerium",
       "title": "Monerium",
-      "understand": "Je comprends le risque",
-      "warning": "À l'heure actuelle, Monerium utilise uniquement une authentification de base, il ne s'agit donc pas de données en lecture seule."
+      "token_required": "Les jetons d'accès et d'actualisation sont requis.",
+      "unknown_email": "email inconnu",
+      "warning": "Autorisez Monerium afin que rotki puisse enrichir vos transactions. Les jetons d'accès sont stockés localement et utilisés en lecture seule.",
+      "website_url_missing": "L'URL du site web pour OAuth Monerium n'est pas configurée."
     },
     "opensea": {
       "description": "Utilisé pour interroger les informations et soldes NFT sur Opensea.",

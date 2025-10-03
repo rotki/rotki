@@ -21,7 +21,6 @@ EMPTY_RESULT = {
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
-@pytest.mark.parametrize('start_with_valid_premium', [True])  # for monerium
 def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that adding and retrieving external service credentials works"""
     # With no data an empty response should be returned
@@ -36,12 +35,10 @@ def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
         'etherscan': {'api_key': 'key1'},
         **EMPTY_RESULT,
         'cryptocompare': {'api_key': 'key2'},
-        'monerium': {'username': 'Ben', 'password': 'supersafepassword'},
     }
     data = {'services': [
         {'name': 'etherscan', 'api_key': 'key1'},
         {'name': 'cryptocompare', 'api_key': 'key2'},
-        {'name': 'monerium', 'username': 'Ben', 'password': 'supersafepassword'},
     ]}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
@@ -217,38 +214,26 @@ def test_add_external_services_errors(rotkehlchen_api_server: 'APIServer') -> No
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # monerium without username
-    response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
-        json={'services': [{'name': 'monerium', 'api_key': 'aaa'}]},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='monerium needs a username and password"',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # monerium without password
+    # monerium with username/password also not allowed (OAuth only)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json={'services': [{'name': 'monerium', 'username': 'Ben'}]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='monerium needs a username and password"',
+        contained_in_msg='Monerium credentials must be managed via the dedicated OAuth endpoint',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # monerium without premium
-    rotkehlchen_api_server.rest_api.rotkehlchen.premium = None
+    # monerium with username and password also not allowed (OAuth only)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json={'services': [{'name': 'monerium', 'username': 'Ben', 'password': 'secure'}]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='You can only use monerium with rotki premium',
-        status_code=HTTPStatus.FORBIDDEN,
+        contained_in_msg='Monerium credentials must be managed via the dedicated OAuth endpoint',
+        status_code=HTTPStatus.BAD_REQUEST,
     )
 
 
