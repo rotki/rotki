@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import gevent
-import gevent.lock
 import pytest
 from freezegun import freeze_time
 
