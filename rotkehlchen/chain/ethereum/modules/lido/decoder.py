@@ -2,10 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import (
-    asset_normalized_value,
-    token_normalized_value_decimals,
-)
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -127,15 +124,15 @@ class LidoDecoder(EvmDecoderInterface):
         if (steth_transfer is None):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        deposited_steth_amount = asset_normalized_value(
-            amount=steth_transfer[2],
-            asset=A_STETH.resolve_to_crypto_asset(),
+        deposited_steth_amount = token_normalized_value_decimals(
+            token_amount=steth_transfer[2],
+            token_decimals=18,
         )
 
         minted_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
-        minted_wsteth_amount = asset_normalized_value(
-            amount=minted_wsteth_amount_raw,
-            asset=A_WSTETH.resolve_to_crypto_asset(),
+        minted_wsteth_amount = token_normalized_value_decimals(
+            token_amount=minted_wsteth_amount_raw,
+            token_decimals=18,
         )
         in_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -180,15 +177,15 @@ class LidoDecoder(EvmDecoderInterface):
         steth_transfer = expect_erc20_transfer(steth_transfer_log, from_addr=self.wsteth_evm_address, to_addr=withdrawer)  # noqa: E501
         if (steth_transfer is None):
             return DEFAULT_EVM_DECODING_OUTPUT
-        withdrawn_steth_amount = asset_normalized_value(
-            amount=steth_transfer[2],
-            asset=A_STETH.resolve_to_crypto_asset(),
+        withdrawn_steth_amount = token_normalized_value_decimals(
+            token_amount=steth_transfer[2],
+            token_decimals=18,
         )
 
         burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
-        burned_wsteth_amount = asset_normalized_value(
-            amount=burned_wsteth_amount_raw,
-            asset=A_WSTETH.resolve_to_crypto_asset(),
+        burned_wsteth_amount = token_normalized_value_decimals(
+            token_amount=burned_wsteth_amount_raw,
+            token_decimals=18,
         )
         out_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
