@@ -121,8 +121,8 @@ class LidoDecoder(EvmDecoderInterface):
 
         steth_transfer_log = get_log_with_offset(context, 2)
         steth_transfer = expect_erc20_transfer(steth_transfer_log, from_addr=depositor, to_addr=self.wsteth_evm_address)  # noqa: E501
-        if (steth_transfer is None):
-            return DEFAULT_DECODING_OUTPUT
+        if steth_transfer is None:
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         minted_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
         minted_wsteth_amount = token_normalized_value_decimals(
@@ -174,7 +174,7 @@ class LidoDecoder(EvmDecoderInterface):
 
         steth_transfer_log = get_log_with_offset(context, 1)
         steth_transfer = expect_erc20_transfer(steth_transfer_log, from_addr=self.wsteth_evm_address, to_addr=withdrawer)  # noqa: E501
-        if (steth_transfer is None):
+        if steth_transfer is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
         burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
@@ -253,19 +253,17 @@ def get_log_with_offset(context: 'DecoderContext', offset: int) -> 'EvmTxReceipt
     return context.all_logs[steth_transfer_log_index]
 
 
-def parse_erc20_transfer(
-        log: 'EvmTxReceiptLog',
-    ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress, int] | None:
+def parse_erc20_transfer(transfer_log: 'EvmTxReceiptLog') -> tuple[ChecksumEvmAddress, ChecksumEvmAddress, int] | None:  # noqa: E501
     """Parse an ERC20 transfer from its log
 
     Returns a tuple of `from`, `to` and `amount` if `log` is an ERC20 transfer or `None` otherwise
     """
-    if log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+    if transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
         return None
 
-    from_address = bytes_to_address(log.topics[1])
-    to_address = bytes_to_address(log.topics[2])
-    actual_amount = int.from_bytes(log.data[:32])
+    from_address = bytes_to_address(transfer_log.topics[1])
+    to_address = bytes_to_address(transfer_log.topics[2])
+    actual_amount = int.from_bytes(transfer_log.data[:32])
 
     return from_address, to_address, actual_amount
 
