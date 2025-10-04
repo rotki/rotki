@@ -63,7 +63,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-# @pytest.mark.vcr
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4F243B4b795502AA5Cf562cB42EccD444c0321b0']])
 def test_lido_wsteth_wrapping(ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x21e291c980e6ca90b6b52bf13bc43c26bead4d3129bdbc463e140592294fe5bd')  # noqa: E501
@@ -128,7 +128,7 @@ def test_lido_wsteth_wrapping(ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-# @pytest.mark.vcr
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x29eC7360170367F86F4e18dA8Cf232A9C108Dc60']])
 def test_lido_wsteth_unwrapping(ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x104e9b227fb672dd32f3b9bfca002eec783846a6e8787010f6c0f5579f111ef1')  # noqa: E501
