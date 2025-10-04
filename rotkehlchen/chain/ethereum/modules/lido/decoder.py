@@ -252,7 +252,7 @@ def get_log_with_offset(context: 'DecoderContext', offset: int) -> 'EvmTxReceipt
 def parse_erc20_transfer(transfer_log: 'EvmTxReceiptLog') -> tuple[ChecksumEvmAddress, ChecksumEvmAddress, int] | None:  # noqa: E501
     """Parse an ERC20 transfer from its log
 
-    Returns a tuple of `from`, `to` and `amount` if `log` is an ERC20 transfer or `None` otherwise
+    Returns a tuple of `from`, `to` and `amount` if `transfer_log` is an ERC20 transfer or `None` otherwise
     """
     if transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
         return None
