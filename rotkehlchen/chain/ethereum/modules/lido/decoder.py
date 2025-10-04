@@ -122,12 +122,7 @@ class LidoDecoder(EvmDecoderInterface):
         steth_transfer_log = get_log_with_offset(context, 2)
         steth_transfer = expect_erc20_transfer(steth_transfer_log, from_addr=depositor, to_addr=self.wsteth_evm_address)  # noqa: E501
         if (steth_transfer is None):
-            return DEFAULT_EVM_DECODING_OUTPUT
-
-        deposited_steth_amount = token_normalized_value_decimals(
-            token_amount=steth_transfer[2],
-            token_decimals=18,
-        )
+            return DEFAULT_DECODING_OUTPUT
 
         minted_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
         minted_wsteth_amount = token_normalized_value_decimals(
@@ -147,6 +142,10 @@ class LidoDecoder(EvmDecoderInterface):
             address=self.wsteth_evm_address,
         )
 
+        deposited_steth_amount = token_normalized_value_decimals(
+            token_amount=steth_transfer[2],
+            token_decimals=18,
+        )
         out_action = ActionItem(
             action='transform',
             from_event_type=HistoryEventType.SPEND,
@@ -177,10 +176,6 @@ class LidoDecoder(EvmDecoderInterface):
         steth_transfer = expect_erc20_transfer(steth_transfer_log, from_addr=self.wsteth_evm_address, to_addr=withdrawer)  # noqa: E501
         if (steth_transfer is None):
             return DEFAULT_EVM_DECODING_OUTPUT
-        withdrawn_steth_amount = token_normalized_value_decimals(
-            token_amount=steth_transfer[2],
-            token_decimals=18,
-        )
 
         burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
         burned_wsteth_amount = token_normalized_value_decimals(
@@ -200,6 +195,10 @@ class LidoDecoder(EvmDecoderInterface):
             address=context.transaction.to_address,
         )
 
+        withdrawn_steth_amount = token_normalized_value_decimals(
+            token_amount=steth_transfer[2],
+            token_decimals=18,
+        )
         in_action = ActionItem(
             action='transform',
             from_event_type=HistoryEventType.RECEIVE,
