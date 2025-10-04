@@ -18,11 +18,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
-from .constants import (
-    CPT_LIDO,
-    LIDO_STETH_SUBMITTED,
-    STETH_MAX_ROUND_ERROR_WEI,
-)
+from .constants import CPT_LIDO, LIDO_STETH_SUBMITTED,STETH_MAX_ROUND_ERROR_WEI
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
