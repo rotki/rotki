@@ -226,9 +226,8 @@ class LidoDecoder(EvmDecoderInterface):
 
     def _decode_lido_steth_wrapping(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode mints and burns of wstETH"""
-        if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
-            from_address = bytes_to_address(context.tx_log.topics[1])
-            to_address = bytes_to_address(context.tx_log.topics[2])
+        if (erc20_transfer := parse_erc20_transfer(context.tx_log)) is not None:
+            from_address, to_address, _ = erc20_transfer
             if self.base.is_tracked(to_address) and from_address == ZERO_ADDRESS:
                 return self._decode_deposit_event(context, to_address)
             elif self.base.is_tracked(from_address) and to_address == ZERO_ADDRESS:
@@ -255,6 +254,23 @@ def get_log_with_offset(context: 'DecoderContext', offset: int) -> 'EvmTxReceipt
     return context.all_logs[steth_transfer_log_index]
 
 
+def parse_erc20_transfer(
+        log: 'EvmTxReceiptLog',
+    ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress, int] | None:
+    """Parse an ERC20 transfer from its log
+
+    Returns a tuple of `from`, `to` and `amount` if `log` is an ERC20 transfer or `None` otherwise
+    """
+    if log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+        return None
+
+    from_address = bytes_to_address(log.topics[1])
+    to_address = bytes_to_address(log.topics[2])
+    actual_amount = int.from_bytes(log.data[:32])
+
+    return from_address, to_address, actual_amount
+
+
 def expect_erc20_transfer(
         log: 'EvmTxReceiptLog',
         from_addr: Optional['ChecksumEvmAddress'] = None,
@@ -263,25 +279,16 @@ def expect_erc20_transfer(
     ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress, int] | None:
     """Expect an ERC20 transfer log and optionally match `from`, `to` and `amount`
 
-    Returns a tuple of `from`, `to` and `amount` if it matches or `None` otherwise`
+    Returns a tuple of `from`, `to` and `amount` if it matches or `None` otherwise
     """
-    if log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+    if (erc20_transfer := parse_erc20_transfer(log)) is None:
         return None
 
     if (
-        (from_address := bytes_to_address(log.topics[1])) and
-        (from_addr is not None and from_addr != from_address)
-        ):
-        return None
-    if (
-        (to_address := bytes_to_address(log.topics[2])) and
-        (to_addr is not None and to_addr != to_address)
-        ):
-        return None
-    if (
-        (actual_amount := int.from_bytes(log.data[:32])) and
-        (amount is not None and amount != actual_amount)
+        (from_addr is not None and from_addr != erc20_transfer[0]) or
+        (to_addr is not None and to_addr != erc20_transfer[1]) or
+        (amount is not None and amount != erc20_transfer[2])
         ):
         return None
 
-    return from_address, to_address, actual_amount
+    return erc20_transfer
