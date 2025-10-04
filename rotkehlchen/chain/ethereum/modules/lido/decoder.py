@@ -1,13 +1,12 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
-
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -16,7 +15,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH, A_STETH, A_WSTETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -32,6 +30,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -53,6 +52,8 @@ class LidoDecoder(EvmDecoderInterface):
         )
         self.steth_evm_address = A_STETH.resolve_to_evm_token().evm_address
         self.wsteth_evm_address = A_WSTETH.resolve_to_evm_token().evm_address
+        self.steth_symbol = A_STETH.resolve_to_evm_token().symbol
+        self.wsteth_symbol = A_WSTETH.resolve_to_evm_token().symbol
 
     def _decode_lido_staking_in_steth(self, context: DecoderContext, sender: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
         """Decode the submit of eth to lido contract for obtaining steth in return"""
@@ -110,13 +111,7 @@ class LidoDecoder(EvmDecoderInterface):
 
         return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_LIDO)
 
-    def _decode_deposit_event(self, context: DecoderContext, depositor: ChecksumEvmAddress) -> EvmDecodingOutput:
-        minted_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
-        minted_wsteth_amount = asset_normalized_value(
-            amount=minted_wsteth_amount_raw,
-            asset=A_WSTETH.resolve_to_crypto_asset(),
-        )
-
+    def _decode_deposit_event(self, context: DecoderContext, depositor: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
         # A steth -> wsteth wrapping event has 4 logs associated with it.
         #
         # 1. A transfer of wsteth to the user
@@ -125,24 +120,23 @@ class LidoDecoder(EvmDecoderInterface):
         # 4. A transfer of steth shares from the user to the wsteth contract
         #
         # We're currently decoding the ERC20 transfer associated with the first log
-        # so we can find the other 3 logs and pull values from them accordingly.
+        # so we can find the other 3 logs by their offset.
 
-        tx_start_log_index = context.all_logs[0].log_index
-        steth_transfer_log_index = (context.tx_log.log_index - tx_start_log_index) + 2
-        steth_transfer_log = context.all_logs[steth_transfer_log_index]
-
-        if (
-            (steth_transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER) or
-            (bytes_to_address(steth_transfer_log.topics[2]) != A_WSTETH.resolve_to_evm_token().evm_address)  # noqa: E501
-            ):
+        steth_transfer_log = get_log_with_offset(context, 2)
+        steth_transfer = expect_erc20_transfer(steth_transfer_log, from_addr=depositor, to_addr=self.wsteth_evm_address)  # noqa: E501
+        if (steth_transfer is None):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        deposited_steth_amount_raw = int.from_bytes(steth_transfer_log.data[:32])
         deposited_steth_amount = asset_normalized_value(
-            amount=deposited_steth_amount_raw,
+            amount=steth_transfer[2],
             asset=A_STETH.resolve_to_crypto_asset(),
         )
 
+        minted_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
+        minted_wsteth_amount = asset_normalized_value(
+            amount=minted_wsteth_amount_raw,
+            asset=A_WSTETH.resolve_to_crypto_asset(),
+        )
         in_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -152,8 +146,8 @@ class LidoDecoder(EvmDecoderInterface):
             amount=minted_wsteth_amount,
             location_label=depositor,
             counterparty=CPT_LIDO,
-            notes=f'Receive {minted_wsteth_amount} {A_WSTETH.resolve_to_evm_token().symbol}',  # noqa: E501
-            address=A_WSTETH.resolve_to_evm_token().evm_address,
+            notes=f'Receive {minted_wsteth_amount} {self.wsteth_symbol}',
+            address=self.wsteth_evm_address,
         )
 
         out_action = ActionItem(
@@ -164,21 +158,15 @@ class LidoDecoder(EvmDecoderInterface):
             amount=deposited_steth_amount,
             to_event_type=HistoryEventType.DEPOSIT,
             to_event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
-            to_notes=f'Wrap {deposited_steth_amount} {A_STETH.resolve_to_evm_token().symbol} in {A_WSTETH.resolve_to_evm_token().symbol}',  # noqa: E501
-            to_address=A_STETH.resolve_to_evm_token().evm_address,
+            to_notes=f'Wrap {deposited_steth_amount} {self.steth_symbol} in {self.wsteth_symbol}',
+            to_address=self.steth_evm_address,
             to_counterparty=CPT_LIDO,
             paired_events_data=((in_event,), False),
         )
 
         return EvmDecodingOutput(events=[in_event], action_items=[out_action])
 
-    def _decode_withdraw_event(self, context: DecoderContext, withdrawer: ChecksumEvmAddress) -> EvmDecodingOutput:
-        burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
-        burned_wsteth_amount = asset_normalized_value(
-            amount=burned_wsteth_amount_raw,
-            asset=A_WSTETH.resolve_to_crypto_asset(),
-        )
-
+    def _decode_withdraw_event(self, context: DecoderContext, withdrawer: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
         # A wsteth -> steth unwrapping event has 3 logs associated with it.
         #
         # 1. A burn of wsteth from the user
@@ -186,24 +174,22 @@ class LidoDecoder(EvmDecoderInterface):
         # 3. A transfer of steth shares from the wsteth contract to the user
         #
         # We're currently decoding the ERC20 transfer associated with the first log
-        # so we can find the other 2 logs and pull values from them accordingly.
+        # so we can access the other 2 logs by their offset.
 
-        tx_start_log_index = context.all_logs[0].log_index
-        steth_transfer_log_index = (context.tx_log.log_index - tx_start_log_index) + 1
-        steth_transfer_log = context.all_logs[steth_transfer_log_index]
-
-        if (
-            (steth_transfer_log.topics[0] != ERC20_OR_ERC721_TRANSFER) or
-            (bytes_to_address(steth_transfer_log.topics[1]) != A_WSTETH.resolve_to_evm_token().evm_address)  # noqa: E501
-            ):
+        steth_transfer_log = get_log_with_offset(context, 1)
+        steth_transfer = expect_erc20_transfer(steth_transfer_log, from_addr=self.wsteth_evm_address, to_addr=withdrawer)  # noqa: E501
+        if (steth_transfer is None):
             return DEFAULT_EVM_DECODING_OUTPUT
-
-        withdrawn_steth_amount_raw = int.from_bytes(steth_transfer_log.data[:32])
         withdrawn_steth_amount = asset_normalized_value(
-            amount=withdrawn_steth_amount_raw,
+            amount=steth_transfer[2],
             asset=A_STETH.resolve_to_crypto_asset(),
         )
 
+        burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
+        burned_wsteth_amount = asset_normalized_value(
+            amount=burned_wsteth_amount_raw,
+            asset=A_WSTETH.resolve_to_crypto_asset(),
+        )
         out_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -213,25 +199,26 @@ class LidoDecoder(EvmDecoderInterface):
             amount=burned_wsteth_amount,
             location_label=withdrawer,
             counterparty=CPT_LIDO,
-            notes=f'Unwrap {burned_wsteth_amount} {A_WSTETH.resolve_to_evm_token().symbol}',
+            notes=f'Unwrap {burned_wsteth_amount} {self.wsteth_symbol}',
             address=context.transaction.to_address,
         )
+
         in_action = ActionItem(
             action='transform',
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=A_STETH,
             amount=withdrawn_steth_amount,
-            to_notes=f'Receive {withdrawn_steth_amount} {A_STETH.resolve_to_evm_token().symbol}',
+            to_notes=f'Receive {withdrawn_steth_amount} {self.steth_symbol}',
             to_counterparty=CPT_LIDO,
-            to_address=A_STETH.resolve_to_evm_token().evm_address,
+            to_address=self.steth_evm_address,
             paired_events_data=((out_event,), True),
         )
 
         return EvmDecodingOutput(events=[out_event], action_items=[in_action])
 
     def _decode_lido_eth_staking_contract(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode interactions with stETH and wstETH contracts"""
+        """Decode interactions with stETH contract"""
         if (
             context.tx_log.topics[0] == LIDO_STETH_SUBMITTED and
             self.base.is_tracked(sender := bytes_to_address(context.tx_log.topics[1]))
@@ -245,11 +232,10 @@ class LidoDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
             from_address = bytes_to_address(context.tx_log.topics[1])
             to_address = bytes_to_address(context.tx_log.topics[2])
-            if self.base.is_tracked(from_address) and to_address == ZERO_ADDRESS:
-                return self._decode_withdraw_event(context, from_address)
-            elif self.base.is_tracked(to_address) and from_address == ZERO_ADDRESS:
+            if self.base.is_tracked(to_address) and from_address == ZERO_ADDRESS:
                 return self._decode_deposit_event(context, to_address)
-
+            elif self.base.is_tracked(from_address) and to_address == ZERO_ADDRESS:
+                return self._decode_withdraw_event(context, from_address)
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
@@ -263,3 +249,42 @@ class LidoDecoder(EvmDecoderInterface):
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(identifier=CPT_LIDO, label='Lido eth', image='lido.svg'),)
+
+
+def get_log_with_offset(context: 'DecoderContext', offset: int) -> 'EvmTxReceiptLog':
+    """Get a log with an offset relative to the current log in the context"""
+    tx_start_log_index = context.all_logs[0].log_index
+    steth_transfer_log_index = (context.tx_log.log_index - tx_start_log_index) + offset
+    return context.all_logs[steth_transfer_log_index]
+
+
+def expect_erc20_transfer(
+        log: 'EvmTxReceiptLog',
+        from_addr: Optional['ChecksumEvmAddress'] = None,
+        to_addr: Optional['ChecksumEvmAddress'] = None,
+        amount: int | None = None,
+    ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress, int] | None:
+    """Expect an ERC20 transfer log and optionally match `from`, `to` and `amount`
+
+    Returns a tuple of `from`, `to` and `amount` if it matches or `None` otherwise`
+    """
+    if log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+        return None
+
+    if (
+        (from_address := bytes_to_address(log.topics[1])) and
+        (from_addr is not None and from_addr != from_address)
+        ):
+        return None
+    if (
+        (to_address := bytes_to_address(log.topics[2])) and
+        (to_addr is not None and to_addr != to_address)
+        ):
+        return None
+    if (
+        (actual_amount := int.from_bytes(log.data[:32])) and
+        (amount is not None and amount != actual_amount)
+        ):
+        return None
+
+    return from_address, to_address, actual_amount
