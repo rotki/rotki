@@ -265,7 +265,7 @@ def parse_erc20_transfer(transfer_log: 'EvmTxReceiptLog') -> tuple[ChecksumEvmAd
 
 
 def expect_erc20_transfer(
-        log: 'EvmTxReceiptLog',
+        transfer_log: 'EvmTxReceiptLog',
         from_addr: Optional['ChecksumEvmAddress'] = None,
         to_addr: Optional['ChecksumEvmAddress'] = None,
         amount: int | None = None,
@@ -274,7 +274,7 @@ def expect_erc20_transfer(
 
     Returns a tuple of `from`, `to` and `amount` if it matches or `None` otherwise
     """
-    if (erc20_transfer := parse_erc20_transfer(log)) is None:
+    if (erc20_transfer := parse_erc20_transfer(transfer_log)) is None:
         return None
 
     if (
