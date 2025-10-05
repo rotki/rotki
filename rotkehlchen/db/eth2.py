@@ -72,9 +72,6 @@ class DBEth2:
     def get_active_pubkeys_to_ownership(self, cursor: 'DBCursor') -> dict[Eth2PubKey, FVal]:
         return {x[0]: FVal(x[1]) for x in cursor.execute('SELECT public_key, ownership_proportion FROM eth2_validators WHERE exited_timestamp IS NULL')}  # noqa: E501
 
-    def get_index_to_ownership(self, cursor: 'DBCursor') -> dict[int, FVal]:
-        return {x[0]: FVal(x[1]) for x in cursor.execute('SELECT validator_index, ownership_proportion FROM eth2_validators WHERE validator_index IS NOT NULL')}  # noqa: E501
-
     def get_validators(self, cursor: 'DBCursor') -> list[ValidatorDetails]:
         cursor.execute(
             'SELECT validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, '  # noqa: E501

@@ -42,9 +42,6 @@ class AvalancheManager(ChainManager[ChecksumEvmAddress]):
         )
         self.msg_aggregator = msg_aggregator
 
-    def connected_to_any_web3(self) -> bool:
-        return self.w3.is_connected()
-
     def get_latest_block_number(self) -> int:
         return self.w3.eth.block_number
 

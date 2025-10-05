@@ -77,17 +77,6 @@ PRUNED_AND_NOT_ARCHIVED_NODE = WeightedNode(
     active=True,
     weight=ONE,
 )
-ANKR_NODE = WeightedNode(
-    node_info=NodeName(
-        name='own',
-        endpoint='https://rpc.ankr.com/eth',
-        owned=True,
-        blockchain=SupportedBlockchain.ETHEREUM,
-    ),
-    weight=ONE,
-    active=True,
-)
-
 ETHERSCAN_AND_INFURA_PARAMS: tuple[str, list[tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
     ((), (ETHEREUM_ETHERSCAN_NODE,)),
     (

@@ -12,7 +12,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -75,31 +74,6 @@ class EvmProxiesInquirer:
                 break
 
         return owner
-
-    def get_account_ds_proxy(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
-        """Checks if a DS proxy exists for the given address and returns it if it does.
-
-        May raise:
-        - RemoteError if etherscan is used and there is a problem with
-        reaching it or with the returned result. Also this error can be raised
-        if there is a problem deserializing the result address.
-        - BlockchainQueryError if an evm node is used and the contract call
-        queries fail for some reason
-        """
-        result = self.dsproxy_registry.call(self.node_inquirer, 'proxies', arguments=[address])
-        try:
-            result = deserialize_evm_address(result)
-        except DeserializationError as e:
-            msg = f'Failed to deserialize {result} DS proxy for address {address}'
-            log.error(msg)
-            raise RemoteError(msg) from e
-
-        if result != ZERO_ADDRESS:
-            self.address_to_proxies[ProxyType.DS][address] = {result}
-            self.proxy_to_address[ProxyType.DS][result] = address
-            return result
-
-        return None
 
     def get_or_query_ds_proxy(
             self,
