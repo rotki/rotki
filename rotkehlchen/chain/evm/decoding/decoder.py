@@ -997,7 +997,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     token_kind=token_kind,
                     collectible_id=collectible_id,
                     evm_inquirer=self.evm_inquirer,
-                    encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
+                    encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
                 )
             except (NotERC20Conformant, NotERC721Conformant):
                 return DEFAULT_EVM_DECODING_OUTPUT  # ignore non token transfers for now
@@ -1124,7 +1124,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     token_kind=token_kind,
                     collectible_id=collectible_id,
                     evm_inquirer=self.evm_inquirer,
-                    encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
+                    encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
                 )
             except (NotERC20Conformant, NotERC721Conformant):
                 return DEFAULT_EVM_DECODING_OUTPUT  # ignore non token transfers for now

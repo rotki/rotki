@@ -248,7 +248,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                     self.base.is_tracked(bytes_to_address(_log.topics[2])) and
                     (withdrawn_asset := self._read_curve_asset(
                         asset_address=_log.address,
-                        encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
+                        encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
                     )) is not None
                 )
             ]
@@ -423,7 +423,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                         _log.address in lp_and_gauge_token_addresses and
                         (received_asset := self._read_curve_asset(
                             asset_address=_log.address,
-                            encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
+                            encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
                         )) is not None
                     ):
                         break
@@ -559,7 +559,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
         sold_asset = self._read_curve_asset(
             asset_address=sold_token_address,
-            encounter=(encounter := TokenEncounterInfo(tx_hash=context.transaction.tx_hash)),
+            encounter=(encounter := TokenEncounterInfo(tx_ref=context.transaction.tx_hash)),
         )
         bought_asset = self._read_curve_asset(
             asset_address=bought_token_address,
@@ -732,7 +732,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         # if gauge token is None, that means the gauge is an old one, without any token
         if (gauge_token := self._read_curve_asset(
             asset_address=gauge_address,
-            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
+            encounter=TokenEncounterInfo(tx_ref=context.transaction.tx_hash),
         )) is not None:
             try:
                 gauge_token = gauge_token.resolve_to_evm_token()

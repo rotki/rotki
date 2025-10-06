@@ -278,7 +278,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 userdb=self.database,
                 address=mint_address,
                 solana_inquirer=self.node_inquirer,
-                encounter=TokenEncounterInfo(tx_hash=transaction.signature),
+                encounter=TokenEncounterInfo(tx_ref=transaction.signature),
             )
         except NotSPLConformant as e:
             log.error(

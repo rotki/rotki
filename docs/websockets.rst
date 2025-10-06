@@ -159,7 +159,7 @@ Token Detection
 
 While we are processing transactions new tokens may be detected and added to the database. Some of them can be spam tokens. Using this message we can let the frontend know which tokens are detected. Then they can in turn allow the user to see an aggregated list of all detected tokens and using that list, easily mark spam assets if any.
 
-The `seen_tx_hash` and `seen_description` keys are optional, but mutually exclusive. If one exists the other should not. But also both can be missing.
+The `seen_tx_reference` and `seen_description` keys are optional, but mutually exclusive. If one exists the other should not. But also both can be missing.
 
 ::
 
@@ -168,7 +168,7 @@ The `seen_tx_hash` and `seen_description` keys are optional, but mutually exclus
         "data": {
             "token_kind": "evm",
             "token_identifier": "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
-            "seen_tx_hash": "0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39"
+            "seen_tx_reference": "0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39"
         }
     }
 
@@ -195,7 +195,7 @@ The `seen_tx_hash` and `seen_description` keys are optional, but mutually exclus
 
 
 - ``token_kind`` Indicates what kind of token was detected. Either `evm` or `solana`.
-- ``seen_tx_hash``: A transaction hash in the same chain as the token in which the token was first seen.
+- ``seen_tx_reference``: A transaction hash in the same chain as the token in which the token was first seen.
 - ``seen_description``: A description of the action in which the token was first seen and added to the DB. For example, querying curve pools, querying yearn pools etc.
 - ``is_ignored`` (Optional): If it is set the backend has marked automatically the asset as ignored for the user.
 
