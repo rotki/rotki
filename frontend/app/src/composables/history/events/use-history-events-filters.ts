@@ -9,6 +9,7 @@ import { isEqual } from 'es-toolkit';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { TableId } from '@/modules/table/use-remember-table-sorting';
 import { RouterLocationLabelsSchema } from '@/types/route';
 import {
   isEvmEventType,
@@ -145,6 +146,10 @@ export function useHistoryEventsFilters(
       else
         set(locationLabels, locationLabelsParsed);
     },
+    persistFilter: computed(() => ({
+      enabled: true,
+      tableId: TableId.HISTORY,
+    })),
     queryParamsOnly: computed(() => ({
       locationLabels: get(usedLocationLabels),
     })),

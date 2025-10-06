@@ -4,6 +4,7 @@ import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
+import type { TableId } from '@/modules/table/use-remember-table-sorting';
 import type { Collection } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { LocationQuery, RawLocationQuery } from '@/types/route';
@@ -19,6 +20,7 @@ import {
   parseQueryHistory,
   parseQueryPagination,
 } from '@/composables/use-pagination-filter/utils';
+import { useRememberTableFilter } from '@/modules/table/use-remember-table-filter';
 import { useNotificationsStore } from '@/store/notifications';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
 import { defaultCollectionState } from '@/utils/collection';
@@ -29,6 +31,11 @@ type Params<
   TItem extends NonNullable<unknown>,
   TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
 > = Partial<Omit<TPayload, keyof PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>>>;
+
+interface PersistFilterSetting {
+  enabled: boolean;
+  tableId: TableId;
+}
 
 interface UsePaginationFiltersOptions<
   TItem extends NonNullable<unknown>,
@@ -46,6 +53,7 @@ interface UsePaginationFiltersOptions<
   defaultSortBy?: DataTableSortData<TItem>;
   query?: Ref<LocationQuery>;
   queryParamsOnly?: ComputedRef<RawLocationQuery>;
+  persistFilter?: ComputedRef<PersistFilterSetting>;
 }
 
 interface UsePaginationFilterReturn<
@@ -106,6 +114,7 @@ export function usePaginationFilters<
     history = false,
     locationOverview,
     onUpdateFilters,
+    persistFilter,
     query = ref<LocationQuery>({}),
     queryParamsOnly = computed<LocationQuery>(() => ({})),
     requestParams,
@@ -114,6 +123,13 @@ export function usePaginationFilters<
   const defaultSorting = (): Sorting<TItem> => applySortingDefaults(defaultSortBy);
 
   const { filters, matchers, RouteFilterSchema } = filterSchema();
+
+  const { restorePersistedFilter, savePersistedFilter } = useRememberTableFilter({
+    enabled: computed<boolean>(() => get(persistFilter)?.enabled ?? false),
+    history,
+    query,
+    tableId: computed<TableId>(() => get(persistFilter)?.tableId ?? '' as TableId),
+  });
 
   const sort = computed<DataTableSortData<TItem>>({
     get() {
@@ -388,7 +404,15 @@ export function usePaginationFilters<
     }
   }
 
-  onBeforeMount(() => {
+  onBeforeMount(async () => {
+    const hasHistory = get(history);
+    const routeQuery = hasHistory === 'router' ? get(route).query : get(query);
+
+    // Only restore persisted filter if route/query is empty (route filter takes precedence)
+    if (isEmpty(routeQuery)) {
+      await restorePersistedFilter();
+    }
+
     applyRouteFilter();
   });
 
@@ -418,6 +442,9 @@ export function usePaginationFilters<
   watch(pageParams, async (params, op) => {
     if (isEqual(params, op))
       return;
+
+    const query = getQuery();
+    savePersistedFilter(query);
 
     await updateQuery();
     await fetchData();
