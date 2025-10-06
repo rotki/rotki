@@ -43,8 +43,8 @@ def test_query_decode_history_profiling(
     response = requests.post(  # Decode all transactions
         api_url_for(
             rotkehlchen_api_server,
-            'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': True},
+            'transactionsdecodingresource',
+        ), json={'async_query': True, 'chain': 'eth'},
     )
     task_id = assert_ok_async_response(response)
     outcome = wait_for_async_task(rotkehlchen_api_server, task_id)

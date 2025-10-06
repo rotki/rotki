@@ -140,14 +140,8 @@ def assert_editing_works(
     # also redecode without custom deletion and see the custom events
     # are still correctly shown and not deleted
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
-        json={
-            'transactions': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': entry.tx_hash.hex(),
-                }],
-            'delete_custom': False,
-        },
+        api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+        json={'chain': 'eth', 'tx_refs': [str(entry.tx_hash)], 'delete_custom': False},
     )
     assert_simple_ok_response(response)
     assert_event_got_edited(entry)

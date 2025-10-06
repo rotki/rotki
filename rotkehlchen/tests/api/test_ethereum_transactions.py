@@ -272,11 +272,11 @@ def assert_force_redecode_txns_works(api_server: 'APIServer') -> None:
         response = requests.post(
             api_url_for(
                 api_server,
-                'evmpendingtransactionsdecodingresource',
+                'transactionsdecodingresource',
             ), json={
                 'async_query': False,
                 'ignore_cache': True,
-                'chains': ['ethereum'],
+                'chain': 'eth',
             },
         )
         assert_proper_response(response)
@@ -353,13 +353,11 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
-                'evmtransactionsresource',
+                'transactionsdecodingresource',
             ), json={
                 'async_query': True,
-                'transactions': [{
-                    'evm_chain': 'ethereum',
-                    'tx_hash': tx_hash,
-                }],
+                'chain': 'eth',
+                'tx_refs': [tx_hash],
             },
         )
 
@@ -397,31 +395,27 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer'
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
+            'transactionsdecodingresource',
         ), json={
             'async_query': False,
-            'transactions': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': 1,
-            }],
+            'chain': 'eth',
+            'tx_refs': [1],
         },
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Transaction hash should be a string',
+        contained_in_msg='"tx_refs": {"0": ["Not a valid string."]}',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
+            'transactionsdecodingresource',
         ), json={
             'async_query': False,
-            'transactions': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': 'dasd',
-            }],
+            'chain': 'eth',
+            'tx_refs': ['dasd'],
         },
     )
     assert_error_response(
@@ -433,13 +427,11 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer'
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
+            'transactionsdecodingresource',
         ), json={
             'async_query': False,
-            'transactions': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': '0x34af01',
-            }],
+            'chain': 'eth',
+            'tx_refs': ['0x34af01'],
         },
     )
     assert_error_response(
@@ -452,13 +444,11 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer'
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
+            'transactionsdecodingresource',
         ), json={
             'async_query': False,
-            'transactions': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': nonexisting_hash,
-            }],
+            'chain': 'eth',
+            'tx_refs': [nonexisting_hash],
         },
     )
     assert_error_response(
@@ -1264,16 +1254,8 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
     tx_str = '0x6cbae2712ded4254cc0dbd3daa9528b049c27095b5216a4c52e2e3be3d6905a5'
     # Make sure that the transactions get decoded
     response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ), json={
-            'async_query': False,
-            'transactions': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': tx_str,
-            }],
-        },
+        api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+        json={'async_query': False, 'chain': 'eth', 'tx_refs': [tx_str]},
     )
     assert_simple_ok_response(response)
 
@@ -1322,11 +1304,11 @@ def test_decoding_missing_transactions(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': False, 'chains': ['ethereum']},
+            'transactionsdecodingresource',
+        ), json={'async_query': False, 'chain': 'eth'},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['decoded_tx_number']['ethereum'] == len(transactions)
+    assert result['decoded_tx_number'] == len(transactions)
 
     websocket_connection.wait_until_messages_num(num=4, timeout=4)
     assert websocket_connection.pop_message() == {'type': 'progress_updates', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 0, 'subtype': 'undecoded_transactions'}}  # noqa: E501
@@ -1355,12 +1337,12 @@ def test_decoding_missing_transactions(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': True},
+            'transactionsdecodingresource',
+        ), json={'async_query': True, 'chain': 'eth'},
     )
     result = assert_proper_sync_response_with_result(response)
     outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
-    assert outcome['result']['decoded_tx_number'] == {}
+    assert outcome['result']['decoded_tx_number'] == 0
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1434,7 +1416,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            'evmpendingtransactionsdecodingresource',
+            'transactionsdecodingresource',
         ), json={'async_query': async_query},
     )
     if async_query:
@@ -1492,14 +1474,8 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
 
     # trigger the deletion of the transaction's data by redecoding it
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
-        json={
-            'async_query': False,
-            'transactions': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': tx_hash.hex(),  # pylint: disable=no-member  # pylint doesn't detect the .hex attribute here
-            }],
-        },
+        api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+        json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
     )
     assert_proper_response(response)
 
@@ -1547,11 +1523,11 @@ def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') ->
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': False, 'ignore_cache': True},
+            'transactionsdecodingresource',
+        ), json={'async_query': False, 'ignore_cache': True, 'chain': 'eth'},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'decoded_tx_number': {'ethereum': 2}}
+    assert result == {'decoded_tx_number': 2}
     with rotki.data.db.conn.read_ctx() as cursor:
         assert dbevents.get_history_events_count(
             cursor=cursor,
@@ -1655,17 +1631,17 @@ def test_monerium_gnosis_pay_events_update(
             side_effect=lambda **kwargs: ([monerium_event], False, None),
         ),
     ):
-        response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
-            json={
-                'transactions': [
-                    {'evm_chain': 'gnosis', 'tx_hash': gnosispay_event1.tx_hash.hex()},
-                    {'evm_chain': 'gnosis', 'tx_hash': gnosispay_event2.tx_hash.hex()},
-                    {'evm_chain': 'arbitrum_one', 'tx_hash': monerium_event.tx_hash.hex()},
-                ],
-            },
-        )
-        assert_proper_response(response)
+        assert_proper_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'chain': 'gnosis', 'tx_refs': [
+                str(gnosispay_event1.tx_hash),
+                str(gnosispay_event2.tx_hash),
+            ]},
+        ))
+        assert_proper_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'chain': 'arbitrum_one', 'tx_refs': [str(monerium_event.tx_hash)]},
+        ))
 
         if start_with_valid_premium:
             assert monerium_instance_mock.update_events.call_count == 1

@@ -2211,9 +2211,9 @@ Deleting locally saved blockchain transactions
 Decode transactions that haven't been decoded yet
 =================================================
 
-.. http:post:: /api/(version)/blockchains/(chaintype)/transactions/decode
+.. http:post:: /api/(version)/blockchains/transactions/decode
 
-   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet for the given chain and addresses combination. Transactions already decoded won't be re-decoded unless ignore_cache is set to true . ``chaintype`` can be either ``evm`` or ``evmlike``
+   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet for the given chain. Transactions already decoded won't be re-decoded unless ignore_cache is set to true.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2222,18 +2222,18 @@ Decode transactions that haven't been decoded yet
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/evm/transactions/decode HTTP/1.1
+      POST /api/1/blockchains/transactions/decode HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {
           "async_query": false,
-	  "ignore_cache": false,
-          "chains": ["ethereum", "optimism"]
+	      "ignore_cache": false,
+          "chain": "eth"
       }
 
    :reqjson bool ignore_cache: Defaults to false. If set to true then all events will be redecoded, not only those that have not yet been decoded.
-   :reqjson list chains: A list specifying the evm/evmlike chains for which to decode tx_hashes. The possible values are limited to the chains with evm transactions for evm and to zksynclite for evmlike. If the list is not provided all transactions from all the chains will be decoded.
+   :reqjson string chain: The name of the chain for which to decode transactions. The possible values are limited to the chains for which we support transaction decoding (solana, zksync lite, and all supported EVM chains except for avalanche).
 
    **Example Response**:
 
@@ -2242,17 +2242,17 @@ Decode transactions that haven't been decoded yet
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": {"decoded_tx_number": {"ethereum": 4, "optimism": 1}}, "message": "" }
+      { "result": {"decoded_tx_number": 4}, "message": "" }
 
-   :resjson object decoded_tx_number: A mapping of how many transactions were decoded per requested chain. If a chain was not requested no key will exist in the mapping.
+   :resjson int decoded_tx_number: Number of transactions that were decoded.
    :statuscode 200: Transactions successfully decoded.
    :statuscode 401: User is not logged in.
    :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-.. http:get:: /api/(version)/blockchains/(chaintype)/transactions/decode
+.. http:put:: /api/(version)/blockchains/transactions/decode
 
-   Doing a GET on the transactions decoding endpoint will return a breakdown of the number of transactions that are not decoded. ``chaintype`` can be either ``evm`` or ``evmlike``
+   Doing a PUT on the transactions decoding endpoint will request deleting and re-querying of all the transaction data and decoding events for the specified transactions.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2261,7 +2261,56 @@ Decode transactions that haven't been decoded yet
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/evm/transactions/decode HTTP/1.1
+      PUT /api/1/blockchains/transactions/decode HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": true,
+          "chain": "eth",
+          "tx_refs": [
+              "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742",
+              "0xe11031d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9712"
+          ],
+          "delete_custom": true
+      }
+
+   :reqjson string chain: The name of the chain for which to decode transactions.
+   :reqjson list tx_refs: A list of transaction hashes/signatures from the specified chain to redecode.
+   :reqjson bool delete_custom: Boolean denoting whether to delete any customized events of the transaction or not. Default is false
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true,
+        "message": ""
+      }
+
+
+   :statuscode 200: Transaction successfully repulled and decoded.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: The given transaction references do not correspond to an onchain transaction according to the nodes we contacted.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Problem contacting a remote service
+
+.. http:get:: /api/(version)/blockchains/transactions/decode
+
+   Doing a GET on the transactions decoding endpoint will return a breakdown of the number of transactions that are not decoded.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/transactions/decode HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -2737,107 +2786,6 @@ Querying blockchain transactions
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
-
-Request specific EVM transactions repulling and event decoding
-===================================================================
-
-.. http:put:: /api/(version)/blockchains/evm/transactions
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails deleting and re-querying all the transaction data. Transaction, internal transactions, receipts and all log for each hash and then decoding all events. Also requeries prices for assets involved in these events.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PUT /api/1/blockchains/evm/transactions HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {
-          "async_query": true,
-          "transactions": [{
-              "evm_chain": "ethereum",
-              "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
-          }, {
-              "evm_chain": "gnosis",
-              "tx_hash": "0xe11031d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9712"
-           }],
-          "delete_custom": true
-      }
-
-   :reqjson list transactions: A list of objects of evm_chain and tx_hash keys to redecode. Each list entry represents a single transaction.
-   :reqjson bool delete_custom: Boolean denoting whether to delete any customized events of the transaction or not. Default is false
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      { "result": true,
-        "message": ""
-      }
-
-
-   :statuscode 200: Transaction successfully repulled and decoded.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: The given hashe does not correspond to a transaction according to the nodes we contacted.
-   :statuscode 500: Internal rotki error
-   :statuscode 502: Problem contacting a remote service
-
-Request specific EVMlike transaction repulling and event decoding
-===================================================================
-
-.. http:put:: /api/(version)/blockchains/evmlike/transactions
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   Doing a PUT on the evmlike transactions endpoint will request a decoding of the given transactions and generation of decoded events. Transaction data will also be deleted and requeried and events redecoded.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PUT /api/1/blockchains/evm/transactions HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {
-          "async_query": true,
-          "transactions": [{
-              "chain": "zksync_lite",
-              "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
-          }]
-      }
-
-   :reqjson list transactions: A list of data to decode. Each data entry consists of a ``"chain"`` key specifying the evmlike chain for which to decode and a ``"tx_hash"`` key which is the tx_hash to decode.
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      { "result": true,
-        "message": ""
-      }
-
-
-   :statuscode 200: Transactions successfully decoded.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Given hash does not correspond to a transaction according to the nodes we contacted.
-   :statuscode 500: Internal rotki error
-   :statuscode 502: Problem contacting a remote service
 
 Querying tags
 =================

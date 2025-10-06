@@ -3,7 +3,6 @@ import operator
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Protocol
 
@@ -45,7 +44,6 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -798,26 +796,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 counterparty=CPT_ACCOUNT_DELEGATION,
             ))
 
-        with self.database.user_write() as write_cursor:
-            if len(events) > 0:
-                self.dbevents.add_history_events(
-                    write_cursor=write_cursor,
-                    history=events,
-                )
-            else:
-                # This is probably a phishing zero value token transfer tx.
-                # Details here: https://github.com/rotki/rotki/issues/5749
-                with suppress(InputError):  # We don't care if it's already in the DB
-                    self.database.add_to_ignored_action_ids(
-                        write_cursor=write_cursor,
-                        identifiers=[transaction.identifier],
-                    )
-
-            write_cursor.execute(
-                'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-                (tx_id, TX_DECODED),
-            )
-
+        self._write_new_tx_events_to_the_db(
+            events=events,
+            action_id=transaction.identifier,
+            db_id=tx_id,
+        )
         return events, refresh_balances, reload_decoders  # Propagate for post processing in the caller  # noqa: E501
 
     def _decode_transaction_hashes(
