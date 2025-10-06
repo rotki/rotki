@@ -942,7 +942,7 @@ def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
             sequence_index=2,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.RECEIVE,
+            event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_POLYGON_POS_MATIC,
             amount=FVal(amount),
