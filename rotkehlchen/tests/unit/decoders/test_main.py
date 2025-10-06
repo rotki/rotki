@@ -922,7 +922,8 @@ def test_genesis_transaction_no_address(ethereum_inquirer):
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_phishing_zero_transfers(database, ethereum_inquirer):
     """Checks that zero transfer phishing transactions are marked as ignored."""
-    tx_hash = deserialize_evm_tx_hash('0xb45ef1a202a8d9e983cf59129d28f79057969bb822f62e4b7d9f1ac8853d23ed')  # noqa: E501
+    tx_hex = '0xb45ef1a202a8d9e983cf59129d28f79057969bb822f62e4b7d9f1ac8853d23ed'
+    tx_hash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=tx_hash,
@@ -932,7 +933,7 @@ def test_phishing_zero_transfers(database, ethereum_inquirer):
     with database.conn.read_ctx() as cursor:
         ignored_actions = database.get_ignored_action_ids(cursor=cursor)
 
-    assert ignored_actions == {f'{ChainID.ETHEREUM.value}{tx_hash}'}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
+    assert ignored_actions == {f'{ChainID.ETHEREUM.value}{tx_hex}'}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
 
     # Repeat the same process to see that redecoding doesnt break anything
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -941,7 +942,7 @@ def test_phishing_zero_transfers(database, ethereum_inquirer):
     with database.conn.read_ctx() as cursor:
         ignored_actions = database.get_ignored_action_ids(cursor=cursor)
 
-    assert ignored_actions == {f'{ChainID.ETHEREUM.value}{tx_hash}'}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
+    assert ignored_actions == {f'{ChainID.ETHEREUM.value}{tx_hex}'}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
 
 
 def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transactions):

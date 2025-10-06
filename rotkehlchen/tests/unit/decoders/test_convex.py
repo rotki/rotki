@@ -40,7 +40,9 @@ def test_booster_deposit(
         database,
         ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
-    tx_hash = deserialize_evm_tx_hash('0x8f643dc245ce64085197692ed98309a94fd176a1e7394e8967ae7bfa10ad1f8f')  # noqa: E501
+    tx_hex = '0x8f643dc245ce64085197692ed98309a94fd176a1e7394e8967ae7bfa10ad1f8f'
+    tx_hash = deserialize_evm_tx_hash(tx_hex)
+
     timestamp = TimestampMS(1655810357000)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
@@ -52,7 +54,7 @@ def test_booster_deposit(
         message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
         data={
             'token_identifier': 'eip155:1/erc20:0x9518c9063eB0262D791f38d8d6Eb0aca33c63ed0',  # cvxsteCRV  # noqa: E501
-            'seen_tx_hash': tx_hash,
+            'seen_tx_hash': tx_hex,
         },
     )
     assert mocked_notifier.pop_message() == MockedWsMessage(
