@@ -126,17 +126,12 @@ export function usePaginationFilters<
 
   const persistFilterEnabled = computed<boolean>(() => !!(persistFilter && get(persistFilter)?.enabled));
 
-  const { restorePersistedFilter, savePersistedFilter } = persistFilter
-    ? useRememberTableFilter({
-      enabled: persistFilterEnabled,
-      history,
-      query,
-      tableId: computed<TableId>(() => get(persistFilter)?.tableId ?? '' as TableId),
-    })
-    : {
-        restorePersistedFilter: async () => {},
-        savePersistedFilter: () => {},
-      };
+  const { restorePersistedFilter, savePersistedFilter } = useRememberTableFilter({
+    enabled: persistFilterEnabled,
+    history,
+    query,
+    tableId: computed<TableId>(() => get(persistFilter)?.tableId ?? '' as TableId),
+  });
 
   const sort = computed<DataTableSortData<TItem>>({
     get() {
@@ -411,7 +406,9 @@ export function usePaginationFilters<
     }
   }
 
-  onBeforeMount(async () => {
+  watchImmediate(route, async () => {
+    set(userAction, false);
+
     const hasHistory = get(history);
     const routeQuery = hasHistory === 'router' ? get(route).query : get(query);
 
@@ -420,11 +417,6 @@ export function usePaginationFilters<
       await restorePersistedFilter();
     }
 
-    applyRouteFilter();
-  });
-
-  watch(route, () => {
-    set(userAction, false);
     applyRouteFilter();
   });
 

@@ -40,24 +40,25 @@ export function useRememberTableFilter(
     const savedFilter = get(persistedFiltersRaw)[tableIdValue];
 
     if (savedFilter && !isEmpty(savedFilter)) {
+      // Reset page to 1 (offset to 0) when restoring
+      const { page, ...filterWithoutPage } = savedFilter;
+
       // Update query params so applyRouteFilter can pick them up
       if (history === 'router') {
-        await router.replace({ query: savedFilter });
+        await router.replace({ query: filterWithoutPage });
       }
       else if (history === 'external') {
-        set(query, savedFilter);
+        set(query, filterWithoutPage);
       }
     }
   };
 
   /**
    * Saves filter to localStorage when it changes
+   * Always saves regardless of enabled state, so the latest filter is available when re-enabling
    */
   const savePersistedFilter = (query: LocationQuery): void => {
     const tableIdValue = get(tableId);
-
-    if (!get(enabled))
-      return;
 
     const current = get(persistedFiltersRaw);
     set(persistedFiltersRaw, {

@@ -12,7 +12,6 @@ import { isEmpty } from 'es-toolkit/compat';
 import { z } from 'zod/v4';
 import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { Defaults } from '@/data/defaults';
-import { TableId } from '@/modules/table/use-remember-table-sorting';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { camelCaseTransformer } from '@/services/axios-transformers';
 import { CurrencyLocationEnum } from '@/types/currency-location';
@@ -101,10 +100,6 @@ const SavedFilterLocationEnum = z.enum(SavedFilterLocation);
 
 const PrivacyModeEnum = z.nativeEnum(PrivacyMode);
 
-const TableIdEnum = z.nativeEnum(TableId);
-
-const PersistTableFilters = z.partialRecord(TableIdEnum, z.boolean().optional()).default({});
-
 export enum BalanceSource {
   BLOCKCHAIN = 'BLOCKCHAIN',
   EXCHANGES = 'EXCHANGES',
@@ -158,7 +153,6 @@ export const FrontendSettings = z.object({
   nftsInNetValue: z.boolean().default(true),
   notifyNewNfts: z.boolean().optional().default(false),
   persistPrivacySettings: z.boolean().default(false),
-  persistTableFilters: PersistTableFilters,
   persistTableSorting: z.boolean().default(false),
   privacyMode: PrivacyModeEnum.default(PrivacyMode.NORMAL),
   profitLossReportPeriod: ProfitLossTimeframe.default({

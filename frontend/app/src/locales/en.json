@@ -4958,7 +4958,6 @@
       "match_exact_filter": "Should match exact filter",
       "match_exact_filter_hint": "If enabled, it will show only the events that match the filter, excluding the other events in the same group.",
       "notes": "filter by notes content",
-      "persist_filter": "Remember filter settings",
       "product": "filter by product",
       "protocol": "filter by the protocol of the events",
       "show_ignored_assets": "Show entries with ignored assets",
