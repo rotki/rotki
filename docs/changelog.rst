@@ -8,6 +8,7 @@ Changelog
 * :feature:`10637` rotki will now properly handle Runmoney.app transactions and balances in Base.
 * :feature:`9972` rotki will now properly handle Quickswap transactions and LP balances in all supported chains.
 * :feature:`10321` Users can now delete multiple events in the history events section.
+* :feature:`9133` rotki will now properly decode wrapping stETH into WSTETH and vice versa.
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
