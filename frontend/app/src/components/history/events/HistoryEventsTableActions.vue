@@ -8,6 +8,8 @@ import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import LocationLabelSelector from '@/components/history/LocationLabelSelector.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
+import { TableId } from '@/modules/table/use-remember-table-sorting';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
 import { useRefPropVModel } from '@/utils/model';
 
@@ -37,9 +39,26 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { persistTableFilters } = storeToRefs(useFrontendSettingsStore());
+const { updateSetting } = useFrontendSettingsStore();
+
 const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
+
+const persistFilter = computed<boolean>({
+  get() {
+    return get(persistTableFilters)[TableId.HISTORY] ?? false;
+  },
+  set(value: boolean) {
+    updateSetting({
+      persistTableFilters: {
+        ...get(persistTableFilters),
+        [TableId.HISTORY]: value,
+      },
+    });
+  },
+});
 
 function handleDelete(): void {
   emit('selection:action', 'delete');
@@ -88,6 +107,14 @@ function handleToggleAll(): void {
             class="p-4"
             :label="t('transactions.filter.match_exact_filter')"
             :hint="t('transactions.filter.match_exact_filter_hint')"
+          />
+          <RuiDivider />
+          <RuiSwitch
+            v-model="persistFilter"
+            color="primary"
+            class="p-4"
+            hide-details
+            :label="t('transactions.filter.persist_filter')"
           />
         </div>
       </TableStatusFilter>

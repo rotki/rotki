@@ -10,6 +10,7 @@ import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { RouterLocationLabelsSchema } from '@/types/route';
 import {
   isEvmEventType,
@@ -76,6 +77,7 @@ export function useHistoryEventsFilters(
 
   const route = useRoute();
   const { fetchHistoryEvents } = useHistoryEvents();
+  const { persistTableFilters } = storeToRefs(useFrontendSettingsStore());
 
   // Define these early since they're used in extraParams
   const identifiersFromQuery = computed<string[] | undefined>(() => {
@@ -147,7 +149,7 @@ export function useHistoryEventsFilters(
         set(locationLabels, locationLabelsParsed);
     },
     persistFilter: computed(() => ({
-      enabled: true,
+      enabled: get(persistTableFilters)[TableId.HISTORY] ?? false,
       tableId: TableId.HISTORY,
     })),
     queryParamsOnly: computed(() => ({

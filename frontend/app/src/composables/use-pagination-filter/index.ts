@@ -124,12 +124,19 @@ export function usePaginationFilters<
 
   const { filters, matchers, RouteFilterSchema } = filterSchema();
 
-  const { restorePersistedFilter, savePersistedFilter } = useRememberTableFilter({
-    enabled: computed<boolean>(() => get(persistFilter)?.enabled ?? false),
-    history,
-    query,
-    tableId: computed<TableId>(() => get(persistFilter)?.tableId ?? '' as TableId),
-  });
+  const persistFilterEnabled = computed<boolean>(() => !!(persistFilter && get(persistFilter)?.enabled));
+
+  const { restorePersistedFilter, savePersistedFilter } = persistFilter
+    ? useRememberTableFilter({
+      enabled: persistFilterEnabled,
+      history,
+      query,
+      tableId: computed<TableId>(() => get(persistFilter)?.tableId ?? '' as TableId),
+    })
+    : {
+        restorePersistedFilter: async () => {},
+        savePersistedFilter: () => {},
+      };
 
   const sort = computed<DataTableSortData<TItem>>({
     get() {
