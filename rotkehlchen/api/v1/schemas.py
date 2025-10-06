@@ -113,6 +113,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     CHAINS_WITH_TRANSACTIONS,
+    CHAINS_WITH_TX_DECODING,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_LOCATIONS,
@@ -123,13 +124,11 @@ from rotkehlchen.types import (
     AssetAmount,
     BlockchainAddress,
     BTCAddress,
-    ChainID,
     ChainType,
     ChecksumEvmAddress,
     CostBasisMethod,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
-    EvmlikeChain,
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -187,7 +186,6 @@ from .fields import (
     TimestampMSField,
     TimestampUntilNowField,
     XpubField,
-    validate_and_deserialize_evm_tx_hash,
 )
 from .types import IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats
 
@@ -358,7 +356,7 @@ class BlockchainTransactionDeletionSchema(Schema):
                     field_name='tx_hash',
                 )
             if chain.is_evm_or_evmlike():
-                data['tx_hash'] = validate_and_deserialize_evm_tx_hash(tx_hash)
+                data['tx_hash'] = EVMTransactionHashField.deserialize_string_value(tx_hash)
 
         return data
 
@@ -411,69 +409,27 @@ class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):
     query_type = SerializableEnumField(enum_class=HistoryEventQueryType, required=True)
 
 
-class EvmTransactionSchema(Schema):
-    evm_chain = EvmChainNameField(required=True)
-    tx_hash = EVMTransactionHashField(required=True)
-
-
-class EvmTransactionDecodingSchema(AsyncQueryArgumentSchema):
-    transactions = fields.List(
-        fields.Nested(EvmTransactionSchema),
+class TransactionDecodingSchema(AsyncQueryArgumentSchema):
+    chain = BlockchainField(required=True, allow_only=CHAINS_WITH_TX_DECODING)
+    tx_refs = fields.List(
+        NonEmptyStringField(required=True),
+        required=True,
         validate=webargs.validate.Length(min=1),
     )
     delete_custom = fields.Boolean(load_default=False)
 
-
-class EvmLikeTransactionSchema(Schema):
-    chain = StrEnumField(enum_class=EvmlikeChain, required=True)
-    tx_hash = EVMTransactionHashField(required=True)
-
-
-class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
-    transactions = fields.List(
-        fields.Nested(EvmLikeTransactionSchema),
-        validate=webargs.validate.Length(min=1),
-    )
-
-
-class EvmPendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    chains = fields.List(
-        EvmChainNameField(limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS)),
-        load_default=EVM_CHAIN_IDS_WITH_TRANSACTIONS,
-    )
-
     @validates_schema
-    def validate_schema(
-            self,
-            chains: list[ChainID],
-            **_kwargs: Any,
-    ) -> None:
-
-        if len(chains) == 0:
-            raise ValidationError(
-                message='The list of chains should not be empty',
-                field_name='chains',
-            )
+    def validate_tx_refs(self, data: dict[str, Any], **kwargs: Any) -> None:
+        """Validate and transform all tx_refs based on chain"""
+        tx_ref_field = EVMTransactionHashField if data['chain'].is_evm_or_evmlike() else SolanaSignatureField  # noqa: E501
+        data['tx_refs'] = [
+            tx_ref_field.deserialize_string_value(tx_ref)
+            for tx_ref in data['tx_refs']
+        ]
 
 
-class EvmlikePendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    chains = fields.List(
-        StrEnumField(enum_class=EvmlikeChain),
-        load_default=[EvmlikeChain.ZKSYNC_LITE],
-    )
-
-    @validates_schema
-    def validate_schema(
-            self,
-            chains: list[ChainID],
-            **_kwargs: Any,
-    ) -> None:
-
-        if len(chains) == 0:
-            raise ValidationError(
-                message='The list of chains should not be empty',
-                field_name='chains',
-            )
+class PendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
+    chain = BlockchainField(required=True, allow_only=CHAINS_WITH_TX_DECODING)
 
 
 class BaseStakingQuerySchema(

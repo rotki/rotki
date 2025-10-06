@@ -1,10 +1,11 @@
 import logging
 import re
 import urllib
+from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Generic, Literal
 
 import webargs
 from eth_utils import to_checksum_address
@@ -30,6 +31,7 @@ from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.db.dbtx import T_TxHash
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -732,55 +734,21 @@ class SolanaAddressField(fields.Field):
         return SolanaAddress(value)
 
 
-def validate_and_deserialize_evm_tx_hash(value: str) -> EVMTxHash:
-    """Ensure that the given value is a valid evm transaction hash and deserialize it.
-    May raise ValidationError or DeserializationError.
-    """
-    try:
-        txhash = bytes.fromhex(value.removeprefix('0x'))
-    except ValueError as e:
-        raise ValidationError(f'Could not turn transaction hash {value} to bytes') from e
+class BaseTransactionHashField(fields.Field, ABC, Generic[T_TxHash]):
 
-    if (length := len(txhash)) != 32:
-        raise ValidationError(f'EVM transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
-
-    return deserialize_evm_tx_hash(txhash)
-
-
-class EVMTransactionHashField(fields.Field):
+    @staticmethod
+    @abstractmethod
+    def deserialize_string_value(value: str) -> T_TxHash:
+        ...
 
     @staticmethod
     def _serialize(
-            value: EVMTxHash | None,
+            value: T_TxHash | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
         assert value, 'should never be called with None'  # type kept due to Liskov principle
-        return value.hex()
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: str | None,  # pylint: disable=unused-argument
-            data: Mapping[str, Any] | None,
-            **_kwargs: Any,
-    ) -> EVMTxHash:
-        if not isinstance(value, str):
-            raise ValidationError('Transaction hash should be a string')
-
-        return validate_and_deserialize_evm_tx_hash(value)
-
-
-class SolanaSignatureField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: Signature | None,
-            attr: str | None,  # pylint: disable=unused-argument
-            obj: Any,
-            **_kwargs: Any,
-    ) -> str:
         return str(value)
 
     def _deserialize(
@@ -789,10 +757,35 @@ class SolanaSignatureField(fields.Field):
             attr: str | None,  # pylint: disable=unused-argument
             data: Mapping[str, Any] | None,
             **_kwargs: Any,
-    ) -> Signature:
+    ) -> T_TxHash:
         if not isinstance(value, str):
-            raise ValidationError('Transaction signature should be a string')
+            raise ValidationError('Transaction hash should be a string')
 
+        return self.deserialize_string_value(value)
+
+
+class EVMTransactionHashField(BaseTransactionHashField[EVMTxHash]):
+
+    @staticmethod
+    def deserialize_string_value(value: str) -> EVMTxHash:
+        """Ensure that the given value is a valid evm transaction hash and deserialize it.
+        May raise ValidationError or DeserializationError.
+        """
+        try:
+            txhash = bytes.fromhex(value.removeprefix('0x'))
+        except ValueError as e:
+            raise ValidationError(f'Could not turn transaction hash {value} to bytes') from e
+
+        if (length := len(txhash)) != 32:
+            raise ValidationError(f'EVM transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
+
+        return deserialize_evm_tx_hash(txhash)
+
+
+class SolanaSignatureField(BaseTransactionHashField[Signature]):
+
+    @staticmethod
+    def deserialize_string_value(value: str) -> Signature:
         return deserialize_tx_signature(value)
 
 

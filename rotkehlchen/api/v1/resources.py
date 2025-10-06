@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 from flask import Blueprint, Request, Response, request as flask_request
 from marshmallow import Schema, ValidationError, fields
 from marshmallow.utils import missing
+from solders.solders import Signature
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
@@ -89,10 +90,6 @@ from rotkehlchen.api.v1.schemas import (
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
-    EvmlikePendingTransactionDecodingSchema,
-    EvmlikeTransactionDecodingSchema,
-    EvmPendingTransactionDecodingSchema,
-    EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
@@ -143,6 +140,7 @@ from rotkehlchen.api.v1.schemas import (
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
     OptionalAddressesWithBlockchainsListSchema,
+    PendingTransactionDecodingSchema,
     QueriedAddressesSchema,
     QueryAddressbookSchema,
     QueryCalendarSchema,
@@ -173,6 +171,7 @@ from rotkehlchen.api.v1.schemas import (
     TagSchema,
     TimedManualPriceSchema,
     TimestampRangeSchema,
+    TransactionDecodingSchema,
     TransactionQuerySchema,
     UpdateCalendarReminderSchema,
     UpdateCalendarSchema,
@@ -241,6 +240,7 @@ from rotkehlchen.serialization.schemas import (
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTIONS_TYPE,
+    CHAINS_WITH_TX_DECODING_TYPE,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
     SUPPORTED_CHAIN_IDS,
@@ -255,7 +255,6 @@ from rotkehlchen.types import (
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
-    EvmlikeChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -649,24 +648,6 @@ class BlockchainTransactionsResource(BaseMethodView):
         return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)  # type: ignore[arg-type] # schema ensures chain is included when tx_hash is present.
 
 
-class EvmTransactionsResource(BaseMethodView):
-    put_schema = EvmTransactionDecodingSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(put_schema, location='json_and_query')
-    def put(
-            self,
-            async_query: bool,
-            transactions: list[dict[str, Any]],
-            delete_custom: bool,
-    ) -> Response:
-        return self.rest_api.decode_given_evm_transactions(
-            async_query=async_query,
-            transactions=[(x['evm_chain'], x['tx_hash']) for x in transactions],
-            delete_custom=delete_custom,
-        )
-
-
 class EvmTransactionsStatusResource(BaseMethodView):
     get_schema = AsyncQueryArgumentSchema()
 
@@ -676,68 +657,45 @@ class EvmTransactionsStatusResource(BaseMethodView):
         return self.rest_api.get_evm_transactions_status(async_query=async_query)
 
 
-class EvmlikeTransactionsResource(BaseMethodView):
-    put_schema = EvmlikeTransactionDecodingSchema()
+class TransactionsDecodingResource(BaseMethodView):
+    post_schema = PendingTransactionDecodingSchema()
+    put_schema = TransactionDecodingSchema()
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool,
+            ignore_cache: bool,
+            chain: CHAINS_WITH_TX_DECODING_TYPE,
+    ) -> Response:
+        return self.rest_api.decode_transactions(
+            async_query=async_query,
+            chain=chain,
+            force_redecode=ignore_cache,
+        )
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
     def put(
             self,
             async_query: bool,
-            transactions: list[dict[str, Any]],
+            chain: CHAINS_WITH_TX_DECODING_TYPE,
+            tx_refs: list[EVMTxHash | Signature],
+            delete_custom: bool,
     ) -> Response:
-        return self.rest_api.decode_evmlike_transactions(
+        return self.rest_api.decode_given_transactions(
             async_query=async_query,
-            transactions=[(x['chain'], x['tx_hash']) for x in transactions],
-        )
-
-
-class EvmPendingTransactionsDecodingResource(BaseMethodView):
-    post_schema = EvmPendingTransactionDecodingSchema()
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            async_query: bool,
-            ignore_cache: bool,
-            chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
-    ) -> Response:
-        return self.rest_api.decode_evm_transactions(
-            async_query=async_query,
-            evm_chains=chains,
-            force_redecode=ignore_cache,
+            chain=chain,
+            tx_refs=tx_refs,
+            delete_custom=delete_custom,
         )
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_count_transactions_not_decoded(async_query=async_query)
-
-
-class EvmlikePendingTransactionsDecodingResource(BaseMethodView):
-    post_schema = EvmlikePendingTransactionDecodingSchema()
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            async_query: bool,
-            ignore_cache: bool,
-            chains: list[EvmlikeChain],
-    ) -> Response:
-        return self.rest_api.decode_pending_evmlike_transactions(
-            async_query=async_query,
-            ignore_cache=ignore_cache,
-            evmlike_chains=chains,
-        )
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_count_evmlike_transactions_not_decoded(async_query=async_query)
 
 
 class EthereumAirdropsResource(BaseMethodView):

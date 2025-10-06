@@ -8,6 +8,7 @@ import traceback
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from contextlib import suppress
+from functools import partial
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overload
@@ -19,6 +20,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
+from solders.solders import Signature
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
 
@@ -151,6 +153,7 @@ from rotkehlchen.db.filtering import (
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
+    SolanaTransactionsNotDecodedFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -159,6 +162,7 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
+from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.unresolved_conflicts import DBRemoteConflicts
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.api import (
@@ -244,9 +248,11 @@ from rotkehlchen.types import (
     BLOCKSCOUT_TO_CHAINID,
     CHAINS_WITH_TRANSACTIONS,
     CHAINS_WITH_TRANSACTIONS_TYPE,
+    CHAINS_WITH_TX_DECODING_TYPE,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAINS_WITH_TRANSACTIONS,
+    EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     EVM_EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
     SPAM_PROTOCOL,
@@ -255,7 +261,6 @@ from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
-    SUPPORTED_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
@@ -270,7 +275,6 @@ from rotkehlchen.types import (
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
-    EvmlikeChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -2929,109 +2933,125 @@ class RestAPI:
         return {'result': result, 'message': message, 'status_code': status_code}
 
     @async_api_call()
-    def decode_given_evm_transactions(
+    def decode_given_transactions(
             self,
-            transactions: list[tuple[SUPPORTED_CHAIN_IDS, EVMTxHash]],
+            chain: CHAINS_WITH_TX_DECODING_TYPE,
+            tx_refs: list[EVMTxHash | Signature],
             delete_custom: bool,
     ) -> dict[str, Any]:
+        """Re-pull data for the specified tx_refs in the given chain
+        and redecode all related events.
         """
-        Repull data for the given transactions and redecode all events. Also prices for
-        the assets involved in these events are requeried.
-        """
-        task_manager = self.rotkehlchen.task_manager
-        assert task_manager, 'task manager should have been initialized at this point'
-        success, message, status_code, events = True, '', HTTPStatus.OK, []
-        for evm_chain, tx_hash in transactions:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
-            with self.rotkehlchen.data.db.user_write() as write_cursor:
-                write_cursor.execute(
-                    'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                    (tx_hash, evm_chain.serialize_for_db()))
-            try:
-                chain_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
-            except RemoteError as e:
-                return {
-                    'result': False,
-                    'message': f'Failed to request evm transaction decoding due to hash {tx_hash.hex()} does not correspond to a transaction at {evm_chain.name}. {e!s}',  # noqa: E501
-                    'status_code': HTTPStatus.CONFLICT,
-                }
-            except DeserializationError as e:
-                return {
-                    'result': False,
-                    'message': f'Failed to request evm transaction decoding due to {e!s}',
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+        decode_function: Callable[[EVMTxHash, bool], None] | Callable[[Signature, bool], None]
+        if chain.is_evm():
+            decode_function = partial(
+                lambda _tx_ref, _delete_custom, _chain: self._decode_given_evm_tx(
+                    chain=_chain,
+                    tx_ref=_tx_ref,
+                    delete_custom=_delete_custom,
+                ),
+                _chain=chain,
+            )
+        elif chain.is_evmlike():
+            decode_function = self._decode_given_evmlike_tx
+        else:  # solana
+            decode_function = self._decode_given_solana_tx
 
+        success, message, status_code = True, '', HTTPStatus.OK
+        for tx_ref in tx_refs:
             try:
-                events.extend(chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
-                    tx_hashes=[tx_hash],
-                    send_ws_notifications=True,
-                    ignore_cache=True,  # always redecode from here
-                    delete_customized=delete_custom,
-                ))
-            except (RemoteError, DeserializationError) as e:
-                return {
-                    'result': False,
-                    'message': f'Failed to request evm transaction decoding due to {e!s}',
-                    'status_code': HTTPStatus.BAD_GATEWAY,
-                }
-            except InputError as e:
-                return {
-                    'result': False,
-                    'message': f'Failed to request evm transaction decoding due to {e!s}',
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                decode_function(tx_ref, delete_custom)  # type: ignore[arg-type]  # schema ensures all tx refs match the type required for the given chain
+            except (RemoteError, DeserializationError, InputError) as e:
+                success = False
+                message = f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'  # noqa: E501
+                status_code = HTTPStatus.CONFLICT if isinstance(e, InputError) else HTTPStatus.BAD_GATEWAY  # noqa: E501
+                break
 
         return {'result': success, 'message': message, 'status_code': status_code}
 
-    @async_api_call()
-    def decode_evmlike_transactions(
+    def _decode_given_evm_tx(
             self,
-            transactions: list[tuple[EvmlikeChain, EVMTxHash]],
-    ) -> dict[str, Any]:
+            chain: EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
+            tx_ref: EVMTxHash,
+            delete_custom: bool,
+    ) -> None:
+        """Re-pull and decode the given evm transaction.
+        May raise RemoteError, DeserializationError or InputError.
         """
-        Repull all data and redecode events for a single emvlike transaction hash.
-        Chain can only be zksync lite for now.
-        """
-        task_manager = self.rotkehlchen.task_manager
-        assert task_manager, 'task manager should have been initialized at this point'
-        tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
-
-        for _, tx_hash in transactions:
-            # first delete tranasaction data and all decoded events and related data
-            with self.rotkehlchen.data.db.user_write() as write_cursor:
-                concerning_address = write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=? RETURNING from_address', (tx_hash,)).fetchone()  # noqa: E501
-                deleted_event_data = write_cursor.execute(
-                    'DELETE FROM history_events WHERE event_identifier=? RETURNING location_label',
-                    (ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),),
-                ).fetchone()
-                if deleted_event_data is not None:
-                    concerning_address = deleted_event_data[0]
-
-            transaction = self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
-                tx_hash=tx_hash,
-                concerning_address=concerning_address,
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_ref, chain.to_chain_id().serialize_for_db()),
             )
-            if transaction:
-                self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
-                    transaction=transaction,
-                    tracked_addresses=tracked_addresses,
-                )
-            else:
-                return {'result': False, 'message': f'Failed to fetch transaction {tx_hash.hex()} from zksync lite API', 'status_code': HTTPStatus.BAD_GATEWAY}  # noqa: E501
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        try:
+            (chain_manager := self.rotkehlchen.chains_aggregator.get_chain_manager(
+                blockchain=chain,
+            )).transactions.get_or_query_transaction_receipt(tx_hash=tx_ref)
+        except RemoteError as e:
+            raise InputError(f'hash {tx_ref!s} does not correspond to a transaction at {chain.name}. {e!s}') from e  # noqa: E501
+        except DeserializationError as e:
+            raise InputError(str(e)) from e
+
+        chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
+            tx_hashes=[tx_ref],
+            send_ws_notifications=True,
+            ignore_cache=True,  # always redecode from here
+            delete_customized=delete_custom,
+        )
+
+    def _decode_given_evmlike_tx(self, tx_ref: EVMTxHash, delete_custom: bool) -> None:
+        """Re-pull and decode the given evmlike transaction.
+        First deletes the existing tx and events and then re-queries and decodes it.
+        May raise RemoteError if the transaction can not be queried.
+        """
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            concerning_address = write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=? RETURNING from_address', (tx_ref,)).fetchone()  # noqa: E501
+            deleted_event_data = write_cursor.execute(
+                'DELETE FROM history_events WHERE event_identifier=? RETURNING location_label',
+                (ZKL_IDENTIFIER.format(tx_hash=str(tx_ref)),),
+            ).fetchone()
+            if deleted_event_data is not None:
+                concerning_address = deleted_event_data[0]
+
+        if (transaction := self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
+            tx_hash=tx_ref,
+            concerning_address=concerning_address,
+        )) is None:
+            raise RemoteError(f'Failed to fetch transaction {tx_ref!s} from the zksync lite API')
+
+        self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
+            transaction=transaction,
+            tracked_addresses=self.rotkehlchen.chains_aggregator.accounts.zksync_lite,
+        )
+
+    def _decode_given_solana_tx(self, tx_ref: Signature, delete_custom: bool) -> None:
+        """Re-pull and decode the given solana transaction.
+        May raise RemoteError, DeserializationError or InputError.
+        """
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM solana_transactions WHERE signature=?',
+                (tx_ref.to_bytes(),),
+            )
+
+        self.rotkehlchen.chains_aggregator.solana.transactions_decoder.decode_and_get_transaction_hashes(
+            tx_hashes=[tx_ref],
+            send_ws_notifications=True,
+            ignore_cache=True,  # always redecode from here
+            delete_customized=delete_custom,
+        )
 
     @async_api_call()
-    def decode_evm_transactions(
+    def decode_transactions(
             self,
-            evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
+            chain: CHAINS_WITH_TX_DECODING_TYPE,
             force_redecode: bool,
     ) -> dict[str, Any]:
-        """
-        This method should be called after querying evm transactions and does the following:
-        - Query missing receipts
-        - Decode EVM transactions
+        """This method should be called after querying transactions to perform event decoding.
+
+        For EVM chains, any missing tx receipts are queried first. For Ethereum, block production
+        events are also redecoded.
 
         It can be a slow process and this is why it is important to set the list of addresses
         queried per module that need to be decoded.
@@ -3039,43 +3059,46 @@ class RestAPI:
         This logic is executed by the frontend in pages where the set of transactions needs to be
         up to date, for example, the liquity module.
 
-        If force redecode is True then all related evm events, except the
-        customized ones are deleted and re-decoded.
+        If force redecode is True, all related uncustomized events are deleted and re-decoded.
 
         Returns the number of decoded transactions (not events in transactions)
         """
-
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
-        result, hashes = {}, []
-        for evm_chain in evm_chains:
+        if chain.is_evmlike():
+            decoded_count = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions(  # noqa: E501
+                force_redecode=force_redecode,
+                send_ws_notifications=True,
+            )
+        else:  # evm or solana
             if force_redecode:
                 with self.rotkehlchen.data.db.user_write() as write_cursor:
                     dbevents.reset_events_for_redecode(
                         write_cursor=write_cursor,
-                        location=Location.from_chain_id(evm_chain),
+                        location=Location.from_chain(chain),
                     )
 
-                if evm_chain == ChainID.ETHEREUM:
+                if chain == SupportedBlockchain.ETHEREUM:
                     DBEth2(self.rotkehlchen.data.db).redecode_block_production_events()
 
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
-            # make sure that all the receipts are already queried
-            chain_manager.transactions.get_receipts_for_transactions_missing_them()
-            amount_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
-                filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=evm_chain),
-            )
-            if amount_of_tx_to_decode > 0:
-                hashes.extend(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(
-                    send_ws_notifications=True,
-                ))
-                result[evm_chain.to_name()] = amount_of_tx_to_decode
+            chain_manager = self.rotkehlchen.chains_aggregator.get_chain_manager(chain)
+            if chain.is_evm():
+                # make sure that all the evm tx receipts are already queried
+                chain_manager.transactions.get_receipts_for_transactions_missing_them()  # type: ignore[attr-defined]  # will be evm chain manager with transactions
+                decoded_count = dbevmtx.count_hashes_not_decoded(
+                    filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=chain.to_chain_id()),
+                )
+            else:  # solana
+                decoded_count = DBSolanaTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
+                    filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
+                )
 
-        return {
-            'result': {'decoded_tx_number': result},
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+            if decoded_count > 0:
+                chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(  # type: ignore[attr-defined]  # evm and solana chain managers have a transactions_decoder
+                    send_ws_notifications=True,
+                )
+
+        return _wrap_in_ok_result({'decoded_tx_number': decoded_count})
 
     @async_api_call()
     def get_evm_transactions_status(self) -> dict[str, Any]:
@@ -3107,57 +3130,34 @@ class RestAPI:
         })
 
     @async_api_call()
-    def decode_pending_evmlike_transactions(
-            self,
-            ignore_cache: bool,
-            evmlike_chains: list[SUPPORTED_EVMLIKE_CHAINS_TYPE],  # pylint: disable=unused-argument
-    ) -> dict[str, Any]:
-        """This method should be called after querying evmlike transactions. Decodes
-        all undecoded evmlike transactions or all transaction if ignore_cache is true.
-
-        Returns the number of decoded transactions (not events in transactions)
-        """
-        decoded_num = 0
-        # For now it's only zksync lite
-        decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions(
-            force_redecode=ignore_cache,
-            send_ws_notifications=True,
-        )
-        return {
-            'result': {'decoded_tx_number': decoded_num},
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
-
-    @async_api_call()
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:
-        transactions_information: dict[str, dict[str, int]] = defaultdict(dict)
+        tx_info: dict[str, dict[str, int]] = defaultdict(dict)
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
-            if (tx_count := dbevmtx.count_hashes_not_decoded(
+            if (undecoded_count := dbevmtx.count_hashes_not_decoded(
                 filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=chain),
-            )) != 0:
-                chain_information = transactions_information[chain.to_name()]
-                chain_information['undecoded'] = tx_count
-                chain_information['total'] = dbevmtx.count_evm_transactions(chain_id=chain)
+            )) == 0:
+                continue
 
-        return _wrap_in_ok_result(transactions_information)
+            tx_info[chain_name := chain.name.lower()]['undecoded'] = undecoded_count
+            tx_info[chain_name]['total'] = dbevmtx.count_evm_transactions(chain_id=chain)
 
-    @async_api_call()
-    def get_count_evmlike_transactions_not_decoded(self) -> dict[str, Any]:
-        result = {}
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            undecoded = cursor.execute(
+            if (undecoded_count := cursor.execute(
                 'SELECT COUNT(*) FROM zksynclite_transactions WHERE is_decoded=0',
-            ).fetchone()[0]
-            if undecoded != 0:
-                cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions')
-                result['zksync_lite'] = {
-                    'undecoded': undecoded,
-                    'total': cursor.fetchone()[0],
-                }
+            ).fetchone()[0]) != 0:
+                tx_info[chain_name := SupportedBlockchain.ZKSYNC_LITE.name.lower()]['undecoded'] = undecoded_count  # noqa: E501
+                tx_info[chain_name]['total'] = cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0]  # noqa: E501
 
-        return _wrap_in_ok_result(result)
+        if (undecoded_count := DBSolanaTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
+            filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
+        )) != 0:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                tx_info[chain_name := SupportedBlockchain.SOLANA.name.lower()]['undecoded'] = undecoded_count  # noqa: E501
+                tx_info[chain_name]['total'] = cursor.execute('SELECT COUNT(*) FROM solana_transactions').fetchone()[0]  # noqa: E501
+
+        return _wrap_in_ok_result(tx_info)
 
     def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
         self.rotkehlchen.icon_manager.add_icon(asset=asset, icon_path=filepath)

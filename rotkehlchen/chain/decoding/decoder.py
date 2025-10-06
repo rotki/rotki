@@ -12,6 +12,7 @@ from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
 from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -410,6 +411,38 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
             )
 
         return refresh_balances, new_events
+
+    def _write_new_tx_events_to_the_db(
+            self,
+            events: list[T_Event],
+            action_id: str,
+            db_id: int,
+    ) -> None:
+        """Writes new events from a single tx to the DB and sets the decoded flag.
+
+        `action_id` uniquely identifies the tx (for example, chain id + tx hash for EVM txs)
+        which is added to the ignored_action_ids if there are no events.
+        `db_id` is the id of the transaction in the DB, used in the tx mappings table.
+        """
+        with self.database.user_write() as write_cursor:
+            if len(events) > 0:
+                self.dbevents.add_history_events(
+                    write_cursor=write_cursor,
+                    history=events,
+                )
+            else:
+                # This is probably a phishing zero value token transfer tx.
+                # Details here: https://github.com/rotki/rotki/issues/5749
+                with suppress(InputError):  # We don't care if it's already in the DB
+                    self.database.add_to_ignored_action_ids(
+                        write_cursor=write_cursor,
+                        identifiers=[action_id],
+                    )
+
+            write_cursor.execute(
+                f'INSERT OR IGNORE INTO {self.tx_mappings_table}(tx_id, value) VALUES(?, ?)',
+                (db_id, TX_DECODED),
+            )
 
     @abstractmethod
     def _calculate_fees(self, tx: T_Transaction) -> FVal:

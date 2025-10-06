@@ -6,10 +6,16 @@ import pytest
 import requests
 
 from rotkehlchen.chain.solana.types import SolanaTransaction
-from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
+from rotkehlchen.db.filtering import SolanaEventFilterQuery, SolanaTransactionsFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_proper_response,
+    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
+)
 from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
 from rotkehlchen.types import SolanaAddress
 from rotkehlchen.utils.misc import ts_now
@@ -25,7 +31,7 @@ def test_query_solana_transactions(
         rotkehlchen_api_server: 'APIServer',
         solana_accounts: list[SolanaAddress],
 ) -> None:
-    """Test that solana transactions are properly queried via the api.
+    """Test that solana transactions are properly queried and decoded from the RPCs.
     Also checks that querying with existing txs in the DB only queries new transactions.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -39,7 +45,7 @@ def test_query_solana_transactions(
                 fee=0,
                 slot=1,
                 success=True,
-                signature=make_solana_signature(),
+                signature=(fake_signature := make_solana_signature()),
                 block_time=ts_now(),
                 account_keys=[],
                 instructions=[],
@@ -47,15 +53,14 @@ def test_query_solana_transactions(
             relevant_address=make_solana_address(),
         )
 
+    signature1 = deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q')  # noqa: E501
+    signature2 = deserialize_tx_signature('2ZYFMzQMpDFcAmXo2UMhGErSitNpuZ4zeu548QvMU8k37cgetF91wTYnGmN1oZq6EG7zXaZyNPCzWtakDnSJEtgF')  # noqa: E501
+    signature3 = deserialize_tx_signature('LLco7QQYo9HVc8w6YZeabxrdhZAjQxGRvrk1hNCJPrHGYAELjh3HwQKvTA1n8bWmkcLyKkFivieooK8C9LvYZuy')  # noqa: E501
     tx_count = 1
-    for signatures_list, until_sig in ((
-        (deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q'),
-        deserialize_tx_signature('2ZYFMzQMpDFcAmXo2UMhGErSitNpuZ4zeu548QvMU8k37cgetF91wTYnGmN1oZq6EG7zXaZyNPCzWtakDnSJEtgF')),
-        None,  # First query ignores the tx already in the DB because it's for a different address.
-    ), (
-        (deserialize_tx_signature('LLco7QQYo9HVc8w6YZeabxrdhZAjQxGRvrk1hNCJPrHGYAELjh3HwQKvTA1n8bWmkcLyKkFivieooK8C9LvYZuy'),),
-        deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q'),
-    )):
+    for signatures_list, until_sig in (
+        ((signature1, signature2), None),  # First query ignores the tx already in the DB because it's for a different address.  # noqa: E501
+        ((signature3,), signature1),
+    ):
         with (
             patch.object(
                 target=rotki.chains_aggregator.solana.node_inquirer,
@@ -99,3 +104,27 @@ def test_query_solana_transactions(
         assert len(db_transactions) == tx_count
         all_signatures_from_db = [x.signature for x in db_transactions]
         assert all(x in all_signatures_from_db for x in signatures_list)
+
+    # check the number of undecoded transactions
+    assert assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+    )) == {'solana': {'undecoded': 4, 'total': 4}}
+    # trigger tx decoding
+    assert_proper_response(requests.post(
+        api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+        json={'chain': 'solana', 'async_query': False},
+    ))
+    # check undecoded tx count again
+    assert assert_proper_sync_response_with_result(requests.get(  # check undecoded tx count again
+        api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+    )) == {}
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=SolanaEventFilterQuery.make(),
+        )
+        assert {signature1, signature2, signature3} == {
+            deserialize_tx_signature(x.event_identifier) for x in events
+        }
+        assert str(fake_signature) in rotki.data.db.get_ignored_action_ids(cursor=cursor)

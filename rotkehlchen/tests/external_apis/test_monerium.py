@@ -233,9 +233,9 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
-                'evmtransactionsresource',
+                'transactionsdecodingresource',
             ),
-            json={'transactions': [{'evm_chain': 'gnosis', 'tx_hash': gnosishash.hex()}]},  # pylint: disable=no-member
+            json={'chain': 'gnosis', 'tx_refs': [str(gnosishash)]},
         )
         assert_proper_response(response)
 

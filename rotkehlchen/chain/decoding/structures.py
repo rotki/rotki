@@ -1,7 +1,10 @@
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
-T_Event = TypeVar('T_Event')
+if TYPE_CHECKING:
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+
+T_Event = TypeVar('T_Event', bound='HistoryBaseEntry')
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)

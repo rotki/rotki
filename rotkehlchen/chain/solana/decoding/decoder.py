@@ -415,10 +415,18 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         """
         log.debug(f'Starting decoding of solana transaction {transaction.signature!s}')
 
+        with self.database.conn.write_ctx() as write_cursor:
+            tx_id = transaction.get_or_query_db_id(write_cursor)
+
         if len(transaction.account_keys) == 0 or len(transaction.instructions) == 0:
             log.warning(
                 f'Solana transaction {transaction.signature!s} '
-                f'has empty instructions or accounts. Skipping.',
+                f'has empty instructions or accounts. Ignoring this transaction.',
+            )
+            self._write_new_tx_events_to_the_db(
+                events=[],  # marks the tx as decoded and adds to the ignored action ids since there are no events.  # noqa: E501
+                action_id=str(transaction.signature),
+                db_id=tx_id,
             )
             return [], False, None
 
@@ -454,7 +462,9 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             if decoding_output.events is not None:
                 events.extend(decoding_output.events)
 
-        if len(reload_decoders) == 0:
-            return events, refresh_balances, None
-
-        return events, refresh_balances, reload_decoders
+        self._write_new_tx_events_to_the_db(
+            events=events,
+            action_id=str(transaction.signature),
+            db_id=tx_id,
+        )
+        return events, refresh_balances, (reload_decoders if len(reload_decoders) > 0 else None)

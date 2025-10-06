@@ -277,7 +277,7 @@ def test_decode_pending_evmlike(
     response = requests.get(  # get the number of decoded & undecoded transactions
         api_url_for(
             rotkehlchen_api_server,
-            'evmlikependingtransactionsdecodingresource',
+            'transactionsdecodingresource',
         ),
     )
     result = assert_proper_sync_response_with_result(response)
@@ -286,15 +286,15 @@ def test_decode_pending_evmlike(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmlikependingtransactionsdecodingresource',
-        ), json={'async_query': False},
+            'transactionsdecodingresource',
+        ), json={'async_query': False, 'chain': 'zksync_lite'},
     )
     assert_proper_response(response)
 
     response = requests.get(  # get the number of decoded & undecoded transactions
         api_url_for(
             rotkehlchen_api_server,
-            'evmlikependingtransactionsdecodingresource',
+            'transactionsdecodingresource',
         ),
     )
     result = assert_proper_sync_response_with_result(response)
@@ -439,15 +439,10 @@ def test_decode_pending_evmlike(
         raise AssertionError('Did not find the event')
 
     # now let's try to redecode one transactions
-    response = requests.put(api_url_for(
-        rotkehlchen_api_server,
-        'evmliketransactionsresource',
-    ), json={
-        'transactions': [{
-            'chain': 'zksync_lite',
-            'tx_hash': tx_hash1.hex(),  # pylint: disable=no-member
-        }],
-    })
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+        json={'chain': 'zksync_lite', 'tx_refs': [str(tx_hash1)]},
+    )
     assert_simple_ok_response(response)  # see all is fine
 
     # now let's check the DB contains the entries we will check against when deleting
