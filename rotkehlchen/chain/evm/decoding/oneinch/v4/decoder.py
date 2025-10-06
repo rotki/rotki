@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import (
     ORDERFILLED_RFQ,
     PANCAKE_SWAP_TOPIC,
 )
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
@@ -117,7 +117,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return {self.router_address: self.counterparty}
 
-    def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_swapped(self, context: DecoderContext) -> EvmDecodingOutput:
         sender = context.transaction.from_address
         decoded_events = context.decoded_events
         out_event = in_event = None
@@ -151,7 +151,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
             ordered_events=[out_event, in_event],
             events_list=decoded_events,
         )
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

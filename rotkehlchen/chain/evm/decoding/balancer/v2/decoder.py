@@ -15,9 +15,9 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import V2_SWAP, VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -60,15 +60,15 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
         )
         self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[self.node_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
 
-    def decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
+    def decode_vault_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == V2_SWAP:
-            return DecodingOutput(matched_counterparty=CPT_BALANCER_V2)
+            return EvmDecodingOutput(matched_counterparty=CPT_BALANCER_V2)
         if context.tx_log.topics[0] == POOL_BALANCE_CHANGED_TOPIC:
             return self._decode_join_or_exit(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_join_or_exit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_join_or_exit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes and processes Balancer v2 pool join/exit events"""
         send_events, receive_events = [], []
         for event in context.decoded_events:
@@ -128,10 +128,10 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             transaction=context.transaction,
             decoded_events=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
-        return DEFAULT_DECODING_OUTPUT  # no-op
+    def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        return DEFAULT_EVM_DECODING_OUTPUT  # no-op
 
     def _handle_post_decoding(
             self,

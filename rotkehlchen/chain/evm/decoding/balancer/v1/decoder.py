@@ -12,12 +12,12 @@ from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecode
 from rotkehlchen.chain.evm.decoding.balancer.types import BalancerV1EventTypes
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
     EnricherContext,
+    EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -149,10 +149,10 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
 
         return FAILED_ENRICHMENT_OUTPUT
 
-    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Not all balancer v1 pools are created via the UI. This method decodes the events of such pools."""  # noqa: E501
         if context.tx_log.topics[0] not in (JOIN_V1, EXIT_V1, ERC20_OR_ERC721_TRANSFER):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_event_subtype, to_event_type, to_event_subtype, location_label = HistoryEventSubType.NONE, None, None, None  # noqa: E501
         if context.tx_log.topics[0] == JOIN_V1:
@@ -183,7 +183,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                 else f'Return {amount} {token.symbol} to a Balancer v1 pool'
             )
 
-        return DecodingOutput(action_items=[ActionItem(
+        return EvmDecodingOutput(action_items=[ActionItem(
             action='transform',
             from_event_type=from_event_type,
             from_event_subtype=from_event_subtype,

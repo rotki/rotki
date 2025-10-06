@@ -8,9 +8,9 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -60,14 +60,14 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         """
         return set()
 
-    def _decode_mint_and_burn(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_mint_and_burn(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode mint and burn events for monerium"""
         if context.transaction.tx_hash.hex() in self._v1_to_v2_migration_hashes():
             # stop processing the transaction if it is a migration from v1 to v2
-            return DecodingOutput(stop_processing=True)
+            return EvmDecodingOutput(stop_processing=True)
 
         if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_address = bytes_to_address(value=context.tx_log.topics[1])
         to_address = bytes_to_address(value=context.tx_log.topics[2])
@@ -116,7 +116,7 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 counterparty=CPT_MONERIUM,
             )
 
-        return DecodingOutput(
+        return EvmDecodingOutput(
             events=[event] if event is not None else None,
             refresh_balances=False,
             matched_counterparty=CPT_MONERIUM,

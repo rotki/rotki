@@ -9,9 +9,9 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -190,14 +190,14 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             transaction=transaction,
         )
 
-    def _decode_zap_deposits_and_withdrawals(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_zap_deposits_and_withdrawals(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes zap contract transactions that bundle token swaps with vault operations.
 
         Zap contracts allow users to deposit any token into a vault by automatically
         swapping it for the required LP tokens, or withdraw vault tokens as any desired token.
         """
         if context.tx_log.topics[0] != FULFILLED_ORDER_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amounts_and_assets = []
         for tx_log in context.all_logs:
@@ -221,7 +221,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             expected_amounts_and_assets=amounts_and_assets,
         )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         if (is_cache_updated := should_update_protocol_cache(

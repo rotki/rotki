@@ -31,11 +31,11 @@ from rotkehlchen.chain.evm.decoding.interfaces import (
     ReloadableCacheDecoderMixin,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     DecoderContext,
-    DecodingOutput,
     EnricherContext,
+    EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.constants.assets import A_CRV, A_CVX
@@ -84,16 +84,16 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         assert isinstance(self.cache_data[0], dict), 'ConvexDecoder cache_data[0] is not a dict'
         return self.cache_data[0]
 
-    def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], DecodingOutput]]:
+    def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], EvmDecodingOutput]]:
         return (self._decode_pool_events,)
 
-    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == REWARD_ADDED:
             return self._decode_compound_crv(context=context)
 
         return self._decode_gauge_events(context=context)
 
-    def _decode_compound_crv(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_compound_crv(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode compounding of CRV in convex pools"""
         for event in context.decoded_events:
             if (
@@ -105,9 +105,9 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.counterparty = CPT_CONVEX
                 event.notes = f'Claim {event.amount} {event.asset.resolve_to_crypto_asset().symbol} after compounding Convex pool'  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         Decode events in convex gauges:
         - deposits/withdrawals
@@ -202,7 +202,7 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                         event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
-        return DecodingOutput(
+        return EvmDecodingOutput(
             refresh_balances=found_event_modifying_balances,
             matched_counterparty=matched_counterparty,
         )

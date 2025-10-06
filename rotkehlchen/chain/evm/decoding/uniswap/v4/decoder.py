@@ -8,10 +8,10 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V4, UNISWAP_ICON
 from rotkehlchen.chain.evm.decoding.uniswap.utils import (
@@ -62,9 +62,9 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
         self.position_manager = position_manager
         self.universal_router = universal_router
 
-    def _decode_modify_liquidity(self, context: 'DecoderContext') -> 'DecodingOutput':
+    def _decode_modify_liquidity(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
         if context.tx_log.topics[0] != MODIFY_LIQUIDITY:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if len(pool_info := self.node_inquirer.call_contract(
             contract_address=self.position_manager,
@@ -73,7 +73,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
             arguments=[context.tx_log.topics[1][:25]],
         )) != 5:
             log.error(f'Unexpected response from Uniswap V4 Position Manager poolKeys call: {pool_info}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         lp_assets, has_native = [], False
         for raw_address in pool_info[:2]:
@@ -129,7 +129,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
                     amount=deposit_withdraw_event.amount,
                 )
 
-        return DecodingOutput(
+        return EvmDecodingOutput(
             matched_counterparty=CPT_UNISWAP_V4_LP,  # Trigger _lp_post_decoding
             action_items=[ActionItem(
                 action='transform',

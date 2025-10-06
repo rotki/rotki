@@ -9,8 +9,8 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
-    DecodingOutput,
+    DEFAULT_EVM_DECODING_OUTPUT,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -119,9 +119,9 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 event.notes = f'Spend {event.amount} {asset.symbol} as an {self.label} fee'
                 event.counterparty = self.counterparty
 
-    def _decode_incentives(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_incentives(self, context: 'DecoderContext') -> EvmDecodingOutput:
         if context.tx_log.topics[0] != REWARDS_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return self._decode_incentives_common(
             context=context,
@@ -388,7 +388,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 )
                 matched_asset_symbols = set()
 
-    def _collateral_swap(self, context: 'DecoderContext') -> DecodingOutput:
+    def _collateral_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decode a collateral swap event from aave.
 
         This swapped event logs the underlying token swapped. At this point we have decoded
@@ -398,7 +398,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         in the post decoding.
         """
         if context.tx_log.topics[0] != SWAPPED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         swapped_addr = bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
@@ -419,7 +419,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         else:
             log.error(f'Failed to find aave v3 collateral swap in {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # DecoderInterface methods
 

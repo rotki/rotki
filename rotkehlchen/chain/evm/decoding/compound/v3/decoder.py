@@ -10,10 +10,10 @@ from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
@@ -85,13 +85,13 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
 
         return self.underlying_tokens.get(compound_token)  # return from cached mapping
 
-    def decode_reward_claim(self, context: DecoderContext) -> DecodingOutput:
+    def decode_reward_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a compound v3 reward claiming"""
         if context.tx_log.topics[0] != REWARD_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[2])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         reward_token = get_or_create_evm_token(
             userdb=self.base.database,
@@ -110,7 +110,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 event.notes = f'Collect {event.amount} {reward_token.symbol} from compound'
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _correct_supply_or_withdraw_event(
             self,
@@ -135,7 +135,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
             self,
             context: DecoderContext,
             compound_token: 'EvmToken',
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Decode a compound v3 supply or repay event. Takes decoder context and
         the compound v3 wrapped token of the supplied/withdrawn underlying token."""
         if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
@@ -143,7 +143,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 f'At compound v3 supply/withdraw decoding of tx '
                 f'{context.transaction.tx_hash.hex()} the underlying token was not found.',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         receiving_ctoken = False
         for tx_log in context.all_logs:
@@ -198,7 +198,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 'At compound v3 supply/withdraw decoding of tx '
                 f'{context.transaction.tx_hash.hex()} the action item data was not found.',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # create an action item for the receive of the cTokens. It's possible that
         # there is no cToken received if you just supply collateral to the COMET contract
@@ -215,13 +215,13 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 paired_events_data=((paired_event,), True),
             ))
 
-        return DecodingOutput(action_items=action_items)
+        return EvmDecodingOutput(action_items=action_items)
 
     def _decode_withdraw_or_borrow_event(
             self,
             context: DecoderContext,
             compound_token: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Decode a compound v3 withdraw or borrow event. Takes decoder context and
         the compound v3 wrapped token of the withdrawn/borrowed underlying token."""
         if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
@@ -229,7 +229,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 f'At compound v3 supply/withdraw decoding of tx '
                 f'{context.transaction.tx_hash.hex()} the underlying token was not found.',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         may_wrap_eth = underlying_token.symbol == 'WETH' and self.node_inquirer.native_token == A_ETH  # noqa: E501
         sending_ctoken = False
@@ -293,13 +293,13 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 paired_events_data=((paired_event,), False),
             ))
 
-        return DecodingOutput(action_items=action_items)
+        return EvmDecodingOutput(action_items=action_items)
 
     def _decode_collateral_movement(
             self,
             context: DecoderContext,
             compound_token: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Decode compound v3 supply/withdraw collateral events"""
         collateral_asset = EvmToken(evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[3]),
@@ -350,20 +350,20 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 f'Could not find any compound v3 supply/withdraw collateral event in tx '
                 f'{context.transaction.tx_hash.hex()}.',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         context.decoded_events.append(collateral_event)
         maybe_reshuffle_events(
             events_list=context.decoded_events,
             ordered_events=[transfer_event, collateral_event],
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def decode_compound_token_movement(
             self,
             context: DecoderContext,
             compound_token: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Decode a compound v3 token movement"""
         if (
             context.tx_log.topics[0] not in {
@@ -374,7 +374,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 bytes_to_address(context.tx_log.topics[2]),  # to_address
             ]) is False
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == COMPOUND_V3_SUPPLY:
             return self._decode_supply_or_repay_event(

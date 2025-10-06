@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.chain.evm.decoding.extrafi.constants import CPT_EXTRAFI
 from rotkehlchen.chain.evm.decoding.extrafi.decoder import ExtrafiCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_OP
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -35,11 +35,11 @@ class ExtrafiDecoder(ExtrafiCommonDecoder):
             extra_token_identifier='eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8',
         )
 
-    def _handle_op_rewards(self, context: DecoderContext) -> DecodingOutput:
+    def _handle_op_rewards(self, context: DecoderContext) -> EvmDecodingOutput:
         """For a period of time extrafi gave/gives extra incentives for pool depositors by
         sending them directly to user addresses from their community fund"""
         if context.tx_log.topics[0] != b'fu<\xd25ei\xee\x08\x122\xe3\xbe\x89\t\xb9P\xe0\xa7l\x1f\x84`\xc3\xa5\xe3\xc2\xbe2\xb1\x1b\xed':  # SafeMultiSigTransaction # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # If this transaction appears in your history you most probably received an Optimism
         # incentive reward, so create an action item to find it and mark it appropriately
@@ -52,7 +52,7 @@ class ExtrafiDecoder(ExtrafiCommonDecoder):
             to_notes='Receive {amount} OP as a reward incentive for participating in an Extrafi pool',  # noqa: E501
             to_counterparty=CPT_EXTRAFI,
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return super().addresses_to_decoders() | {

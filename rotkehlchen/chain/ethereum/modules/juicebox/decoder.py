@@ -19,9 +19,9 @@ from rotkehlchen.chain.ethereum.modules.juicebox.constants import (
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.settings import CachedSettings
@@ -63,10 +63,10 @@ class JuiceboxDecoder(EvmDecoderInterface):
 
         return metadata.get('name'), metadata.get('tags', [])
 
-    def _decode_pay(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pay(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode pay with rewards in juicebox"""
         if context.tx_log.topics[0] != PAY_SIGNATURE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         try:
             topic_data, decoded_data = decode_event_data_abi_str(context.tx_log, PAY_ABI)
@@ -75,7 +75,7 @@ class JuiceboxDecoder(EvmDecoderInterface):
                 f'Failed to deserialize Juicebox event at '
                 f'{context.transaction.tx_hash.hex()} due to {e}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=decoded_data[2],
@@ -112,7 +112,7 @@ class JuiceboxDecoder(EvmDecoderInterface):
                 action_verb = 'donating' if is_donation else 'contributing'
                 event.notes = f'Receive an NFT for {action_verb} via Juicebox'
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

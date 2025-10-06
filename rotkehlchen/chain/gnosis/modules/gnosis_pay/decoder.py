@@ -6,9 +6,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     CPT_GNOSIS_PAY,
@@ -55,7 +55,7 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         self.gnosispay_api = init_gnosis_pay(self.base.database)
         return self.addresses_to_decoders()
 
-    def decode_cashback_events(self, context: DecoderContext) -> DecodingOutput:
+    def decode_cashback_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Cashback events are simple transfers from cashback collector to user's safe"""
         for event in context.decoded_events:
             if (
@@ -67,9 +67,9 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.CASHBACK
                 event.notes = f'Receive cashback of {event.amount} GNO from Gnosis Pay'
 
-        return DecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
+        return EvmDecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
 
-    def decode_referral_events(self, context: DecoderContext) -> DecodingOutput:
+    def decode_referral_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Referral events are simple transfers from the address to user's safe"""
         for event in context.decoded_events:
             if (
@@ -80,9 +80,9 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.notes = f'Receive referral reward of {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Gnosis Pay'  # noqa: E501
 
-        return DecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
+        return EvmDecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
 
-    def decode_refund_events(self, context: DecoderContext) -> DecodingOutput:
+    def decode_refund_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Refund events are simple transfers from spending collector's safe to user's safe"""
         for event in context.decoded_events:
             if (
@@ -106,11 +106,11 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 ):
                     event.notes = new_notes
 
-        return DecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
+        return EvmDecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
 
-    def decode_spend(self, context: DecoderContext) -> DecodingOutput:
+    def decode_spend(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != SPEND:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token = self.base.get_or_create_evm_token(
             address=bytes_to_address(context.tx_log.data[0:32]),
@@ -138,7 +138,7 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         else:
             log.error(f'Could not find gnosis pay spend event in {context.transaction}')
 
-        return DecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
+        return EvmDecodingOutput(matched_counterparty=CPT_GNOSIS_PAY)
 
     def _handle_post_processing(
             self,

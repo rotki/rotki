@@ -9,9 +9,9 @@ from rotkehlchen.chain.evm.decoding.kyber.decoder import (
     KyberCommonDecoder,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -63,9 +63,9 @@ class KyberDecoder(KyberCommonDecoder):
         destination_token = self.base.get_or_create_evm_asset(destination_token_address)
         return sender, source_token, destination_token
 
-    def _decode_legacy_trade(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_legacy_trade(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != KYBER_TRADE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         sender, source_asset, destination_asset = self._legacy_contracts_basic_info(context.tx_log)
         spent_amount_raw = int.from_bytes(context.tx_log.data[64:96])
@@ -82,11 +82,11 @@ class KyberDecoder(KyberCommonDecoder):
             counterparty=CPT_KYBER_LEGACY,
         )
 
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
-    def _decode_legacy_upgraded_trade(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_legacy_upgraded_trade(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != KYBER_TRADE_LEGACY:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         sender, source_asset, destination_asset = self._legacy_contracts_basic_info(context.tx_log)
         spent_amount_raw = int.from_bytes(context.tx_log.data[96:128])
@@ -103,7 +103,7 @@ class KyberDecoder(KyberCommonDecoder):
             counterparty=CPT_KYBER_LEGACY,
         )
 
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

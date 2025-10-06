@@ -6,9 +6,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, UNISWAP_ICON
 from rotkehlchen.chain.evm.decoding.uniswap.utils import decode_basic_uniswap_info
@@ -54,7 +54,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """
         Decodes only basic swap info. Basic swap info includes trying to find approval, spend and
         receive events for this particular swap but doesn't include ensuring order of events if the
@@ -87,7 +87,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if tx_log.topics[0] == UNISWAP_V2_SWAP_SIGNATURE:
             if transaction.to_address == self.router_address:
                 # If uniswap v2 router is used, then we can decode an entire swap.
@@ -108,7 +108,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             # and other properties should be decoded by the aggregator decoding methods later.
             return self._decode_basic_swap_info(tx_log=tx_log, decoded_events=decoded_events)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _maybe_decode_v2_liquidity_addition_and_removal(
             self,
@@ -118,7 +118,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if tx_log.topics[0] == MINT_TOPIC:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
@@ -145,7 +145,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
             )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

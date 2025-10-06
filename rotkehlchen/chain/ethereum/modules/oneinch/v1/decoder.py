@@ -6,9 +6,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -24,10 +24,10 @@ SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x8
 
 class Oneinchv1Decoder(EvmDecoderInterface):
 
-    def _decode_history(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_history(self, context: DecoderContext) -> EvmDecodingOutput:
         sender = bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(sender):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_token_address = bytes_to_address(context.tx_log.data[0:32])
         to_token_address = bytes_to_address(context.tx_log.data[32:64])
@@ -71,16 +71,16 @@ class Oneinchv1Decoder(EvmDecoderInterface):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
-    def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_swapped(self, context: DecoderContext) -> EvmDecodingOutput:
         """We use the Swapped event to get the fee kept by 1inch"""
         to_token_address = bytes_to_address(context.tx_log.topics[2])
         to_asset = self.base.get_or_create_evm_asset(to_token_address)
         to_raw = int.from_bytes(context.tx_log.data[32:64])
         fee_raw = int.from_bytes(context.tx_log.data[96:128])
         if fee_raw == 0:
-            return DEFAULT_DECODING_OUTPUT  # no need to do anything for zero fee taken
+            return DEFAULT_EVM_DECODING_OUTPUT  # no need to do anything for zero fee taken
 
         full_amount = asset_normalized_value(to_raw + fee_raw, to_asset)
         sender_address = None
@@ -94,7 +94,7 @@ class Oneinchv1Decoder(EvmDecoderInterface):
                 break
 
         if sender_address is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
@@ -107,15 +107,15 @@ class Oneinchv1Decoder(EvmDecoderInterface):
             amount=fee_amount,
             notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
         )
-        return DecodingOutput(events=[fee_event], process_swaps=True)
+        return EvmDecodingOutput(events=[fee_event], process_swaps=True)
 
-    def decode_action(self, context: DecoderContext) -> DecodingOutput:
+    def decode_action(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == HISTORY:
             return self._decode_history(context=context)
         if context.tx_log.topics[0] == SWAPPED:
             return self._decode_swapped(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

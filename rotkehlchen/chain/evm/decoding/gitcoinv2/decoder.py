@@ -28,10 +28,10 @@ from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import get_donation_event_params
 from rotkehlchen.constants.assets import A_ETH
@@ -142,7 +142,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
             asset: 'CryptoAsset',
             amount: FVal,
             payer_address: 'ChecksumEvmAddress',
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Common logic across Allocated and Voted events for the donator side
 
         sender_address: The original sender address
@@ -186,27 +186,27 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 counterparty=CPT_GITCOIN,
                 address=recipient_address,
             )
-            return DecodingOutput(events=[event])
+            return EvmDecodingOutput(events=[event])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_retro_funding_strategy(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_retro_funding_strategy(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == REGISTERED:
             return self._decode_registered(context)
         elif context.tx_log.topics[0] == FUNDS_DISTRIBUTED:
             return self._decode_funds_distributed(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_voting_merkle_distributor(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_voting_merkle_distributor(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == ALLOCATED:
             return self._decode_allocated(context)
         elif context.tx_log.topics[0] == REGISTERED:
             return self._decode_registered(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_registered(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_registered(self, context: DecoderContext) -> EvmDecodingOutput:
         try:
             topic_data, decoded_data = decode_event_data_abi(context.tx_log, REGISTERED_ABI)
         except DeserializationError as e:
@@ -214,10 +214,10 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 f'Failed to deserialize gitcoin registered event at '
                 f'{context.transaction.tx_hash.hex()} due to {e}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(sender := decoded_data[1]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         self.recipient_id_to_addr.add(  # store the recipient id to address mapping in the cache
             key=(recipient_id := topic_data[0]),
@@ -235,9 +235,9 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
             counterparty=CPT_GITCOIN,
             extra_data={'recipient_id': recipient_id},
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_allocated(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_allocated(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode the allocated events
 
         The problem with those is that the recipient address is not known and needs a contract
@@ -254,11 +254,11 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
             contract_address=context.tx_log.address,
         )) is None:
             log.error(f'Could not get recipient_address for recipient_id: {recipient_id}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         recipient_tracked = self.base.is_tracked(recipient_address)
         if not (origin_tracked := self.base.is_tracked(origin)) and not recipient_tracked:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token_address = bytes_to_address(context.tx_log.data[32:64])
         amount_raw = int.from_bytes(context.tx_log.data[:32])
@@ -305,11 +305,11 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 to_address=origin,
                 to_counterparty=CPT_GITCOIN,
             )
-            return DecodingOutput(action_items=[action_item])
+            return EvmDecodingOutput(action_items=[action_item])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_vote_action(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vote_action(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == VOTED_WITH_ORIGIN:
             donator = bytes_to_address(context.tx_log.data[64:96])
             return self._decode_voted(
@@ -327,7 +327,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 paying_contract_idx=3,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_voted(
             self,
@@ -335,12 +335,12 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
             donator: 'ChecksumEvmAddress',
             receiver_start_idx: int,
             paying_contract_idx: int,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         receiver = bytes_to_address(context.tx_log.data[receiver_start_idx:receiver_start_idx + 32])  # noqa: E501
         donator_tracked = self.base.is_tracked(donator)
         receiver_tracked = self.base.is_tracked(receiver)
         if donator_tracked is False and receiver_tracked is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # there is a discrepancy here between the 2 different Voted events
         paying_contract_address = bytes_to_address(context.tx_log.topics[paying_contract_idx])
@@ -377,9 +377,9 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_project_action(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_project_action(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == PROJECT_CREATED:
             project_id = int.from_bytes(context.tx_log.topics[1])
             owner = bytes_to_address(context.tx_log.topics[2])
@@ -395,7 +395,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 counterparty=CPT_GITCOIN,
                 address=context.tx_log.address,
             )
-            return DecodingOutput(events=[event])
+            return EvmDecodingOutput(events=[event])
         elif context.tx_log.topics[0] == METADATA_UPDATED:
             project_id = int.from_bytes(context.tx_log.topics[1])
             event = self.base.make_event_from_transaction(
@@ -410,11 +410,11 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 counterparty=CPT_GITCOIN,
                 address=context.tx_log.address,
             )
-            return DecodingOutput(events=[event])
+            return EvmDecodingOutput(events=[event])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_profile_created(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_profile_created(self, context: DecoderContext) -> EvmDecodingOutput:
         try:
             topic_data, decoded_data = decode_event_data_abi(context.tx_log, PROFILE_CREATED_ABI)
             profile_id = bytes_to_hexstr(topic_data[0])
@@ -423,7 +423,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 f'Failed to deserialize gitcoin profile created event at '
                 f'{context.transaction.tx_hash.hex()} due to {e}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         name = decoded_data[1]
         owner = decoded_data[3]
@@ -445,9 +445,9 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 'anchor': decoded_data[4],
             },
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_profile_metadata_updated(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_profile_metadata_updated(self, context: DecoderContext) -> EvmDecodingOutput:
         profile_id = bytes_to_hexstr(context.tx_log.topics[1])
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -461,19 +461,19 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
             counterparty=CPT_GITCOIN,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_profile_registry(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_profile_registry(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == PROFILE_CREATED:
             return self._decode_profile_created(context)
         elif context.tx_log.topics[0] == PROFILE_METADATA_UPDATED:
             return self._decode_profile_metadata_updated(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_round_action(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_round_action(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] not in (NEW_PROJECT_APPLICATION_2ARGS, NEW_PROJECT_APPLICATION_3ARGS):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         application_id = context.tx_log.topics[1].hex()
         event = self.base.make_event_from_transaction(
@@ -488,12 +488,12 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
             counterparty=CPT_GITCOIN,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_funds_distributed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_funds_distributed(self, context: DecoderContext) -> EvmDecodingOutput:
         grantee = bytes_to_address(context.tx_log.data[32:64])
         if self.base.is_tracked(grantee) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[0:32])
         token_address = bytes_to_address(context.tx_log.topics[1])
@@ -512,18 +512,18 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_payout_action(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_payout_action(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != FUNDS_DISTRIBUTED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return self._decode_funds_distributed(context)
 
-    def _decode_direct_allocated(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_direct_allocated(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode direct allocation strategy donations from gitcoin v2."""
         if context.tx_log.topics[0] != DIRECT_ALLOCATED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         recipient = bytes_to_address(context.tx_log.data[:32])
         amount = asset_normalized_value(
@@ -555,7 +555,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
                 event.event_type = new_type
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_GITCOIN
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         # if no event found, create action item (for native tokens sent as internal transactions)
         action_item = ActionItem(
@@ -569,7 +569,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
             to_notes=notes,
             to_counterparty=CPT_GITCOIN,
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
     # -- DecoderInterface methods
 

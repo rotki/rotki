@@ -16,10 +16,10 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.curve.lend.common import CurveBorrowRepayCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -108,14 +108,14 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
             ),
         )
 
-    def maybe_decode_leveraged_borrow(self, context: DecoderContext) -> DecodingOutput | None:
+    def maybe_decode_leveraged_borrow(self, context: DecoderContext) -> EvmDecodingOutput | None:
         """Decode events associated with creating a leveraged Curve position."""
         if (tokens_and_amounts := self._get_controller_event_tokens_and_amounts(
                 controller_address=(controller_address := context.tx_log.address),
                 context=context,
         )) is None:
             log.error(f'Failed to find tokens and amounts for Curve borrow transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         collateral_token, _, collateral_amount, _ = tokens_and_amounts
 
@@ -126,7 +126,7 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 contract_method='amm',
         )) is None:
             log.error(f'Failed to find AMM address for Curve crvUSD controller {controller_address} in transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Find the amounts of collateral transferred to the AMM.
         collateral_sent, borrowed_collateral_amount = None, None
@@ -155,7 +155,7 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
 
         if borrowed_collateral_amount is None:
             log.error(f'Failed to find borrowed amount for crvUSD leveraged loan in transaction {context.transaction!s}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Find the amount of collateral supplied by the user by subtracting the amount borrowed
         # from the total collateral increase.
@@ -181,11 +181,11 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 event.extra_data = {'controller_address': controller_address}
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_peg_keeper_update(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_peg_keeper_update(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] not in {PEG_KEEPER_PROVIDE_TOPIC, PEG_KEEPER_WITHDRAW_TOPIC}:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Get the pool address for this peg keeper (tx_log.address will be a valid key since this
         # function is called via the CRVUSD_PEG_KEEPERS_AND_POOLS mapping in addresses_to_decoders)
@@ -205,9 +205,9 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 break
         else:
             log.error(f'Failed to find reward amount for curve peg keeper update transaction {context.transaction!s}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DecodingOutput(action_items=[
+        return EvmDecodingOutput(action_items=[
             ActionItem(
                 action='transform',
                 from_event_type=HistoryEventType.RECEIVE,

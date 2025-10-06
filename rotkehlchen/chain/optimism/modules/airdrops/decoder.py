@@ -7,10 +7,10 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
@@ -46,7 +46,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
         )
         self.op_token = A_OP.resolve_to_evm_token()
 
-    def _decode_distributed_airdrop(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_distributed_airdrop(self, context: DecoderContext) -> EvmDecodingOutput:
         """This decodes airdrops sent directly to users by the OP Foundation:
         - Airdrop 1: For users who did not claim their allocation.
         - Airdrop 2 & 3: Automatically distributed, no claim required.
@@ -55,7 +55,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             bytes_to_address(context.tx_log.topics[1]) != OPTIMISM_FOUNDATION_ADDRESS and
             not self.base.is_tracked(bytes_to_address(context.tx_log.topics[2]))
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.transaction.to_address == string_to_evm_address('0xbE9a9B1B07f027130e56d8569d1aeA5dd5a86013'):  # noqa: E501
             airdrop_identifier, note_suffix = 'optimism_2', '2'
@@ -64,7 +64,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
         elif context.transaction.to_address == string_to_evm_address('0x4bd927E14f828e5862F166919Fd5091dA6ae44c0'):  # noqa: E501
             airdrop_identifier, note_suffix = 'optimism_3', '3'
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         context.action_items.append(ActionItem(
             action='transform',
@@ -81,7 +81,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             to_notes=f'Receive {amount} OP from the optimism airdrop {note_suffix}',
             extra_data={AIRDROP_IDENTIFIER_KEY: airdrop_identifier},
         ))
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

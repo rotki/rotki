@@ -24,12 +24,12 @@ from rotkehlchen.chain.evm.decoding.interfaces import (
     ReloadableCacheDecoderMixin,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
     EnricherContext,
+    EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.constants.assets import A_WETH, A_WETH_ARB, A_WETH_OPT
@@ -87,7 +87,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         assert isinstance(self.cache_data[0], dict), 'GearboxCommonDecoder cache_data[0] is not a dict'  # noqa: E501
         return self.cache_data[0]
 
-    def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], DecodingOutput]]:
+    def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], EvmDecodingOutput]]:
         return (self._decode_pool_events,)
 
     def _is_weth_pool(self, token: EvmToken) -> bool:
@@ -143,7 +143,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         action = 'providing liquidity' if asset.identifier in pool_info.lp_tokens else 'depositing'
         return f'Receive {amount} {asset.symbol_or_name()} after {action} in Gearbox'
 
-    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         Decode the deposit event done via Gearbox protocol. The ActionItem handles both the
         lp tokens (providing liquidity) and the farming pool (staking) token/event. The note for
@@ -151,7 +151,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         multiple lp tokens, they include their old lp tokens with the newer ones.
         """
         if (lp_data := self._decode_common(context)) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address, pool_info, amount, shares = lp_data
         found_receive_event = False
@@ -195,11 +195,11 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 ) for asset_id in pool_info.lp_tokens.union({pool_info.farming_pool_token})
             ]
 
-        return DecodingOutput(action_items=action_items)
+        return EvmDecodingOutput(action_items=action_items)
 
-    def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         if (lp_data := self._decode_common(context=context, address_offset=32)) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address, _, amount, shares = lp_data
         for event in context.decoded_events:
@@ -223,9 +223,9 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.counterparty = CPT_GEARBOX
                 event.notes = f'Return {event.amount} {event.asset.symbol_or_name()}'
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode the deposit and withdrawal events done via Gearbox protocol."""
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             return self._decode_deposit(context=context)
@@ -233,9 +233,9 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         if context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
             return self._decode_withdraw(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_stake(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_stake(self, context: DecoderContext) -> EvmDecodingOutput:
         user_address = bytes_to_address(context.tx_log.topics[1])
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -258,9 +258,9 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         else:
             log.error(f'Could not find matching spend event for {self.node_inquirer.chain_name} gearbox staking deposit {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_unstake(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_unstake(self, context: DecoderContext) -> EvmDecodingOutput:
         user_address = bytes_to_address(context.tx_log.data[:32])
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -282,16 +282,16 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         else:
             log.error(f'Could not find matching receive event for {self.node_inquirer.chain_name} gearbox unstaking withdrawal {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_staking_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT_GEAR:
             return self._decode_stake(context=context)
 
         if context.tx_log.topics[0] == CLAIM_GEAR_WITHDRAWAL:
             return self._decode_unstake(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _maybe_enrich_gearbox_claims(self, context: EnricherContext) -> TransferEnrichmentOutput:
         """Identifies and enriches Gearbox reward claims.

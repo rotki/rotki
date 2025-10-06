@@ -6,9 +6,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import SWAPPED_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -44,14 +44,14 @@ class FirebirdFinanceCommonDecoder(EvmDecoderInterface):
         )
         self.router_address = router_address
 
-    def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_swapped(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != SWAPPED_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         sender = bytes_to_address(context.tx_log.data[:32])
         receiver = bytes_to_address(context.tx_log.data[96:128])
         if self.base.any_tracked([sender, receiver]) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_token = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.data[32:64]))  # noqa: E501
         to_token = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.data[64:96]))
@@ -98,7 +98,7 @@ class FirebirdFinanceCommonDecoder(EvmDecoderInterface):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.router_address: (self._decode_swapped,)}

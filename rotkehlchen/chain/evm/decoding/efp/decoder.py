@@ -8,9 +8,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -85,22 +85,22 @@ class EfpCommonDecoder(EvmDecoderInterface, ABC):
             )
         return address
 
-    def _decode_list_op_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_list_op_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode EFP list operation events."""
         if context.tx_log.topics[0] != LIST_OP_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if (address := self._get_address_for_slot(
                 slot=int.from_bytes(context.tx_log.topics[1]),
         )) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(address):
             log.debug(
                 f'Skipping EFP list op event for untracked address {address} '
                 f'in transaction {context.transaction}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Decode list operation data. See https://docs.ethfollow.xyz/design/list-ops/
         data = context.tx_log.data[64:]
@@ -114,7 +114,7 @@ class EfpCommonDecoder(EvmDecoderInterface, ABC):
                 f'OpVersion: {op_version}, OpCode: {op_code}, '
                 f'RecordVersion: {record_version}, RecordType: {record_type}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         followed_address = bytes_to_address(b'\x00' * 12 + data[4:24])
         if op_code == 1:  # Follow
@@ -128,7 +128,7 @@ class EfpCommonDecoder(EvmDecoderInterface, ABC):
             tag = data[24:].rstrip(b'\x00').decode()
             notes = f'Remove {tag} tag from {followed_address} on EFP'
 
-        return DecodingOutput(events=[self.base.make_event_from_transaction(
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,

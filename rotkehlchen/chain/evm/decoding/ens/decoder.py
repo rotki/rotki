@@ -20,9 +20,9 @@ from rotkehlchen.chain.evm.decoding.ens.constants import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -65,9 +65,9 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
         self.suffix = suffix
         self.display_name = display_name
 
-    def _decode_name_transfer(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_name_transfer(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # The ENS contract doesn't implement the `symbol` and `name` methods so we must hardcode them here  # noqa: E501
         symbol, name = ('ENS', 'Ethereum Name Service') if self.counterparty == CPT_ENS else (None, None)  # noqa: E501
@@ -89,7 +89,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             transaction=context.transaction,
         )
         if transfer_event is None:  # Can happen if neither from/to is tracked
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         label_hash = f'0x{collectible_id:064x}'  # Transform the int token id to a 32 bytes hex label hash  # noqa: E501
         found_name = self._maybe_get_labelhash_name(context=context, label_hash=label_hash)
@@ -116,9 +116,9 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
 
         transfer_event.counterparty = self.counterparty
         transfer_event.notes = f'{verb} {self.display_name} name {name_to_show}{from_text}{to_text}'  # noqa: E501
-        return DecodingOutput(events=[transfer_event], refresh_balances=False)
+        return EvmDecodingOutput(events=[transfer_event], refresh_balances=False)
 
-    def _decode_new_resolver(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_new_resolver(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode event where address is set for an ENS name."""
         ens_name = self._get_name_to_show(node=context.tx_log.topics[1], context=context)
         suffix = ens_name if ens_name is not None else 'an ENS name'
@@ -138,15 +138,15 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             counterparty=self.counterparty,
             address=context.transaction.to_address,
         ))
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_new_owner(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_new_owner(self, context: DecoderContext) -> EvmDecodingOutput:
         if self.base.is_tracked(new_owner := bytes_to_address(context.tx_log.data[:32])):
             associated_address = new_owner
         elif self.base.is_tracked(context.transaction.from_address):
             associated_address = context.transaction.from_address
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         node_name = self._get_name_to_show(node=(node := context.tx_log.topics[1]), context=context)  # noqa: E501
         label_hash = '0x' + context.tx_log.topics[2].hex()
@@ -170,18 +170,18 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             address=context.tx_log.address,
             counterparty=self.counterparty,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
         """Decode event where address is set for an ENS name."""
         if context.tx_log.topics[0] == NEW_RESOLVER:
             return self._decode_new_resolver(context)
         elif context.tx_log.topics[0] == NEW_OWNER:
             return self._decode_new_owner(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
         """Decode an event that modifies a content hash for the public ENS resolver"""
         node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
         contract = self.node_inquirer.contracts.contract_by_address(address=context.tx_log.address)
@@ -192,7 +192,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
                 f'This should never happen. Please, '
                 f"open an issue in rotki's github repository.",
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)
         new_hash = result[1][0].hex()
@@ -224,16 +224,16 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             counterparty=self.counterparty,
             address=context.transaction.to_address,
         ))
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_addr_changed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_addr_changed(self, context: DecoderContext) -> EvmDecodingOutput:
 
         if self.base.is_tracked(new_address := bytes_to_address(context.tx_log.data[:32])):
             associated_address = new_address
         elif self.base.is_tracked(context.transaction.from_address):
             associated_address = context.transaction.from_address
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
         name = self._get_name_to_show(node=node, context=context)
@@ -250,9 +250,9 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             address=context.tx_log.address,
             counterparty=self.counterparty,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_ens_public_resolver_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_ens_public_resolver_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode events that modify the ENS resolver.
 
         For example, where a text property (discord, telegram, etc.) is set for an ENS name.
@@ -266,7 +266,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
 
         # else by now it should only be text attribute changes
         if context.tx_log.topics[0] not in (TEXT_CHANGED_KEY_ONLY, TEXT_CHANGED_KEY_AND_VALUE):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         try:
             _, decoded_data = decode_event_data_abi_str(
@@ -275,7 +275,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             )
         except DeserializationError as e:
             log.error(f'Failed to decode {self.display_name} set-text event in {context.transaction} due to {e!s}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         changed_key = decoded_data[0]
         new_value = decoded_data[1] if context.tx_log.topics[0] == TEXT_CHANGED_KEY_AND_VALUE else None  # noqa: E501
@@ -297,7 +297,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             counterparty=self.counterparty,
             address=context.transaction.to_address,
         ))
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     @abstractmethod
     def _maybe_get_labelhash_name(

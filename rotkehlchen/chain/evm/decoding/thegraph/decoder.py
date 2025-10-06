@@ -8,10 +8,10 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.misc import ZERO
@@ -66,7 +66,7 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
         self.token = native_asset.resolve_to_evm_token()
         self.staking_contract = staking_contract
 
-    def _decode_delegator_staking(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_delegator_staking(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == TOPIC_STAKE_DELEGATED:
             return self._decode_stake_delegated(context)
         elif context.tx_log.topics[0] == TOPIC_STAKE_DELEGATED_LOCKED:
@@ -74,7 +74,7 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
         elif context.tx_log.topics[0] == TOPIC_STAKE_DELEGATED_WITHDRAWN:
             return self._decode_stake_withdrawn(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def get_user_address(self, address: ChecksumEvmAddress, address_l2: ChecksumEvmAddress | None = None) -> ChecksumEvmAddress | None:  # noqa: E501
         """Get the user address (benficiary) from the vesting contract on L2 if it exists"""
@@ -91,11 +91,11 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
                 return None
         return address_l2 or address
 
-    def _decode_stake_delegated(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_stake_delegated(self, context: DecoderContext) -> EvmDecodingOutput:
         deposit_event, burn_event = None, None
         delegator = bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
         stake_amount = int.from_bytes(context.tx_log.data[:32])
@@ -140,7 +140,7 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
                         ordered_events=[deposit_event, burn_event],
                         events_list=context.decoded_events,
                     )
-                    return DecodingOutput(events=[burn_event])
+                    return EvmDecodingOutput(events=[burn_event])
                 break
 
         # Reset the LAST_GRAPH_DELEGATIONS_CHECK_TS to Timestamp(0) to ensure the task runs more
@@ -153,12 +153,12 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
                 value=Timestamp(0),
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_stake_locked(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_stake_locked(self, context: DecoderContext) -> EvmDecodingOutput:
         delegator = bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
         tokens_amount = int.from_bytes(context.tx_log.data[:32])
@@ -183,12 +183,12 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
             counterparty=CPT_THEGRAPH,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_stake_withdrawn(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_stake_withdrawn(self, context: DecoderContext) -> EvmDecodingOutput:
         delegator = bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
         tokens_amount_norm = token_normalized_value(
@@ -207,7 +207,7 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
             to_notes=f'Withdraw {tokens_amount_norm} GRT from indexer {indexer}',
             to_counterparty=CPT_THEGRAPH,
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
     # -- DecoderInterface methods
 

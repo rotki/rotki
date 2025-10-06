@@ -16,9 +16,9 @@ from rotkehlchen.chain.evm.decoding.quickswap.v3.constants import (
     QUICKSWAP_V3_NFT_MANAGER_ABI,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.utils import (
     decode_uniswap_v3_like_position_create_or_exit,
@@ -68,7 +68,7 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
         self.version_string = version_string
         self.wrapped_native_currency = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
 
-    def _decode_deposits_and_withdrawals(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposits_and_withdrawals(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == QUICKSWAP_INCREASE_LIQUIDITY_TOPIC:
             is_deposit = True
             amount0_raw = int.from_bytes(context.tx_log.data[64:96])
@@ -78,7 +78,7 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
             amount0_raw = int.from_bytes(context.tx_log.data[32:64])
             amount1_raw = int.from_bytes(context.tx_log.data[64:96])
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         position_id = int.from_bytes(context.tx_log.topics[1])
         try:
@@ -98,7 +98,7 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
                 f'Failed to query {self.counterparty} nft contract for '
                 f'position {position_id} due to {e!s}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return decode_uniswap_v3_like_deposit_or_withdrawal(
             context=context,

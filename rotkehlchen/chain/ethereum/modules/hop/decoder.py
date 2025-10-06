@@ -5,9 +5,9 @@ from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP, HOP_CPT_DETAIL
 from rotkehlchen.chain.evm.decoding.hop.decoder import HopCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -48,15 +48,15 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
             proposals_url='https://www.tally.xyz/gov/hop/proposal',
         )
 
-    def _decode_send_to_l2(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_send_to_l2(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != TRANSFER_TO_L2:
             return super()._decode_events(context=context)
 
         if self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[2])) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount_raw = int.from_bytes(context.tx_log.data[:32])
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
@@ -75,7 +75,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
                 )
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

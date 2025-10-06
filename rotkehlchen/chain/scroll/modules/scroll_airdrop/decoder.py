@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
+from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL, SCROLL_CPT_DETAILS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -16,7 +16,7 @@ from .constants import A_SCR, SCROLL_OFFCHAIN_TOKEN_DISTRIBUTOR, SCROLL_TOKEN_DI
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
-    from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+    from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
     from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
@@ -27,10 +27,10 @@ EXECUTION_SUCCESS_TOPIC: Final = b"D.q_bcF\xe8\xc5C\x81\x00-\xa6\x14\xf6+\xee\x8
 
 class ScrollAirdropDecoder(EvmDecoderInterface):
 
-    def _decode_airdop_claim(self, context: 'DecoderContext') -> 'DecodingOutput':
+    def _decode_airdop_claim(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
         """Decodes scroll SCR airdrop claim event."""
         if context.tx_log.topics[0] != CLAIMED_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address = bytes_to_address(context.tx_log.topics[1])
         amount = asset_normalized_value(
@@ -50,12 +50,12 @@ class ScrollAirdropDecoder(EvmDecoderInterface):
         else:
             log.error(f'Failed to find scroll airdrop claim event for {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_scroll_batch_airdrop(
             self,
             context: 'DecoderContext',
-    ) -> 'DecodingOutput':
+    ) -> 'EvmDecodingOutput':
         """Decodes SCR token airdrop claims from Scroll's offchain distributor.
 
         Handles batch distributions for GitHub/email-based claims that are processed
@@ -64,7 +64,7 @@ class ScrollAirdropDecoder(EvmDecoderInterface):
         See https://scroll-faqs.gitbook.io/faq#23-when-will-i-receive-my-scr-tokens-after-claiming
         """
         if context.tx_log.topics[0] != EXECUTION_SUCCESS_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
             if (
@@ -78,7 +78,7 @@ class ScrollAirdropDecoder(EvmDecoderInterface):
                 event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'scroll'}
                 event.notes = f'Receive {event.amount} SCR from scroll airdrop'
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

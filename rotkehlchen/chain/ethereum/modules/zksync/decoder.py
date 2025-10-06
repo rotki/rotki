@@ -4,9 +4,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_raw_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
@@ -22,7 +22,7 @@ PENDING_WITHDRAWALS_COMPLETE: Final = b'\x9bTx\xc9\x9b\\\xa4\x1b\xee\xc4\xf6\xf6
 
 class ZksyncDecoder(EvmDecoderInterface):
 
-    def _decode_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == ONCHAIN_DEPOSIT:
             user_address = bytes_to_address(context.tx_log.topics[1])
             return self._decode_deposit(context, user_address)
@@ -37,9 +37,9 @@ class ZksyncDecoder(EvmDecoderInterface):
         elif context.tx_log.topics[0] == PENDING_WITHDRAWALS_COMPLETE:
             return self._decode_withdrawal(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_deposit(self, context: DecoderContext, user_address: ChecksumEvmAddress) -> DecodingOutput:  # noqa: E501
+    def _decode_deposit(self, context: DecoderContext, user_address: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
         """Match a zksync lite deposit with the transfer to decode it
 
         TODO: This is now quite bad. We don't use the token id of zksync as we should.
@@ -68,9 +68,9 @@ class ZksyncDecoder(EvmDecoderInterface):
                 event.notes = f'Deposit {event.amount} {crypto_asset.symbol} to zksync'
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdrawal(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode zksync lite withdrawal event.
         The log event doesn't contain information about the withdrawn
         amount or token since there are multiple withdrawals bundled together
@@ -82,7 +82,7 @@ class ZksyncDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_ZKSYNC
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

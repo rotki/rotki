@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.constants import STAKED
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
@@ -28,10 +28,10 @@ log = RotkehlchenLogsAdapter(logger)
 
 class OmniDecoder(CliqueAirdropDecoderInterface):
 
-    def _decode_omni_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_omni_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         transfer_found = False
         if not (decode_result := self._decode_claim(context)):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claiming_address, claimed_amount = decode_result
         notes = f'Claim {claimed_amount} OMNI from the Omni genesis airdrop'
@@ -88,16 +88,16 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
             else:
                 log.error(f'Could not find stake event for an OMNI stake and claim action {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-            return DecodingOutput(events=[claim_event])
+            return EvmDecodingOutput(events=[claim_event])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_omni_stake(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_omni_stake(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != STAKED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         staked_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data),
@@ -120,7 +120,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 transfer_found = True
 
         if not transfer_found:  # it's claim and stake so transfer is direct from airdrop contract
-            return DecodingOutput(events=[self.base.make_event_from_transaction(
+            return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.STAKING,
@@ -133,7 +133,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 address=OMNI_STAKING_CONTRACT,
             )])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

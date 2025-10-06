@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.weth.constants import CHAIN_ID_TO_WETH_MAPPING, CPT_WETH
@@ -51,15 +51,15 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
         self.wrapped_token = wrapped_token
         self.counterparty = counterparty
 
-    def _decode_wrapper(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_wrapper(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
             return self._decode_deposit_event(context)
         elif context.tx_log.topics[0] == WETH_WITHDRAW_TOPIC:
             return self._decode_withdrawal_event(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit_event(self, context: DecoderContext) -> EvmDecodingOutput:
         deposited_amount_raw = int.from_bytes(context.tx_log.data[:32])
         deposited_amount = asset_normalized_value(
             amount=deposited_amount_raw,
@@ -81,7 +81,7 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
                 out_event = event
 
         if out_event is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         in_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -99,11 +99,11 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events + [in_event],
         )
-        return DecodingOutput(events=[in_event])
+        return EvmDecodingOutput(events=[in_event])
 
-    def _decode_withdrawal_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdrawal_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(withdrawer := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         withdrawn_amount_raw = int.from_bytes(context.tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(
@@ -123,7 +123,7 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
                 event.counterparty = self.counterparty
 
         if in_event is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         out_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -141,7 +141,7 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events + [out_event],
         )
-        return DecodingOutput(events=[out_event])
+        return EvmDecodingOutput(events=[out_event])
 
     # -- DecoderInterface methods
 

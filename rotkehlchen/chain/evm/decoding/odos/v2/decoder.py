@@ -6,9 +6,9 @@ from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.odos.common import OdosCommonDecoderBase
 from rotkehlchen.chain.evm.decoding.odos.v2.constants import CPT_ODOS_V2, SWAPMULTI_EVENT_ABI
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -39,7 +39,7 @@ class Odosv2DecoderBase(OdosCommonDecoderBase):
             router_address=router_address,
         )
 
-    def _decode_v2_swap(self, context: 'DecoderContext') -> 'DecodingOutput':
+    def _decode_v2_swap(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
         """Decodes swaps done using an Odos v2 router"""
         if context.tx_log.topics[0] == b'\x82>\xaf\x01\x00-sS\xfb\xca\xdb.\xa30\\\xc4o\xa3]y\x9c\xb0\x91HF\xd1\x85\xac\x06\xf8\xad\x05':  # swapCompact()  # noqa: E501
             # decode the single swap event structure
@@ -61,12 +61,12 @@ class Odosv2DecoderBase(OdosCommonDecoderBase):
                     f'Failed to deserialize Odos event {context.tx_log=} at '
                     f'{context.transaction} due to {e}',
                 )
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(decoded_data[0]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         input_tokens = self.base.resolve_tokens_data(token_amounts=decoded_data[1], token_addresses=decoded_data[2])  # noqa: E501
         output_tokens = self.base.resolve_tokens_data(token_amounts=decoded_data[3], token_addresses=decoded_data[4])  # noqa: E501

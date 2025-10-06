@@ -8,10 +8,10 @@ from rotkehlchen.chain.evm.decoding.constants import ERC4626_ABI
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.spark.decoder import SparkCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -55,12 +55,12 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
         self.psm_address = psm_address
         self.spark_savings_tokens = spark_savings_tokens
 
-    def _decode_psm_deposit_withdrawal(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_psm_deposit_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes PSM (Peg Stability Module) deposit and withdrawal events.
         PSM allows swapping between assets and their wrapped Spark Savings equivalents.
         """
         if context.tx_log.topics[0] != SWAP_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         asset_in = self.base.get_or_create_evm_token(bytes_to_address(context.tx_log.topics[1]))
         asset_out = self.base.get_or_create_evm_token(bytes_to_address(context.tx_log.topics[2]))
@@ -104,9 +104,9 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
                     event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     event.notes = f'Remove {amount_out} {asset_out.symbol} from Spark Savings'
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_spark_tokens_deposit_withdrawal(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_spark_tokens_deposit_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
         """Decodes deposit and withdrawal events for Spark tokens (e.g., sUSDC).
         Similar to PSM deposits/withdrawals but for direct token interactions.
         """
@@ -120,12 +120,12 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
                 for log in context.all_logs
             )
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(bytes_to_address(
                 value=context.tx_log.topics[2 if context.tx_log.topics[0] == DEPOSIT_TOPIC else 3],
         )):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         vault_token = self.base.get_or_create_evm_token(
             address=context.tx_log.address,
@@ -212,13 +212,13 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
                 to_counterparty=CPT_SPARK,
                 paired_events_data=([out_event] if out_event else [], True),
             ))
-            return DecodingOutput(action_items=action_items)
+            return EvmDecodingOutput(action_items=action_items)
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(action_items=action_items)
+        return EvmDecodingOutput(action_items=action_items)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoders = dict.fromkeys(self.spark_savings_tokens, (self._decode_spark_tokens_deposit_withdrawal,))  # noqa: E501

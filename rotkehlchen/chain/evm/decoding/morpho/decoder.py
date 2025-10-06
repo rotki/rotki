@@ -8,9 +8,9 @@ from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3, ZE
 from rotkehlchen.chain.evm.decoding.constants import REWARD_CLAIMED
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -263,7 +263,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         return spend_event, receive_event
 
-    def _decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vault_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode events from Morpho vaults."""
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             out_events, in_event = self._decode_deposit(context=context)
@@ -271,22 +271,22 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             out_event, in_event = self._decode_withdraw(context=context)
             out_events = [out_event] if out_event is not None else []
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if len(out_events) == 0 or in_event is None:
             log.error(f'Failed to find both out and in events for Morpho vault transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(
             ordered_events=out_events + [in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_reward_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_reward_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode Morpho vault reward claim event."""
         if context.tx_log.topics[0] != REWARD_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claimed_asset = self.base.get_or_create_evm_asset(
             address=bytes_to_address(context.tx_log.topics[2]),
@@ -305,7 +305,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         else:
             log.error(f'Failed to find Morpho reward claim event in {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _remove_unneeded_bundler_events(
             self,

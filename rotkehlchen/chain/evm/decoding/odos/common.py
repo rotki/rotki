@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants.misc import ZERO
@@ -129,7 +129,7 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
             sender: 'ChecksumEvmAddress',
             input_tokens: dict[str, FVal],
             output_tokens: dict[str, FVal],
-    ) -> 'DecodingOutput':
+    ) -> 'EvmDecodingOutput':
         """Decodes swaps done using an Odos v1/v2 router"""
         in_events, out_events = [], []
         for event in context.decoded_events:
@@ -177,4 +177,4 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
             ordered_events=out_events + in_events + fee_events,
             events_list=context.decoded_events,
         )
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)

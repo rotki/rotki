@@ -11,14 +11,14 @@ from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import (
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
+from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+    from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -55,16 +55,16 @@ class HyperliquidDecoder(EvmDecoderInterface):
 
         return decoded_events
 
-    def _process_withdrawal(self, context: 'DecoderContext') -> 'DecodingOutput':
+    def _process_withdrawal(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
         """Withdrawals are initiated on the UI and then a validator executes them by calling a
         method in the bridge contract. Multiple withdrawals can be batched
         in the same transaction.
         """
         if context.tx_log.topics[0] != FINALIZE_WITHDRAWAL:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -86,7 +86,7 @@ class HyperliquidDecoder(EvmDecoderInterface):
         else:
             log.error(f'Did not find hyperliquid withdrawal in {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {BRIDGE_ADDRESS: (self._process_withdrawal,)}

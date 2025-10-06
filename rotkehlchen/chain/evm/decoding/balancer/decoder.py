@@ -16,10 +16,10 @@ from rotkehlchen.chain.evm.decoding.interfaces import (
     ReloadablePoolsAndGaugesDecoderMixin,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -69,9 +69,9 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
         assert isinstance(self.cache_data[0], set), f'{self.counterparty} Decoder cache_data[0] is not a set'  # noqa: E501
         return self.cache_data[0]
 
-    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] not in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         gauge_asset = self.base.get_or_create_evm_token(context.tx_log.address)
         amount = asset_normalized_value(
@@ -112,7 +112,7 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Withdraw {amount} {evm_asset.symbol} from {self.counterparty} gauge'  # noqa: E501
 
-        return DecodingOutput(action_items=[] if paired_events_data is None else [
+        return EvmDecodingOutput(action_items=[] if paired_events_data is None else [
             ActionItem(
                 action='transform',
                 from_event_type=from_event_type,  # type: ignore[arg-type]  # it cannot be none if paired_events_data is present

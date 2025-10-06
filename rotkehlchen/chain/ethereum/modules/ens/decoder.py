@@ -9,9 +9,9 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
@@ -176,7 +176,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
 
         return found_name
 
-    def _decode_ens_registrar_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_ens_registrar_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] in (
             NAME_REGISTERED_SINGLE_COST,
             NAME_REGISTERED_BASE_COST_AND_PREMIUM,
@@ -186,9 +186,9 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         if context.tx_log.topics[0] == NAME_RENEWED:
             return self._decode_name_renewed(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_name_registered(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_name_registered(self, context: DecoderContext) -> EvmDecodingOutput:
         try:
             _, decoded_data = decode_event_data_abi_str(
                 context.tx_log,
@@ -196,7 +196,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
             )
         except DeserializationError as e:
             log.debug(f'Failed to decode ENS name registered event due to {e!s}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         fullname = _save_hash_mappings_get_fullname(name=decoded_data[0], tx_hash=context.transaction.tx_hash)  # noqa: E501
         if context.tx_log.topics[0] == NAME_REGISTERED_SINGLE_COST:
@@ -221,7 +221,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 if refund_from_registrar:
                     expected_amount = amount + refund_from_registrar
                 if event.amount != expected_amount:
-                    return DEFAULT_DECODING_OUTPUT  # registration amount did not match
+                    return DEFAULT_EVM_DECODING_OUTPUT  # registration amount did not match
 
                 event.amount = amount  # adjust the spent amount too, after refund
                 event.event_type = HistoryEventType.TRADE
@@ -249,14 +249,14 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 events_list=context.decoded_events,
             )
 
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
-    def _decode_name_renewed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_name_renewed(self, context: DecoderContext) -> EvmDecodingOutput:
         try:
             _, decoded_data = decode_event_data_abi_str(context.tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
             log.error(f'Failed to decode ENS name renewed event in {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         fullname = _save_hash_mappings_get_fullname(name=decoded_data[0], tx_hash=context.transaction.tx_hash)  # noqa: E501
         logged_cost = from_wei(decoded_data[1])  # logs msg.value for new controller and actual cost for old  # noqa: E501
@@ -284,7 +284,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
 
         if refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _get_name_to_show(self, node: bytes, context: DecoderContext) -> str | None:
         """Try to find the name associated with the ENS namehash/node that is being modified

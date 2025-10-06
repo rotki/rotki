@@ -12,9 +12,9 @@ from rotkehlchen.chain.evm.decoding.socket_bridge.constants import (
     GATEWAY_ADDRESS,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
@@ -49,9 +49,9 @@ class SocketBridgeDecoder(EvmDecoderInterface):
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
 
-    def _decode_bridged_asset(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_bridged_asset(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != BRIDGE_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount_raw = int.from_bytes(context.tx_log.data[0:32])
         token_address = bytes_to_address(context.tx_log.data[32:64])
@@ -93,7 +93,7 @@ class SocketBridgeDecoder(EvmDecoderInterface):
                     f'Bridge {amount} {bridged_asset.symbol} to {receiver} at {target_chain} using Socket'  # noqa: E501
                 )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

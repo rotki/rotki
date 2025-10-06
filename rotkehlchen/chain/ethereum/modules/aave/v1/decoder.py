@@ -7,9 +7,9 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -24,7 +24,7 @@ LIQUIDATION_CALL = b'V\x86GW\xfd[\x1f\xc9\xf3\x8f_:\x98\x1c\xd8\xaeQ,\xe4\x1b\x9
 
 class Aavev1Decoder(EvmDecoderInterface):
 
-    def _decode_pool_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT:
             return self._decode_deposit_event(context=context)
         if context.tx_log.topics[0] == REDEEM_UNDERLYING:
@@ -32,9 +32,9 @@ class Aavev1Decoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == LIQUIDATION_CALL:
             return self._decode_liquidation(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit_event(self, context: DecoderContext) -> EvmDecodingOutput:
         reserve_address = bytes_to_address(context.tx_log.topics[1])
         reserve_asset = self.base.get_or_create_evm_asset(reserve_address)
         user_address = bytes_to_address(context.tx_log.topics[2])
@@ -42,7 +42,7 @@ class Aavev1Decoder(EvmDecoderInterface):
         amount = asset_normalized_value(raw_amount, reserve_asset)
         atoken = asset_to_atoken(asset=reserve_asset, version=1)
         if atoken is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         deposit_event = receive_event = None
         for event in context.decoded_events:
@@ -68,9 +68,9 @@ class Aavev1Decoder(EvmDecoderInterface):
             ordered_events=[deposit_event, receive_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_redeem_underlying_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_redeem_underlying_event(self, context: DecoderContext) -> EvmDecodingOutput:
         reserve_address = bytes_to_address(context.tx_log.topics[1])
         reserve_asset = self.base.get_or_create_evm_asset(reserve_address)
         user_address = bytes_to_address(context.tx_log.topics[2])
@@ -78,7 +78,7 @@ class Aavev1Decoder(EvmDecoderInterface):
         amount = asset_normalized_value(raw_amount, reserve_asset)
         atoken = asset_to_atoken(asset=reserve_asset, version=1)
         if atoken is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         receive_event = return_event = interest_event = None
         for event in context.decoded_events:
@@ -105,14 +105,14 @@ class Aavev1Decoder(EvmDecoderInterface):
             ordered_events=[return_event, receive_event, interest_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_liquidation(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_liquidation(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         Decode AAVE v1 liquidations. When a liquidation happens the user returns the debt token.
         """
         if self.base.is_tracked(bytes_to_address(context.tx_log.topics[3])) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
             asset = event.asset.resolve_to_evm_token()
@@ -132,7 +132,7 @@ class Aavev1Decoder(EvmDecoderInterface):
                 event.notes = f'Interest payment of {event.amount} {asset.symbol} for aave-v1 position'  # noqa: E501
                 event.address = context.tx_log.address
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

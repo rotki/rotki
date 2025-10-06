@@ -5,9 +5,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import BASE_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -83,11 +83,11 @@ class BaseBridgeDecoder(EvmDecoderInterface):
                     counterparty=BASE_CPT_DETAILS,
                 )
 
-    def _decode_bridge_eth(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_bridge_eth(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes a bridging event for ETH. Either a deposit or a withdrawal."""
         if context.tx_log.topics[0] not in {TRANSACTION_DEPOSITED, WITHDRAWAL_FINALIZED}:
             # Make sure that we are decoding a supported event.
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Read information from event's topics & data
         if context.tx_log.topics[0] == TRANSACTION_DEPOSITED:
@@ -105,7 +105,7 @@ class BaseBridgeDecoder(EvmDecoderInterface):
             from_address=from_address,
             to_address=to_address,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

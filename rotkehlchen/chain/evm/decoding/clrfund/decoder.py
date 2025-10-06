@@ -14,9 +14,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import FUNDS_CLAIMED
 from rotkehlchen.chain.evm.decoding.interfaces import CommonGrantsDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -62,7 +62,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         )
         self.rounds_data = rounds_data
 
-    def _decode_funding_round_events(self, context: DecoderContext, name: str, asset: Asset) -> DecodingOutput:  # noqa: E501
+    def _decode_funding_round_events(self, context: DecoderContext, name: str, asset: Asset) -> EvmDecodingOutput:  # noqa: E501
         if context.tx_log.topics[0] == FUNDS_CLAIMED:
             return self._decode_matching_claim_common(
                 context=context,
@@ -77,11 +77,11 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         elif context.tx_log.topics[0] == b'M\x15MJ\xae!k\xedm\t&\xdbw\xc0\r\xf2\xb5|k[\xa4\xee\xe0Wu\xde \xfa\xce\xde:{':  # Contribution  # noqa: E501
             return self._decode_contribution(context=context, asset=asset.resolve_to_crypto_asset(), name=name)  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_voted(self, context: DecoderContext, name: str) -> DecodingOutput:
+    def _decode_voted(self, context: DecoderContext, name: str) -> EvmDecodingOutput:
         if not self.base.any_tracked([user := bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         new_event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -95,11 +95,11 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
             counterparty=CPT_CLRFUND,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[new_event])
+        return EvmDecodingOutput(events=[new_event])
 
-    def _decode_contribution(self, context: DecoderContext, asset: CryptoAsset, name: str) -> DecodingOutput:  # noqa: E501
+    def _decode_contribution(self, context: DecoderContext, asset: CryptoAsset, name: str) -> EvmDecodingOutput:  # noqa: E501
         if not self.base.any_tracked([sender := bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data),
@@ -123,20 +123,20 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         else:  # not found
             log.error(f'Failed to find clrfund donation event for {self.node_inquirer.chain_name} {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_recipient_registry(self, context: DecoderContext, name: str) -> DecodingOutput:
+    def _decode_recipient_registry(self, context: DecoderContext, name: str) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != b'\xbbJ\xd3\x18\xe5\x17\x03W\xf8\xe7\xd2]\xee\xfe\\\xf0+\xc8\x18,\xbb\x95`\x0c"\xa1\x10Yx\xa8\xf1\xb8':  # RequestSubmitted # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.any_tracked([recipient := bytes_to_address(context.tx_log.data[:32]), context.transaction.from_address]):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         try:  # using decode_event_data_abi_str since data contains a string
             _, decoded_data = decode_event_data_abi_str(context.tx_log, REQUEST_SUBMITTED_ABI)
         except DeserializationError as e:
             log.error(f'Failed to decode clrfund request submitted event due to {e!s} for {self.node_inquirer.chain_name} {context.transaction.tx_hash.hex()}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         jsondata, new_event = {}, None
         try:
@@ -171,7 +171,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                 address=context.tx_log.address,
             )
 
-        return DecodingOutput(events=[new_event] if new_event is not None else None)
+        return EvmDecodingOutput(events=[new_event] if new_event is not None else None)
 
     # -- DecoderInterface methods
 

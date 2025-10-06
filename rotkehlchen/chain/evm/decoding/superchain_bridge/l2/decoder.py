@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -55,7 +55,7 @@ class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
         self.native_assets = native_assets
         self.counterparty = counterparty
 
-    def _decode_receive_or_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_receive_or_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes a bridging event.
 
         Note:
@@ -66,7 +66,7 @@ class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
              https://docs.optimism.io/app-developers/bridging/custom-bridge
         """
         if context.tx_log.topics[0] not in {DEPOSIT_FINALIZED, WITHDRAWAL_INITIATED}:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Read information from event's topics & data
         l1_token_address = bytes_to_address(context.tx_log.topics[1])
@@ -91,7 +91,7 @@ class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
             except (UnknownAsset, WrongAssetType):
                 # can't call `notify_user`` since we don't have any particular event here.
                 log.error(f'Failed to resolve asset with address {l2_token_address} to an {self.node_inquirer.chain_name} token')  # noqa: E501
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = asset_normalized_value(asset=asset, amount=raw_amount)
 
@@ -126,7 +126,7 @@ class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
                     counterparty=self.counterparty,
                 )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

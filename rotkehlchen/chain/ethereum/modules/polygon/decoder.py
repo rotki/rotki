@@ -7,10 +7,10 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON, CPT_POLYGON_DETAILS
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH_MATIC, A_POL
@@ -34,14 +34,14 @@ MIGRATED = b'\x8b\x80\xbd\x19\xae\xa7\xb75\xbcmu\xdb\x8dj\xdb\xe1\x8b(\xc3\rb\xb
 class PolygonDecoder(EvmDecoderInterface):
     """General polygon related decoder for ethereum mainnet. For now matic->pol migration"""
 
-    def _decode_migration(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_migration(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a MATIC -> POL migration"""
         if context.tx_log.topics[0] != MIGRATED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         account = bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(account):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[:32])
         amount = token_normalized_value_decimals(raw_amount, 18)
@@ -61,7 +61,7 @@ class PolygonDecoder(EvmDecoderInterface):
             (HistoryEventType.SPEND, A_ETH_MATIC, HistoryEventSubType.SPEND, f'Migrate {amount} MATIC to POL'),  # noqa: E501
             (HistoryEventType.RECEIVE, A_POL, HistoryEventSubType.RECEIVE, f'Receive {amount} POL from MATIC->POL migration'),  # noqa: E501
         )]
-        return DecodingOutput(action_items=action_items, matched_counterparty=CPT_POLYGON)
+        return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_POLYGON)
 
     def _handle_post_decoding(
             self,

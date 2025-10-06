@@ -4,9 +4,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED, OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
@@ -21,13 +21,13 @@ OPTIMISM_TOKEN = string_to_evm_address('0x42000000000000000000000000000000000000
 
 class OptimismDecoder(EvmDecoderInterface):
 
-    def _decode_delegate_changed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_delegate_changed(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != DELEGATE_CHANGED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         delegator = bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(delegator):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         delegator_note = ''
         if delegator != context.transaction.from_address:
@@ -46,7 +46,7 @@ class OptimismDecoder(EvmDecoderInterface):
             counterparty=CPT_OPTIMISM,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

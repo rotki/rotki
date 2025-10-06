@@ -17,10 +17,10 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -37,16 +37,16 @@ log = RotkehlchenLogsAdapter(logger)
 
 class EchoDecoder(EvmDecoderInterface):
 
-    def _decode_fee_paid(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_fee_paid(self, context: DecoderContext) -> EvmDecodingOutput:
         """Transform transfer event to Echo fee event if Echo charged on-chain fee"""
         if (
             context.tx_log.topics[0] != FEE_PAID or
             not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1]))
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if fee_amount_from_input := int.from_bytes(context.transaction.input_data[36:68]) == 0:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         deal_address = bytes_to_address(context.transaction.input_data[68:100])
         raw_token_address = self.node_inquirer.call_contract(
@@ -84,9 +84,9 @@ class EchoDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find fee event for {self.node_inquirer.chain_name} for Echo funding tx {context.transaction}')  # noqa:E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _transform_refund(self, context: DecoderContext) -> DecodingOutput:
+    def _transform_refund(self, context: DecoderContext) -> EvmDecodingOutput:
         """Transform transfer event from echo full refund
            This will not track partial refund as it does not emit deregistered event
            Only 3 instance of those have happened https://dune.com/queries/4605517
@@ -96,7 +96,7 @@ class EchoDecoder(EvmDecoderInterface):
             context.tx_log.topics[0] != FUNDER_DEREGISTERED or
             not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2]))
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for tx_log in context.all_logs:
             if (
@@ -131,7 +131,7 @@ class EchoDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find refund event for {self.node_inquirer.chain_name} for Echo refund {context.transaction}')  # noqa:E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _process_funding(
             self,
