@@ -4,6 +4,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, overload
 
 import regex
+from solders.solders import Signature
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import (
@@ -221,7 +222,7 @@ class TokenEncounterInfo(NamedTuple):
     If should_notify is True then we will send a ws message with information
     about the new asset
     """
-    tx_hash: EVMTxHash | None = None
+    tx_hash: EVMTxHash | Signature | None = None
     description: str | None = None
     should_notify: bool = True
 
@@ -613,7 +614,7 @@ def _get_or_create_token(
                     data['is_ignored'] = True
                 if encounter is not None:
                     if encounter.tx_hash is not None:
-                        data['seen_tx_hash'] = encounter.tx_hash.hex()
+                        data['seen_tx_hash'] = str(encounter.tx_hash)
                     else:  # description should have been given
                         data['seen_description'] = encounter.description
 

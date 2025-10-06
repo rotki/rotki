@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable, Sequence
+from functools import partial
 from typing import TYPE_CHECKING, Final, TypeVar
 
 import gevent
@@ -9,6 +10,7 @@ from solana.rpc.api import Client
 from solders.pubkey import Pubkey
 from solders.solders import (
     LOOKUP_TABLE_META_SIZE,
+    Account,
     EncodedConfirmedTransactionWithStatusMeta,
     GetSignaturesForAddressResp,
     MessageAddressTableLookup,
@@ -35,7 +37,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain
-from rotkehlchen.utils.misc import bytes_to_solana_address
+from rotkehlchen.utils.misc import bytes_to_solana_address, get_chunks
 
 from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
 from .types import SolanaTransaction
@@ -52,6 +54,7 @@ INITIAL_BACKOFF: Final = 4
 BACKOFF_MULTIPLIER: Final = 2
 MAX_RETRIES: Final = 3
 SIGNATURES_PAGE_SIZE: Final = 1000
+MAX_ACCOUNTS_PER_REQUEST: Final = 100
 
 
 class SolanaInquirer(SolanaRPCMixin):
@@ -135,6 +138,30 @@ class SolanaInquirer(SolanaRPCMixin):
             raise RemoteError(f'Got empty response for raw solana account info for {pubkey!s}')
 
         return response.data
+
+    def get_raw_accounts_info(self, pubkeys: list[Pubkey]) -> dict[SolanaAddress, Account]:
+        """Query the raw accounts info for the given pubkeys.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        aggregated_response: dict[SolanaAddress, Account] = {}
+        for chunk in get_chunks(pubkeys, MAX_ACCOUNTS_PER_REQUEST):
+            if (response := self.query(
+                method=partial(lambda client, keys: client.get_multiple_accounts(keys), keys=list(chunk)),  # noqa: E501
+            ).value) is None:
+                raise RemoteError(f'Got empty response for raw solana accounts info for {chunk!s}')
+
+            if len(response) != len(chunk):
+                # shouldn't happen, rpc is expected to return one entry per input key
+                # preserving order and including None for non-existent accounts
+                # reference: https://solana.com/docs/rpc/http/getmultipleaccounts
+                raise RemoteError(
+                    f'Unexpected length mismatch from getMultipleAccounts, expected {len(chunk)} '
+                    f'items but got {len(response)}',
+                )
+
+            aggregated_response.update({SolanaAddress(str(addr)): info for addr, info in zip(pubkeys, response, strict=False) if info is not None})  # noqa: E501
+
+        return aggregated_response
 
     def get_token_mint_info(self, token_address: SolanaAddress) -> MintInfo | None:
         """Query the mint info for the given token address.

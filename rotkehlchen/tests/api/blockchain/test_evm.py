@@ -612,6 +612,7 @@ def test_adding_safe(rotkehlchen_api_server: 'APIServer') -> None:
     }
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
     initial_accounts_data, addies_to_start_with = [], [(SupportedBlockchain.ETHEREUM, addy := string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'), (label := 'rotki ens'))]  # noqa: E501

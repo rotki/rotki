@@ -2,13 +2,24 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from solders.solders import Signature
+from solders.solders import Account, Pubkey, Signature
 
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
 from rotkehlchen.chain.decoding.utils import decode_safely
+from rotkehlchen.chain.ethereum.utils import (
+    token_normalized_value,
+)
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
-from rotkehlchen.chain.solana.decoding.constants import NATIVE_TRANSFER_DELIMITER, SYSTEM_PROGRAM
+from rotkehlchen.chain.solana.decoding.constants import (
+    NATIVE_TRANSFER_DELIMITER,
+    SPL_TOKEN_PROGRAM,
+    SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS,
+    SPL_TOKEN_TRANSFER_DELIMITER,
+    SYSTEM_PROGRAM,
+    TOKEN_2022_PROGRAM,
+)
 from rotkehlchen.chain.solana.decoding.interfaces import SolanaDecoderInterface
 from rotkehlchen.chain.solana.decoding.structures import (
     SolanaDecoderContext,
@@ -25,14 +36,17 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
-from rotkehlchen.errors.misc import ModuleLoadingError
+from rotkehlchen.errors.misc import ModuleLoadingError, NotSPLConformant, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain
+from rotkehlchen.utils.misc import bytes_to_solana_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.chain.solana.transactions import SolanaTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -171,6 +185,119 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             counterparty=CPT_GAS,
         )
 
+    @staticmethod
+    def _identify_token_transfer(
+            instruction: SolanaInstruction,
+            transaction_signature: Signature,
+    ) -> tuple[SolanaAddress, SolanaAddress] | None:
+        """Identify token transfer instruction and extract their token account addresses."""
+        if not (
+            instruction.program_id in (SPL_TOKEN_PROGRAM, TOKEN_2022_PROGRAM) and
+            instruction.data[:1] in (SPL_TOKEN_TRANSFER_DELIMITER, *SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS) and  # noqa: E501
+            len(instruction.data) > 0
+        ):
+            return None
+
+        minimum_accounts, to_token_account_idx = 3, 1
+        if instruction.data[:1] in SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS:
+            minimum_accounts, to_token_account_idx = 4, 2
+
+        if len(instruction.accounts) < minimum_accounts:
+            log.error(
+                f'Skipping SPL token transfer in {transaction_signature}, '
+                f'expected at least {minimum_accounts} accounts but found {len(instruction.accounts)}',  # noqa: E501
+            )
+            return None
+
+        return instruction.accounts[0], instruction.accounts[to_token_account_idx]
+
+    def _fetch_token_accounts(
+            self,
+            transfers: list[tuple[SolanaAddress, SolanaAddress]],
+    ) -> dict[SolanaAddress, Account]:
+        """Fetch account info for all token accounts"""
+        unique_addresses = set()
+        for addresses in transfers:
+            unique_addresses.add(Pubkey.from_string(addresses[0]))
+            unique_addresses.add(Pubkey.from_string(addresses[1]))
+
+        # todo: derive the addresses programmatically before resorting to remote calls.
+        # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=130029049
+        try:
+            return self.node_inquirer.get_raw_accounts_info(list(unique_addresses))
+        except (DeserializationError, RemoteError) as e:
+            log.error(f'Failed to fetch token accounts for {unique_addresses} due to {e}')
+            return {}
+
+    def _maybe_decode_token_transfer(
+            self,
+            transaction: SolanaTransaction,
+            instruction: SolanaInstruction,
+            token_accounts: tuple[SolanaAddress, SolanaAddress],
+            accounts_data: dict[SolanaAddress, Account],
+    ) -> SolanaEvent | None:
+        """Decode transfer-like spl token instructions (spl-token and token-2022).
+        It supports:
+            - Transfer
+            - TransferChecked
+            - TransferCheckedWithFee
+
+        Both token programs share identical instruction layout, so we can safely extract
+        fields from known offsets. The instruction program and type are verified in
+        _identify_token_transfer() before this function is called, ensuring the data
+        structure matches the documented layout.
+
+        Reference:
+         * https://github.com/solana-program/token/blob/main/p-interface/src/instruction.rs
+         * https://github.com/solana-program/token-2022/blob/main/interface/src/instruction.rs
+        """
+        if (raw_amount := int.from_bytes(instruction.data[1:9], 'little')) == ZERO:
+            return None
+
+        try:
+            owners = []
+            for token_address in token_accounts:
+                if (account_data := accounts_data.get(token_address)) is None:
+                    log.error(f'Failed to find owner data for SPL token account {token_address} in transaction {transaction.signature}')  # noqa: E501
+                    return None
+
+                # Account data keeps the owner address in bytes 32..64 as per the SPL token layout.
+                owners.append(bytes_to_solana_address(account_data.data[32:64]))
+
+            # retrieve the mint address from the `from` associated token address.
+            mint_address = bytes_to_solana_address(accounts_data[token_accounts[0]].data[:32])
+        except (DeserializationError, RemoteError) as e:
+            log.error(
+                f'Failed to fetch SPL token account owners for ({token_accounts}) in '
+                f'transaction {transaction.signature} due to {e}',
+            )
+            return None
+
+        try:
+            spl_token = get_or_create_solana_token(
+                userdb=self.database,
+                address=mint_address,
+                solana_inquirer=self.node_inquirer,
+                encounter=TokenEncounterInfo(tx_hash=transaction.signature),
+            )
+        except NotSPLConformant as e:
+            log.error(
+                f'Failed to load SPL token {mint_address} in transaction '
+                f'{transaction.signature} due to {e}',
+            )
+            return None
+
+        return self._compose_transfer_event(
+            transaction=transaction,
+            amount=token_normalized_value(
+                token_amount=raw_amount,
+                token=spl_token,
+            ),
+            asset=spl_token,
+            from_address=owners[0],
+            to_address=owners[1],
+        )
+
     def _maybe_decode_native_transfer(
             self,
             transaction: SolanaTransaction,
@@ -187,16 +314,31 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             )
             return None
 
-        if (
-            (direction_result := self.base.decode_direction(
-                from_address=instruction.accounts[0],
-                to_address=instruction.accounts[1],
-            )) is None or
-            (raw_amount := int.from_bytes(instruction.data[4:12], byteorder='little')) == 0
-        ):
+        if (raw_amount := int.from_bytes(instruction.data[4:12], byteorder='little')) == ZERO:
             return None
 
-        amount = lamports_to_sol(raw_amount)
+        return self._compose_transfer_event(
+            transaction=transaction,
+            amount=lamports_to_sol(raw_amount),
+            asset=A_SOL,
+            from_address=instruction.accounts[0],
+            to_address=instruction.accounts[1],
+        )
+
+    def _compose_transfer_event(
+            self,
+            amount: FVal,
+            asset: 'Asset',
+            from_address: 'SolanaAddress',
+            to_address: 'SolanaAddress',
+            transaction: SolanaTransaction,
+    ) -> SolanaEvent | None:
+        if (direction_result := self.base.decode_direction(
+                from_address=from_address,
+                to_address=to_address,
+        )) is None:
+            return None
+
         event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
@@ -205,10 +347,10 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             timestamp=transaction.block_time,
             event_type=event_type,
             event_subtype=event_subtype,
-            asset=A_SOL,
+            asset=asset,
             amount=amount,
             location_label=location_label,
-            notes=f'{verb} {amount} SOL {preposition} {counterparty_or_address}',
+            notes=f'{verb} {amount} {asset.resolve_to_asset_with_symbol().symbol} {preposition} {counterparty_or_address}',  # noqa: E501
             counterparty=counterparty,
             address=address,
         )
@@ -225,6 +367,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         if (fee_event := self._maybe_decode_fee_event(transaction=transaction)) is not None:
             events.append(fee_event)
 
+        instructions_token_accounts = []
         # Decode basic transfer instructions so that the more complex decoding that runs later
         # can simply modify the already decoded transfer events.
         undecoded_instructions = []
@@ -236,7 +379,24 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 events.append(native_transfer_event)
                 continue
 
-            # TODO: also decode token transfers here
+            if (token_accounts := self._identify_token_transfer(
+                instruction=instruction,
+                transaction_signature=transaction.signature,
+            )) is not None:
+                instructions_token_accounts.append((instruction, token_accounts))
+                continue
+
+            undecoded_instructions.append(instruction)
+
+        accounts_data = self._fetch_token_accounts([val[1] for val in instructions_token_accounts])
+        for instruction, token_accounts in instructions_token_accounts:
+            if (transfer_event := self._maybe_decode_token_transfer(
+                transaction=transaction,
+                instruction=instruction,
+                token_accounts=token_accounts,
+                accounts_data=accounts_data,
+            )) is not None:
+                events.append(transfer_event)
 
             undecoded_instructions.append(instruction)
 
