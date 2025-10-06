@@ -51,11 +51,11 @@ def _add_transactions_to_db(
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> tuple[EVMTxHash, EVMTxHash, EVMTxHash]:
     """Add to the database transactions in different optimism and ethereum for testing"""
-    evmhash_opt = deserialize_evm_tx_hash('0x063d45910f29e0954a52aee39febba9be784d49af7588a590dc2fd7d156b4665')  # noqa: E501
-    evmhash_eth = deserialize_evm_tx_hash('0x3f313e90ed07044fdbb1016ff7986fd26adaeb05e8e9d3252ae0a8318cb8100d')  # noqa: E501
-    evmhash_eth_yabir = deserialize_evm_tx_hash('0x91016e7fb9f524449dd1a0b4faef9bc630e9c01c31b6d3383c94975269335afe')  # noqa: E501
+    tx_hash_opt = deserialize_evm_tx_hash('0x063d45910f29e0954a52aee39febba9be784d49af7588a590dc2fd7d156b4665')  # noqa: E501
+    tx_hash_eth = deserialize_evm_tx_hash('0x3f313e90ed07044fdbb1016ff7986fd26adaeb05e8e9d3252ae0a8318cb8100d')  # noqa: E501
+    tx_hash_eth_yabir = deserialize_evm_tx_hash('0x91016e7fb9f524449dd1a0b4faef9bc630e9c01c31b6d3383c94975269335afe')  # noqa: E501
     transaction_opt = L2WithL1FeesTransaction(
-        tx_hash=evmhash_opt,
+        tx_hash=tx_hash_opt,
         chain_id=ChainID.OPTIMISM,
         timestamp=Timestamp(1646375440),
         block_number=14318825,
@@ -70,7 +70,7 @@ def _add_transactions_to_db(
         l1_fee=455063072063200,
     )
     transaction_eth = EvmTransaction(
-        tx_hash=evmhash_eth,
+        tx_hash=tx_hash_eth,
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1646375440),
         block_number=14318825,
@@ -84,7 +84,7 @@ def _add_transactions_to_db(
         nonce=507,
     )
     transaction_eth_yabir = EvmTransaction(
-        tx_hash=evmhash_eth_yabir,
+        tx_hash=tx_hash_eth_yabir,
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1646375440),
         block_number=14318825,
@@ -105,7 +105,7 @@ def _add_transactions_to_db(
         dbevmtx.add_evm_transactions(cursor, [transaction_eth], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevmtx.add_evm_transactions(cursor, [transaction_eth_yabir], relevant_address=ethereum_accounts[1])  # noqa: E501
 
-    return evmhash_eth, evmhash_eth_yabir, evmhash_opt
+    return tx_hash_eth, tx_hash_eth_yabir, tx_hash_opt
 
 
 def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
@@ -210,14 +210,14 @@ def test_query_and_decode_transactions_works_with_different_chains(
     and the decoding of transactions using an instance of the EVMTransactionDecoder
     only decodes transactions from the correct chain.
     """
-    _, evmhash_eth_yabir, evmhash_opt = _add_transactions_to_db(database, ethereum_accounts)
+    _, tx_hash_eth_yabir, tx_hash_opt = _add_transactions_to_db(database, ethereum_accounts)
     dbevmtx = DBEvmTx(database)
     dbl2withl1feestx = DBL2WithL1FeesTx(database)
     assert len(dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None)) == 3
     eth_transactions.get_receipts_for_transactions_missing_them(addresses=[ethereum_accounts[0]])
-    assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_opt, evmhash_eth_yabir]  # noqa: E501
+    assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [tx_hash_opt, tx_hash_eth_yabir]  # noqa: E501
     optimism_transactions.get_receipts_for_transactions_missing_them()
-    assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_eth_yabir]  # noqa: E501
+    assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [tx_hash_eth_yabir]  # noqa: E501
 
     hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)  # noqa: E501
     assert len(hashes) == 1
@@ -331,14 +331,14 @@ def test_token_detection_after_decoding(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf4ae64c5c4fb632D0e0D77097b957941c399d26e']])
 def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
-    evmhash = deserialize_evm_tx_hash('0x42402dcf6658abaf2c47593a7ebe1264fb2f331de918239d1717a7a9d2996abf')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x42402dcf6658abaf2c47593a7ebe1264fb2f331de918239d1717a7a9d2996abf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1746615035000)),
             location=Location.ETHEREUM,
@@ -350,7 +350,7 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -370,14 +370,14 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x22d094Fb289DD45B02490F97b015891FD9d4C145']])
 def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_accounts):
-    evmhash = deserialize_evm_tx_hash('0x8419cf2c21e755a9a3e916749b8356beca49d85fb4fc31f7e5fbb7f36d21fe62')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x8419cf2c21e755a9a3e916749b8356beca49d85fb4fc31f7e5fbb7f36d21fe62')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1746793655000)),
             location=Location.ETHEREUM,
@@ -389,7 +389,7 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,

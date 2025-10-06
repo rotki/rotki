@@ -14,9 +14,8 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3800966F67ccBA1976F69D006374204fba56d240']])
 def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x6635d1e12fed1a95019a53e6f6495c586891bf7b41bccfc5838f9b1703a9c20c')  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x6635d1e12fed1a95019a53e6f6495c586891bf7b41bccfc5838f9b1703a9c20c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1634470709000)
     expected_events = [
         EvmEvent(

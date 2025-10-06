@@ -35,12 +35,12 @@ def test_send_bank_transfer(database, monerium_credentials):  # pylint: disable=
     """Test that sending a bank transfer on-chain via monerium is seen via their API
     and the periodic task identifies the event and properly annotates it"""
     dbevents = DBHistoryEvents(database)
-    evmhash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
     amount_str = '1500'
     user_address = '0x99a0618B846D43E29C15ac468Eae06d03C9243C7'
     timestamp = TimestampMS(1701765059000)
     event = EvmEvent(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         sequence_index=171,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -67,7 +67,7 @@ def test_send_bank_transfer(database, monerium_credentials):  # pylint: disable=
         new_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
-                tx_hashes=[evmhash],
+                tx_hashes=[tx_hash],
             ),
         )
     assert new_events == [event]
@@ -77,12 +77,12 @@ def test_receive_bank_transfer(database, monerium_credentials):  # pylint: disab
     """Test that receiving a bank transfer on-chain via monerium is seen via their API
     and the periodic task identifies the event and properly annotates it"""
     dbevents = DBHistoryEvents(database)
-    evmhash = deserialize_evm_tx_hash(val='0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash(val='0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74')  # noqa: E501
     amount_str = '1500'
     user_address = '0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da'
     timestamp = TimestampMS(1701765059000)
     event = EvmEvent(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         sequence_index=113,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -109,7 +109,7 @@ def test_receive_bank_transfer(database, monerium_credentials):  # pylint: disab
         new_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
-                tx_hashes=[evmhash],
+                tx_hashes=[tx_hash],
             ),
         )
     assert new_events == [event]

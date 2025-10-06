@@ -17,16 +17,15 @@ def test_zksync_lite_legacy_deposit(ethereum_inquirer, ethereum_accounts):
     Test a transaction with the OnChainDeposit event which is missing
     from the newest implementation of the proxy address
     """
-    tx_hex = deserialize_evm_tx_hash('0x6740ba7d674c285ce315b97dffdbf2cf91f74a2b75fba6fd82b3e0e5c8057218')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x6740ba7d674c285ce315b97dffdbf2cf91f74a2b75fba6fd82b3e0e5c8057218')  # noqa: E501
     timestamp = TimestampMS(1607624823000)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_str = '0.003633546'
     dai_str = '9.4361'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -38,7 +37,7 @@ def test_zksync_lite_legacy_deposit(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=270,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -59,16 +58,15 @@ def test_zksync_lite_legacy_deposit(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
 def test_zksync_lite_deposit(ethereum_inquirer, ethereum_accounts):
     """Test a transaction with the Deposit event"""
-    tx_hex = deserialize_evm_tx_hash('0x041514c879ae6f4f36c44000270ce482798502be230865911d1013978f4bcb87')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x041514c879ae6f4f36c44000270ce482798502be230865911d1013978f4bcb87')  # noqa: E501
     timestamp = TimestampMS(1639578202000)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_str = '0.007252433740671543'
     dai_str = '18.4614'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -80,7 +78,7 @@ def test_zksync_lite_deposit(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=139,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -101,13 +99,13 @@ def test_zksync_lite_deposit(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
     """Test a transaction with the Withdrawal event"""
-    evmhash = deserialize_evm_tx_hash('0x234407968b9a688be3fb37cf7ff8ef3b4168d6cd85ec45b8344bb2a88832f982')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x234407968b9a688be3fb37cf7ff8ef3b4168d6cd85ec45b8344bb2a88832f982')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, eth_str, dai_str, pan_str, usdc_str, usdt_str = TimestampMS(1604326368000), '1.4437093', '1691.92749999', '1586.6', '57.25', '15.2'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -120,7 +118,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=176,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -133,7 +131,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=177,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -146,7 +144,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=178,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -159,7 +157,7 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_ZKSYNC,
             address=ZKSYNC_BRIDGE,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=179,
             timestamp=timestamp,
             location=Location.ETHEREUM,

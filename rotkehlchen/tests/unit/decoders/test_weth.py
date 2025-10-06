@@ -42,14 +42,13 @@ def test_weth_deposit(ethereum_inquirer):
     Data for deposit is taken from
     https://etherscan.io/tx/0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf
     """
-    tx_hex = '0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf'
+    tx_hash = deserialize_evm_tx_hash('0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf')  # noqa: E501
     timestamp = TimestampMS(1666256147000)
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -61,7 +60,7 @@ def test_weth_deposit(ethereum_inquirer):
             notes='Burn 0.00057313513694104 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -74,7 +73,7 @@ def test_weth_deposit(ethereum_inquirer):
             counterparty=CPT_WETH,
             address=WETH_MAINNET_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -98,14 +97,13 @@ def test_weth_withdrawal(ethereum_inquirer):
     Data for withdrawal is taken from
     https://etherscan.io/tx/0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07
     """
-    tx_hex = '0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07')  # noqa: E501
     timestamp = TimestampMS(1666256147000)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -117,7 +115,7 @@ def test_weth_withdrawal(ethereum_inquirer):
             notes='Burn 0.00062372398538032 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -130,7 +128,7 @@ def test_weth_withdrawal(ethereum_inquirer):
             counterparty=CPT_WETH,
             address=WETH_MAINNET_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -154,14 +152,13 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     Data for deposit is taken from
     https://etherscan.io/tx/0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9
     """
-    tx_hex = '0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9'
+    tx_hash = deserialize_evm_tx_hash('0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9')  # noqa: E501
     timestamp = TimestampMS(1666595591000)
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 4
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -173,7 +170,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             notes='Burn 0.004777703202235758 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -186,7 +183,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=187,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -210,7 +207,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         evm_inquirer=ethereum_inquirer,
     )
     assert events[3] == EvmEvent(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         sequence_index=191,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -232,14 +229,13 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
     Data for deposit is taken from
     https://etherscan.io/tx/0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167
     """
-    tx_hex = '0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167'
+    tx_hash = deserialize_evm_tx_hash('0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167')  # noqa: E501
     timesatmp = TimestampMS(1666284551000)
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timesatmp,
             location=Location.ETHEREUM,
@@ -266,7 +262,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=243,
             timestamp=timesatmp,
             location=Location.ETHEREUM,
@@ -290,14 +286,13 @@ def test_weth_interaction_errors(ethereum_inquirer):
     Check that if no out event occurs, an in event should not be created for deposit event
     https://etherscan.io/tx/0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d
     """
-    tx_hex = '0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d'
+    tx_hash = deserialize_evm_tx_hash('0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d')  # noqa: E501
     timestamp = TimestampMS(1666800983000)
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -309,7 +304,7 @@ def test_weth_interaction_errors(ethereum_inquirer):
             notes='Burn 0.003535483550478045 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -321,7 +316,7 @@ def test_weth_interaction_errors(ethereum_inquirer):
             notes='Send 0.06693824468797216 ETH to 0xe66B31678d6C16E9ebf358268a790B763C133750',
             address=string_to_evm_address('0xe66B31678d6C16E9ebf358268a790B763C133750'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             timestamp=timestamp,
             sequence_index=181,
             location=Location.ETHEREUM,
@@ -448,16 +443,16 @@ def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xBE6660FBE96B61B72Bf35FFaB40eB2CA886A7f85']])
 def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
-    evmhash = deserialize_evm_tx_hash('0xc19c7e1e0af7819b1922a287d034540e8f8dba4e065317d6483d48ac27e727e9')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xc19c7e1e0af7819b1922a287d034540e8f8dba4e065317d6483d48ac27e727e9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1712238368000)
     amount, gas_fees = '0.00052', '0.00000108547'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -469,7 +464,7 @@ def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -482,7 +477,7 @@ def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts
             counterparty=CPT_WETH,
             address=WETH_ARB_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -502,15 +497,15 @@ def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x7aBAee8F04EFd689961115f7A28bAA2E73Be6703']])
 def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
-    evmhash = deserialize_evm_tx_hash('0x57cc837c6f3d84c8fa3db8a7405f7244f11d32152159edf5ba79f5a7c34919b8')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x57cc837c6f3d84c8fa3db8a7405f7244f11d32152159edf5ba79f5a7c34919b8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     user, amount, gas_fees, timestamp = arbitrum_one_accounts[0], '0.007767825959188763', '0.000001382891214', TimestampMS(1712328694000)  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -522,7 +517,7 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -535,7 +530,7 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
             counterparty=CPT_WETH,
             address=WETH_ARB_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -555,13 +550,13 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
 @pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x81aa5101D4c376cd6DC031EA62D7b64A9BAE10a0']])
 def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
-    evmhash = deserialize_evm_tx_hash('0x4a6b47e1f622a8ad059bd0723c53f2c71f12e7b105d2ef2ff4dff07ac1f185c0')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x4a6b47e1f622a8ad059bd0723c53f2c71f12e7b105d2ef2ff4dff07ac1f185c0')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712240095000)
     amount, gas_fees = '0.000518962654328944', '0.000001897927938075'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -573,7 +568,7 @@ def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -586,7 +581,7 @@ def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
             counterparty=CPT_WETH,
             address=WETH_OP_BASE_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -606,13 +601,13 @@ def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0xD6f30247e6a8B8656a8B02Ea37247f5eb939c626']])
 def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
-    evmhash = deserialize_evm_tx_hash('0x42074e2228be1716f84888f1993fa62443f591945b21dfbf159a64ae467990c4')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x42074e2228be1716f84888f1993fa62443f591945b21dfbf159a64ae467990c4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712241853000)
     amount, gas_fees = '0.0345', '0.000002820767318933'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -624,7 +619,7 @@ def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -637,7 +632,7 @@ def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
             counterparty=CPT_WETH,
             address=WETH_OP_BASE_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -657,13 +652,13 @@ def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0x6247666Ea4C80083035214780978E9EBa4AA6Cf4']])
 def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts):
-    evmhash = deserialize_evm_tx_hash('0x88f49633073a7667f93eb888ec2151c26f449cc10afca565a15f8df68ee20f82')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x88f49633073a7667f93eb888ec2151c26f449cc10afca565a15f8df68ee20f82')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239879000)
     amount, gas_fees = '0.00211824', '0.000194659253936861'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -675,7 +670,7 @@ def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -688,7 +683,7 @@ def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts):
             counterparty=CPT_WETH,
             address=WETH_SCROLL_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -708,13 +703,13 @@ def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0xdFd21F8aA81c5787160F9a4B39357F5FE1c743DC']])
 def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts):
-    evmhash = deserialize_evm_tx_hash('0x1fa6d87801891fcea66a9be2d4fce1c52569c5ce30579fbe7de37eb05bd247f8')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x1fa6d87801891fcea66a9be2d4fce1c52569c5ce30579fbe7de37eb05bd247f8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239897000)
     amount, gas_fees = '0.135', '0.000199290832110225'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -726,7 +721,7 @@ def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -739,7 +734,7 @@ def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts):
             counterparty=CPT_WETH,
             address=WETH_SCROLL_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=17,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -759,13 +754,13 @@ def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('base_accounts', [['0x44f29ebE386c409376C66ad268F9Ae595c8C3e76']])
 def test_weth_withdraw_base(base_inquirer, base_accounts):
-    evmhash = deserialize_evm_tx_hash('0x8d54608c2f684d880ad40a16cf9b82525c51520798ae8875d543d3338327ddad')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x8d54608c2f684d880ad40a16cf9b82525c51520798ae8875d543d3338327ddad')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239837000)
     amount, gas_fees = '0.00022448658511341', '0.000000533995613184'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -777,7 +772,7 @@ def test_weth_withdraw_base(base_inquirer, base_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
@@ -790,7 +785,7 @@ def test_weth_withdraw_base(base_inquirer, base_accounts):
             counterparty=CPT_WETH,
             address=WETH_OP_BASE_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -810,13 +805,13 @@ def test_weth_withdraw_base(base_inquirer, base_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('base_accounts', [['0xf396e7dbb20489D47F2daBfDA013163223B892a0']])
 def test_weth_deposit_base(base_inquirer, base_accounts):
-    evmhash = deserialize_evm_tx_hash('0x0d418e4a858ca5faf00c36b685561ca0fdac52ebd10364bf2cb6d7b5969e84e5')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x0d418e4a858ca5faf00c36b685561ca0fdac52ebd10364bf2cb6d7b5969e84e5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239899000)
     amount, gas_fees = '1.2', '0.000000775794575663'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -828,7 +823,7 @@ def test_weth_deposit_base(base_inquirer, base_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
@@ -841,7 +836,7 @@ def test_weth_deposit_base(base_inquirer, base_accounts):
             counterparty=CPT_WETH,
             address=WETH_OP_BASE_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -861,16 +856,16 @@ def test_weth_deposit_base(base_inquirer, base_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x33C0Aae5b2b6Eae2a6286B3a6621B55DcC02dC9e']])
 def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
-    evmhash = deserialize_evm_tx_hash('0xba581391d417a6dcc31031f1cf7cba6e63b701a8680828445ffdde73777843e1')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xba581391d417a6dcc31031f1cf7cba6e63b701a8680828445ffdde73777843e1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1712851902000)
     amount, gas_fees = '119.97566999849747', '0.007112105381183941'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -882,7 +877,7 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -895,7 +890,7 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             counterparty=CPT_WMATIC,
             address=WMATIC_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -915,16 +910,16 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xdAA9E3CA7500d7Ba3855dF9d8BCCde229C13919e']])
 def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
-    evmhash = deserialize_evm_tx_hash('0xe90ed71875ff44ea45ea960d006ec4c0ccb86506cba494471aba4ba9dc86123f')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xe90ed71875ff44ea45ea960d006ec4c0ccb86506cba494471aba4ba9dc86123f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1712851796000)
     amount, gas_fees = '4.9750995', '0.007687202027240021'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -936,7 +931,7 @@ def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
             notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -949,7 +944,7 @@ def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
             counterparty=CPT_WMATIC,
             address=WMATIC_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.POLYGON_POS,

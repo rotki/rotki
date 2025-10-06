@@ -149,13 +149,12 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa931b486F661540c6D709aE6DfC8BcEF347ea437']])
 def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0xcbe558177f62ccdb77f59b6be11e60b0a3fed1d224d5ce28d2bb6dff59447d3b')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xcbe558177f62ccdb77f59b6be11e60b0a3fed1d224d5ce28d2bb6dff59447d3b')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
@@ -167,7 +166,7 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.003227029072809172 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
@@ -179,7 +178,7 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             notes='Set MPL spending approval of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 by 0x617Dee16B86534a5d792A4d7A62FB491B544111E to 115792089237316195423570985008687907853269984665640564039436.930578017129639935',  # noqa: E501
             address=string_to_evm_address('0x617Dee16B86534a5d792A4d7A62FB491B544111E'),
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
@@ -191,7 +190,7 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7b28470032DA06051f2E620531adBAeAdb285408'),
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=3,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
@@ -372,10 +371,10 @@ def test_uniswap_v2_swap_events_order(
     It checks that an approval event does not come between trade events.
     """
     tx_hash = '0xec15324d55274d9ad3181ed2f29d29e9812841e5e79aa9228a0f3ef4d3ce8d2c'
-    evmhash = deserialize_evm_tx_hash(tx_hash)
+    tx_hash = deserialize_evm_tx_hash(tx_hash)
     user_address = ethereum_accounts[0]
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1672784687),
         block_number=16329226,
@@ -389,7 +388,7 @@ def test_uniswap_v2_swap_events_order(
         nonce=2,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -495,7 +494,7 @@ def test_uniswap_v2_swap_events_order(
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
             sequence_index=0,
@@ -507,7 +506,7 @@ def test_uniswap_v2_swap_events_order(
             notes='Burn 0.00468942 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
             sequence_index=33,
@@ -520,7 +519,7 @@ def test_uniswap_v2_swap_events_order(
             counterparty=None,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
             sequence_index=34,
@@ -532,7 +531,7 @@ def test_uniswap_v2_swap_events_order(
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
             sequence_index=35,
@@ -552,13 +551,12 @@ def test_uniswap_v2_swap_events_order(
 @pytest.mark.parametrize('ethereum_accounts', [['0xbcce162c23480a4d44b88F57D5D2D9997402010e']])
 def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
     """Test that removing liquidity as weth gets correctly decoded"""
-    tx_hex = deserialize_evm_tx_hash('0x00007120e5281e9bdf9a57739e3ecaf736013e4a1a31ecfe44f719c229cc2cbd')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x00007120e5281e9bdf9a57739e3ecaf736013e4a1a31ecfe44f719c229cc2cbd')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1615943669000),
             location=Location.ETHEREUM,
@@ -571,7 +569,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=238,
             timestamp=TimestampMS(1615943669000),
             location=Location.ETHEREUM,
@@ -584,7 +582,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=240,
             timestamp=TimestampMS(1615943669000),
             location=Location.ETHEREUM,
@@ -598,7 +596,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
             extra_data={'pool_address': '0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'},
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=241,
             timestamp=TimestampMS(1615943669000),
             location=Location.ETHEREUM,
@@ -619,15 +617,14 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3163Bb273E8D9960Ce003fD542bF26b4C529f515']])
 def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x0e50e7374e0ffbe0aea82dbe94a04ab0da3981f3bfb1a66927eb250c7aff29e3')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x0e50e7374e0ffbe0aea82dbe94a04ab0da3981f3bfb1a66927eb250c7aff29e3')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1600446008000)
     gas_amount, claimed_amount = '0.027890731101011885', '408.638074'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -640,7 +637,7 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=163,
             timestamp=timestamp,
             location=Location.ETHEREUM,
