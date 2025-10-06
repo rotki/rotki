@@ -119,6 +119,8 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
                 event.asset == self.base_asset
             ):
                 in_event = event
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Receive {withdrawn_amount} {self.base_asset.symbol}'
                 event.counterparty = self.counterparty
 
