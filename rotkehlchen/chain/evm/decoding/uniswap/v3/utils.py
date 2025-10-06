@@ -183,7 +183,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
             chain_id=evm_inquirer.chain_id,
             token_kind=TokenKind.ERC20,
             evm_inquirer=evm_inquirer,
-            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
+            encounter=TokenEncounterInfo(tx_ref=context.transaction.tx_hash),
         )
         resolved_assets_and_amounts.append(CryptoAssetAmount(
             asset=token_with_data,

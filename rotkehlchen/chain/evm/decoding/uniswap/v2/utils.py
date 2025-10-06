@@ -84,7 +84,7 @@ def decode_uniswap_v2_like_swap(
         chain_id=evm_inquirer.chain_id,
         token_kind=TokenKind.ERC20,
         evm_inquirer=evm_inquirer,
-        encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
+        encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
     )
 
     if pool_token.symbol in exclude_amms.values():
@@ -230,7 +230,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 chain_id=evm_inquirer.chain_id,
                 token_kind=TokenKind.ERC20,
                 evm_inquirer=evm_inquirer,
-                encounter=TokenEncounterInfo(tx_hash=tx_hash),
+                encounter=TokenEncounterInfo(tx_ref=tx_hash),
             )
             # we make a distinction between token and asset since for eth uniswap moves around
             # WETH but we could receive ETH
@@ -242,7 +242,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 chain_id=evm_inquirer.chain_id,
                 token_kind=TokenKind.ERC20,
                 evm_inquirer=evm_inquirer,
-                encounter=TokenEncounterInfo(tx_hash=tx_hash),
+                encounter=TokenEncounterInfo(tx_ref=tx_hash),
             )
             asset_1 = resolved_eth if token1 == A_WETH else token1
 
@@ -274,7 +274,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             chain_id=evm_inquirer.chain_id,
             token_kind=TokenKind.ERC20,
             evm_inquirer=evm_inquirer,
-            encounter=TokenEncounterInfo(tx_hash=tx_hash),
+            encounter=TokenEncounterInfo(tx_ref=tx_hash),
             underlying_tokens=underlying_tokens,
             protocol=counterparty,
         )

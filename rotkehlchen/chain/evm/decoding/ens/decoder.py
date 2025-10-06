@@ -81,7 +81,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             name=name,
             collectible_id=str(collectible_id := int.from_bytes(context.tx_log.topics[3])),
             evm_inquirer=self.node_inquirer,
-            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
+            encounter=TokenEncounterInfo(tx_ref=context.transaction.tx_hash),
         )
         transfer_event = self.base.decode_erc20_721_transfer(
             token=token,

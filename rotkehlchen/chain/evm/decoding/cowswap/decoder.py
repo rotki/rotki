@@ -149,7 +149,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
         Returns a list of swap data. Each entry in the list contains basic information about a
         swap made in the transaction.
         """
-        trades, tx_info = [], TokenEncounterInfo(tx_hash=tx_hash, description='CowSwap trade')
+        trades, tx_info = [], TokenEncounterInfo(tx_ref=tx_hash, description='CowSwap trade')
         for tx_log in all_logs:
             if tx_log.topics[0] != TRADE_SIGNATURE:
                 continue
