@@ -14,12 +14,12 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
     EnricherContext,
+    EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -75,14 +75,14 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
         self.sai = A_SAI.resolve_to_evm_token()
         self.peth = A_PETH.resolve_to_evm_token()
 
-    def _decode_sai_tub(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_sai_tub(self, context: DecoderContext) -> EvmDecodingOutput:
         decoder_function = self.topics_to_methods.get(context.tx_log.topics[0])
         if decoder_function is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return decoder_function(context=context)
 
-    def _decode_withdraw_eth(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdraw_eth(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes ETH withdrawal from a CDP.
 
@@ -108,11 +108,11 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                         event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                         event.counterparty = CPT_SAI
                         event.notes = f'Withdraw {event.amount} {self.eth.symbol} from CDP {cdp_id}'  # noqa: E501
-                        return DEFAULT_DECODING_OUTPUT
+                        return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_new_cdp_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_new_cdp_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes the event of a new CDP creation.
 
@@ -147,9 +147,9 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
         )
         # ensure that the cdp creation event comes before any deposit event
         maybe_reshuffle_events(ordered_events=[event, deposit_event], events_list=context.decoded_events)  # noqa: E501
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_close_cdp(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_close_cdp(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes the closing of an already existing CDP.
 
@@ -169,7 +169,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             ):
                 # this is to avoid having duplicated history events
                 # which is caused by the tx_logs containing similar log entries
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -183,9 +183,9 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             notes=f'Close CDP {cdp_id}',
             address=context.transaction.to_address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_borrow_sai_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_borrow_sai_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes an event of SAI being borrowed.
 
@@ -207,7 +207,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             ):
                 # this is to avoid having duplicated history events
                 # which is caused by the tx_logs containing similar log entries
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.base.is_tracked(withdrawer) is True:
             event = self.base.make_event_from_transaction(
@@ -222,7 +222,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                 notes=f'Borrow {amount_withdrawn} {self.sai.symbol} from CDP {cdp_id}',
                 address=context.transaction.to_address,
             )
-            return DecodingOutput(events=[event])
+            return EvmDecodingOutput(events=[event])
 
         # sai was actually borrowed, but it was handled by a proxy so create an action item
         # to transform the "receive" event later
@@ -238,9 +238,9 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             to_counterparty=CPT_SAI,
             extra_data={'cdp_id': cdp_id},
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
-    def _decode_repay_sai_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_repay_sai_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes an event of SAI loan repayment.
 
@@ -262,7 +262,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.counterparty = CPT_SAI
                 event.notes = f'Repay {amount_paid} {self.sai.symbol} to CDP {cdp_id}'
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -272,7 +272,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             ):
                 # this is to avoid having duplicated history events
                 # which is caused by the tx_logs containing similar log entries
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.base.is_tracked(depositor) is True:
             event = self.base.make_event_from_transaction(
@@ -287,11 +287,11 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                 notes=f'Repay {amount_paid} {self.sai.symbol} to CDP {cdp_id}',
                 address=context.transaction.to_address,
             )
-            return DecodingOutput(events=[event])
+            return EvmDecodingOutput(events=[event])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_liquidate_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_liquidate_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes a liquidation event in a CDP
 
@@ -310,7 +310,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             ):
                 # this is to avoid having duplicated history events
                 # which is caused by the tx_logs containing similar log entries
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         # check for the transfer event of the liquidation to Maker SaiTap contract
         for log in context.all_logs:
@@ -334,11 +334,11 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                     counterparty=CPT_SAI,
                     address=context.transaction.to_address,
                 )
-                return DecodingOutput(events=[event])
+                return EvmDecodingOutput(events=[event])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_deposit_eth_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit_eth_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes a deposit event of ETH into a CDP.
 
@@ -359,7 +359,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Supply {event.amount} {self.eth.symbol} to Sai vault'
                 event.counterparty = CPT_SAI
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -378,9 +378,9 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                         event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                         event.notes = f'Supply {event.amount} {self.eth.symbol} to Sai vault'
                         event.counterparty = CPT_SAI
-                        return DEFAULT_DECODING_OUTPUT
+                        return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _maybe_enrich_sai_tub_transfers(
             self,
@@ -427,7 +427,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
 
         return FAILED_ENRICHMENT_OUTPUT
 
-    def _decode_peth_mint_after_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_peth_mint_after_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This method decodes the receipt of PETH after WETH has been deposited.
 
@@ -451,9 +451,9 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                 notes=f'Receive {amount} {self.peth.symbol} from Sai Vault',
                 address=context.transaction.to_address,
             )
-            return DecodingOutput(events=[event])
+            return EvmDecodingOutput(events=[event])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_sai_cdp_migration(
             self,
@@ -463,10 +463,10 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """This method decodes the migration of a Sai CDP to Dai CDP."""
         if tx_log.topics[0] != SAI_CDP_MIGRATION_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         old_cdp_id = int.from_bytes(tx_log.topics[1])
         new_cdp_id = int.from_bytes(tx_log.topics[2])
@@ -484,7 +484,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
             counterparty=CPT_SAI,
             address=transaction.to_address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     def decoding_rules(self) -> list[Callable]:
         return [

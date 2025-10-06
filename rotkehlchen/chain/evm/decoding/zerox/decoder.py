@@ -6,9 +6,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import UNISWAP_SIGNATURES
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -239,10 +239,10 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
 
         return decoded_events
 
-    def _decode_meta_tx_swap(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_meta_tx_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decodes the swap event from the 0x router contract via executeMetaTransactionV2."""
         if context.tx_log.topics[0] != METATX_ZEROX or context.tx_log.address != self.router_address:  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # using [] for cases with multiple dexes, where multiple send/receive events exist
         send_events, receive_events, fee_event = [], [], None
@@ -282,7 +282,7 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
             fee_event=fee_event,
         )
 
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

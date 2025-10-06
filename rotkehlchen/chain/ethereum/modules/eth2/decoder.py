@@ -5,9 +5,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -97,9 +97,9 @@ class Eth2Decoder(EvmDecoderInterface):
 
         return indices
 
-    def _decode_eth2_deposit_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_eth2_deposit_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != DEPOSIT_EVENT:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[192:240]))
         amount = from_gwei(int.from_bytes(context.tx_log.data[352:360], byteorder='little'))
@@ -124,16 +124,16 @@ class Eth2Decoder(EvmDecoderInterface):
                 )
                 if event.amount == amount:  # If amount is the same, replace the event
                     context.decoded_events[idx] = eth_deposit_event
-                    return DEFAULT_DECODING_OUTPUT
+                    return DEFAULT_EVM_DECODING_OUTPUT
                 else:  # If amount is less, subtract the amount from the event and return new event
                     event.amount -= amount
-                    return DecodingOutput(events=[eth_deposit_event])
+                    return EvmDecodingOutput(events=[eth_deposit_event])
 
         log.error(
             f'While decoding ETH deposit event {context.transaction.tx_hash.hex()} for public key '
             f'{public_key} could not find the send event',
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_eth2_request_with_fee(
             self,
@@ -184,7 +184,7 @@ class Eth2Decoder(EvmDecoderInterface):
             )
         return fee_event, info_event
 
-    def _decode_eth2_consolidation_request(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_eth2_consolidation_request(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a request to consolidate validators.
         Handles two types of requests:
         - Self consolidation - changes the withdrawal credentials to 0x02 (accumulating validator)
@@ -195,7 +195,7 @@ class Eth2Decoder(EvmDecoderInterface):
             context=context,
             expected_data_length=116,
         )) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         fee_event, info_event = events
         source_public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[20:68]))
@@ -205,7 +205,7 @@ class Eth2Decoder(EvmDecoderInterface):
                 context=context,
                 public_keys=[target_public_key],
             )) is None:
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
             info_event.extra_data = {'validator_index': (validator_index := indexes[0])}
             info_event.notes = f'Request to convert validator {validator_index} into an accumulating validator'  # noqa: E501
@@ -215,7 +215,7 @@ class Eth2Decoder(EvmDecoderInterface):
                 context=context,
                 public_keys=[source_public_key, target_public_key],
             )) is None:
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
             source_index, target_index = indexes
             info_event.notes = f'Request to consolidate validator {source_index} into {target_index}'  # noqa: E501
@@ -224,9 +224,9 @@ class Eth2Decoder(EvmDecoderInterface):
 
         if fee_event:
             fee_event.notes = f'Spend {fee_event.amount} ETH as validator consolidation fee'
-        return DecodingOutput(events=[info_event])
+        return EvmDecodingOutput(events=[info_event])
 
-    def _decode_eth2_withdrawal_request(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_eth2_withdrawal_request(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a withdrawal/exit request.
         If amount is greater than zero, it is a partial withdrawal request.
         If amount is zero, it indicates a request to fully exit the validator.
@@ -236,7 +236,7 @@ class Eth2Decoder(EvmDecoderInterface):
             context=context,
             expected_data_length=76,
         )) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         fee_event, info_event = events
         public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[20:68]))
@@ -244,7 +244,7 @@ class Eth2Decoder(EvmDecoderInterface):
             context=context,
             public_keys=[public_key],
         )) is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         info_event.extra_data = {'validator_index': (validator_index := indexes[0])}
         info_event.event_subtype = HistoryEventSubType.REMOVE_ASSET
@@ -258,7 +258,7 @@ class Eth2Decoder(EvmDecoderInterface):
 
         if fee_event:
             fee_event.notes = f'Spend {fee_event.amount} ETH as {request_description} request fee'
-        return DecodingOutput(events=[info_event])
+        return EvmDecodingOutput(events=[info_event])
 
     # -- DecoderInterface methods
 

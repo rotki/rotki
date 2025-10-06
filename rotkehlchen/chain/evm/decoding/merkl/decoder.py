@@ -6,9 +6,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import REWARD_CLAIMED
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -41,10 +41,10 @@ class MerklDecoder(EvmDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
 
-    def _decode_reward_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_reward_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a Merkl reward claim event."""
         if context.tx_log.topics[0] != REWARD_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claimed_asset = self.base.get_or_create_evm_asset(
             address=(claimed_asset_addr := bytes_to_address(context.tx_log.topics[2])),
@@ -75,7 +75,7 @@ class MerklDecoder(EvmDecoderInterface):
         else:
             log.error(f'Failed to find Merkl reward claim event in {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

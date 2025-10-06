@@ -7,9 +7,9 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import RABBY_WALLET_FEE_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -36,17 +36,17 @@ class MagpieCommonDecoder(EvmDecoderInterface):
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.router_addresses = router_addresses
 
-    def _decode_swap(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_swap(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a swap event from Magpie protocol"""
         if context.tx_log.topics[0] != SWAPPED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if len(context.tx_log.topics) != 3:
             log.warning(
                 f'Magpie swap event at {context.transaction.tx_hash.hex()} has '
                 f'{len(context.tx_log.topics)} topics instead of 3',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Extract swap data from event
         # Event structure: topics[1] = sender, topics[2] = receiver (usually same as sender)
@@ -59,7 +59,7 @@ class MagpieCommonDecoder(EvmDecoderInterface):
                 f'Magpie swap event at {context.transaction.tx_hash.hex()} has '
                 f'insufficient data length: {len(context.tx_log.data)}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         data = context.tx_log.data
         source_token_address = bytes_to_address(data[:32])
@@ -167,12 +167,12 @@ class MagpieCommonDecoder(EvmDecoderInterface):
             ordered_events=[event for event in all_trade_events if event is not None],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
-    def decode_action(self, context: DecoderContext) -> DecodingOutput:
+    def decode_action(self, context: DecoderContext) -> EvmDecodingOutput:
         """Main decoding function for Magpie protocol"""
         if context.transaction.to_address not in self.router_addresses:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
         return self._decode_swap(context)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

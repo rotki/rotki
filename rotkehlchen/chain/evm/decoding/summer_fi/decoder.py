@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import ACCOUNT_CREATED_TOPIC, CPT_SUMMER_FI
 from rotkehlchen.constants import ZERO
@@ -35,17 +35,17 @@ class SummerFiCommonDecoder(EvmDecoderInterface):
         )
         self.account_factory = account_factory
 
-    def _decode_account_creation(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_account_creation(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode smart account creation events."""
         if (
             context.tx_log.topics[0] != ACCOUNT_CREATED_TOPIC or
             not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2]))
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         proxy_address = bytes_to_address(context.tx_log.topics[1])
         vault_id = int.from_bytes(context.tx_log.topics[3])
-        return DecodingOutput(events=[self.base.make_event_from_transaction(
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,

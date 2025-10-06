@@ -26,10 +26,10 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -181,13 +181,13 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         return deposit_event, receive_event
 
-    def _handle_transfer_events(self, context: DecoderContext) -> DecodingOutput:
+    def _handle_transfer_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode v1 and v2 vault events that only have transfer log events."""
         if not self.base.any_tracked((
                 (from_address := bytes_to_address(context.tx_log.topics[1])),
                 (to_address := bytes_to_address(context.tx_log.topics[2])),
         )):
-            return DEFAULT_DECODING_OUTPUT  # can happen as other transfers of token may be hit in same transaction  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT  # can happen as other transfers of token may be hit in same transaction  # noqa: E501
 
         counterparty = CPT_YEARN_V1 if (vault_address := context.tx_log.address) in self.vaults[CPT_YEARN_V1] else CPT_YEARN_V2  # noqa: E501
 
@@ -204,7 +204,7 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             underlying_vault_token = self.base.get_or_create_evm_token(vault_token.underlying_tokens[0].address)  # noqa: E501
         else:
             log.error(f'Failed to find underlying token for yearn vault {vault_address}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         vault_amount = token_normalized_value(
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
@@ -226,7 +226,7 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 break
         else:
             log.error(f'Failed to find transfer of yearn vault underlying token for {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         underlying_amount = token_normalized_value(
             token_amount=int.from_bytes(underlying_transfer_tx_log.data[0:32]),
@@ -234,7 +234,7 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         )
 
         if from_address == ZERO_ADDRESS:  # deposit
-            return DecodingOutput(action_items=[
+            return EvmDecodingOutput(action_items=[
                 ActionItem(
                     action='transform',
                     from_event_type=HistoryEventType.SPEND,
@@ -257,7 +257,7 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 ),
             ])
         elif to_address == ZERO_ADDRESS:  # withdraw
-            return DecodingOutput(action_items=[
+            return EvmDecodingOutput(action_items=[
                 ActionItem(
                     action='transform',
                     from_event_type=HistoryEventType.SPEND,
@@ -280,9 +280,9 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 ),
             ])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_vault_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vault_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode yearn v1 and v2 vault events."""
         if context.tx_log.topics[0] == STAKE_TOPIC:
             out_event, in_event = self._handle_deposit_events(
@@ -299,9 +299,9 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         ):
             return self._handle_transfer_events(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_v3_vault_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_v3_vault_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode yearn v3 vault events."""
         out_event, in_event, is_deposit = None, None, False
         if context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
@@ -316,11 +316,11 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             )
             is_deposit = True
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if out_event is None or in_event is None:
             log.error(f'Failed to find both out and in events for yearn v3 vault transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Special case for Curve Savings - it's actually a yearn v3 vault, so we can simply update
         # the events here and avoid needing a separate Curve Savings decoder.
@@ -338,9 +338,9 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_v2_increase_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_v2_increase_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode increase deposit events for yearn v2."""
         if context.tx_log.topics[0] == YEARN_V2_INCREASE_DEPOSIT_TOPIC:
             out_event, in_event = self._handle_deposit_events(
@@ -352,7 +352,7 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 events_list=context.decoded_events,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _reorder_events(
             self,

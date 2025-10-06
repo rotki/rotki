@@ -6,9 +6,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -56,7 +56,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
 
-    def _decode_eth_deposit_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_eth_deposit_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes ETH deposit and withdraw events. (Bridging ETH from and to ethereum)"""
         if context.tx_log.topics[0] == INBOX_MESSAGE_DELIVERED:  # ETH_DEPOSIT_INITIATED
             # data here is abi.encodePacked(dest, msg.value).
@@ -84,7 +84,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
             from_chain, to_chain = ChainID.ARBITRUM_ONE, ChainID.ETHEREUM
 
         if not self.base.is_tracked(user_address):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Find the corresponding transfer event and update it
         for event in context.decoded_events:
@@ -106,15 +106,15 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find ETH {expected_event_type} for arbitrum one during {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_erc20_deposit_withdraw(self, tx_log: 'EvmTxReceiptLog', decoded_events: list['EvmEvent']) -> DecodingOutput:  # noqa: E501
+    def _decode_erc20_deposit_withdraw(self, tx_log: 'EvmTxReceiptLog', decoded_events: list['EvmEvent']) -> EvmDecodingOutput:  # noqa: E501
         """Decodes ERC20 deposits and withdrawals. (Bridging ERC20 tokens from and to ethereum)"""
         from_address = bytes_to_address(tx_log.topics[1])
         to_address = bytes_to_address(tx_log.topics[2])
 
         if not self.base.any_tracked([from_address, to_address]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         ethereum_token_address = bytes_to_address(tx_log.data[:32])
         asset = self.base.get_or_create_evm_token(ethereum_token_address)
@@ -159,9 +159,9 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
                     f'Spend {event.amount} ETH to bridge ERC20 tokens to Arbitrum One'
                 )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_asset_deposit_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_asset_deposit_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes ETH or ERC20 deposit and withdraw events. (Bridging assets from and to ethereum)"""  # noqa: E501
         if context.tx_log.topics[0] in {MESSAGE_DELIVERED, INBOX_MESSAGE_DELIVERED, BRIDGE_CALL_TRIGGERED}:  # noqa: E501
             for tx_log in context.all_logs:  # Check all logs to determine if it is an erc20 event. Eth events have no specific deposit/withdraw topic from which they can be identified.  # noqa: E501
@@ -169,7 +169,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
                     return self._decode_erc20_deposit_withdraw(tx_log, context.decoded_events)
             return self._decode_eth_deposit_withdraw(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

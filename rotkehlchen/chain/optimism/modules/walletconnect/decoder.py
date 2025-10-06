@@ -8,7 +8,10 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, STAKING_DEPOSIT
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_EVM_DECODING_OUTPUT,
+    EvmDecodingOutput,
+)
 from rotkehlchen.chain.optimism.modules.walletconnect.constants import WALLETCONECT_STAKE_WEIGHT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -54,10 +57,10 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         )
         CustomizableDateMixin.__init__(self, base_tools.database)
 
-    def _decode_airdop_claim(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_airdop_claim(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decodes wallet connect airdrop claim event."""
         if context.tx_log.topics[0] != TOKENS_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address = bytes_to_address(context.tx_log.topics[1])
         amount = token_normalized_value_decimals(
@@ -77,9 +80,9 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         else:
             log.error(f'Failed to find walletconnect airdrop claim event for {context.transaction}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_staking_deposit(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_staking_deposit(self, context: 'DecoderContext') -> EvmDecodingOutput:
         user_address = bytes_to_address(context.tx_log.topics[1])
         locktime = Timestamp(int.from_bytes(context.tx_log.data[32:64]))
         transferred_amount = token_normalized_value_decimals(
@@ -89,7 +92,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         # according to the contract `transferred_amount` is either equal to amount
         # or zero. If zero then no transfer has occurred, but just lock time has changed
         if transferred_amount == ZERO:
-            return DecodingOutput(events=[self.base.make_event_from_transaction(
+            return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
@@ -122,9 +125,9 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         else:  # not found
             log.error(f'WCT staking deposit transfer was not found for {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_staking_withdraw(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_staking_withdraw(self, context: 'DecoderContext') -> EvmDecodingOutput:
         user_address = bytes_to_address(context.tx_log.topics[1])
         transferred_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -148,16 +151,16 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         else:  # not found
             log.error(f'WCT staking withdrawal transfer was not found for {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_staking(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_staking(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decodes WalletConnect staking related activity"""
         if context.tx_log.topics[0] == STAKING_DEPOSIT:
             return self._decode_staking_deposit(context)
         elif context.tx_log.topics[0] == STAKING_WITHDRAW:
             return self._decode_staking_withdraw(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

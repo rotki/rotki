@@ -15,10 +15,10 @@ from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
 from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V3
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants import ZERO
@@ -72,15 +72,15 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         )
         self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
 
-    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         # no-op implementation of abstract method from ReloadablePoolsAndGaugesDecoderMixin.
         # balancer v3 pool deposits and withdrawals are handled by _decode_liquidity_event.
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_liquidity_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_liquidity_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode liquidity events (inflow & outflow) for Balancer V3 pools."""
         if context.tx_log.topics[0] not in (LIQUIDITY_ADDED_TOPIC, LIQUIDITY_REMOVED_TOPIC):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == LIQUIDITY_ADDED_TOPIC:
             pool_token_event_type = HistoryEventType.RECEIVE
@@ -126,7 +126,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
 
         if pool_token_event is None:
             log.error(f'Failed to find balancer v3 pool token event in transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         action_items = []
         amounts = decode_abi(  # totalSupply, amounts, swapFeeAmountsRaw
@@ -172,12 +172,12 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                 to_counterparty=CPT_BALANCER_V3,
             ))
 
-        return DecodingOutput(action_items=action_items, matched_counterparty=CPT_BALANCER_V3)
+        return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_BALANCER_V3)
 
     @staticmethod
-    def _decode_swap_event(context: DecoderContext) -> DecodingOutput:
+    def _decode_swap_event(context: DecoderContext) -> EvmDecodingOutput:
         """Identifies swap events and marks them for later processing."""
-        return DecodingOutput(matched_counterparty=CPT_BALANCER_SWAP_V3)
+        return EvmDecodingOutput(matched_counterparty=CPT_BALANCER_SWAP_V3)
 
     @staticmethod
     def _order_lp_events(
@@ -290,13 +290,13 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         )
         return decoded_events
 
-    def _decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vault_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] in (LIQUIDITY_ADDED_TOPIC, LIQUIDITY_REMOVED_TOPIC):
             return self._decode_liquidity_event(context)
         elif context.tx_log.topics[0] == SWAP_TOPIC:
             return self._decode_swap_event(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {

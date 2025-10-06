@@ -5,10 +5,10 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -52,7 +52,7 @@ class LockedgnoDecoder(EvmDecoderInterface):
             evm_inquirer=ethereum_inquirer,
         )
 
-    def _decode_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_events(self, context: DecoderContext) -> EvmDecodingOutput:
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
@@ -78,7 +78,7 @@ class LockedgnoDecoder(EvmDecoderInterface):
                     to_notes=f'Receive {event.amount} locked GNO from the locking contract',
                     to_counterparty=CPT_LOCKEDGNO,
                 )
-                return DecodingOutput(action_items=[action_item])
+                return EvmDecodingOutput(action_items=[action_item])
 
             if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -104,9 +104,9 @@ class LockedgnoDecoder(EvmDecoderInterface):
                     to_notes=f'Return {event.amount} locked GNO to the locking contract',
                     to_counterparty=CPT_LOCKEDGNO,
                 )
-                return DecodingOutput(action_items=[action_item])
+                return EvmDecodingOutput(action_items=[action_item])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

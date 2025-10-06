@@ -9,9 +9,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -61,7 +61,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
 
-    def _decode_eth_deposit_withdraw_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_eth_deposit_withdraw_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes an ETH deposit or withdraw bridging event
         Ethereum -> Scroll: Withdraw from bridge
         Scroll -> Ethereum: Deposit to bridge
@@ -79,7 +79,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
             new_event_type = HistoryEventType.DEPOSIT
             from_chain, to_chain = ChainID.SCROLL, ChainID.ETHEREUM
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
             if (
@@ -100,21 +100,21 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find ETH {expected_event_type} event for scroll during {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_erc20_deposit_withdraw_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_erc20_deposit_withdraw_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes an ERC20 deposit or withdraw bridging event
         Ethereum -> Scroll: Withdraw from bridge
         Scroll -> Ethereum: Deposit to bridge
         """
         if (tx_log := context.tx_log).topics[0] not in (FINALIZE_DEPOSIT_ERC20, WITHDRAW_ERC20):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_address = bytes_to_address(tx_log.topics[3])
         to_address = bytes_to_address(tx_log.data[:32])
 
         if not self.base.any_tracked([from_address, to_address]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         ethereum_token_address = bytes_to_address(tx_log.topics[1])
         l2_token_address = bytes_to_address(tx_log.topics[2])
@@ -159,12 +159,12 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
             f'{context.transaction.tx_hash.hex()} and L1 token {ethereum_token_address}',
         )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_messenger_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_messenger_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes a relayed message event to a bridge withdrawal"""
         if context.transaction.input_data[:4] != RELAY_MESSAGE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         method_input_data = context.transaction.input_data[4:]
 
@@ -177,7 +177,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
         amount = from_wei(FVal(raw_amount))
 
         if not self.base.any_tracked([from_address, to_address]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Find the corresponding transfer event and update it
         for event in context.decoded_events:
@@ -196,7 +196,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                 )
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

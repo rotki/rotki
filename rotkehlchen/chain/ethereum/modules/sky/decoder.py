@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_DAI, A_MKR
@@ -46,9 +46,9 @@ class SkyDecoder(EvmDecoderInterface):
     • Indirect DAI to USDS migrations - Via the MIGRATION_ACTIONS_CONTRACT using USDS join exit events
     """  # noqa: E501
 
-    def _decode_migrate_dai(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_migrate_dai(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != DAI_TO_USDS:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[0:32])
         amount = token_normalized_value_decimals(
@@ -77,11 +77,11 @@ class SkyDecoder(EvmDecoderInterface):
                 event.notes = f'Receive {amount} USDS from DAI to USDS migration'
                 event.address = DAI_TO_USDS_CONTRACT
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_migrate_mkr(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_migrate_mkr(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != MKR_TO_SKY:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         mkr_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
@@ -118,23 +118,23 @@ class SkyDecoder(EvmDecoderInterface):
 
         if None in (mkr_event, sky_event):
             log.error(f'Failed to decode mkr migration at {context.transaction}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events([mkr_event, sky_event], context.decoded_events)
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_maybe_migrate_dai(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_maybe_migrate_dai(self, context: DecoderContext) -> EvmDecodingOutput:
         """Similar to _decode_maybe_downgrade_usds in makerdao decoder, There is no useful log
         event for migrating dai to usds via the migration actions contract. But there is an Exit
         on USDS join which we can use as a hook to check if it is a migration or not"""
         if context.tx_log.topics[0] != EXIT:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if (
                 bytes_to_address(context.tx_log.topics[1]) != MIGRATION_ACTIONS_CONTRACT or
                 not self.base.is_tracked(location_label := bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         out_event, in_event = None, None
         for event in context.decoded_events:
@@ -157,7 +157,7 @@ class SkyDecoder(EvmDecoderInterface):
                 event.address = MIGRATION_ACTIONS_CONTRACT
 
         if out_event is None or in_event is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         out_event.event_type = HistoryEventType.MIGRATE
         out_event.event_subtype = HistoryEventSubType.SPEND
@@ -167,7 +167,7 @@ class SkyDecoder(EvmDecoderInterface):
         in_event.event_subtype = HistoryEventSubType.RECEIVE
         in_event.notes = f'Receive {in_event.amount} USDS from DAI to USDS migration'
         in_event.counterparty = CPT_SKY
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -18,9 +18,9 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -33,13 +33,13 @@ log = RotkehlchenLogsAdapter(logger)
 
 class PufferDecoder(EvmDecoderInterface):
 
-    def _decode_unlockedtokens_claimed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_unlockedtokens_claimed(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode claiming unlocked tokens (airdrop) from puffer"""
         if context.tx_log.topics[0] != UNLOCKED_TOKENS_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(claimer := bytes_to_address(context.tx_log.topics[2])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if (campaign_id := context.tx_log.topics[1][:16].hex()) in (PUFFERX_EIGEN_S2_AIRDROP1, PUFFERX_EIGEN_S2_AIRDROP2):  # noqa: E501
             asset_id = EIGEN_TOKEN_ID
@@ -49,7 +49,7 @@ class PufferDecoder(EvmDecoderInterface):
             campaign_name = 'Puffer S1 airdrop'
         else:
             log.error(f'Unknown Puffer delegated tokens campaign with id {campaign_id}. Skipping decoding ...')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claimed_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -70,7 +70,7 @@ class PufferDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find transfer event for a Puffer claim event at {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {  # The contract in question is for multiple delegated campaigns (https://hedgey.gitbook.io/hedgey-community-docs/for-developers/deployments/token-claims-claimcampaigns) and not only for puffer. If we see more of them we probably would need to abstract this better and out of here and have the protocol variable.  # noqa: E501

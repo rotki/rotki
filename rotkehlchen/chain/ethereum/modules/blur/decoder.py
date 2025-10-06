@@ -12,10 +12,10 @@ from rotkehlchen.chain.evm.constants import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -37,7 +37,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class BlurDecoder(EvmDecoderInterface):
 
-    def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_staking_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode staking events in the Blur protocol"""
         if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
             return self._decode_stake(context)
@@ -45,12 +45,12 @@ class BlurDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == WITHDRAW_TOPIC_V2:
             return self._decode_unstake(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_stake(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_stake(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode staking event in the Blur protocol"""
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         stake_amount = int.from_bytes(context.tx_log.data[:32])
         stake_amount_norm = token_normalized_value_decimals(
@@ -82,12 +82,12 @@ class BlurDecoder(EvmDecoderInterface):
             product=EvmProduct.STAKING,
             address=BLUR_STAKING_CONTRACT,
         )
-        return DecodingOutput(action_items=[action_item], events=[event])
+        return EvmDecodingOutput(action_items=[action_item], events=[event])
 
-    def _decode_unstake(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_unstake(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode unstaking event in the Blur protocol"""
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -107,15 +107,15 @@ class BlurDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_BLUR
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_blur_airdrop_2_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_blur_airdrop_2_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode airdrop 2 claim event in the Blur protocol"""
         if context.tx_log.topics[0] != CLAIMED_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claim_amount = int.from_bytes(context.tx_log.data[:32])
         claim_amount_norm = token_normalized_value_decimals(
@@ -134,7 +134,7 @@ class BlurDecoder(EvmDecoderInterface):
             counterparty=CPT_BLUR,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

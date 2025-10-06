@@ -14,9 +14,9 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
@@ -194,7 +194,7 @@ class MerkleClaimDecoderInterface(EvmDecoderInterface, ABC):
             claiming_address: ChecksumEvmAddress,
             claimed_amount: FVal,
             airdrop_identifiers: str,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -212,7 +212,7 @@ class MerkleClaimDecoderInterface(EvmDecoderInterface, ABC):
         else:
             log.error(f'Could not find transfer event for {counterparty} airdrop claim {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_indexed_merkle_claim(
             self,
@@ -222,13 +222,13 @@ class MerkleClaimDecoderInterface(EvmDecoderInterface, ABC):
             token_decimals: int,
             notes_suffix: str,
             airdrop_identifier: str,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """This decodes all merkledrop claims but with indexed topic arguments"""
         if context.tx_log.topics[0] != MERKLE_CLAIM:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(claiming_address := bytes_to_address(context.tx_log.topics[2])):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claimed_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.topics[3]),
@@ -244,13 +244,13 @@ class MerkleClaimDecoderInterface(EvmDecoderInterface, ABC):
             token_decimals: int,
             notes_suffix: str,
             airdrop_identifier: str,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """This decodes all merkledrop claims that fit the same event log format"""
         if context.tx_log.topics[0] != MERKLE_CLAIM:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(claiming_address := bytes_to_address(context.tx_log.data[32:64])):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claimed_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[64:96]),
@@ -295,7 +295,7 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
             vote_choice: VoteChoice,
             proposal_id: int,
             notes_reason: str = '',
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         notes = f'Vote {vote_choice.upper()} {"in " if vote_choice == VoteChoice.ABSTAIN else ""}{self.protocol} governance proposal {self.proposals_url}/{proposal_id}{notes_reason}'  # noqa: E501
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -309,7 +309,7 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
             address=context.tx_log.address,
             counterparty=self.protocol,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     @staticmethod
     def _decode_raw_vote(vote_raw: int) -> VoteChoice:
@@ -320,9 +320,9 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
         else:
             return VoteChoice.ABSTAIN
 
-    def _decode_vote_cast(self, context: DecoderContext, abi: str) -> DecodingOutput:
+    def _decode_vote_cast(self, context: DecoderContext, abi: str) -> EvmDecodingOutput:
         if not self.base.is_tracked(voter_address := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         try:  # we use decode_event_data_abi_str due to "reason" string being hard to
             # decode directly. Perhaps if we learn how to and abstract in our own
@@ -333,7 +333,7 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
                 f'Failed to decode vote_cast event ABI at '
                 f'{context.transaction.tx_hash.hex()} due to {e}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         proposal_id, vote_raw, notes_reason = decoded_data[0], decoded_data[1], ''
         if len(decoded_data[3]) != 0:
@@ -347,9 +347,9 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
             notes_reason=notes_reason,
         )
 
-    def _decode_vote_cast_unindexed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vote_cast_unindexed(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(voter_address := bytes_to_address(context.tx_log.data[:32])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return self._decode_vote_cast_common(
             context=context,
@@ -358,12 +358,12 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
             proposal_id=int.from_bytes(context.tx_log.data[32:64]),
         )
 
-    def _decode_propose(self, context: DecoderContext, abi: str) -> DecodingOutput:
+    def _decode_propose(self, context: DecoderContext, abi: str) -> EvmDecodingOutput:
         try:  # using decode_event_data_abi_str for same reason as in vote cast
             _, decoded_data = decode_event_data_abi_str(context.tx_log, abi)
         except DeserializationError as e:
             log.error(f'Failed to decode governor alpha event due to {e!s} for {context.transaction.tx_hash.hex()}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         proposal_id = decoded_data[0]
         proposal_text = decoded_data[8]
@@ -380,9 +380,9 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
             address=context.tx_log.address,
             counterparty=self.protocol,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_governance(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_governance(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == VOTE_CAST:
             event_abi = VOTE_CAST_ABI
             method = self._decode_vote_cast
@@ -395,7 +395,7 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
             method = self._decode_propose
             event_abi = GOVERNORALPHA_PROPOSE_ABI
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return method(context, event_abi)
 
@@ -526,11 +526,11 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, ABC):
         return self.cache_data[1]
 
     @abstractmethod
-    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes events related to protocol pools."""
 
     @abstractmethod
-    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_gauge_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes events related to protocol gauges."""
 
     def _cache_mapping_methods(self) -> tuple[Callable, ...]:
@@ -549,7 +549,7 @@ class CommonGrantsDecoderMixin(EvmDecoderInterface, ABC):
             claimee_raw: bytes,
             amount_raw: bytes,
             counterparty: str,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Decode the matching funds claim based on the given name and asset. We need
         to provide the name and the asset as this is based per contract and does not change.
 
@@ -560,7 +560,7 @@ class CommonGrantsDecoderMixin(EvmDecoderInterface, ABC):
         The caller should confirm that the topic[0] matces the required topic hash.
         """
         if not self.base.any_tracked([claimee := bytes_to_address(claimee_raw), context.transaction.from_address]):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         asset = asset.resolve_to_crypto_asset()
         amount = asset_normalized_value(
@@ -587,4 +587,4 @@ class CommonGrantsDecoderMixin(EvmDecoderInterface, ABC):
                 f'Failed to find the {counterparty} matching receive transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT

@@ -7,9 +7,9 @@ from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP
 from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
@@ -38,7 +38,7 @@ class SushiswapDecoder(EvmDecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if tx_log.topics[0] == UNISWAP_V2_SWAP_SIGNATURE and transaction.to_address == SUSHISWAP_ROUTER:  # noqa: E501
             return decode_uniswap_v2_like_swap(
                 tx_log=tx_log,
@@ -50,7 +50,7 @@ class SushiswapDecoder(EvmDecoderInterface):
                 evm_inquirer=self.node_inquirer,
                 notify_user=self.notify_user,
             )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _maybe_decode_v2_liquidity_addition_and_removal(
             self,
@@ -60,7 +60,7 @@ class SushiswapDecoder(EvmDecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if tx_log.topics[0] == MINT_TOPIC:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
@@ -87,7 +87,7 @@ class SushiswapDecoder(EvmDecoderInterface):
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
             )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

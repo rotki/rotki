@@ -13,10 +13,10 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -85,9 +85,9 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
 
-    def _decode_transfer_routed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_transfer_routed(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != TRANSFER_ROUTED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         l1_token_address = bytes_to_address(context.tx_log.topics[1])
         to_asset = get_or_create_evm_token(
@@ -100,7 +100,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         to_address = bytes_to_address(context.tx_log.topics[3])
 
         if not self.base.any_tracked([from_address, to_address]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         try:
             raw_token_address = self.base.evm_inquirer.call_contract(
@@ -111,7 +111,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             )
         except RemoteError as e:
             log.error(f'During arbitrum bridge erc20 withdrawal got error calling {context.tx_log.address} l2TokenAddress({l1_token_address}): {e!s}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_token_address = deserialize_evm_address(raw_token_address)
 
@@ -128,7 +128,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
 
         # else we got a problem
         log.error(f'Could not find a WithdrawalInitiated event after a transfer routed for arbitrum {context.transaction.tx_hash.hex()}')  # noqa: E501
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_erc20_withdraw_event(
             self,
@@ -137,7 +137,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             to_address: ChecksumEvmAddress,
             from_token_address: ChecksumEvmAddress,
             to_asset: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Decodes an event for depositing ERC20 tokens into the bridge.
         (Sending assets from arbitrum one)
         """
@@ -165,21 +165,21 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             to_notes=notes,
             to_counterparty=CPT_ARBITRUM_ONE,
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
-    def _decode_eth_withdraw_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_eth_withdraw_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes an event for depositing ETH into the bridge (Removing ETH from arbitrum one)"""
         if (
             context.transaction.input_data[:4] != WITHDRAW_ETH_METHOD or
             context.tx_log.topics[0] != L2_TO_L1_TX
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_address = bytes_to_address(context.tx_log.topics[1])
         to_address = bytes_to_address(context.transaction.input_data[4:])  # only argument of input data is destination address # noqa: E501
 
         if not self.base.any_tracked([from_address, to_address]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[128:160])
         amount = from_wei(FVal(raw_amount))
@@ -207,7 +207,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         else:  # event was not found
             log.error(f'ETH withdraw transaction was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_eth_deposit_event(
             self,
@@ -249,19 +249,19 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
 
         return decoded_events
 
-    def _decode_erc20_deposit_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_erc20_deposit_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes an event for withdrawing ERC20 tokens from bridge
         (Receiving ECR20 tokens to arbitrum one)
         """
         if context.tx_log.topics[0] != ERC20_DEPOSIT_FINALIZED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[:32])
         l1_token_address = bytes_to_address(context.tx_log.topics[1])
         from_address = bytes_to_address(context.tx_log.topics[2])
         to_address = bytes_to_address(context.tx_log.topics[3])
         if not self.base.any_tracked([from_address, to_address]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         from_label = f' address {from_address}' if from_address != to_address else ''
 
@@ -289,7 +289,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                 f'{context.transaction.tx_hash.hex()} and L1 token {l1_token_address}',
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -8,9 +8,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
@@ -163,9 +163,9 @@ class BasenamesDecoder(EnsCommonDecoder):
 
         return name
 
-    def _decode_registrar_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_registrar_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != NAME_REGISTERED_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         try:
             _, decoded_data = decode_event_data_abi_str(
@@ -174,7 +174,7 @@ class BasenamesDecoder(EnsCommonDecoder):
             )
         except DeserializationError as e:
             log.error(f'Failed to decode Basenames registered event due to {e!s}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         fullname = f'{decoded_data[0]}.base.eth'
         expires = decoded_data[1]
@@ -220,7 +220,7 @@ class BasenamesDecoder(EnsCommonDecoder):
                 events_list=context.decoded_events,
             )
 
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

@@ -7,9 +7,9 @@ from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -64,7 +64,7 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
         self.target_chain = target_chain
         self.peripheral_addresses = peripheral_addresses or ()
 
-    def _decode_bridged_asset(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_bridged_asset(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes a bridging event for the `bridged_asset`, either a deposit or a withdrawal."""
         create_event = False
         if context.tx_log.topics[0] in self.deposit_topics:
@@ -77,7 +77,7 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
                 create_event = True
 
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -117,7 +117,7 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
                 new_event_type=new_event_type,
                 counterparty=GNOSIS_CPT_DETAILS,
             )
-            return DecodingOutput(events=[event])
+            return EvmDecodingOutput(events=[event])
 
         for event in context.decoded_events:
             if (
@@ -145,7 +145,7 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
                 f'Could not find the transfer event for bridging to {to_address}'
                 f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
             )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

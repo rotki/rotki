@@ -12,7 +12,7 @@ from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, EvmDecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_underlying
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
@@ -152,7 +152,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
         position_id: int,
         evm_inquirer: 'EvmNodeInquirer',
         wrapped_native_currency: Asset,
-) -> DecodingOutput:
+) -> EvmDecodingOutput:
     """This method decodes a Uniswap V3 like LP liquidity increase or decrease.
 
     Examples of such transactions are:
@@ -256,7 +256,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
             ),
         )
 
-    return DecodingOutput(
+    return EvmDecodingOutput(
         action_items=new_action_items,
         matched_counterparty=counterparty,
     )

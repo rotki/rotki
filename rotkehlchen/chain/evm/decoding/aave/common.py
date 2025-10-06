@@ -17,9 +17,9 @@ from rotkehlchen.chain.evm.decoding.aave.constants import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -344,7 +344,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
         return return_event, repay_event
 
-    def _decode_lending_pool_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_lending_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes AAVE v2/v3 Lending Pool events"""
         if context.tx_log.topics[0] not in (
             LIQUIDATION_CALL,
@@ -355,12 +355,12 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
             self.borrow_signature,
             self.repay_signature,
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == LIQUIDATION_CALL:
             # the liquidation event has two tokens and needs to be checked per event
             self.decode_liquidation(context)
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token = EvmToken(evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[1]),
@@ -370,7 +370,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
         if context.tx_log.topics[0] in (ENABLE_COLLATERAL, DISABLE_COLLATERAL):
             event = self._decode_collateral_events(token, context.transaction, context.tx_log)
-            return DecodingOutput(
+            return EvmDecodingOutput(
                 events=[event] if event is not None else None,
                 matched_counterparty=self.counterparty,
             )
@@ -394,7 +394,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
             ordered_events=paired_events,
             events_list=context.decoded_events,
         )
-        return DecodingOutput(matched_counterparty=self.counterparty)
+        return EvmDecodingOutput(matched_counterparty=self.counterparty)
 
     def _decode_incentives_common(
             self,
@@ -403,13 +403,13 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
             claimer_raw: bytes,
             reward_token_address: ChecksumEvmAddress,
             amount_raw: bytes,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         user_tracked = self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1]))
         to_tracked = self.base.is_tracked(to_address := bytes_to_address(context.tx_log.topics[to_idx]))  # noqa: E501
         claimer_tracked = self.base.is_tracked(claimer := bytes_to_address(claimer_raw))
 
         if not user_tracked and not to_tracked and not claimer_tracked:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         reward_token = self.base.get_or_create_evm_token(address=reward_token_address)
         amount = asset_normalized_value(
@@ -445,9 +445,9 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
             log.error(
                 f'Failed to find the {self.label} incentive reward transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DecodingOutput(matched_counterparty=self.counterparty)
+        return EvmDecodingOutput(matched_counterparty=self.counterparty)
 
     # DecoderInterface method
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

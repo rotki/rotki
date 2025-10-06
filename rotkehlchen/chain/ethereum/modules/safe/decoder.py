@@ -7,10 +7,10 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -56,19 +56,19 @@ class SafeDecoder(EvmDecoderInterface):
         )
         self.safe_token = EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe')
 
-    def _decode_safe_vesting(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_safe_vesting(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != CLAIMED_VESTING:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         account = bytes_to_address(context.tx_log.topics[2])
         beneficiary = bytes_to_address(context.tx_log.topics[3])
         if not self.base.any_tracked((account, beneficiary)):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         notes = 'Claim {amount} SAFE from vesting'  # amount set at actionitem process
         if account != beneficiary:
             notes += f' and send to {beneficiary}'
-        return DecodingOutput(
+        return EvmDecodingOutput(
             action_items=[ActionItem(
                 action='transform',
                 from_event_type=HistoryEventType.RECEIVE,
@@ -80,9 +80,9 @@ class SafeDecoder(EvmDecoderInterface):
             )],
         )
 
-    def _decode_safe_locked(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_safe_locked(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(holder := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
@@ -106,11 +106,11 @@ class SafeDecoder(EvmDecoderInterface):
         else:  # transfer not found
             log.error(f'Could not find the transfer of SAFE to the locker for {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_safe_unlocked(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_safe_unlocked(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(holder := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
@@ -128,11 +128,11 @@ class SafeDecoder(EvmDecoderInterface):
             address=context.tx_log.address,
             counterparty=CPT_SAFE,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_safe_withdrawn(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_safe_withdrawn(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(holder := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
@@ -150,9 +150,9 @@ class SafeDecoder(EvmDecoderInterface):
             to_notes=f'Withdraw {amount} SAFE from Safe{{Pass}} locking',
             to_counterparty=CPT_SAFE,
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
-    def _decode_safe_locker(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_safe_locker(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == LOCKED:
             return self._decode_safe_locked(context)
         elif context.tx_log.topics[0] == UNLOCKED:
@@ -160,14 +160,14 @@ class SafeDecoder(EvmDecoderInterface):
         elif context.tx_log.topics[0] == WITHDRAWN:
             return self._decode_safe_withdrawn(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_safpass_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_safpass_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != ADDED_VESTING:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(account := bytes_to_address(context.tx_log.topics[2])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -181,7 +181,7 @@ class SafeDecoder(EvmDecoderInterface):
             address=context.tx_log.address,
             counterparty=CPT_SAFE,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

@@ -11,9 +11,9 @@ from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderToolsWithProxy
 from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoderWithDSProxy
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -99,14 +99,14 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if tx_log.topics[0] == AIRDROP_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.amount} GTC from the GTC airdrop'
                     event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'gitcoin'}
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if tx_log.topics[0] == MERKLE_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
             for event in decoded_events:
@@ -114,9 +114,9 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.amount} 1INCH from the 1INCH airdrop'
                     event.extra_data = {AIRDROP_IDENTIFIER_KEY: '1inch'}
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- methods that need to be implemented by child classes --
 

@@ -13,10 +13,10 @@ from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -104,9 +104,9 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
 
-    def _decode_fox_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_fox_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != FOX_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[64:96])
         amount = token_normalized_value_decimals(
@@ -125,11 +125,11 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             ):
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_badger_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_badger_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != BADGER_HUNT_EVENT:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[32:64])
         amount = token_normalized_value_decimals(
@@ -148,15 +148,15 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             ):
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_fpis_claim(
             self,
             context: DecoderContext,
             airdrop: Literal['convex', 'fpis'],
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != SIMPLE_CLAIM:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address = bytes_to_address(context.tx_log.data[0:32])
         raw_amount = int.from_bytes(context.tx_log.data[32:64])
@@ -196,14 +196,14 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             ):
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_elfi_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_elfi_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Example:
         https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
         """
         if context.tx_log.topics[0] != ELFI_VOTE_CHANGE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address = bytes_to_address(context.tx_log.topics[1])
         delegate_address = bytes_to_address(context.tx_log.topics[2])
@@ -241,13 +241,13 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                     address=context.transaction.to_address,
                     extra_data={AIRDROP_IDENTIFIER_KEY: 'elfi'},
                 )
-                return DecodingOutput(events=[event])
+                return EvmDecodingOutput(events=[event])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_ens_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_ens_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != SIMPLE_CLAIM:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[:32])
         amount = token_normalized_value_decimals(
@@ -255,7 +255,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # ens 18 decimals
         )
         user_address = bytes_to_address(context.tx_log.topics[1])
-        return DecodingOutput(
+        return EvmDecodingOutput(
             action_items=[
                 ActionItem(
                     action='transform',

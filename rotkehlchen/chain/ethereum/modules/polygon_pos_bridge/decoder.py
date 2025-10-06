@@ -6,9 +6,9 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON, CPT_POLYGON_DETAILS
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -37,7 +37,7 @@ PROCESS_EXIT_TOPIC: Final = b'\xfe\xb2\x00\r\xca>a|\xd6\xf3\xa8\xbb\xb60\x14\xbb
 
 class PolygonPosBridgeDecoder(EvmDecoderInterface):
 
-    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes ETH and ERC20 bridge deposit events.
 
         Ethereum to Polygon bridging uses a state sync mechanism to transfer data from ethereum
@@ -47,7 +47,7 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         a bridge deposit has been initiated and the corresponding spend event needs to be modified.
         """
         if context.tx_log.topics[0] != STATE_SYNCED_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
             if (
@@ -72,9 +72,9 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         else:
             log.error(f'Failed to find Polygon bridge deposit event for {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode ETH and ERC20 bridge withdraw events. (not Plasma, see _decode_plasma_withdraw)
 
         Mapped to BRIDGE_ADDRESS, ETH_BRIDGE_ADDRESS, and ERC20_BRIDGE_ADDRESS. Also called
@@ -82,7 +82,7 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         initiated, and then modifies the corresponding receive event.
         """
         if context.tx_log.topics[0] not in {EXITED_ERC20_TOPIC, EXITED_ETHER_TOPIC, PROCESS_EXIT_TOPIC}:  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
             if (
@@ -107,7 +107,7 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         else:
             log.error(f'Failed to find Polygon bridge withdraw event for {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     @staticmethod
     def _is_exit_nft_event(event: 'EvmEvent', match_event_type: HistoryEventType) -> bool:
@@ -119,7 +119,7 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
             event.asset.resolve_to_evm_token().token_kind == TokenKind.ERC721
         )
 
-    def _decode_plasma_receive_exit_nft(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_plasma_receive_exit_nft(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes Plasma bridge receive exit nft event."""
         for event in context.decoded_events:
             if self._is_exit_nft_event(event=event, match_event_type=HistoryEventType.RECEIVE):
@@ -129,9 +129,9 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         else:
             log.error(f'Failed to find Polygon bridge receive Exit NFT event for {context.transaction}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_plasma_process_exit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_plasma_process_exit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes Plasma bridge process exit events."""
         for event in context.decoded_events:
             if self._is_exit_nft_event(event=event, match_event_type=HistoryEventType.SPEND):
@@ -143,7 +143,7 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
 
         return self._decode_withdraw(context=context)
 
-    def _decode_plasma_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_plasma_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes withdrawals via Plasma bridge.
         Bridging via Plasma bridge spans two transactions:
             - start exit: begins the withdrawal process and user receives an Exit NFT
@@ -154,7 +154,7 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         elif context.tx_log.topics[0] == PROCESS_EXIT_TOPIC:
             return self._decode_plasma_process_exit(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

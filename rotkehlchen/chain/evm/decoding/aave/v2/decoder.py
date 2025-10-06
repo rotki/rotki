@@ -5,9 +5,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -88,9 +88,9 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
                 event.address = context.tx_log.address
                 event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
 
-    def _decode_incentives(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_incentives(self, context: 'DecoderContext') -> EvmDecodingOutput:
         if context.tx_log.topics[0] != b'V7\xd7\xf9b$\x8a\x7f\x05\xa7\xabi\xee\xc6Dn1\xf3\xd0\xa2\x99\xd9\x97\xf15\xa6\\b\x80nx\x91':  # RewardsClaimed  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return self._decode_incentives_common(
             context=context,
@@ -100,9 +100,9 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             amount_raw=context.tx_log.data[0:32],
         )
 
-    def _decode_migration(self, context: 'DecoderContext') -> DecodingOutput:
+    def _decode_migration(self, context: 'DecoderContext') -> EvmDecodingOutput:
         if context.tx_log.topics[0] != b'K\xec\xcb\x90\xf9\x94\xc3\x1a\xce\xd7\xa2;V\x11\x02\x07(\xa2=\x8e\xc5\xcd\xdd\x1a>\x9d\x97\xb9o\xda\x86f':  # TokenTransferred # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.v3_migration_helper and (to_address := bytes_to_address(context.tx_log.topics[2])) == self.v3_migration_helper and self.base.is_tracked(from_address := bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
             token = self.base.get_evm_token(address=context.tx_log.address)
@@ -121,9 +121,9 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
                 to_notes=f'Migrate {amount} {token.symbol} from AAVE v2',
                 to_counterparty=CPT_AAVE_V2,
             )
-            return DecodingOutput(action_items=[action_item])
+            return EvmDecodingOutput(action_items=[action_item])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # --- DecoderInterface methods
     @staticmethod

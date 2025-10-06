@@ -13,10 +13,10 @@ from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS, CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -98,7 +98,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             chain=cast('SUPPORTED_COWSWAP_BLOCKCHAIN', self.node_inquirer.blockchain),
         )
 
-    def _decode_native_asset_orders(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_native_asset_orders(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == PLACE_NATIVE_ASSET_ORDER_SIGNATURE:
             target_token_address = bytes_to_address(context.tx_log.data[32:64])
             target_token = EvmToken(evm_address_to_identifier(
@@ -133,7 +133,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
                         event.event_subtype = HistoryEventSubType.REFUND
                         event.notes = f'Refund {event.amount} unused {self.native_asset.symbol} from cowswap'  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # --- Aggregator methods ---
 
@@ -322,7 +322,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
         return decoded_events
 
     @staticmethod
-    def _match_cowswap_counterparty(context: DecoderContext) -> DecodingOutput:
+    def _match_cowswap_counterparty(context: DecoderContext) -> EvmDecodingOutput:
         """Sets the CowSwap counterparty for events involving the settlement contract.
 
         This is needed because not all CowSwap transactions are sent directly
@@ -331,7 +331,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
         We don't decode the actual swap here since only one leg (spend or receive)
         is available at this stage. Full swap decoding happens in post-processing.
         """
-        return DecodingOutput(matched_counterparty=CPT_COWSWAP)
+        return EvmDecodingOutput(matched_counterparty=CPT_COWSWAP)
 
     # -- DecoderInterface methods
 
@@ -407,7 +407,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             )
         return decoded_events
 
-    def _decode_normal_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_normal_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         raw_amount = int.from_bytes(context.tx_log.data[128:160])
         amount = asset_normalized_value(amount=raw_amount, asset=self.vcow_token)
         airdrop_identifier: Literal['cow_mainnet', 'cow_gnosis'] = 'cow_mainnet' if self.node_inquirer.chain_id == ChainID.ETHEREUM else 'cow_gnosis'  # noqa: E501
@@ -415,7 +415,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
         claim_supports_payment = int.from_bytes(context.tx_log.data[32:64]) in (1, 2, 3)
         claimant_address = bytes_to_address(context.tx_log.data[64:96])
         if not self.base.is_tracked(claimant_address):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
         claim_has_payment = False
         out_event = in_event = None
         for event in context.decoded_events:
@@ -460,17 +460,17 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             else:
                 log.error(f'Could not find the COW token claim corresponding to detected payment for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
-    def _decode_vested_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vested_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a claim of vested cow token from vcow token"""
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # in gnosis chain the Vested log event has no amount in data. So we don't
         # match on amount for action items and in post decoding fix notes instead of here
         amount = token_normalized_value(int.from_bytes(context.tx_log.data), self.vcow_token) if self.node_inquirer.chain_id != ChainID.GNOSIS else None  # noqa: E501
-        return DecodingOutput(
+        return EvmDecodingOutput(
             action_items=[
                 ActionItem(
                     action='transform',
@@ -490,14 +490,14 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             ],
         )
 
-    def _decode_cow_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_cow_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode claim of cow token either normally or from vcow token"""
         if context.tx_log.topics[0] == CLAIMED:
             return self._decode_normal_claim(context)
         elif context.tx_log.topics[0] == VESTED:
             return self._decode_vested_claim(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {

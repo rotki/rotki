@@ -12,10 +12,10 @@ from rotkehlchen.chain.decoding.types import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     CPT_UNISWAP_V2,
@@ -139,13 +139,13 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             return None
         return to_asset, to_amount
 
-    def _decode_deposits_and_withdrawals(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposits_and_withdrawals(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
             is_deposit = True
         elif context.tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
             is_deposit = False
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         position_id = int.from_bytes(context.tx_log.topics[1])
         try:
@@ -173,7 +173,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
                 'Failed to query uniswap v3 nft contract for '
                 f'position {position_id} due to {e!s}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return decode_uniswap_v3_like_deposit_or_withdrawal(
             context=context,
@@ -196,14 +196,14 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """
         Detect some basic uniswap v3 events. This method doesn't ensure the order of the events
         and other things, but just labels some of the events as uniswap v3 events.
         The order should be ensured by the post-decoding rules.
         """
         if tx_log.topics[0] != SWAP_SIGNATURE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount_received, amount_sent = get_uniswap_swap_amounts(tx_log=tx_log)
 

@@ -69,7 +69,7 @@ class EnricherContext(DecoderBasicContext):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class DecodingOutput(CommonDecodingOutput['EvmEvent']):
+class EvmDecodingOutput(CommonDecodingOutput['EvmEvent']):
     """Output of EVM decoding functions
 
     - action_items is a list of actions to be performed later automatically or to be passed
@@ -102,5 +102,5 @@ class TransferEnrichmentOutput(NamedTuple):
     process_swaps: bool = False
 
 
-DEFAULT_DECODING_OUTPUT: Final = DecodingOutput()
+DEFAULT_EVM_DECODING_OUTPUT: Final = EvmDecodingOutput()
 FAILED_ENRICHMENT_OUTPUT: Final = TransferEnrichmentOutput()

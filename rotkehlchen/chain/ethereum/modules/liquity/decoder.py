@@ -6,9 +6,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants import ZERO
@@ -74,16 +74,16 @@ class LiquityDecoder(EvmDecoderInterface):
             self,
             context: DecoderContext,
             post_decoding: bool = False,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != BALANCE_UPDATE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
             # If this is a transaction made via a DS Proxy, it needs to be handled in a
             # post-decoding rule. Returning matched_counterparty only here and not for other
             # cases since the post decoding rule needs to run only for ds proxies.
             # This comment applies to all decoding functions in this file.
-            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
+            return EvmDecodingOutput(matched_counterparty=CPT_LIQUITY)
 
         debt_event: EvmEvent | None = None
         fee_event: EvmEvent | None = None
@@ -135,18 +135,18 @@ class LiquityDecoder(EvmDecoderInterface):
             ordered_events=[debt_event, fee_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_stability_pool_event(
             self,
             context: DecoderContext,
             post_decoding: bool = False,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if context.tx_log.topics[0] not in STABILITY_POOL_EVENTS:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
-            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
+            return EvmDecodingOutput(matched_counterparty=CPT_LIQUITY)
 
         deposit_event, withdraw_event, reward_events = None, None, []
         collected_eth, collected_lqty = ZERO, ZERO
@@ -161,7 +161,7 @@ class LiquityDecoder(EvmDecoderInterface):
                 asset=self.lqty,
             )
             if collected_lqty == ZERO:
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
             if context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID_TO_FRONTEND:
                 frontend_address = bytes_to_address(context.tx_log.topics[1])
@@ -177,7 +177,7 @@ class LiquityDecoder(EvmDecoderInterface):
                     counterparty=CPT_LIQUITY,
                     address=context.tx_log.address,
                 )
-                return DecodingOutput(events=[event])
+                return EvmDecodingOutput(events=[event])
 
         for event in context.decoded_events:  # modify the send/receive events
             if event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
@@ -222,28 +222,28 @@ class LiquityDecoder(EvmDecoderInterface):
             ordered_events=[deposit_event, withdraw_event, *reward_events],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_borrower_operations(
             self,
             context: DecoderContext,
             post_decoding: bool = False,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != LUSD_BORROWING_FEE_PAID:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
-            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
+            return EvmDecodingOutput(matched_counterparty=CPT_LIQUITY)
 
         borrower = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
         if borrower is None or self.base.is_tracked(borrower) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if (fee_amount := asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[0:32]),
             asset=self.lusd,
         )) == ZERO:  # for many operations it emits a zero event log
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -261,18 +261,18 @@ class LiquityDecoder(EvmDecoderInterface):
         for decoded_event in context.decoded_events:
             max_seq_index = max(max_seq_index, decoded_event.sequence_index)
         event.sequence_index = max_seq_index + 1
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     def _decode_lqty_staking_deposits(
             self,
             context: DecoderContext,
             post_decoding: bool = False,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if context.tx_log.topics[0] not in STAKING_LQTY_EVENTS:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
-            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
+            return EvmDecodingOutput(matched_counterparty=CPT_LIQUITY)
 
         user, lqty_amount = None, ZERO
         if context.tx_log.topics[0] == STAKING_LQTY_CHANGE:
@@ -328,19 +328,19 @@ class LiquityDecoder(EvmDecoderInterface):
             ordered_events=[deposit_withdraw_event, *reward_events],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_deposit_v2_staking(
             self,
             context: DecoderContext,
             is_deposit: bool,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         user = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
         recipient = self.base.get_address_or_proxy_owner(
             bytes_to_address(context.tx_log.data[0:32]),
         )
         if user is None or recipient is None or not self.base.any_tracked([user, recipient]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if is_deposit:
             offset = 0
@@ -433,16 +433,16 @@ class LiquityDecoder(EvmDecoderInterface):
             ordered_events=[deposit_withdraw_event, *reward_events],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(events=new_events)
+        return EvmDecodingOutput(events=new_events)
 
-    def _decode_liquity_v2_wrapper(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_liquity_v2_wrapper(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode Liquity V2 wrapper transactions"""
         if context.tx_log.topics[0] == DEPOSIT_LQTY_V2:
             return self._decode_deposit_v2_staking(context, is_deposit=True)
         elif context.tx_log.topics[0] == WITHDRAW_LQTY_V2:
             return self._decode_deposit_v2_staking(context, is_deposit=False)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

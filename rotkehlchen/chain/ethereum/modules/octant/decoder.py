@@ -9,9 +9,9 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.constants import WITHDRAWN_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH, A_GLM
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -45,9 +45,9 @@ class OctantDecoder(EvmDecoderInterface):
         )
         self.glm = A_GLM.resolve_to_evm_token()
 
-    def _decode_locker_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_locker_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] not in (LOCKED, UNLOCKED):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == LOCKED:
             expected_type = HistoryEventType.SPEND
@@ -60,12 +60,12 @@ class OctantDecoder(EvmDecoderInterface):
             new_subtype = HistoryEventSubType.REMOVE_ASSET
             verb, preposition = 'Unlock', 'from'
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[32:64])
         address = bytes_to_address(context.tx_log.data[96:128])
         if self.base.is_tracked(address) is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value(raw_amount, self.glm)
 
@@ -85,15 +85,15 @@ class OctantDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find corresponding GLM transfer for Octant {verb} at: {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_reward_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_reward_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != WITHDRAWN_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user = bytes_to_address(context.tx_log.data[0:32])
         if not self.base.is_tracked(user):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[32:64])
         epoch = int.from_bytes(context.tx_log.data[64:96])
@@ -112,7 +112,7 @@ class OctantDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find corresponding ETH receive transaction for Octant rewards withdrawal at: {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

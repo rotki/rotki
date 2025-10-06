@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class Oneinchv2Decoder(OneinchCommonDecoder):
             counterparty=CPT_ONEINCH_V2,
         )
 
-    def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_swapped(self, context: DecoderContext) -> EvmDecodingOutput:
         return self._create_swapped_events(
             context=context,
             sender=bytes_to_address(context.tx_log.topics[1]),

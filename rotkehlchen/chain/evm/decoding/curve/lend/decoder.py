@@ -19,12 +19,12 @@ from rotkehlchen.chain.evm.constants import (
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
     EnricherContext,
+    EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -250,24 +250,24 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
 
         return out_event, in_event
 
-    def _decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vault_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode events from Curve lending vaults."""
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             out_event, in_event = self._decode_deposit(context=context)
         elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
             out_event, in_event = self._decode_withdraw(context=context)
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if out_event is None or in_event is None:
             log.error(f'Failed to find both out and in events for Curve lending vault transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _get_vault_for_controller(
             self,
@@ -327,14 +327,14 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             ),
         )
 
-    def maybe_decode_leveraged_borrow(self, context: DecoderContext) -> DecodingOutput | None:
+    def maybe_decode_leveraged_borrow(self, context: DecoderContext) -> EvmDecodingOutput | None:
         """Decode events associated with creating a leveraged Curve position."""
         if (tokens_and_amounts := self._get_controller_event_tokens_and_amounts(
                 controller_address=(controller_address := context.tx_log.address),
                 context=context,
         )) is None:
             log.error(f'Failed to find tokens and amounts for Curve borrow transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         collateral_token, borrowed_token, _, _ = tokens_and_amounts
 
@@ -377,7 +377,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 event.extra_data = {'controller_address': controller_address}
                 break
 
-        return DecodingOutput(action_items=[ActionItem(
+        return EvmDecodingOutput(action_items=[ActionItem(
             action='transform',
             from_event_type=HistoryEventType.SPEND,
             from_event_subtype=HistoryEventSubType.NONE,
@@ -391,10 +391,10 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             extra_data={'controller_address': controller_address},
         )])
 
-    def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_staking_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """This decodes deposit & withdraw events of the vault's gauge contract."""
         if context.tx_log.topics[0] not in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -444,9 +444,9 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 break
         else:
             log.error(f'Failed to find deposit/withdraw event for curve lending vault gauge for {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DecodingOutput(action_items=[
+        return EvmDecodingOutput(action_items=[
             ActionItem(
                 action='transform',
                 from_event_type=from_event_type,

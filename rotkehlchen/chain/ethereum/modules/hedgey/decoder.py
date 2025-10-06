@@ -9,9 +9,9 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -37,7 +37,7 @@ class HedgeyDecoder(EvmDecoderInterface):
             transaction: 'EvmTransaction',
             owner_address: 'ChecksumEvmAddress',
             plan_name: str,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         token = self.base.get_or_create_evm_token(tx_log.address)
         from_delegate = bytes_to_address(tx_log.topics[2])
         to_delegate = bytes_to_address(tx_log.topics[3])
@@ -57,9 +57,9 @@ class HedgeyDecoder(EvmDecoderInterface):
             counterparty=CPT_HEDGEY,
             address=tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_vault_creation(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vault_creation(self, context: DecoderContext) -> EvmDecodingOutput:
         vault_address = bytes_to_address(context.tx_log.data[:32])
         plan_id = int.from_bytes(context.tx_log.topics[1])
         owner_address = deserialize_evm_address(self.node_inquirer.call_contract(
@@ -69,7 +69,7 @@ class HedgeyDecoder(EvmDecoderInterface):
             arguments=[plan_id],
         ))
         if not self.base.is_tracked(owner_address):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # now find the log of the token delegation
         for tx_log in context.all_logs:
@@ -82,13 +82,13 @@ class HedgeyDecoder(EvmDecoderInterface):
                 )
 
         log.error(f'Did not find a delegation event in {context.transaction} logs')
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_delegate_plans(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_delegate_plans(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode direct delegate change after voting token lockup creation.
         Will only work if called by an EoA"""
         if not self.base.is_tracked(owner_address := context.transaction.from_address):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         contract = EvmContract(address=VOTING_TOKEN_LOCKUPS, abi=VOTING_TOKEN_LOCKUPS_ABI)
         _, args = contract.decode_input_data(context.transaction.input_data)
@@ -104,7 +104,7 @@ class HedgeyDecoder(EvmDecoderInterface):
             plan_name=plan_name,
         )
 
-    def _decode_plan_redeemed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_plan_redeemed(self, context: DecoderContext) -> EvmDecodingOutput:
         plan_id = int.from_bytes(context.tx_log.topics[1])
         contract = EvmContract(address=VOTING_TOKEN_LOCKUPS, abi=VOTING_TOKEN_LOCKUPS_ABI)
         calls = [
@@ -119,7 +119,7 @@ class HedgeyDecoder(EvmDecoderInterface):
             contract.decode(result=output[1], method_name='ownerOf', arguments=[plan_id])[0],
         )
         if not self.base.is_tracked(owner_address):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token = self.base.get_or_create_evm_token(address=token_address)
         amount_redeemed = token_normalized_value(token_amount=int.from_bytes(context.tx_log.data[:32]), token=token)  # noqa: E501
@@ -134,15 +134,15 @@ class HedgeyDecoder(EvmDecoderInterface):
         else:
             log.error(f'Could not find token transfer event for hedgey plan redemption in {context.transaction}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_lockup_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_lockup_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == b'\xa9d\x9a`\xc9\xbf\x95\x06R\x94\x9a}n=\xca\x99+0\xcc\xa6\x10\xef\xc7\xdfDi\xb1Z\x8fw\x8d\xdd':  # Voting Vault Created  # noqa: E501
             return self._decode_vault_creation(context)
         elif context.tx_log.topics[0] == b'\xa6\xfa\xee"FGE\x97\xb6\xde|v\xbf\x9aE\xd2VsuC\xcb\x08\x06\xe6\xe8\x05\xb5[8\xc7f?':  # PlanRedeemed  # noqa: E501
             return self._decode_plan_redeemed(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

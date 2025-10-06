@@ -5,9 +5,9 @@ from rotkehlchen.chain.arbitrum_one.decoding.interfaces import ArbitrumDecoderIn
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ARB
@@ -40,9 +40,9 @@ class AirdropsDecoder(ArbitrumDecoderInterface):
         )
         self.arb_token = A_ARB.resolve_to_evm_token()
 
-    def _decode_arbitrum_airdrop_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_arbitrum_airdrop_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != ARB_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address = bytes_to_address(context.tx_log.topics[1])
         raw_amount = int.from_bytes(context.tx_log.data[0:32])
@@ -56,7 +56,7 @@ class AirdropsDecoder(ArbitrumDecoderInterface):
                 event.notes = f'Claimed {amount} ARB from arbitrum airdrop'
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

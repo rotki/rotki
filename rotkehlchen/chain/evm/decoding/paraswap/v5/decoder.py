@@ -4,9 +4,9 @@ from typing import Any
 
 from rotkehlchen.chain.evm.decoding.paraswap.decoder import ParaswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import DIRECT_SWAP_SIGNATURE
@@ -25,7 +25,7 @@ from .constants import (
 
 class Paraswapv5CommonDecoder(ParaswapCommonDecoder, ABC):
 
-    def _decode_paraswap_swap(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_paraswap_swap(self, context: DecoderContext) -> EvmDecodingOutput:
         """This decodes the following types of trades:
         - Simple Buy
         - Simple Swap
@@ -36,7 +36,7 @@ class Paraswapv5CommonDecoder(ParaswapCommonDecoder, ABC):
         - Direct Swap on Balancer V2
         """
         if context.tx_log.topics[0] not in {PARASWAP_SWAP_SIGNATURE, BUY_SIGNATURE, DIRECT_SWAP_SIGNATURE}:  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return self._decode_swap(
             context=context,
@@ -44,7 +44,7 @@ class Paraswapv5CommonDecoder(ParaswapCommonDecoder, ABC):
             sender=bytes_to_address(context.tx_log.data[96:128]),
         )
 
-    def _decode_uniswap_v2_swap(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_uniswap_v2_swap(self, context: DecoderContext) -> EvmDecodingOutput:
         """This decodes swaps done directly on Uniswap V2 pools"""
         return self._decode_swap(
             context=context,

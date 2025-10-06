@@ -6,9 +6,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -37,7 +37,7 @@ class MetamaskCommonDecoder(EvmDecoderInterface):
         self.router_address = router_address
         self.fee_receiver_address = fee_receiver_address
 
-    def _decode_swap(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_swap(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         This function is used to decode the swap done by metamask.
 
@@ -47,11 +47,11 @@ class MetamaskCommonDecoder(EvmDecoderInterface):
         """
 
         if context.tx_log.topics[0] != SWAP_SIGNATURE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         sender = bytes_to_address(context.tx_log.topics[2])
         if not self.base.is_tracked(sender):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         fee_raw = fee_asset_address = fee_asset = None  # extract the fee info
         for log in context.all_logs:
@@ -102,7 +102,7 @@ class MetamaskCommonDecoder(EvmDecoderInterface):
                 out_event = event
 
         if not (out_event and in_event):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
@@ -111,7 +111,7 @@ class MetamaskCommonDecoder(EvmDecoderInterface):
 
         if not (fee_raw and fee_asset_address):
             # if fee is not found then we have already updated the events so exit
-            return DecodingOutput(process_swaps=True)
+            return EvmDecodingOutput(process_swaps=True)
 
         if fee_asset is None:  # if fee_asset is not determined yet
             if (  # determine it from in_event/out_event
@@ -142,7 +142,7 @@ class MetamaskCommonDecoder(EvmDecoderInterface):
             notes=f'Spend {fee_amount} {fee_asset.symbol} as metamask fees',
         )
 
-        return DecodingOutput(events=[fee_event], process_swaps=True)
+        return EvmDecodingOutput(events=[fee_event], process_swaps=True)
 
     # -- DecoderInterface methods
 

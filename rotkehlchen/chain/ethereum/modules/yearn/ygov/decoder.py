@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
+from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT
 from rotkehlchen.constants.assets import A_CRVP_DAIUSDCTTUSD, A_YFI
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -16,7 +16,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
-    from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+    from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -97,7 +97,7 @@ class YearnygovDecoder(EvmDecoderInterface):
                 event.notes = f'Deposit {event.amount} yDAI+yUSDC+yUSDT+yTUSD in ygov.finance'
                 break
 
-    def decode_gov_events(self, context: 'DecoderContext') -> 'DecodingOutput':
+    def decode_gov_events(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
         if context.tx_log.topics[0] == REWARD_PAID_TOPIC_V2:
             self._decode_reward_token(context)
         elif context.tx_log.topics[0] == WITHDRAWN:
@@ -105,7 +105,7 @@ class YearnygovDecoder(EvmDecoderInterface):
         elif context.tx_log.topics[0] == STAKED:
             self._decode_stake(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {YGOV_ADDRESS: (self.decode_gov_events,)}

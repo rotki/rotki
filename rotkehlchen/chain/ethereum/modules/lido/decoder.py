@@ -5,10 +5,10 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH, A_STETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -42,7 +42,7 @@ class LidoDecoder(EvmDecoderInterface):
         )
         self.steth_evm_address = A_STETH.resolve_to_evm_token().evm_address
 
-    def _decode_lido_staking_in_steth(self, context: DecoderContext, sender: ChecksumEvmAddress) -> DecodingOutput:  # noqa: E501
+    def _decode_lido_staking_in_steth(self, context: DecoderContext, sender: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
         """Decode the submit of eth to lido contract for obtaining steth in return"""
         amount_raw = int.from_bytes(context.tx_log.data[:32])
         collateral_amount = token_normalized_value_decimals(
@@ -78,7 +78,7 @@ class LidoDecoder(EvmDecoderInterface):
                 f'At lido steth submit decoding of tx {context.transaction.tx_hash.hex()}'
                 f' did not find the related ETH transfer',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         action_items = []  # also create an action item for the reception of the stETH tokens
         if paired_event is not None and action_from_event_type is not None:
@@ -96,9 +96,9 @@ class LidoDecoder(EvmDecoderInterface):
                 extra_data={'staked_eth': str(collateral_amount)},
             ))
 
-        return DecodingOutput(action_items=action_items, matched_counterparty=CPT_LIDO)
+        return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_LIDO)
 
-    def _decode_lido_eth_staking_contract(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_lido_eth_staking_contract(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode interactions with stETH ans wstETH contracts"""
         if (
             context.tx_log.topics[0] == LIDO_STETH_SUBMITTED and
@@ -106,7 +106,7 @@ class LidoDecoder(EvmDecoderInterface):
         ):
             return self._decode_lido_staking_in_steth(context=context, sender=sender)
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

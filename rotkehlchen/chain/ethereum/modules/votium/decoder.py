@@ -5,9 +5,9 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
@@ -24,9 +24,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 class VotiumDecoder(EvmDecoderInterface):
 
-    def _decode_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claimed_token_address = bytes_to_address(context.tx_log.topics[1])
         claimed_token = self.base.get_or_create_evm_token(claimed_token_address)
@@ -50,7 +50,7 @@ class VotiumDecoder(EvmDecoderInterface):
         else:  # not found
             log.error(f'Votium bribe transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -9,9 +9,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -52,7 +52,7 @@ class OmnibridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
         self.source_chain = source_chain
         self.target_chain = target_chain
 
-    def _decode_bridge_tokens(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_bridge_tokens(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes a bridging event for tokens. Either a deposit or a withdrawal."""
         if context.tx_log.topics[0] == TOKENS_BRIDGING_INITIATED:
             from_address = context.transaction.from_address
@@ -61,7 +61,7 @@ class OmnibridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
             to_address = bytes_to_address(context.tx_log.topics[2])
             from_address = to_address  # We have no from_address information
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         bridged_asset = get_or_create_evm_token(
             userdb=self.node_inquirer.database,
@@ -118,7 +118,7 @@ class OmnibridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
         else:
             log.error(f'Could not find the transfer event for bridging to {to_address} in {context.transaction}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

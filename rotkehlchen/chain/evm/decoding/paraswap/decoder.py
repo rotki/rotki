@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
@@ -52,13 +52,13 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
             context: DecoderContext,
             sender: ChecksumEvmAddress,
             receiver: ChecksumEvmAddress | None = None,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """This function is used to decode the swap done by paraswap.
         In v6 swaps, receiver is unavailable and is ignored,
         since sender should always be a tracked address.
         """
         if not self.base.any_tracked((sender,) if receiver is None else (sender, receiver)):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         out_event: EvmEvent | None = None
         in_event: EvmEvent | None = None
@@ -92,7 +92,7 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
 
         if in_event is None or out_event is None:
             log.error(f'Could not find the corresponding events when decoding {self.node_inquirer.chain_name} paraswap swap {context.transaction.tx_hash.hex()}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if partial_refund_event is not None:  # if some in_asset is returned back.
             # it's assumed in the above for loop, that the second in_event is the partial refund
@@ -161,7 +161,7 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
             ordered_events=[out_event, in_event, fee_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

@@ -9,9 +9,9 @@ from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -51,7 +51,7 @@ class DxdaomesaDecoder(EvmDecoderInterface):
             deployed_block=contracts['DXDAOMESA']['deployed_block'],
         )
 
-    def _decode_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT:
             return self._decode_deposit(context=context)
         if context.tx_log.topics[0] == ORDER_PLACEMENT:
@@ -61,9 +61,9 @@ class DxdaomesaDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == WITHDRAW_TOPIC:
             return self._decode_withdraw(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         topic_data, log_data = self.contract.decode_event(
             tx_log=context.tx_log,
             event_name='Deposit',
@@ -81,9 +81,9 @@ class DxdaomesaDecoder(EvmDecoderInterface):
                 event.notes = f'Deposit {amount} {deposited_asset.symbol} to DXDao mesa exchange'
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         topic_data, log_data = self.contract.decode_event(
             tx_log=context.tx_log,
             event_name='Withdraw',
@@ -101,9 +101,9 @@ class DxdaomesaDecoder(EvmDecoderInterface):
                 event.notes = f'Withdraw {amount} {withdraw_asset.symbol} from DXDao mesa exchange'
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdraw_request(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdraw_request(self, context: DecoderContext) -> EvmDecodingOutput:
         topic_data, log_data = self.contract.decode_event(
             tx_log=context.tx_log,
             event_name='WithdrawRequest',
@@ -111,7 +111,7 @@ class DxdaomesaDecoder(EvmDecoderInterface):
         )
         user = topic_data[0]
         if not self.base.is_tracked(user):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token = self.base.get_or_create_evm_asset(topic_data[1])
         amount = asset_normalized_value(amount=log_data[0], asset=token)
@@ -128,9 +128,9 @@ class DxdaomesaDecoder(EvmDecoderInterface):
             counterparty=CPT_DXDAO_MESA,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_order_placement(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_order_placement(self, context: DecoderContext) -> EvmDecodingOutput:
         """Some docs: https://docs.cow.fi/cow-protocol/tutorials/cow-swap/limit"""
         topic_data, log_data = self.contract.decode_event(
             tx_log=context.tx_log,
@@ -139,7 +139,7 @@ class DxdaomesaDecoder(EvmDecoderInterface):
         )
         owner = topic_data[0]
         if not self.base.is_tracked(owner):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         result = self.node_inquirer.multicall_specific(
             contract=self.contract,
@@ -162,7 +162,7 @@ class DxdaomesaDecoder(EvmDecoderInterface):
             counterparty=CPT_DXDAO_MESA,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

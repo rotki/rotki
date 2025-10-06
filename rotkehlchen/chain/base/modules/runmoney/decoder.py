@@ -7,9 +7,9 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import STAKED
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.resolver import tokenid_belongs_to_collection, tokenid_to_collectible_id
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -31,7 +31,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class RunmoneyDecoder(EvmDecoderInterface):
-    def _decode_join_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_join_event(self, context: DecoderContext) -> EvmDecodingOutput:
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
@@ -52,7 +52,7 @@ class RunmoneyDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive Runmoney membership NFT with id {tokenid_to_collectible_id(event.asset.identifier)} for joining the club'  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     @staticmethod
     def _decode_stake_unstake_event(
@@ -62,7 +62,7 @@ class RunmoneyDecoder(EvmDecoderInterface):
             to_event_subtype: Literal[HistoryEventSubType.DEPOSIT_ASSET, HistoryEventSubType.REMOVE_ASSET],  # noqa: E501
             action: Literal['deposit', 'withdraw'],
             preposition: Literal['into', 'from'],
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=6,  # usdc token has decimal=6
@@ -81,10 +81,10 @@ class RunmoneyDecoder(EvmDecoderInterface):
         else:
             log.error(f'Failed to find runmoney {action} event for transaction {context.transaction}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     @staticmethod
-    def _decode_claim_event(context: DecoderContext) -> DecodingOutput:
+    def _decode_claim_event(context: DecoderContext) -> EvmDecodingOutput:
         user_address = bytes_to_address(context.tx_log.topics[1])
         usdc_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -105,9 +105,9 @@ class RunmoneyDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.notes = f'Claim {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as interest earned from Runmoney'  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_runmoney_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_runmoney_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """This decodes the following runmoney.app events:
             - Joined: club membership events (eth fee payment + nft receipt)
             - Staked: usdc deposits into the protocol
@@ -140,7 +140,7 @@ class RunmoneyDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == CLAIM_TOPIC:
             return self._decode_claim_event(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {RUNMONEY_CONTRACT_ADDRESS: (self._decode_runmoney_events,)}

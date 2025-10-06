@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.thegraph.decoder import ThegraphCommonDecoder
@@ -51,7 +51,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             staking_contract=CONTRACT_STAKING,
         )
 
-    def _decode_delegation_transferred_to_l2(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_delegation_transferred_to_l2(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a transfer delegating GRT from ethereum to arbitrum"""
         if context.tx_log.topics[0] != DELEGATION_TRANSFERRED_TO_L2:
             return self._decode_delegator_staking(context)
@@ -60,7 +60,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
         delegator_l2 = bytes_to_address(context.tx_log.topics[2])
         user_address = self.get_user_address(delegator, delegator_l2)
         if not user_address or not self.base.any_tracked([user_address, delegator, delegator_l2]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[3])
         indexer_l2 = bytes_to_address(context.tx_log.data[:32])
@@ -82,14 +82,14 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             extra_data={'delegator_l2': delegator_l2, 'indexer_l2': indexer_l2, 'beneficiary': user_address},  # noqa: E501
             product=EvmProduct.STAKING,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_token_destination_approved(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_token_destination_approved(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a TokenDestinationsApproved event from the L1 bridge. This event is emitted
         when a user approves a token destination to be used for delegation in L2. We use this
         to query the logs to find the delegation address."""
         if context.tx_log.topics[0] != TOKEN_DESTINATIONS_APPROVED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -103,13 +103,13 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             counterparty=CPT_THEGRAPH,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_contract_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_contract_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a deposit of ETH to cover the arbitrum fees of delegating GRT"""
         user_address = self.get_user_address(bytes_to_address(context.tx_log.topics[1]))
         if not user_address or not self.base.is_tracked(user_address):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
         raw_amount = int.from_bytes(context.tx_log.data)
@@ -127,7 +127,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
                 event.extra_data = {'indexer': indexer}
                 break
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

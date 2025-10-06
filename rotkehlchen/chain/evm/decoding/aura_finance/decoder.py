@@ -19,10 +19,10 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -76,7 +76,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
         self.claim_zap_address = claim_zap_address
         self.base_reward_tokens = base_reward_tokens
 
-    def _decode_lock_aura(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_lock_aura(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes locking AURA events on Ethereum and Base (vlAURA)."""
         locked_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -93,9 +93,9 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Lock {locked_amount} {event.asset.resolve_to_asset_with_symbol().symbol} in auraLocker (vlAURA)'  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_lock_aura_bridged(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_lock_aura_bridged(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes locking AURA events on bridged chains (excluding Ethereum)."""
         locked_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -134,9 +134,9 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
         if refund_event:  # Remove refund event; it's factored into the bridge fee
             context.decoded_events.remove(refund_event)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_reward_claims(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_reward_claims(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes Aura Finance reward claiming events.
 
         It handles three types of reward transactions: 'getReward', 'claimRewards'
@@ -172,7 +172,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AURA_FINANCE
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_deposit_helper(
             self,
@@ -180,7 +180,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
             deposit_note_suffix: str,
             receive_note_suffix: str,
             received_amount:  FVal | None = None,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Helper function to decode deposit events where a wrapped token is received.
 
         Handles both the deposit and wrapped token receiving events. Used for
@@ -225,9 +225,9 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
             events_list=context.decoded_events,
             ordered_events=deposit_events + [receive_event],
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         """This logic processes withdrawals from aura that return BPT tokens"""
         withdrawn_amount_raw = int.from_bytes(context.tx_log.data[0:32])
         user_address = bytes_to_address(context.tx_log.topics[1])
@@ -264,7 +264,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
                         break
                 else:
                     log.error(f'Failed to match the burn event of aura tokens in {context.transaction}')  # noqa: E501
-                    return DEFAULT_DECODING_OUTPUT
+                    return DEFAULT_EVM_DECODING_OUTPUT
 
                 aura_token = self.base.get_or_create_evm_token(address=aura_pool_contract_addr)
                 action_item = ActionItem(
@@ -280,14 +280,14 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
                     to_notes=f'Return {withdrawn_amount} {aura_token.symbol_or_name()} to Aura',
                     paired_events_data=((event,), False),
                 )
-                return DecodingOutput(action_items=[action_item])
+                return EvmDecodingOutput(action_items=[action_item])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_deposit_aura_bal(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit_aura_bal(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes auraBAL deposit events (Base, Arbitrum, Polygon)."""
         if context.tx_log.topics[0] != DEPOSIT_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         received_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
@@ -300,7 +300,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
             receive_note_suffix='from auraBAL vault',
         )
 
-    def _decode_booster_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_booster_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes booster deposit events."""
         if context.tx_log.topics[0] == DEPOSITED_TOPIC:
             return self._decode_deposit_helper(
@@ -312,7 +312,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == WITHDRAWN_TOPIC:
             return self._decode_withdraw(context=context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         if self.node_inquirer.chain_id == ChainID.ETHEREUM:

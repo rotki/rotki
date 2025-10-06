@@ -17,10 +17,10 @@ from rotkehlchen.chain.evm.decoding.stakedao.utils import (
     query_stakedao_gauges,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
@@ -102,7 +102,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             reward_token_address: ChecksumEvmAddress,
             amount: int,
             period: Timestamp,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Base functionality for claiming different types of stakedao votemarket bribes
 
         Note: We don't check the user address in the logs as user is not always
@@ -125,9 +125,9 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         else:  # not found
             log.error(f'Stakedao bribe transfer was not found for {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_reward_claim_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_reward_claim_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == CLAIMED_WITH_BOUNTY:
             reward_token_address = bytes_to_address(context.tx_log.data[0:32])
             amount = int.from_bytes(context.tx_log.data[32:64])
@@ -148,28 +148,28 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.notes = f'Claim {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from StakeDAO'  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_claim_with_bribe(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_claim_with_bribe(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != CLAIMED_WITH_BRIBE:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         reward_token_address = bytes_to_address(context.tx_log.topics[2])
         amount = int.from_bytes(context.tx_log.data[0:32])
         period = Timestamp(int.from_bytes(context.tx_log.data[32:64]))
         return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
 
-    def _decode_claim_bribe_protocolfee(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_claim_bribe_protocolfee(self, context: DecoderContext) -> EvmDecodingOutput:
         """Very similar to _decode_claim_with_bribe but has topics[0] of CLAIMED_WITH_BOUNTY but different handling needed due to having a protocol fee which is not paid from the user directly so no need to decode"""  # noqa: E501
         if context.tx_log.topics[0] != CLAIMED_WITH_BOUNTY:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         reward_token_address = bytes_to_address(context.tx_log.topics[2])
         amount = int.from_bytes(context.tx_log.data[0:32])
         period = Timestamp(int.from_bytes(context.tx_log.data[64:96]))
         return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
 
-    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         deposited_raw_amount = int.from_bytes(context.tx_log.data[:32])
         received_amount = asset_normalized_value(
             amount=deposited_raw_amount,
@@ -196,9 +196,9 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 break
         else:
             log.error(f'Could not find stakedao deposit event for transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DecodingOutput(action_items=[ActionItem(
+        return EvmDecodingOutput(action_items=[ActionItem(
             action='transform',
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
@@ -211,7 +211,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             to_counterparty=CPT_STAKEDAO,
         )])
 
-    def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
         claim_events = []
         recipient = bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
@@ -265,7 +265,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             break
         else:
             log.error(f'Could not find stakedao gauge token return event for transaction {context.transaction}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         context.decoded_events.append(return_event)
         maybe_reshuffle_events(
@@ -282,7 +282,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 method_name='token',
             )))),
         )
-        return DecodingOutput(action_items=[ActionItem(
+        return EvmDecodingOutput(action_items=[ActionItem(
             action='transform',
             asset=received_token,
             amount=received_amount,
@@ -296,12 +296,12 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             to_address=context.transaction.to_address,
         )])
 
-    def _decode_deposit_withdrawal_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit_withdrawal_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
             return self._decode_deposit(context)
         elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V2:
             return self._decode_withdraw(context)
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

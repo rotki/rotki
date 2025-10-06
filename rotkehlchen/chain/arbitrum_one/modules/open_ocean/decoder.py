@@ -7,9 +7,9 @@ from rotkehlchen.chain.evm.decoding.open_ocean.decoder import (
     OpenOceanDecoder as OpenOceanBaseDecoder,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -29,13 +29,13 @@ log = RotkehlchenLogsAdapter(logger)
 
 class OpenOceanDecoder(OpenOceanBaseDecoder):
 
-    def _process_arb_airdrop(self, context: 'DecoderContext') -> 'DecodingOutput':
+    def _process_arb_airdrop(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
         """This logic processes an airdrop made from the OpenOcean team as part of the
         swaps incentive program using the ARB granted by the Arbitrum DAO
         https://forum.arbitrum.foundation/t/openocean-final-stip-round-1/17564/1
         """
         if context.tx_log.topics[0] != CLAIMED_REWARDS:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value(
             token_amount=int.from_bytes(context.tx_log.data[64:96]),
@@ -59,7 +59,7 @@ class OpenOceanDecoder(OpenOceanBaseDecoder):
         else:
             log.error(f'Failed to match distributor reward in {context.transaction}')
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return super().addresses_to_decoders() | {DISTRIBUTOR_ADDR: (self._process_arb_airdrop,)}

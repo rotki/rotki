@@ -13,10 +13,10 @@ from rotkehlchen.chain.evm.constants import MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -71,16 +71,16 @@ class Compoundv2Decoder(EvmDecoderInterface):
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         minter = bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         mint_amount_raw = int.from_bytes(tx_log.data[32:64])
         minted_amount_raw = int.from_bytes(tx_log.data[64:96])
         underlying_asset = get_compound_underlying_token(compound_token)
         if underlying_asset is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         mint_amount = asset_normalized_value(mint_amount_raw, underlying_asset)
         minted_amount = token_normalized_value(minted_amount_raw, compound_token)
@@ -102,7 +102,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
 
         if out_event is None:
             log.debug(f'At compound mint decoding of tx {transaction.tx_hash.hex()} the out event was not found')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # also create an action item for the receive of the cTokens
         action_item = ActionItem(
@@ -116,23 +116,23 @@ class Compoundv2Decoder(EvmDecoderInterface):
             to_counterparty=CPT_COMPOUND,
             paired_events_data=((out_event,), True),
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
     def _decode_redeem(
             self,
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         redeemer = bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         redeem_amount_raw = int.from_bytes(tx_log.data[32:64])
         redeem_tokens_raw = int.from_bytes(tx_log.data[64:96])
         underlying_asset = get_compound_underlying_token(compound_token)
         if underlying_asset is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_asset)
         redeem_tokens = token_normalized_value(redeem_tokens_raw, compound_token)
@@ -152,14 +152,14 @@ class Compoundv2Decoder(EvmDecoderInterface):
                 out_event = event
 
         maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_borrow_and_repay(
             self,
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """
         Decode borrow and repayments for compound tokens
         """
@@ -171,7 +171,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
         else:
             underlying_asset = get_compound_underlying_token(compound_token)
             if underlying_asset is None:
-                return DEFAULT_DECODING_OUTPUT
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         if tx_log.topics[0] == BORROW_COMPOUND:
             amount_raw = int.from_bytes(tx_log.data[32:64])
@@ -214,7 +214,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Repay {amount} {underlying_asset.symbol} to compound'
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_liquidate(
             self,
@@ -222,7 +222,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
             tx_log: 'EvmTxReceiptLog',
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         """Decode a liquidation event happening over a tracked account"""
         borrower = bytes_to_address(tx_log.data[32:64])
         liquidator_address = bytes_to_address(tx_log.data[0:32])
@@ -270,7 +270,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
 
         if repaying_asset is None:
             log.error(f'Failed to decode compound liquidation at {transaction.tx_hash.hex()}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         repaid_amount = asset_normalized_value(
             amount=repay_amount_raw,
@@ -310,13 +310,13 @@ class Compoundv2Decoder(EvmDecoderInterface):
                 event.notes = f'Collect {seized_collateral_amount} {collateral_ctoken.symbol} for performing a compound liquidation'  # noqa: E501
                 event.counterparty = CPT_COMPOUND
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def decode_compound_token_movement(
             self,
             context: DecoderContext,
             compound_token: EvmToken,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == MINT_TOPIC:
             return self._decode_mint(transaction=context.transaction, tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
 
@@ -334,9 +334,9 @@ class Compoundv2Decoder(EvmDecoderInterface):
                 all_logs=context.all_logs,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def decode_comp_claim(self, context: DecoderContext) -> DecodingOutput:
+    def decode_comp_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
         https://etherscan.io/tx/0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49
@@ -353,14 +353,14 @@ class Compoundv2Decoder(EvmDecoderInterface):
         contract code: https://etherscan.io/address/0xBafE01ff935C7305907c33BF824352eE5979B526#code
         """
         if context.tx_log.topics[0] not in (DISTRIBUTED_SUPPLIER_COMP, DISTRIBUTED_BORROWER_COMP):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         # Transactions with comp claim have many such "distributed" events. We need to do a
         # decoded evens iteration only at the end but can't think of a good way to avoid
         # the possibility of checking all such events
         supplier_address = bytes_to_address(context.tx_log.topics[2])
         if not self.base.is_tracked(supplier_address):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == supplier_address and event.asset == A_COMP and event.address == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
@@ -379,9 +379,9 @@ class Compoundv2Decoder(EvmDecoderInterface):
                 to_notes='Collect {amount} COMP from compound',  # amount set at actionitem process
                 to_counterparty=CPT_COMPOUND,
             )
-            return DecodingOutput(action_items=[action_item])
+            return EvmDecodingOutput(action_items=[action_item])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

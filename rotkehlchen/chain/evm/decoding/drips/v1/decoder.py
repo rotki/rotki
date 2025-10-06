@@ -14,10 +14,10 @@ from rotkehlchen.chain.evm.decoding.drips.v1.constants import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -54,9 +54,9 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
         CustomizableDateMixin.__init__(self, base_tools.database)
         self.drips_hub = drips_hub
 
-    def _decode_split(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_split(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data),
@@ -74,11 +74,11 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             counterparty=CPT_DRIPS,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_collected(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_collected(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         collected_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[0:32]),
@@ -111,14 +111,14 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             to_counterparty=CPT_DRIPS,
             paired_events_data=paired_events_data,
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
-    def _decode_splits_updated(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_splits_updated(self, context: DecoderContext) -> EvmDecodingOutput:
         contract = self.node_inquirer.contracts.contract(self.drips_hub)
         topic_data, log_data = contract.decode_event(tx_log=context.tx_log, event_name='SplitsUpdated', argument_names=('user', 'receivers'))  # noqa: E501
 
         if not self.base.is_tracked(user := topic_data[0]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         initiator = '' if context.transaction.from_address == user else f'{user} '
         for entry in log_data[0]:
@@ -135,11 +135,11 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
                 address=context.tx_log.address,
             ))
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_given(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_given(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         receiver = bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
         amount = token_normalized_value_decimals(
@@ -158,11 +158,11 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             to_notes=f'Deposit {amount} DAI to Drips v1 as a donation for {receiver}',
             to_counterparty=CPT_DRIPS,
         )
-        return DecodingOutput(action_items=[action_item])
+        return EvmDecodingOutput(action_items=[action_item])
 
-    def _decode_dripping(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_dripping(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         receiver = bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
 
@@ -187,7 +187,7 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             if existing_action_item.to_event_subtype == HistoryEventSubType.DONATE and existing_action_item.asset == A_DAI and existing_action_item.paired_events_data is not None:  # noqa: E501
                 existing_events = existing_action_item.paired_events_data[0]
                 existing_action_item.paired_events_data = (existing_events + [new_event], False)  # type: ignore  # can add the sequences
-                return DecodingOutput(events=[new_event], action_items=[existing_action_item])
+                return EvmDecodingOutput(events=[new_event], action_items=[existing_action_item])
 
         # else loop found no action item. Create one to match first DAI transfer to
         # the drips hub from the user. Count as in events pairing to guarantee
@@ -207,9 +207,9 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             to_counterparty=CPT_DRIPS,
             paired_events_data=paired_events_data,
         )
-        return DecodingOutput(action_items=[action_item], events=[new_event])
+        return EvmDecodingOutput(action_items=[action_item], events=[new_event])
 
-    def _decode_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == SPLIT:
             return self._decode_split(context)
         elif context.tx_log.topics[0] == COLLECTED:
@@ -221,7 +221,7 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
         elif context.tx_log.topics[0] == DRIPPING:
             return self._decode_dripping(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

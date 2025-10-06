@@ -43,9 +43,9 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -104,7 +104,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         )
         self.eigenpod_owner_mapping = get_eigenpods_to_owners_mapping(self.base.database)
 
-    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         depositor = bytes_to_address(context.tx_log.data[0:32])
         token_addr = bytes_to_address(context.tx_log.data[32:64])
         token_identifier = ethaddress_to_identifier(address=token_addr)
@@ -124,9 +124,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.product = EvmProduct.STAKING
                 event.counterparty = CPT_EIGENLAYER
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdrawal(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         Decode withdrawal from eigenlayer. The transaction only contains a transfer event
         and the unstake event but the unstake event doesn't have information about the asset
@@ -148,7 +148,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.NONE
         else:
             log.error(f'Unexpected eigenlayer withdrawal in {context.transaction.tx_hash.hex()}. Skipping')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE:
@@ -161,19 +161,19 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         else:
             log.error(f'Could not match eigenlayer withdrawal event in {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def decode_event(self, context: DecoderContext) -> DecodingOutput:
+    def decode_event(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             return self._decode_deposit(context)
         elif context.tx_log.topics[0] == STRATEGY_WITHDRAWAL_COMPLETE_TOPIC:
             return self._decode_withdrawal(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def decode_airdrop(self, context: DecoderContext, airdrop_identifier: str, note_suffix: str) -> DecodingOutput:  # noqa: E501
+    def decode_airdrop(self, context: DecoderContext, airdrop_identifier: str, note_suffix: str) -> EvmDecodingOutput:  # noqa: E501
         if not (decode_result := self._decode_claim(context)):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         claiming_address, claimed_amount = decode_result
         notes = f'Claim {claimed_amount} EIGEN from the Eigenlayer airdrop {note_suffix}'
@@ -193,19 +193,19 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         else:
             log.error(f'Could not match eigenlayer airdrop receive event in {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def decode_eigenpod_manager_events(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_manager_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == POD_DEPLOYED:
             return self.decode_eigenpod_creation(context)
         elif context.tx_log.topics[0] == POD_SHARES_UPDATED:
             return self.decode_eigenpod_shares_updated(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def decode_eigenpod_shares_updated(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_shares_updated(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(owner := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         shares_delta = int.from_bytes(context.tx_log.data[0:32])
         notes = f'{"Restake" if shares_delta > 0 else "Unstake"} {from_wei(shares_delta)} ETH'
@@ -223,11 +223,11 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def decode_eigenpod_creation(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_creation(self, context: DecoderContext) -> EvmDecodingOutput:
         if not self.base.is_tracked(owner := bytes_to_address(context.tx_log.topics[2])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         eigenpod_address = bytes_to_address(context.tx_log.topics[1])
         suffix = f' with owner {owner}' if context.transaction.from_address != owner else ''
@@ -244,21 +244,21 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             address=context.tx_log.address,
             extra_data={'eigenpod_owner': owner, 'eigenpod_address': eigenpod_address},
         )
-        return DecodingOutput(events=[event], reload_decoders={'Eigenlayer'})
+        return EvmDecodingOutput(events=[event], reload_decoders={'Eigenlayer'})
 
-    def decode_eigenpod_delayed_withdrawals(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_delayed_withdrawals(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CREATED:
             return self.decode_eigenpod_delayed_withdrawals_created(context)
         elif context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CLAIMED:
             return self.decode_eigenpod_delayed_withdrawals_claimed(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def decode_eigenpod_delayed_withdrawals_created(self, context: DecoderContext) -> DecodingOutput:  # noqa: E501
+    def decode_eigenpod_delayed_withdrawals_created(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
         pod_owner = bytes_to_address(context.tx_log.data[0:32])
         recipient = bytes_to_address(context.tx_log.data[32:64])
         if not self.base.any_tracked([pod_owner, recipient]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = from_wei(int.from_bytes(context.tx_log.data[64:96]))
         partial_withdrawals_redeemed, full_withdrawals_redeemed = 0, 0
@@ -283,11 +283,11 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def decode_eigenpod_delayed_withdrawals_claimed(self, context: DecoderContext) -> DecodingOutput:  # noqa: E501
+    def decode_eigenpod_delayed_withdrawals_claimed(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
         if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.data[0:32])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = from_wei(int.from_bytes(context.tx_log.data[32:64]))
         for event in context.decoded_events:
@@ -307,9 +307,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
         log.error(f'Did not find matching eigenlayer ETH transfer for delayed withdrawal claim in {context.transaction.tx_hash.hex()}. Skipping')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_withdrawal_completed(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdrawal_completed(self, context: DecoderContext) -> EvmDecodingOutput:
         """Processes a withdrawal completed event.
 
         What we do is try to find the previous withdrawal queued event and
@@ -394,14 +394,14 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 address=context.tx_log.address,
             )
 
-        return DecodingOutput(events=[new_event])
+        return EvmDecodingOutput(events=[new_event])
 
-    def _decode_withdrawal_queued(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_withdrawal_queued(self, context: DecoderContext) -> EvmDecodingOutput:
         """Creates and adds a queued withdrawal for each withdrawal in the event"""
         contract = self.node_inquirer.contracts.contract(EIGENLAYER_DELEGATION)
         _, log_data = contract.decode_event(tx_log=context.tx_log, event_name='WithdrawalQueued', argument_names=('withdrawalRoot', 'withdrawal'))  # noqa: E501
         if not self.base.any_tracked([staker := log_data[1][0], withdrawer := log_data[1][2]]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         location_label = withdrawer if self.base.is_tracked(withdrawer) else staker
 
@@ -409,7 +409,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         shares_entries = log_data[1][6]
         if len(strategies) != len(shares_entries):  # should not happen according to contracts
             log.error(f'When decoding eigenlayer WithdrawalQueued len(strategies) != len(shares) for {context.transaction.tx_hash.hex()}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         suffix = f' for {withdrawer}' if withdrawer != context.transaction.from_address else ''
         underlying_tokens, underlying_amounts = self._get_strategy_token_amount(
@@ -437,7 +437,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             )
             context.decoded_events.append(event)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _get_strategy_token_amount(
             self,
@@ -489,7 +489,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
         return underlying_tokens, underlying_amounts
 
-    def decode_delegation(self, context: DecoderContext) -> DecodingOutput:
+    def decode_delegation(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode events that delegate shares increase or decrease of an asset to an operator"""
         if context.tx_log.topics[0] == OPERATOR_SHARES_INCREASED:
             verb, preposition = 'Delegate', 'to'
@@ -500,10 +500,10 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         elif context.tx_log.topics[0] == WITHDRAWAL_COMPLETED:
             return self. _decode_withdrawal_completed(context)
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if not self.base.is_tracked(staker := bytes_to_address(context.tx_log.data[0:32])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         underlying_tokens, underlying_amounts = self._get_strategy_token_amount(
             strategies=[bytes_to_address(context.tx_log.data[32:64])],
@@ -528,9 +528,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             extra_data={'amount': str(underlying_amounts[0])},
         )
 
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_start_checkpoint(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_start_checkpoint(self, context: DecoderContext) -> EvmDecodingOutput:
         beacon_blockroot = '0x' + context.tx_log.topics[2].hex()
         validators_num = int.from_bytes(context.tx_log.data)
         event = self.base.make_event_from_transaction(
@@ -545,9 +545,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_finalize_checkpoint(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_finalize_checkpoint(self, context: DecoderContext) -> EvmDecodingOutput:
         total_shares_delta = from_wei(int.from_bytes(context.tx_log.data))
         if total_shares_delta >= 0:
             action = f'add {total_shares_delta} ETH for'
@@ -565,9 +565,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def _decode_validator_balance_updated(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_validator_balance_updated(self, context: DecoderContext) -> EvmDecodingOutput:
         validator_index = int.from_bytes(context.tx_log.data[0:32])
         validator_balance = from_gwei(int.from_bytes(context.tx_log.data[64:96]))
 
@@ -583,9 +583,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
-    def decode_eigenpod_events(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == CHECKPOINT_CREATED:
             return self._decode_start_checkpoint(context)
         elif context.tx_log.topics[0] == CHECKPOINT_FINALIZED:
@@ -593,17 +593,17 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         elif context.tx_log.topics[0] == VALIDATOR_BALANCE_UPDATED:
             return self._decode_validator_balance_updated(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def decode_rewards_coordinator(self, context: DecoderContext) -> DecodingOutput:
+    def decode_rewards_coordinator(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != REWARDS_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         earner = bytes_to_address(context.tx_log.topics[1])
         claimer = bytes_to_address(context.tx_log.topics[2])
         recipient = bytes_to_address(context.tx_log.topics[2])
         if not self.base.any_tracked([earner, claimer, recipient]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token_address = bytes_to_address(context.tx_log.data[32:64])
         token = self.base.get_or_create_evm_token(
@@ -627,7 +627,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         else:
             log.error(f'During decoding eigenlayer AVS reward claiming for {context.transaction} could not find the token transfer')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

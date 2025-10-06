@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_SHU
 from rotkehlchen.constants.misc import ZERO
@@ -46,12 +46,12 @@ class ShutterDecoder(EvmDecoderInterface):
         )
         self.shu = A_SHU.resolve_to_evm_token()
 
-    def _decode_shutter_claim(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_shutter_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         if not (
             context.tx_log.topics[0] == REDEEMED_VESTING and
             self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2]))
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         redeem_id = vesting_contract_address = None
         for tx_log in reversed(context.all_logs):
@@ -72,9 +72,9 @@ class ShutterDecoder(EvmDecoderInterface):
                 break
         else:
             log.error(f'Could not find the SHU transfer in {context.transaction.tx_hash.hex()}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
-        return DecodingOutput(events=[self.base.make_event_from_transaction(
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -88,17 +88,17 @@ class ShutterDecoder(EvmDecoderInterface):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'shutter'},
         )])
 
-    def _decode_delegation_change(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_delegation_change(self, context: DecoderContext) -> EvmDecodingOutput:
         """This contract function (delegateTokens), can only be called by the owner,
         that is `context.transaction.from_address`. So not verifying the caller here."""
         if context.tx_log.topics[0] != DELEGATE_CHANGED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         delegator = bytes_to_address(context.tx_log.topics[1])
         delegator_note = ''
         if delegator != context.transaction.from_address:
             delegator_note = f' for {delegator}'
-        return DecodingOutput(events=[self.base.make_event_from_transaction(
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,

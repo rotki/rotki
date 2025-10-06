@@ -6,9 +6,9 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH, TOKEN_LOCKED
 from rotkehlchen.chain.evm.decoding.giveth.decoder import GivethDecoderBase
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -48,7 +48,7 @@ class GivethDecoder(GivethDecoderBase):
             pow_token_id='eip155:10/erc20:0x301C739CF6bfb6B47A74878BdEB13f92F13Ae5E7',
         )
 
-    def decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
+    def decode_staking_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == TOKEN_DEPOSITED:
             return self._decode_token_movement(
                 context=context,
@@ -78,7 +78,7 @@ class GivethDecoder(GivethDecoderBase):
         elif context.tx_log.topics[0] == TOKEN_LOCKED:
             return self._decode_token_locked(context)
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_token_movement(
             self,
@@ -92,9 +92,9 @@ class GivethDecoder(GivethDecoderBase):
             receive_type: HistoryEventType,
             receive_subtype: HistoryEventSubType,
             receive_notes: str,
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -126,10 +126,10 @@ class GivethDecoder(GivethDecoderBase):
 
         if in_event is None or out_event is None:
             log.error(f'Could not find the GIV/PoW token transfers for {context.transaction}')
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT

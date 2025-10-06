@@ -8,9 +8,9 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     UNISWAP_V2_SWAP_SIGNATURE,
@@ -53,10 +53,10 @@ class OpenOceanDecoder(EvmDecoderInterface, ABC):
         )
         return asset, amount
 
-    def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_swapped(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode OpenOcean swaps that include a SWAPPED_TOPIC tx_log event."""
         if context.tx_log.topics[0] != SWAPPED_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         spend_asset, spend_amount = self._get_asset_and_amount(
             asset_address=bytes_to_address(context.tx_log.topics[2]),
@@ -74,7 +74,7 @@ class OpenOceanDecoder(EvmDecoderInterface, ABC):
             receive_asset=receive_asset,
             receive_amount=receive_amount,
         )
-        return DecodingOutput(process_swaps=True)
+        return EvmDecodingOutput(process_swaps=True)
 
     @staticmethod
     def _decode_swap(

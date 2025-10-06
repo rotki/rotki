@@ -83,12 +83,12 @@ from .constants import (
 )
 from .merkl.decoder import MerklDecoder
 from .structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
     EnricherContext,
+    EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
 from .utils import maybe_reshuffle_events
@@ -119,7 +119,7 @@ class EventDecoderFunction(Protocol):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         ...
 
 
@@ -397,7 +397,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> DecodingOutput | None:
+    ) -> EvmDecodingOutput | None:
         """
         Execute event rules for the current tx log. Returns None when no
         new event or actions need to be propagated.
@@ -431,7 +431,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         return None
 
-    def decode_by_address_rules(self, context: DecoderContext) -> DecodingOutput:
+    def decode_by_address_rules(self, context: DecoderContext) -> EvmDecodingOutput:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -442,7 +442,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         """
         mapping_result = self.rules.address_mappings.get(context.tx_log.address)
         if mapping_result is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         method, *args = mapping_result
         result, err = decode_safely(  # can't used named arguments with *args
@@ -454,7 +454,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             *(context, *args),
         )
         if err:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         return result
 
@@ -965,12 +965,12 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if (
             tx_log.topics[0] != ERC20_OR_ERC721_APPROVE or
             (token_kind_and_id := self._get_transfer_or_approval_token_kind_and_id(tx_log=tx_log)) is None  # noqa: E501
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token_kind, collectible_id = token_kind_and_id
         if len(tx_log.topics) in (3, 4):
@@ -986,7 +986,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 f'Got an ERC20 approve event with unknown structure '
                 f'in transaction {transaction.tx_hash.hex()}',
             )
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         if token is None:
             try:
@@ -1000,10 +1000,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
                 )
             except (NotERC20Conformant, NotERC721Conformant):
-                return DEFAULT_DECODING_OUTPUT  # ignore non token transfers for now
+                return DEFAULT_EVM_DECODING_OUTPUT  # ignore non token transfers for now
 
         if not self.base.any_tracked([owner_address, spender_address]):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         amount = token_normalized_value(token_amount=amount_raw, token=token)
         if amount == ZERO:
@@ -1021,7 +1021,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             notes=notes,
             address=spender_address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     def _maybe_decode_simple_transactions(
             self,
@@ -1107,12 +1107,12 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    ) -> EvmDecodingOutput:
         if (
             tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
             (token_kind_and_id := self._get_transfer_or_approval_token_kind_and_id(tx_log=tx_log)) is None  # noqa: E501
         ):
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         token_kind, collectible_id = token_kind_and_id
         if token is None:
@@ -1127,7 +1127,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
                 )
             except (NotERC20Conformant, NotERC721Conformant):
-                return DEFAULT_DECODING_OUTPUT  # ignore non token transfers for now
+                return DEFAULT_EVM_DECODING_OUTPUT  # ignore non token transfers for now
         else:
             found_token = token
 
@@ -1137,7 +1137,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             transaction=transaction,
         )
         if transfer is None:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         for idx, action_item in enumerate(action_items):
             if (
@@ -1156,7 +1156,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             ):
                 if action_item.action == 'skip':
                     action_items.pop(idx)
-                    return DEFAULT_DECODING_OUTPUT
+                    return DEFAULT_EVM_DECODING_OUTPUT
                 if action_item.action == 'skip & keep':
                     # the action item is skipped but kept in the list of action items. Is used
                     # to propagate information between event decoders and enrichers
@@ -1223,7 +1223,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 event=transfer,
             ),
         )
-        return DecodingOutput(
+        return EvmDecodingOutput(
             events=[transfer],
             matched_counterparty=enrichment_output.matched_counterparty,
             refresh_balances=enrichment_output.refresh_balances,

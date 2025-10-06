@@ -11,10 +11,10 @@ from rotkehlchen.chain.evm.decoding.constants import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import CommonGrantsDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -61,9 +61,9 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
         self.payout_claimed_matching_contracts1 = payout_claimed_matching_contracts1
         self.payout_claimed_matching_contracts2 = payout_claimed_matching_contracts2
 
-    def _decode_bulkcheckout(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_bulkcheckout(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != DONATION_SENT:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         donor_tracked, dst_tracked = False, False
         if self.base.is_tracked(donor := bytes_to_address(context.tx_log.topics[3])):
@@ -73,7 +73,7 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
             dst_tracked = True
 
         if donor_tracked is False and dst_tracked is False:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         asset = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.topics[1]))  # this checks for ETH special address inside # noqa: E501
         amount = asset_normalized_value(
@@ -124,11 +124,11 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
                 to_notes=notes,
                 to_counterparty=CPT_GITCOIN,
             )
-            return DecodingOutput(action_items=[action_item])
+            return EvmDecodingOutput(action_items=[action_item])
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_funds_claimed_matching(self, context: DecoderContext, name: str, asset: Asset) -> DecodingOutput:  # noqa: E501
+    def _decode_funds_claimed_matching(self, context: DecoderContext, name: str, asset: Asset) -> EvmDecodingOutput:  # noqa: E501
         """The > GR13 case seen in mainnet. Example transaction:
         https://etherscan.io/tx/0xc7ba01598f7fee42bb3923af95355d676ad38ec0aebdcdf49eaf7cb74d2150b2
         """
@@ -142,9 +142,9 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
                 counterparty=CPT_GITCOIN,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_payout_claimed_matching_amount_in_data(self, context: DecoderContext, name: str, asset: Asset) -> DecodingOutput:  # noqa: E501
+    def _decode_payout_claimed_matching_amount_in_data(self, context: DecoderContext, name: str, asset: Asset) -> EvmDecodingOutput:  # noqa: E501
         """The GR12 case seen in mainnet. Example transaction:
         https://etherscan.io/tx/0x5acb6ddac6b72fc6ff45e6a387cf8316c1478dfbaff513918c4cc8731858b362
         """
@@ -158,9 +158,9 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
                 counterparty=CPT_GITCOIN,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_payout_claimed_matching_recipient_in_data(self, context: DecoderContext, name: str, asset: Asset) -> DecodingOutput:  # noqa: E501
+    def _decode_payout_claimed_matching_recipient_in_data(self, context: DecoderContext, name: str, asset: Asset) -> EvmDecodingOutput:  # noqa: E501
         """The GR10-11 case seen in mainnet. Recipient also in data. Example transaction:
         https://etherscan.io/tx/0x3a069b8cef0d25068fbd2ae4e46ddd552451ed1bbe3737fbaaca05eeb87d9425
         """
@@ -174,7 +174,7 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
                 counterparty=CPT_GITCOIN,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

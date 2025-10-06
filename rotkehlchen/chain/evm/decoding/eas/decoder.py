@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
-    DecodingOutput,
+    EvmDecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -52,9 +52,9 @@ class EASCommonDecoder(EvmDecoderInterface, ABC):
         )
         self.attestation_service_address = attestation_service_address
 
-    def _decode_attestation_action(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_attestation_action(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != ATTESTED:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         attester = bytes_to_address(context.tx_log.topics[2])
         recipient = bytes_to_address(context.tx_log.topics[1])
@@ -63,7 +63,7 @@ class EASCommonDecoder(EvmDecoderInterface, ABC):
         elif self.base.is_tracked(recipient):
             location_label = recipient
         else:
-            return DEFAULT_DECODING_OUTPUT
+            return DEFAULT_EVM_DECODING_OUTPUT
 
         uid = context.tx_log.data.hex()
         prefix = f'{self.node_inquirer.chain_name}.'
@@ -84,7 +84,7 @@ class EASCommonDecoder(EvmDecoderInterface, ABC):
             counterparty=CPT_EAS,
             address=context.tx_log.address,
         )
-        return DecodingOutput(events=[event])
+        return EvmDecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 
