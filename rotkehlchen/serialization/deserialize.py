@@ -348,14 +348,22 @@ def deserialize_evm_address(symbol: str) -> ChecksumEvmAddress:
         raise DeserializationError(f'Invalid evm address: {symbol}') from e
 
 
-def deserialize_solana_address(value: str) -> SolanaAddress:
-    """Deserializes a Solana address from the given data.
-    May raise DeserializationError if the value is not a valid Solana address.
+def deserialize_solana_pubkey(value: str) -> Pubkey:
+    """Deserializes a Solana public key from the given data.
+    May raise DeserializationError if the value is not a valid Solana public key.
     """
     try:
-        return SolanaAddress(str(Pubkey.from_string(value)))
+        return Pubkey.from_string(value)
     except ValueError as e:
-        raise DeserializationError(f'Invalid solana address: {value}') from e
+        raise DeserializationError(f'Invalid solana pubkey: {value}') from e
+
+
+def deserialize_solana_address(value: str) -> SolanaAddress:
+    """Deserializes a Solana address from the given data.
+    Wrapper for deserialize_solana_pubkey converting the pubkey to a SolanaAddress.
+    May raise DeserializationError if the value is not a valid Solana address.
+    """
+    return SolanaAddress(str(deserialize_solana_pubkey(value)))
 
 
 def deserialize_tx_signature(value: str) -> Signature:

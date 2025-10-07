@@ -93,7 +93,7 @@ class Helius(ExternalServiceWithApiKey):
 
             if response.status_code != 200:
                 raise RemoteError(
-                    f'Etherscan API request {response.url} failed '
+                    f'Helius API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
                 )
@@ -150,13 +150,19 @@ class Helius(ExternalServiceWithApiKey):
         May raise:
         - KeyError
         - ValueError if the data contains invalid base58 characters
+        - TypeError if the accounts are not iterable or an address is not a string
         - DeserializationError if there is an invalid address
         """
+        try:
+            data = b58decode(raw_instruction['data'])
+        except AttributeError as e:  # b58decode raises this if the value is not a string
+            raise DeserializationError(f'Invalid instruction data type: {e!s}') from e
+
         return SolanaInstruction(
             execution_index=execution_index,
             parent_execution_index=parent_execution_index,
             program_id=deserialize_solana_address(raw_instruction['programId']),
-            data=b58decode(raw_instruction['data']),
+            data=data,
             accounts=[deserialize_solana_address(x) for x in raw_instruction['accounts']],
         )
 
@@ -187,6 +193,6 @@ class Helius(ExternalServiceWithApiKey):
                 account_keys=[deserialize_solana_address(x['account']) for x in raw_tx['accountData']],  # noqa: E501
                 instructions=instructions,
             )
-        except (KeyError, ValueError, DeserializationError) as e:
+        except (KeyError, ValueError, TypeError, DeserializationError) as e:
             msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
             raise DeserializationError(f'Failed to deserialize Helius raw tx due to {msg}') from e
