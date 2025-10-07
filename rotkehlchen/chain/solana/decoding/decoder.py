@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from solders.solders import Account, Pubkey, Signature
+from solders.solders import Account, Signature
 
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -42,6 +42,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_solana_pubkey
 from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_solana_address
 
@@ -216,17 +217,17 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             transfers: list[tuple[SolanaAddress, SolanaAddress]],
     ) -> dict[SolanaAddress, Account]:
         """Fetch account info for all token accounts"""
-        unique_addresses = set()
-        for addresses in transfers:
-            unique_addresses.add(Pubkey.from_string(addresses[0]))
-            unique_addresses.add(Pubkey.from_string(addresses[1]))
-
         # todo: derive the addresses programmatically before resorting to remote calls.
         # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=130029049
         try:
+            unique_addresses = set()
+            for addresses in transfers:
+                unique_addresses.add(deserialize_solana_pubkey(addresses[0]))
+                unique_addresses.add(deserialize_solana_pubkey(addresses[1]))
+
             return self.node_inquirer.get_raw_accounts_info(list(unique_addresses))
         except (DeserializationError, RemoteError) as e:
-            log.error(f'Failed to fetch token accounts for {unique_addresses} due to {e}')
+            log.error(f'Failed to fetch token accounts for {transfers} due to {e}')
             return {}
 
     def _maybe_decode_token_transfer(

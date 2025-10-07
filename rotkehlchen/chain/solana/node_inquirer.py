@@ -35,7 +35,7 @@ from rotkehlchen.chain.solana.utils import (
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_solana_pubkey, deserialize_timestamp
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_solana_address, get_chunks
 
@@ -159,7 +159,7 @@ class SolanaInquirer(SolanaRPCMixin):
                     f'items but got {len(response)}',
                 )
 
-            aggregated_response.update({SolanaAddress(str(addr)): info for addr, info in zip(pubkeys, response, strict=False) if info is not None})  # noqa: E501
+            aggregated_response.update({SolanaAddress(str(addr)): info for addr, info in zip(chunk, response, strict=False) if info is not None})  # noqa: E501
 
         return aggregated_response
 
@@ -169,7 +169,7 @@ class SolanaInquirer(SolanaRPCMixin):
         """
         try:
             return deserialize_mint(
-                mint_data=self.get_raw_account_info(pubkey=Pubkey.from_string(token_address)),
+                mint_data=self.get_raw_account_info(pubkey=deserialize_solana_pubkey(token_address)),
             )
         except (RemoteError, DeserializationError) as e:
             log.error(f'Failed to get mint info for solana token {token_address} due to {e!s}')
@@ -409,5 +409,5 @@ class SolanaInquirer(SolanaRPCMixin):
                 account_keys=account_keys,
                 instructions=instructions,
             )
-        except (IndexError, ValueError, DeserializationError) as e:
+        except (IndexError, ValueError, TypeError, DeserializationError) as e:
             raise DeserializationError(f'Failed to deserialize solana tx due to {e!s}') from e
