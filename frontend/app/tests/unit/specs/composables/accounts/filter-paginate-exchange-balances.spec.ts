@@ -85,7 +85,7 @@ describe('composables::history/filter-paginate', () => {
 
       expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
-      expect(get(filters)).to.toStrictEqual(undefined);
+      expect(get(filters)).to.toStrictEqual({});
       expect(get(sort)).toHaveLength(1);
       expect(get(sort)).toMatchObject([
         {
