@@ -236,10 +236,10 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
             {{ row.seenDescription }}
           </div>
 
-          <div v-if="row.seenTxHash">
+          <div v-if="row.seenTxReference">
             <HashLink
               :location="row.chain"
-              :text="row.seenTxHash"
+              :text="row.seenTxReference"
               type="transaction"
             />
           </div>

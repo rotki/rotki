@@ -24,7 +24,7 @@ export enum NewDetectedTokenKind {
 export const NewDetectedToken = z.object({
   isIgnored: z.boolean().optional(),
   seenDescription: z.string().nullish(),
-  seenTxHash: z.string().nullish(),
+  seenTxReference: z.string().nullish(),
   tokenIdentifier: z.string(),
   tokenKind: z.enum(NewDetectedTokenKind).default(NewDetectedTokenKind.EVM),
 });
