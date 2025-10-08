@@ -89,7 +89,6 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         super().__init__(
             database=database,
             dbtx=DBSolanaTx(database),
-            tx_not_decoded_filter_query_class=SolanaTransactionsNotDecodedFilterQuery,
             tx_mappings_table='solana_tx_mappings',
             chain_name=SupportedBlockchain.SOLANA.name.lower(),
             value_asset=A_SOL.resolve_to_asset_with_oracles(),
@@ -135,6 +134,12 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     @staticmethod
     def _load_default_decoding_rules() -> SolanaDecodingRules:
         return SolanaDecodingRules(address_mappings={})
+
+    def _get_tx_not_decoded_filter_query(
+            self,
+            limit: int | None,
+    ) -> SolanaTransactionsNotDecodedFilterQuery:
+        return SolanaTransactionsNotDecodedFilterQuery.make(limit=limit)
 
     def _load_transaction_context(
             self,

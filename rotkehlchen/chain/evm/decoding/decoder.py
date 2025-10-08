@@ -206,7 +206,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self=self,
             database=database,
             dbtx=dbevmtx_class(database),
-            tx_not_decoded_filter_query_class=EvmTransactionsNotDecodedFilterQuery,
             tx_mappings_table='evm_tx_mappings',
             chain_name=evm_inquirer.chain_name,
             value_asset=value_asset,
@@ -357,6 +356,15 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             post_processing_rules={},
             all_counterparties=set(),
             addresses_to_counterparties={},
+        )
+
+    def _get_tx_not_decoded_filter_query(
+            self,
+            limit: int | None,
+    ) -> EvmTransactionsNotDecodedFilterQuery:
+        return EvmTransactionsNotDecodedFilterQuery.make(
+            limit=limit,
+            chain_id=self.evm_inquirer.chain_id,
         )
 
     def get_decoders_products(self) -> dict[str, list[EvmProduct]]:
