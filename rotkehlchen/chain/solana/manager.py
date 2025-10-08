@@ -49,6 +49,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress]):
         self.transactions = SolanaTransactions(
             node_inquirer=self.node_inquirer,
             database=node_inquirer.database,
+            helius=node_inquirer.helius,
         )
         self.transactions_decoder = SolanaTransactionDecoder(
             database=node_inquirer.database,

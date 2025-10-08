@@ -48,6 +48,7 @@ from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_evm_managers_set_order
 from rotkehlchen.tests.utils.mock import mock_proxies, patch_etherscan_request
+from rotkehlchen.tests.utils.solana import patch_solana_inquirer_nodes
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
@@ -549,6 +550,7 @@ def fixture_rotkehlchen_api_server(
         scroll_manager_connect_at_start,
         binance_sc_manager_connect_at_start,
         kusama_manager_connect_at_start,
+        solana_nodes_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
         legacy_messages_via_websockets,
@@ -644,6 +646,12 @@ def fixture_rotkehlchen_api_server(
                         manager_connect_at_start=connect_at_start,
                         mock_data=mock_data,
                     )
+
+                patch_solana_inquirer_nodes(
+                    stack=stack,
+                    solana_inquirer=api_server.rest_api.rotkehlchen.chains_aggregator.solana.node_inquirer,
+                    solana_nodes_connect_at_start=solana_nodes_connect_at_start,
+                )
 
             if mocked_proxies is not None:
                 mock_proxies(stack, mocked_proxies)

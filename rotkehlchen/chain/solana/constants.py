@@ -13,7 +13,10 @@ from construct import (
     Struct,
     this,
 )
+from solders.hash import Hash
 from solders.pubkey import Pubkey
+
+SOLANA_GENESIS_BLOCK_HASH: Final = Hash.from_string('4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZAMdL4VZHirAn')
 
 # Used to derive the metadata PDA (Program Derived Address) for tokens in get_metadata_account
 METADATA_PROGRAM_IDS: Final = (

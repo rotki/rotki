@@ -82,6 +82,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -476,6 +477,7 @@ class Rotkehlchen:
                 node_inquirer=SolanaInquirer(
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
+                    helius=Helius(database=self.data.db),
                 ),
                 premium=self.premium,
             ),

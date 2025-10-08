@@ -9,9 +9,10 @@ from urllib.parse import urlparse
 
 import requests
 from ens import ENS
-from httpx import HTTPError
+from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
 from solana.rpc.core import RPCException
+from solders.solders import SerdeJSONError
 from typing_extensions import NamedTuple
 from web3 import HTTPProvider, Web3
 from web3.exceptions import Web3Exception
@@ -19,6 +20,7 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.solana.constants import SOLANA_GENESIS_BLOCK_HASH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -371,7 +373,7 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
                 endpoint=node.endpoint,
                 timeout=self.rpc_timeout,
             )).is_connected()
-        except (HTTPError, RPCException) as e:
+        except (RPCException, SolanaRpcException, SerdeJSONError) as e:
             return (
                 False,
                 f'Failed to connect to Solana RPC at {node.endpoint} due to {e}',
@@ -381,7 +383,15 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
         self.rpc_mapping[node] = RPCNode(
             rpc_client=client,
             is_pruned=False,
-            is_archive=True,  # TODO: we need to check this in solana. It is a bit different in solana but the concept of archive and pruned also exist there  # noqa: E501
+            is_archive=self._is_archive(client),
         )
 
         return True, ''
+
+    @staticmethod
+    def _is_archive(client: Client) -> bool:
+        """Returns a boolean representing if the node is an archive one."""
+        try:
+            return client.get_block(0).value.blockhash == SOLANA_GENESIS_BLOCK_HASH
+        except (RPCException, SolanaRpcException, SerdeJSONError):
+            return False
