@@ -7,6 +7,7 @@ import gevent
 from httpx import HTTPStatusError, ReadTimeout
 from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
+from solana.rpc.core import RPCException
 from solders.pubkey import Pubkey
 from solders.solders import (
     LOOKUP_TABLE_META_SIZE,
@@ -14,6 +15,7 @@ from solders.solders import (
     EncodedConfirmedTransactionWithStatusMeta,
     GetSignaturesForAddressResp,
     MessageAddressTableLookup,
+    SerdeJSONError,
     Signature,
     UiAddressTableLookup,
 )
@@ -47,6 +49,7 @@ from .types import SolanaTransaction, pubkey_to_solana_address
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.helius import Helius
     from rotkehlchen.greenlets.manager import GreenletManager
 
 R = TypeVar('R')
@@ -66,17 +69,32 @@ class SolanaInquirer(SolanaRPCMixin):
             self,
             greenlet_manager: 'GreenletManager',
             database: 'DBHandler',
+            helius: 'Helius',
     ):
         SolanaRPCMixin.__init__(self)
         self.greenlet_manager = greenlet_manager
         self.database = database
         self.blockchain = SupportedBlockchain.SOLANA
         self.rpc_timeout = DEFAULT_RPC_TIMEOUT
+        self.helius = helius
+
+    def default_call_order(self) -> list['WeightedNode']:
+        """Default call order for solana nodes.
+        Adds the helius rpc as a fallback in case there are no other active RPCs. This is mostly
+        needed for queries requiring archive nodes, since there are few open archive nodes, but
+        adding it at the end of the call order in all cases for extra redundancy.
+        """
+        call_order = super().default_call_order()
+        if (helius_node := self.helius.maybe_get_rpc_node()) is not None:
+            call_order.append(helius_node)
+
+        return call_order
 
     def query(
             self,
             method: Callable[[Client], R],
             call_order: Sequence[WeightedNode] | None = None,
+            only_archive_nodes: bool = False,
     ) -> R:
         """Request a method from solana using the provided or default call order.
         May raise RemoteError if unable to get a response from any node.
@@ -99,11 +117,15 @@ class SolanaInquirer(SolanaRPCMixin):
                     log.error(f'Unexpected missing node {node_info} at Solana')
                     continue
 
+            if only_archive_nodes and not rpc_node.is_archive:
+                log.debug(f'Skipping non-archive node {node_info.name} for solana query requiring only archive nodes')  # noqa: E501
+                continue
+
             backoff, attempts = INITIAL_BACKOFF, 0
             while True:
                 try:
                     return method(rpc_node.rpc_client)
-                except SolanaRpcException as e:
+                except (SolanaRpcException, RPCException, SerdeJSONError) as e:
                     if attempts > MAX_RETRIES:
                         log.error(f'Maximum retries reached for solana node {node_info.name}. Giving up.')  # noqa: E501
                         break
@@ -297,6 +319,7 @@ class SolanaInquirer(SolanaRPCMixin):
                     before=_before,
                     until=_until,
                 ),
+                only_archive_nodes=True,
             )
             signatures.extend([tx_sig.signature for tx_sig in response.value])
             if len(response.value) < SIGNATURES_PAGE_SIZE:
@@ -314,10 +337,13 @@ class SolanaInquirer(SolanaRPCMixin):
         - RemoteError if there is a problem with querying the external service.
         - DeserializationError if there is a problem deserializing the transaction data.
         """
-        if (response := self.query(method=lambda client: client.get_transaction(
-            tx_sig=signature,
-            max_supported_transaction_version=0,  # include the new v0 txs
-        )).value) is None:
+        if (response := self.query(
+            method=lambda client: client.get_transaction(
+                tx_sig=signature,
+                max_supported_transaction_version=0,  # include the new v0 txs
+            ),
+            only_archive_nodes=True,
+        ).value) is None:
             raise RemoteError(f'Empty response from the RPC for solana tx {signature!s}')
 
         return self.deserialize_solana_tx_from_rpc(raw_tx=response)

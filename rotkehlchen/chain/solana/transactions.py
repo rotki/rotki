@@ -36,11 +36,12 @@ class SolanaTransactions:
             self,
             node_inquirer: 'SolanaInquirer',
             database: 'DBHandler',
+            helius: Helius,
     ) -> None:
         self.node_inquirer = node_inquirer
         self.database = database
         self.dbtx = DBSolanaTx(database=database)
-        self.helius = Helius(database=database)
+        self.helius = helius
 
     def get_or_create_transaction(
             self,

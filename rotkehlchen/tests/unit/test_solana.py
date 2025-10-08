@@ -1,16 +1,21 @@
+from collections.abc import Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from functools import partial
+from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
+from solana.rpc.api import Client
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_solana_token_nft
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.makerdao import FVal
-from rotkehlchen.types import SolanaAddress, Timestamp, TokenKind
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.manager import SolanaManager
@@ -197,3 +202,53 @@ def test_query_signatures_for_address(solana_inquirer: 'SolanaInquirer') -> None
     assert len(signatures) == 64
     assert signatures[0] == deserialize_tx_signature('4awgHCjCD2Da2UbaKitSfUWExW2eVSA1x5PBrdHBi61NdCpWWxG1JbCDRbKUsQYSPZfPzMKLGrJw2XhajUUvz2Tc')  # noqa: E501
     assert signatures[63] == deserialize_tx_signature('Ars2bdNxYNVRDmWsGCwr9j8jHgRkb6gq7giaritpLw9yj6kiefwEUZpqz4Hr6SxRnJLTLtNnQaVNjuX6jjMAL7T')  # noqa: E501
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [[SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY')]])  # noqa: E501
+@pytest.mark.parametrize('solana_nodes_connect_at_start', [(
+    WeightedNode(node_info=NodeName(name='therpc', endpoint='https://solana.therpc.io', blockchain=SupportedBlockchain.SOLANA, owned=False), weight=ONE, active=True),  # noqa: E501
+    WeightedNode(node_info=NodeName(name='solana.com', endpoint='https://api.mainnet-beta.solana.com', blockchain=SupportedBlockchain.SOLANA, owned=False), weight=ONE, active=True),  # noqa: E501
+)])
+def test_only_archive_nodes(
+        solana_manager: 'SolanaManager',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    """Test that non-archive nodes are skipped when making a request for historical data.
+    solana_nodes_connect_at_start sets the call order to be first a non-archive node and then an
+    archive node, so it always tries the non-archive node first unless explicitly skipped.
+    """
+    client_to_endpoint = {}
+    original_query = solana_manager.node_inquirer.query
+
+    def mock_client_creation(endpoint: str, timeout: int) -> Client:
+        client_to_endpoint[client := Client(endpoint=endpoint, timeout=timeout)] = endpoint
+        return client
+
+    def check_client(client: Client, method: Callable, expected_endpoint: str) -> Any:
+        assert client_to_endpoint[client] == expected_endpoint
+        return method(client)
+
+    for query_func, expected_endpoint, expected_result_len in ((
+        lambda: solana_manager.node_inquirer.query_tx_signatures_for_address(address=solana_accounts[0]),  # noqa: E501
+        'https://api.mainnet-beta.solana.com',  # archive node
+        64,
+    ), (
+        lambda: solana_manager.get_multi_balance(accounts=solana_accounts),
+        'https://solana.therpc.io',  # non-archive node
+        1,
+    )):
+        with (
+            patch('rotkehlchen.chain.mixins.rpc_nodes.Client', side_effect=mock_client_creation),
+            patch.object(
+                target=solana_manager.node_inquirer,
+                attribute='query',
+                side_effect=lambda method, call_order=None, only_archive_nodes=False, endpoint=expected_endpoint: original_query(  # noqa: E501
+                    method=partial(check_client, method=method, expected_endpoint=endpoint),
+                    call_order=call_order,
+                    only_archive_nodes=only_archive_nodes,
+                ),
+            ) as query_mock,
+        ):
+            assert len(query_func()) == expected_result_len
+            assert query_mock.call_count == 1

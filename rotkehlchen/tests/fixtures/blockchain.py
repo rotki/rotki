@@ -25,7 +25,7 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.contracts import EvmContracts
-from rotkehlchen.chain.evm.types import NodeName
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
@@ -46,6 +46,7 @@ from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
@@ -53,6 +54,7 @@ from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import mock_proxies, patch_etherscan_request
+from rotkehlchen.tests.utils.solana import patch_solana_inquirer_nodes
 from rotkehlchen.tests.utils.substrate import (
     KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
     KUSAMA_MAIN_ASSET_DECIMALS,
@@ -859,12 +861,31 @@ def fixture_btc_derivation_gap_limit():
     return DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
+@pytest.fixture(name='solana_nodes_connect_at_start')
+def fixture_solana_nodes_connect_at_start() -> Literal['DEFAULT'] | Sequence[WeightedNode]:
+    """A sequence of nodes to connect to at the start of the test.
+
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return 'DEFAULT'
+
+
 @pytest.fixture(name='solana_inquirer')
-def fixture_solana_inquirer(greenlet_manager, database):
-    return SolanaInquirer(
+def fixture_solana_inquirer(greenlet_manager, database, solana_nodes_connect_at_start):
+    solana_inquirer = SolanaInquirer(
         greenlet_manager=greenlet_manager,
         database=database,
+        helius=Helius(database=database),
     )
+    with ExitStack() as stack:
+        patch_solana_inquirer_nodes(
+            stack=stack,
+            solana_inquirer=solana_inquirer,
+            solana_nodes_connect_at_start=solana_nodes_connect_at_start,
+        )
+        yield solana_inquirer
 
 
 @pytest.fixture(name='solana_manager')

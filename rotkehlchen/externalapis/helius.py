@@ -8,7 +8,9 @@ import requests
 from base58 import b58decode
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
@@ -21,6 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_tx_signature,
 )
+from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.serialization import jsonloads_list
 
@@ -32,6 +35,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 HELIUS_API_URL: Final = 'https://api.helius.xyz/v0'
+HELIUS_RPC_URL: Final = 'https://mainnet.helius-rpc.com'
 
 # Max allowed by the api
 # https://www.helius.dev/docs/api-reference/enhanced-transactions/gettransactions#body-transactions
@@ -110,6 +114,22 @@ class Helius(ExternalServiceWithApiKey):
             ) from e
 
         return json_ret
+
+    def maybe_get_rpc_node(self) -> WeightedNode | None:
+        """Returns the Helius RPC node if the user has an api key."""
+        if (api_key := self._get_api_key()) is None:
+            return None
+
+        return WeightedNode(
+            node_info=NodeName(
+                name='Helius',
+                endpoint=f'{HELIUS_RPC_URL}?api-key={api_key}',
+                blockchain=SupportedBlockchain.SOLANA,
+                owned=False,
+            ),
+            weight=ONE,
+            active=True,
+        )
 
     def get_transactions(self, signatures: list[str], relevant_address: 'SolanaAddress') -> None:
         """Query Helius for txs corresponding to the given signatures and save them in the DB.
