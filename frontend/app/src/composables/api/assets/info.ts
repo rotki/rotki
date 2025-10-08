@@ -9,6 +9,7 @@ import { AssetMap, AssetsWithId } from '@/types/asset';
 export interface AssetSearchParams {
   value: string;
   evmChain?: string;
+  assetType?: string;
   address?: string;
   limit?: number;
   searchNfts?: boolean;
@@ -35,21 +36,15 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
 
   const assetSearch = async (params: AssetSearchParams): Promise<AssetsWithId> => {
     const {
-      address,
-      evmChain,
       limit,
-      searchNfts,
       signal,
-      value,
+      ...payload
     } = params;
     const response = await api.instance.post<ActionResult<AssetsWithId>>(
       '/assets/search/levenshtein',
       snakeCaseTransformer({
-        address,
-        evmChain,
         limit: limit || 25,
-        searchNfts,
-        value,
+        ...payload,
       }),
       {
         signal,

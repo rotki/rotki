@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 import { assert, getValidSelectorFromEvmAddress, transformCase } from '@rotki/common';
 import { CanceledError } from 'axios';
@@ -7,6 +6,7 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { type AssetInfoWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { uniqueObjects } from '@/utils/data';
 
 defineOptions({
@@ -30,13 +30,12 @@ const props = withDefaults(defineProps<{
   hideDetails?: boolean;
   includeNfts?: boolean;
   asset?: AssetInfoWithId | NftAsset;
-  evmChain?: string;
+  chain?: string;
 }>(), {
   asset: undefined,
   clearable: false,
   disabled: false,
   errorMessages: () => [],
-  evmChain: undefined,
   excludes: () => [],
   hideDetails: false,
   hint: '',
@@ -103,8 +102,10 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
 async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
   set(loading, true);
   try {
+    const chain = props.chain;
     const fetchedAssets = await assetSearch({
-      evmChain: props.evmChain,
+      assetType: chain === SOLANA_CHAIN ? SOLANA_TOKEN : (chain ? EVM_TOKEN : undefined),
+      evmChain: chain === SOLANA_CHAIN ? undefined : chain,
       limit: 50,
       searchNfts: get(includeNfts),
       signal,
@@ -191,7 +192,7 @@ watch(visibleAssets, () => {
     onUpdateModelValue('');
 });
 
-watch(() => props.evmChain, async () => {
+watch(() => [props.chain], async () => {
   if (!get(modelValue)) {
     return;
   }

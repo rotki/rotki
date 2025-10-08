@@ -223,9 +223,18 @@ const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
     return filteredByUsedKeys;
 
   const searchToken = getTextToken(searchVal);
-  return filteredByUsedKeys
+
+  const filteredByKey = filteredByUsedKeys
     .filter(({ key }) => getTextToken(key).includes(searchToken))
     .sort((a, b) => compareTextByKeyword(getTextToken(a.key), getTextToken(b.key), searchToken));
+
+  const keySet = new Set(filteredByKey.map(item => item.key));
+
+  const filteredByDescription = filteredByUsedKeys
+    .filter(({ description, key }) => !keySet.has(key) && getTextToken(description).includes(searchToken))
+    .sort((a, b) => compareTextByKeyword(getTextToken(a.description), getTextToken(b.description), searchToken));
+
+  return [...filteredByKey, ...filteredByDescription];
 });
 
 async function applySuggestion() {

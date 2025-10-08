@@ -8,7 +8,8 @@ import {
   isValidBchAddress,
   isValidBtcAddress,
   isValidEthAddress,
-  isValidTxHash,
+  isValidEvmTxHash,
+  isValidSolanaAddress,
 } from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useScramble } from '@/composables/scramble';
@@ -235,7 +236,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
 
       const isValidBch = isValidBchAddress(word);
 
-      if (isValidEthAddress(word) || isValidBtcAddress(word) || isValidBch) {
+      if (isValidEthAddress(word) || isValidBtcAddress(word) || isValidBch || isValidSolanaAddress(word)) {
         addLeadingPunctuation();
         formats.push({
           address: isValidBch ? word.replace(/^bitcoincash:/, '') : word,
@@ -246,7 +247,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       }
 
       // Check if the word is Tx Hash
-      if (isValidTxHash(word) && !get(noTxHash)) {
+      if (isValidEvmTxHash(word) && !get(noTxHash)) {
         addLeadingPunctuation();
         formats.push({
           address: word,

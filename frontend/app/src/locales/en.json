@@ -1691,6 +1691,7 @@
     "rewards": "Rewards",
     "select_address": "Select address(es)",
     "select_directory": "Select a directory",
+    "signature": "Signature",
     "status": "Status",
     "tags": "Tags",
     "total": "Total",
@@ -4550,7 +4551,7 @@
     "visible_timeframes": "Visible Timeframes"
   },
   "toggle_location_link": {
-    "disabled": "This functionality is available only for evm chains",
+    "disabled": "This functionality is available only for evm chains or solana",
     "limited": "Only assets available in {location} will be displayed.",
     "unlimited": "All supported assets will be displayed."
   },
@@ -4840,6 +4841,12 @@
             "non_empty": "The sequence index field cannot be empty."
           }
         },
+        "signature": {
+          "validation": {
+            "non_empty": "The signature field cannot be empty.",
+            "valid": "The signature is invalid, fill it with valid signature"
+          }
+        },
         "tx_hash": {
           "validation": {
             "non_empty": "The tx hash field cannot be empty.",
@@ -4873,6 +4880,7 @@
         "event_identifier": "Event information",
         "evm_event": "Transaction {txHash}",
         "history_event": "{location} event",
+        "solana_event": "Transaction {signature}",
         "swap_event": "Swap on {location}"
       },
       "ignore": {
@@ -4962,7 +4970,7 @@
       "protocol": "filter by the protocol of the events",
       "show_ignored_assets": "Show entries with ignored assets",
       "start_date": "filter by the start date of the transaction period",
-      "tx_hash": "filter by tx hash(es)",
+      "tx_hash": "filter by tx hash(es) or signature(s)",
       "validator_index": "filter by validator index(es)"
     },
     "form": {

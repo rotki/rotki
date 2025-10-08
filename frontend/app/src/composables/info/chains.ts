@@ -30,6 +30,10 @@ function isBitcoinChain(info: ChainInfo): info is ChainInfo {
   return info.type === 'bitcoin';
 }
 
+function isSolanaChain(info: ChainInfo): info is ChainInfo {
+  return info.type === 'solana';
+}
+
 export const useSupportedChains = createSharedComposable(() => {
   const { fetchAllEvmChains, fetchSupportedChains } = useSupportedChainsApi();
 
@@ -66,11 +70,19 @@ export const useSupportedChains = createSharedComposable(() => {
     get(supportedChains).filter(isBitcoinChain),
   );
 
+  const solanaChainsData = computed<ChainInfo[]>(() =>
+    get(supportedChains).filter(isSolanaChain),
+  );
+
   const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(evmChainsData, x => x.id !== Blockchain.AVAX);
 
   const evmAndEvmLikeTxChainsInfo = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
 
-  const allTxChainsInfo = computed<ChainInfo[]>(() => [...get(evmAndEvmLikeTxChainsInfo), ...get(bitcoinChainsData)]);
+  const allTxChainsInfo = computed<ChainInfo[]>(() => [
+    ...get(evmAndEvmLikeTxChainsInfo),
+    ...get(bitcoinChainsData),
+    ...get(solanaChainsData),
+  ]);
 
   const evmChains: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.id);
 
@@ -92,6 +104,12 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const isBtcChains = (chain: MaybeRef<string>): boolean => {
     const chains = get(bitcoinChainsData);
+    const selectedChain = get(chain);
+    return chains.some(x => x.id === selectedChain);
+  };
+
+  const isSolanaChains = (chain: MaybeRef<string>): boolean => {
+    const chains = get(solanaChainsData);
     const selectedChain = get(chain);
     return chains.some(x => x.id === selectedChain);
   };
@@ -229,7 +247,9 @@ export const useSupportedChains = createSharedComposable(() => {
     isBtcChains,
     isEvm,
     isEvmLikeChains,
+    isSolanaChains,
     matchChain,
+    solanaChainsData,
     supportedChains,
     supportsTransactions,
     txChainsToLocation,

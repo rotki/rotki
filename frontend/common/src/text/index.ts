@@ -248,6 +248,10 @@ export function isValidBchAddress(address?: string): boolean {
   return /^[pq][02-9ac-hj-np-z]{41,}$/.test(address);
 }
 
+export function isValidAddress(address?: string): boolean {
+  return isValidEthAddress(address) || isValidBtcAddress(address) || isValidBchAddress(address) || isValidSolanaAddress(address);
+}
+
 export function isValidSolanaAddress(address?: string): boolean {
   if (!address)
     return false;
@@ -257,11 +261,33 @@ export function isValidSolanaAddress(address?: string): boolean {
   return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
 }
 
-export function isValidTxHash(address?: string): boolean {
+export function isValidEvmTxHash(address?: string): boolean {
   if (!address)
     return false;
 
   return /^0x[\dA-Fa-f]{64}$/.test(address);
+}
+
+export function isValidBtcTxHash(txHash?: string): boolean {
+  if (!txHash)
+    return false;
+
+  // BTC transaction hashes are 64 hexadecimal characters
+  const btcTxRegex = /^[\dA-Fa-f]{64}$/;
+  return btcTxRegex.test(txHash);
+}
+
+export function isValidSolanaSignature(signature?: string): boolean {
+  if (!signature)
+    return false;
+
+  // Solana signatures are base58 encoded and typically 87-88 characters
+  const solanaSignatureRegex = /^[1-9A-HJ-NP-Za-km-z]{87,88}$/;
+  return solanaSignatureRegex.test(signature);
+}
+
+export function isValidTxHashOrSignature(txHash?: string): boolean {
+  return isValidEvmTxHash(txHash) || isValidBtcTxHash(txHash) || isValidSolanaSignature(txHash);
 }
 
 export function consistOfNumbers(text?: string): boolean {

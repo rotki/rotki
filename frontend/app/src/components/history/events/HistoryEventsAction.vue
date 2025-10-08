@@ -9,13 +9,21 @@ import type {
   EvmSwapEvent,
   HistoryEvent,
   HistoryEventEntry,
+  SolanaEvent,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEthBlockEvent, isEthBlockEventRef, isEvmEvent, isOnlineHistoryEvent } from '@/utils/history/events';
+import {
+  isEthBlockEvent,
+  isEthBlockEventRef,
+  isEvmEvent,
+  isOnlineHistoryEvent,
+  isSolanaEvent,
+  isSolanaEventRef,
+} from '@/utils/history/events';
 
 interface EventInfo { txHash: string; location: string }
 
@@ -33,7 +41,7 @@ const emit = defineEmits<{
 
 const {
   ethBlockEventsDecoding,
-  evmEventsDecoding,
+  txEventsDecoding,
 } = useHistoryEventsStatus();
 
 const { event } = toRefs(props);
@@ -46,10 +54,22 @@ const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
   return undefined;
 });
 
+const solanaEvent = isSolanaEventRef(event);
+
+const eventWithDecoding = computed<EvmHistoryEvent | EvmSwapEvent | SolanaEvent | undefined>(() => get(evmEvent) || get(solanaEvent));
+
 const eventWithTxHash = computed<{ location: string; txHash: string } | undefined>(() => {
   const currentEvent = get(event);
-  if (get(evmEvent)) {
-    return get(evmEvent);
+  const evm = get(evmEvent);
+  const solana = get(solanaEvent);
+  if (evm) {
+    return evm;
+  }
+  else if (solana) {
+    return {
+      location: solana.location,
+      txHash: solana.signature,
+    };
   }
   if (isOnlineHistoryEvent(currentEvent) && 'txHash' in currentEvent && currentEvent.txHash) {
     return {
@@ -75,19 +95,23 @@ function addEvent(event: HistoryEvent) {
 }
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 
-function redecode(event: EthBlockEvent | EvmHistoryEvent | EvmSwapEvent) {
+function redecode(event: EthBlockEvent | EvmHistoryEvent | EvmSwapEvent | SolanaEvent) {
+  let data: any;
+
   if (isEthBlockEvent(event)) {
-    emit('redecode', {
-      data: [event.blockNumber],
-      type: event.entryType,
-    });
+    data = [event.blockNumber];
+  }
+  else if (isSolanaEvent(event)) {
+    data = toEvmChainAndTxHash({ location: event.location, txHash: event.signature });
   }
   else {
-    emit('redecode', {
-      data: toEvmChainAndTxHash({ location: event.location, txHash: event.txHash }),
-      type: event.entryType,
-    });
+    data = toEvmChainAndTxHash({ location: event.location, txHash: event.txHash });
   }
+
+  emit('redecode', {
+    data,
+    type: event.entryType,
+  });
 }
 
 function deleteTxAndEvents({ location, txHash }: EventInfo) {
@@ -152,11 +176,11 @@ function hideAddAction(item: HistoryEvent): boolean {
             {{ t('transactions.actions.redecode_events') }}
           </RuiButton>
         </template>
-        <template v-else-if="evmEvent">
+        <template v-else-if="eventWithDecoding">
           <RuiButton
             variant="list"
-            :disabled="loading || evmEventsDecoding"
-            @click="redecode(evmEvent)"
+            :disabled="loading || txEventsDecoding"
+            @click="redecode(eventWithDecoding)"
           >
             <template #prepend>
               <RuiIcon name="lu-rotate-ccw" />
