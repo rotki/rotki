@@ -11,10 +11,13 @@ import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.evm.structures import EvmTxReceipt
+from rotkehlchen.chain.evm.transactions import EvmTransaction
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -27,15 +30,18 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     AddressbookType,
+    ChainID,
     ChecksumEvmAddress,
     ListOfBlockchainAddresses,
     OptionalChainAddress,
     SupportedBlockchain,
+    Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -667,3 +673,62 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
             book_type=AddressbookType.PRIVATE,
             chain_address=OptionalChainAddress(address=addy, blockchain=chain_id.to_blockchain()),
         ) == 'rotki ens'
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+def test_decoding_only_uses_hashes_from_queried_chain(rotkehlchen_api_server: 'APIServer') -> None:
+    """Check that when decoding txs it only tries to decode txs from the queried chain.
+    Regression test for a bug where the non-decoded txs query was getting txs for all chains.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevmtx = DBEvmTx(rotki.data.db)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        for tx_hash, chain_id in (
+            (base_tx_hash := make_evm_tx_hash(), ChainID.BASE),
+            (make_evm_tx_hash(), ChainID.ARBITRUM_ONE),
+        ):
+            dbevmtx.add_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=[EvmTransaction(
+                    tx_hash=tx_hash,
+                    chain_id=chain_id,
+                    timestamp=Timestamp(0),
+                    block_number=1,
+                    from_address=make_evm_address(),
+                    to_address=make_evm_address(),
+                    value=1,
+                    gas=1,
+                    gas_price=1,
+                    gas_used=1,
+                    input_data=b'',
+                    nonce=0,
+                )],
+                relevant_address=make_evm_address(),
+            )
+            dbevmtx.add_or_ignore_receipt_data(
+                write_cursor=write_cursor,
+                chain_id=chain_id,
+                data=txreceipt_to_data(EvmTxReceipt(
+                    tx_hash=tx_hash,
+                    chain_id=chain_id,
+                    contract_address=None,
+                    status=True,
+                    tx_type=0,
+                    logs=[],
+                )),
+            )
+
+    with (
+        patch.object(
+            target=rotki.chains_aggregator.base.transactions_decoder,
+            attribute='decode_transaction_hashes',
+        ) as mock_decode_txs,
+    ):
+        assert_proper_response(requests.post(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'async_query': False, 'ignore_cache': True, 'chain': 'base'},
+        ))
+
+    # decode hashes should be queried with only the hash from base.
+    assert mock_decode_txs.call_count == 1
+    assert mock_decode_txs.call_args_list[0].kwargs['tx_hashes'] == [base_tx_hash]

@@ -49,7 +49,6 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
             self,
             database: 'DBHandler',
             dbtx: T_DBTx,
-            tx_not_decoded_filter_query_class: type[T_TxNotDecodedFilterQuery],
             tx_mappings_table: Literal['evm_tx_mappings', 'solana_tx_mappings'],
             chain_name: str,
             value_asset: 'AssetWithOracles',
@@ -71,7 +70,6 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         """
         self.database = database
         self.dbtx = dbtx
-        self.tx_not_decoded_filter_query_class = tx_not_decoded_filter_query_class
         self.tx_mappings_table = tx_mappings_table
         self.premium = premium
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='lu-flame')] + misc_counterparties  # noqa: E501
@@ -188,6 +186,12 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
 
             self._reload_single_decoder(cursor, decoder)
 
+    @abstractmethod
+    def _get_tx_not_decoded_filter_query(self, limit: int | None) -> T_TxNotDecodedFilterQuery:
+        """Return a filter query for loading txs that still need decoding for this chain using
+        the specified limit.
+        """
+
     def get_and_decode_undecoded_transactions(
             self,
             limit: int | None = None,
@@ -201,7 +205,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         with self.undecoded_tx_query_lock:
             log.debug(f'Starting task to process undecoded transactions for {self.chain_name} with {limit=}')  # noqa: E501
             hashes = self.dbtx.get_transaction_hashes_not_decoded(
-                filter_query=self.tx_not_decoded_filter_query_class.make(limit=limit),
+                filter_query=self._get_tx_not_decoded_filter_query(limit=limit),
             )
             if len(hashes) != 0:
                 log.debug(f'Will decode {len(hashes)} transactions for {self.chain_name}')
