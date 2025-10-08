@@ -873,7 +873,7 @@
       },
       "task": {
         "description": "Decoding transaction events for transactions: {tx} ({chain})",
-        "single_description": "Decoding transaction events for {number} transactions",
+        "single_description": "Decoding {chain} transaction events for {number} transactions",
         "title": "Decoding transaction events"
       }
     },

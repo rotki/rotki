@@ -27,7 +27,7 @@ function toggleSelect(): void {
 <template>
   <div
     class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900 transition"
-    @click.prevent="emit('pick-addresses', item.evmChain)"
+    @click.prevent="emit('pick-addresses', item.chain)"
   >
     <RuiCheckbox
       :model-value="modelValue.length === addresses.length"
@@ -41,7 +41,7 @@ function toggleSelect(): void {
     <LocationIcon
       size="1.25"
       class="text-sm"
-      :item="item.evmChain"
+      :item="item.chain"
       horizontal
     />
     <div class="grow" />

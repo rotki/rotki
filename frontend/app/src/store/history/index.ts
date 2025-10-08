@@ -2,10 +2,8 @@ import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/m
 import type { LocationLabel } from '@/types/location';
 import { useHistoryApi } from '@/composables/api/history';
 import { type EvmTransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
-import { TransactionChainType } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 
@@ -19,7 +17,6 @@ export const useHistoryStore = defineStore('history', () => {
   const receivingProtocolCacheStatus = ref<boolean>(false);
 
   const { useIsTaskRunning } = useTaskStore();
-  const { getChain, isEvmLikeChains } = useSupportedChains();
   const { getEvmTransactionStatus } = useHistoryEventsApi();
 
   const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
@@ -70,27 +67,8 @@ export const useHistoryStore = defineStore('history', () => {
     set(undecodedTransactionsStatus, {});
   };
 
-  const clearUndecodedTransactionsNumbers = (type: TransactionChainType): void => {
-    const currentStatus = get(undecodedTransactionsStatus);
-    const newStatus: Record<string, EvmUnDecodedTransactionsData> = {};
-
-    for (const [chain, value] of Object.entries(currentStatus)) {
-      const blockchain = getChain(chain);
-      const isEvmLike = isEvmLikeChains(blockchain);
-
-      if ((isEvmLike && type === TransactionChainType.EVMLIKE) || (!isEvmLike && type === TransactionChainType.EVM)) {
-        newStatus[chain] = {
-          ...value,
-          processed: value.total,
-        };
-      }
-      else {
-        newStatus[chain] = {
-          ...value,
-        };
-      }
-    }
-    set(undecodedTransactionsStatus, newStatus);
+  const clearUndecodedTransactionsNumbers = (): void => {
+    set(undecodedTransactionsStatus, {});
   };
 
   const resetProtocolCacheUpdatesStatus = (): void => {

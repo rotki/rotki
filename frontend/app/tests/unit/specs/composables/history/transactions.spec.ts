@@ -129,7 +129,7 @@ describe('composables::history/events/tx', () => {
     await redecodeTransactions();
 
     expect(decodeTxSpy).toHaveBeenCalledOnce();
-    expect(decodeTxSpy).toHaveBeenCalledWith(expect.anything(), expect.anything(), true);
+    expect(decodeTxSpy).toHaveBeenCalledWith(expect.anything(), true);
 
     // delete transaction with empty array and check the spy function is not called
     await deleteHistoryEvent([], true);

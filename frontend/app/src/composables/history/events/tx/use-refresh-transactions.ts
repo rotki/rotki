@@ -14,9 +14,8 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import {
-  type BitcoinChainAddress,
   type BlockchainAddress,
-  type EvmChainAddress,
+  type ChainAddress,
   TransactionChainType,
   type TransactionRequestPayload,
 } from '@/types/history/events';
@@ -42,7 +41,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { initializeQueryStatus, removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
   const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus } = useEventsQueryStatusStore();
-  const { getChain, getChainName, isEvmLikeChains } = useSupportedChains();
+  const { getChainName, isBtcChains, isEvmLikeChains } = useSupportedChains();
   const { getBitcoinAccounts, getEvmAccounts, getEvmLikeAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const {
@@ -52,46 +51,29 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   } = useHistoryTransactionDecoding();
   const { resetUndecodedTransactionsStatus } = useHistoryStore();
 
-  const getChainInfo = (
-    account: EvmChainAddress | BitcoinChainAddress,
-    type: TransactionChainType,
-  ): { chainName: string; blockchain: string } => {
-    if (type === TransactionChainType.BITCOIN && 'chain' in account) {
-      const chainName = account.chain;
-      return { blockchain: chainName, chainName };
-    }
-    else if ('evmChain' in account) {
-      const chainName = account.evmChain;
-      return { blockchain: getChain(chainName), chainName };
-    }
-    else {
-      throw new Error('Invalid account type');
-    }
-  };
-
   const syncTransactionTask = async (
-    account: EvmChainAddress | BitcoinChainAddress,
+    account: ChainAddress,
     type: TransactionChainType,
   ): Promise<void> => {
     const taskType = TaskType.TX;
-    const address = account.address;
-    const { blockchain, chainName } = getChainInfo(account, type);
+    const { address, chain } = account;
 
     const blockchainAccount: BlockchainAddress = {
       address,
-      blockchain,
+      blockchain: chain,
     };
     const defaults: TransactionRequestPayload = {
       accounts: [blockchainAccount],
     };
 
+    const chainName = get(getChainName(chain));
     const { taskId } = await fetchTransactionsTask(defaults);
     const taskMeta = {
       address,
-      chain: chainName,
+      chain,
       description: t('actions.transactions.task.description', {
         address,
-        chain: get(getChainName(blockchain)),
+        chain: chainName,
       }),
       title: t('actions.transactions.task.title'),
       type,
@@ -110,7 +92,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
           display: true,
           message: t('actions.transactions.error.description', {
             address,
-            chain: get(getChainName(blockchain)),
+            chain: chainName,
             error,
           }),
           title: t('actions.transactions.error.title'),
@@ -142,7 +124,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     if (!isBitcoin) {
       logger.debug(`queued ${chain} transactions for decoding`);
       queue.queue(chain, async () => {
-        await decodeTransactionsTask(chain, type);
+        await decodeTransactionsTask(chain);
         logger.debug(`finished decoding ${chain} transactions`);
       });
     }
@@ -155,12 +137,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   ): Promise<void> => {
     const { accounts, type } = params;
     logger.debug(`refreshing ${type} transactions for ${accounts.length} addresses`);
-    const isBitcoin = type === TransactionChainType.BITCOIN;
-
-    const getChainKey = (account: any): string => isBitcoin ? account.chain : account.evmChain;
 
     const groupedByChains = Object.entries(
-      groupBy(accounts, getChainKey),
+      groupBy(accounts, item => item.chain),
     ).map(([chain, data]) => ({
       chain,
       data,
@@ -172,10 +151,6 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       async item => syncAndReDecodeEvents(item.chain, { accounts: item.data, type }),
       2,
     );
-
-    if (!isBitcoin) {
-      queue.queue(type, async () => fetchUndecodedTransactionsBreakdown(type));
-    }
 
     if (accounts.length > 0)
       setStatus(isTaskRunning(TaskType.TX, { type }) ? Status.REFRESHING : Status.LOADED);
@@ -201,23 +176,21 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
     // Get current accounts first to check if we have new ones
-    let currentEvmAccounts: EvmChainAddress[] = [];
-    let currentEvmLikeAccounts: EvmChainAddress[] = [];
-    let currentBitcoinAccounts: BitcoinChainAddress[] = [];
+    let currentEvmAccounts: ChainAddress[] = [];
+    let currentEvmLikeAccounts: ChainAddress[] = [];
+    let currentBitcoinAccounts: ChainAddress[] = [];
 
     if (accounts && accounts.length > 0) {
       // Separate accounts by type
       accounts.forEach((account) => {
-        if ('evmChain' in account) {
-          if (isEvmLikeChains(account.evmChain)) {
-            currentEvmLikeAccounts.push(account);
-          }
-          else {
-            currentEvmAccounts.push(account);
-          }
+        if (isEvmLikeChains(account.chain)) {
+          currentEvmLikeAccounts.push(account);
         }
-        else if ('chain' in account) {
+        else if (isBtcChains(account.chain)) {
           currentBitcoinAccounts.push(account);
+        }
+        else {
+          currentEvmAccounts.push(account);
         }
       });
     }
@@ -266,16 +239,14 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       evmLikeAccounts = [];
       bitcoinAccounts = [];
       newAccountsList.forEach((account) => {
-        if ('evmChain' in account) {
-          if (isEvmLikeChains(account.evmChain)) {
-            evmLikeAccounts.push(account);
-          }
-          else {
-            evmAccounts.push(account);
-          }
+        if (isEvmLikeChains(account.chain)) {
+          evmLikeAccounts.push(account);
         }
-        else if ('chain' in account) {
+        else if (isBtcChains(account.chain)) {
           bitcoinAccounts.push(account);
+        }
+        else {
+          evmAccounts.push(account);
         }
       });
     }
@@ -332,8 +303,10 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         }
       }
 
+      queue.queue('fetch-undecoded-transactions-breakdown', fetchUndecodedTransactionsBreakdown);
+
       if (!disableEvmEvents && evmAccounts.length > 0)
-        queue.queue('undecoded-transactions-status-final', async () => fetchUndecodedTransactionsStatus());
+        queue.queue('undecoded-transactions-status-final', fetchUndecodedTransactionsStatus);
     }
     catch (error) {
       logger.error(error);

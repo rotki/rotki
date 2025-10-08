@@ -43,12 +43,12 @@ export function isSocketMessageType(type: string): type is SocketMessageType {
 
 export const SocketMessageProgressUpdateSubType = {
   CSV_IMPORT_RESULT: 'csv_import_result',
-  EVM_UNDECODED_TRANSACTIONS: 'evm_undecoded_transactions',
   HISTORICAL_PRICE_QUERY_STATUS: 'historical_price_query_status',
   LIQUITY_STAKING_QUERY: 'liquity_staking_query',
   MULTIPLE_PRICES_QUERY_STATUS: 'multiple_prices_query_status',
   PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
   STATS_PRICE_QUERY: 'stats_price_query',
+  UNDECODED_TRANSACTIONS: 'undecoded_transactions',
 } as const;
 
 export type SocketMessageProgressUpdateSubType = (typeof SocketMessageProgressUpdateSubType)[keyof typeof SocketMessageProgressUpdateSubType];

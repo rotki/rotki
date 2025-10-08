@@ -1,48 +1,39 @@
-import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import type { ChainAddress } from '@/types/history/events';
 import { get } from '@vueuse/core';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 
 interface UseHistoryTransactionAccountsReturn {
-  getEvmAccounts: (chains?: string[]) => EvmChainAddress[];
-  getEvmLikeAccounts: (chains?: string[]) => EvmChainAddress[];
-  getBitcoinAccounts: (chains?: string[]) => BitcoinChainAddress[];
+  getEvmAccounts: (chains?: string[]) => ChainAddress[];
+  getEvmLikeAccounts: (chains?: string[]) => ChainAddress[];
+  getBitcoinAccounts: (chains?: string[]) => ChainAddress[];
 }
 
 export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsReturn {
   const { addresses } = useAccountAddresses();
-  const { getEvmChainName, isBtcChains, isEvmLikeChains, supportsTransactions } = useSupportedChains();
+  const { isBtcChains, isEvmLikeChains, supportsTransactions } = useSupportedChains();
 
-  const getEvmAccounts = (chains: string[] = []): EvmChainAddress[] =>
+  const getAccountsByChainType = (
+    chainFilter: (chain: string) => boolean,
+    chains: string[] = [],
+  ): ChainAddress[] =>
     Object.entries(get(addresses))
-      .filter(([chain]) => supportsTransactions(chain) && (chains.length === 0 || chains.includes(chain)))
-      .flatMap(([chain, addresses]) => {
-        const evmChain = getEvmChainName(chain) ?? '';
-        return addresses.map(address => ({
-          address,
-          evmChain,
-        }));
-      });
-
-  const getEvmLikeAccounts = (chains: string[] = []): EvmChainAddress[] =>
-    Object.entries(get(addresses))
-      .filter(([chain]) => isEvmLikeChains(chain) && (chains.length === 0 || chains.includes(chain)))
-      .flatMap(([evmChain, addresses]) =>
-        addresses.map(address => ({
-          address,
-          evmChain,
-        })),
-      );
-
-  const getBitcoinAccounts = (chains: string[] = []): BitcoinChainAddress[] =>
-    Object.entries(get(addresses))
-      .filter(([chain]) => isBtcChains(chain) && (chains.length === 0 || chains.includes(chain)))
+      .filter(([chain]) => chainFilter(chain) && (chains.length === 0 || chains.includes(chain)))
       .flatMap(([chain, addresses]) =>
         addresses.map(address => ({
           address,
           chain,
         })),
       );
+
+  const getEvmAccounts = (chains: string[] = []): ChainAddress[] =>
+    getAccountsByChainType(supportsTransactions, chains);
+
+  const getEvmLikeAccounts = (chains: string[] = []): ChainAddress[] =>
+    getAccountsByChainType(isEvmLikeChains, chains);
+
+  const getBitcoinAccounts = (chains: string[] = []): ChainAddress[] =>
+    getAccountsByChainType(isBtcChains, chains);
 
   return {
     getBitcoinAccounts,

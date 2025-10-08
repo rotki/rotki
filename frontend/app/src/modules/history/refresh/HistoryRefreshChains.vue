@@ -1,14 +1,17 @@
 <script lang="ts" setup>
-import type { ChainData, RefreshChainAddress } from '@/modules/history/refresh/types';
-import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import type { ChainData } from '@/modules/history/refresh/types';
 import { getTextToken } from '@rotki/common';
 import { cloneDeep, isEqual } from 'es-toolkit';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryRefreshAddressSelection from '@/modules/history/refresh/HistoryRefreshAddressSelection.vue';
 import HistoryRefreshChainItem from '@/modules/history/refresh/HistoryRefreshChainItem.vue';
+import {
+  type ChainAddress,
+  TransactionChainType,
+} from '@/types/history/events';
 
-const modelValue = defineModel<RefreshChainAddress[]>({ required: true });
+const modelValue = defineModel<ChainAddress[]>({ required: true });
 const selectedChain = defineModel<string | undefined>('chain', { required: true });
 const search = defineModel<string>('search', { required: true });
 
@@ -26,23 +29,23 @@ const { t } = useI18n({ useScope: 'global' });
 
 const refreshChains = computed<ChainData[]>(() => [
   ...get(txEvmChains).map(item => ({
-    evmChain: item.evmChainName,
+    chain: item.id,
     id: item.id,
     name: item.name,
-    type: 'evm',
-  }) satisfies ChainData),
+    type: TransactionChainType.EVM,
+  })),
   ...get(evmLikeChainsData).map(item => ({
-    evmChain: item.id,
+    chain: item.id,
     id: item.id,
     name: item.name,
-    type: 'evmlike',
-  }) satisfies ChainData),
+    type: TransactionChainType.EVMLIKE,
+  })),
   ...get(bitcoinChainsData).map(item => ({
-    evmChain: item.id,
+    chain: item.id,
     id: item.id,
     name: item.name,
-    type: 'bitcoin',
-  }) satisfies ChainData),
+    type: TransactionChainType.BITCOIN,
+  })),
 ]);
 
 const filtered = computed<ChainData[]>(() => {
@@ -51,44 +54,29 @@ const filtered = computed<ChainData[]>(() => {
   if (!query)
     return chains;
 
-  return chains.filter(item => getTextToken(item.evmChain).includes(query) || getTextToken(item.name).includes(query));
+  return chains.filter(item => getTextToken(item.chain).includes(query) || getTextToken(item.name).includes(query));
 });
 
 const chainAddresses = computed<Record<string, string[]>>(() => {
   const chains = [...get(refreshChains)];
   const record: Record<string, string[]> = {};
   return chains.reduce((acc, item) => {
-    acc[item.evmChain] = getAddresses(item.id) ?? [];
+    acc[item.chain] = getAddresses(item.id) ?? [];
     return acc;
   }, record);
 });
 
 const selected = computed<number>(() => getAccounts(get(selection)).length);
 
-function getAccounts(record: Record<string, string[]>): RefreshChainAddress[] {
-  const chains = get(refreshChains);
-  return Object.entries(record).flatMap(([chainKey, addresses]) => {
-    const chainData = chains.find(chain => chain.evmChain === chainKey);
-
-    return addresses.map((address): RefreshChainAddress => {
-      if (chainData?.type === 'bitcoin') {
-        return {
-          address,
-          chain: chainKey,
-        } satisfies BitcoinChainAddress;
-      }
-      else {
-        return {
-          address,
-          evmChain: chainKey,
-        } satisfies EvmChainAddress;
-      }
-    });
-  });
+function getAccounts(record: Record<string, string[]>): ChainAddress[] {
+  return Object.entries(record).flatMap(([chainKey, addresses]) => addresses.map((address): ChainAddress => ({
+    address,
+    chain: chainKey,
+  })));
 }
 
 function emptySelection(): Record<string, string[]> {
-  return Object.fromEntries(get(refreshChains).map(item => [item.evmChain, []]));
+  return Object.fromEntries(get(refreshChains).map(item => [item.chain, []]));
 }
 
 function toggleSelectAll() {
@@ -186,10 +174,10 @@ defineExpose({
       <HistoryRefreshChainItem
         v-for="item in filtered"
         :key="item.id"
-        v-model="selection[item.evmChain]"
+        v-model="selection[item.chain]"
         :processing="processing"
         :item="item"
-        :addresses="chainAddresses[item.evmChain]"
+        :addresses="chainAddresses[item.chain]"
         @pick-addresses="selectedChain = $event"
       />
     </template>

@@ -1,4 +1,4 @@
-import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import type { ChainAddress } from '@/types/history/events';
 import { get, set } from '@vueuse/core';
 import { logger } from '@/utils/logging';
 
@@ -9,14 +9,9 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
   const pendingAccounts = ref<Set<string>>(new Set<string>());
   const accountsBeingRefreshed = ref<Set<string>>(new Set<string>());
 
-  const createAccountKey = (account: EvmChainAddress | BitcoinChainAddress): string => {
-    if ('evmChain' in account) {
-      return `${account.evmChain}:${account.address}`;
-    }
-    return `${account.chain}:${account.address}`;
-  };
+  const createAccountKey = (account: ChainAddress): string => `${account.chain}:${account.address}`;
 
-  const startRefresh = (accounts: Array<EvmChainAddress | BitcoinChainAddress>): void => {
+  const startRefresh = (accounts: Array<ChainAddress>): void => {
     const accountKeys = new Set(accounts.map(createAccountKey));
 
     // Merge with existing accounts if we're refreshing pending accounts
@@ -41,7 +36,7 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
     // No need to update pendingAccounts as they're already set
   };
 
-  const addPendingAccounts = (accounts: Array<EvmChainAddress | BitcoinChainAddress>): void => {
+  const addPendingAccounts = (accounts: Array<ChainAddress>): void => {
     const currentAccountsAtLastRefresh = get(accountsAtLastRefresh);
     const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
     const newPendingAccounts = new Set(get(pendingAccounts));
@@ -58,39 +53,29 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
   };
 
   const getNewAccounts = (
-    currentAccounts: Array<EvmChainAddress | BitcoinChainAddress>,
-  ): Array<EvmChainAddress | BitcoinChainAddress> => {
+    currentAccounts: Array<ChainAddress>,
+  ): Array<ChainAddress> => {
     const lastRefreshedAccounts = get(accountsAtLastRefresh);
     const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
 
     logger.debug(`Checking for new accounts. Current: ${currentAccounts.length}, Last refreshed: ${lastRefreshedAccounts.size}, Being refreshed: ${currentAccountsBeingRefreshed.size}`);
 
-    const newAccounts = currentAccounts.filter((account) => {
+    return currentAccounts.filter((account) => {
       const key = createAccountKey(account);
       // Exclude accounts that have been refreshed OR are currently being refreshed
       return !lastRefreshedAccounts.has(key) && !currentAccountsBeingRefreshed.has(key);
     });
-
-    return newAccounts;
   };
 
-  const getPendingAccountsForRefresh = (): Array<EvmChainAddress | BitcoinChainAddress> => {
+  const getPendingAccountsForRefresh = (): Array<ChainAddress> => {
     const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
     // Filter out accounts that are currently being refreshed
     const pendingKeys = Array.from(get(pendingAccounts)).filter(key => !currentAccountsBeingRefreshed.has(key));
-    const result: Array<EvmChainAddress | BitcoinChainAddress> = [];
+    const result: Array<ChainAddress> = [];
 
     pendingKeys.forEach((key) => {
       const [chain, address] = key.split(':');
-      if (chain && address) {
-        // Check if it's a bitcoin chain (simple heuristic - could be improved)
-        if (chain.toLowerCase() === 'btc' || chain.toLowerCase() === 'bch') {
-          result.push({ address, chain });
-        }
-        else {
-          result.push({ address, evmChain: chain });
-        }
-      }
+      result.push({ address, chain });
     });
 
     return result;
@@ -99,7 +84,7 @@ export const useHistoryRefreshStateStore = defineStore('history/refresh-state', 
   const hasPendingAccounts = computed<boolean>(() => get(pendingAccounts).size > 0);
 
   const shouldRefreshAll = (
-    currentAccounts: Array<EvmChainAddress | BitcoinChainAddress>,
+    currentAccounts: Array<ChainAddress>,
   ): boolean => {
     // If never refreshed, refresh all
     if (get(lastRefreshTime) === null) {
