@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from solders.solders import Signature
+from solders.solders import Pubkey, Signature
 
 from rotkehlchen.types import SolanaAddress, Timestamp
 
@@ -41,3 +41,8 @@ class SolanaTransaction:
             object.__setattr__(self, 'db_id', db_id)
 
         return self.db_id
+
+
+def pubkey_to_solana_address(value: Pubkey) -> SolanaAddress:
+    """Convert a public key to SolanaAddress. Only used for typing purposes."""
+    return SolanaAddress(str(value))

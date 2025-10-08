@@ -35,12 +35,15 @@ from rotkehlchen.chain.solana.utils import (
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_solana_pubkey, deserialize_timestamp
+from rotkehlchen.serialization.deserialize import (
+    deserialize_solana_pubkey,
+    deserialize_timestamp,
+)
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_solana_address, get_chunks
 
 from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
-from .types import SolanaTransaction
+from .types import SolanaTransaction, pubkey_to_solana_address
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -159,7 +162,7 @@ class SolanaInquirer(SolanaRPCMixin):
                     f'items but got {len(response)}',
                 )
 
-            aggregated_response.update({SolanaAddress(str(addr)): info for addr, info in zip(chunk, response, strict=False) if info is not None})  # noqa: E501
+            aggregated_response.update({pubkey_to_solana_address(addr): info for addr, info in zip(chunk, response, strict=False) if info is not None})  # noqa: E501
 
         return aggregated_response
 
@@ -303,8 +306,10 @@ class SolanaInquirer(SolanaRPCMixin):
 
         return signatures
 
-    def get_transaction_for_signature(self, signature: Signature) -> SolanaTransaction:
+    def get_transaction_for_signature(self, signature: Signature) -> tuple[SolanaTransaction, dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]]:  # noqa: E501
         """Query the transaction with the given signature.
+        Returns a tuple containing the transaction and
+        a mapping of token accounts to (owner, mint).
         May raise:
         - RemoteError if there is a problem with querying the external service.
         - DeserializationError if there is a problem deserializing the transaction data.
@@ -347,8 +352,11 @@ class SolanaInquirer(SolanaRPCMixin):
     def deserialize_solana_tx_from_rpc(
             self,
             raw_tx: EncodedConfirmedTransactionWithStatusMeta,
-    ) -> SolanaTransaction:
+    ) -> tuple[SolanaTransaction, dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]]:
         """Deserialize a solana transaction from the RPC response.
+        Returns a tuple containing the transaction and
+        a mapping of token accounts to (owner, mint).
+
         Note that the solders library uses some complex union types, apparently to support querying
         using different parsing options, so we use some type ignores here since we only use the
         default (`json`) parsing option when querying tx data.
@@ -361,7 +369,7 @@ class SolanaInquirer(SolanaRPCMixin):
             raise DeserializationError('The tx data does not contain transaction meta')
 
         try:
-            account_keys = [SolanaAddress(str(pubkey)) for pubkey in message.account_keys]
+            account_keys = [pubkey_to_solana_address(pubkey) for pubkey in message.account_keys]  # type: ignore[arg-type]  # it is a pubkey
             if (  # maybe resolve addresses from Address Lookup Tables (ALTs)
                 (alts := message.address_table_lookups) is not None and  # type: ignore[union-attr]
                 len(alts) > 0
@@ -400,7 +408,28 @@ class SolanaInquirer(SolanaRPCMixin):
                 if (inner_instruction := inner_instructions_dict.get(idx)) is not None:
                     instructions.extend(inner_instruction)
 
-            return SolanaTransaction(
+            token_accounts_mapping: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]] = {}
+            for token_balances in (
+                    raw_tx.transaction.meta.pre_token_balances,
+                    raw_tx.transaction.meta.post_token_balances,
+            ):
+                if token_balances is None:
+                    continue
+
+                for token_balance in token_balances:
+                    if token_balance.owner is None or token_balance.mint is None:
+                        log.warning(
+                            f'Solana transaction {raw_tx.transaction.transaction.signatures[0]} has '  # noqa: E501
+                            f'token account {account_keys[token_balance.account_index]} without an owner. Skipping.',  # noqa: E501
+                        )
+                        continue
+
+                    token_accounts_mapping[account_keys[token_balance.account_index]] = (
+                        pubkey_to_solana_address(token_balance.owner),
+                        pubkey_to_solana_address(token_balance.mint),
+                    )
+
+            return (SolanaTransaction(
                 fee=raw_tx.transaction.meta.fee,
                 slot=raw_tx.slot,
                 success=raw_tx.transaction.meta.err is None,
@@ -408,6 +437,6 @@ class SolanaInquirer(SolanaRPCMixin):
                 block_time=deserialize_timestamp(raw_tx.block_time),
                 account_keys=account_keys,
                 instructions=instructions,
-            )
+            ), token_accounts_mapping)
         except (IndexError, ValueError, TypeError, DeserializationError) as e:
             raise DeserializationError(f'Failed to deserialize solana tx due to {e!s}') from e

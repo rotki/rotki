@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from solders.solders import Account, Signature
+from solders.solders import Signature
 
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -12,24 +12,14 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
 )
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
-from rotkehlchen.chain.solana.decoding.constants import (
-    NATIVE_TRANSFER_DELIMITER,
-    SPL_TOKEN_PROGRAM,
-    SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS,
-    SPL_TOKEN_TRANSFER_DELIMITER,
-    SYSTEM_PROGRAM,
-    TOKEN_2022_PROGRAM,
+from rotkehlchen.chain.solana.types import (
+    SolanaInstruction,
+    SolanaTransaction,
 )
-from rotkehlchen.chain.solana.decoding.interfaces import SolanaDecoderInterface
-from rotkehlchen.chain.solana.decoding.structures import (
-    SolanaDecoderContext,
-    SolanaDecodingOutput,
-)
-from rotkehlchen.chain.solana.decoding.tools import SolanaDecoderTools
-from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
-from rotkehlchen.chain.solana.utils import lamports_to_sol
+from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_to_sol
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import (
     SolanaEventFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
@@ -44,7 +34,21 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_solana_pubkey
 from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain
-from rotkehlchen.utils.misc import bytes_to_solana_address
+
+from .constants import (
+    NATIVE_TRANSFER_DELIMITER,
+    SPL_TOKEN_PROGRAM,
+    SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS,
+    SPL_TOKEN_TRANSFER_DELIMITER,
+    SYSTEM_PROGRAM,
+    TOKEN_2022_PROGRAM,
+)
+from .interfaces import SolanaDecoderInterface
+from .structures import (
+    SolanaDecoderContext,
+    SolanaDecodingOutput,
+)
+from .tools import SolanaDecoderTools
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -217,30 +221,67 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
         return instruction.accounts[0], instruction.accounts[to_token_account_idx]
 
-    def _fetch_token_accounts(
+    def _fetch_token_accounts_owners(
             self,
-            transfers: list[tuple[SolanaAddress, SolanaAddress]],
-    ) -> dict[SolanaAddress, Account]:
-        """Fetch account info for all token accounts"""
-        # todo: derive the addresses programmatically before resorting to remote calls.
-        # https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=130029049
-        try:
-            unique_addresses = set()
-            for addresses in transfers:
-                unique_addresses.add(deserialize_solana_pubkey(addresses[0]))
-                unique_addresses.add(deserialize_solana_pubkey(addresses[1]))
+            token_accounts: list[tuple[SolanaAddress, SolanaAddress]],
+    ) -> dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]:
+        """Fetch token account owners and mint addresses from cache or RPC calls as fallback.
 
-            return self.node_inquirer.get_raw_accounts_info(list(unique_addresses))
-        except (DeserializationError, RemoteError) as e:
-            log.error(f'Failed to fetch token accounts for {transfers} due to {e}')
-            return {}
+        In Solana, tokens are held in Associated Token Accounts (ATAs) rather than directly
+        by user wallets. Each token account contains metadata about:
+        - The owner (the wallet address that controls this token account)
+        - The mint (the token contract address)
+
+        This function takes pairs of token accounts (typically from/to in transfers) and
+        retrieves the (owner, mint) information for each unique token account. It first
+        tries to get this data from the local cache to avoid RPC calls, and
+        only queries the Solana RPC for accounts not found in cache.
+
+        May raise:
+        - RemoteError
+        - DeserializationError
+        """
+        result = {}
+        accounts_needing_rpc = set()
+        for from_token_account, to_token_account in token_accounts:
+            for token_account in (from_token_account, to_token_account):
+                with self.database.conn.read_ctx() as cursor:
+                    if (cached_owner_mint := self.database.get_dynamic_cache(
+                        cursor=cursor,
+                        name=DBCacheDynamic.SOLANA_TOKEN_ACCOUNT,
+                        address=token_account,
+                    )) is not None:
+                        result[token_account] = cached_owner_mint
+                    else:
+                        accounts_needing_rpc.add(deserialize_solana_pubkey(token_account))
+
+        if len(accounts_needing_rpc) > 0:  # fallback to RPC calls for uncached accounts
+            token_cache_data = []
+            for account_addr, account_info in self.node_inquirer.get_raw_accounts_info(list(accounts_needing_rpc)).items():  # noqa: E501
+                token_account_info = deserialize_token_account(account_info.data)
+                result[(token_account := account_addr)] = (owner_mint_info := (
+                    token_account_info.owner,
+                    token_account_info.mint,
+                ))
+                token_cache_data.append((
+                    DBCacheDynamic.SOLANA_TOKEN_ACCOUNT.get_db_key(address=token_account),
+                    ','.join(owner_mint_info),
+                ))
+
+            with self.database.conn.write_ctx() as write_cursor:
+                write_cursor.executemany(
+                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+                    token_cache_data,
+                )
+
+        return result
 
     def _maybe_decode_token_transfer(
             self,
             transaction: SolanaTransaction,
             instruction: SolanaInstruction,
             token_accounts: tuple[SolanaAddress, SolanaAddress],
-            accounts_data: dict[SolanaAddress, Account],
+            token_accounts_with_owners: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]],
     ) -> SolanaEvent | None:
         """Decode transfer-like spl token instructions (spl-token and token-2022).
         It supports:
@@ -261,17 +302,17 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             return None
 
         try:
-            owners = []
+            owners: list[SolanaAddress] = []
             for token_address in token_accounts:
-                if (account_data := accounts_data.get(token_address)) is None:
+                if (account_data := token_accounts_with_owners.get(token_address)) is None:
                     log.error(f'Failed to find owner data for SPL token account {token_address} in transaction {transaction.signature}')  # noqa: E501
                     return None
 
-                # Account data keeps the owner address in bytes 32..64 as per the SPL token layout.
-                owners.append(bytes_to_solana_address(account_data.data[32:64]))
+                owners.append(account_data[0])
 
-            # retrieve the mint address from the `from` associated token address.
-            mint_address = bytes_to_solana_address(accounts_data[token_accounts[0]].data[:32])
+            # mint_address is guaranteed to exist since we checked
+            # all token_accounts exist in token_accounts_with_owners above
+            mint_address = token_accounts_with_owners[token_accounts[0]][1]
         except (DeserializationError, RemoteError) as e:
             log.error(
                 f'Failed to fetch SPL token account owners for ({token_accounts}) in '
@@ -373,7 +414,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         if (fee_event := self._maybe_decode_fee_event(transaction=transaction)) is not None:
             events.append(fee_event)
 
-        instructions_token_accounts = []
+        transfers_and_token_accounts = []
         # Decode basic transfer instructions so that the more complex decoding that runs later
         # can simply modify the already decoded transfer events.
         undecoded_instructions = []
@@ -389,18 +430,27 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 instruction=instruction,
                 transaction_signature=transaction.signature,
             )) is not None:
-                instructions_token_accounts.append((instruction, token_accounts))
+                transfers_and_token_accounts.append((instruction, token_accounts))
                 continue
 
             undecoded_instructions.append(instruction)
 
-        accounts_data = self._fetch_token_accounts([val[1] for val in instructions_token_accounts])
-        for instruction, token_accounts in instructions_token_accounts:
+        try:
+            token_accounts_with_owners = self._fetch_token_accounts_owners(
+                token_accounts=[entry[1] for entry in transfers_and_token_accounts],
+            )
+        except (DeserializationError, RemoteError) as e:
+            log.error(f'Failed to fetch token account owners for transaction {transaction.signature} due to {e}')  # noqa: E501
+            # Add all token transfer instructions to undecoded since we can't process them
+            undecoded_instructions.extend(instruction for instruction, _ in transfers_and_token_accounts)  # noqa: E501
+            return events, undecoded_instructions
+
+        for instruction, token_accounts in transfers_and_token_accounts:
             if (transfer_event := self._maybe_decode_token_transfer(
                 transaction=transaction,
                 instruction=instruction,
                 token_accounts=token_accounts,
-                accounts_data=accounts_data,
+                token_accounts_with_owners=token_accounts_with_owners,
             )) is not None:
                 events.append(transfer_event)
 

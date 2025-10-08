@@ -3,7 +3,7 @@ from typing import Any, Final, TypedDict, Unpack, overload
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
-from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, Timestamp
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, Timestamp
 from rotkehlchen.utils.mixins.enums import Enum
 
 
@@ -42,8 +42,8 @@ class LabeledLocationIdArgsType(LabeledLocationArgsType):
 
 
 class AddressArgType(TypedDict):
-    """Type of kwargs, used to get the value of `DBCacheDynamic.WITHDRAWALS_TS`, `DBCacheDynamic.WITHDRAWALS_IDX` and `DBCacheDynamic.LAST_BITCOIN_TX_ID`"""  # noqa: E501
-    address: ChecksumEvmAddress | BTCAddress
+    """Type of kwargs, used to get the value of following `WITHDRAWALS_TS`, `WITHDRAWALS_IDX`, `LAST_BTC_TX_BLOCK`, `LAST_BCH_TX_BLOCK` and `SOLANA_TOKEN_ACCOUNT`"""  # noqa: E501
+    address: ChecksumEvmAddress | BTCAddress | SolanaAddress
 
 
 class IndexArgType(TypedDict):
@@ -75,6 +75,15 @@ def _deserialize_timestamp_from_str(value: str) -> Timestamp | None:
     return Timestamp(int(value))
 
 
+def _deserialize_solana_token_account_from_str(value: str) -> tuple[SolanaAddress, SolanaAddress] | None:  # noqa: E501
+    """Deserialize cached token account data as (owner, mint) tuple from comma-separated string."""
+    try:
+        owner, mint = value.split(',')
+        return SolanaAddress(owner), SolanaAddress(mint)
+    except ValueError:
+        return None
+
+
 class DBCacheDynamic(Enum):
     """It contains all the formattable keys that depend on a variable
     that can be stored in the `key_value_cache` table"""
@@ -90,6 +99,7 @@ class DBCacheDynamic(Enum):
     LAST_BTC_TX_BLOCK: Final = 'last_btc_tx_block_{address}', _deserialize_int_from_str
     LAST_BCH_TX_BLOCK: Final = 'last_bch_tx_block_{address}', _deserialize_int_from_str
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
+    SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:

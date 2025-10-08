@@ -119,13 +119,12 @@ class Helius(ExternalServiceWithApiKey):
         """
         solana_tx_db = DBSolanaTx(database=self.db)
         for chunk in get_chunks(signatures, MAX_TX_BATCH_SIZE):
-            txs = []
-            for raw_tx in self._query(
-                endpoint='transactions',
-                params={'transactions': chunk},
-            ):
+            txs, token_accounts_mappings = [], {}
+            for raw_tx in self._query(endpoint='transactions', params={'transactions': chunk}):
                 try:
-                    txs.append(self._deserialize_raw_tx(raw_tx))
+                    tx, token_accounts_mapping = self._deserialize_raw_tx(raw_tx)
+                    txs.append(tx)
+                    token_accounts_mappings.update(token_accounts_mapping)
                 except DeserializationError as e:
                     log.error(e)  # the error from _deserialize_raw_tx is already descriptive.
 
@@ -138,6 +137,10 @@ class Helius(ExternalServiceWithApiKey):
                     write_cursor=write_cursor,
                     solana_transactions=txs,
                     relevant_address=relevant_address,
+                )
+                solana_tx_db.add_token_account_mappings(
+                    write_cursor=write_cursor,
+                    token_accounts_mappings=token_accounts_mappings,
                 )
 
     @staticmethod
@@ -166,8 +169,11 @@ class Helius(ExternalServiceWithApiKey):
             accounts=[deserialize_solana_address(x) for x in raw_instruction['accounts']],
         )
 
-    def _deserialize_raw_tx(self, raw_tx: dict[str, Any]) -> SolanaTransaction:
+    def _deserialize_raw_tx(self, raw_tx: dict[str, Any]) -> tuple[SolanaTransaction, dict['SolanaAddress', tuple['SolanaAddress', 'SolanaAddress']]]:  # noqa: E501
         """Deserialize a raw transaction from Helius to a SolanaTransaction.
+        Returns a tuple containing the transaction
+        and a mapping of token accounts to (owner, mint).
+
         May raise DeserializationError if there is a problem deserializing.
         """
         try:
@@ -184,7 +190,18 @@ class Helius(ExternalServiceWithApiKey):
                         parent_execution_index=idx,
                     ))
 
-            return SolanaTransaction(
+            token_account_mapping = {}
+            for entry in raw_tx.get('tokenTransfers', []):
+                token_account_mapping[deserialize_solana_address(entry['fromTokenAccount'])] = (
+                    deserialize_solana_address(entry['fromUserAccount']),
+                    deserialize_solana_address(entry['mint']),
+                )
+                token_account_mapping[deserialize_solana_address(entry['toTokenAccount'])] = (
+                    deserialize_solana_address(entry['toUserAccount']),
+                    deserialize_solana_address(entry['mint']),
+                )
+
+            return (SolanaTransaction(
                 fee=deserialize_int(value=raw_tx['fee'], location='solana tx fee from helius'),
                 slot=deserialize_int(value=raw_tx['slot'], location='solana tx slot from helius'),
                 success=raw_tx.get('transactionError') is None,
@@ -192,7 +209,7 @@ class Helius(ExternalServiceWithApiKey):
                 block_time=deserialize_timestamp(raw_tx['timestamp']),
                 account_keys=[deserialize_solana_address(x['account']) for x in raw_tx['accountData']],  # noqa: E501
                 instructions=instructions,
-            )
+            ), token_account_mapping)
         except (KeyError, ValueError, TypeError, DeserializationError) as e:
             msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
             raise DeserializationError(f'Failed to deserialize Helius raw tx due to {msg}') from e

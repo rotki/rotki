@@ -60,12 +60,18 @@ class SolanaTransactions:
             )) == 1:
                 return txs[0]
 
-        tx = self.node_inquirer.get_transaction_for_signature(signature=signature)
+        tx, token_accounts_mapping = self.node_inquirer.get_transaction_for_signature(
+            signature=signature,
+        )
         with self.database.conn.write_ctx() as write_cursor:
             self.dbtx.add_transactions(
                 write_cursor=write_cursor,
                 solana_transactions=[tx],
                 relevant_address=relevant_address,
+            )
+            self.dbtx.add_token_account_mappings(
+                write_cursor=write_cursor,
+                token_accounts_mappings=token_accounts_mapping,
             )
 
         return tx
@@ -116,10 +122,12 @@ class SolanaTransactions:
             )
             solana_tx_db = DBSolanaTx(database=self.database)
             for chunk in get_chunks(signatures, RPC_TX_BATCH_SIZE):
-                transactions = []
+                txs, token_accounts_mappings = [], {}
                 for signature in chunk:
                     try:
-                        transactions.append(self.node_inquirer.get_transaction_for_signature(signature))
+                        tx, token_accounts_mapping = self.node_inquirer.get_transaction_for_signature(signature)  # noqa: E501
+                        txs.append(tx)
+                        token_accounts_mappings.update(token_accounts_mapping)
                     except (RemoteError, DeserializationError) as e_:
                         log.error(
                             f'Failed to query solana transaction with signature {signature} '
@@ -130,8 +138,12 @@ class SolanaTransactions:
                 with self.database.conn.write_ctx() as write_cursor:
                     solana_tx_db.add_transactions(
                         write_cursor=write_cursor,
-                        solana_transactions=transactions,
+                        solana_transactions=txs,
                         relevant_address=address,
+                    )
+                    solana_tx_db.add_token_account_mappings(
+                        write_cursor=write_cursor,
+                        token_accounts_mappings=token_accounts_mappings,
                     )
 
         self.database.msg_aggregator.add_message(
