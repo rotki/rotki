@@ -26,7 +26,12 @@ export interface BitcoinTxQueryStatusData extends BaseTxQueryStatusData {
   subtype: 'bitcoin';
 }
 
-export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData;
+export interface SolanaTxQueryStatusData extends BaseTxQueryStatusData {
+  subtype: 'solana';
+  period: [number, number];
+}
+
+export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData | SolanaTxQueryStatusData;
 
 export function isEvmTxQueryStatusData(data: TxQueryStatusData): data is EvmTxQueryStatusData {
   return data.subtype === 'evm';

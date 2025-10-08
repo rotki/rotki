@@ -5,6 +5,7 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEventRef,
   isEthBlockEventRef,
+  isSolanaEventRef,
   isWithdrawalEventRef,
 } from '@/utils/history/events';
 
@@ -36,6 +37,7 @@ const translationKey = computed<string>(() => {
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 const assetMovementEvent = isAssetMovementEventRef(event);
+const solanaEvent = isSolanaEventRef(event);
 const transaction = computed<{ location: string; txHash: string } | undefined>(() => {
   const event = props.event;
   if ('txHash' in event && event.txHash) {
@@ -62,6 +64,8 @@ const key = computed(() => {
     return 'withdraw';
   else if (get(assetMovementEvent))
     return 'asset_movement';
+  else if (get(solanaEvent))
+    return 'signature';
   else
     return undefined;
 });
@@ -121,6 +125,19 @@ const key = computed(() => {
         :location="assetMovementEvent?.extraData?.blockchain || undefined"
         :truncate-length="is2xlAndUp ? 0 : 8"
         :display-mode="assetMovementEvent?.extraData?.blockchain ? 'default' : 'copy'"
+      />
+    </template>
+
+    <template
+      v-if="solanaEvent"
+      #signature
+    >
+      <HashLink
+        :class="$style.wrapper"
+        :text="solanaEvent.signature"
+        type="transaction"
+        :location="solanaEvent.location"
+        :truncate-length="is2xlAndUp ? 0 : 8"
       />
     </template>
 

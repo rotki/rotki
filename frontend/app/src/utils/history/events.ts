@@ -11,6 +11,7 @@ import {
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
   type OnlineHistoryEvent,
+  type SolanaEvent,
 } from '@/types/history/events/schemas';
 
 export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
@@ -97,6 +98,21 @@ export function isAssetMovementEventRef(event: MaybeRef<HistoryEvent>): Computed
   return computed(() => {
     const eventVal = get(event);
     return isAssetMovementEvent(eventVal) ? eventVal : undefined;
+  });
+}
+
+export function isSolanaEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.SOLANA_EVENT;
+}
+
+export function isSolanaEvent(event: HistoryEvent): event is SolanaEvent {
+  return isSolanaEventType(event.entryType);
+}
+
+export function isSolanaEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<SolanaEvent | undefined> {
+  return computed(() => {
+    const eventVal = get(event);
+    return isSolanaEvent(eventVal) ? eventVal : undefined;
   });
 }
 

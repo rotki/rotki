@@ -200,6 +200,33 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
+  it('with Solana addresses', () => {
+    const address1 = '7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3';
+    const address2 = 'DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG5CNSKK';
+    const notes = `Address ${address1},${address2}`;
+
+    const formatted = get(formatNotes({ notes }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Address',
+      },
+      {
+        type: NoteType.ADDRESS,
+        address: address1,
+        showHashLink: true,
+      },
+      {
+        type: NoteType.ADDRESS,
+        address: address2,
+        showHashLink: true,
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
   describe('with TX Hash', () => {
     const txHash = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
     const notes = `TxHash ${txHash}`;

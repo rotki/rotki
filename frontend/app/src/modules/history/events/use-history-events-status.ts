@@ -10,7 +10,7 @@ import { TaskType } from '@/types/task-type';
 interface UseHistoryEventStatusReturn {
   ethBlockEventsDecoding: ComputedRef<boolean>;
   anyEventsDecoding: ComputedRef<boolean>;
-  evmEventsDecoding: ComputedRef<boolean>;
+  txEventsDecoding: ComputedRef<boolean>;
   processing: ComputedRef<boolean>;
   refreshing: ComputedRef<boolean>;
   sectionLoading: ComputedRef<boolean>;
@@ -25,9 +25,9 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
   const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
 
   const sectionLoading = isSectionLoading(Section.HISTORY);
-  const evmEventsDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+  const txEventsDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
   const ethBlockEventsDecoding = useIsTaskRunning(TaskType.ETH_BLOCK_EVENTS_DECODING);
-  const anyEventsDecoding = logicOr(evmEventsDecoding, ethBlockEventsDecoding);
+  const anyEventsDecoding = logicOr(txEventsDecoding, ethBlockEventsDecoding);
   const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
   const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
   const queryExchangeEventsLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_EVENTS);
@@ -41,10 +41,10 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
   return {
     anyEventsDecoding,
     ethBlockEventsDecoding,
-    evmEventsDecoding,
     processing,
     refreshing,
     sectionLoading,
     shouldFetchEventsRegularly,
+    txEventsDecoding,
   };
 }

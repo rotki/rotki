@@ -7,11 +7,12 @@ interface UseHistoryTransactionAccountsReturn {
   getEvmAccounts: (chains?: string[]) => ChainAddress[];
   getEvmLikeAccounts: (chains?: string[]) => ChainAddress[];
   getBitcoinAccounts: (chains?: string[]) => ChainAddress[];
+  getSolanaAccounts: (chains?: string[]) => ChainAddress[];
 }
 
 export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsReturn {
   const { addresses } = useAccountAddresses();
-  const { isBtcChains, isEvmLikeChains, supportsTransactions } = useSupportedChains();
+  const { isBtcChains, isEvmLikeChains, isSolanaChains, supportsTransactions } = useSupportedChains();
 
   const getAccountsByChainType = (
     chainFilter: (chain: string) => boolean,
@@ -35,9 +36,13 @@ export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsRe
   const getBitcoinAccounts = (chains: string[] = []): ChainAddress[] =>
     getAccountsByChainType(isBtcChains, chains);
 
+  const getSolanaAccounts = (chains: string[] = []): ChainAddress[] =>
+    getAccountsByChainType(isSolanaChains, chains);
+
   return {
     getBitcoinAccounts,
     getEvmAccounts,
     getEvmLikeAccounts,
+    getSolanaAccounts,
   };
 }

@@ -2,7 +2,7 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AddTransactionHashPayload } from '@/types/history/events';
-import { Blockchain, isValidTxHash } from '@rotki/common';
+import { Blockchain, isValidEvmTxHash } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
@@ -102,7 +102,7 @@ const rules = {
   },
   evmChain: { required },
   txHash: {
-    isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHash),
+    isValidEvmTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidEvmTxHash),
     required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
   },
 };

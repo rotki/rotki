@@ -11,6 +11,7 @@ import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
 import { EVM_EVENTS, isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
+import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 
 interface FormComponent {
@@ -54,6 +55,7 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.EVM_EVENT]: EvmEventForm,
   [HistoryEventEntryType.EVM_SWAP_EVENT]: EvmSwapEventForm,
   [HistoryEventEntryType.HISTORY_EVENT]: OnlineHistoryEventForm,
+  [HistoryEventEntryType.SOLANA_EVENT]: SolanaEventForm,
   [HistoryEventEntryType.SWAP_EVENT]: SwapEventForm,
 };
 

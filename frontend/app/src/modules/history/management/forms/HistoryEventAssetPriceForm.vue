@@ -48,7 +48,7 @@ const fiatValue = ref<string>('');
 const assetToFiatPrice = ref<string>('');
 const fiatValueFocused = ref<boolean>(false);
 const fetchedAssetToFiatPrice = ref<string>('');
-const evmChain = ref<string>();
+const chain = ref<string>();
 const showPriceFields = ref<boolean>(!get(hidePriceFields) && !get(noPriceFields));
 
 const { useIsTaskRunning } = useTaskStore();
@@ -184,12 +184,12 @@ defineExpose({
           :disabled="disabled || disableAsset"
           :data-cy="type ? `${type}-asset` : 'asset'"
           :label="type && t('transactions.events.form.asset_price.asset_label', { type: toSentenceCase((type)) })"
-          :evm-chain="evmChain"
+          :chain="chain"
           :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
           @blur="v$.asset.$touch()"
         />
         <ToggleLocationLink
-          v-model="evmChain"
+          v-model="chain"
           class="ml-3"
           :disabled="disableAsset"
           :location="location"

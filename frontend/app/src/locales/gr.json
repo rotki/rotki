@@ -3169,7 +3169,7 @@
       "location": "filter by event location",
       "protocol": "filter by the protocol of the events",
       "start_date": "filter by the start date of the transaction period",
-      "tx_hash": "filter by tx hash(es)",
+      "tx_hash": "filter by tx hash(es) or signature(s)",
       "validator_index": "filter by validator index(es)"
     },
     "ignore": "Ignore Tx in Accounting",

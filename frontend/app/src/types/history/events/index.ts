@@ -10,7 +10,14 @@ export enum TransactionChainType {
   EVM = 'evm',
   EVMLIKE = 'evmlike',
   BITCOIN = 'bitcoin',
+  SOLANA = 'solana',
 }
+
+export const TransactionChainTypeNeedDecoding: TransactionChainType[] = [
+  TransactionChainType.EVM,
+  TransactionChainType.EVMLIKE,
+  TransactionChainType.SOLANA,
+] as const;
 
 export interface TransactionRequestPayload {
   readonly accounts: BlockchainAddress[];
@@ -29,7 +36,7 @@ export type PullEventPayload = {
   type: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
   data: number [];
 } | {
-  type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT;
+  type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT | typeof HistoryEventEntryType.SOLANA_EVENT;
   data: EvmChainAndTxHash;
 };
 

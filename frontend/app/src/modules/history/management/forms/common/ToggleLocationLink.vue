@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<{
 
 const locationLimited = ref<boolean>(true);
 
-const { isEvm, matchChain } = useSupportedChains();
+const { isEvm, isSolanaChains, matchChain } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 
 const isDisabled = computed<boolean>(() => {
@@ -19,7 +19,7 @@ const isDisabled = computed<boolean>(() => {
   }
 
   const chain = matchChain(props.location);
-  return !chain || !get(isEvm(chain));
+  return !chain || !(get(isEvm(chain)) || get(isSolanaChains(chain)));
 });
 
 const tooltipText = computed<string>(() => {
