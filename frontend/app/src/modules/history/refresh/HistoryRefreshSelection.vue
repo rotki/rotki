@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { HistoryRefreshEventData, RefreshChainAddress } from '@/modules/history/refresh/types';
+import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Exchange } from '@/types/exchanges';
+import type { ChainAddress } from '@/types/history/events';
 import type { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import HistoryRefreshChains from '@/modules/history/refresh/HistoryRefreshChains.vue';
 import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExchanges.vue';
@@ -23,7 +24,7 @@ const open = ref<boolean>(false);
 const search = ref<string>('');
 const tab = ref<'chains' | 'exchanges' | 'events' | 'protocols'>('chains');
 
-const selectedAccounts = ref<RefreshChainAddress[]>([]);
+const selectedAccounts = ref<ChainAddress[]>([]);
 const allAccountsSelected = ref<boolean>(false);
 const selectedChain = ref<string>();
 

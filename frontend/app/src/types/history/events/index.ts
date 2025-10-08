@@ -33,16 +33,13 @@ export type PullEventPayload = {
   data: EvmChainAndTxHash;
 };
 
-export interface PullEvmLikeTransactionPayload {
-  readonly transactions: ChainAndTxHash[];
-  readonly deleteCustom?: boolean;
+export interface ChainAndTxRefs {
+  readonly chain: string;
+  readonly txRefs: string[];
 }
 
-export type PullTransactionPayload = PullEvmTransactionPayload | PullEvmLikeTransactionPayload;
-
-export interface ChainAndTxHash {
-  readonly chain: string;
-  readonly txHash: string;
+export interface PullTransactionPayload extends ChainAndTxRefs {
+  readonly deleteCustom?: boolean;
 }
 
 export interface EvmChainAndTxHash {
@@ -105,6 +102,13 @@ export const BitcoinChainAddress = z.object({
 });
 
 export type BitcoinChainAddress = z.infer<typeof BitcoinChainAddress>;
+
+export const ChainAddress = z.object({
+  address: z.string(),
+  chain: z.string(),
+});
+
+export type ChainAddress = z.infer<typeof BitcoinChainAddress>;
 
 export const HistoryEventDetail = z
   .object({

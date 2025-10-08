@@ -1,5 +1,4 @@
-import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
-import { useSupportedChains } from '@/composables/info/chains';
+import type { ChainAddress } from '@/types/history/events';
 import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
@@ -42,9 +41,7 @@ export function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is Bit
 }
 
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
-  const { getChain } = useSupportedChains();
-
-  const createKey = ({ address, chain }: { address: string; chain: string }): string => address + chain;
+  const createKey = ({ address, chain }: ChainAddress): string => address + chain;
 
   const isStatusFinished = (item: TxQueryStatusData): boolean => {
     if (isBitcoinTxQueryStatusData(item)) {
@@ -60,17 +57,16 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     resetQueryStatus,
   } = useQueryStatusStore<TxQueryStatusData>(isStatusFinished, createKey);
 
-  const initializeQueryStatus = (data: EvmChainAddress[]): void => {
+  const initializeQueryStatus = (data: ChainAddress[]): void => {
     resetQueryStatus();
 
     const status = { ...get(queryStatus) };
     const now = millisecondsToSeconds(Date.now());
     for (const item of data) {
-      const chain = getChain(item.evmChain);
-      const key = createKey({ address: item.address, chain });
+      const key = createKey(item);
       status[key] = {
         address: item.address,
-        chain,
+        chain: item.chain,
         period: [0, now],
         status: TransactionsQueryStatus.ACCOUNT_CHANGE,
         subtype: 'evm' as const,
@@ -79,14 +75,8 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     set(queryStatus, status);
   };
 
-  const removeQueryStatus = (data: EvmChainAddress | BitcoinChainAddress): void => {
-    if ('evmChain' in data) {
-      const chain = getChain(data.evmChain);
-      remove(createKey({ address: data.address, chain }));
-    }
-    else {
-      remove(createKey({ address: data.address, chain: data.chain }));
-    }
+  const removeQueryStatus = (data: ChainAddress): void => {
+    remove(createKey({ address: data.address, chain: data.chain }));
   };
 
   const setUnifiedTxQueryStatus = (data: UnifiedTransactionStatusData): void => {

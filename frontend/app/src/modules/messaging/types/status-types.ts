@@ -103,7 +103,7 @@ export const EvmUndecodedTransactionResponse = z.record(z.string(), EvmUndecoded
 export type EvmUndecodedTransactionResponse = z.infer<typeof EvmUndecodedTransactionResponse>;
 
 export const EvmUnDecodedTransactionsDataWithSubtype = EvmUnDecodedTransactionsData.extend({
-  subtype: z.literal(SocketMessageProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
+  subtype: z.literal(SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS),
 });
 
 export const StatsPriceQueryData = CommonQueryStatusData.extend({

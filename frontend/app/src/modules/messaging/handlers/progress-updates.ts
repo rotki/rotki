@@ -22,7 +22,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
     }
 
     switch (subtype) {
-      case SocketMessageProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS:
+      case SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS:
         setUndecodedTransactionsStatus(data);
         break;
       case SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES:

@@ -1,5 +1,5 @@
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
-import type { BitcoinChainAddress, EvmChainAddress, TransactionChainType } from '@/types/history/events';
+import type { ChainAddress, TransactionChainType } from '@/types/history/events';
 
 export interface RefreshTransactionsParams {
   chains?: string[];
@@ -8,6 +8,4 @@ export interface RefreshTransactionsParams {
   payload?: HistoryRefreshEventData;
 }
 
-export type TransactionSyncParams =
-  | { accounts: EvmChainAddress[]; type: TransactionChainType.EVM | TransactionChainType.EVMLIKE }
-  | { accounts: BitcoinChainAddress[]; type: TransactionChainType.BITCOIN };
+export interface TransactionSyncParams { accounts: ChainAddress[]; type: TransactionChainType }
