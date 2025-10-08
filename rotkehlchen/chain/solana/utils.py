@@ -6,7 +6,7 @@ from base58 import b58decode
 from construct import Struct
 from construct.core import ConstructError
 from solders.solders import Pubkey, UiCompiledInstruction
-from spl.token._layouts import MINT_LAYOUT
+from spl.token._layouts import ACCOUNT_LAYOUT, MINT_LAYOUT
 
 from rotkehlchen.chain.solana.types import SolanaInstruction
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
@@ -63,6 +63,15 @@ class MintInfo(NamedTuple):
     supply: int
     decimals: int
     tlv_data: bytes | None
+
+
+class TokenAccountInfo(NamedTuple):
+    """Token account information parsed from ACCOUNT_LAYOUT.
+    Contains the essential fields from an SPL Token account.
+    """
+    mint: SolanaAddress
+    owner: SolanaAddress
+    amount: int
 
 
 class MetadataInfo(NamedTuple):
@@ -256,4 +265,42 @@ def deserialize_solana_instruction_from_rpc(
         accounts=[account_keys[i] for i in raw_instruction.accounts],
         data=b58decode(raw_instruction.data),
         program_id=account_keys[raw_instruction.program_id_index],
+    )
+
+
+def deserialize_token_account(account_data: bytes) -> TokenAccountInfo:
+    """Deserializes token account data into a TokenAccountInfo structure.
+
+    Token account structure (165 bytes):
+    - mint: publicKey (32 bytes)
+    - owner: publicKey (32 bytes)
+    - amount: u64 (8 bytes)
+    - delegate_option: u32 (4 bytes)
+    - delegate: publicKey (32 bytes)
+    - state: u8 (1 byte)
+    - is_native_option: u32 (4 bytes)
+    - is_native: u64 (8 bytes)
+    - delegated_amount: u64 (8 bytes)
+    - close_authority_option: u32 (4 bytes)
+    - close_authority: publicKey (32 bytes)
+    https://github.com/solana-program/token/blob/998ad67a017b64e6030e695d358d7f6cbc476ac5/interface/src/state.rs#L87
+
+    May raise:
+    - DeserializationError if the data is invalid.
+    """
+    if len(account_data) < ACCOUNT_SIZE:
+        raise DeserializationError(
+            f'Solana token account data must be at least {ACCOUNT_SIZE} bytes, '
+            f'got {len(account_data)} bytes.',
+        )
+
+    try:
+        decoded = ACCOUNT_LAYOUT.parse(account_data)
+    except ConstructError as e:
+        raise DeserializationError(f'Failed to parse solana token account data due to {e!s}') from e  # noqa: E501
+
+    return TokenAccountInfo(
+        mint=bytes_to_solana_address(decoded.mint),
+        owner=bytes_to_solana_address(decoded.owner),
+        amount=decoded.amount,
     )

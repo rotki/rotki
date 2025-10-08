@@ -779,6 +779,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.SOLANA_TOKEN_ACCOUNT],
+            **kwargs: Unpack[AddressArgType],
+    ) -> tuple[SolanaAddress, SolanaAddress] | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             **kwargs: Unpack[AddressArgType],
     ) -> Timestamp | None:
@@ -834,7 +843,7 @@ class DBHandler:
             cursor: 'DBCursor',
             name: DBCacheDynamic,
             **kwargs: Any,
-    ) -> int | Timestamp | str | ChecksumEvmAddress | None:
+    ) -> int | Timestamp | str | ChecksumEvmAddress | tuple[SolanaAddress, SolanaAddress] | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
         value = cursor.execute(
@@ -976,11 +985,21 @@ class DBHandler:
     ) -> None:
         ...
 
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.SOLANA_TOKEN_ACCOUNT],
+            value: str,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
             name: DBCacheDynamic,
-            value: int | Timestamp | ChecksumEvmAddress | str,
+            value: int | Timestamp | ChecksumEvmAddress | SolanaAddress | str,
             **kwargs: Any,
     ) -> None:
         """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501

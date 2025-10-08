@@ -3,10 +3,8 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from construct import ConstructError
 from solana.rpc.types import TokenAccountOpts
 from solders.pubkey import Pubkey
-from spl.token._layouts import ACCOUNT_LAYOUT
 from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
@@ -14,7 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.manager import ChainManagerWithTransactions
-from rotkehlchen.chain.solana.utils import lamports_to_sol
+from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_to_sol
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
@@ -24,7 +22,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SolanaAddress, Timestamp
-from rotkehlchen.utils.misc import bytes_to_solana_address
 
 from .decoding.decoder import SolanaTransactionDecoder
 from .decoding.tools import SolanaDecoderTools
@@ -101,37 +98,31 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress]):
             )
             for account_info in response.value:
                 try:
-                    decoded = ACCOUNT_LAYOUT.parse(account_info.account.data)
-                except ConstructError as e:
+                    token_account_info = deserialize_token_account(account_info.account.data)
+                except DeserializationError as e:
                     log.error(f'Failed to parse solana token account data for {account} due to {e}')  # noqa: E501
                     continue
 
-                try:
-                    token_address = bytes_to_solana_address(decoded.mint)
-                except DeserializationError as e:
-                    log.error(f'Failed to deserialize a solana token address for {account} due to {e}')  # noqa: E501
-                    continue
-
-                if decoded.amount == ZERO:
-                    log.debug(f'Found solana token {token_address} with zero balance for {account}. Skipping.')  # noqa: E501
+                if token_account_info.amount == ZERO:
+                    log.debug(f'Found solana token {token_account_info.mint} with zero balance for {account}. Skipping.')  # noqa: E501
                     continue
 
                 try:
                     token = get_or_create_solana_token(
                         userdb=self.database,
-                        address=token_address,
+                        address=token_account_info.mint,
                         solana_inquirer=self.node_inquirer,
                         encounter=TokenEncounterInfo(should_notify=False),
                     )
                 except NotSPLConformant as e:
-                    log.error(f'Failed to create solana token with address {token_address} due to {e}')  # noqa: E501
+                    log.error(f'Failed to create solana token with address {token_account_info.mint} due to {e}')  # noqa: E501
                     continue
 
                 # Add to existing balances since there may be multiple ATAs
                 # (Associated Token Account) for the same token.
                 balances[token] += (amount := token_normalized_value(
                     token=token,
-                    token_amount=decoded.amount,
+                    token_amount=token_account_info.amount,
                 ))
                 log.debug(f'Found {token} token balance for solana account {account} with balance {amount}')  # noqa: E501
 

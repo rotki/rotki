@@ -135,7 +135,7 @@ def test_is_nft_via_offchain_metadata() -> None:
 
 @pytest.mark.vcr
 def test_query_tx_from_rpc(solana_inquirer: 'SolanaInquirer') -> None:
-    tx = solana_inquirer.get_transaction_for_signature(
+    tx, token_account_mapping = solana_inquirer.get_transaction_for_signature(
         signature=(signature := deserialize_tx_signature('58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM')),  # noqa: E501
     )
     assert tx is not None
@@ -165,6 +165,28 @@ def test_query_tx_from_rpc(solana_inquirer: 'SolanaInquirer') -> None:
     assert len([x for x in tx.instructions if x.parent_execution_index == 2]) == 4
     assert len([x for x in tx.instructions if x.parent_execution_index == 5]) == 5
     assert len([x for x in tx.instructions if x.parent_execution_index == 7]) == 6
+    assert token_account_mapping == {
+        'F54yhxDkhsprqQoRV5L1dCQKKFSY1WBzFQ6YaVRuW42T': (
+            '9rJ4QzDLYm5VARnuWcMFMzB4Nr1hKprGQWb8LTfsU6Q2',
+            'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        ),
+        '7ixaquirw9k3VNkxJ5zpbx9GTAbAvUrrNeZovw7TBqyu': (
+            '81MPQqJY58rgT83sy99MkRHs2g3dyy6uWKHD24twV62F',
+            'So11111111111111111111111111111111111111112',
+        ),
+        '2JwKVhEeJZn8bHsHVK1rFuATHni3wDft3UFAsrKKMKfP': (
+            '81MPQqJY58rgT83sy99MkRHs2g3dyy6uWKHD24twV62F',
+            'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        ),
+        '9yfN3qv6tKxhniWcrQi7bP1kZgXmdd4dLm84rostKvQG': (
+            '6p6RCUtoXDvrwqx9AJmyM3wCFd9nDvMaLs3Fwif6QeXH',
+            'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        ),
+        '9PzW3acuWjfCb74AKRK7BsZq9tjBxvwqPoTLSeXonGLu': (
+            'EEne7rPNgqPXLEK3Hv74KwkxJKPgaMHUd39LNx9yXbiK',
+            'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        ),
+    }
 
 
 @pytest.mark.vcr

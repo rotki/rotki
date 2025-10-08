@@ -5,6 +5,7 @@ from solders.pubkey import Pubkey
 from solders.solders import Signature
 
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.dbtx import DBCommonTx
 from rotkehlchen.db.filtering import (
     SolanaTransactionsFilterQuery,
@@ -74,6 +75,24 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                             for order, account_address in enumerate(instruction.accounts)
                         ],
                     )
+
+    @staticmethod
+    def add_token_account_mappings(
+            write_cursor: 'DBCursor',
+            token_accounts_mappings: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]],
+    ) -> None:
+        """Save Solana token account to (owner, mint) mappings in the database cache."""
+        token_cache_data = []
+        for token_account, owner_mint_data in token_accounts_mappings.items():
+            token_cache_data.append((
+                DBCacheDynamic.SOLANA_TOKEN_ACCOUNT.get_db_key(address=token_account),
+                ','.join(owner_mint_data),
+            ))
+
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+            token_cache_data,
+        )
 
     @staticmethod
     def get_transactions(
