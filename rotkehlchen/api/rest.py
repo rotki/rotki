@@ -5464,12 +5464,6 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(monerium.oauth_client.get_status()))
 
     def complete_monerium_oauth(self, access_token: str, refresh_token: str, expires_in: int) -> Response:  # noqa: E501
-        if not has_premium_check(self.rotkehlchen.premium):
-            return api_response(
-                result=wrap_in_fail_result('Monerium can be used only with a valid premium subscription'),  # noqa: E501
-                status_code=HTTPStatus.FORBIDDEN,
-            )
-
         try:
             result = Monerium(self.rotkehlchen.data.db).oauth_client.complete_oauth(
                 access_token=access_token,
@@ -5777,6 +5771,20 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
 
         return _wrap_in_ok_result(result=payload)
+
+    @async_api_call()
+    def get_gnosis_pay_safe_admin_addresses(self) -> dict[str, Any]:
+        if not (tracked_addresses := self.rotkehlchen.chains_aggregator.accounts.gnosis):
+            return _wrap_in_ok_result({})
+
+        gnosis_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
+
+        try:
+            addresses_with_admins = gnosis_manager.node_inquirer.get_safe_admins_for_addresses(tracked_addresses)  # type: ignore  # mypy doesn't identify the inquirer as GnosisInquirer  # noqa: E501
+        except (RemoteError, DeserializationError) as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return _wrap_in_ok_result(addresses_with_admins)
 
     @async_api_call()
     def prepare_native_transfer(

@@ -14399,3 +14399,37 @@ Monerium OAuth
    :statuscode 200: Credentials removed successfully.
    :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
+
+GnosisPay admins
+=================
+
+.. http:get:: /api/(version)/services/gnosispay/admins
+
+   Retrieve tracked Gnosis addresses whose corresponding safe has at least one administrator
+   reported by the Gnosis Pay contract.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xaCFEb570426e260Eb930971FE528c8014f1002a0": [
+                  "0x37f18A82493cdF80675fF01e58c1A1b39637cf50",
+                  "0xc37b40ABdB939635068d3c5f13E7faF686F03B65"
+              ]
+          },
+          "message": ""
+      }
+
+   :resjson object result: Mapping of tracked safe addresses to the list of admin addresses.
+   :statuscode 200: The request was successful.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Error querying the on chain information.
+   :statuscode 502: Failed to query the external contract.

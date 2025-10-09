@@ -90,6 +90,7 @@ class GnosisPay:
         self.session = create_session()
         self.session_token = session_token
         set_user_agent(self.session)
+        self.session.headers = {'Authorization': f'Bearer {self.session_token}'}
 
     def _query(
             self,
@@ -109,7 +110,6 @@ class GnosisPay:
                 url=querystr,
                 params=params,
                 timeout=timeout,
-                cookies={'__Secure-authjs.session-token': self.session_token},
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Querying {querystr} failed due to {e!s}') from e
