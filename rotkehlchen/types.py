@@ -137,12 +137,7 @@ class ExternalServiceApiCredentials(NamedTuple):
         return (self.service.name.lower(), self.api_key, self.api_secret)
 
     def serialize_for_api(self) -> tuple[str, dict[str, str]]:
-        value: dict[str, str]
-        if self.service == ExternalService.MONERIUM:
-            value = {'username': self.api_key, 'password': self.api_secret}  # type:ignore  # exists
-        else:
-            value = {'api_key': self.api_key}
-        return self.service.name.lower(), value
+        return self.service.name.lower(), {'api_key': self.api_key}
 
 
 T_TradePair = str
