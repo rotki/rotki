@@ -1603,7 +1603,7 @@ class ManualBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSche
 
 
 class ExternalServiceSchema(Schema):
-    name = SerializableEnumField(enum_class=ExternalService, required=True)
+    name = SerializableEnumField(enum_class=ExternalService, required=True, exclude_types=(ExternalService.MONERIUM,))  # noqa: E501
     api_key = EmptyAsNoneStringField(required=False)
     username = EmptyAsNoneStringField(required=False)
     password = EmptyAsNoneStringField(required=False)
@@ -1614,12 +1614,6 @@ class ExternalServiceSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['name'] == ExternalService.MONERIUM:
-            raise ValidationError(
-                message='Monerium credentials must be managed via the dedicated OAuth endpoint',
-                field_name='name',
-            )
-
         if data.get('api_key') is None:
             raise ValidationError(
                 message=f'an api key is needed for {data["name"].name.lower()}',

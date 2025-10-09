@@ -5464,6 +5464,12 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(monerium.oauth_client.get_status()))
 
     def complete_monerium_oauth(self, access_token: str, refresh_token: str, expires_in: int) -> Response:  # noqa: E501
+        if not has_premium_check(self.rotkehlchen.premium):
+            return api_response(
+                result=wrap_in_fail_result('Monerium can be used only with a valid premium subscription'),  # noqa: E501
+                status_code=HTTPStatus.FORBIDDEN,
+            )
+
         try:
             result = Monerium(self.rotkehlchen.data.db).oauth_client.complete_oauth(
                 access_token=access_token,

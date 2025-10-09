@@ -14369,8 +14369,6 @@ Monerium OAuth
    :reqjson str access_token: Access token returned by the Monerium OAuth callback.
    :reqjson str refresh_token: Refresh token returned by the OAuth callback.
    :reqjson int expires_in: Lifetime of the access token in seconds.
-   :reqjson str client_id: OAuth client identifier that issued the tokens.
-   :reqjson str token_type: Optional token type, defaults to ``"Bearer"``.
    :resjson object result: Confirmation payload containing the stored user context.
    :resjson bool success: ``true`` when the credentials were stored successfully.
    :resjson str message: Confirmation message returned by rotki.

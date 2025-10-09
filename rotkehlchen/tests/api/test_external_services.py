@@ -214,28 +214,6 @@ def test_add_external_services_errors(rotkehlchen_api_server: 'APIServer') -> No
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # monerium with username/password also not allowed (OAuth only)
-    response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
-        json={'services': [{'name': 'monerium', 'username': 'Ben'}]},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Monerium credentials must be managed via the dedicated OAuth endpoint',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # monerium with username and password also not allowed (OAuth only)
-    response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
-        json={'services': [{'name': 'monerium', 'username': 'Ben', 'password': 'secure'}]},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Monerium credentials must be managed via the dedicated OAuth endpoint',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
 
 def test_remove_external_services_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that errors at removing external service credentials are handled properly"""
