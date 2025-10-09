@@ -1997,6 +1997,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             substring_search: str | None = None,
             chain_id: ChainID | None = None,
             address: ChecksumEvmAddress | SolanaAddress | None = None,
+            asset_type: AssetType | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'LevenshteinFilterQuery':
         assert substring_search is not None or address is not None  # substring search and address can't be none at the same time  # noqa: E501
@@ -2055,6 +2056,9 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
 
         if address is not None:
             filters.append((DBEqualsFilter(and_op=True, column='evm_tokens.address' if is_hex_address(address) else 'solana_tokens.address', value=address), 'assets'))  # noqa: E501
+
+        if asset_type is not None:
+            filters.append((DBEqualsFilter(and_op=True, column='assets.type', value=asset_type.serialize_for_db()), 'assets'))  # noqa: E501
 
         filter_query.filters = filters
         return filter_query
