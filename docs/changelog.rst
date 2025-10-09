@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`10681` rotki will now provide an option in history events to persist filters when navigating between pages.
+* :feature:`-` rotki will now be able decode Jupiter swaps on Solana.
 * :feature:`10630` Users will now be able to re-pull missed history events from exchanges.
 * :feature:`10637` rotki will now properly handle Runmoney.app transactions and balances in Base.
 * :feature:`9972` rotki will now properly handle Quickswap transactions and LP balances in all supported chains.
