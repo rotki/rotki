@@ -13,6 +13,7 @@ import {
   type PullEvmTransactionPayload,
   type PullTransactionPayload,
   TransactionChainType,
+  TransactionChainTypeNeedDecoding,
 } from '@/types/history/events';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -167,10 +168,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const checkMissingEventsAndRedecode = async (): Promise<void> => {
     resetUndecodedTransactionsStatus();
     await fetchUndecodedTransactionsStatus();
-    await Promise.allSettled([
-      checkMissingEventsAndRedecodeHandler(TransactionChainType.EVM),
-      checkMissingEventsAndRedecodeHandler(TransactionChainType.EVMLIKE),
-    ]);
+    await Promise.allSettled(TransactionChainTypeNeedDecoding.map(async item => checkMissingEventsAndRedecodeHandler(item)));
   };
 
   const redecodeTransactions = async (chains: string[] = []): Promise<void> => {

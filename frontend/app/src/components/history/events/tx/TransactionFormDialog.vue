@@ -45,7 +45,7 @@ async function save() {
 
   const data = get(modelValue);
 
-  const evmChain = getEvmChainName(data.evmChain);
+  const evmChain = getEvmChainName(data.evmChain) || data.evmChain;
   assert(evmChain);
 
   const payload: AddTransactionHashPayload = {
