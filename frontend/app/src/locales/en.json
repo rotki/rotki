@@ -4980,6 +4980,7 @@
           "non_empty": "The account field cannot be empty"
         }
       },
+      "no_accounts": "No accounts to add the transaction. Please add an account first before continuing.",
       "tx_hash": {
         "validation": {
           "non_empty": "The tx hash field cannot be empty.",

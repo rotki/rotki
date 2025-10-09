@@ -2,7 +2,7 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AddTransactionHashPayload } from '@/types/history/events';
-import { Blockchain, isValidEvmTxHash } from '@rotki/common';
+import { Blockchain, isValidTxHashOrSignature } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
@@ -35,7 +35,7 @@ const chainOptions = computed(() => {
     .filter(([_, accounts]) => accounts.length > 0)
     .map(([chain]) => chain);
 
-  return get(txChains).filter(chain => accountChains.includes(chain));
+  return [...get(txChains)].filter(chain => accountChains.includes(chain));
 });
 
 const usableChains = computed<string[]>(() => {
@@ -102,7 +102,7 @@ const rules = {
   },
   evmChain: { required },
   txHash: {
-    isValidEvmTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidEvmTxHash),
+    isValidTxHashOrSignature: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHashOrSignature),
     required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
   },
 };
@@ -134,7 +134,16 @@ defineExpose({
 </script>
 
 <template>
-  <form class="flex flex-col gap-4">
+  <div
+    v-if="chainOptions.length === 0"
+    class="text-rui-text-secondary"
+  >
+    {{ t('transactions.form.no_accounts') }}
+  </div>
+  <form
+    v-else
+    class="flex flex-col gap-4"
+  >
     <div class="flex gap-2">
       <ChainSelect
         v-model="evmChain"

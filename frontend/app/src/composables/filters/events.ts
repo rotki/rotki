@@ -58,7 +58,7 @@ enum HistoryEventFilterValueKeys {
   LOCATION = 'location',
   PRODUCT = 'products',
   ENTRY_TYPE = 'entryTypes',
-  TX_HASHES = 'txHashes',
+  TX_HASHES = 'txRefs',
   VALIDATOR_INDICES = 'validatorIndices',
   ADDRESSES = 'addresses',
   NOTES = 'notesSubstring',
