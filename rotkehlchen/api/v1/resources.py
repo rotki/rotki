@@ -249,7 +249,7 @@ from rotkehlchen.types import (
     AddressbookType,
     ApiKey,
     ApiSecret,
-    BTCTxHash,
+    BTCTxId,
     ChainType,
     ChecksumEvmAddress,
     CounterpartyAssetMappingDeleteEntry,
@@ -643,7 +643,7 @@ class BlockchainTransactionsResource(BaseMethodView):
     def delete(
             self,
             chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
-            tx_hash: EVMTxHash | BTCTxHash | None,
+            tx_hash: EVMTxHash | BTCTxId | None,
     ) -> Response:
         return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)  # type: ignore[arg-type] # schema ensures chain is included when tx_hash is present.
 

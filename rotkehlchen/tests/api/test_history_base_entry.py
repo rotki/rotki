@@ -7,14 +7,18 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
+    A_BCH,
     A_BTC,
     A_DAI,
     A_ETH,
+    A_SOL,
     A_SUSHI,
     A_USD,
     A_USDC,
@@ -32,6 +36,7 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
+from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
@@ -47,7 +52,14 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.factories import generate_events_response, make_solana_signature
+from rotkehlchen.tests.utils.factories import (
+    generate_events_response,
+    make_btc_tx_id,
+    make_evm_address,
+    make_evm_tx_hash,
+    make_solana_address,
+    make_solana_signature,
+)
 from rotkehlchen.tests.utils.history_base_entry import (
     KEYS_IN_ENTRY_TYPE,
     add_entries,
@@ -1626,3 +1638,90 @@ def test_add_edit_delete_solana_events(rotkehlchen_api_server: 'APIServer') -> N
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 2
+
+
+def test_tx_ref_and_address_filtering(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that filtering by tx_ref and address works correctly."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    btc_tx_id, bch_tx_id = make_btc_tx_id(), make_btc_tx_id()
+    all_events: list[HistoryBaseEntry] = []
+    all_events.extend(evm_events := [EvmEvent(
+        tx_hash=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TimestampMS(0),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        address=make_evm_address(),
+        notes=f'Evm event {idx}',
+    ) for idx in range(2)])
+    all_events.extend(solana_events := [SolanaEvent(
+        signature=make_solana_signature(),
+        sequence_index=0,
+        timestamp=TimestampMS(0),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_SOL,
+        amount=ZERO,
+        address=make_solana_address(),
+        notes=f'Solana event {idx}',
+    ) for idx in range(2)])
+    all_events.extend([HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=0,
+        timestamp=TimestampMS(0),
+        location=location,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=asset,
+        amount=ZERO,
+        notes=f'{asset.identifier} event',
+    ) for event_identifier, location, asset in (
+        (f'{BTC_EVENT_IDENTIFIER_PREFIX}{btc_tx_id}', Location.BITCOIN, A_BTC),
+        (f'{BCH_EVENT_IDENTIFIER_PREFIX}{bch_tx_id}', Location.BITCOIN_CASH, A_BCH),
+    )])
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        db.add_history_events(write_cursor=write_cursor, history=all_events)
+
+    # Check all evm and solana events are retrieved by their addresses
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'addresses': [str(x.address) for x in evm_events + solana_events]},
+    ))
+    assert {x['entry']['user_notes'] for x in result['entries']} == {
+        'Evm event 0',
+        'Evm event 1',
+        'Solana event 0',
+        'Solana event 1',
+    }
+
+    # Check all events are retrieved by their tx refs
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'tx_refs': [str(x.tx_hash) for x in evm_events] + [str(x.signature) for x in solana_events] + [btc_tx_id, bch_tx_id]},  # noqa: E501
+    ))
+    assert {x['entry']['user_notes'] for x in result['entries']} == {
+        'Evm event 0',
+        'Evm event 1',
+        'Solana event 0',
+        'Solana event 1',
+        'BTC event',
+        'BCH event',
+    }
+
+    # Check with a combination of addresses and tx_refs
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={
+            'addresses': [str(evm_events[0].address), str(evm_events[1].address), str(solana_events[1].address)],  # noqa: E501
+            'tx_refs': [str(evm_events[0].tx_hash), str(solana_events[0].signature), str(solana_events[1].signature), btc_tx_id],  # noqa: E501
+        },
+    ))
+    assert {x['entry']['user_notes'] for x in result['entries']} == {
+        'Evm event 0',
+        'Solana event 1',
+    }

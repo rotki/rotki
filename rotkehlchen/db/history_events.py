@@ -36,6 +36,7 @@ from rotkehlchen.db.filtering import (
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     HistoryEventWithCounterpartyFilterQuery,
+    HistoryEventWithTxRefFilterQuery,
     SolanaEventFilterQuery,
 )
 from rotkehlchen.errors.asset import UnknownAsset
@@ -63,7 +64,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     BLOCKCHAIN_LOCATIONS_TYPE,
-    BTCTxHash,
+    BTCTxId,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -305,7 +306,7 @@ class DBHistoryEvents:
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
-            tx_hashes: Sequence[EVMTxHash | BTCTxHash | Signature],
+            tx_hashes: Sequence[EVMTxHash | BTCTxId | Signature],
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             delete_customized: bool = False,
     ) -> None:
@@ -564,13 +565,36 @@ class DBHistoryEvents:
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
+            filter_query: HistoryEventWithTxRefFilterQuery,
+            entries_limit: int | None,
+            group_by_event_ids: Literal[True],
+            match_exact_events: bool,
+    ) -> list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]]:
+        ...
+
+    @overload
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventWithTxRefFilterQuery,
+            entries_limit: int | None,
+            group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
+    ) -> list[SolanaEvent | EvmEvent | HistoryEvent]:
+        ...
+
+    @overload
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             entries_limit: int | None,
             group_by_event_ids: bool = ...,
             match_exact_events: bool = ...,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
         list[tuple[int, SolanaEvent | EvmEvent]] | list[SolanaEvent | EvmEvent] |
+        list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]] | list[SolanaEvent | EvmEvent | HistoryEvent] |  # noqa: E501
         list[tuple[int, SolanaEvent]] | list[SolanaEvent] |
         list[tuple[int, EvmEvent]] | list[EvmEvent] |
         list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
@@ -584,13 +608,14 @@ class DBHistoryEvents:
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
+            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             entries_limit: int | None,
             group_by_event_ids: bool = False,
             match_exact_events: bool = True,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
         list[tuple[int, SolanaEvent | EvmEvent]] | list[SolanaEvent | EvmEvent] |
+        list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]] | list[SolanaEvent | EvmEvent | HistoryEvent] |  # noqa: E501
         list[tuple[int, SolanaEvent]] | list[SolanaEvent] |
         list[tuple[int, EvmEvent]] | list[EvmEvent] |
         list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
@@ -806,12 +831,33 @@ class DBHistoryEvents:
     def get_history_events_internal(
             self,
             cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
+            filter_query: HistoryEventWithTxRefFilterQuery,
+            group_by_event_ids: Literal[True],
+            match_exact_events: bool,
+    ) -> list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventWithTxRefFilterQuery,
+            group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
+    ) -> list[SolanaEvent | EvmEvent | HistoryEvent]:
+        ...
+
+    @overload
+    def get_history_events_internal(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             group_by_event_ids: bool = ...,
             match_exact_events: bool = ...,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
         list[tuple[int, SolanaEvent | EvmEvent]] | list[SolanaEvent | EvmEvent] |
+        list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]] | list[SolanaEvent | EvmEvent | HistoryEvent] |  # noqa: E501
         list[tuple[int, SolanaEvent]] | list[SolanaEvent] |
         list[tuple[int, EvmEvent]] | list[EvmEvent] |
         list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
@@ -825,12 +871,13 @@ class DBHistoryEvents:
     def get_history_events_internal(
             self,
             cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
+            filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             group_by_event_ids: bool = False,
             match_exact_events: bool = True,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
         list[tuple[int, SolanaEvent | EvmEvent]] | list[SolanaEvent | EvmEvent] |
+        list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]] | list[SolanaEvent | EvmEvent | HistoryEvent] |  # noqa: E501
         list[tuple[int, SolanaEvent]] | list[SolanaEvent] |
         list[tuple[int, EvmEvent]] | list[EvmEvent] |
         list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
