@@ -320,7 +320,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     return_event = receive_event
                     return_events.append(return_event)
                     # re-assign the values to the return event
-                    if (matching_withdraw := next((x for x in withdraw_events if x.asset == withdraw_asset), None)) is None:  # noqa: E501
+                    if (matching_withdraw := next((x for x in withdraw_events if x.asset.resolve_to_asset_with_symbol().symbol == withdraw_asset.symbol), None)) is None:  # noqa: E501
                         log.error(f'Failed to find matching withdraw event for asset {withdraw_asset} in transaction {transaction}. Skipping')  # noqa: E501
                         continue
 
