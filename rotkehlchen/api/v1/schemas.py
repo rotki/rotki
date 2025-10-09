@@ -2417,6 +2417,7 @@ class AssetsSearchLevenshteinSchema(Schema):
     address = EvmAddressField(load_default=None)
     limit = fields.Integer(required=True)
     search_nfts = fields.Boolean(load_default=False)
+    asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -2442,6 +2443,7 @@ class AssetsSearchLevenshteinSchema(Schema):
             substring_search=data['value'].strip().casefold() if data['value'] else None,
             chain_id=data['evm_chain'],
             address=data['address'],
+            asset_type=data['asset_type'],
             ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored assets at search  # noqa: E501
         )
         return {
