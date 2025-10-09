@@ -172,8 +172,8 @@ def deserialize_evm_tx_hash(val: Web3HexBytes | (bytearray | (bytes | str))) -> 
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
-T_BTCTxHash = str
-BTCTxHash = NewType('BTCTxHash', T_BTCTxHash)
+T_BTCTxId = str
+BTCTxId = NewType('BTCTxId', T_BTCTxId)
 
 T_Eth2PubKey = str
 Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)

@@ -13,6 +13,8 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.constants import (
@@ -34,6 +36,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     SUPPORTED_CHAIN_IDS,
+    BTCTxId,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
@@ -957,8 +960,8 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
         return HISTORY_BASE_ENTRY_FIELDS
 
 
-class HistoryEventWithCounterpartyFilterQuery(HistoryBaseEntryFilterQuery):
-    """Dedicated filter for querying events by counterparties without selecting a chain-specific query."""  # noqa: E501
+class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
+    """Filter for events with a transaction reference."""
     @classmethod
     def make(
             cls,
@@ -984,7 +987,135 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
             notes_substring: str | None = None,
+            tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
+    ) -> Self:
+        if entry_types is None:
+            entry_types = IncludeExcludeFilterData(values=[
+                HistoryBaseEntryType.SOLANA_EVENT,
+                HistoryBaseEntryType.EVM_EVENT,
+                HistoryBaseEntryType.EVM_SWAP_EVENT,
+                HistoryBaseEntryType.HISTORY_EVENT,
+            ])
+
+        filter_query = super().make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_labels=location_labels,
+            excluded_locations=excluded_locations,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            identifiers=identifiers,
+            event_identifiers=event_identifiers,
+            entry_types=entry_types,
+            exclude_ignored_assets=exclude_ignored_assets,
+            customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
+        )
+        if tx_refs is not None and len(tx_refs) > 0:
+            event_identifiers, tx_ref_values = [], []
+            for tx_ref in tx_refs:
+                if isinstance(tx_ref, str):  # BTCTxId is simply a NewType (can't be used with isinstance) wrapping str  # noqa: E501
+                    event_identifiers.extend([
+                        f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_ref}',
+                        f'{BCH_EVENT_IDENTIFIER_PREFIX}{tx_ref}',
+                    ])
+                elif isinstance(tx_ref, Signature):
+                    tx_ref_values.append(tx_ref.to_bytes())
+                else:  # EVMTxHash
+                    tx_ref_values.append(tx_ref)
+
+            tx_ref_filters: list[DBFilter] = []
+            if len(event_identifiers) > 0:
+                tx_ref_filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='event_identifier',
+                    values=event_identifiers,
+                ))
+
+            if len(tx_ref_values) > 0:
+                tx_ref_filters.append(DBMultiBytesFilter(
+                    and_op=True,
+                    column='tx_ref',
+                    values=tx_ref_values,
+                ))
+
+            if len(tx_ref_filters) == 1:
+                filter_query.filters.extend(tx_ref_filters)
+            elif len(tx_ref_filters) > 1:
+                filter_query.filters.append(DBNestedFilter(
+                    and_op=False,
+                    filters=tx_ref_filters,
+                ))
+
+        return filter_query
+
+    @staticmethod
+    def get_join_query() -> str:
+        return EVENTS_WITH_COUNTERPARTY_JOIN
+
+    @staticmethod
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS}'
+
+    @staticmethod
+    def match_location_label(filters: list[DBFilter], labels: list[str]) -> None:
+        """Check if labels match either location_label or address fields."""
+        filters.append(DBNestedFilter(
+            and_op=False,
+            filters=[DBMultiStringFilter(
+                and_op=True,
+                column='location_label',
+                values=labels,
+                operator='IN',
+            ), DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=labels,
+                operator='IN',
+            )],
+        ))
+
+
+class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
+    """Filter for querying events by counterparties without selecting a chain-specific query."""
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple[Asset, ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: Location | None = None,
+            location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
+            ignored_ids: list[str] | None = None,
+            null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
+            event_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
+            exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
+            notes_substring: str | None = None,
+            tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
             counterparties: list[str] | None = None,
+            addresses: list[ChecksumEvmAddress | SolanaAddress] | None = None,
     ) -> Self:
         if entry_types is None:
             entry_types = IncludeExcludeFilterData(values=[
@@ -1016,8 +1147,9 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
             notes_substring=notes_substring,
+            tx_refs=tx_refs,
         )
-        if counterparties is not None:
+        if counterparties is not None and len(counterparties) > 0:
             filter_query.filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='counterparty',
@@ -1025,24 +1157,15 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryBaseEntryFilterQuery):
                 operator='IN',
             ))
 
+        if addresses is not None and len(addresses) > 0:
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=addresses,
+                operator='IN',
+            ))
+
         return filter_query
-
-    @staticmethod
-    def get_join_query() -> str:
-        return EVENTS_WITH_COUNTERPARTY_JOIN
-
-    @staticmethod
-    def get_columns() -> str:
-        return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS}'
-
-    @staticmethod
-    def match_location_label(filters: list[DBFilter], labels: list[str]) -> None:
-        filters.append(DBMultiStringFilter(
-            and_op=True,
-            column='location_label',
-            values=labels,
-            operator='IN',
-        ))
 
 
 class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):

@@ -25,7 +25,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
-    make_btc_tx_hash,
+    make_btc_tx_id,
 )
 from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, TimestampMS
 
@@ -637,7 +637,7 @@ def test_delete_btc_account(
                 dbevents.add_history_event(
                     write_cursor=write_cursor,
                     event=HistoryEvent(
-                        event_identifier=make_btc_tx_hash(),
+                        event_identifier=make_btc_tx_id(),
                         sequence_index=0,
                         timestamp=TimestampMS(1500000000000),
                         location=Location.BITCOIN,

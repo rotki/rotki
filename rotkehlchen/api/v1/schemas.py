@@ -66,6 +66,7 @@ from rotkehlchen.db.filtering import (
     EvmEventFilterQuery,
     HistoryEventFilterQuery,
     HistoryEventWithCounterpartyFilterQuery,
+    HistoryEventWithTxRefFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
@@ -109,7 +110,7 @@ from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.serialization.deserialize import deserialize_btc_tx_id, deserialize_evm_address
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     CHAINS_WITH_TRANSACTIONS,
@@ -592,14 +593,14 @@ class HistoryEventSchema(
     )
     notes_substring = fields.String(load_default=None)
 
-    # SolanaEvent only
-    signatures = DelimitedOrNormalList(SolanaSignatureField(), load_default=None)
-    solana_addresses = DelimitedOrNormalList(SolanaAddressField(), load_default=None)
+    # Evm, Solana, or BTC/BCH
+    tx_refs = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
+
+    # EVM or Solana
+    addresses = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
 
     # EvmEvent only
-    tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
-    evm_addresses = DelimitedOrNormalList(EvmAddressField(), load_default=None)
 
     # EthStakingEvent only
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
@@ -632,14 +633,7 @@ class HistoryEventSchema(
     ) -> dict[str, Any]:
         should_query_eth_staking_event = data['validator_indices'] is not None
         location_labels = data['location_labels']
-        should_query_evm_event = (
-            any(data[x] is not None for x in ('products', 'tx_hashes', 'evm_addresses')) or
-            (location_labels is not None and all(is_checksum_address(x) for x in location_labels))
-        )  # use evm filter when location_labels are evm addresses, so the "address" column is also included in the filter  # noqa: E501
-        should_query_solana_event = (
-            any(data[x] is not None for x in ('signatures', 'solana_addresses')) or
-            (location_labels is not None and all(is_valid_solana_address(x) for x in location_labels))  # noqa: E501
-        )  # use solana filter when location_labels are solana addresses, so the "address" column is also included in the filter  # noqa: E501
+        addresses = data['addresses']
         counterparties = data['counterparties']
         entry_types = data['entry_types']
         if counterparties is not None and CPT_ETH2 in counterparties:
@@ -653,7 +647,7 @@ class HistoryEventSchema(
                     message='Filtering by counterparty ETH2 does not work in combination with entry type',  # noqa: E501
                     field_name='counterparties',
                 )
-            for x in ('products', 'tx_hashes', 'signatures'):
+            for x in ('products', 'tx_refs', 'addresses'):
                 if data[x] is not None:
                     raise ValidationError(
                         message=f'Filtering by counterparty ETH2 does not work in combination with filtering by {x}',  # noqa: E501
@@ -671,7 +665,6 @@ class HistoryEventSchema(
                 operator='IN',
             )
             should_query_eth_staking_event = True
-            should_query_evm_event = False
 
         common_arguments = self.make_extra_filtering_arguments(data) | {
             'order_by_rules': create_order_by_rules_list(
@@ -694,26 +687,89 @@ class HistoryEventSchema(
             'notes_substring': data['notes_substring'],
         }
 
-        filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)  # noqa: E501
-        if should_query_evm_event:
+        tx_ref_types = set()
+        tx_refs: list | None = None
+        if (raw_tx_refs := data['tx_refs']) is not None:
+            tx_refs = []
+            for tx_ref in raw_tx_refs:
+                for _type, deserializer in (
+                    (ChainType.BITCOIN, deserialize_btc_tx_id),
+                    (ChainType.EVM, EVMTransactionHashField.deserialize_string_value),
+                    (ChainType.SOLANA, SolanaSignatureField.deserialize_string_value),
+                ):
+                    try:
+                        tx_refs.append(deserializer(tx_ref))
+                        tx_ref_types.add(_type)
+                        break
+                    except (ValidationError, DeserializationError):
+                        continue
+                else:
+                    raise ValidationError(
+                        message=f'Invalid transaction reference {tx_ref}',
+                        field_name='tx_refs',
+                    )
+
+        multi_chain_query = all_addrs_are_evm = all_addrs_are_solana = False
+        if addresses is not None:
+            evm_addresses = {x for x in addresses if is_checksum_address(x)}
+            solana_addresses = {x for x in addresses if is_valid_solana_address(x)}
+            if len(solana_addresses) + len(evm_addresses) != (address_count := len(addresses)):
+                raise ValidationError(
+                    message='some addresses are not valid EVM or Solana addresses',
+                    field_name='addresses',
+                )
+
+            all_addrs_are_evm = len(evm_addresses) == address_count
+            all_addrs_are_solana = len(solana_addresses) == address_count
+            multi_chain_query = (
+                not (all_addrs_are_evm or all_addrs_are_solana) or  # addresses from both types
+                len(tx_ref_types) > 1 or  # multiple types of tx refs
+                (len(tx_ref_types) == 1 and (
+                    (ref_type := next(iter(tx_ref_types))) == ChainType.BITCOIN or
+                    (ref_type == ChainType.EVM and not all_addrs_are_evm) or
+                    (ref_type == ChainType.SOLANA and not all_addrs_are_solana)
+                ))  # single tx ref type but doesn't match addresses type
+            )
+
+        filter_query: HistoryEventFilterQuery | HistoryEventWithTxRefFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)  # noqa: E501
+        if (not should_query_eth_staking_event and not multi_chain_query and (
+            data['products'] is not None or
+            tx_ref_types == {ChainType.EVM} or
+            (addresses is not None and all_addrs_are_evm) or
+            (location_labels is not None and all(is_checksum_address(x) for x in location_labels))
+        )):
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
-                tx_hashes=data['tx_hashes'],
+                tx_hashes=tx_refs,
                 products=data['products'],
-                addresses=data['evm_addresses'],
+                addresses=addresses,
                 counterparties=counterparties,
             )
-        elif should_query_solana_event:
+        elif (not multi_chain_query and (
+            tx_ref_types == {ChainType.SOLANA} or
+            (addresses is not None and all_addrs_are_solana) or
+            (location_labels is not None and all(is_valid_solana_address(x) for x in location_labels))  # noqa: E501
+        )):
             filter_query = SolanaEventFilterQuery.make(
                 **common_arguments,
-                signatures=data['signatures'],
+                signatures=tx_refs,
                 counterparties=counterparties,
-                addresses=data['solana_addresses'],
+                addresses=addresses,
             )
-        elif counterparties is not None and len(counterparties) != 0:
+        elif (
+            (counterparties is not None and len(counterparties) != 0) or
+            (addresses is not None and len(addresses) != 0)
+        ):
             filter_query = HistoryEventWithCounterpartyFilterQuery.make(
-                **common_arguments,
+                tx_refs=tx_refs,
                 counterparties=counterparties,
+                addresses=addresses,
+                **common_arguments,
+            )
+        elif tx_refs is not None and len(tx_refs) > 0:
+            filter_query = HistoryEventWithTxRefFilterQuery.make(
+                tx_refs=tx_refs,
+                **common_arguments,
             )
         elif should_query_eth_staking_event:
             filter_query = EthStakingEventFilterQuery.make(

@@ -268,7 +268,7 @@ from rotkehlchen.types import (
     ApiSecret,
     BlockchainAddress,
     BTCAddress,
-    BTCTxHash,
+    BTCTxId,
     CacheType,
     ChainType,
     ChecksumEvmAddress,
@@ -2817,14 +2817,14 @@ class RestAPI:
     def delete_blockchain_transaction_data(
             self,
             chain: Literal[SupportedBlockchain.BITCOIN],
-            tx_hash: BTCTxHash,
+            tx_hash: BTCTxId,
     ) -> Response:
         ...
 
     def delete_blockchain_transaction_data(
             self,
             chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
-            tx_hash: EVMTxHash | BTCTxHash | None,
+            tx_hash: EVMTxHash | BTCTxId | None,
     ) -> Response:
         """Delete transactions and events.
         May be limited to a specific chain or further limited to a specific tx hash on that chain.

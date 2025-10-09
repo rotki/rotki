@@ -22,6 +22,7 @@ from rotkehlchen.types import (
     ApiSecret,
     BlockchainAddress,
     BTCAddress,
+    BTCTxId,
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
@@ -90,8 +91,8 @@ def make_evm_tx_hash() -> EVMTxHash:
     return deserialize_evm_tx_hash(make_random_bytes(32))
 
 
-def make_btc_tx_hash() -> str:
-    return make_random_bytes(32).hex()
+def make_btc_tx_id() -> BTCTxId:
+    return BTCTxId(make_random_bytes(32).hex())
 
 
 def make_ethereum_transaction(

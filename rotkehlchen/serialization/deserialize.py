@@ -19,6 +19,7 @@ from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    BTCTxId,
     ChainID,
     ChecksumEvmAddress,
     EvmInternalTransaction,
@@ -374,6 +375,21 @@ def deserialize_tx_signature(value: str) -> Signature:
         return Signature.from_string(value)
     except ValueError as e:
         raise DeserializationError(f'Failed to deserialize solana tx signature due to {e!s}') from e  # noqa: E501
+
+
+def deserialize_btc_tx_id(value: str) -> BTCTxId:
+    """Deserialize a bitcoin transaction id from a string.
+    May raise DeserializationError if the data is not a valid bitcoin transaction id.
+    """
+    try:
+        tx_id_bytes = bytes.fromhex(value)
+    except ValueError as e:
+        raise DeserializationError(f'Failed to deserialize bitcoin tx id due to {e!s}') from e
+
+    if (id_len := len(tx_id_bytes)) != 32:
+        raise DeserializationError(f'Failed to deserialize bitcoin tx id due to invalid length {id_len}. Expected 32 bytes.')  # noqa: E501
+
+    return BTCTxId(tx_id_bytes.hex())
 
 
 def deserialize_int_from_str(symbol: str, location: str) -> int:

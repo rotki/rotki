@@ -1175,7 +1175,7 @@ def test_events_filter_params(
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
-            'evm_addresses': [test_contract_address],
+            'addresses': [test_contract_address],
         },
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
@@ -1278,7 +1278,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
             rotkehlchen_api_server,
             'historyeventresource',
         ),
-        json={'tx_hashes': [tx_str]},
+        json={'tx_refs': [tx_str]},
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries'][0]['entry']['asset'] == A_ETH
