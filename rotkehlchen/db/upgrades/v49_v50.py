@@ -84,4 +84,15 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
         write_cursor.execute('DROP TABLE evm_events_info_old')
 
+    @progress_step(description='Remove monerium credentials.')
+    def _remove_monerium(write_cursor: 'DBCursor') -> None:
+        """
+        Since monerium authentication, switches to oauth we should delete user's
+        monerium credentials from the DB
+        """
+        write_cursor.execute(
+            'DELETE FROM external_service_credentials WHERE name = ?',
+            ('monerium',),
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
