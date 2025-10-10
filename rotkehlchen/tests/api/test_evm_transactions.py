@@ -362,22 +362,27 @@ def test_force_refetch_evm_transactions_success(
     )
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-def test_evm_transactions_status(
+def test_history_status_summary(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
-    """Test that querying the evm transactions status endpoint works correctly.
+    """Test that querying the transactions status endpoint works correctly.
     Checks both with and without txs and queried ranges in the DB.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'evmtransactionsstatusresource'),
+        api_url_for(rotkehlchen_api_server, 'historystatussummaryresource'),
         json={'async_query': (async_query := random.choice([False, True]))},
     )
     result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
-    assert result == {'last_queried_ts': 0, 'undecoded_tx_count': 0, 'has_evm_accounts': True}
+    assert result == {
+        'evm_last_queried_ts': 0,
+        'exchanges_last_queried_ts': 0,
+        'undecoded_tx_count': 0,
+        'has_evm_accounts': True,
+        'has_exchanges_accounts': False,
+    }
 
     # Add some undecoded txs to the db
     setup_ethereum_transactions_test(
@@ -386,20 +391,28 @@ def test_evm_transactions_status(
         one_receipt_in_db=True,
         second_receipt_in_db=True,
     )
-    for address, timestamp in zip(ethereum_accounts, [last_queried_ts := Timestamp(100), Timestamp(50)], strict=False):  # noqa: E501
-        # Run tx query logic to ensure we get the last queried timestamp correctly.
-        rotki.chains_aggregator.ethereum.transactions.single_address_query_transactions(
-            address=address,
-            start_ts=Timestamp(0),
-            end_ts=timestamp,
-        )
+    # Manually set query ranges instead of making actual API calls
+    last_queried_ts = Timestamp(100)
+    with rotki.data.db.user_write() as write_cursor:
+        for address in ethereum_accounts:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) '
+                'VALUES (?, ?, ?)',
+                (f'ETHtxs_{address}', 0, last_queried_ts),
+            )
 
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'evmtransactionsstatusresource'),
+        api_url_for(rotkehlchen_api_server, 'historystatussummaryresource'),
         json={'async_query': async_query},
     )
     result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
-    assert result == {'last_queried_ts': last_queried_ts, 'undecoded_tx_count': 2, 'has_evm_accounts': True}  # noqa: E501
+    assert result == {
+        'evm_last_queried_ts': last_queried_ts,
+        'exchanges_last_queried_ts': 0,
+        'undecoded_tx_count': 2,
+        'has_evm_accounts': True,
+        'has_exchanges_accounts': False,
+    }
 
     # Remove all ethereum accounts to test has_evm_accounts: False
     with rotki.data.db.conn.write_ctx() as write_cursor:
@@ -410,8 +423,14 @@ def test_evm_transactions_status(
         )
 
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'evmtransactionsstatusresource'),
+        api_url_for(rotkehlchen_api_server, 'historystatussummaryresource'),
         json={'async_query': async_query},
     )
     result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
-    assert result == {'last_queried_ts': 0, 'undecoded_tx_count': 0, 'has_evm_accounts': False}
+    assert result == {
+        'evm_last_queried_ts': 0,
+        'exchanges_last_queried_ts': 0,
+        'undecoded_tx_count': 0,
+        'has_evm_accounts': False,
+        'has_exchanges_accounts': False,
+    }

@@ -186,7 +186,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
@@ -3048,30 +3048,48 @@ class RestAPI:
         }
 
     @async_api_call()
-    def get_evm_transactions_status(self) -> dict[str, Any]:
-        """Get the last timestamp when evm transactions were queried and how many
+    def get_history_status_summary(self) -> dict[str, Any]:
+        """Get the last timestamp when evm transactions and exchanges were queried and how many
         transactions are waiting to be decoded.
         """
-        where_str = ' OR '.join(['name LIKE ?'] * len(EVM_CHAINS_WITH_TRANSACTIONS))
-        bindings = [
+        evm_where_str = ' OR '.join(['name LIKE ?'] * len(EVM_CHAINS_WITH_TRANSACTIONS))
+        evm_bindings = [
             f'{blockchain.to_range_prefix("txs")}_%'
             for blockchain in EVM_CHAINS_WITH_TRANSACTIONS
         ]
+        exchanges_where_str = ' OR '.join(['name LIKE ?'] * len(SUPPORTED_EXCHANGES))
+        exchanges_bindings = [
+            f'{location!s}_history_events_%'
+            for location in SUPPORTED_EXCHANGES
+        ]
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            last_queried_ts = cursor.execute(
-                f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {where_str}',
-                bindings,
+            evm_last_queried_ts = cursor.execute(
+                f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {evm_where_str}',
+                evm_bindings,
+            ).fetchone()[0] or Timestamp(0)
+            exchanges_last_queried_ts = cursor.execute(
+                f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {exchanges_where_str}',
+                exchanges_bindings,
             ).fetchone()[0] or Timestamp(0)
             has_evm_accounts = cursor.execute(
                 f'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain IN ({",".join(["?"] * len(EVM_CHAINS_WITH_TRANSACTIONS))})',  # noqa: E501
                 [blockchain.value for blockchain in EVM_CHAINS_WITH_TRANSACTIONS],
             ).fetchone()[0] > 0
+            exchanges_bindings_with_rotkehlchen = [
+                location.serialize_for_db() for location in SUPPORTED_EXCHANGES
+            ] + ['rotkehlchen']
+            has_exchanges_accounts = cursor.execute(
+                f'SELECT COUNT(*) FROM user_credentials WHERE location IN ({",".join(["?"] * len(SUPPORTED_EXCHANGES))}) AND name != ?',  # noqa: E501
+                exchanges_bindings_with_rotkehlchen,
+            ).fetchone()[0] > 0
 
         undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(chain_id=None)
         return _wrap_in_ok_result({
-            'last_queried_ts': last_queried_ts,
+            'evm_last_queried_ts': evm_last_queried_ts,
+            'exchanges_last_queried_ts': exchanges_last_queried_ts,
             'undecoded_tx_count': undecoded_count,
             'has_evm_accounts': has_evm_accounts,
+            'has_exchanges_accounts': has_exchanges_accounts,
         })
 
     @async_api_call()

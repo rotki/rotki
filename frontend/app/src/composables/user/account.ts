@@ -37,7 +37,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
   const { disconnect: disconnectWallet } = useWalletStore();
-  const { fetchEvmTransactionStatus } = useHistoryStore();
+  const { fetchTransactionStatusSummary } = useHistoryStore();
 
   const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
     set(loading, true);
@@ -59,7 +59,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
         clearUpgradeMessages();
         showGetPremiumButton();
         set(canRequestData, true);
-        await fetchEvmTransactionStatus();
+        await fetchTransactionStatusSummary();
         await navigateToDashboard();
       }
     }
@@ -92,7 +92,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
       setLastLogin(username);
       showGetPremiumButton();
       set(checkForAssetUpdate, true);
-      await fetchEvmTransactionStatus();
+      await fetchTransactionStatusSummary();
       await disconnectWallet();
     }
   };
