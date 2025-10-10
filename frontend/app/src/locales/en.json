@@ -2347,10 +2347,6 @@
       "message": "Are you sure you want to delete this API Key?",
       "title": "Delete API Key"
     },
-    "credential": {
-      "password": "Password",
-      "username": "Username"
-    },
     "cryptocompare": {
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
@@ -2466,14 +2462,6 @@
       },
       "success": {
         "message": "Successfully updated the key for {serviceName}"
-      }
-    },
-    "set_credential": {
-      "error": {
-        "message": "Error while settings external service credentials: {error}"
-      },
-      "success": {
-        "message": "Successfully updated the credentials for {serviceName}"
       }
     },
     "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
