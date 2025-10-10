@@ -30,9 +30,10 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
   const anyEventsDecoding = logicOr(evmEventsDecoding, ethBlockEventsDecoding);
   const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
   const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+  const exchangeEventsLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_EVENTS);
   const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
 
-  const refreshing = logicOr(sectionLoading, anyEventsDecoding, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
+  const refreshing = logicOr(sectionLoading, anyEventsDecoding, onlineHistoryEventsLoading, exchangeEventsLoading, protocolCacheUpdatesLoading);
   const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
   const shouldFetchEventsRegularly = logicOr(querying, refreshing);
   const processing = logicOr(isTransactionsLoading, querying, refreshing);

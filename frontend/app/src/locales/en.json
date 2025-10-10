@@ -4192,9 +4192,12 @@
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
+    "go_to_history": "Go to History Events",
     "loading": "Please wait while your PnL report is loading",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "loading_message": "Please wait while your report is generated...",
+    "out_of_sync_alert": "Your history events data is out of sync. Please update your history events before generating a report.",
+    "processing_alert": "History events are currently being processed. Please wait until processing is complete.",
     "report_period": "Report starting from {start} to {end}",
     "settings_tooltip": "Open the accounting settings",
     "upgrade": "{processed} total events have been processed starting from {start}.",

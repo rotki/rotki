@@ -38,13 +38,15 @@ import { getFilename } from '@/utils/file';
 
 interface QueryExchangePayload { name: string; location: string }
 
-const EvmTransactionStatusSchema = z.object({
+const TransactionStatusSchema = z.object({
+  evmLastQueriedTs: z.number(),
+  exchangesLastQueriedTs: z.number(),
   hasEvmAccounts: z.boolean(),
-  lastQueriedTs: z.number(),
+  hasExchangesAccounts: z.boolean(),
   undecodedTxCount: z.number(),
 });
 
-export type EvmTransactionStatus = z.infer<typeof EvmTransactionStatusSchema>;
+export type TransactionStatus = z.infer<typeof TransactionStatusSchema>;
 
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
@@ -68,7 +70,7 @@ interface UseHistoryEventsApiReturn {
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
-  getEvmTransactionStatus: () => Promise<EvmTransactionStatus>;
+  getTransactionStatusSummary: () => Promise<TransactionStatus>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -335,15 +337,15 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
-  const getEvmTransactionStatus = async (): Promise<EvmTransactionStatus> => {
+  const getTransactionStatusSummary = async (): Promise<TransactionStatus> => {
     const response = await api.instance.get<ActionResult<any>>(
-      '/blockchains/evm/transactions/status',
+      '/history/status/summary',
       {
         validateStatus: validStatus,
       },
     );
 
-    return EvmTransactionStatusSchema.parse(handleResponse(response));
+    return TransactionStatusSchema.parse(handleResponse(response));
   };
 
   return {
@@ -359,9 +361,9 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     fetchHistoryEvents,
     fetchTransactionsTask,
     getEventDetails,
-    getEvmTransactionStatus,
     getHistoryEventCounterpartiesData,
     getHistoryEventProductsData,
+    getTransactionStatusSummary,
     getTransactionTypeMappings,
     getUndecodedTransactionsBreakdown,
     pullAndRecodeEthBlockEventRequest,

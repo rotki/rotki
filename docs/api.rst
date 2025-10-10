@@ -13923,13 +13923,13 @@ Refetch EVM transactions for a specific time period
    :statuscode 500: Internal rotki error
 
 
-Get EVM transaction status
-===========================
+Get history status summary
+======================
 
-.. http:post:: /api/(version)/blockchains/evm/transactions/status
+.. http:post:: /api/(version)/history/status/summary
 
    Doing a GET on the transactions status endpoint will query status information about how recently all EVM chains
-   have been queried for transactions and how many transactions are waiting to be decoded.
+   and exchanges have been queried for transactions/events and how many transactions are waiting to be decoded.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -13938,7 +13938,7 @@ Get EVM transaction status
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/evm/transactions/status HTTP/1.1
+      GET /api/1/history/status/summary HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -13951,12 +13951,14 @@ Get EVM transaction status
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {"result": {"last_queried_ts": 1600000000, "undecoded_tx_count": 3, "has_evm_accounts": true}, "message": "" }
+      {"result": {"evm_last_queried_ts": 1600000000, "exchanges_last_queried_ts": 1599999000, "undecoded_tx_count": 3, "has_evm_accounts": true, "has_exchanges_accounts": true}, "message": "" }
 
    :resjson object result: An object containing the status data
-   :resjson integer last_queried_ts: The last timestamp when transactions for all EVM chains have been queried.
+   :resjson integer evm_last_queried_ts: The last timestamp when transactions for all EVM chains have been queried.
+   :resjson integer exchanges_last_queried_ts: The last timestamp when history events for all exchanges have been queried.
    :resjson integer undecoded_tx_count: The number of transactions waiting to be decoded.
    :resjson boolean has_evm_accounts: Whether there are any EVM accounts added to rotki.
+   :resjson boolean has_exchanges_accounts: Whether there are any exchange accounts added to rotki.
    :statuscode 200: Status successfully queried.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
