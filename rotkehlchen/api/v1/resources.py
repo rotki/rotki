@@ -1702,6 +1702,16 @@ class BlockchainsAccountsResource(BaseMethodView):
         )
 
 
+class GnosisPaySafeAdminsResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_gnosis_pay_safe_admin_addresses(async_query=async_query)
+
+
 class ChainTypeAccountResource(BaseMethodView):
 
     @require_loggedin_user()
@@ -3329,7 +3339,7 @@ class MoneriumOAuthResource(BaseMethodView):
     def get(self) -> Response:
         return self.rest_api.get_monerium_status()
 
-    @require_loggedin_user()
+    @require_premium_user(active_check=False)
     @use_kwargs(put_schema, location='json')
     def put(self, access_token: str, refresh_token: str, expires_in: int) -> Response:
         return self.rest_api.complete_monerium_oauth(
