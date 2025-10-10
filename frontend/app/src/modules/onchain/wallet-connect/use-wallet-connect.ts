@@ -41,6 +41,9 @@ function buildAppKit(): AppKit {
     metadata: ROTKI_DAPP_METADATA,
     networks: supportedNetworks,
     projectId,
+    themeVariables: {
+      '--w3m-z-index': 10000,
+    },
   });
 }
 

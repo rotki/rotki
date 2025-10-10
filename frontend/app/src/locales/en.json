@@ -2374,13 +2374,31 @@
     },
     "get_api_key": "You can apply for an API key {link}",
     "gnosispay": {
-      "api_key_hint": "Enter your Gnosis Pay session token",
-      "api_key_label": "Session Token",
-      "description": "Add your Gnosis Pay session token to integrate Gnosis Pay transactions.",
-      "session_token_instructions": "Follow the guide to obtain your Gnosis Pay session token {link}",
-      "title": "Gnosis Pay",
-      "understand": "I understand",
-      "warning": "Gnosis Pay integration is experimental. The session token provides read-only access to your Gnosis Pay data."
+      "description": "Authenticate with Gnosis Pay using your Ethereum wallet to access your transaction data.",
+      "errors": {
+        "allowed_admin_addresses": "Allowed admin addresses:",
+        "connection_failed": "Failed to connect wallet",
+        "invalid_address": "No Gnosis Pay account found for this address. Please connect a wallet using one of the allowed admin addresses listed below.",
+        "no_registered_accounts": "No Gnosis Pay safe accounts are registered in rotki. Please add a Gnosis Pay safe account first before attempting to authenticate.",
+        "no_wallet_connected": "No wallet connected",
+        "signature_rejected": "Signature request was rejected by user",
+        "unknown": "An unknown error occurred"
+      },
+      "siwe": {
+        "checking_accounts": "Checking for registered Gnosis Pay accounts...",
+        "connected_address": "Connected Address",
+        "controlled_safe": "Controlled Gnosis Pay Safe account(s):",
+        "disconnect": "Disconnect Wallet",
+        "explanation": "To authenticate with Gnosis Pay, you need to sign a message with your Ethereum wallet. Connect your wallet and sign the message to generate a session token.",
+        "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
+        "sign_message": "Sign Message to Authenticate",
+        "step1_title": "Select Wallet Mode & Connect",
+        "step2_title": "Checking connected address eligibility",
+        "step3_title": "Sign Authentication Message",
+        "success": "Successfully authenticated with Gnosis Pay! You can now close this dialog.",
+        "validating_address": "Validating address..."
+      },
+      "title": "Gnosis Pay"
     },
     "google_calendar": {
       "access_token": "Access Token",

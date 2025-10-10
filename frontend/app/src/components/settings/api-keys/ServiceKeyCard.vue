@@ -62,6 +62,11 @@ watch(route, async (route) => {
     await router.replace({ query: {} });
   }
 }, { immediate: true });
+
+defineExpose({
+  openDialog,
+  setOpen,
+});
 </script>
 
 <template>
