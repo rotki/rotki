@@ -74,6 +74,52 @@ def test_swap_token_to_token(
 
 
 @pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['DYH6x4JoTXUUc4GJUcBYv4gPRApbfTsoZEeD318ernQY']])
+def test_swap_with_temp_token_account(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    """This swaps from CORL to Wrapped SOL and uses a temporary token account in some of its
+    internal transfers, which requires special handling to get the correct owner address."""
+    signature = deserialize_tx_signature('53TUfpGbKBGjYNw2w84fXbEDpGGbdo3dLcnJs5sKiL3v3eKAuxTZWCcoXjgzgS3J14bEDEkHJ9qmWnDCLQRwUm5N')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        signature=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1760110834000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal(fee_amount := '0.000006'),
+        location_label=solana_accounts[0],
+        notes=f'Spend {fee_amount} SOL as transaction fee',
+        counterparty=CPT_GAS,
+    ), SolanaSwapEvent(
+        signature=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('solana/token:EqtNWgVzp77fNMQTNbDwzELmfcKuaiurYhbzLJfqjS72'),
+        amount=FVal(spend_amount := '106.347883'),
+        location_label=solana_accounts[0],
+        notes=f'Swap {spend_amount} CORL in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
+    ), SolanaSwapEvent(
+        signature=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        amount=FVal(receive_amount := '0.029137025'),
+        location_label=solana_accounts[0],
+        notes=f'Receive {receive_amount} SOL as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
+    )]
+
+
+@pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['E2MPTDnFPNiCRmbJGKYSYew48NWRGVNfHjoiibFP5VL2']])
 def test_arbitrage_swap(
         solana_inquirer: 'SolanaInquirer',

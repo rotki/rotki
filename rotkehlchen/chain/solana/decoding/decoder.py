@@ -35,12 +35,14 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_solana_pubkey
 from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain
+from rotkehlchen.utils.misc import bytes_to_solana_address
 
 from .constants import (
-    NATIVE_TRANSFER_DELIMITER,
+    NATIVE_TRANSFER_DISCRIMINATOR,
+    SPL_TOKEN_INITIALIZE_ACCOUNT_DISCRIMINATOR,
     SPL_TOKEN_PROGRAM,
-    SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS,
-    SPL_TOKEN_TRANSFER_DELIMITER,
+    SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS,
+    SPL_TOKEN_TRANSFER_DISCRIMINATOR,
     SYSTEM_PROGRAM,
     TOKEN_2022_PROGRAM,
 )
@@ -204,13 +206,13 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         """Identify token transfer instruction and extract their token account addresses."""
         if not (
             instruction.program_id in (SPL_TOKEN_PROGRAM, TOKEN_2022_PROGRAM) and
-            instruction.data[:1] in (SPL_TOKEN_TRANSFER_DELIMITER, *SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS) and  # noqa: E501
+            instruction.data[:1] in (SPL_TOKEN_TRANSFER_DISCRIMINATOR, *SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS) and  # noqa: E501
             len(instruction.data) > 0
         ):
             return None
 
         minimum_accounts, to_token_account_idx = 3, 1
-        if instruction.data[:1] in SPL_TOKEN_TRANSFER_CHECKED_DELIMITERS:
+        if instruction.data[:1] in SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS:
             minimum_accounts, to_token_account_idx = 4, 2
 
         if len(instruction.accounts) < minimum_accounts:
@@ -224,7 +226,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
     def _fetch_token_accounts_owners(
             self,
-            token_accounts: list[tuple[SolanaAddress, SolanaAddress]],
+            token_accounts: list[SolanaAddress],
     ) -> dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]:
         """Fetch token account owners and mint addresses from cache or RPC calls as fallback.
 
@@ -244,17 +246,16 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         """
         result = {}
         accounts_needing_rpc = set()
-        for from_token_account, to_token_account in token_accounts:
-            for token_account in (from_token_account, to_token_account):
-                with self.database.conn.read_ctx() as cursor:
-                    if (cached_owner_mint := self.database.get_dynamic_cache(
-                        cursor=cursor,
-                        name=DBCacheDynamic.SOLANA_TOKEN_ACCOUNT,
-                        address=token_account,
-                    )) is not None:
-                        result[token_account] = cached_owner_mint
-                    else:
-                        accounts_needing_rpc.add(deserialize_solana_pubkey(token_account))
+        with self.database.conn.read_ctx() as cursor:
+            for token_account in token_accounts:
+                if (cached_owner_mint := self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.SOLANA_TOKEN_ACCOUNT,
+                    address=token_account,
+                )) is not None:
+                    result[token_account] = cached_owner_mint
+                else:
+                    accounts_needing_rpc.add(deserialize_solana_pubkey(token_account))
 
         if len(accounts_needing_rpc) > 0:  # fallback to RPC calls for uncached accounts
             token_cache_data = []
@@ -296,7 +297,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         structure matches the documented layout.
 
         Reference:
-         * https://github.com/solana-program/token/blob/main/p-interface/src/instruction.rs
+         * https://github.com/solana-program/token/blob/main/interface/src/instruction.rs
          * https://github.com/solana-program/token-2022/blob/main/interface/src/instruction.rs
         """
         if (raw_amount := int.from_bytes(instruction.data[1:9], 'little')) == ZERO:
@@ -352,7 +353,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             instruction: SolanaInstruction,
     ) -> SolanaEvent | None:
         """Decode native SOL transfers."""
-        if instruction.program_id != SYSTEM_PROGRAM or instruction.data[:4] != NATIVE_TRANSFER_DELIMITER:  # noqa: E501
+        if instruction.program_id != SYSTEM_PROGRAM or instruction.data[:4] != NATIVE_TRANSFER_DISCRIMINATOR:  # noqa: E501
             return None
 
         if (account_len := len(instruction.accounts)) < 2:
@@ -371,6 +372,33 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             asset=A_SOL,
             from_address=instruction.accounts[0],
             to_address=instruction.accounts[1],
+        )
+
+    def _maybe_get_token_account_initialization(
+            self,
+            transaction: SolanaTransaction,
+            instruction: SolanaInstruction,
+    ) -> tuple[SolanaAddress, SolanaAddress, SolanaAddress] | None:
+        """Decode an SPL associated token account (ATA) initialization instruction.
+        Returns a tuple containing the ATA address, the owner address, and the mint address.
+        """
+        if (
+            instruction.program_id != SPL_TOKEN_PROGRAM or
+            instruction.data[:1] != SPL_TOKEN_INITIALIZE_ACCOUNT_DISCRIMINATOR
+        ):
+            return None
+
+        if (account_len := len(instruction.accounts)) < 2:
+            log.error(
+                f'Encountered an SPL token account initialization instruction in {transaction} '
+                f'with {account_len} accounts. Expected 2. Skipping.',
+            )
+            return None
+
+        return (
+            instruction.accounts[0],  # ATA address
+            bytes_to_solana_address(instruction.data[1:33]),  # account owner address
+            instruction.accounts[1],  # token mint address
         )
 
     def _compose_transfer_event(
@@ -415,7 +443,9 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         if (fee_event := self._maybe_decode_fee_event(transaction=transaction)) is not None:
             events.append(fee_event)
 
+        token_accounts_with_owners: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]] = {}
         transfers_and_token_accounts = []
+        token_account_list: list[SolanaAddress] = []
         # Decode basic transfer instructions so that the more complex decoding that runs later
         # can simply modify the already decoded transfer events.
         undecoded_instructions = []
@@ -425,21 +455,25 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 instruction=instruction,
             )) is not None:
                 events.append(native_transfer_event)
-                continue
-
-            if (token_accounts := self._identify_token_transfer(
+            elif (token_accounts := self._identify_token_transfer(
                 instruction=instruction,
                 transaction_signature=transaction.signature,
             )) is not None:
+                token_account_list.extend(token_accounts)
                 transfers_and_token_accounts.append((instruction, token_accounts))
-                continue
-
-            undecoded_instructions.append(instruction)
+            if (account_initialization_result := self._maybe_get_token_account_initialization(
+                transaction=transaction,
+                instruction=instruction,
+            )) is not None:
+                ata_address, owner_address, mint_address = account_initialization_result
+                token_accounts_with_owners[ata_address] = (owner_address, mint_address)
+            else:
+                undecoded_instructions.append(instruction)
 
         try:
-            token_accounts_with_owners = self._fetch_token_accounts_owners(
-                token_accounts=[entry[1] for entry in transfers_and_token_accounts],
-            )
+            token_accounts_with_owners.update(self._fetch_token_accounts_owners(
+                token_accounts=[x for x in token_account_list if x not in token_accounts_with_owners],  # noqa: E501
+            ))
         except (DeserializationError, RemoteError) as e:
             log.error(f'Failed to fetch token account owners for transaction {transaction.signature} due to {e}')  # noqa: E501
             # Add all token transfer instructions to undecoded since we can't process them
