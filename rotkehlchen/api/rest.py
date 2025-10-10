@@ -667,14 +667,18 @@ class RestAPI:
                 credentials=services,
             )
 
-        if (
-                updates_gnosispay and
-                (gnosispay_decoder := cast(
-                    'GnosisPayDecoder',
-                    self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS).transactions_decoder.decoders.get('GnosisPay'),
-                )) is not None
-        ):
-            gnosispay_decoder.reload_data()
+        if updates_gnosispay:
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
+            gnosispay_decoder = cast(
+                'GnosisPayDecoder',
+                chain_manager.transactions_decoder.decoders.get('GnosisPay'),
+            )
+            if gnosispay_decoder is not None:
+                gnosispay_decoder.reload_data()
+                if gnosispay_decoder.gnosispay_api is not None:
+                    gevent.spawn(
+                        gnosispay_decoder.gnosispay_api.backfill_missing_events,
+                    )
 
         return self._return_external_services_response()
 

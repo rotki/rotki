@@ -19,11 +19,12 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import EVMTxHash, Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import EVMTxHash, Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import (
     iso8601ts_to_timestamp,
     set_user_agent,
     timestamp_to_iso8601,
+    ts_ms_to_sec,
     ts_now,
 )
 from rotkehlchen.utils.network import create_session
@@ -121,9 +122,10 @@ class GnosisPay:
                 except JSONDecodeError:
                     error_message = response.text
 
+                log.error(f'Failed to connect to the GnosisPay API due to {error_message}')
                 self.database.msg_aggregator.add_message(
                     message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
-                    data={'error': error_message},
+                    data={'error': 'Please sign in with GnosisPay again to refresh your data'},
                 )
 
             raise RemoteError(
@@ -455,6 +457,35 @@ class GnosisPay:
             start_ts=tx_timestamps[missing_tx_hashes[0]],
             end_ts=tx_timestamps[missing_tx_hashes[-1]],
         )
+
+    def backfill_missing_events(self) -> None:
+        """Fetch merchant data for events missing Gnosis Pay metadata."""
+        tx_timestamps: dict[EVMTxHash, Timestamp] = {}
+        with self.database.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT EI.tx_hash, H.timestamp '
+                'FROM history_events H '
+                'INNER JOIN evm_events_info EI ON EI.identifier = H.identifier '
+                'WHERE H.location = ? AND EI.counterparty = ? AND H.notes LIKE ?',
+                (Location.GNOSIS.serialize_for_db(), CPT_GNOSIS_PAY, 'Spend% via Gnosis Pay'),
+            )
+            for raw_tx_hash, timestamp_ms in cursor:
+                if raw_tx_hash is None or timestamp_ms is None:
+                    continue
+
+                try:
+                    tx_hash = deserialize_evm_tx_hash(raw_tx_hash)
+                except DeserializationError as exc:
+                    log.error(f'Failed to deserialize Gnosis Pay tx hash {raw_tx_hash}. {exc!s}')
+                    continue
+
+                tx_timestamps[tx_hash] = ts_ms_to_sec(TimestampMS(timestamp_ms))
+
+        if len(tx_timestamps) == 0:
+            log.debug('No Gnosis Pay events require fetching merchant metadata.')
+            return
+
+        self.update_events(tx_timestamps=tx_timestamps)
 
     def create_notes_for_transaction(
             self,
