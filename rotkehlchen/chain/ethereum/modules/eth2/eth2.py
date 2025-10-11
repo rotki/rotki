@@ -5,7 +5,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -41,9 +40,6 @@ from .constants import (
     MAX_EFFECTIVE_BALANCE,
     MIN_EFFECTIVE_BALANCE,
     UNKNOWN_VALIDATOR_INDEX,
-    VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS,
-    VALIDATOR_STATS_QUERY_BACKOFF_TIME,
-    VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
 )
 
 ETH_STAKED_CACHE_TIME: Final = 7200  # 2 hours in seconds
@@ -473,20 +469,6 @@ class Eth2(EthereumModule):
             result[Eth2PubKey(groups[0])] = event.location_label
 
         return result  # type: ignore  # location_label is set for this event
-
-    def _maybe_backoff_beaconchain(self, now: Timestamp) -> None:
-        should_backoff = (
-            now - self.last_stats_query_ts < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and
-            self.validator_stats_queried >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS
-        )
-        if should_backoff:
-            log.debug(
-                f'Queried {self.validator_stats_queried} validators in the last '
-                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE} seconds. Backing off for '
-                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
-            )
-            self.validator_stats_queried = 0
-            gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
 
     def query_services_for_validator_withdrawals(
             self,

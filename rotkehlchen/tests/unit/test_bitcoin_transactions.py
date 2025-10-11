@@ -4,7 +4,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.types import string_to_btc_address
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -12,7 +11,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.bitcoin import get_decoded_events_of_bitcoin_tx
+from rotkehlchen.tests.utils.bitcoin import get_decoded_events_of_bitcoin_tx, string_to_btc_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import BTCAddress, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now

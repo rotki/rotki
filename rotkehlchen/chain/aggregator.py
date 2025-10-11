@@ -172,43 +172,6 @@ def _module_name_to_class(module_name: ModuleName) -> type[EthereumModule]:
     return klass
 
 
-# Mapping to token symbols to ignore. True means all
-DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
-    # aTokens are already detected at token balance queries
-    'Aave': True,  # True means all
-    'Aave V2': True,  # True means all
-    # stkAAVE and staking incentives are already detected
-    'Aave • Staking': True,
-    # cTokens are already detected at token balance queries
-    'Compound': True,  # True means all
-    # Curve balances are detected by our scan for ERC20 tokens
-    'Curve': True,  # True means all
-    # Curve gauges balances are now being detected separately by us
-    'Curve • Liquidity Gauges': True,  # True means all
-    # Chai is a normal token we query
-    'Chai': True,  # True means all
-    # Chitoken is a normal token we query
-    'Chi Gastoken by 1inch': True,  # True means all
-    # yearn vault balances are detected by the yTokens
-    'yearn.finance • Vaults': True,  # True means all
-    'Yearn Token Vaults': True,
-    # Synthetix SNX token is in our packaged DB
-    'Synthetix': ['SNX'],
-    # Ampleforth's AMPL token is in our packaged DB
-    'Ampleforth': ['AMPL'],
-    # MakerDao vault balances are already detected by our code.
-    # Note that DeFi SDK only detects them for the proxies.
-    'Multi-Collateral Dai': True,  # True means all
-    # We already got some pie dao tokens in the packaged DB
-    'PieDAO': ['BCP', 'BTC++', 'DEFI++', 'DEFI+S', 'DEFI+L', 'YPIE'],
-    'Dai Savings Rate': True,
-}
-DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
-    'Multi-Collateral Dai': True,  # True means all
-    'Aave': True,
-    'Aave V2': True,
-    'Compound': True,
-}
 CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.ETHEREUM: (
         Compoundv3Balances,
