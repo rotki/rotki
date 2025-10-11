@@ -1,5 +1,4 @@
 import logging
-import re
 import urllib
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
@@ -73,8 +72,6 @@ from rotkehlchen.utils.mixins.enums import (
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-SOLANA_ADDRESS_RE = re.compile(r'^[1-9A-HJ-NP-Za-km-z]{32,44}$')  # Solana addresses are base58 encoded, 32-44 characters  # noqa: E501
 
 
 class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):

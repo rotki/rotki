@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Final
 
 from rotkehlchen.chain.decoding.structures import CommonDecodingOutput
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
@@ -17,6 +16,3 @@ class SolanaDecoderContext:
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class SolanaDecodingOutput(CommonDecodingOutput[SolanaEvent]):
     ...
-
-
-DEFAULT_SOLANA_DECODING_OUTPUT: Final = SolanaDecodingOutput()

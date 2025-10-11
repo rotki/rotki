@@ -69,8 +69,3 @@ class BitcoinTx(NamedTuple):
     inputs: list[BtcTxIO]
     outputs: list[BtcTxIO]
     multi_io: bool = False
-
-
-def string_to_btc_address(value: str) -> BTCAddress:
-    """Convert a string to a bitcoin address without any checks. Used only for typing."""
-    return BTCAddress(value)

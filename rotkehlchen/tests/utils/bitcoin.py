@@ -6,6 +6,7 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCYPHER_TX_IO_LIMIT,
 )
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
@@ -32,3 +33,8 @@ def get_decoded_events_of_bitcoin_tx(
 
     assert tx is not None, 'tx result should not be None. Perhaps the tx is unconfirmed?'
     return bitcoin_manager.decode_transaction(tx=tx)
+
+
+def string_to_btc_address(value: str) -> BTCAddress:
+    """Convert a string to a bitcoin address without any checks. Used only for typing."""
+    return BTCAddress(value)
