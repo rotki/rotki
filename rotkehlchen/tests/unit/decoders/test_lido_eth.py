@@ -123,7 +123,6 @@ def test_lido_wsteth_wrapping(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_LIDO,
             address=A_WSTETH.resolve_to_evm_token().evm_address,
         ),
-
     ]
     assert events == expected_events
 
@@ -175,6 +174,5 @@ def test_lido_wsteth_unwrapping(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_LIDO,
             address=A_STETH.resolve_to_evm_token().evm_address,
         ),
-
     ]
     assert events == expected_events
