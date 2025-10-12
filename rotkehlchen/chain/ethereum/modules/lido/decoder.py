@@ -2,7 +2,10 @@ import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import (
+    token_normalized_value,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -48,9 +51,8 @@ class LidoDecoder(EvmDecoderInterface):
 
     def _decode_lido_staking_in_steth(self, context: DecoderContext, sender: ChecksumEvmAddress) -> EvmDecodingOutput:  # noqa: E501
         """Decode the submit of eth to lido contract for obtaining steth in return"""
-        amount_raw = int.from_bytes(context.tx_log.data[:32])
         collateral_amount = token_normalized_value_decimals(
-            token_amount=amount_raw,
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=18,
         )
 
@@ -118,10 +120,9 @@ class LidoDecoder(EvmDecoderInterface):
         if steth_transfer is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        minted_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
-        minted_wsteth_amount = token_normalized_value_decimals(
-            token_amount=minted_wsteth_amount_raw,
-            token_decimals=18,
+        minted_wsteth_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token=self.wsteth,
         )
         in_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -136,9 +137,9 @@ class LidoDecoder(EvmDecoderInterface):
             address=self.wsteth.evm_address,
         )
 
-        deposited_steth_amount = token_normalized_value_decimals(
+        deposited_steth_amount = token_normalized_value(
             token_amount=steth_transfer[2],
-            token_decimals=18,
+            token=self.steth,
         )
         out_action = ActionItem(
             action='transform',
@@ -171,10 +172,9 @@ class LidoDecoder(EvmDecoderInterface):
         if steth_transfer is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        burned_wsteth_amount_raw = int.from_bytes(context.tx_log.data[:32])
-        burned_wsteth_amount = token_normalized_value_decimals(
-            token_amount=burned_wsteth_amount_raw,
-            token_decimals=18,
+        burned_wsteth_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token=self.wsteth,
         )
         out_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -189,9 +189,9 @@ class LidoDecoder(EvmDecoderInterface):
             address=context.transaction.to_address,
         )
 
-        withdrawn_steth_amount = token_normalized_value_decimals(
+        withdrawn_steth_amount = token_normalized_value(
             token_amount=steth_transfer[2],
-            token_decimals=18,
+            token=self.steth,
         )
         in_action = ActionItem(
             action='transform',
