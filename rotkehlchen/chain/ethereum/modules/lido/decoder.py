@@ -141,14 +141,11 @@ class LidoDecoder(EvmDecoderInterface):
             from_event_type=HistoryEventType.SPEND,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=A_STETH,
-            amount=(deposited_steth_amount := token_normalized_value(
-                token_amount=steth_transfer[2],
-                token=self.steth,
-            )),
+            address=self.wsteth.evm_address,
+            location_label=depositor,
             to_event_type=HistoryEventType.DEPOSIT,
             to_event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
-            to_notes=f'Wrap {deposited_steth_amount} {self.steth.symbol} in {self.wsteth.symbol}',
-            to_address=self.steth.evm_address,
+            to_notes=f'Wrap {{amount}} {self.steth.symbol} in {self.wsteth.symbol}',
             to_counterparty=CPT_LIDO,
             paired_events_data=((in_event,), False),
         )
@@ -191,15 +188,12 @@ class LidoDecoder(EvmDecoderInterface):
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=A_STETH,
-            amount=(withdrawn_steth_amount := token_normalized_value(
-                token_amount=steth_transfer[2],
-                token=self.steth,
-            )),
+            address=self.steth.evm_address,
+            location_label=withdrawer,
             to_event_type=HistoryEventType.WITHDRAWAL,
             to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
-            to_notes=f'Receive {withdrawn_steth_amount} {self.steth.symbol}',
+            to_notes=f'Receive {{amount}} {self.steth.symbol}',
             to_counterparty=CPT_LIDO,
-            to_address=self.steth.evm_address,
             paired_events_data=((out_event,), True),
         )
 
