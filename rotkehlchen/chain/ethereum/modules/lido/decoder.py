@@ -120,33 +120,31 @@ class LidoDecoder(EvmDecoderInterface):
         if steth_transfer is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        minted_wsteth_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[:32]),
-            token=self.wsteth,
-        )
         in_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_WSTETH,
-            amount=minted_wsteth_amount,
+            amount=(minted_wsteth_amount := token_normalized_value(
+                token_amount=int.from_bytes(context.tx_log.data[:32]),
+                token=self.wsteth,
+            )),
             location_label=depositor,
             counterparty=CPT_LIDO,
             notes=f'Receive {minted_wsteth_amount} {self.wsteth.symbol}',
             address=self.wsteth.evm_address,
         )
 
-        deposited_steth_amount = token_normalized_value(
-            token_amount=steth_transfer[2],
-            token=self.steth,
-        )
         out_action = ActionItem(
             action='transform',
             from_event_type=HistoryEventType.SPEND,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=A_STETH,
-            amount=deposited_steth_amount,
+            amount=(deposited_steth_amount := token_normalized_value(
+                token_amount=steth_transfer[2],
+                token=self.steth,
+            )),
             to_event_type=HistoryEventType.DEPOSIT,
             to_event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             to_notes=f'Wrap {deposited_steth_amount} {self.steth.symbol} in {self.wsteth.symbol}',
@@ -172,33 +170,31 @@ class LidoDecoder(EvmDecoderInterface):
         if steth_transfer is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        burned_wsteth_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[:32]),
-            token=self.wsteth,
-        )
         out_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=A_WSTETH,
-            amount=burned_wsteth_amount,
+            amount=(burned_wsteth_amount := token_normalized_value(
+                token_amount=int.from_bytes(context.tx_log.data[:32]),
+                token=self.wsteth,
+            )),
             location_label=withdrawer,
             counterparty=CPT_LIDO,
             notes=f'Unwrap {burned_wsteth_amount} {self.wsteth.symbol}',
             address=context.transaction.to_address,
         )
 
-        withdrawn_steth_amount = token_normalized_value(
-            token_amount=steth_transfer[2],
-            token=self.steth,
-        )
         in_action = ActionItem(
             action='transform',
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=A_STETH,
-            amount=withdrawn_steth_amount,
+            amount=(withdrawn_steth_amount := token_normalized_value(
+                token_amount=steth_transfer[2],
+                token=self.steth,
+            )),
             to_notes=f'Receive {withdrawn_steth_amount} {self.steth.symbol}',
             to_counterparty=CPT_LIDO,
             to_address=self.steth.evm_address,
