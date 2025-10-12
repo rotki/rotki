@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import (
@@ -257,8 +257,8 @@ def parse_erc20_transfer(transfer_log: 'EvmTxReceiptLog') -> tuple[ChecksumEvmAd
 
 def expect_erc20_transfer(
         transfer_log: 'EvmTxReceiptLog',
-        from_addr: Optional['ChecksumEvmAddress'] = None,
-        to_addr: Optional['ChecksumEvmAddress'] = None,
+        from_addr: 'ChecksumEvmAddress | None' = None,
+        to_addr: 'ChecksumEvmAddress | None' = None,
         amount: int | None = None,
     ) -> tuple[ChecksumEvmAddress, ChecksumEvmAddress, int] | None:
     """Expect an ERC20 transfer log and optionally match `from`, `to` and `amount`
