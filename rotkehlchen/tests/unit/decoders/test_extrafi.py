@@ -458,12 +458,12 @@ def test_farm_investment(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x007183900fBbe3e7815b278074a49B8C7319EDba']])
 def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
-    evmhash = deserialize_evm_tx_hash('0xb9479f2e21100ddbba10395d76abb2fb4e151b2142ba90c91151a10fcb5cfbc7')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0xb9479f2e21100ddbba10395d76abb2fb4e151b2142ba90c91151a10fcb5cfbc7')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, borrow_amount, gas_fees = TimestampMS(1725972969000), '4025.689364', '0.000006907473477667'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -475,7 +475,7 @@ def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
@@ -488,7 +488,7 @@ def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
             counterparty=CPT_EXTRAFI,
             address=EXTRAFI_FARMING_CONTRACT,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -507,12 +507,12 @@ def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x007183900fBbe3e7815b278074a49B8C7319EDba']])
 def test_new_farm_position_on_base(base_inquirer, base_accounts):
-    evmhash = deserialize_evm_tx_hash('0xf0458b2c208fa7362669b6430277808a2bda527fcbe5dd3514a5879c445311cc')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0xf0458b2c208fa7362669b6430277808a2bda527fcbe5dd3514a5879c445311cc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, deposit_amount, gas_fees = TimestampMS(1725309783000), '5042.114438', '0.000003258939143014'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -524,7 +524,7 @@ def test_new_farm_position_on_base(base_inquirer, base_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=390,
             timestamp=timestamp,
             location=Location.BASE,
@@ -544,12 +544,12 @@ def test_new_farm_position_on_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xDbA7bB7Ee25d259e0a14880Ef107A7c5106A716d']])
 def test_vested_extra_base(base_inquirer, base_accounts):
-    evmhash = deserialize_evm_tx_hash('0x560a5e279a7f1b9c89dca3d7f93da11c9418037c0362f01b443d50967a719d5d')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x560a5e279a7f1b9c89dca3d7f93da11c9418037c0362f01b443d50967a719d5d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, locked_amount, gas_fees = TimestampMS(1722581379000), '8.004925206880061111', '0.000002859618316575'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -561,7 +561,7 @@ def test_vested_extra_base(base_inquirer, base_accounts):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=53,
             timestamp=timestamp,
             location=Location.BASE,
@@ -573,7 +573,7 @@ def test_vested_extra_base(base_inquirer, base_accounts):
             notes=f'Revoke EXTRA spending approval of {base_accounts[0]} by 0xe0BeC4F45aEF64CeC9dCB9010d4beFfB13e91466',  # noqa: E501
             address=VOTE_ESCROW,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=54,
             timestamp=timestamp,
             location=Location.BASE,

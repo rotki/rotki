@@ -14,14 +14,14 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
-    evmhash = deserialize_evm_tx_hash('0xe8c9cffe2a2bbccf81cf8dd34f9b89c01b00ae3f0ff74eab089de96f4624165c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0xe8c9cffe2a2bbccf81cf8dd34f9b89c01b00ae3f0ff74eab089de96f4624165c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address = optimism_accounts[0]
     bridged_amount, gas_amount = '360.791433', '0.000035854553456552'
     timestamp = TimestampMS(1705844449000)
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -33,7 +33,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -52,17 +52,17 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
-    evmhash = deserialize_evm_tx_hash('0xb1e29bebca0300ff02ee478dfa6c0c2197169761e1c0dcc87418c53a6530d3a5')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xb1e29bebca0300ff02ee478dfa6c0c2197169761e1c0dcc87418c53a6530d3a5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     user_address = arbitrum_one_accounts[0]
     bridged_amount, gas_amount = '0.01', '0.0000464928'
     timestamp = TimestampMS(1696328657000)
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -74,7 +74,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,

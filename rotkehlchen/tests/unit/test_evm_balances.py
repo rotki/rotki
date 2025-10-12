@@ -38,10 +38,10 @@ def test_optimism_balances(
         )
 
     optimism_inquirer = rotkehlchen_instance.chains_aggregator.optimism.node_inquirer
-    tx_hex = deserialize_evm_tx_hash('0xed7e13e4941bba33edbbd70c4f48c734629fd67fe4eac43ce1bed3ef8f3da7df')  # transaction that interacts with the gauge address  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xed7e13e4941bba33edbbd70c4f48c734629fd67fe4eac43ce1bed3ef8f3da7df')  # transaction that interacts with the gauge address  # noqa: E501
     get_decoded_events_of_transaction(  # decode events that interact with the gauge address. This is needed because the query_balances which is used later only queries balances for addresses interacted with gauges. This also populates the global db with the event assets  # noqa: E501
         evm_inquirer=optimism_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     blockchain_result = rotkehlchen_instance.chains_aggregator.query_balances(

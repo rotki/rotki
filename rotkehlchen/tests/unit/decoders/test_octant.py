@@ -17,17 +17,16 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_lock_glm(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x29944efad254413b5eccdd5f13f14642ab830dbf51d5f2cfc59cf4957f33671a')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x29944efad254413b5eccdd5f13f14642ab830dbf51d5f2cfc59cf4957f33671a')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1697572739000)
     gas_str = '0.000721453620442015'
     approval_str = '199999000'
     amount_str = '1000'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -39,7 +38,7 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=347,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -51,7 +50,7 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             notes=f'Set GLM spending approval of {user_address} by {OCTANT_DEPOSITS} to {approval_str}',  # noqa: E501
             address=OCTANT_DEPOSITS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=348,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -71,16 +70,15 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa8258ED271BB9be9d7E16c5818E45eF6F2577d92']])
 def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x6705075bef0c3d9167c95a4a6c4911d6cc4055365e12fc445acd1039b157b1ab')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x6705075bef0c3d9167c95a4a6c4911d6cc4055365e12fc445acd1039b157b1ab')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1697527487000)
     gas_str = '0.000482531053547631'
     amount_str = '500'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -92,7 +90,7 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=180,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -112,16 +110,15 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd1B8dB70Ded72dB850713b2ce7e1A4FfAfAD95d1']])
 def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0xfc9b4ca277dcfd8000830aee13f8785b15516ce55a432c0d68f1bbdc0f599a49')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xfc9b4ca277dcfd8000830aee13f8785b15516ce55a432c0d68f1bbdc0f599a49')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1706775971000)
     gas_str = '0.000818835884130552'
     amount_str = '7.989863001451442888'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -133,7 +130,7 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,

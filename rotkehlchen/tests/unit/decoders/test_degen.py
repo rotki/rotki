@@ -28,16 +28,16 @@ def test_claim_airdrop_2(
         base_accounts: list[ChecksumEvmAddress],
         base_transaction_decoder: BaseTransactionDecoder,
 ):
-    evmhash = deserialize_evm_tx_hash('0x885722ab252530e687212799080d5d158d767536b62e0d45a700091a5424bcaa ')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x885722ab252530e687212799080d5d158d767536b62e0d45a700091a5424bcaa ')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     timestamp, gas_amount, claimed_amount = TimestampMS(1709555247000), '0.000443147649294366', '100'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -49,7 +49,7 @@ def test_claim_airdrop_2(
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
             location=Location.BASE,
@@ -73,16 +73,16 @@ def test_claim_airdrop_3(
         base_accounts: list[ChecksumEvmAddress],
         base_transaction_decoder: BaseTransactionDecoder,
 ):
-    evmhash = deserialize_evm_tx_hash('0x40920bf5416e9bd756d1c57f04e1b978e838efb42e7c2b07c4e9aaa8eb0da2ef ')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x40920bf5416e9bd756d1c57f04e1b978e838efb42e7c2b07c4e9aaa8eb0da2ef ')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
     )
     timestamp, gas_amount, claimed_amount = TimestampMS(1715696797000), '0.000016768741928411', '1649'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -94,7 +94,7 @@ def test_claim_airdrop_3(
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=121,
             timestamp=timestamp,
             location=Location.BASE,

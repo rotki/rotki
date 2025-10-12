@@ -67,11 +67,11 @@ def test_get_balances(
 
     TODO: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=46377335
     """
-    tx_hex = deserialize_evm_tx_hash('0x856a5b5d95623f85923938e1911dfda6ad1dd185f45ab101bac99371aeaed329')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x856a5b5d95623f85923938e1911dfda6ad1dd185f45ab101bac99371aeaed329')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     async_query = random.choice([False, True])
     response = requests.get(
