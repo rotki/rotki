@@ -1886,7 +1886,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             notes=f'Unwrap {unwrap_amount} WETH',
             counterparty=CPT_WETH,
             address=user_safe_proxy,
-        ),  EvmEvent(
+        ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=26,
             timestamp=timestamp,
