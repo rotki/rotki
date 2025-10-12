@@ -208,10 +208,10 @@ def test_convex_staking_balances(
         evm_inquirer=ethereum_inquirer,
         tx_hash=tx_hash,
     )
-    tx_hash = deserialize_evm_tx_hash('0x49f4dabfee05cc78e2b19a574373ad5afb1de52e03d7b355fe8611be7137e411')  # noqa: E501
+    tx_hash_2 = deserialize_evm_tx_hash('0x49f4dabfee05cc78e2b19a574373ad5afb1de52e03d7b355fe8611be7137e411')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=tx_hash_2,
     )
     convex_balances_inquirer = ConvexBalances(
         evm_inquirer=ethereum_inquirer,
