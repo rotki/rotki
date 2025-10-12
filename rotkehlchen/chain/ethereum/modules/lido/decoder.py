@@ -195,6 +195,8 @@ class LidoDecoder(EvmDecoderInterface):
                 token_amount=steth_transfer[2],
                 token=self.steth,
             )),
+            to_event_type=HistoryEventType.WITHDRAWAL,
+            to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             to_notes=f'Receive {withdrawn_steth_amount} {self.steth.symbol}',
             to_counterparty=CPT_LIDO,
             to_address=self.steth.evm_address,
