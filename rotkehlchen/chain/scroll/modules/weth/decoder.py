@@ -44,7 +44,6 @@ class WethDecoder(EthBaseWethDecoder):
                 event.asset == self.wrapped_token
             ):  # scroll WETH does emit an event on transfer so we can edit the event instead of creating a new one  # noqa: E501
                 event.notes = f'Receive {deposited_amount} WETH'
-                event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = self.counterparty
                 event.location_label = depositor
