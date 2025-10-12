@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.efp.constants import CPT_EFP
 from rotkehlchen.chain.evm.decoding.efp.decoder import EfpCommonDecoder
@@ -93,7 +92,6 @@ class EfpDecoder(EfpCommonDecoder):
                 token_type=TokenKind.ERC721,
                 collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
             )),
-            address=ZERO_ADDRESS,
             to_notes=f'Receive EFP list NFT for {user_address}',
             to_counterparty=CPT_EFP,
         )])

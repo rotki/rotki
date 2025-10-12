@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.giveth.constants import (
     CPT_GIVETH,
@@ -98,7 +98,6 @@ class GivethDecoder(GivethDecoderBase):
             amount=amount,
             location_label=user,
             asset=Asset(self.pow_token_id),
-            address=ZERO_ADDRESS,
             to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             to_location_label=user,
             to_address=context.tx_log.address,
@@ -112,7 +111,6 @@ class GivethDecoder(GivethDecoderBase):
             amount=amount,
             location_label=user,
             asset=Asset(GGIV_TOKEN_ID),
-            address=ZERO_ADDRESS,
         )]
         return DecodingOutput(action_items=action_items)
 
@@ -131,7 +129,6 @@ class GivethDecoder(GivethDecoderBase):
             amount=amount,
             location_label=user,
             asset=Asset(self.pow_token_id),
-            address=ZERO_ADDRESS,
             to_event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             to_address=context.tx_log.address,
             to_notes='Return {amount} POW to Giveth staking',  # to be filled by the action item
@@ -144,7 +141,6 @@ class GivethDecoder(GivethDecoderBase):
              amount=amount,
              location_label=user,
              asset=Asset(self.giv_token_id),
-             address=GNOSIS_GIVPOWERSTAKING_WRAPPER,
              to_event_type=HistoryEventType.WITHDRAWAL,
              to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
              to_notes='Withdraw {amount} GIV from staking',  # to be filled by the action item
@@ -156,6 +152,5 @@ class GivethDecoder(GivethDecoderBase):
              amount=amount,
              location_label=user,
              asset=Asset(GGIV_TOKEN_ID),
-             address=ZERO_ADDRESS,
          )]
         return DecodingOutput(action_items=action_items)
