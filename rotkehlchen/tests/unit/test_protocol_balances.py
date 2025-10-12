@@ -203,15 +203,10 @@ def test_convex_staking_balances(
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check Convex balance query for CVX locked and staked"""
-    tx_hash = deserialize_evm_tx_hash('0x9a1cdbbe383d7677cf45b54106af0cf7e07f65eb1809f9bd3ecea8bb905600d3')  # noqa: E501
-    _, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
-    )
-    tx_hash_2 = deserialize_evm_tx_hash('0x49f4dabfee05cc78e2b19a574373ad5afb1de52e03d7b355fe8611be7137e411')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x49f4dabfee05cc78e2b19a574373ad5afb1de52e03d7b355fe8611be7137e411')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash_2,
+        tx_hash=tx_hash,
     )
     convex_balances_inquirer = ConvexBalances(
         evm_inquirer=ethereum_inquirer,
