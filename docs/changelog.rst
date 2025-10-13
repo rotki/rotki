@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`10544` rotki will now properly decode transactions for rotki sponsorship contract.
 * :feature:`10681` rotki will now provide an option in history events to persist filters when navigating between pages.
 * :feature:`-` rotki will now be able decode Jupiter swaps on Solana.
 * :feature:`10630` Users will now be able to re-pull missed history events from exchanges.

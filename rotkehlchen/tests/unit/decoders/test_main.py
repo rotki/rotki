@@ -112,6 +112,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'PolygonPosBridge',
         'Puffer',
         'RainbowDecoder',
+        'Rotki',
         'Safemultisig',
         'ScrollBridge',
         'Sparklend',
@@ -245,6 +246,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'magpie',
         'merkl',
         'summer-fi',
+        'rotki',
     }
 
 
