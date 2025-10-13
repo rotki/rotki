@@ -13,9 +13,11 @@ from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.tests.utils.exchanges import mock_exchange_data_in_db
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     EVM_LOCATIONS_TYPE,
     AssetAmount,
+    BTCAddress,
     ChecksumEvmAddress,
     Location,
     TimestampMS,
@@ -62,17 +64,23 @@ def test_get_associated_locations(
     assert set(result) == {'nexo', 'binance', 'poloniex'}
 
 
-def test_get_location_labels(rotkehlchen_api_server: 'APIServer') -> None:
+@pytest.mark.parametrize('ethereum_accounts', [['0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0']])
+@pytest.mark.parametrize('btc_accounts', [['bc1qdf3av8da4up78shctfual6j6cv3kyvcw6qk3fz']])
+def test_get_location_labels(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+) -> None:
     """Test that location labels endpoint returns labels ordered by frequency."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
 
     # Create events with different frequencies
     events = []
     for count, location_label, location in (
-        (4, (eth_address := '0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0'), Location.ETHEREUM),
+        (4, (eth_address := ethereum_accounts[0]), Location.ETHEREUM),
         (3, 'Kraken 1', Location.KRAKEN),
         (2, 'Binance Account', Location.BINANCE),
-        (2, (btc_address := 'bc1qdf3av8da4up78shctfual6j6cv3kyvcw6qk3fz'), Location.BITCOIN),
+        (2, (btc_address := btc_accounts[0]), Location.BITCOIN),
         (1, 'Kraken 2', Location.KRAKEN),
     ):
         events.extend([HistoryEvent(
@@ -96,12 +104,60 @@ def test_get_location_labels(rotkehlchen_api_server: 'APIServer') -> None:
 
     # Check that we get the correct format with location_label and location
     # Results should be ordered by frequency (descending)
+    # Only tracked blockchain accounts and all exchange accounts should appear
     assert len(result) == 5
     expected_results = [
         {'location_label': eth_address, 'location': 'ethereum'},  # 4 occurrences
         {'location_label': 'Kraken 1', 'location': 'kraken'},  # 3 occurrences
-        {'location_label': 'Binance Account', 'location': 'binance'},  # 2 occurrences
         {'location_label': btc_address, 'location': 'bitcoin'},  # 2 occurrences
-        {'location_label': 'Kraken 2', 'location': 'kraken'},  # 1 occurrence
+        {'location_label': 'Binance Account', 'location': 'binance'},  # 2 occurrences
+        {'location_label': 'Kraken 2', 'location': 'kraken'},  # 1 occurrence (exchanges don't need credentials)  # noqa: E501
     ]
     assert result == expected_results
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0']])
+def test_get_location_labels_excludes_untracked_accounts(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that location labels endpoint excludes untracked blockchain accounts"""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+
+    # Create events for tracked and untracked addresses
+    with db.user_write() as cursor:
+        DBHistoryEvents(db).add_history_events(write_cursor=cursor, history=[
+            HistoryEvent(
+                event_identifier='tracked_event',
+                sequence_index=0,
+                timestamp=TimestampMS(1500000000000),
+                location=Location.ETHEREUM,
+                asset=A_ETH,
+                amount=ONE,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                location_label=(tracked_address := ethereum_accounts[0]),
+            ), HistoryEvent(
+                event_identifier='untracked_event',
+                sequence_index=0,
+                timestamp=TimestampMS(1500000000000),
+                location=Location.ETHEREUM,
+                asset=A_ETH,
+                amount=ONE,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.APPROVE,
+                location_label=make_evm_address(),
+            ),
+        ])
+
+    result = assert_proper_sync_response_with_result(
+        requests.get(api_url_for(
+            rotkehlchen_api_server,
+            'locationlabelsresource'),
+        ),
+    )
+
+    # Should only return the tracked address, not the untracked one
+    assert len(result) == 1
+    assert result[0]['location_label'] == tracked_address
+    assert result[0]['location'] == 'ethereum'

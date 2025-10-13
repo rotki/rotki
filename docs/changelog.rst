@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Filtering of events by accounts will now only include tracked accounts and exchange labels.
 * :feature:`-` Monerium users will be able to authenticate just by signing in with monerium via oauth.
 * :bug:`10652` Cowswap swaps with a missing `fullAppData` field will now be properly decoded.
 * :bug:`-` Monerium aave v3 events will now always have the earn event at the end.
