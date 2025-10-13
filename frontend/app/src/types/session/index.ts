@@ -55,10 +55,15 @@ export interface QueriedAddressPayload {
   readonly address: string;
 }
 
-export const PremiumCapabilities = z.object({
-  ethStakingView: z.boolean(),
-  eventAnalysisView: z.boolean(),
-  graphsView: z.boolean(),
-});
+export enum PremiumFeature {
+  ETH_STAKING_VIEW = 'ethStakingView',
+  EVENT_ANALYSIS_VIEW = 'eventAnalysisView',
+  GRAPHS_VIEW = 'graphsView',
+}
+
+export const PremiumCapabilities = z.record(
+  z.enum(PremiumFeature),
+  z.boolean().default(false),
+);
 
 export type PremiumCapabilities = z.infer<typeof PremiumCapabilities>;

@@ -7,7 +7,7 @@ import { logger } from '@/utils/logging';
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref<boolean>(false);
   const premiumSync = ref<boolean>(false);
-  const capabilities = ref<PremiumCapabilities | undefined>(undefined);
+  const capabilities = ref<PremiumCapabilities>();
 
   const api = usePremiumCredentialsApi();
 

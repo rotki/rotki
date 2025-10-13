@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { PremiumCapabilities } from '@/types/session';
+import type { PremiumFeature } from '@/types/session';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremiumStore } from '@/store/session/premium';
 
@@ -10,7 +10,7 @@ export function usePremium(): Ref<boolean> {
 
 interface UsePremiumHelperReturn {
   showGetPremiumButton: () => void;
-  isFeatureAllowed: (feature: keyof PremiumCapabilities) => ComputedRef<boolean>;
+  isFeatureAllowed: (feature: PremiumFeature) => ComputedRef<boolean>;
 }
 
 export function usePremiumHelper(): UsePremiumHelperReturn {
@@ -23,7 +23,7 @@ export function usePremiumHelper(): UsePremiumHelperReturn {
     premiumUserLoggedIn(get(premium));
   };
 
-  const isFeatureAllowed = (feature: keyof PremiumCapabilities): ComputedRef<boolean> => computed<boolean>(() => {
+  const isFeatureAllowed = (feature: PremiumFeature): ComputedRef<boolean> => computed<boolean>(() => {
     if (!get(premium))
       return false;
 

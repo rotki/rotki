@@ -157,7 +157,7 @@ declare module 'vue-router/auto-routes' {
       views: never
     }
     'src/pages/asset-manager/more.vue': {
-      routes: 'asset-manager-more' | 'asset-manager-cex-mapping' | 'asset-manager-counterparty-mapping' | 'asset-manager-missing-mappings' | 'asset-manager-newly-detected' | 'asset-manager-solana-token-migration' | '/asset-manager/more/cex-mapping' | '/asset-manager/more/counterparty-mapping' | '/asset-manager/more/missing-mappings' | '/asset-manager/more/newly-detected' | '/asset-manager/more/solana-token-migration'
+      routes: 'asset-manager-more' | 'asset-manager-cex-mapping' | 'asset-manager-missing-mappings' | 'asset-manager-counterparty-mapping' | 'asset-manager-newly-detected' | 'asset-manager-solana-token-migration' | '/asset-manager/more/cex-mapping' | '/asset-manager/more/counterparty-mapping' | '/asset-manager/more/missing-mappings' | '/asset-manager/more/newly-detected' | '/asset-manager/more/solana-token-migration'
       views: 'default'
     }
     'src/pages/asset-manager/more/cex-mapping/index.vue': {
@@ -265,7 +265,7 @@ declare module 'vue-router/auto-routes' {
       views: never
     }
     'src/pages/settings.vue': {
-      routes: '/settings' | '/settings/accounting/' | '/settings/account/' | '/settings/general/' | '/settings/database/' | '/settings/modules/' | '/settings/interface/' | '/settings/rpc/' | '/settings/oracle/' | '/settings/account' | '/settings/accounting' | '/settings/database' | '/settings/general' | '/settings/interface' | '/settings/modules' | '/settings/oracle' | '/settings/rpc'
+      routes: '/settings' | '/settings/database/' | '/settings/general/' | '/settings/interface/' | '/settings/modules/' | '/settings/oracle/' | '/settings/accounting/' | '/settings/account/' | '/settings/rpc/' | '/settings/account' | '/settings/accounting' | '/settings/database' | '/settings/general' | '/settings/interface' | '/settings/modules' | '/settings/oracle' | '/settings/rpc'
       views: 'default'
     }
     'src/pages/settings/account/index.vue': {
