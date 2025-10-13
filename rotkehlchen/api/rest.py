@@ -186,7 +186,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
@@ -3721,14 +3721,22 @@ class RestAPI:
             # Get distinct location_labels with their corresponding location
             # Ordered by frequency (most frequent first)
             # When multiple locations exist for a label, we take the first one
+            # Only include labels that correspond to tracked blockchain accounts
+            # For exchanges, include all labels since users' credentials can be removed.
+            exchange_locations = tuple(loc.serialize_for_db() for loc in SUPPORTED_EXCHANGES)
+            placeholders = ','.join(['?' for _ in exchange_locations])
             labels = [{
                 'location_label': row[0],
                 'location': Location.deserialize_from_db(row[1]).serialize(),
             } for row in cursor.execute(
-                'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
-                'FROM history_events WHERE location_label IS NOT NULL '
-                'GROUP BY location_label '
-                'ORDER BY frequency DESC',
+                f'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
+                f'FROM history_events '
+                f'WHERE location_label IS NOT NULL '
+                f'AND (location_label IN (SELECT account FROM blockchain_accounts) '
+                f'OR location IN ({placeholders})) '
+                f'GROUP BY location_label '
+                f'ORDER BY frequency DESC',
+                exchange_locations,
             )]
 
         return api_response(
