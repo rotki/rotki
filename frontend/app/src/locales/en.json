@@ -4657,7 +4657,7 @@
       "delete": {
         "error": {
           "message": "Failed: {message}",
-          "title": "Delete EVM transaction"
+          "title": "Delete transaction"
         },
         "message": "Are you sure you want to delete this transaction and its events? You will have to purge all transactions or add by the transaction hash to restore them.",
         "title": "Delete transaction and events"

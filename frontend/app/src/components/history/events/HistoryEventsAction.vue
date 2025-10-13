@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type {
-  EvmChainAndTxHash,
+  LocationAndTxHash,
   PullEventPayload,
 } from '@/types/history/events';
 import type {
@@ -12,10 +12,9 @@ import type {
   SolanaEvent,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
-import { toEvmChainAndTxHash } from '@/utils/history';
+import { toLocationAndTxHash } from '@/utils/history';
 import {
   isEthBlockEvent,
   isEthBlockEventRef,
@@ -24,8 +23,6 @@ import {
   isSolanaEvent,
   isSolanaEventRef,
 } from '@/utils/history/events';
-
-interface EventInfo { txHash: string; location: string }
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -36,7 +33,7 @@ const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
   'toggle-ignore': [event: HistoryEventEntry];
   'redecode': [event: PullEventPayload];
-  'delete-tx': [data: EvmChainAndTxHash];
+  'delete-tx': [data: LocationAndTxHash];
 }>();
 
 const {
@@ -83,8 +80,6 @@ const eventWithTxHash = computed<{ location: string; txHash: string } | undefine
 
 const blockEvent = isEthBlockEventRef(event);
 
-const { getChain } = useSupportedChains();
-
 const { t } = useI18n({ useScope: 'global' });
 
 function addEvent(event: HistoryEvent) {
@@ -102,10 +97,10 @@ function redecode(event: EthBlockEvent | EvmHistoryEvent | EvmSwapEvent | Solana
     data = [event.blockNumber];
   }
   else if (isSolanaEvent(event)) {
-    data = toEvmChainAndTxHash({ location: event.location, txHash: event.signature });
+    data = toLocationAndTxHash({ location: event.location, txHash: event.signature });
   }
   else {
-    data = toEvmChainAndTxHash({ location: event.location, txHash: event.txHash });
+    data = toLocationAndTxHash({ location: event.location, txHash: event.txHash });
   }
 
   emit('redecode', {
@@ -114,8 +109,8 @@ function redecode(event: EthBlockEvent | EvmHistoryEvent | EvmSwapEvent | Solana
   });
 }
 
-function deleteTxAndEvents({ location, txHash }: EventInfo) {
-  return emit('delete-tx', { evmChain: getChain(location), txHash });
+function deleteTxAndEvents(params: LocationAndTxHash) {
+  return emit('delete-tx', params);
 }
 
 function hideAddAction(item: HistoryEvent): boolean {

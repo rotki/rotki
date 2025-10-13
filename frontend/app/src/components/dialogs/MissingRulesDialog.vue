@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { EvmChainAndTxHash } from '@/types/history/events';
+import type { LocationAndTxHash } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import { toEvmChainAndTxHash } from '@/utils/history';
+import { toLocationAndTxHash } from '@/utils/history';
 import { isEvmEvent } from '@/utils/history/events';
 
 const modelValue = defineModel<HistoryEventEditData | undefined>({ required: true });
 
 const emit = defineEmits<{
-  'redecode': [data: EvmChainAndTxHash];
+  'redecode': [data: LocationAndTxHash];
   'edit-event': [event: HistoryEventEditData];
   'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>];
   'dismiss': [];
@@ -46,7 +46,7 @@ function close() {
 
 function onRedecode(data: HistoryEventEditData) {
   const event = data.type === 'edit' ? data.event : data.eventsInGroup[0];
-  emit('redecode', toEvmChainAndTxHash(event));
+  emit('redecode', toLocationAndTxHash(event));
   close();
 }
 

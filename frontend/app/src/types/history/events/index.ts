@@ -23,8 +23,8 @@ export interface TransactionRequestPayload {
   readonly accounts: BlockchainAddress[];
 }
 
-export interface PullEvmTransactionPayload {
-  readonly transactions: EvmChainAndTxHash[];
+export interface PullLocationTransactionPayload {
+  readonly transactions: LocationAndTxHash[];
   readonly deleteCustom?: boolean;
 }
 
@@ -37,7 +37,7 @@ export type PullEventPayload = {
   data: number [];
 } | {
   type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT | typeof HistoryEventEntryType.SOLANA_EVENT;
-  data: EvmChainAndTxHash;
+  data: LocationAndTxHash;
 };
 
 export interface ChainAndTxRefs {
@@ -49,12 +49,14 @@ export interface PullTransactionPayload extends ChainAndTxRefs {
   readonly deleteCustom?: boolean;
 }
 
-export interface EvmChainAndTxHash {
-  readonly evmChain: string;
+export interface LocationAndTxHash {
+  readonly location: string;
   readonly txHash: string;
 }
 
-export interface AddTransactionHashPayload extends EvmChainAndTxHash {
+export interface AddTransactionHashPayload {
+  readonly evmChain: string;
+  readonly txHash: string;
   readonly associatedAddress: string;
 }
 

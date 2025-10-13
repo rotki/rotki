@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type {
-  EvmChainAndTxHash,
+  LocationAndTxHash,
   PullEventPayload,
 } from '@/types/history/events';
 import type {
@@ -32,7 +32,7 @@ interface UseHistoryEventsOperationsReturn {
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
   suggestNextSequenceId: (group: HistoryEventEntry) => string;
-  confirmTxAndEventsDelete: (payload: EvmChainAndTxHash) => void;
+  confirmTxAndEventsDelete: (payload: LocationAndTxHash) => void;
   redecode: (payload: PullEventPayload, eventIdentifier: string) => void;
   confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean }) => void;
   toggle: (event: HistoryEventEntry) => Promise<void>;
@@ -111,9 +111,9 @@ export function useHistoryEventsOperations(
     return ((filtered[0] ?? Number(group.sequenceIndex)) + 1).toString();
   }
 
-  async function onConfirmTxAndEventDelete({ evmChain, txHash }: EvmChainAndTxHash): Promise<void> {
+  async function onConfirmTxAndEventDelete({ location, txHash }: LocationAndTxHash): Promise<void> {
     try {
-      const chain = get(getChain(evmChain));
+      const chain = get(getChain(location));
       await deleteTransactions(chain, txHash);
       emit('refresh');
     }
@@ -133,7 +133,7 @@ export function useHistoryEventsOperations(
     }
   }
 
-  function confirmTxAndEventsDelete(payload: EvmChainAndTxHash): void {
+  function confirmTxAndEventsDelete(payload: LocationAndTxHash): void {
     show({
       message: t('transactions.dialog.delete.message'),
       title: t('transactions.dialog.delete.title'),

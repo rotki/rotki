@@ -4,9 +4,9 @@ import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Collection } from '@/types/collection';
 import type { Exchange } from '@/types/exchanges';
 import type {
-  EvmChainAndTxHash,
+  LocationAndTxHash,
   PullEthBlockEventPayload,
-  PullEvmTransactionPayload,
+  PullLocationTransactionPayload,
 } from '@/types/history/events';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
@@ -20,10 +20,11 @@ import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-
 import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
-import { toEvmChainAndTxHash } from '@/utils/history';
+import { toLocationAndTxHash } from '@/utils/history';
 import {
   isEthBlockEvent,
   isEvmEvent,
+  isSolanaEvent,
 } from '@/utils/history/events';
 
 interface UseHistoryEventsActionsOptions {
@@ -40,14 +41,14 @@ interface UseHistoryEventsActionsReturn {
   dialogHandlers: DialogEventHandlers;
   fetch: {
     dataAndLocations: () => Promise<void>;
-    dataAndRedecode: (data?: PullEvmTransactionPayload) => Promise<void>;
+    dataAndRedecode: (data?: PullLocationTransactionPayload) => Promise<void>;
     undecodedStatus: () => Promise<void>;
   };
   redecode: {
     all: () => void; // Shows confirmation dialog
     blocks: (data: PullEthBlockEventPayload) => Promise<void>;
     by: (payload: 'all' | 'page' | string[]) => Promise<void>; // Current unified redecode
-    evm: (data: PullEvmTransactionPayload) => Promise<void>;
+    evm: (data: PullLocationTransactionPayload) => Promise<void>;
     page: () => Promise<void>;
     transactions: (chains: Blockchain[]) => Promise<void>;
   };
@@ -110,13 +111,13 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     startPromise(fetchDataAndLocations());
   }
 
-  async function forceRedecodeEvmEvents(data: PullEvmTransactionPayload): Promise<void> {
+  async function forceRedecodeEvmEvents(data: PullLocationTransactionPayload): Promise<void> {
     set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await pullAndRedecodeTransactions(data);
     await fetchData();
   }
 
-  async function fetchAndRedecodeEvents(data?: PullEvmTransactionPayload): Promise<void> {
+  async function fetchAndRedecodeEvents(data?: PullLocationTransactionPayload): Promise<void> {
     await fetchDataAndLocations();
     if (data)
       await forceRedecodeEvmEvents(data);
@@ -130,12 +131,12 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
 
   async function redecodePageTransactions(): Promise<void> {
     const events = flatten(get(groups).data);
-    const evmEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event));
+    const txEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event) || isSolanaEvent(event));
     const ethBlockEvents = events.filter(isEthBlockEvent);
 
-    if (evmEvents.length > 0 || ethBlockEvents.length > 0) {
-      if (evmEvents.length > 0) {
-        const redecodePayload = evmEvents.map(item => toEvmChainAndTxHash(item));
+    if (txEvents.length > 0 || ethBlockEvents.length > 0) {
+      if (txEvents.length > 0) {
+        const redecodePayload: LocationAndTxHash[] = txEvents.map(toLocationAndTxHash);
         await pullAndRedecodeTransactions({ transactions: redecodePayload });
         await fetchUndecodedTransactionsStatus();
       }
@@ -186,14 +187,14 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   // Dialog handlers
-  const handleTransactionRecode = async (txHash: EvmChainAndTxHash): Promise<void> => {
+  const handleTransactionRedecode = async (txHash: LocationAndTxHash): Promise<void> => {
     await forceRedecodeEvmEvents({ transactions: [txHash] });
   };
 
   const dialogHandlers: DialogEventHandlers = {
     onHistoryEventSaved: fetchDataAndLocations,
     onRedecodeAllEvents: redecodeAllEvents,
-    onRedecodeTransaction: handleTransactionRecode,
+    onRedecodeTransaction: handleTransactionRedecode,
     onRepullExchangeEvents: async (exchanges: Exchange[]): Promise<void> => {
       await refreshTransactions({
         disableEvmEvents: true,
@@ -214,7 +215,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     onResetUndecodedTransactions: (): void => {
       resetUndecodedTransactionsStatus();
     },
-    onTransactionAdded: handleTransactionRecode,
+    onTransactionAdded: handleTransactionRedecode,
   };
 
   return {
