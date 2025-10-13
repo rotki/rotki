@@ -2374,7 +2374,7 @@
       "errors": {
         "allowed_admin_addresses": "Allowed admin addresses:",
         "connection_failed": "Failed to connect wallet",
-        "invalid_address": "No Gnosis Pay account found for this address. Please connect a wallet using one of the allowed admin addresses listed below.",
+        "invalid_address": "This address is not registered as an on-chain admin for any Gnosis Pay account. You can still proceed with sign-in as there may be other authorized addresses not visible on-chain. The registered admin addresses are listed below for reference.",
         "no_registered_accounts": "No Gnosis Pay safe accounts are registered in rotki. Please add a Gnosis Pay safe account first before attempting to authenticate.",
         "no_wallet_connected": "No wallet connected",
         "signature_rejected": "Signature request was rejected by user",
