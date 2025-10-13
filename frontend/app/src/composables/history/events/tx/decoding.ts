@@ -10,7 +10,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import {
   type PullEthBlockEventPayload,
-  type PullEvmTransactionPayload,
+  type PullLocationTransactionPayload,
   type PullTransactionPayload,
   TransactionChainType,
   TransactionChainTypeNeedDecoding,
@@ -40,7 +40,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     updateUndecodedTransactionsStatus,
   } = useHistoryStore();
 
-  const { evmAndEvmLikeTxChainsInfo, getChain, getChainName, isEvmLikeChains } = useSupportedChains();
+  const { evmAndEvmLikeTxChainsInfo, getChain, getChainName, isEvmLikeChains, isSolanaChains } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY);
 
@@ -182,7 +182,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     );
   };
 
-  const pullAndRecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
+  const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
       const { taskId } = await pullAndRecodeTransactionRequest(payload);
@@ -224,10 +224,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
-  const pullAndRedecodeTransactions = async ({ deleteCustom, transactions }: PullEvmTransactionPayload): Promise<void> => {
+  const pullAndRedecodeTransactions = async ({ deleteCustom, transactions }: PullLocationTransactionPayload): Promise<void> => {
     resetUndecodedTransactionsStatus();
 
-    const grouped = groupBy(transactions, item => item.evmChain);
+    const grouped = groupBy(transactions, item => item.location);
     Object.entries(grouped).forEach(([chain, transactions]) => {
       updateUndecodedTransactionsStatus({
         [chain]: {
@@ -238,43 +238,49 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       });
     });
 
-    const evmChainsMap = new Map<string, string[]>();
-    const evmLikeChainsMap = new Map<string, string[]>();
+    // Group transactions by chain type
+    const chainMaps = {
+      evm: new Map<string, string[]>(),
+      evmLike: new Map<string, string[]>(),
+      solana: new Map<string, string[]>(),
+    };
 
     transactions.forEach((item) => {
-      const chain = getChain(item.evmChain);
+      const chain = getChain(item.location);
+      let targetMap: Map<string, string[]>;
 
       if (isEvmLikeChains(chain)) {
-        if (!evmLikeChainsMap.has(chain))
-          evmLikeChainsMap.set(chain, []);
-
-        evmLikeChainsMap.get(chain)!.push(item.txHash);
+        targetMap = chainMaps.evmLike;
+      }
+      else if (isSolanaChains(chain)) {
+        targetMap = chainMaps.solana;
       }
       else {
-        if (!evmChainsMap.has(chain))
-          evmChainsMap.set(chain, []);
-
-        evmChainsMap.get(chain)!.push(item.txHash);
+        targetMap = chainMaps.evm;
       }
+
+      if (!targetMap.has(chain))
+        targetMap.set(chain, []);
+
+      targetMap.get(chain)!.push(item.txHash);
     });
 
-    if (evmChainsMap.size > 0) {
-      await awaitParallelExecution(
-        Array.from(evmChainsMap.entries()),
-        ([chain]) => chain,
-        async ([chain, txRefs]) => pullAndRecodeTransactions({ chain, deleteCustom, txRefs }),
-        2,
-      );
-    }
+    // Process all chain types in parallel
+    const processChainMap = async (chainMap: Map<string, string[]>): Promise<void> => {
+      if (chainMap.size === 0)
+        return;
 
-    if (evmLikeChainsMap.size > 0) {
       await awaitParallelExecution(
-        Array.from(evmLikeChainsMap.entries()),
+        Array.from(chainMap.entries()),
         ([chain]) => chain,
-        async ([chain, txRefs]) => pullAndRecodeTransactions({ chain, deleteCustom, txRefs }),
+        async ([chain, txRefs]) => pullAndDecodeTransactions({ chain, deleteCustom, txRefs }),
         2,
       );
-    }
+    };
+
+    await processChainMap(chainMaps.evm);
+    await processChainMap(chainMaps.solana);
+    await processChainMap(chainMaps.evmLike);
   };
 
   const pullAndRecodeEthBlockEvents = async (payload: PullEthBlockEventPayload): Promise<void> => {

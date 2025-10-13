@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
+import type { AddTransactionHashPayload, LocationAndTxHash } from '@/types/history/events';
 import { assert } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -20,7 +20,7 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'reload', event: EvmChainAndTxHash): void;
+  (e: 'reload', event: LocationAndTxHash): void;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -60,7 +60,7 @@ async function save() {
   if (result.success) {
     set(modelValue, undefined);
     emit('reload', {
-      evmChain,
+      location: evmChain,
       txHash: data.txHash,
     });
   }
