@@ -1199,7 +1199,10 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             addresses: list[SolanaAddress] | None = None,
     ) -> Self:
         if entry_types is None:
-            entry_types = IncludeExcludeFilterData(values=[HistoryBaseEntryType.SOLANA_EVENT])
+            entry_types = IncludeExcludeFilterData(values=[
+                HistoryBaseEntryType.SOLANA_EVENT,
+                HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+            ])
 
         filter_query = super().make(
             and_op=and_op,

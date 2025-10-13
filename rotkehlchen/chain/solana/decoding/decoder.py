@@ -558,8 +558,9 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             if decoding_output.process_swaps:
                 process_swaps = True
 
+        # the events list may not be properly ordered after decoding
+        events = sorted(events, key=lambda x: x.sequence_index, reverse=False)
         if process_swaps:
-            # events are already ordered by sequence_index so no need to sort here.
             events = self._process_swaps(transaction=transaction, decoded_events=events)
 
         self._write_new_tx_events_to_the_db(
