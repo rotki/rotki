@@ -206,8 +206,8 @@ class LidoDecoder(EvmDecoderInterface):
             self.base.is_tracked(sender := bytes_to_address(context.tx_log.topics[1]))
         ):
             return self._decode_lido_staking_in_steth(context=context, sender=sender)
-
-        return DEFAULT_EVM_DECODING_OUTPUT
+        else:
+            return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_lido_steth_wrapping(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode mints and burns of wstETH"""
