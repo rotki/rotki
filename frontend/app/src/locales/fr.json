@@ -1900,10 +1900,6 @@
       "message": "Voulez-vous vraiment supprimer cette clé API ?",
       "title": "Supprimer la Clé API"
     },
-    "credential": {
-      "password": "Mot de Passe",
-      "username": "Nom d'Utilisateur"
-    },
     "cryptocompare": {
       "description": "rotki utilise cryptocompare pour obtenir des informations de prix sur les actifs de votre portefeuille. Une clé API est uniquement nécessaire si vous disposez de nombreux actifs et êtes soumis à une limitation de taux.",
       "hint": "Entrer votre clé API CryptoCompare",
@@ -1957,14 +1953,6 @@
       },
       "success": {
         "message": "Mise à jour réussie de la clé pour {serviceName}"
-      }
-    },
-    "set_credential": {
-      "error": {
-        "message": "Erreur lors de la configuration des informations d'identification du service externe : {error}"
-      },
-      "success": {
-        "message": "Mise à jour réussie des informations d'identification pour {serviceName}"
       }
     },
     "subtitle": "rotki se connecte à divers fournisseurs de services pour obtenir des informations tels que des prix historiques ou des données de blockchain. Dans certains cas, rotki dépend de ces API pour des informations de base, auquel cas vous devrez fournir une clé API."
