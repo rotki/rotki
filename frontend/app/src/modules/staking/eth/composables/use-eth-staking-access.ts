@@ -2,6 +2,7 @@ import type { ComputedRef } from 'vue';
 import { usePremiumHelper } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { Module } from '@/types/modules';
+import { PremiumFeature } from '@/types/session';
 
 interface UseEthStakingAccessReturn {
   enabled: ComputedRef<boolean>;
@@ -16,7 +17,7 @@ export function useEthStakingAccess(): UseEthStakingAccessReturn {
 
   const { isFeatureAllowed } = usePremiumHelper();
 
-  const allowed = isFeatureAllowed('ethStakingView');
+  const allowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
 
   const enabled = isModuleEnabled(module);
 

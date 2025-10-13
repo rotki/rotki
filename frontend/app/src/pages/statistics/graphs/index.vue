@@ -3,6 +3,7 @@ import StatisticPlaceholder from '@/components/graphs/StatisticPlaceholder.vue';
 import { usePremiumHelper } from '@/composables/premium';
 import { PremiumStatistics } from '@/premium/premium';
 import { NoteLocation } from '@/types/notes';
+import { PremiumFeature } from '@/types/session';
 
 definePage({
   meta: {
@@ -13,7 +14,7 @@ definePage({
 
 const { isFeatureAllowed } = usePremiumHelper();
 
-const allowed = isFeatureAllowed('graphsView');
+const allowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
 </script>
 
 <template>

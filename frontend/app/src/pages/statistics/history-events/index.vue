@@ -3,6 +3,7 @@ import WrappedContainerPlaceholder from '@/components/wrapped/WrappedContainerPl
 import { usePremiumHelper } from '@/composables/premium';
 import WrappedContainer from '@/modules/statistics/wrapped/components/WrappedContainer.vue';
 import { NoteLocation } from '@/types/notes';
+import { PremiumFeature } from '@/types/session';
 
 definePage({
   meta: {
@@ -13,7 +14,7 @@ definePage({
 
 const { isFeatureAllowed } = usePremiumHelper();
 
-const allowed = isFeatureAllowed('eventAnalysisView');
+const allowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
 </script>
 
 <template>
