@@ -25,6 +25,14 @@ enum GnosisPayError {
   OTHER = 'OTHER',
 }
 
+enum AuthStep {
+  NOT_READY = 0,
+  CONNECT_WALLET = 1,
+  VALIDATE_ADDRESS = 2,
+  SIGN_MESSAGE = 3,
+  COMPLETE = 4,
+}
+
 const { t } = useI18n({ useScope: 'global' });
 
 const errorType = ref<GnosisPayError | null>(null);
@@ -76,14 +84,14 @@ const { connect: connectWallet, disconnect: disconnectWallet } = walletStore;
 const currentStep = computed<number>(() => {
   // Skip showing the account verification step - it happens in background
   if (!get(hasRegisteredAccounts))
-    return 0; // Not ready yet
+    return AuthStep.NOT_READY;
   if (!get(connected))
-    return 1; // Select wallet mode and connect
-  if (!get(isAddressValid))
-    return 2; // Check address eligibility
+    return AuthStep.CONNECT_WALLET;
+  if (get(validatingAddress))
+    return AuthStep.VALIDATE_ADDRESS;
   if (!get(signInSuccess))
-    return 3; // Ready to sign
-  return 4; // Complete
+    return AuthStep.SIGN_MESSAGE;
+  return AuthStep.COMPLETE;
 });
 
 const showNoRegisteredAccountsError = computed<boolean>(() => get(errorType) === GnosisPayError.NO_REGISTERED_ACCOUNTS);
@@ -99,12 +107,12 @@ function isStepCurrent(step: number): boolean {
   return get(currentStep) === step;
 }
 
-const isStep1Complete = computed<boolean>(() => isStepComplete(1));
-const isStep1Current = computed<boolean>(() => isStepCurrent(1));
-const isStep2Complete = computed<boolean>(() => isStepComplete(2));
-const isStep2Current = computed<boolean>(() => isStepCurrent(2));
-const isStep3Complete = computed<boolean>(() => isStepComplete(3));
-const isStep3Current = computed<boolean>(() => isStepCurrent(3));
+const isStep1Complete = computed<boolean>(() => isStepComplete(AuthStep.CONNECT_WALLET));
+const isStep1Current = computed<boolean>(() => isStepCurrent(AuthStep.CONNECT_WALLET));
+const isStep2Complete = computed<boolean>(() => isStepComplete(AuthStep.VALIDATE_ADDRESS));
+const isStep2Current = computed<boolean>(() => isStepCurrent(AuthStep.VALIDATE_ADDRESS));
+const isStep3Complete = computed<boolean>(() => isStepComplete(AuthStep.SIGN_MESSAGE));
+const isStep3Current = computed<boolean>(() => isStepCurrent(AuthStep.SIGN_MESSAGE));
 
 // Separate error messages for different steps
 const connectionErrorMessage = computed<string>(() => {
@@ -143,7 +151,7 @@ const validationErrorMessage = computed<string>(() => {
   }
 });
 
-const primaryActionDisabled = computed<boolean>(() => get(signingInProgress) || !get(connectedAddress) || !get(isAddressValid));
+const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddress));
 
 const injectedWallet = useInjectedWallet();
 const walletConnect = useWalletConnect();
@@ -284,13 +292,13 @@ async function goToStep(step: number): Promise<void> {
     return;
 
   // Navigate to the requested step by clearing state
-  if (step === 1) {
+  if (step === AuthStep.CONNECT_WALLET) {
     // Go back to Step 1: disconnect wallet
     if (get(connected)) {
       await disconnect();
     }
   }
-  else if (step === 2) {
+  else if (step === AuthStep.VALIDATE_ADDRESS) {
     // Go back to Step 2: clear validation
     clearValidation();
     clearError();
@@ -327,7 +335,10 @@ function getBrowserProvider(): BrowserProvider {
 
 async function signInWithEthereum(): Promise<void> {
   try {
-    clearError();
+    // Preserve INVALID_ADDRESS warning during sign-in
+    if (get(errorType) !== GnosisPayError.INVALID_ADDRESS) {
+      clearError();
+    }
     set(signingInProgress, true);
     set(signInSuccess, false);
 
@@ -445,7 +456,7 @@ watch(connectedAddress, async (address) => {
       <template v-if="!showNoRegisteredAccountsError && !checkingRegisteredAccounts">
         <!-- Step 1: Select Wallet Mode & Connect -->
         <GnosisPayAuthStep
-          :step-number="1"
+          :step-number="AuthStep.CONNECT_WALLET"
           :title="t('external_services.gnosispay.siwe.step1_title')"
           :is-complete="isStep1Complete"
           :is-current="isStep1Current"
@@ -543,7 +554,7 @@ watch(connectedAddress, async (address) => {
 
         <!-- Step 2: Checking connected address eligibility -->
         <GnosisPayAuthStep
-          :step-number="2"
+          :step-number="AuthStep.VALIDATE_ADDRESS"
           :title="t('external_services.gnosispay.siwe.step2_title')"
           :is-complete="isStep2Complete"
           :is-current="isStep2Current"
@@ -581,7 +592,7 @@ watch(connectedAddress, async (address) => {
           <!-- Validation errors -->
           <RuiAlert
             v-if="validationErrorMessage"
-            type="error"
+            :type="errorType === GnosisPayError.INVALID_ADDRESS ? 'warning' : 'error'"
             variant="default"
             :closeable="errorCloseable"
             @close="clearError()"
@@ -631,7 +642,7 @@ watch(connectedAddress, async (address) => {
 
         <!-- Step 3: Sign Message -->
         <GnosisPayAuthStep
-          :step-number="3"
+          :step-number="AuthStep.SIGN_MESSAGE"
           :title="t('external_services.gnosispay.siwe.step3_title')"
           :is-complete="isStep3Complete"
           :is-current="isStep3Current"
