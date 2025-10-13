@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.solana.modules.jupiter.constants import CPT_JUPITER
+from rotkehlchen.constants.assets import A_WSOL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
@@ -110,12 +111,45 @@ def test_swap_with_temp_token_account(
         sequence_index=2,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=FVal(receive_amount := '0.029137025'),
         location_label=solana_accounts[0],
         notes=f'Receive {receive_amount} SOL as the result of a swap in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
+def test_rfq_swap(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    signature = deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaSwapEvent(
+        signature=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1758217531000)),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('solana/token:7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs'),
+        amount=FVal(spend_amount := '0.00287442'),
+        location_label=solana_accounts[0],
+        notes=f'Swap {spend_amount} WETH in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('7rhxnLV8C77o6d8oz26AgK8x8m5ePsdeRawjqvojbjnQ'),
+    ), SolanaSwapEvent(
+        signature=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_SOL,
+        amount=FVal(receive_amount := '0.052708178'),
+        location_label=solana_accounts[0],
+        notes=f'Receive {receive_amount} SOL as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('7rhxnLV8C77o6d8oz26AgK8x8m5ePsdeRawjqvojbjnQ'),
     )]
 
 
@@ -169,7 +203,7 @@ def test_arbitrage_swap(
         sequence_index=9,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=(in_amount_2 := FVal('0.039404601')),
         location_label=user,
         notes=f'Receive {in_amount_2} SOL as the result of a swap in Jupiter',
@@ -180,7 +214,7 @@ def test_arbitrage_swap(
         sequence_index=10,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.SPEND,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=(out_amount_3 := FVal('0.039406767')),
         location_label=user,
         notes=f'Swap {out_amount_3} SOL in Jupiter',

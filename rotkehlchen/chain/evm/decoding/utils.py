@@ -81,16 +81,13 @@ def maybe_reshuffle_events(
     if len(actual_events) <= 1:
         return  # nothing to do
 
-    all_other_events = []
     max_seq_index = -1
     for event in events_list:
         if event not in actual_events:
-            all_other_events.append(event)
             max_seq_index = max(event.sequence_index, max_seq_index)
 
     for idx, event in enumerate(actual_events):
         event.sequence_index = max_seq_index + idx + 1
-    events_list = all_other_events + actual_events  # type: ignore[assignment]  # can only be evm event or solana event
 
 
 def bridge_prepare_data(
