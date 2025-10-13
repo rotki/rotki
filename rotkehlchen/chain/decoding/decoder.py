@@ -6,6 +6,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 from gevent.lock import Semaphore
+from more_itertools import peekable
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
@@ -15,6 +16,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BLOCKCHAIN_LOCATIONS_TYPE
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
@@ -448,9 +450,103 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
                 (db_id, TX_DECODED),
             )
 
+    def _process_swaps(
+            self,
+            transaction: T_Transaction,
+            decoded_events: list[T_Event],
+    ) -> list[T_Event]:
+        """Convert trade events into chain-specific swap events.
+
+        Assumes that the decoding logic has already ordered the sequence indexes of trade events
+        in the correct spend/receive/fee order with no other events between them (although the
+        indexes do not need to be consecutive). If an incomplete or unordered group of Trade events
+        is encountered an error will be logged and the original events saved to the db.
+
+        If a swap has multiple spend receive or fee events, then the event_type will be set to
+        MULTI_TRADE for all the events in the swap.
+
+        Returns the list of decoded events ordered by sequence index with any complete groups
+        of trade events replaced with chain-specific swap events.
+        """
+        processed_events = []
+        trade_subtypes = (HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE, HistoryEventSubType.FEE)  # noqa: E501
+        events_iterator = peekable(iter(decoded_events))
+        while (next_event := events_iterator.peek(None)) is not None:
+            if (
+                    next_event.event_type != HistoryEventType.TRADE or
+                    next_event.event_subtype not in trade_subtypes
+            ):  # event is not part of a swap - save it and continue
+                processed_events.append(next(events_iterator))
+                continue
+
+            trade_events: list[T_Event] = []
+            event_type = HistoryEventType.TRADE
+            for subtype in trade_subtypes:
+                subtype_events = []
+                while (
+                        (next_event := events_iterator.peek(None)) is not None and
+                        next_event.event_type == HistoryEventType.TRADE and
+                        next_event.event_subtype == subtype
+                ):  # match events in the order defined in trade_subtypes
+                    subtype_events.append(next(events_iterator))
+
+                if len(subtype_events) > 1:
+                    event_type = HistoryEventType.MULTI_TRADE
+                elif len(subtype_events) == 0 and subtype != HistoryEventSubType.FEE:  # if no spend or receive was found then the group is incomplete or out of order.  # noqa: E501
+                    # If no events yet (failed on SPEND), save next(events_iterator), so that
+                    # we move on to the event after in the next while loop iteration.
+                    # If some events (failed on RECEIVE), save only the already matched
+                    # trade_events so the next event (could be the SPEND of another group) will be
+                    # reprocessed in the next iteration of the main while loop.
+                    processed_events.extend(trade_events if len(trade_events) > 0 else [next(events_iterator)])  # noqa: E501
+                    log.error(
+                        'Encountered incomplete or unordered swap event group '
+                        f'{trade_events + [next_event]} in transaction {transaction!s}',
+                    )
+                    trade_events = []
+                    break
+
+                trade_events.extend(subtype_events)
+
+            if len(trade_events) == 0:
+                continue  # swap group was incomplete or unordered.
+
+            spend_event = trade_events[0]
+            for idx, trade_event in enumerate(trade_events):
+                processed_events.append(self._create_swap_event(
+                    trade_event=trade_event,
+                    spend_event=spend_event,
+                    sequence_index=spend_event.sequence_index + idx,
+                    event_type=event_type,
+                ))
+
+        return processed_events
+
     @abstractmethod
     def _calculate_fees(self, tx: T_Transaction) -> FVal:
         """Calculates the transaction fee using the chain's formula."""
+
+    @abstractmethod
+    def _create_swap_event(
+            self,
+            trade_event: T_Event,
+            spend_event: T_Event,
+            sequence_index: int,
+            event_type: HistoryEventType,
+    ) -> T_Event:
+        """Creates a chain-specific swap event from trade event data.
+
+        `trade_event` is the main trade/swap event being processed.
+        `spend_event` is the "spend" side of the swap (outgoing asset) used as
+        the source for consistent metadata across all events in the swap group.
+
+        * Make indexes consecutive (required for retrieving the receive and fee
+          events when editing a swap event group via the api)
+        * Location label can be different on the spend versus the receive,
+          but if its missing, fall back to setting it from the spend event
+        * Counterparty, product, and address should be the
+          same for the whole group, so set from the spend event
+        """
 
     if __debug__:  # for now only debug as decoders are constant
 

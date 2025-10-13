@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Protocol
 
 import gevent
-from more_itertools import peekable
 from web3.exceptions import Web3Exception
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -524,92 +523,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     break  # an event was added, so let's break out of post decoding
 
         return decoded_events, maybe_modified
-
-    @staticmethod
-    def _process_swaps(
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-    ) -> list['EvmEvent']:
-        """Convert EvmEvents with event_type of TRADE into EvmSwapEvents.
-
-        Assumes that the decoding logic has already ordered the sequence indexes of trade events
-        in the correct spend/receive/fee order with no other events between them (although the
-        indexes do not need to be consecutive). If an incomplete or unordered group of Trade events
-        is encountered an error will be logged and the original EvmEvents saved to the db.
-
-        If a swap has multiple spend receive or fee events, then the event_type will be set to
-        MULTI_TRADE for all the events in the swap.
-
-        Returns the list of decoded events ordered by sequence index with any complete groups
-        of trade events replaced with EvmSwapEvents.
-        """
-        processed_events = []
-        trade_subtypes = (HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE, HistoryEventSubType.FEE)  # noqa: E501
-        events_iterator = peekable(iter(decoded_events))
-        while (next_event := events_iterator.peek(None)) is not None:
-            if (
-                next_event.event_type != HistoryEventType.TRADE or
-                next_event.event_subtype not in trade_subtypes
-            ):  # event is not part of a swap - save it and continue
-                processed_events.append(next(events_iterator))
-                continue
-
-            trade_events: list[EvmEvent] = []
-            event_type = HistoryEventType.TRADE
-            for subtype in trade_subtypes:
-                subtype_events = []
-                while (
-                    (next_event := events_iterator.peek(None)) is not None and
-                    next_event.event_type == HistoryEventType.TRADE and
-                    next_event.event_subtype == subtype
-                ):  # match events in the order defined in trade_subtypes
-                    subtype_events.append(next(events_iterator))
-
-                if len(subtype_events) > 1:
-                    event_type = HistoryEventType.MULTI_TRADE
-                elif len(subtype_events) == 0 and subtype != HistoryEventSubType.FEE:  # if no spend or receive was found then the group is incomplete or out of order.  # noqa: E501
-                    # If no events yet (failed on SPEND), save next(events_iterator), so that
-                    # we move on to the event after in the next while loop iteration.
-                    # If some events (failed on RECEIVE), save only the already matched
-                    # trade_events so the next event (could be the SPEND of another group) will be
-                    # reprocessed in the next iteration of the main while loop.
-                    processed_events.extend(trade_events if len(trade_events) > 0 else [next(events_iterator)])  # noqa: E501
-                    log.error(
-                        'Encountered incomplete or unordered swap event group '
-                        f'{trade_events + [next_event]} in transaction {transaction!s}',
-                    )
-                    trade_events = []
-                    break
-
-                trade_events.extend(subtype_events)
-
-            if len(trade_events) == 0:
-                continue  # swap group was incomplete or unordered.
-
-            spend_event = trade_events[0]
-            for idx, trade_event in enumerate(trade_events):
-                swap_event = EvmSwapEvent(
-                    tx_hash=trade_event.tx_hash,
-                    sequence_index=spend_event.sequence_index + idx,  # Make indexes consecutive (required for retrieving the receive and fee events when editing a swap event group via the api).  # noqa: E501
-                    timestamp=trade_event.timestamp,
-                    location=trade_event.location,
-                    event_type=event_type,  # type: ignore[arg-type]  # will be TRADE or MULTI_TRADE
-                    event_subtype=trade_event.event_subtype,  # type: ignore[arg-type]  # will be SPEND, RECEIVE, or FEE
-                    asset=trade_event.asset,
-                    amount=trade_event.amount,
-                    notes=trade_event.notes,
-                    extra_data=trade_event.extra_data,
-                    # location label can be different on the spend versus the receive, but if its
-                    # missing, fall back to setting it from the spend event.
-                    location_label=trade_event.location_label if trade_event.location_label is not None else spend_event.location_label,  # noqa: E501
-                    # the rest should be the same for the whole group, so set from the spend event.
-                    counterparty=spend_event.counterparty,
-                    product=spend_event.product,
-                    address=spend_event.address,
-                )
-                processed_events.append(swap_event)
-
-        return processed_events
 
     def _decode_transaction(
             self,
@@ -1341,6 +1254,31 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 return transfer_enrich
 
         return FAILED_ENRICHMENT_OUTPUT
+
+    def _create_swap_event(
+            self,
+            trade_event: 'EvmEvent',
+            spend_event: 'EvmEvent',
+            sequence_index: int,
+            event_type: HistoryEventType,
+    ) -> 'EvmEvent':
+        """Creates an EvmSwapEvent from trade event data."""
+        return EvmSwapEvent(
+            tx_hash=trade_event.tx_hash,
+            sequence_index=sequence_index,
+            timestamp=trade_event.timestamp,
+            location=trade_event.location,
+            event_type=event_type,  # type: ignore[arg-type]  # will be TRADE or MULTI_TRADE
+            event_subtype=trade_event.event_subtype,  # type: ignore[arg-type]  # will be SPEND, RECEIVE, or FEE
+            asset=trade_event.asset,
+            amount=trade_event.amount,
+            notes=trade_event.notes,
+            extra_data=trade_event.extra_data,
+            location_label=trade_event.location_label if trade_event.location_label is not None else spend_event.location_label,  # noqa: E501
+            counterparty=spend_event.counterparty,
+            product=spend_event.product,
+            address=spend_event.address,
+        )
 
     # -- methods to be implemented by child classes --
 

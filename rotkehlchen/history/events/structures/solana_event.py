@@ -180,7 +180,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     def __repr__(self) -> str:
         fields = self._history_base_entry_repr_fields() + [
-            f'{self.signature=}',
+            f'self.signature={self.signature!s}',  # convert to string to avoid newlines from solders library  # noqa: E501
             f'{self.counterparty=}',
             f'{self.address=}',
         ]

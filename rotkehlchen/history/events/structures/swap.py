@@ -104,6 +104,9 @@ class SwapEvent(HistoryBaseEntry):
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
             tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
             tuple[str, str, EVM_EVENT_FIELDS_TYPE],
+    ] | tuple[
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
     ]:
         return (self._serialize_base_tuple_for_db(),)
 
