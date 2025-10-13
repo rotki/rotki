@@ -76,14 +76,12 @@ class EvmDecodingOutput(CommonDecodingOutput['EvmEvent']):
     in further decoding methods.
     - matched_counterparty is optionally set if needed for decoder rules that matched
     and is used in post-decoding rules like in the case of balancer
-    - process_swaps indicates whether there are swaps that need to be converted into EvmSwapEvents.
     - stop_processing if true will stop processing log events for the transaction and clear
         any processed events. Used when we want to stop iterating over certain transactions
         because we have determined it's full of unnecessary log events and should all be skipped.
     """
     action_items: list[ActionItem] = field(default_factory=list)
     matched_counterparty: str | None = None
-    process_swaps: bool = False
     stop_processing: bool = False
 
 

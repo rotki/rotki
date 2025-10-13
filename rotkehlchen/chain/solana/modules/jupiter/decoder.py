@@ -138,7 +138,7 @@ class JupiterDecoder(SolanaDecoderInterface):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_SOLANA_DECODING_OUTPUT
+        return SolanaDecodingOutput(process_swaps=True)
 
     def addresses_to_decoders(self) -> dict[SolanaAddress, tuple[Any, ...]]:
         return {JUPITER_AGGREGATOR_PROGRAM_V6: (self._decode_swap,)}

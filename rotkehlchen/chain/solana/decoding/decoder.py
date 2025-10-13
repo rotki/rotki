@@ -30,6 +30,7 @@ from rotkehlchen.errors.misc import ModuleLoadingError, NotSPLConformant, Remote
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
+from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_solana_pubkey
@@ -487,7 +488,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
         self.base.reset_sequence_counter(tx_data=transaction)
         events, undecoded_instructions = self._decode_basic_events(transaction=transaction)
-        refresh_balances, reload_decoders = False, set()
+        refresh_balances, reload_decoders, process_swaps = False, set(), False
         for instruction in undecoded_instructions:
             if (mapping_result := self.rules.address_mappings.get(instruction.program_id)) is None:
                 continue
@@ -516,6 +517,12 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 reload_decoders.update(decoding_output.reload_decoders)
             if decoding_output.events is not None:
                 events.extend(decoding_output.events)
+            if decoding_output.process_swaps:
+                process_swaps = True
+
+        if process_swaps:
+            # events are already ordered by sequence_index so no need to sort here.
+            events = self._process_swaps(transaction=transaction, decoded_events=events)
 
         self._write_new_tx_events_to_the_db(
             events=events,
@@ -523,3 +530,26 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             db_id=tx_id,
         )
         return events, refresh_balances, (reload_decoders if len(reload_decoders) > 0 else None)
+
+    def _create_swap_event(
+            self,
+            trade_event: SolanaEvent,
+            spend_event: SolanaEvent,
+            sequence_index: int,
+            event_type: HistoryEventType,
+    ) -> SolanaEvent:
+        """Creates a SolanaSwapEvent from trade event data."""
+        return SolanaSwapEvent(
+            signature=trade_event.signature,
+            sequence_index=sequence_index,
+            timestamp=trade_event.timestamp,
+            event_type=event_type,  # type: ignore[arg-type]  # will be TRADE or MULTI_TRADE
+            event_subtype=trade_event.event_subtype,  # type: ignore[arg-type]  # will be SPEND, RECEIVE, or FEE
+            asset=trade_event.asset,
+            amount=trade_event.amount,
+            notes=trade_event.notes,
+            extra_data=trade_event.extra_data,
+            location_label=trade_event.location_label if trade_event.location_label is not None else spend_event.location_label,  # noqa: E501
+            counterparty=spend_event.counterparty,
+            address=spend_event.address,
+        )
