@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import json
 import os
 import tempfile
@@ -8,6 +10,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import call, patch
 
 import gevent
+import machineid
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
@@ -26,6 +29,7 @@ from rotkehlchen.premium.premium import (
     Premium,
     PremiumCredentials,
     check_docker_container,
+    extended_get_machine_id,
     get_kubernetes_pod_name,
 )
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
@@ -903,3 +907,34 @@ def test_get_kubernetes_pod_name_reads_hostname():
     ):
         assert get_kubernetes_pod_name() == pod_id
         assert check_docker_container() == (pod_id, KUBERNETES_PLATFORM_KEY)
+
+
+def test_check_docker_container_detects_podman():
+    """Ensures podman container IDs are detected and treated as docker platform."""
+    podman_container_id = '235e0319f7ad6649a7e822f8d4e542eab7fe778de7c31663b5579fb080421249'
+    mountinfo = (
+        '27 23 0:22 / / rw,relatime - overlay overlay rw,lowerdir=/var/lib/containers/storage/overlay,'  # noqa: E501
+        f'upperdir=/var/lib/containers/storage/overlay-containers/{podman_container_id}/userdata'
+    )
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        patch('rotkehlchen.premium.premium.Path.read_text', return_value=mountinfo),
+    ):
+        assert check_docker_container() == (podman_container_id[:12], DOCKER_PLATFORM_KEY)
+
+
+def test_extended_get_machine_id_uses_container_identifier():
+    """Ensure extended_get_machine_id falls back to container identifier when needed."""
+    username = 'test-user'
+    container_identifier = 'abc123def456'
+
+    with (
+        patch('rotkehlchen.premium.premium.machineid.hashed_id', side_effect=machineid.MachineIdNotFound),  # noqa: E501
+        patch('rotkehlchen.premium.premium.check_docker_container', return_value=(container_identifier, DOCKER_PLATFORM_KEY)),  # noqa: E501
+    ):
+        expected = hmac.new(
+            key=username.encode(),
+            msg=container_identifier.encode(),
+            digestmod=hashlib.sha256,
+        ).hexdigest()
+        assert extended_get_machine_id(username) == expected
