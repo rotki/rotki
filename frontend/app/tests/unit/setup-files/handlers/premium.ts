@@ -2,6 +2,7 @@ import type { ActionResult } from '@rotki/common';
 import type { PremiumDevicesResponse } from '@/modules/premium/devices/composables/premium';
 import process from 'node:process';
 import { http, HttpResponse } from 'msw';
+import { type PremiumCapabilities, PremiumFeature } from '@/types/session';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 
@@ -29,7 +30,20 @@ const mockPremiumDevicesResponse: ActionResult<PremiumDevicesResponse> = {
   message: '',
 };
 
+const mockPremiumCapabilitiesResponse: ActionResult<PremiumCapabilities> = {
+  result: {
+    [PremiumFeature.ETH_STAKING_VIEW]: true,
+    [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
+    [PremiumFeature.GRAPHS_VIEW]: true,
+  },
+  message: '',
+};
+
 export const premiumHandlers = [
+  // GET /api/1/premium/capabilities
+  http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
+    HttpResponse.json(mockPremiumCapabilitiesResponse, { status: 200 })),
+
   // GET /api/1/premium/devices
   http.get(`${backendUrl}/api/1/premium/devices`, () =>
     HttpResponse.json(mockPremiumDevicesResponse, { status: 200 })),
