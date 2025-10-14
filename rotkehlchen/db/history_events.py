@@ -253,16 +253,25 @@ class DBHistoryEvents:
             address: str | None,
     ) -> None:
         """Delete all uncustomized history events for the given location and optionally address.
-        For EVM locations, only deletes events that also have a corresponding tx in the DB.
+        For EVM and Solana, only deletes events that also have a corresponding tx in the DB.
         """
         customized_events_num = write_cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0]
-        join_or_where = (
-            'INNER JOIN chain_events_info C ON H.identifier=C.identifier '
-            'AND C.tx_ref IN (SELECT tx_hash FROM evm_transactions) AND'
-        ) if not location.is_bitcoin() else 'WHERE'
+        if location.is_bitcoin():
+            join_or_where = 'WHERE'
+        else:
+            sub_query = (
+                'SELECT signature FROM solana_transactions'
+                if location == Location.SOLANA else
+                'SELECT tx_hash FROM evm_transactions'
+            )
+            join_or_where = (
+                'INNER JOIN chain_events_info C ON H.identifier=C.identifier '
+                f'AND C.tx_ref IN ({sub_query}) AND'
+            )
+
         querystr = (
             'DELETE FROM history_events WHERE identifier IN ('
             f'SELECT H.identifier from history_events H {join_or_where} H.location = ?)'
@@ -297,16 +306,21 @@ class DBHistoryEvents:
 
         # zksynclite's decode status is stored in zksynclite_transactions.is_decoded
         # and btc/bch don't have the individual txs or decoded status in the db
-        if location.is_evm():  # so only delete mappings here for evm locations
+        if location.is_evm():  # so only delete mappings here for evm and solana locations
             write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
                 (TX_DECODED,),
             )
+        elif location == Location.SOLANA:
+            write_cursor.execute(
+                'DELETE from solana_tx_mappings WHERE tx_id IN (SELECT identifier FROM solana_transactions) AND value=?',  # noqa: E501
+                (TX_DECODED,),
+            )
 
-    def delete_events_by_tx_hash(
+    def delete_events_by_tx_ref(
             self,
             write_cursor: 'DBCursor',
-            tx_hashes: Sequence[EVMTxHash | BTCTxId | Signature],
+            tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             delete_customized: bool = False,
     ) -> None:
@@ -318,21 +332,21 @@ class DBHistoryEvents:
         code in v37 -> v38 upgrade as that is not limited to the number of transactions
         and won't potentially raise a too many sql variables error
         """
-        placeholders = ', '.join(['?'] * len(tx_hashes))
+        placeholders = ', '.join(['?'] * len(tx_refs))
         bindings: list[str | bytes]
         if location.is_bitcoin():
             where_str = f'WHERE event_identifier IN ({placeholders})'
             id_prefix = BTC_EVENT_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_EVENT_IDENTIFIER_PREFIX  # noqa: E501
-            bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_hashes]
+            bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_refs]
         else:
             where_str = (
                 f'WHERE identifier IN (SELECT identifier FROM chain_events_info '
                 f'WHERE tx_ref IN ({placeholders}))'
             )
             if location == Location.SOLANA:
-                bindings = [x.to_bytes() for x in tx_hashes]  # type: ignore[union-attr]  # hashes will be solana signatures
+                bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # hashes will be solana signatures
             else:
-                bindings = list(tx_hashes)  # type: ignore  # different type of elements in the list
+                bindings = list(tx_refs)  # type: ignore  # different type of elements in the list
 
         if (
             delete_customized is False and

@@ -339,7 +339,7 @@ class BlockchainTransactionDeletionSchema(Schema):
         required=False,
         load_default=None,
     )
-    tx_hash = NonEmptyStringField(required=False, load_default=None)
+    tx_ref = NonEmptyStringField(required=False, load_default=None)
 
     @post_load
     def validate_and_transform_data(
@@ -347,17 +347,19 @@ class BlockchainTransactionDeletionSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        """Validate that tx_hash is only specified with a chain, and if chain is EVM or EVM like,
-        deserialize the tx_hash. Hashes for other chains remain as strings.
+        """Validate that tx_ref is only specified with a chain, and if chain is EVM, EVM-like, or
+        Solana, deserialize the tx_ref. Hashes for other chains remain as strings.
         """
-        if (tx_hash := data['tx_hash']) is not None:
+        if (tx_ref := data['tx_ref']) is not None:
             if (chain := data['chain']) is None:
                 raise ValidationError(
-                    message='Deleting a specific transaction needs both tx_hash and chain',
-                    field_name='tx_hash',
+                    message='Deleting a specific transaction needs both tx_ref and chain',
+                    field_name='tx_ref',
                 )
             if chain.is_evm_or_evmlike():
-                data['tx_hash'] = EVMTransactionHashField.deserialize_string_value(tx_hash)
+                data['tx_ref'] = EVMTransactionHashField.deserialize_string_value(tx_ref)
+            elif chain == SupportedBlockchain.SOLANA:
+                data['tx_ref'] = SolanaSignatureField.deserialize_string_value(tx_ref)
 
         return data
 

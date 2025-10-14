@@ -560,7 +560,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Resetting decoded events.')
     def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         """
-        The code is taken from `delete_events_by_tx_hash` right before 1.27 release.
+        The code is taken from `delete_events_by_tx_ref` right before 1.27 release.
         Has to happen after `_upgrade_events_mappings` so that the schema is the needed one.
         """
         write_cursor.execute('SELECT tx_hash from evm_transactions')

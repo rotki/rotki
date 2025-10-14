@@ -482,9 +482,9 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 return
             genesis_tx_id = genesis_tx_id[0]
 
-        dbevents.delete_events_by_tx_hash(
+        dbevents.delete_events_by_tx_ref(
             write_cursor=write_cursor,
-            tx_hashes=tx_hashes,
+            tx_refs=tx_hashes,
             location=Location.from_chain_id(chain_id),
         )
         write_cursor.execute(  # delete genesis tx events related to the provided address

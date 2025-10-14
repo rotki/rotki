@@ -172,3 +172,19 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
             'signature',
             'solana_transactions AS A LEFT JOIN solana_tx_mappings AS B ON A.identifier = B.tx_id ',  # noqa: E501
         )
+
+    def delete_transaction_data(
+            self,
+            write_cursor: 'DBCursor',
+            signature: Signature | None = None,
+    ) -> None:
+        """Deletes solana transactions from the DB. If signature is given, only deletes the
+        transaction with that signature.
+        """
+        query = 'DELETE FROM solana_transactions'
+        bindings = []
+        if signature is not None:
+            query += ' WHERE signature = ?'
+            bindings.append(signature.to_bytes())
+
+        write_cursor.execute(query, bindings)
