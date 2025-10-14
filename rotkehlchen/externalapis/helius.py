@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import gevent
 import requests
 from base58 import b58decode
+from solders.solders import Signature
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -189,6 +190,54 @@ class Helius(ExternalServiceWithApiKey):
             accounts=[deserialize_solana_address(x) for x in raw_instruction['accounts']],
         )
 
+    def _deserialize_token_account_mappings(
+            self,
+            signature: Signature,
+            raw_transfers: list[dict[str, Any]] | None,
+    ) -> dict['SolanaAddress', tuple['SolanaAddress', 'SolanaAddress']]:
+        """Deserialize raw token transfers from Helius into token account mappings.
+        Since a missing mapping doesn't break the entire tx, any errors in this process are
+        caught and logged to avoid breaking the deserialization of the entire tx.
+        """
+        token_account_mapping: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]] = {}
+        if raw_transfers is None:
+            return token_account_mapping
+
+        for entry in raw_transfers:
+            try:
+                mint = deserialize_solana_address(entry['mint'])
+            except (DeserializationError, KeyError) as e:
+                msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
+                log.error(
+                    f'Encountered Helius token transfer entry with invalid mint {entry} '
+                    f'in {signature} due to {msg}. Skipping.',
+                )
+                continue
+
+            for token_account_key, user_account_key in (
+                    ('fromTokenAccount', 'fromUserAccount'),
+                    ('toTokenAccount', 'toUserAccount'),
+            ):
+                if not (
+                    (raw_token_account := entry.get(token_account_key)) and
+                    (raw_user_account := entry.get(user_account_key))
+                ):  # These can be empty in some cases. For example, Helius has a transfer entry
+                    # for the `Mint To` instruction which has no `from` values.
+                    continue  # so continue without error
+
+                try:
+                    token_account_mapping[deserialize_solana_address(raw_token_account)] = (
+                        deserialize_solana_address(raw_user_account),
+                        mint,
+                    )
+                except DeserializationError as e:
+                    log.warning(
+                        'Failed to load token account owner/mint mapping from Helius '
+                        f'token transfer entry {entry} in {signature} due to {e!s}. Skipping.',
+                    )
+
+        return token_account_mapping
+
     def _deserialize_raw_tx(self, raw_tx: dict[str, Any]) -> tuple[SolanaTransaction, dict['SolanaAddress', tuple['SolanaAddress', 'SolanaAddress']]]:  # noqa: E501
         """Deserialize a raw transaction from Helius to a SolanaTransaction.
         Returns a tuple containing the transaction
@@ -210,26 +259,21 @@ class Helius(ExternalServiceWithApiKey):
                         parent_execution_index=idx,
                     ))
 
-            token_account_mapping = {}
-            for entry in raw_tx.get('tokenTransfers', []):
-                token_account_mapping[deserialize_solana_address(entry['fromTokenAccount'])] = (
-                    deserialize_solana_address(entry['fromUserAccount']),
-                    deserialize_solana_address(entry['mint']),
-                )
-                token_account_mapping[deserialize_solana_address(entry['toTokenAccount'])] = (
-                    deserialize_solana_address(entry['toUserAccount']),
-                    deserialize_solana_address(entry['mint']),
-                )
-
             return (SolanaTransaction(
                 fee=deserialize_int(value=raw_tx['fee'], location='solana tx fee from helius'),
                 slot=deserialize_int(value=raw_tx['slot'], location='solana tx slot from helius'),
                 success=raw_tx.get('transactionError') is None,
-                signature=deserialize_tx_signature(raw_tx['signature']),
+                signature=(signature := deserialize_tx_signature(raw_tx['signature'])),
                 block_time=deserialize_timestamp(raw_tx['timestamp']),
                 account_keys=[deserialize_solana_address(x['account']) for x in raw_tx['accountData']],  # noqa: E501
                 instructions=instructions,
-            ), token_account_mapping)
+            ), self._deserialize_token_account_mappings(
+                signature=signature,
+                raw_transfers=raw_tx.get('tokenTransfers'),
+            ))
         except (KeyError, ValueError, TypeError, DeserializationError) as e:
             msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
-            raise DeserializationError(f'Failed to deserialize Helius raw tx due to {msg}') from e
+            raise DeserializationError(
+                f'Failed to deserialize Helius raw tx with signature '
+                f'{raw_tx.get("signature", "Unknown")} due to {msg}. Raw tx data: {raw_tx}',
+            ) from e
