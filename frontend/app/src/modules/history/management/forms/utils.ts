@@ -1,6 +1,6 @@
-import type { EvmSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
+import type { EvmSwapEvent, SolanaSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
 
-export function toSubEvent(event: EvmSwapEvent): Required<SwapSubEventModel> {
+export function toSubEvent(event: EvmSwapEvent | SolanaSwapEvent): Required<SwapSubEventModel> {
   return {
     amount: event.amount.toString(),
     asset: event.asset,

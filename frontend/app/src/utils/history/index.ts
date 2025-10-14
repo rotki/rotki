@@ -1,5 +1,5 @@
 import type { Collection } from '@/types/collection';
-import type { LocationAndTxHash } from '@/types/history/events';
+import type { LocationAndSignature, LocationAndTxHash } from '@/types/history/events';
 import type { EntryMeta, EntryWithMeta } from '@/types/history/meta';
 import { isValidEthAddress } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
@@ -30,9 +30,9 @@ export function getEthAddressesFromText(notes: string): string[] {
   return filterAddressesFromWords(notes.split(/\s|\\n/));
 }
 
-export function toLocationAndTxHash({ location, signature, txHash }: { location: string; txHash?: string; signature?: string }): LocationAndTxHash {
+export function toLocationAndTxHash(params: LocationAndTxHash | LocationAndSignature): LocationAndTxHash {
   return {
-    location: snakeCase(location),
-    txHash: txHash || signature || '',
+    location: snakeCase(params.location),
+    txHash: 'txHash' in params ? params.txHash : params.signature,
   };
 }

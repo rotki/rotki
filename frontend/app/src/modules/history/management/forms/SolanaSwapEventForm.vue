@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swap-event-form';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import type { SolanaSwapFormData } from '@/modules/history/management/forms/solana-swap-event-form';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
+import type { AddSolanaSwapEventPayload, SolanaEvent, SolanaSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
@@ -12,18 +12,18 @@ import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
-import { useSupportedChains } from '@/composables/info/chains';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { toSubEvent } from '@/modules/history/management/forms/utils';
 import { useMessageStore } from '@/store/message';
+import { SOLANA_CHAIN } from '@/types/asset';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: StandaloneEventData<EvmHistoryEvent> | GroupEventData<EvmSwapEvent> }>();
+const props = defineProps<{ data: StandaloneEventData<SolanaEvent> | GroupEventData<SolanaSwapEvent> }>();
 
 function emptySubEvent(): SwapSubEventModel {
   return {
@@ -32,24 +32,22 @@ function emptySubEvent(): SwapSubEventModel {
   };
 }
 
-function emptyEvent(): EvmSwapFormData {
+function emptyEvent(): SolanaSwapFormData {
   return {
     address: '',
     counterparty: '',
-    entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
+    entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT,
     fee: [],
-    location: '',
     receive: [emptySubEvent()],
     sequenceIndex: '0',
+    signature: '',
     spend: [emptySubEvent()],
     timestamp: dayjs().valueOf(),
-    txHash: '',
   };
 }
 
-const { txChainsToLocation } = useSupportedChains();
-
-const states = ref<EvmSwapFormData>(emptyEvent());
+const states = ref<SolanaSwapFormData>(emptyEvent());
+const location = ref<string>(SOLANA_CHAIN);
 const hasFee = ref<boolean>(false);
 const identifiers = ref<number[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
@@ -65,20 +63,20 @@ const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
 const rules = computed(() => ({
-  address: commonRules.createValidEthAddressRule(),
+  address: commonRules.createValidSolanaAddressRule(),
   counterparty: commonRules.createExternalValidationRule(),
   fee: get(hasFee) ? commonRules.createRequiredAtLeastOne() : {},
-  location: commonRules.createRequiredLocationRule(),
+  location: commonRules.createExternalValidationRule(),
   receive: commonRules.createRequiredAtLeastOne(),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
+  signature: commonRules.createValidSolanaSignatureRule(),
   spend: commonRules.createRequiredAtLeastOne(),
   timestamp: commonRules.createExternalValidationRule(),
-  txHash: commonRules.createValidTxHashRule(),
 }));
 
 const v$ = useVuelidate(
   rules,
-  states,
+  computed(() => ({ ...get(states), location: get(location) })),
   {
     $autoDirty: true,
     $externalResults: errorMessages,
@@ -141,7 +139,7 @@ async function save(): Promise<boolean> {
     return true;
   }
 
-  const payload: AddEvmSwapEventPayload = { ...get(states) };
+  const payload: AddSolanaSwapEventPayload = { ...get(states) };
 
   if (!get(hasFee)) {
     delete payload.fee;
@@ -181,10 +179,9 @@ watchImmediate(() => props.data, (data) => {
 
     set(states, {
       ...get(states),
-      location: group.location ?? '',
       sequenceIndex: data.nextSequenceId.toString(),
+      signature: group.signature,
       timestamp: group.timestamp,
-      txHash: group.txHash,
     });
   }
   else if (data.type === 'edit-group') {
@@ -202,14 +199,13 @@ watchImmediate(() => props.data, (data) => {
     set(states, {
       address: firstSpend.address ?? '',
       counterparty: firstSpend.counterparty ?? '',
-      entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
+      entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT,
       fee: fee.map(event => toSubEvent(event)),
-      location: firstSpend.location,
       receive: receive.map(event => toSubEvent(event)),
       sequenceIndex: firstSpend.sequenceIndex.toString(),
+      signature: firstSpend.signature,
       spend: spend.map(event => toSubEvent(event)),
       timestamp: firstSpend.timestamp,
-      txHash: firstSpend.txHash,
     });
 
     captureEditModeState(get(states));
@@ -234,9 +230,8 @@ defineExpose({
   <div>
     <EventDateLocation
       v-model:timestamp="timestamp"
-      v-model:location="states.location"
-      :location-disabled="data.type !== 'add'"
-      :locations="txChainsToLocation"
+      v-model:location="location"
+      location-disabled
       :error-messages="{
         location: toMessages(v$.location),
         timestamp: toMessages(v$.timestamp),
@@ -247,14 +242,14 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextField
-      v-model="states.txHash"
+      v-model="states.signature"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="tx-hash"
-      :label="t('common.tx_hash')"
-      :error-messages="toMessages(v$.txHash)"
-      @blur="v$.txHash.$touch()"
+      data-cy="signature"
+      :label="t('common.signature')"
+      :error-messages="toMessages(v$.signature)"
+      @blur="v$.signature.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -263,9 +258,10 @@ defineExpose({
       ref="spendListRef"
       v-model="states.spend"
       data-cy="spend"
-      :location="states.location"
+      :location="location"
       :timestamp="timestamp"
       type="spend"
+      solana
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -274,9 +270,10 @@ defineExpose({
       ref="receiveListRef"
       v-model="states.receive"
       data-cy="receive"
-      :location="states.location"
+      :location="location"
       :timestamp="timestamp"
       type="receive"
+      solana
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -292,10 +289,11 @@ defineExpose({
       ref="feeListRef"
       v-model="states.fee"
       data-cy="fee"
-      :location="states.location"
+      :location="location"
       :disabled="!hasFee"
       :timestamp="timestamp"
       type="fee"
+      solana
     />
 
     <RuiDivider class="mb-6 mt-2" />

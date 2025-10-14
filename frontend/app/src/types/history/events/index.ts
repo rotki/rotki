@@ -36,7 +36,7 @@ export type PullEventPayload = {
   type: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
   data: number [];
 } | {
-  type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT | typeof HistoryEventEntryType.SOLANA_EVENT;
+  type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT | typeof HistoryEventEntryType.SOLANA_EVENT | typeof HistoryEventEntryType.SOLANA_SWAP_EVENT;
   data: LocationAndTxHash;
 };
 
@@ -52,6 +52,11 @@ export interface PullTransactionPayload extends ChainAndTxRefs {
 export interface LocationAndTxHash {
   readonly location: string;
   readonly txHash: string;
+}
+
+export interface LocationAndSignature {
+  readonly location: string;
+  readonly signature: string;
 }
 
 export interface AddTransactionHashPayload {

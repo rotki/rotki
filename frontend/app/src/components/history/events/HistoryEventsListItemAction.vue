@@ -9,7 +9,6 @@ import type {
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import {
-  isEvmSwapEvent,
   isGroupEditableHistoryEvent,
   isSwapTypeEvent,
 } from '@/modules/history/management/forms/form-guards';
@@ -41,7 +40,7 @@ function hideActions(item: HistoryEventEntry, index: number): boolean {
 }
 
 function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
-  if (isGroupEditableHistoryEvent(item) || isEvmSwapEvent(item)) {
+  if (isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType)) {
     return {
       eventsInGroup: props.events as GroupEditableHistoryEvents[],
       type: 'edit-group',

@@ -148,7 +148,7 @@ cargo run -- --database ../data/global.db --port 4343
 - **Always return explicit types from functions**: `function getName(): string { ... }`
 - **Always type reactive variables**: `const isLoading = ref<boolean>(false)`
 - **Always type computed properties**: `const fullName = computed<string>(() => ...)`
-- If a ref type can be undefined and the default value is undefined, **Don't explicitly put it as type or default value**: `const newId = computed<number>()`
+- If a ref type can be undefined and the default value is undefined, **Don't explicitly put it as type or default value**: `const newId = ref<number>()`
 
 #### Correct Examples:
 
@@ -163,7 +163,7 @@ const user = ref<User>();
 
 const isEven = computed<boolean>(() => get(count) % 2 === 0);
 const formattedName = computed<string>(() => `${get(firstName)} ${get(lastName)}`);
-const newId = computed<number>(); // this newId type is number | undefined.
+const newId = ref<number>(); // this newId type is number | undefined.
 
 function getUserById(id: number): User | undefined {
   return get(users).find(user => user.id === id) || undefined;
@@ -189,7 +189,7 @@ const user = ref();
 
 const isEven = computed(() => count.value % 2 === 0);
 const formattedName = computed(() => `${firstName.value} ${lastName.value}`);
-const newId = computed<number | undefined>(undefined);
+const newId = ref<number | undefined>(undefined);
 
 function getUserById(id: number) {
   return users.value.find(user => user.id === id) || undefined;

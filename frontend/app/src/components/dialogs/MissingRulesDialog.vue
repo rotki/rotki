@@ -2,8 +2,8 @@
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { LocationAndTxHash } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import { isEventDecodable } from '@/modules/history/management/forms/form-guards';
 import { toLocationAndTxHash } from '@/utils/history';
-import { isEvmEvent } from '@/utils/history/events';
 
 const modelValue = defineModel<HistoryEventEditData | undefined>({ required: true });
 
@@ -20,7 +20,7 @@ function canRedecode(data?: HistoryEventEditData): boolean {
   if (!data || data.type === 'edit-group') {
     return false;
   }
-  return isEvmEvent(data.event);
+  return !!isEventDecodable(data.event);
 }
 
 const options = computed(() => [{
@@ -46,7 +46,10 @@ function close() {
 
 function onRedecode(data: HistoryEventEditData) {
   const event = data.type === 'edit' ? data.event : data.eventsInGroup[0];
-  emit('redecode', toLocationAndTxHash(event));
+  const decodableEvent = isEventDecodable(event);
+  if (decodableEvent) {
+    emit('redecode', toLocationAndTxHash(decodableEvent));
+  }
   close();
 }
 

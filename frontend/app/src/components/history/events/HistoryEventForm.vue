@@ -9,9 +9,10 @@ import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEv
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
-import { EVM_EVENTS, isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
+import { EVM_EVENTS, isEvmTypeEvent, isSolanaTypeEvent, SOLANA_EVENTS } from '@/modules/history/management/forms/form-guards';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
+import SolanaSwapEventForm from '@/modules/history/management/forms/SolanaSwapEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 
 interface FormComponent {
@@ -40,9 +41,22 @@ const isEvmGroupAdd = computed<boolean>(() => {
   return isEvmTypeEvent(data.group.entryType);
 });
 
+const isSolanaGroupAdd = computed<boolean>(() => {
+  const data = props.data;
+  if (data.type !== 'group-add') {
+    return false;
+  }
+  return isSolanaTypeEvent(data.group.entryType);
+});
+
+const isGroupAdd = logicOr(isEvmGroupAdd, isSolanaGroupAdd);
+
 const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
   if (get(isEvmGroupAdd)) {
     return [...EVM_EVENTS];
+  }
+  else if (get(isSolanaGroupAdd)) {
+    return [...SOLANA_EVENTS];
   }
   return Object.values(HistoryEventEntryType);
 });
@@ -56,6 +70,7 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.EVM_SWAP_EVENT]: EvmSwapEventForm,
   [HistoryEventEntryType.HISTORY_EVENT]: OnlineHistoryEventForm,
   [HistoryEventEntryType.SOLANA_EVENT]: SolanaEventForm,
+  [HistoryEventEntryType.SOLANA_SWAP_EVENT]: SolanaSwapEventForm,
   [HistoryEventEntryType.SWAP_EVENT]: SwapEventForm,
 };
 
@@ -89,7 +104,7 @@ defineExpose({
       v-model="entryType"
       data-cy="entry-type"
       :options="historyEventEntryTypes"
-      :disabled="data.type !== 'add' && !isEvmGroupAdd"
+      :disabled="data.type !== 'add' && !isGroupAdd"
       :label="t('common.entry_type')"
       hide-details
       variant="outlined"
