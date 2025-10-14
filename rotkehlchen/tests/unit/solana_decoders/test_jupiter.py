@@ -114,7 +114,7 @@ def test_swap_with_temp_token_account(
         asset=A_WSOL,
         amount=FVal(receive_amount := '0.029137025'),
         location_label=solana_accounts[0],
-        notes=f'Receive {receive_amount} SOL as the result of a swap in Jupiter',
+        notes=f'Receive {receive_amount} WSOL as the result of a swap in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
     )]
@@ -206,7 +206,7 @@ def test_arbitrage_swap(
         asset=A_WSOL,
         amount=(in_amount_2 := FVal('0.039404601')),
         location_label=user,
-        notes=f'Receive {in_amount_2} SOL as the result of a swap in Jupiter',
+        notes=f'Receive {in_amount_2} WSOL as the result of a swap in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('9MkixYmjT2UbMgnNnPBTYkRjzdmi4zP1jkMdCkR89L67'),
     ), SolanaSwapEvent(
@@ -217,7 +217,7 @@ def test_arbitrage_swap(
         asset=A_WSOL,
         amount=(out_amount_3 := FVal('0.039406767')),
         location_label=user,
-        notes=f'Swap {out_amount_3} SOL in Jupiter',
+        notes=f'Swap {out_amount_3} WSOL in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('GtpsrTHYnfFVm3qkPJtyKVwQLpXT7p2MRy9bp5hYeJnQ'),
     ), SolanaSwapEvent(
