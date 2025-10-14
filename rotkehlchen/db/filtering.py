@@ -994,6 +994,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
                 HistoryBaseEntryType.SOLANA_EVENT,
                 HistoryBaseEntryType.EVM_EVENT,
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
+                HistoryBaseEntryType.SOLANA_SWAP_EVENT,
                 HistoryBaseEntryType.HISTORY_EVENT,
             ])
 
@@ -1122,6 +1123,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
                 HistoryBaseEntryType.SOLANA_EVENT,
                 HistoryBaseEntryType.EVM_EVENT,
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
+                HistoryBaseEntryType.SOLANA_SWAP_EVENT,
             ])
 
         filter_query = super().make(

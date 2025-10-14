@@ -100,6 +100,7 @@ from rotkehlchen.history.events.structures.eth2 import (
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
+from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEventExtraData, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import (
@@ -833,6 +834,84 @@ class CreateHistoryEventSchema(Schema):
         extra_data = fields.Dict(load_default=None)
         location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
 
+    class BaseSolanaEventSchema(Schema):
+        """Base schema for Solana events. Used for SolanaEvents and SolanaSwapEvents."""
+        signature = SolanaSignatureField(required=True)
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        counterparty = EmptyAsNoneStringField(load_default=None)
+        address = SolanaAddressField(load_default=None)
+        extra_data = fields.Dict(load_default=None)
+
+    class BaseOnchainSwapEventSchema(Schema):
+        """Base schema for onchain swap events. Contains common swap logic."""
+
+        class OnchainSwapSubEventSchema(Schema):
+            identifier = fields.Integer(required=False, load_default=None)
+            amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
+            asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+            user_notes = EmptyAsNoneStringField(required=False, load_default=None)
+            location_label = EmptyAsNoneStringField(required=False, load_default=None)
+
+        identifiers = fields.List(fields.Integer(), required=True)
+        sequence_index = fields.Integer(required=True)
+        timestamp = TimestampMSField(required=True)
+        spend = fields.List(fields.Nested(OnchainSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
+        receive = fields.List(fields.Nested(OnchainSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
+        fee = fields.List(fields.Nested(OnchainSwapSubEventSchema), required=False, load_default=[])  # noqa: E501
+
+        def create_swap_event(self, data: dict[str, Any], **kwargs: Any) -> SolanaSwapEvent | EvmSwapEvent:  # noqa: E501
+            """Abstract method to be implemented by subclasses"""
+            raise NotImplementedError('Subclasses must implement create_swap_event')
+
+        @post_load
+        def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
+            sequence_index = data['sequence_index']
+            timestamp = data['timestamp']
+            event_identifier = data['event_identifier']
+            counterparty = data['counterparty']
+            extra_data = data['extra_data']
+            # Use .get() here since identifiers may have been excluded from the schema in the
+            # post load of CreateHistoryEventSchema.
+            identifiers = data.get('identifiers')
+
+            events, is_multi = [], False
+            for subtype in (
+                HistoryEventSubType.SPEND,
+                HistoryEventSubType.RECEIVE,
+                HistoryEventSubType.FEE,
+            ):
+                if len(subtype_data_list := data[subtype.serialize()]) > 1:
+                    is_multi = True
+
+                for idx, subtype_data in enumerate(subtype_data_list):
+                    event = self.create_swap_event(
+                        data=data,
+                        identifier=subtype_data['identifier'],
+                        sequence_index=sequence_index,
+                        timestamp=timestamp,
+                        event_type=HistoryEventType.TRADE,
+                        event_subtype=subtype,
+                        asset=subtype_data['asset'],
+                        amount=subtype_data['amount'],
+                        location_label=subtype_data['location_label'],
+                        notes=subtype_data['user_notes'],
+                        event_identifier=event_identifier,
+                        extra_data=extra_data if subtype == HistoryEventSubType.SPEND and idx == 0 else None,  # Only set extra_data on first spend event  # noqa: E501
+                        counterparty=counterparty,
+                    )
+                    events.append(event)
+                    sequence_index += 1
+
+            if is_multi:
+                for event in events:
+                    event.event_type = HistoryEventType.MULTI_TRADE
+
+            return (
+                {'events': events}
+                if identifiers is None else
+                {'events': events, 'identifiers': identifiers}
+            )
+
     class CreateBaseHistoryEventSchema(BaseEventSchema):
         event_identifier = NonEmptyStringField(required=True)
         location = LocationField(required=True)
@@ -868,12 +947,7 @@ class CreateHistoryEventSchema(Schema):
             data['notes'] = data.pop('user_notes')
             return {'events': [EvmEvent(**data)]}
 
-    class CreateSolanaEventSchema(BaseEventSchema):
-        signature = SolanaSignatureField(required=True)
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
-        counterparty = EmptyAsNoneStringField(load_default=None)
-        address = SolanaAddressField(load_default=None)
-        extra_data = fields.Dict(load_default=None)
+    class CreateSolanaEventSchema(BaseEventSchema, BaseSolanaEventSchema):
 
         @post_load
         def make_history_base_entry(
@@ -1127,77 +1201,28 @@ class CreateHistoryEventSchema(Schema):
             )
             return {'events': events}
 
-    class CreateEvmSwapEventSchema(BaseEvmEventSchema):
+    class CreateEvmSwapEventSchema(BaseOnchainSwapEventSchema, BaseEvmEventSchema):
 
-        class EvmSwapSubEventSchema(Schema):
-            identifier = fields.Integer(required=False, load_default=None)
-            amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
-            asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-            user_notes = EmptyAsNoneStringField(required=False, load_default=None)
-            location_label = EmptyAsNoneStringField(required=False, load_default=None)
+        location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
 
-        identifiers = fields.List(fields.Integer(), required=True)
-        sequence_index = fields.Integer(required=True)
-        timestamp = TimestampMSField(required=True)
-        location = LocationField(required=True)
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
-        spend = fields.List(fields.Nested(EvmSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
-        receive = fields.List(fields.Nested(EvmSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
-        fee = fields.List(fields.Nested(EvmSwapSubEventSchema), required=False, load_default=[])
+        def create_swap_event(self, data: dict[str, Any], **kwargs: Any) -> EvmSwapEvent:
+            """Create an EvmSwapEvent with EVM-specific fields"""
+            return EvmSwapEvent(
+                tx_hash=data['tx_hash'],
+                product=data['product'],
+                address=data['address'],
+                location=data['location'],
+                **kwargs,
+            )
 
-        @post_load
-        def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
-            tx_hash = data['tx_hash']
-            sequence_index = data['sequence_index']
-            timestamp = data['timestamp']
-            location = data['location']
-            event_identifier = data['event_identifier']
-            counterparty = data['counterparty']
-            product = data['product']
-            address = data['address']
-            extra_data = data['extra_data']
-            # Use .get() here since identifiers may have been excluded from the schema in the
-            # post load of CreateHistoryEventSchema.
-            identifiers = data.get('identifiers')
+    class CreateSolanaSwapEventSchema(BaseOnchainSwapEventSchema, BaseSolanaEventSchema):
 
-            events, is_multi = [], False
-            for subtype in (
-                HistoryEventSubType.SPEND,
-                HistoryEventSubType.RECEIVE,
-                HistoryEventSubType.FEE,
-            ):
-                if len(subtype_data_list := data[subtype.serialize()]) > 1:
-                    is_multi = True
-
-                for idx, subtype_data in enumerate(subtype_data_list):
-                    events.append(EvmSwapEvent(
-                        identifier=subtype_data['identifier'],
-                        tx_hash=tx_hash,
-                        sequence_index=sequence_index,
-                        timestamp=timestamp,
-                        location=location,
-                        event_type=HistoryEventType.TRADE,
-                        event_subtype=subtype,
-                        asset=subtype_data['asset'],
-                        amount=subtype_data['amount'],
-                        location_label=subtype_data['location_label'],
-                        notes=subtype_data['user_notes'],
-                        event_identifier=event_identifier,
-                        extra_data=extra_data if subtype == HistoryEventSubType.SPEND and idx == 0 else None,  # Only set extra_data on first spend event  # noqa: E501
-                        counterparty=counterparty,
-                        product=product,
-                        address=address,
-                    ))
-                    sequence_index += 1
-
-            if is_multi:
-                for event in events:
-                    event.event_type = HistoryEventType.MULTI_TRADE
-
-            return (
-                {'events': events}
-                if identifiers is None else
-                {'events': events, 'identifiers': identifiers}
+        def create_swap_event(self, data: dict[str, Any], **kwargs: Any) -> SolanaSwapEvent:
+            """Create a SolanaSwapEvent with Solana-specific fields"""
+            return SolanaSwapEvent(
+                signature=data['signature'],
+                address=data['address'],
+                **kwargs,
             )
 
     ENTRY_TO_SCHEMA: Final[dict[HistoryBaseEntryType, type[Schema]]] = {
@@ -1210,6 +1235,7 @@ class CreateHistoryEventSchema(Schema):
         HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: CreateAssetMovementEventSchema,
         HistoryBaseEntryType.SWAP_EVENT: CreateSwapEventSchema,
         HistoryBaseEntryType.EVM_SWAP_EVENT: CreateEvmSwapEventSchema,
+        HistoryBaseEntryType.SOLANA_SWAP_EVENT: CreateSolanaSwapEventSchema,
     }
 
     def get_grouped_event_identifier(
@@ -1229,11 +1255,11 @@ class CreateHistoryEventSchema(Schema):
     ) -> dict[str, Any]:
         entry_type = data.pop('entry_type')  # already used to decide schema
         # Exclude the identifier field unless `include_identifier` is True. Most event types
-        # have the same field name of `identifier` but for evm swaps it is plural since this
-        # field is a list containing multiple identifiers in that case.
+        # have the same field name of `identifier` but for swap events (EVM and Solana) it is
+        # plural since this field is a list containing multiple identifiers in that case.
         exclude = () if self.include_identifier else (
             ('identifiers',)
-            if entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT else
+            if entry_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT) else  # noqa: E501
             ('identifier',)
         )
         self.history_event_context.set({'schema': self})

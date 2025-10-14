@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -37,6 +38,7 @@ from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
+from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
@@ -71,6 +73,7 @@ from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
     Location,
+    SolanaAddress,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -1725,3 +1728,182 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: 'APIServer') -> No
         'Evm event 0',
         'Solana event 1',
     }
+
+
+def test_add_edit_solana_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that adding and editing Solana swap events works correctly"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+
+    entries = [{
+        'entry_type': 'solana swap event',
+        'timestamp': 1569924575000,
+        'spend': [
+            {'amount': '100', 'asset': (bonk_identifier := 'solana/token:DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'), 'user_notes': 'Swapped BONK', 'location_label': '7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W'},  # noqa: E501
+            {'amount': '0.5', 'asset': A_SOL.identifier, 'location_label': '8Qp42peZrPfgfORFITw2VEiZsfiyjQOUyDxFTxDVk8Y'},  # noqa: E501
+        ],
+        'receive': [
+            {'amount': '2.5', 'asset': (jup_identifier := 'solana/token:JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'), 'location_label': 'JUP4LHuHiLdG1qZfzN5JYKmZvSd5mE1kEWy1UQ8K8oP'},  # noqa: E501
+        ],
+        'fee': [
+            {'amount': '0.001', 'asset': A_SOL.identifier},
+        ],
+        'sequence_index': 0,
+        'signature': str(signature := make_solana_signature()),
+        'counterparty': 'jupiter',
+        'address': '7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W',
+    }, {
+        'entry_type': 'solana swap event',
+        'timestamp': 1569924576000,
+        'spend': [{'amount': '50', 'asset': (ray_identifier := 'solana/token:4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 'location_label': '8Qp42peZrPfgfORFITw2VEiZsfiyjQOUyDxFTxDVk8Y'}],  # noqa: E501
+        'receive': [{'amount': '1.5', 'asset': A_SOL.identifier, 'location_label': '7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W'}],  # noqa: E501
+        'sequence_index': 123,
+        'signature': str(signature),
+        'counterparty': 'orca',
+        'address': 'JUP4LHuHiLdG1qZfzN5JYKmZvSd5mE1kEWy1UQ8K8oP',
+    }]
+
+    for entry in entries:  # add the events
+        assert 'identifier' in assert_proper_sync_response_with_result(requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entry,
+        ))
+
+    # Verify events were added correctly
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert (events := db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            group_by_event_ids=False,
+        )) == [SolanaSwapEvent(  # 2 spend + 1 receive + 1 fee + 1 spend + 1 receive = 6 events  # noqa: E501
+            signature=signature,
+            identifier=1,
+            event_identifier=str(signature),
+            sequence_index=0,
+            timestamp=TimestampMS(1569924575000),
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset(bonk_identifier),
+            amount=FVal('100'),
+            location_label='7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W',
+            notes='Swapped BONK',
+            counterparty='jupiter',
+            address=SolanaAddress('7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W'),
+        ), SolanaSwapEvent(
+            signature=signature,
+            identifier=2,
+            event_identifier=str(signature),
+            sequence_index=1,
+            timestamp=TimestampMS(1569924575000),
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_SOL,
+            amount=FVal('0.5'),
+            location_label='8Qp42peZrPfgfORFITw2VEiZsfiyjQOUyDxFTxDVk8Y',
+            notes=None,
+            counterparty='jupiter',
+            address=SolanaAddress('7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W'),
+        ), SolanaSwapEvent(
+            signature=signature,
+            identifier=3,
+            event_identifier=str(signature),
+            sequence_index=2,
+            timestamp=TimestampMS(1569924575000),
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset(jup_identifier),
+            amount=FVal('2.5'),
+            location_label='JUP4LHuHiLdG1qZfzN5JYKmZvSd5mE1kEWy1UQ8K8oP',
+            notes=None,
+            counterparty='jupiter',
+            address=SolanaAddress('7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W'),
+        ), SolanaSwapEvent(
+            signature=signature,
+            identifier=4,
+            event_identifier=str(signature),
+            sequence_index=3,
+            timestamp=TimestampMS(1569924575000),
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_SOL,
+            amount=FVal('0.001'),
+            location_label=None,
+            notes=None,
+            counterparty='jupiter',
+            address=SolanaAddress('7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W'),
+        ), SolanaSwapEvent(
+            signature=signature,
+            identifier=5,
+            event_identifier=str(signature),
+            sequence_index=123,
+            timestamp=TimestampMS(1569924576000),
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset(ray_identifier),
+            amount=FVal('50'),
+            location_label='8Qp42peZrPfgfORFITw2VEiZsfiyjQOUyDxFTxDVk8Y',
+            notes=None,
+            counterparty='orca',
+            address=SolanaAddress('JUP4LHuHiLdG1qZfzN5JYKmZvSd5mE1kEWy1UQ8K8oP'),
+        ), SolanaSwapEvent(
+            signature=signature,
+            identifier=6,
+            event_identifier=str(signature),
+            sequence_index=124,
+            timestamp=TimestampMS(1569924576000),
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_SOL,
+            amount=FVal('1.5'),
+            location_label='7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W',
+            notes=None,
+            counterparty='orca',
+            address=SolanaAddress('JUP4LHuHiLdG1qZfzN5JYKmZvSd5mE1kEWy1UQ8K8oP'),
+        )]
+
+    # Test editing Solana swap events
+    # Setup entry's identifiers for editing
+    entry = entries[0]
+    entry['identifiers'], ids_per_subtype = [], defaultdict(list)
+    timestamp_to_edit = TimestampMS(1569924575000)
+    for event in events:
+        if event.timestamp == timestamp_to_edit:
+            entry['identifiers'].append(event.identifier)  # type: ignore
+            ids_per_subtype[event.event_subtype.serialize()].append(event.identifier)
+
+    for subtype in ('spend', 'receive', 'fee'):
+        assert len(data_list := entry[subtype]) == len(id_list := ids_per_subtype[subtype])  # type: ignore
+        for idx, identifier in enumerate(id_list):
+            data_list[idx]['identifier'] = identifier  # type: ignore
+
+    # Edit the event: change amounts and add a new receive event
+    entry['spend'][0]['amount'] = '120'  # type: ignore  # Change BONK amount
+    entry['spend'][1]['amount'] = '0.7'  # type: ignore  # Change SOL amount
+    entry['receive'].append({'amount': '1.2', 'asset': A_SOL.identifier, 'location_label': '9Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W'})  # type: ignore  # Add new receive event  # noqa: E501
+    entry['fee'] = []  # Remove fee event
+
+    # Apply the edit
+    assert_proper_sync_response_with_result(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    ))
+
+    # Verify the edit was successful
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(edited_events := db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(event_identifiers=[str(signature)]),
+            group_by_event_ids=False,
+        )) == 6  # Should have 2 spend + 2 receive + 1 spend + 1 receive = 6 events (fee was removed, new receive added)  # noqa: E501
+
+    # Check that the first swap event was modified correctly
+    assert len(spend_events := [e for e in edited_events if e.event_subtype == HistoryEventSubType.SPEND and e.timestamp == timestamp_to_edit]) == 2  # noqa: E501
+    assert spend_events[0].amount == FVal('120')  # BONK amount changed
+    assert spend_events[1].amount == FVal('0.7')   # SOL amount changed
+
+    # Check that new receive event was added
+    assert len(receive_events := [e for e in edited_events if e.event_subtype == HistoryEventSubType.RECEIVE and e.timestamp == timestamp_to_edit]) == 2  # noqa: E501
+    assert any(e.amount == FVal('1.2') and e.asset == A_SOL for e in receive_events)
+
+    # Check that fee event was removed
+    assert len([e for e in edited_events if e.event_subtype == HistoryEventSubType.FEE and e.timestamp == timestamp_to_edit]) == 0  # noqa: E501

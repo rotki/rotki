@@ -22,8 +22,8 @@ def edit_grouped_events_with_optional_fee(
     - Create fee entry if it wasn't present before
     - Update existing events when modifications occur
 
-    Evm swaps are more complex and must rely on the identifiers specified. This is handled
-    in edit_grouped_evm_swap_events.
+    Chain swaps are more complex and must rely on the identifiers specified. This is handled
+    in edit_grouped_chain_swap_events.
 
     May raise:
     - InputError
@@ -36,8 +36,8 @@ def edit_grouped_events_with_optional_fee(
     else:
         raise InputError(f'Tried to edit event with id {events[0].identifier} but could not find it in the DB')  # noqa: E501
 
-    if events_type == HistoryBaseEntryType.EVM_SWAP_EVENT:
-        edit_grouped_evm_swap_events(  # Evm swaps must be handled differently.
+    if events_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT):  # noqa: E501
+        edit_grouped_chain_swap_events(  # Chain swaps must be handled differently.
             events_db=events_db,
             write_cursor=write_cursor,
             events=events,
@@ -76,14 +76,14 @@ def edit_grouped_events_with_optional_fee(
         events_db.edit_history_event(write_cursor=write_cursor, event=event)
 
 
-def edit_grouped_evm_swap_events(
+def edit_grouped_chain_swap_events(
         events_db: 'DBHistoryEvents',
         write_cursor: 'DBCursor',
         events: list[HistoryBaseEntry],
         identifiers: list[int],
         event_identifier: str,
 ) -> None:
-    """Handle editing of grouped evm swap events.
+    """Handle editing of grouped chain swap events.
     Determines which events to add, edit, or remove using the `identifiers`
     and `events` lists as follows:
     - Inserts events that have no identifier.
