@@ -2,13 +2,12 @@
 import type { BlockchainAccount } from '@/types/blockchain/accounts';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useRefWithDebounce } from '@/composables/ref';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import {
   useHistoryQueryIndicatorSettings,
 } from '@/modules/dashboard/history-events/composables/use-history-query-indicator-settings';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { useTransactionStatusCheck } from '@/modules/dashboard/history-events/composables/use-transaction-status-check';
 import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
@@ -30,12 +29,16 @@ const { transactionStatusSummary } = storeToRefs(historyStore);
 const { appVersion } = storeToRefs(useMainStore());
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 
-const router = useRouter();
-const { processing: rawProcessing } = useHistoryEventsStatus();
-const processing = useRefWithDebounce(rawProcessing, 400);
 const { allTxChainsInfo } = useSupportedChains();
 const userId = useLoggedUserIdentifier();
-const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();
+const { dismissalThresholdMs } = useHistoryQueryIndicatorSettings();
+const {
+  earliestQueriedTimestamp: lastQueriedTimestamp,
+  isNeverQueried,
+  isOutOfSync: isOutOfSyncCheck,
+  navigateToHistory,
+  processing,
+} = useTransactionStatusCheck();
 const [DefineTimeTooltip, ReuseTimeTooltip] = createReusableTemplate();
 
 const queryStatus = useLocalStorage<QueryStatus>(`${get(userId)}.rotki_query_status`, { lastDismissedTs: 0, lastUsedVersion: null });
@@ -64,31 +67,6 @@ const hasTxAccounts = computed<boolean>(() => {
   return get(accounts).some(({ chain }) => filteredChains.includes(chain));
 });
 
-const lastQueriedTimestamp = computed<number>(() => {
-  const status = get(transactionStatusSummary);
-  if (!status)
-    return 0;
-
-  const { evmLastQueriedTs = 0, exchangesLastQueriedTs = 0, hasEvmAccounts = false, hasExchangesAccounts = false } = status;
-
-  // Only consider timestamps for account types the user has
-  const timestamps: number[] = [];
-  if (hasEvmAccounts && evmLastQueriedTs > 0) {
-    timestamps.push(evmLastQueriedTs);
-  }
-  if (hasExchangesAccounts && exchangesLastQueriedTs > 0) {
-    timestamps.push(exchangesLastQueriedTs);
-  }
-
-  if (timestamps.length === 0) {
-    return 0;
-  }
-
-  // Use the earliest (minimum) timestamp to show the most out-of-sync status
-  // Convert seconds to milliseconds for useTimeAgo
-  return Math.min(...timestamps) * 1000;
-});
-
 const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);
 
 const processingMessage = computed<string>(() => {
@@ -104,24 +82,18 @@ const showMessage = computed<boolean>(() => {
     return false;
   }
 
-  const now = Date.now();
-  const lastQueried = get(lastQueriedTimestamp);
-  const minOutOfSyncMs = get(minOutOfSyncPeriodMs);
-
-  // Don't show if not out of sync enough
-  if (now - lastQueried < minOutOfSyncMs) {
+  // Use the composable's out of sync check
+  if (!get(isOutOfSyncCheck)) {
     return false;
   }
 
   // Don't show if dismissed recently
   const dismissalMs = get(dismissalThresholdMs);
   const { lastDismissedTs } = get(queryStatus);
-  const dismissedRecently = now - lastDismissedTs < dismissalMs;
+  const dismissedRecently = Date.now() - lastDismissedTs < dismissalMs;
 
   return !dismissedRecently;
 });
-
-const isNeverQueried = computed<boolean>(() => get(lastQueriedTimestamp) === 0);
 
 const longQuery = computed<boolean>(() => {
   const status = get(transactionStatusSummary);
@@ -129,10 +101,6 @@ const longQuery = computed<boolean>(() => {
   const lastQueried = get(lastQueriedTimestamp);
   return isDefined(status) && status.undecodedTxCount === 0 && now - lastQueried > HUNDRED_EIGHTY_DAYS;
 });
-
-function navigateToHistory(): void {
-  router.push('/history');
-}
 
 function dismiss(): void {
   set(queryStatus, {
