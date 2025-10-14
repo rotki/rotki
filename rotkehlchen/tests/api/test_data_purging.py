@@ -13,15 +13,24 @@ from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteTXType,
 )
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_SOL
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import (
+    EvmTransactionsFilterQuery,
+    HistoryEventFilterQuery,
+    SolanaEventFilterQuery,
+    SolanaTransactionsFilterQuery,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.db.test_solana_tx import create_test_solana_transactions
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_sync_response_with_result,
@@ -111,14 +120,32 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         )
         dbevents.add_history_events(
             write_cursor=write_cursor,
-            history=make_eth_withdrawal_and_block_events(),
+            history=make_eth_withdrawal_and_block_events() + [EvmEvent(
+                tx_hash=(evm_tx_hash_1 := make_evm_tx_hash()),
+                sequence_index=0,
+                timestamp=TimestampMS(0),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ), EvmEvent(
+                tx_hash=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(0),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            )],
         )
         for chain_id in (ChainID.ETHEREUM, ChainID.OPTIMISM, ChainID.GNOSIS):
             for i in range(3 if chain_id == ChainID.ETHEREUM else 2):
                 db.add_transactions(
                     write_cursor,
                     [EvmTransaction(
-                        tx_hash=make_evm_tx_hash(),
+                        tx_hash=evm_tx_hash_1 if chain_id == ChainID.ETHEREUM and i == 0 else make_evm_tx_hash(),  # noqa: E501
                         chain_id=chain_id,
                         timestamp=Timestamp(i),
                         block_number=1,
@@ -152,7 +179,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         assert dbevents.get_history_events_count(
             cursor=cursor,
             query_filter=HistoryEventFilterQuery.make(),
-        )[0] == 2  # the eth withdrawal & block events are not deleted
+        )[0] == 3  # the eth withdrawal event, eth block event, and evm event with no corresponding tx are not deleted  # noqa: E501
 
     def _add_zksynclitetxs(write_cursor: 'DBCursor') -> None:
         for i in range(2):
@@ -260,7 +287,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         # check deleting by hash
         response = requests.delete(
             api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
-            json={'chain': chain, 'tx_hash': tx_hash},
+            json={'chain': chain, 'tx_ref': tx_hash},
         )
         assert_simple_ok_response(response)
         with rotki.data.db.conn.read_ctx() as cursor:
@@ -287,6 +314,73 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                 'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ?;',
                 (f"{cache_key.value[0].format(address='')}%",),
             ).fetchone()[0] == 0
+
+
+def test_purge_solana_transaction_data(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    solana_tx_db = DBSolanaTx(rotki.data.db)
+    events_db = DBHistoryEvents(rotki.data.db)
+    txs, address1, _, _ = create_test_solana_transactions()
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.SOLANA,
+                address=address1,
+            )],
+        )
+        solana_tx_db.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=txs,
+            relevant_address=address1,
+        )
+        events = [SolanaEvent(
+            signature=tx.signature,
+            sequence_index=0,
+            timestamp=TimestampMS(0),
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_SOL,
+            amount=ONE,
+        ) for tx in txs]
+        events_db.add_history_events(write_cursor=write_cursor, history=events[1:])
+        events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=(customized_event := events[0]),
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED},
+        )
+
+    # check deleting by hash
+    assert_simple_ok_response(requests.delete(
+        api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+        json={'chain': 'solana', 'tx_ref': (deleted_signature := str(txs[-1].signature))},
+    ))
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(txs := solana_tx_db.get_transactions(
+            cursor=cursor,
+            filter_=SolanaTransactionsFilterQuery.make(),
+        )) == 2  # only deleted the tx for the specified hash
+        assert all(deleted_signature != str(x.signature) for x in txs)
+        assert len(events := events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=SolanaEventFilterQuery.make(),
+        )) == 2  # only deleted one event for the specified hash
+        assert all(deleted_signature != x.event_identifier for x in events)
+
+    # then delete all
+    assert_simple_ok_response(requests.delete(
+        api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+    ))
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(solana_tx_db.get_transactions(
+            cursor=cursor,
+            filter_=SolanaTransactionsFilterQuery.make(),
+        )) == 0  # all transactions are removed
+        assert len(events := events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=SolanaEventFilterQuery.make(),
+        )) == 1  # Only the customized event remains
+        assert events[0].event_identifier == customized_event.event_identifier
 
 
 def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:

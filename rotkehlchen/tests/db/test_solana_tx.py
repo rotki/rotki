@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def _create_test_solana_transactions() -> tuple[list[SolanaTransaction], SolanaAddress, SolanaAddress, SolanaAddress]:  # noqa: E501
+def create_test_solana_transactions() -> tuple[list[SolanaTransaction], SolanaAddress, SolanaAddress, SolanaAddress]:  # noqa: E501
     """Create test Solana transactions with different properties for testing."""
     sol_address1 = make_solana_address()
     sol_address2 = make_solana_address()
@@ -45,7 +45,7 @@ def _create_test_solana_transactions() -> tuple[list[SolanaTransaction], SolanaA
 
 
 def test_add_get_solana_transactions(database: 'DBHandler') -> None:
-    txs, sol_address1, sol_address2, _ = _create_test_solana_transactions()
+    txs, sol_address1, sol_address2, _ = create_test_solana_transactions()
     with database.conn.write_ctx() as write_cursor:
         # add and retrieve the first 2 tx. All should be fine.
         dbsolanatx = DBSolanaTx(database)
@@ -88,7 +88,7 @@ def test_add_get_solana_transactions(database: 'DBHandler') -> None:
 
 def test_solana_transactions_filtering(database: 'DBHandler') -> None:
     """Test filtering solana transactions by various criteria"""
-    txs, sol_address1, _, _ = _create_test_solana_transactions()
+    txs, sol_address1, _, _ = create_test_solana_transactions()
     with database.conn.write_ctx() as write_cursor:
         dbsolanatx = DBSolanaTx(database)
         dbsolanatx.add_transactions(
@@ -256,7 +256,7 @@ def test_solana_instruction_execution_order(database: 'DBHandler') -> None:
 
 
 def test_query_txs_not_decoded(database: 'DBHandler') -> None:
-    txs, sol_address1, _, _ = _create_test_solana_transactions()
+    txs, sol_address1, _, _ = create_test_solana_transactions()
     dbsolanatx = DBSolanaTx(database)
     with database.conn.write_ctx() as write_cursor:
         dbsolanatx.add_transactions(

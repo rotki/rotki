@@ -471,9 +471,9 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                         dbevents = DBHistoryEvents(self.db)
                         with self.db.user_write() as write_cursor:
                             # Delete decoded genesis events so they can be later redecoded.
-                            dbevents.delete_events_by_tx_hash(
+                            dbevents.delete_events_by_tx_ref(
                                 write_cursor=write_cursor,
-                                tx_hashes=[GENESIS_HASH],
+                                tx_refs=[GENESIS_HASH],
                                 location=Location.from_chain_id(chain_id.to_blockchain()),  # type: ignore
                             )
                             write_cursor.execute(

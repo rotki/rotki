@@ -2801,7 +2801,7 @@ class RestAPI:
     def delete_blockchain_transaction_data(
             self,
             chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
-            tx_hash: None,
+            tx_ref: None,
     ) -> Response:
         ...
 
@@ -2809,22 +2809,30 @@ class RestAPI:
     def delete_blockchain_transaction_data(
             self,
             chain: EVM_EVMLIKE_CHAINS_WITH_TRANSACTIONS_TYPE,
-            tx_hash: EVMTxHash,
+            tx_ref: EVMTxHash,
     ) -> Response:
         ...
 
     @overload
     def delete_blockchain_transaction_data(
             self,
-            chain: Literal[SupportedBlockchain.BITCOIN],
-            tx_hash: BTCTxId,
+            chain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            tx_ref: BTCTxId,
+    ) -> Response:
+        ...
+
+    @overload
+    def delete_blockchain_transaction_data(
+            self,
+            chain: Literal[SupportedBlockchain.SOLANA],
+            tx_ref: Signature,
     ) -> Response:
         ...
 
     def delete_blockchain_transaction_data(
             self,
             chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
-            tx_hash: EVMTxHash | BTCTxId | None,
+            tx_ref: EVMTxHash | Signature | BTCTxId | None,
     ) -> Response:
         """Delete transactions and events.
         May be limited to a specific chain or further limited to a specific tx hash on that chain.
@@ -2834,33 +2842,12 @@ class RestAPI:
         """
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.user_write() as write_cursor:
-            # First delete transaction data
-            if not chain:  # no chain specified, delete data for all supported types.
-                DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(write_cursor=write_cursor)
-                self._delete_zksync_tx_data(write_cursor=write_cursor)
-                for cache_key in (DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK):  # noqa: E501
-                    self._delete_bitcoin_tx_data(write_cursor=write_cursor, cache_key=cache_key)
-            elif chain.is_evm():
-                DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(
+            # First delete events related to the transactions being removed
+            if tx_ref is not None:
+                dbevents.delete_events_by_tx_ref(
                     write_cursor=write_cursor,
-                    chain=chain,  # type: ignore[arg-type] # mypy doesn't understand the is_evm check
-                    tx_hash=tx_hash,  # type: ignore[arg-type] # will be EVMTxHash
-                )
-            elif chain == SupportedBlockchain.ZKSYNC_LITE:
-                self._delete_zksync_tx_data(write_cursor=write_cursor, tx_hash=tx_hash)  # type: ignore[arg-type] # will be EVMTxHash
-            elif chain.is_bitcoin() and tx_hash is None:
-                # only delete cached btc/bch last tx block if we're deleting all events.
-                self._delete_bitcoin_tx_data(
-                    write_cursor=write_cursor,
-                    cache_key=DBCacheDynamic.LAST_BTC_TX_BLOCK if chain == SupportedBlockchain.BITCOIN else DBCacheDynamic.LAST_BCH_TX_BLOCK,  # noqa: E501
-                )
-
-            # Then delete events related to the deleted transaction data
-            if tx_hash is not None:
-                dbevents.delete_events_by_tx_hash(
-                    write_cursor=write_cursor,
-                    tx_hashes=[tx_hash],
-                    location=Location.from_chain(chain),  # type: ignore[arg-type] # chain cannot be None if tx_hash is set
+                    tx_refs=[tx_ref],
+                    location=Location.from_chain(chain),  # type: ignore[arg-type] # chain cannot be None if tx_ref is set
                 )
             else:
                 chains = [chain] if chain is not None else CHAINS_WITH_TRANSACTIONS
@@ -2869,6 +2856,33 @@ class RestAPI:
                         write_cursor=write_cursor,
                         location=chain_location,
                     )
+
+            # Then delete the transaction data
+            if not chain:  # no chain specified, delete data for all supported types.
+                DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(write_cursor=write_cursor)
+                DBSolanaTx(self.rotkehlchen.data.db).delete_transaction_data(write_cursor=write_cursor)
+                self._delete_zksync_tx_data(write_cursor=write_cursor)
+                for cache_key in (DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK):  # noqa: E501
+                    self._delete_bitcoin_tx_data(write_cursor=write_cursor, cache_key=cache_key)
+            elif chain.is_evm():
+                DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(
+                    write_cursor=write_cursor,
+                    chain=chain,  # type: ignore[arg-type] # mypy doesn't understand the is_evm check
+                    tx_hash=tx_ref,  # type: ignore[arg-type] # will be EVMTxHash
+                )
+            elif chain == SupportedBlockchain.SOLANA:
+                DBSolanaTx(self.rotkehlchen.data.db).delete_transaction_data(
+                    write_cursor=write_cursor,
+                    signature=tx_ref,  # type: ignore[arg-type]  # will be Signature
+                )
+            elif chain == SupportedBlockchain.ZKSYNC_LITE:
+                self._delete_zksync_tx_data(write_cursor=write_cursor, tx_hash=tx_ref)  # type: ignore[arg-type] # will be EVMTxHash
+            elif chain.is_bitcoin() and tx_ref is None:
+                # only delete cached btc/bch last tx block if we're deleting all events.
+                self._delete_bitcoin_tx_data(
+                    write_cursor=write_cursor,
+                    cache_key=DBCacheDynamic.LAST_BTC_TX_BLOCK if chain == SupportedBlockchain.BITCOIN else DBCacheDynamic.LAST_BCH_TX_BLOCK,  # noqa: E501
+                )
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

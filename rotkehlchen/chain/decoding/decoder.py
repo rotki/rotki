@@ -318,9 +318,9 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
 
         if ignore_cache is True:  # delete all decoded events for the given tx ref
             with self.database.user_write() as write_cursor:
-                self.dbevents.delete_events_by_tx_hash(
+                self.dbevents.delete_events_by_tx_ref(
                     write_cursor=write_cursor,
-                    tx_hashes=[tx_ref],
+                    tx_refs=[tx_ref],
                     location=location,
                     delete_customized=delete_customized,
                 )

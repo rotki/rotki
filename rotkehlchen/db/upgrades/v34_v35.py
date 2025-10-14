@@ -399,7 +399,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             cursor.execute('SELECT tx_hash from evm_tx_mappings')
             tx_hashes = [x[0] for x in cursor]
 
-        #  delete_events_by_tx_hash -- took code out of method at v34 DB version
+        #  delete_events_by_tx_ref -- took code out of method at v34 DB version
         write_cursor.execute(
             'SELECT parent_identifier FROM history_events_mappings WHERE value=?',
             ('customized',),

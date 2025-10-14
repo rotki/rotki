@@ -643,9 +643,9 @@ class BlockchainTransactionsResource(BaseMethodView):
     def delete(
             self,
             chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
-            tx_hash: EVMTxHash | BTCTxId | None,
+            tx_ref: EVMTxHash | Signature | BTCTxId | None,
     ) -> Response:
-        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)  # type: ignore[arg-type] # schema ensures chain is included when tx_hash is present.
+        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_ref=tx_ref)  # type: ignore[arg-type] # schema ensures chain is included when tx_ref is present.
 
 
 class EvmTransactionsStatusResource(BaseMethodView):
