@@ -4459,22 +4459,28 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(details), status_code=HTTPStatus.OK)
 
     @async_api_call()
-    def add_evm_transaction_by_hash(
+    def add_transaction_by_reference(
             self,
-            evm_chain: SUPPORTED_CHAIN_IDS,
-            tx_hash: EVMTxHash,
-            associated_address: ChecksumEvmAddress,
+            blockchain: CHAINS_WITH_TRANSACTIONS_TYPE,
+            tx_ref: EVMTxHash | Signature,
+            associated_address: ChecksumEvmAddress | SolanaAddress,
     ) -> dict[str, Any]:
         """
-        Adds an evm transaction to the DB and associates it with the address provided.
+        Adds a transaction to the DB and associates it with the address provided.
         If successful, the transaction is then decoded.
         """
-        evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
+        chain_manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         try:
-            evm_manager.transactions.add_transaction_by_hash(
-                tx_hash=tx_hash,
-                associated_address=associated_address,
-            )
+            if blockchain == SupportedBlockchain.SOLANA:
+                chain_manager.transactions.get_or_create_transaction(  # type: ignore[attr-defined]  # Solana manager has transactions
+                    signature=tx_ref,
+                    relevant_address=associated_address,
+                )
+            else:
+                chain_manager.transactions.add_transaction_by_hash(  # type: ignore[attr-defined]  # EVM manager has transactions
+                    tx_hash=tx_ref,
+                    associated_address=associated_address,
+                )
         except (KeyError, DeserializationError, RemoteError, AlreadyExists, InputError) as e:  # pylint: disable=no-member
             if isinstance(e, AlreadyExists):  # pylint: disable=no-member
                 status_code = HTTPStatus.CONFLICT
@@ -4485,15 +4491,15 @@ class RestAPI:
 
             return wrap_in_fail_result(
                 message=(
-                    f'Unable to add transaction with hash {tx_hash.hex()} for chain '
-                    f'{evm_chain} and associated address {associated_address} due to {e!s}'
+                    f'Unable to add transaction with reference {tx_ref!s} for blockchain '
+                    f'{blockchain} and associated address {associated_address} due to {e!s}'
                 ),
                 status_code=status_code,
             )
 
-        evm_manager.transactions_decoder.decode_transaction_hashes(
+        chain_manager.transactions_decoder.decode_transaction_hashes(  # type: ignore[attr-defined]  # EVM manager has transactions_decoder
             ignore_cache=True,
-            tx_hashes=[tx_hash],
+            tx_hashes=[tx_ref],
         )
         return OK_RESULT
 

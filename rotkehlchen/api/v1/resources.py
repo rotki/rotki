@@ -90,7 +90,6 @@ from rotkehlchen.api.v1.schemas import (
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
-    EvmTransactionHashAdditionSchema,
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeEventsRangeQuerySchema,
@@ -173,6 +172,7 @@ from rotkehlchen.api.v1.schemas import (
     TimestampRangeSchema,
     TransactionDecodingSchema,
     TransactionQuerySchema,
+    TransactionReferenceAdditionSchema,
     UpdateCalendarReminderSchema,
     UpdateCalendarSchema,
     UserActionLoginSchema,
@@ -616,6 +616,27 @@ class LocationLabelsResource(BaseMethodView):
 
 class BlockchainTransactionsResource(BaseMethodView):
     delete_schema = BlockchainTransactionDeletionSchema()
+
+    def make_put_schema(self) -> TransactionReferenceAdditionSchema:
+        return TransactionReferenceAdditionSchema(
+            db=self.rest_api.rotkehlchen.data.db,
+        )
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_put_schema, location='json')
+    def put(
+            self,
+            async_query: bool,
+            blockchain: CHAINS_WITH_TRANSACTIONS_TYPE,
+            tx_ref: EVMTxHash | Signature,
+            associated_address: ChecksumEvmAddress | SolanaAddress,
+    ) -> Response:
+        return self.rest_api.add_transaction_by_reference(
+            async_query=async_query,
+            blockchain=blockchain,
+            tx_ref=tx_ref,
+            associated_address=associated_address,
+        )
 
     def make_post_schema(self) -> TransactionQuerySchema:
         return TransactionQuerySchema(
@@ -2921,29 +2942,6 @@ class EventDetailsResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, identifier: int) -> Response:
         return self.rest_api.get_event_details(identifier=identifier)
-
-
-class EvmTransactionsHashResource(BaseMethodView):
-    def make_put_schema(self) -> EvmTransactionHashAdditionSchema:
-        return EvmTransactionHashAdditionSchema(
-            db=self.rest_api.rotkehlchen.data.db,
-        )
-
-    @require_loggedin_user()
-    @resource_parser.use_kwargs(make_put_schema, location='json')
-    def put(
-            self,
-            async_query: bool,
-            evm_chain: SUPPORTED_CHAIN_IDS,
-            tx_hash: EVMTxHash,
-            associated_address: ChecksumEvmAddress,
-    ) -> Response:
-        return self.rest_api.add_evm_transaction_by_hash(
-            async_query=async_query,
-            evm_chain=evm_chain,
-            tx_hash=tx_hash,
-            associated_address=associated_address,
-        )
 
 
 class AllEvmChainsResource(BaseMethodView):

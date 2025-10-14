@@ -2172,8 +2172,8 @@ Purging locally saved data for exchanges
    :statuscode 409: Exchange is not registered or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-Deleting locally saved blockchain transactions
-=================================================
+Managing blockchain transactions
+==================================
 
 .. http:delete:: /api/(version)/blockchains/transactions
 
@@ -2206,6 +2206,123 @@ Deleting locally saved blockchain transactions
    :statuscode 401: User is not logged.
    :statuscode 409: Other error. Check error message for details.
    :statuscode 500: Internal rotki error
+
+.. http:put:: /api/(version)/blockchains/transactions
+
+   Doing a PUT on this endpoint will add a transaction to the database and associate it with the provided address. Supports EVM chains and Solana.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request (EVM)**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/transactions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "blockchain": "ethereum",
+        "tx_ref": "0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba",
+        "associated_address": "0xb8553D9ee35dd23BB96fbd679E651B929821969B",
+        "async_query": true
+      }
+
+   **Example Request (Solana)**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/transactions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "blockchain": "solana",
+        "tx_ref": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+        "associated_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "async_query": true
+      }
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
+   :reqjson str blockchain: The blockchain name for the transaction to be added (e.g. ``"ethereum"``, ``"optimism"``, ``"solana"``).
+   :reqjson str tx_ref: The transaction reference (hash for EVM chains, signature for Solana) to be added.
+   :reqjson str associated_address: The address to be associated with the transaction. The address must be one that is already tracked by rotki.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   :resjson bool result: It contains a boolean representing the status of the request.
+
+   :statuscode 200: The transaction was saved successfully.
+   :statuscode 400: Provided JSON is in some way malformed. Transaction is already present in DB. Address provided is not tracked by rotki.
+   :statuscode 404: Transaction reference not found for the specified blockchain.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+.. http:post:: /api/(version)/blockchains/transactions
+
+   Doing a POST on the blockchain transactions endpoint will refresh/query blockchain transactions for the specified accounts within the given time range.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/transactions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "async_query": true,
+        "from_timestamp": 1451606400,
+        "to_timestamp": 1571663098,
+        "accounts": [
+          {"address": "0x9531C059098e3d194fF87FebB587aB07B30B1306", "blockchain": "eth"},
+          {"address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12", "blockchain": "optimism"},
+          {"address": "DYH6x4JoTXUUc4GJUcBYv4gPRApbfTsoZEeD318ernQY", "blockchain": "solana"}
+        ]
+      }
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
+   :reqjson int from_timestamp: The timestamp from which to start querying transactions. Given in unix time.
+   :reqjson int to_timestamp: The timestamp until which to query transactions. Given in unix time.
+   :reqjson list[object] accounts: Optional. A list of blockchain account objects. If not provided, transactions for all tracked accounts will be refreshed.
+   :reqjsonarr string address: The address of the account.
+   :reqjsonarr string blockchain: The blockchain of the account (e.g., ``"eth"``, ``"optimism"``, ``"polygon_pos"``, ``"solana"``).
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: Boolean indicating whether the transaction refresh was successful.
+
+   :statuscode 200: Transactions were successfully refreshed.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
 Decode transactions that haven't been decoded yet
@@ -12116,56 +12233,6 @@ Events Details
    :statuscode 404: There is no event with the provided identifier or the event has no details to be returned.
    :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
-
-Add EVM Transaction By Hash
-================================
-
-.. http:put:: /api/(version)/blockchains/evm/transactions/add-hash
-
-   Doing a PUT on this endpoint will add an EVM transaction to the database and associate it with the provided address.
-   .. note::
-   This endpoint can also be queried asynchronously by using ``"async_query": true``.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PUT /api/1/blockchains/evm/transactions/add-hash HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {
-        "evm_chain": "ethereum",
-        "tx_hash": "0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba",
-        "associated_address": "0xb8553D9ee35dd23BB96fbd679E651B929821969B",
-        "async_query": true
-      }
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
-   :reqjson str evm_chain: The name of the evm chain for the transaction to the added e.g. ``"ethereum"``, ``"optimism"`` etc.
-   :reqjson str tx_hash: The hash of the transaction to be added.
-   :reqjson str associated_address: The address to be associated with the transaction. The address must be one that is already tracked by rotki.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": true
-          "message": ""
-      }
-
-   :resjson bool result: It contains a boolean representing the status of the request.
-
-   :statuscode 200: The transaction was saved successfully.
-   :statuscode 400: Provided JSON is in some way malformed. Transaction is already present in DB. Address provided is not tracked by rotki.
-   :statuscode 404: Transaction hash not found for the specified chain.
-   :statuscode 401: No user is currently logged in.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
 Get Binance Savings Interests History
