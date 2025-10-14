@@ -55,6 +55,7 @@ from .tools import SolanaDecoderTools
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.chain.solana.transactions import SolanaTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -68,6 +69,7 @@ log = RotkehlchenLogsAdapter(logger)
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class SolanaDecodingRules:
     address_mappings: dict[SolanaAddress, tuple[Any, ...]]
+    all_counterparties: set['CounterpartyDetails']
 
     def __add__(self, other: 'SolanaDecodingRules') -> 'SolanaDecodingRules':
         if not isinstance(other, SolanaDecodingRules):
@@ -77,6 +79,7 @@ class SolanaDecodingRules:
 
         return SolanaDecodingRules(
             address_mappings=self.address_mappings | other.address_mappings,
+            all_counterparties=self.all_counterparties | other.all_counterparties,
         )
 
 
@@ -99,7 +102,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             tx_mappings_table='solana_tx_mappings',
             chain_name=SupportedBlockchain.SOLANA.name.lower(),
             value_asset=A_SOL.resolve_to_asset_with_oracles(),
-            rules=SolanaDecodingRules(address_mappings={}),
+            rules=SolanaDecodingRules(address_mappings={}, all_counterparties=set()),
             premium=premium,
             base_tools=base_tools,
             misc_counterparties=[],
@@ -137,10 +140,11 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             )
 
         rules.address_mappings.update(new_address_to_decoders)
+        rules.all_counterparties.update(decoder.counterparties())
 
     @staticmethod
     def _load_default_decoding_rules() -> SolanaDecodingRules:
-        return SolanaDecodingRules(address_mappings={})
+        return SolanaDecodingRules(address_mappings={}, all_counterparties=set())
 
     def _get_tx_not_decoded_filter_query(
             self,
