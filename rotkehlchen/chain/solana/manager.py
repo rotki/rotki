@@ -68,14 +68,10 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress]):
         May raise:
         - RemoteError if an external service is queried and there is a problem with its query.
         """
-        response = self.node_inquirer.query(
-            method=lambda client: client.get_multiple_accounts(
-                pubkeys=[Pubkey.from_string(addr) for addr in accounts],
-            ),
-        )
-
         result = {}
-        for account, entry in zip(accounts, response.value, strict=False):
+        for account, entry in self.node_inquirer.get_raw_accounts_info(
+            pubkeys=[Pubkey.from_string(addr) for addr in accounts],
+        ).items():
             if entry is None or entry.lamports == 0:
                 log.debug(f'Found no account entry in balances for solana account {account}. Skipping')  # noqa: E501
                 result[account] = ZERO
