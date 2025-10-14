@@ -11,9 +11,11 @@ withDefaults(defineProps<{
     timestamp: string[];
     location: string[];
   };
+  locations?: string[];
 }>(), {
   dateDisabled: false,
   locationDisabled: false,
+  locations: () => [],
 });
 
 const emit = defineEmits<{
@@ -43,6 +45,7 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="location"
       :disabled="locationDisabled"
       data-cy="location"
+      :items="locations"
       :label="t('common.location')"
       :error-messages="errorMessages.location"
       @blur="emit('blur', 'location')"

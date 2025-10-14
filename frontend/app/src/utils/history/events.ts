@@ -12,6 +12,7 @@ import {
   type HistoryEventEntry,
   type OnlineHistoryEvent,
   type SolanaEvent,
+  type SolanaSwapEvent,
 } from '@/types/history/events/schemas';
 
 export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
@@ -114,6 +115,14 @@ export function isSolanaEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<Sol
     const eventVal = get(event);
     return isSolanaEvent(eventVal) ? eventVal : undefined;
   });
+}
+
+export function isSolanaSwapEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.SOLANA_SWAP_EVENT;
+}
+
+export function isSolanaSwapEvent(event: HistoryEvent): event is SolanaSwapEvent {
+  return isSolanaSwapEventType(event.entryType);
 }
 
 export function isMissingAccountingRule(type: HistoryEventAccountingRuleStatus): boolean {

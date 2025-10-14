@@ -1,6 +1,7 @@
 import type {
   EvmSwapEvent,
   GroupEditableHistoryEvents,
+  SolanaSwapEvent,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
 
@@ -9,7 +10,7 @@ export interface AddEventData {
   nextSequenceId: string;
 }
 
-export interface GroupAddEventData<I extends StandaloneEditableEvents | EvmSwapEvent> {
+export interface GroupAddEventData<I extends StandaloneEditableEvents | EvmSwapEvent | SolanaSwapEvent> {
   type: 'group-add';
   nextSequenceId: string;
   group: I;
@@ -28,7 +29,7 @@ export interface EditGroupEventData<D extends GroupEditableHistoryEvents = Group
 
 export type GroupEventData<
   D extends GroupEditableHistoryEvents = GroupEditableHistoryEvents,
-> = AddEventData | EditGroupEventData<D> | (D extends EvmSwapEvent ? GroupAddEventData<D> : never);
+> = AddEventData | EditGroupEventData<D> | (D extends EvmSwapEvent | SolanaSwapEvent ? GroupAddEventData<D> : never);
 
 export type StandaloneEventData<
   I extends StandaloneEditableEvents = StandaloneEditableEvents,

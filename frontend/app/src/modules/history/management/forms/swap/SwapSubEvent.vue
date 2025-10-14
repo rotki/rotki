@@ -18,6 +18,7 @@ const props = withDefaults(defineProps<{
   timestamp: number;
   location: string;
   single: boolean;
+  solana?: boolean;
 }>(), {
   disabled: false,
 });
@@ -47,7 +48,7 @@ const rules = computed(() => (props.disabled
   : {
       amount: commonRules.createRequiredAmountRule(),
       asset: commonRules.createRequiredAssetRule(),
-      locationLabel: commonRules.createValidEthAddressRule(),
+      locationLabel: props.solana ? commonRules.createValidSolanaAddressRule() : commonRules.createValidEthAddressRule(),
       userNotes: commonRules.createExternalValidationRule(),
     }));
 

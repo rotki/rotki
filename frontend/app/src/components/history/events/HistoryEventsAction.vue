@@ -10,10 +10,15 @@ import type {
   HistoryEvent,
   HistoryEventEntry,
   SolanaEvent,
+  SolanaSwapEvent,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
+import {
+  type DecodableEventType,
+  isEvmSwapEvent,
+  isGroupEditableHistoryEvent,
+} from '@/modules/history/management/forms/form-guards';
 import { toLocationAndTxHash } from '@/utils/history';
 import {
   isEthBlockEvent,
@@ -21,7 +26,7 @@ import {
   isEvmEvent,
   isOnlineHistoryEvent,
   isSolanaEvent,
-  isSolanaEventRef,
+  isSolanaSwapEvent,
 } from '@/utils/history/events';
 
 const props = defineProps<{
@@ -48,12 +53,20 @@ const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
   if (isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) {
     return currentEvent;
   }
+
   return undefined;
 });
 
-const solanaEvent = isSolanaEventRef(event);
+const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
+  const currentEvent = get(event);
+  if (isSolanaSwapEvent(currentEvent) || isSolanaEvent(currentEvent)) {
+    return currentEvent;
+  }
 
-const eventWithDecoding = computed<EvmHistoryEvent | EvmSwapEvent | SolanaEvent | undefined>(() => get(evmEvent) || get(solanaEvent));
+  return undefined;
+});
+
+const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent));
 
 const eventWithTxHash = computed<{ location: string; txHash: string } | undefined>(() => {
   const currentEvent = get(event);
@@ -62,12 +75,14 @@ const eventWithTxHash = computed<{ location: string; txHash: string } | undefine
   if (evm) {
     return evm;
   }
-  else if (solana) {
+
+  if (solana) {
     return {
       location: solana.location,
       txHash: solana.signature,
     };
   }
+
   if (isOnlineHistoryEvent(currentEvent) && 'txHash' in currentEvent && currentEvent.txHash) {
     return {
       location: currentEvent.location,
@@ -90,21 +105,17 @@ function addEvent(event: HistoryEvent) {
 }
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 
-function redecode(event: EthBlockEvent | EvmHistoryEvent | EvmSwapEvent | SolanaEvent) {
-  let data: any;
-
+function redecode(event: EthBlockEvent | DecodableEventType): void {
   if (isEthBlockEvent(event)) {
-    data = [event.blockNumber];
-  }
-  else if (isSolanaEvent(event)) {
-    data = toLocationAndTxHash({ location: event.location, txHash: event.signature });
-  }
-  else {
-    data = toLocationAndTxHash({ location: event.location, txHash: event.txHash });
+    emit('redecode', {
+      data: [event.blockNumber],
+      type: event.entryType,
+    });
+    return;
   }
 
   emit('redecode', {
-    data,
+    data: toLocationAndTxHash(event),
     type: event.entryType,
   });
 }

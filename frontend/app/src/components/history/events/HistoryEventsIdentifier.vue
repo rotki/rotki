@@ -5,7 +5,6 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEventRef,
   isEthBlockEventRef,
-  isSolanaEventRef,
   isWithdrawalEventRef,
 } from '@/utils/history/events';
 
@@ -37,13 +36,22 @@ const translationKey = computed<string>(() => {
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 const assetMovementEvent = isAssetMovementEventRef(event);
-const solanaEvent = isSolanaEventRef(event);
-const transaction = computed<{ location: string; txHash: string } | undefined>(() => {
+const eventWithTxHash = computed<{ location: string; txHash: string } | undefined>(() => {
   const event = props.event;
   if ('txHash' in event && event.txHash) {
     return {
       location: event.location,
       txHash: event.txHash,
+    };
+  }
+  return undefined;
+});
+const solanaEvent = computed<{ location: string; signature: string } | undefined>(() => {
+  const event = props.event;
+  if ('signature' in event && event.signature) {
+    return {
+      location: event.location,
+      signature: event.signature,
     };
   }
   return undefined;
@@ -56,7 +64,7 @@ const assetMovementTransactionId = computed<string | undefined>(() => get(assetM
  * to display a hash event identifier resulting in a numerical display instead.
  */
 const key = computed(() => {
-  if (get(transaction))
+  if (get(eventWithTxHash))
     return 'tx_hash';
   else if (get(blockEvent))
     return 'block';
@@ -106,15 +114,15 @@ const key = computed(() => {
     </template>
 
     <template
-      v-if="transaction || assetMovementTransactionId"
+      v-if="eventWithTxHash || assetMovementTransactionId"
       #txHash
     >
       <HashLink
-        v-if="transaction"
+        v-if="eventWithTxHash"
         :class="$style.wrapper"
-        :text="transaction.txHash"
+        :text="eventWithTxHash.txHash"
         type="transaction"
-        :location="transaction.location"
+        :location="eventWithTxHash.location"
         :truncate-length="is2xlAndUp ? 0 : 8"
       />
       <HashLink

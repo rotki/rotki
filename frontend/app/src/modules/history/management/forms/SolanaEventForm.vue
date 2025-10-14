@@ -5,7 +5,6 @@ import { HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import JsonInput from '@/components/inputs/JsonInput.vue';
@@ -13,9 +12,11 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import { SOLANA_CHAIN } from '@/types/asset';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
 
@@ -39,7 +40,7 @@ const signature = ref<string>('');
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const timestamp = ref<number>(0);
-const location = ref<string>('solana');
+const location = ref<string>(SOLANA_CHAIN);
 const eventType = ref<string>('');
 const eventSubtype = ref<string>('none');
 const asset = ref<string>('');
@@ -220,26 +221,15 @@ defineExpose({
 <template>
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
-      <RuiDateTimePicker
-        v-model="timestamp"
-        :label="t('common.datetime')"
-        persistent-hint
-        max-date="now"
-        color="primary"
-        variant="outlined"
-        accuracy="millisecond"
-        data-cy="datetime"
-        :hint="t('transactions.events.form.datetime.hint')"
-        :error-messages="toMessages(v$.timestamp)"
-        @blur="v$.timestamp.$touch()"
-      />
-      <LocationSelector
-        v-model="location"
-        :disabled="data.type !== 'add'"
-        data-cy="location"
-        :label="t('common.location')"
-        :error-messages="toMessages(v$.location)"
-        @blur="v$.location.$touch()"
+      <EventDateLocation
+        v-model:timestamp="timestamp"
+        v-model:location="location"
+        location-disabled
+        :error-messages="{
+          location: toMessages(v$.location),
+          timestamp: toMessages(v$.timestamp),
+        }"
+        @blur="v$[$event].$touch()"
       />
     </div>
 

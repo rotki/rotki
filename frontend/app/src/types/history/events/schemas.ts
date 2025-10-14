@@ -103,6 +103,16 @@ export const SolanaEventSchema = CommonHistoryEvent.extend({
 
 export type SolanaEvent = z.infer<typeof SolanaEventSchema>;
 
+export const SolanaSwapEventSchema = CommonHistoryEvent.extend({
+  address: z.string().nullable(),
+  counterparty: z.string().nullable(),
+  entryType: z.literal(HistoryEventEntryType.SOLANA_SWAP_EVENT),
+  extraData: z.unknown().nullish(),
+  signature: z.string(),
+});
+
+export type SolanaSwapEvent = z.infer<typeof SolanaSwapEventSchema>;
+
 export const HistoryEvent = z.union([
   EvmHistoryEvent,
   AssetMovementEvent,
@@ -113,9 +123,10 @@ export const HistoryEvent = z.union([
   SwapEventSchema,
   EvmSwapEventSchema,
   SolanaEventSchema,
+  SolanaSwapEventSchema,
 ]);
 
-export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent;
+export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent | SolanaSwapEvent;
 
 export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | SolanaEvent;
 
@@ -249,6 +260,22 @@ export interface EditAssetMovementEventPayload {
 
 export type NewAssetMovementEventPayload = Omit<EditAssetMovementEventPayload, 'identifier'>;
 
+export interface AddSolanaSwapEventPayload {
+  entryType: typeof HistoryEventEntryType.SOLANA_SWAP_EVENT;
+  address?: string;
+  timestamp: number;
+  fee?: SwapSubEventModel[];
+  spend: SwapSubEventModel[];
+  receive: SwapSubEventModel[];
+  counterparty: string;
+  sequenceIndex: string;
+  signature: string;
+}
+
+export interface EditSolanaSwapEventPayload extends AddSolanaSwapEventPayload {
+  identifiers: number[];
+}
+
 export type EditHistoryEventPayload =
   | EditEvmHistoryEventPayload
   | EditOnlineHistoryEventPayload
@@ -267,9 +294,9 @@ export type NewHistoryEventPayload =
   | NewAssetMovementEventPayload
   | NewSolanaEventPayload;
 
-export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload | AddEvmSwapEventPayload;
+export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload | AddEvmSwapEventPayload | AddSolanaSwapEventPayload;
 
-export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload | EditEvmSwapEventPayload;
+export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload | EditEvmSwapEventPayload | EditSolanaSwapEventPayload;
 
 export enum HistoryEventAccountingRuleStatus {
   HAS_RULE = 'has rule',
