@@ -222,6 +222,5 @@ class JupiterDecoder(SolanaDecoderInterface):
         return (CounterpartyDetails(
             identifier=CPT_JUPITER,
             label='Jupiter',
-            image='jupiter_light.png',
-            darkmode_image='jupiter_dark.png',
+            image='jupiter.svg',
         ),)
