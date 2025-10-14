@@ -1259,7 +1259,7 @@
     "show_advanced": "Show advanced options",
     "skip_notification": "Don't notify me until the next update",
     "success": {
-      "description": "The asset database has been successfully updated to version {remoteVersion}. You will now need to re-login to apply the changes",
+      "description": "The asset database has been successfully updated to version {remoteVersion}. rotki will restart the backend and then you can continue.",
       "title": "Asset database update"
     },
     "title": "A supported asset update is available",

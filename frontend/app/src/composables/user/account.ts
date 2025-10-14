@@ -36,7 +36,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { createAccount, login } = useLogin();
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
-  const { canRequestData, checkForAssetUpdate, logged, upgradeVisible } = storeToRefs(authStore);
+  const { canRequestData, logged, upgradeVisible } = storeToRefs(authStore);
   const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
@@ -99,7 +99,6 @@ export function useAccountManagement(): UseAccountManagementReturn {
       // Manual login counts as password confirmation
       await updateSetting({ lastPasswordConfirmed: dayjs().unix() });
       showGetPremiumButton();
-      set(checkForAssetUpdate, true);
       await fetchTransactionStatusSummary();
       await disconnectWallet();
     }
@@ -129,7 +128,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { login } = useLogin();
   const { connected } = storeToRefs(useMainStore());
   const authStore = useSessionAuthStore();
-  const { canRequestData, checkForAssetUpdate, logged, needsPasswordConfirmation, username } = storeToRefs(authStore);
+  const { canRequestData, logged, needsPasswordConfirmation, username } = storeToRefs(authStore);
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumHelper();
   const { getPassword, isPackaged } = useInterop();
@@ -229,7 +228,6 @@ export function useAutoLogin(): UseAutoLoginReturn {
     await checkIfPasswordConfirmationNeeded(savedUsername);
 
     showGetPremiumButton();
-    set(checkForAssetUpdate, true);
     set(canRequestData, true);
   });
 

@@ -2,6 +2,7 @@
 import About from '@/components/About.vue';
 import AppHost from '@/components/app/AppHost.vue';
 import AppMessages from '@/components/app/AppMessages.vue';
+import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
@@ -10,6 +11,7 @@ const { showAbout } = storeToRefs(useAreaVisibilityStore());
 <template>
   <AppHost>
     <AppMessages>
+      <AppUpdatePopup />
       <div :class="$style.overlay">
         <div :class="$style.overlay__scroll">
           <RouterView />

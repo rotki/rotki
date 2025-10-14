@@ -867,10 +867,6 @@
       "title": "Reset assets database"
     },
     "skip_notification": "Don't notify me until the next update",
-    "success": {
-      "description": "The asset database has been successfully updated to version {remoteVersion}. You will now need to re-login to apply the changes",
-      "title": "Asset database update"
-    },
     "title": "A supported asset update is available",
     "total_changes": "This update contains {changes} asset changes.",
     "up_to_version": "Only update up to version"

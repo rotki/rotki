@@ -205,7 +205,7 @@ from rotkehlchen.externalapis.gnosispay import (
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.externalapis.monerium import Monerium, init_monerium
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
+from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY, AssetsUpdater
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.cache import (
     globaldb_delete_general_cache_values,
@@ -3625,7 +3625,16 @@ class RestAPI:
     @async_api_call()
     def get_assets_updates(self) -> dict[str, Any]:
         try:
-            local, remote, new_changes = self.rotkehlchen.assets_updater.check_for_updates()
+            # If no user is logged in, create a temporary AssetsUpdater instance
+            if not hasattr(self.rotkehlchen, 'assets_updater'):
+                assets_updater = AssetsUpdater(
+                    msg_aggregator=self.rotkehlchen.msg_aggregator,
+                    globaldb=GlobalDBHandler(),
+                )
+            else:
+                assets_updater = self.rotkehlchen.assets_updater
+
+            local, remote, new_changes = assets_updater.check_for_updates()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
@@ -3638,13 +3647,24 @@ class RestAPI:
             conflicts: dict[Asset, Literal['remote', 'local']] | None,
     ) -> dict[str, Any]:
         try:
-            result = self.rotkehlchen.assets_updater.perform_update(up_to_version, conflicts)
+            # If no user is logged in, create a temporary AssetsUpdater instance
+            if not hasattr(self.rotkehlchen, 'assets_updater'):
+                assets_updater = AssetsUpdater(
+                    msg_aggregator=self.rotkehlchen.msg_aggregator,
+                    globaldb=GlobalDBHandler(),
+                )
+            else:
+                assets_updater = self.rotkehlchen.assets_updater
+
+            result = assets_updater.perform_update(up_to_version, conflicts)
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         if result is None:
-            with self.rotkehlchen.data.db.user_write() as cursor:
-                self.rotkehlchen.data.db.sync_globaldb_assets(cursor)
+            # Only sync user database if a user is logged in
+            if self.rotkehlchen.user_is_logged_in:
+                with self.rotkehlchen.data.db.user_write() as cursor:
+                    self.rotkehlchen.data.db.sync_globaldb_assets(cursor)
             return OK_RESULT
 
         return {

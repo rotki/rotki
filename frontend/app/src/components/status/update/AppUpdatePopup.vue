@@ -10,7 +10,7 @@ const restarting = ref(false);
 const percentage = ref(0);
 const error = ref('');
 
-const { checkForUpdate, showUpdatePopup } = useUpdateChecker();
+const { showUpdatePopup } = useUpdateChecker();
 const { downloadUpdate, installUpdate, isPackaged } = useInterop();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -54,11 +54,6 @@ async function install() {
     );
   }
 }
-
-onMounted(async () => {
-  if (isPackaged)
-    await checkForUpdate();
-});
 </script>
 
 <template>
