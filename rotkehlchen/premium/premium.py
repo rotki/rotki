@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DOCKER_PLATFORM_KEY: Final = 'docker'
+DOCKER_SHORT_ID_HASH_LENGTH: Final = 12
 KUBERNETES_PLATFORM_KEY: Final = 'kubernetes'
 
 
@@ -189,6 +190,18 @@ def get_kubernetes_pod_name() -> str | None:
     return None
 
 
+def get_podman_container_id(mountinfo: str) -> str | None:
+    """Gets the container ID created by postman when running the rotki image.
+
+    mountinfo has the contents of /proc/self/mountinfo
+    """
+    if (match := re.search(r'(?<=/overlay-containers/)[a-f0-9]{64}(?=/)', mountinfo)):
+        return match.group(0)
+
+    log.debug('No container ID found in /proc/self/mountinfo')
+    return None
+
+
 def extended_get_machine_id(username: str) -> str:
     """Wrapper around machineid.hashed_id that checks the hostname in the case of
     kubernetes being detected in the environment.
@@ -199,10 +212,11 @@ def extended_get_machine_id(username: str) -> str:
     try:
         return machineid.hashed_id(username)
     except machineid.MachineIdNotFound:
-        if (pod_name := get_kubernetes_pod_name()) is not None:
+        if (container_info := check_docker_container()) is not None:
+            container_identifier, _ = container_info
             return hmac.new(
                 key=bytes(username.encode()),
-                msg=pod_name.encode(),
+                msg=container_identifier.encode(),
                 digestmod=hashlib.sha256,
             ).hexdigest()
 
@@ -220,12 +234,17 @@ def check_docker_container() -> tuple[str, str] | None:
         return (pod_name, KUBERNETES_PLATFORM_KEY)
 
     try:
-        data = Path('/proc/self/mountinfo').read_text(encoding='utf-8').strip()
-        if 'docker' in data:
-            match = re.search(r'docker/containers/([a-f0-9]+)/hostname', data)
-            return (match.group(1)[:12], DOCKER_PLATFORM_KEY) if match else None
+        mountinfo = Path('/proc/self/mountinfo').read_text(encoding='utf-8')
     except OSError as e:
-        log.error(f'Failed at open mountinfo file due to {e}')
+        log.error(f'Failed to read /proc/self/mountinfo due to {e}')
+        return None
+
+    if (podman_container_id := get_podman_container_id(mountinfo)) is not None:
+        return (podman_container_id[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY)
+
+    if 'docker' in mountinfo:
+        match = re.search(r'docker/containers/([a-f0-9]+)/hostname', mountinfo)
+        return (match.group(1)[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY) if match else None  # noqa: E501
 
     return None
 
