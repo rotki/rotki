@@ -2986,10 +2986,10 @@ class TypesMappingsResource(BaseMethodView):
         return self.rest_api.get_types_mappings()
 
 
-class EvmCounterpartiesResource(BaseMethodView):
+class CounterpartiesResource(BaseMethodView):
 
     def get(self) -> Response:
-        return self.rest_api.get_evm_counterparties_details()
+        return self.rest_api.get_counterparties_details()
 
 
 class EvmProductsResource(BaseMethodView):

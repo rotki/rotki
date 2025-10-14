@@ -475,7 +475,7 @@ def test_counterparties(rotkehlchen_api_server_with_exchanges: 'APIServer') -> N
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            'evmcounterpartiesresource',
+            'counterpartiesresource',
         ),
     )
     result = assert_proper_sync_response_with_result(response)
@@ -485,6 +485,8 @@ def test_counterparties(rotkehlchen_api_server_with_exchanges: 'APIServer') -> N
         assert 'icon' in counterparty_details or 'image' in counterparty_details
         if counterparty_details['identifier'] == 'gas':
             assert counterparty_details['icon'] == 'lu-flame'
+        elif counterparty_details['identifier'] == 'jupiter':
+            assert counterparty_details['label'] == 'Jupiter'
 
 
 @pytest.mark.parametrize('base_manager_connect_at_start', ['DEFAULT'])

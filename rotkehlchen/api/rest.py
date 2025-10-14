@@ -4714,10 +4714,9 @@ class RestAPI:
             status_code=HTTPStatus.OK,
         )
 
-    def get_evm_counterparties_details(self) -> Response:
-        """
-        Collect the counterparties from decoders in the different evm chains and combine them
-        removing duplicates.
+    def get_counterparties_details(self) -> Response:
+        """Collect the counterparties from decoders in the different EVM chains and Solana,
+        combining them and removing duplicates.
         """
         return api_response(
             result=process_result(

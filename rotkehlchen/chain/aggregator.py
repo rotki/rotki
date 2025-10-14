@@ -91,7 +91,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
     CHAINS_WITH_TRANSACTIONS_TYPE,
-    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
+    CHAINS_WITH_TX_DECODING,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
@@ -1314,13 +1314,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def get_all_counterparties(self) -> set['CounterpartyDetails']:
         """
-        obtain the set of unique counterparties from the decoders across
-        all the chains that have them.
+        Obtain the set of unique counterparties from the decoders across
+        all EVM chains and Solana.
         """
         return reduce(
             operator.or_,
             [
-                self.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties
-                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+                self.get_chain_manager(chain).transactions_decoder.rules.all_counterparties  # type: ignore[attr-defined]
+                for chain in CHAINS_WITH_TX_DECODING
+                if chain != SupportedBlockchain.ZKSYNC_LITE
             ],
         )
