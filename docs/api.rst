@@ -5523,7 +5523,66 @@ Dealing with History Events
          :reqjson string[optional] address: Any relevant address that this event interacted with.
          :reqjson object[optional] extra_data: An object containing any other data to be stored.
 
-   :reqjson string entry_type: The type of the event that will be processed. Different validation is used based on the value for this field. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``, ``"asset movement event"``, ``"swap event"``, ``"evm swap event"``.
+   .. tab:: Solana Swap Event
+
+      **Example Request**:
+
+      .. http:put:: /api/(version)/history/events
+
+         .. http:example:: curl wget httpie python-requests
+
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+                "entry_type": "solana swap event",
+                "timestamp": 1569924575000,
+                "spend": [{
+                    "amount": "100",
+                    "asset": "solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    "user_notes": "Swap 100 USDC",
+                    "location_label": "7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W"
+                }, {
+                    "amount": "0.5",
+                    "asset": "SOL",
+                    "location_label": "8Qp42peZrPfgfORFITw2VEiZsfiyjQOUyDxFTxDVk8Y"
+                }],
+                "receive": [{
+                    "amount": "2.5",
+                    "asset": "solana/token:So11111111111111111111111111111111111111112",
+                    "location_label": "JUP4LHuHiLdG1qZfzN5JYKmZvSd5mE1kEWy1UQ8K8oP"
+                }],
+                "fee": [{
+                    "amount": "0.001",
+                    "asset": "SOL"
+                }],
+                "sequence_index": 0,
+                "signature": "5BeydmN8zcpWknvki96jpQKeVz5Zdm3hS9zfzPY3MQGMPS66RjHHaKYbzt1YQmcUGcFvP8BZsXzSWt9kPDSo4o2t",
+                "counterparty": "jupiter",
+                "address": "7Np41oeYqPefeNQEHSv1UDhYrehxin3NStESwCU85j7W"
+            }
+
+         Sub-event schema (objects in the ``spend``, ``receive``, and ``fee`` lists):
+
+         :reqjson list[int][optional] identifier: Identifier of the existing event (only used when editing).
+         :reqjson string amount: The amounts being spent
+         :reqjson string asset: The identifiers of the assets being spent (e.g. "USD", "BTC")
+         :reqjson string[optional] user_notes: Custom notes for the event
+         :reqjson string[optional] location_label: The user address associated with the event
+
+         Main schema:
+
+         :reqjson string signature: This is the transaction signature of the solana event
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier. This value will be the index of the first event in the swap event group, and other events in the group will be given consecutive indexes after this value.
+         :reqjson list[object] spend: List of spend events. See above for sub-event object specification.
+         :reqjson list[object] receive: List of receive events.
+         :reqjson list[object][optional] fee: List of fee events.
+         :reqjson string[optional] event_identifier: Custom identifier for the event.
+         :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For solana swaps this is the protocol that the swap interacted with.
+         :reqjson string[optional] address: Any relevant address that this event interacted with.
+
+   :reqjson string entry_type: The type of the event that will be processed. Different validation is used based on the value for this field. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``, ``"asset movement event"``, ``"swap event"``, ``"evm swap event"``, ``"solana swap event"``.
    :reqjson int timestamp: The timestamp of the entry **in milliseconds**.
 
    **Example Response**:

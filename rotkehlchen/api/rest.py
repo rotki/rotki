@@ -1078,6 +1078,7 @@ class RestAPI:
             HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
             HistoryBaseEntryType.SWAP_EVENT,
             HistoryBaseEntryType.EVM_SWAP_EVENT,
+            HistoryBaseEntryType.SOLANA_SWAP_EVENT,
         }:
             try:
                 with events_db.db.conn.write_ctx() as write_cursor:
@@ -3834,7 +3835,7 @@ class RestAPI:
             hidden_event_ids: list[int],
     ) -> list[dict[str, Any] | list[dict[str, Any]]]:
         """Serialize and group history events for the api.
-        Groups evm swap and multi trade events into sub-lists. Uses the order defined in
+        Groups evm & solana swap and multi trade events into sub-lists. Uses the order defined in
         EVENT_GROUPING_ORDER to decide which events belong in which group.
 
         Args:
@@ -3862,7 +3863,7 @@ class RestAPI:
                 event_accounting_rule_status=event_accounting_rule_status,
                 grouped_events_num=grouped_events_num,
             )
-            if event.entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT:
+            if event.entry_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT):  # noqa: E501
                 if (event_subtype_index := EVENT_GROUPING_ORDER[event.event_type].get(event.event_subtype)) is None:  # noqa: E501
                     log.error(
                         'Unable to determine group order for event type/subtype '
