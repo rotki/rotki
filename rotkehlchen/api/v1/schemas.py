@@ -111,13 +111,18 @@ from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
-from rotkehlchen.serialization.deserialize import deserialize_btc_tx_id, deserialize_evm_address
+from rotkehlchen.serialization.deserialize import (
+    deserialize_btc_tx_id,
+    deserialize_evm_address,
+    deserialize_solana_address,
+)
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     CHAINS_WITH_TRANSACTIONS,
     CHAINS_WITH_TX_DECODING,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
+    EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_LOCATIONS,
     NON_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS_TYPE,
@@ -3616,10 +3621,16 @@ class EventDetailsQuerySchema(Schema):
     identifier = fields.Integer(required=True)
 
 
-class EvmTransactionHashAdditionSchema(AsyncQueryArgumentSchema):
-    evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
-    tx_hash = EVMTransactionHashField(required=True)
-    associated_address = EvmAddressField(required=True)
+class TransactionReferenceAdditionSchema(AsyncQueryArgumentSchema):
+    blockchain = BlockchainField(
+        required=True,
+        validate=validate.OneOf(
+            choices=EVM_CHAINS_WITH_TRANSACTIONS + (SupportedBlockchain.SOLANA,),
+            error='rotki does not support transactions for {input}',
+        ),
+    )
+    tx_ref = NonEmptyStringField(required=True)
+    associated_address = NonEmptyStringField(required=True)
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -3632,27 +3643,39 @@ class EvmTransactionHashAdditionSchema(AsyncQueryArgumentSchema):
             **_kwargs: Any,
     ) -> None:
         """This validation does the following:
-        - Checks that the `tx_hash` is not present in the db for the specified `evm_chain`.
+        - Checks that the `tx_ref` is not present in the db for the specified `blockchain`.
         - Checks that the `associated_address` is tracked by rotki.
         """
+        blockchain = data['blockchain']
         with self.db.conn.read_ctx() as cursor:
-            tx_count = cursor.execute(
-                'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                (data['tx_hash'], data['evm_chain'].serialize_for_db()),
-            ).fetchone()[0]
+            if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
+                data['tx_ref'] = EVMTransactionHashField.deserialize_string_value(data['tx_ref'])
+                data['associated_address'] = deserialize_evm_address(data['associated_address'])
+                tx_count = cursor.execute(
+                    'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                    (data['tx_ref'], blockchain.to_chain_id().serialize_for_db()),
+                ).fetchone()[0]
+            else:  # can only be solana due to schema validation
+                data['tx_ref'] = SolanaSignatureField.deserialize_string_value(data['tx_ref'])
+                data['associated_address'] = deserialize_solana_address(data['associated_address'])
+                tx_count = cursor.execute(
+                    'SELECT COUNT(*) FROM solana_transactions WHERE signature=?',
+                    (data['tx_ref'].to_bytes(),),
+                ).fetchone()[0]
+
             if tx_count > 0:
                 raise ValidationError(
-                    message=f'tx_hash {data["tx_hash"].hex()} for {data["evm_chain"]} already present in the database',  # noqa: E501
-                    field_name='tx_hash',
+                    message=f'tx_ref {data["tx_ref"]} for {blockchain.serialize()} already present in the database',  # noqa: E501
+                    field_name='tx_ref',
                 )
 
             accounts_count = cursor.execute(
                 'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain=? AND account=?',
-                (data['evm_chain'].to_blockchain().value, data['associated_address']),
+                (blockchain.value, (associated_address := data['associated_address'])),
             ).fetchone()[0]
             if accounts_count == 0:
                 raise ValidationError(
-                    message=f'address {data["associated_address"]} provided is not tracked by rotki for {data["evm_chain"]}',  # noqa: E501
+                    message=f'address {associated_address} provided is not tracked by rotki for {blockchain.serialize()}',  # noqa: E501
                     field_name='associated_address',
                 )
 

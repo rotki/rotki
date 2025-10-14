@@ -22,6 +22,7 @@ from rotkehlchen.db.history_events import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_async_response,
@@ -41,6 +42,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Location,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -139,9 +141,10 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+@pytest.mark.parametrize('solana_accounts', [['4DrfzUpTdNtfr7D1RBVw2WhPshasifw97mH3aj27Skp9']])
 @pytest.mark.parametrize('have_decoders', [[True]])
-def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that adding an evm transaction by hash works as expected."""
+def test_transaction_reference_addition(rotkehlchen_api_server: 'APIServer', solana_accounts: list[SolanaAddress]) -> None:  # noqa: E501
+    """Test that adding a transaction by reference works as expected."""
     is_async_query = random.choice([True, False])
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     tx_hash = '0xf7049668cb7cbb9c00d80092b2dce7ea59984f4c52c83e5c0940535a93f3d5a0'
@@ -178,11 +181,11 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionshashresource',
+            'blockchaintransactionsresource',
         ), json={
             'async_query': is_async_query,
-            'evm_chain': chain_id.to_name(),
-            'tx_hash': tx_hash,
+            'blockchain': (blockchain := str(chain_id.to_blockchain().serialize())),
+            'tx_ref': tx_hash,
             'associated_address': ADDY,
         },
     )
@@ -207,58 +210,58 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
         assert expected_decoded_events == events
 
     # check for errors
-    # use an unsupported evm chain and see that it fails
+    # use an unsupported blockchain and see that it fails
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionshashresource',
+            'blockchaintransactionsresource',
         ), json={
             'async_query': is_async_query,
-            'evm_chain': ChainID.FANTOM.to_name(),
-            'tx_hash': tx_hash,
+            'blockchain': SupportedBlockchain.KUSAMA.serialize(),
+            'tx_ref': tx_hash,
             'associated_address': ADDY,
         },
     )
-    assert_error_response(response, 'Given chain_id fantom is not one of ethereum,optimism,polygon_pos,arbitrum_one,base,gnosis,scroll,binance_sc as needed by the endpoint')  # noqa: E501
+    assert_error_response(response, 'rotki does not support transactions for kusama')
 
     # add an already existing transaction
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionshashresource',
+            'blockchaintransactionsresource',
         ), json={
             'async_query': is_async_query,
-            'evm_chain': chain_id.to_name(),
-            'tx_hash': tx_hash,
+            'blockchain': blockchain,
+            'tx_ref': tx_hash,
             'associated_address': ADDY,
         },
     )
-    assert_error_response(response, f'tx_hash {tx_hash} for {chain_id.to_name()} already present in the database')  # noqa: E501
+    assert_error_response(response, f'tx_ref {tx_hash} for {blockchain} already present in the database')  # noqa: E501
 
     # use an associated address that is not tracked by rotki
     random_address = make_evm_address()
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionshashresource',
+            'blockchaintransactionsresource',
         ), json={
             'async_query': is_async_query,
-            'evm_chain': chain_id.to_name(),
-            'tx_hash': random_tx_hash,
+            'blockchain': blockchain,
+            'tx_ref': random_tx_hash,
             'associated_address': random_address,
         },
     )
-    assert_error_response(response, f'address {random_address} provided is not tracked by rotki for {chain_id.to_name()}')  # noqa: E501
+    assert_error_response(response, f'address {random_address} provided is not tracked by rotki for {blockchain}')  # noqa: E501
 
     # use a tx_hash that does not exist on-chain
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionshashresource',
+            'blockchaintransactionsresource',
         ), json={
             'async_query': is_async_query,
-            'evm_chain': chain_id.to_name(),
-            'tx_hash': random_tx_hash,
+            'blockchain': blockchain,
+            'tx_ref': random_tx_hash,
             'associated_address': ADDY,
         },
     )
@@ -268,6 +271,24 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
         assert_error_async_response(response_data, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
     else:
         assert_error_response(response, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+
+    # Test Solana transaction addition
+    assert assert_proper_response_with_result(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json={
+                'async_query': is_async_query,
+                'blockchain': 'solana',
+                'tx_ref': (solana_signature := '2RrXcP3MMgjjt46SJ34wT4pXKhCV94psPJnZgVyVRkPZpk5JSmCMgFyd1rwKuz3LMTAi3hhay11N41YPtodav81z'),  # noqa: E501
+                'associated_address': solana_accounts[0],
+            },
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=is_async_query,
+    )
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM solana_transactions WHERE signature=?', (deserialize_tx_signature(solana_signature).to_bytes(),)).fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE event_identifier=?', (solana_signature,)).fetchone()[0] == 2  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
