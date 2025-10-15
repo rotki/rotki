@@ -5,24 +5,25 @@ from rotkehlchen.errors.serialization import DeserializationError
 
 KDF_ITER: Final = 64000
 
-KRAKEN_ACCOUNT_TYPE_KEY = 'kraken_account_type'
-BINANCE_MARKETS_KEY = 'binance_selected_trade_pairs'
-USER_CREDENTIAL_MAPPING_KEYS = (KRAKEN_ACCOUNT_TYPE_KEY, BINANCE_MARKETS_KEY)
+KRAKEN_ACCOUNT_TYPE_KEY: Final = 'kraken_account_type'
+OKX_LOCATION_KEY: Final = 'okx_location'
+BINANCE_MARKETS_KEY: Final = 'binance_selected_trade_pairs'
+USER_CREDENTIAL_MAPPING_KEYS: Final = (KRAKEN_ACCOUNT_TYPE_KEY, BINANCE_MARKETS_KEY, OKX_LOCATION_KEY)  # noqa: E501
 
 
 # -- EVM transactions attributes values -- used in evm_tx_mappings
-EVMTX_DECODED = 0
-EVMTX_SPAM = 1
+EVMTX_DECODED: Final = 0
+EVMTX_SPAM: Final = 1
 
 # -- history_events_mappings values --
-HISTORY_MAPPING_KEY_STATE = 'state'
-HISTORY_MAPPING_STATE_CUSTOMIZED = 1
+HISTORY_MAPPING_KEY_STATE: Final = 'state'
+HISTORY_MAPPING_STATE_CUSTOMIZED: Final = 1
 
 
-EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS = 'last_queried_timestamp'
-EVM_ACCOUNTS_DETAILS_TOKENS = 'tokens'
+EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS: Final = 'last_queried_timestamp'
+EVM_ACCOUNTS_DETAILS_TOKENS: Final = 'tokens'
 
-NO_ACCOUNTING_COUNTERPARTY = 'NONE'
+NO_ACCOUNTING_COUNTERPARTY: Final = 'NONE'
 LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[
     'include_gas_costs',
     'include_crypto2crypto',
@@ -65,13 +66,13 @@ class UpdateType(Enum):
 
 
 # Giving a name for history_events.identifier since without it in the free version case https://github.com/rotki/rotki/issues/7362 we were hitting a no such column: history_events.identifier  # noqa: E501
-HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype, extra_data, ignored '  # noqa: E501
-HISTORY_BASE_ENTRY_LENGTH = 13
+HISTORY_BASE_ENTRY_FIELDS: Final = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype, extra_data, ignored '  # noqa: E501
+HISTORY_BASE_ENTRY_LENGTH: Final = 13
 
-EVM_EVENT_FIELDS = 'tx_hash, counterparty, product, address'
-EVM_FIELD_LENGTH = 4
+EVM_EVENT_FIELDS: Final = 'tx_hash, counterparty, product, address'
+EVM_FIELD_LENGTH: Final = 4
 
-ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
-ETH_STAKING_FIELD_LENGTH = 2
+ETH_STAKING_EVENT_FIELDS: Final = 'validator_index, is_exit_or_blocknumber'
+ETH_STAKING_FIELD_LENGTH: Final = 2
 
 EXTRAINTERNALTXPREFIX: Final = 'extrainternaltx'
