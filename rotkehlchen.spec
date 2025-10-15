@@ -9,7 +9,7 @@ from PyInstaller.utils.hooks import collect_submodules
 
 from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location
+from rotkehlchen.types import CHAINS_WITH_TRANSACTION_DECODERS, Location
 from rotkehlchen.utils.misc import get_system_spec
 
 """
@@ -62,7 +62,7 @@ for exchange_name in SUPPORTED_EXCHANGES:
         continue
     hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
 
-for chain in EVM_CHAINS_WITH_TRANSACTIONS:  # load modules from the evm chains
+for chain in CHAINS_WITH_TRANSACTION_DECODERS:  # load modules from the chains that have decoders
     hiddenimports.extend(collect_submodules(f'rotkehlchen.chain.{chain.name.lower()}.modules'))
 
 a = Entrypoint(
