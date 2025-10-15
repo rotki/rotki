@@ -32,7 +32,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_value
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
@@ -76,7 +75,6 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            evm_product=EvmProduct.LENDING,
             leverage_zap=leverage_zap,
         )
         self.vaults: set[ChecksumEvmAddress] = set()
@@ -373,7 +371,6 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Deposit {event.amount} {borrowed_token.symbol} into a leveraged Curve position'  # noqa: E501
                 event.counterparty = CPT_CURVE
-                event.product = self.evm_product
                 event.extra_data = {'controller_address': controller_address}
                 break
 
@@ -387,7 +384,6 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             to_notes=f'Deposit {collateral_amount} {collateral_token.symbol} into a leveraged Curve position',  # noqa: E501
             to_counterparty=CPT_CURVE,
-            to_product=self.evm_product,
             extra_data={'controller_address': controller_address},
         )])
 
@@ -410,7 +406,6 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                     event.address == context.tx_log.address
             ):
                 event.counterparty = CPT_CURVE
-                event.product = EvmProduct.GAUGE
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} into {gauge_asset.symbol}'  # noqa: E501
@@ -430,7 +425,6 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                     event.address == context.tx_log.address
             ):
                 event.counterparty = CPT_CURVE
-                event.product = EvmProduct.GAUGE
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {gauge_asset.symbol}'  # noqa: E501

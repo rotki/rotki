@@ -22,10 +22,9 @@ T = TypeVar('T')  # For transaction receipts/data
 H = TypeVar('H')  # For transaction hashes
 E = TypeVar('E')  # For events
 A = TypeVar('A')  # For addresses
-P = TypeVar('P')  # For product types (EvmProduct, etc.)
 
 
-class BaseDecoderTools(ABC, Generic[T, A, H, E, P]):
+class BaseDecoderTools(ABC, Generic[T, A, H, E]):
     """Base class for chain-agnostic decoder tools providing common state and functionality"""
 
     def __init__(
@@ -114,7 +113,6 @@ class BaseDecoderTools(ABC, Generic[T, A, H, E, P]):
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
-            product: P | None = None,
             address: A | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> E:
@@ -131,7 +129,6 @@ class BaseDecoderTools(ABC, Generic[T, A, H, E, P]):
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
-            product: P | None = None,
             address: A | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> E:
@@ -147,7 +144,6 @@ class BaseDecoderTools(ABC, Generic[T, A, H, E, P]):
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
-            product=product,
             address=address,
             extra_data=extra_data,
         )

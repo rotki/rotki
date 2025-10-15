@@ -17,7 +17,6 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -118,7 +117,6 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
                 event.notes = f'Delegate {stake_amount_norm} GRT to indexer {indexer}'
                 event.counterparty = CPT_THEGRAPH
                 event.extra_data = {'indexer': indexer}
-                event.product = EvmProduct.STAKING
                 deposit_event = event
 
                 # also account for the GRT burnt due to delegation tax

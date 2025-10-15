@@ -2,16 +2,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
-from rotkehlchen.db.schema import (
-    DB_CREATE_CHAIN_EVENTS_INFO,
-    DB_CREATE_EVM_EVENTS_INFO,
-    DB_CREATE_SOLANA_ADDRESS_MAPPINGS,
-    DB_CREATE_SOLANA_TRANSACTIONS,
-    DB_CREATE_SOLANA_TX_ACCOUNT_KEYS,
-    DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS,
-    DB_CREATE_SOLANA_TX_INSTRUCTIONS,
-    DB_CREATE_SOLANA_TX_MAPPINGS,
-)
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -62,27 +52,73 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Add solana transaction tables')
     def _add_solana_transaction_tables(write_cursor: 'DBCursor') -> None:
-        write_cursor.executescript(
-            f'{DB_CREATE_SOLANA_TRANSACTIONS} {DB_CREATE_SOLANA_TX_ACCOUNT_KEYS} '
-            f'{DB_CREATE_SOLANA_TX_INSTRUCTIONS} {DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS} '
-            f'{DB_CREATE_SOLANA_ADDRESS_MAPPINGS} {DB_CREATE_SOLANA_TX_MAPPINGS}',
-        )
+        write_cursor.executescript("""
+            CREATE TABLE IF NOT EXISTS solana_transactions (
+                identifier INTEGER PRIMARY KEY NOT NULL,
+                slot INTEGER NOT NULL,
+                fee INTEGER NOT NULL,
+                block_time INTEGER NOT NULL,
+                success INTEGER NOT NULL CHECK(success IN (0, 1)),
+                signature BLOB NOT NULL UNIQUE
+            );
+            CREATE TABLE IF NOT EXISTS solana_tx_account_keys (
+                tx_id INTEGER NOT NULL,
+                account_index INTEGER NOT NULL,
+                address BLOB NOT NULL,
+                PRIMARY KEY(tx_id, account_index),
+                FOREIGN KEY(tx_id) REFERENCES solana_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS solana_tx_instructions (
+                identifier INTEGER NOT NULL PRIMARY KEY,
+                tx_id INTEGER NOT NULL,
+                execution_index INTEGER NOT NULL,
+                parent_execution_index INTEGER NOT NULL,
+                program_id_index INTEGER NOT NULL,
+                data BLOB,
+                FOREIGN KEY(tx_id) REFERENCES solana_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+                FOREIGN KEY(tx_id, program_id_index) REFERENCES solana_tx_account_keys(tx_id, account_index) ON DELETE CASCADE ON UPDATE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS solana_tx_instruction_accounts (
+                identifier INTEGER NOT NULL PRIMARY KEY,
+                instruction_id INTEGER NOT NULL,
+                account_order INTEGER NOT NULL,
+                account_index INTEGER NOT NULL,
+                tx_id INTEGER NOT NULL,
+                FOREIGN KEY(instruction_id) REFERENCES solana_tx_instructions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+                FOREIGN KEY(tx_id, account_index) REFERENCES solana_tx_account_keys(tx_id, account_index) ON DELETE CASCADE ON UPDATE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS solanatx_address_mappings (
+                tx_id INTEGER NOT NULL,
+                address TEXT NOT NULL,
+                PRIMARY KEY(tx_id, address),
+                FOREIGN KEY(tx_id) REFERENCES solana_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS solana_tx_mappings (
+                tx_id INTEGER NOT NULL,
+                value INTEGER NOT NULL,
+                FOREIGN KEY(tx_id) references solana_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+                PRIMARY KEY (tx_id, value)
+            );
+        """)  # noqa: E501
 
-    @progress_step(description='Split events metadata into chain agnostic and EVM specific tables.')  # noqa: E501
-    def _split_events_info_tables(write_cursor: 'DBCursor') -> None:
+    @progress_step(description='Refactor EVM events metadata table into chain agnostic table.')
+    def _refactor_evm_events_info_table(write_cursor: 'DBCursor') -> None:
         write_cursor.switch_foreign_keys('OFF')
-        write_cursor.execute('ALTER TABLE evm_events_info RENAME TO evm_events_info_old')
-        write_cursor.executescript(f'{DB_CREATE_CHAIN_EVENTS_INFO} {DB_CREATE_EVM_EVENTS_INFO}')
+        write_cursor.executescript("""
+            CREATE TABLE IF NOT EXISTS chain_events_info (
+                identifier INTEGER PRIMARY KEY,
+                tx_ref BLOB NOT NULL,
+                counterparty TEXT,
+                address TEXT,
+                FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+            );
+        """)  # noqa: E501
         write_cursor.execute(
             'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) '
-            'SELECT identifier, tx_hash, counterparty, address FROM evm_events_info_old',
-        )
-        write_cursor.execute(
-            'INSERT INTO evm_events_info(identifier, product) '
-            'SELECT identifier, product FROM evm_events_info_old',
+            'SELECT identifier, tx_hash, counterparty, address FROM evm_events_info',
         )
         write_cursor.switch_foreign_keys('ON')
-        write_cursor.execute('DROP TABLE evm_events_info_old')
+        write_cursor.execute('DROP TABLE evm_events_info')
 
     @progress_step(description='Remove monerium credentials.')
     def _remove_monerium(write_cursor: 'DBCursor') -> None:

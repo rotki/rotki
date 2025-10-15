@@ -23,7 +23,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import (
@@ -116,7 +116,7 @@ def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, Tim
             )
 
 
-def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, EvmProduct, str, dict | None]]) -> None:  # noqa: E501
+def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, str, dict | None]]) -> None:  # noqa: E501
     """Helper function to create EvmEvent fixtures"""
     with db.db.user_write() as write_cursor:
         for entry in data.values():
@@ -132,10 +132,9 @@ def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, T
                     asset=A_ETH,
                     amount=entry[2],
                     counterparty=entry[3],
-                    product=entry[4],
-                    address=string_to_evm_address(entry[5]),
+                    address=string_to_evm_address(entry[4]),
                 ),
-                mapping_values=entry[6],
+                mapping_values=entry[5],
             )
 
 
@@ -166,10 +165,10 @@ def test_read_write_events_from_db(database):
         3: ('TEST3', TimestampMS(3), FVal(3), None),
     }
     evm_data = {  # mapping of identifier to unique data
-        4: (make_evm_tx_hash(), TimestampMS(4), FVal(4), 'gas', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
-        5: (make_evm_tx_hash(), TimestampMS(5), FVal(5), 'liquity', EvmProduct.STAKING, '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
-        6: (make_evm_tx_hash(), TimestampMS(6), FVal(6), 'aave', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe4', None),  # noqa: E501
-        7: (make_evm_tx_hash(), TimestampMS(7), FVal(7), 'compound', EvmProduct.POOL, '0x19222290DD7278Aa3Ddd389Cc1E1d165CC4BAf34', None),  # noqa: E501
+        4: (make_evm_tx_hash(), TimestampMS(4), FVal(4), 'gas', '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
+        5: (make_evm_tx_hash(), TimestampMS(5), FVal(5), 'liquity', '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
+        6: (make_evm_tx_hash(), TimestampMS(6), FVal(6), 'aave', '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe4', None),  # noqa: E501
+        7: (make_evm_tx_hash(), TimestampMS(7), FVal(7), 'compound', '0x19222290DD7278Aa3Ddd389Cc1E1d165CC4BAf34', None),  # noqa: E501
     }
 
     add_history_events_to_db(db, history_data)
@@ -212,8 +211,7 @@ def test_read_write_events_from_db(database):
                         asset=A_ETH,
                         amount=data_entry[2],
                         counterparty=data_entry[3],
-                        product=data_entry[4],
-                        address=data_entry[5],
+                        address=data_entry[4],
                     )
                 assert event == expected_event
 
@@ -232,9 +230,9 @@ def test_read_write_customized_events_from_db(database: DBHandler, entries_limit
 
     tx_hashes = [make_evm_tx_hash() for x in range(5)]
     evm_data = {
-        4: (tx_hashes[0], TimestampMS(4), FVal(4), 'gas', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
-        5: (tx_hashes[1], TimestampMS(5), FVal(5), 'liquity', EvmProduct.STAKING, '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
-        6: (tx_hashes[2], TimestampMS(6), FVal(6), 'aave', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe4', {HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED}),  # noqa: E501
+        4: (tx_hashes[0], TimestampMS(4), FVal(4), 'gas', '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
+        5: (tx_hashes[1], TimestampMS(5), FVal(5), 'liquity', '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
+        6: (tx_hashes[2], TimestampMS(6), FVal(6), 'aave', '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe4', {HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED}),  # noqa: E501
     }
     eth2_data = {
         7: (tx_hashes[3], TimestampMS(7), FVal(6), '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501

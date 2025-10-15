@@ -17,7 +17,6 @@ from rotkehlchen.chain.evm.decoding.thegraph.decoder import ThegraphCommonDecode
 from rotkehlchen.constants.assets import A_GRT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
@@ -80,7 +79,6 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             counterparty=CPT_THEGRAPH,
             address=context.transaction.to_address,
             extra_data={'delegator_l2': delegator_l2, 'indexer_l2': indexer_l2, 'beneficiary': user_address},  # noqa: E501
-            product=EvmProduct.STAKING,
         )
         return EvmDecodingOutput(events=[event])
 

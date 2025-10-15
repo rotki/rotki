@@ -43,7 +43,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
@@ -57,6 +56,7 @@ from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -233,7 +233,6 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_EXTRAFI
                 event.notes = f'Lock {amount} EXTRA until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}'  # noqa: E501
-                event.product = EvmProduct.STAKING
                 break
         else:
             log.error(f'Failed to find lock of EXTRA in {context.transaction}')

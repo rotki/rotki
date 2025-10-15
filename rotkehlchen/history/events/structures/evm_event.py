@@ -1,5 +1,4 @@
 import logging
-from enum import auto
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
@@ -14,7 +13,6 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.types import (
     CHAIN_EVENT_FIELDS_TYPE,
-    EVM_EVENT_FIELDS_TYPE,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -29,11 +27,10 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
-from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
 
-    from rotkehlchen.history.events.structures.types import EVM_EVENT_DB_TUPLE_READ
+    from rotkehlchen.history.events.structures.types import CHAIN_EVENT_DB_TUPLE_READ
 
 
 logger = logging.getLogger(__name__)
@@ -49,16 +46,6 @@ ALL_DETAILS_KEYS = {
 }
 
 
-class EvmProduct(SerializableEnumNameMixin):
-    """The type of EVM product we interact with"""
-    POOL = auto()
-    STAKING = auto()
-    GAUGE = auto()
-    BRIBE = auto()
-    LENDING = auto()
-    MINTING = auto()
-
-
 class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
     """This is a class for storing evm events data and it extends HistoryBaseEntry.
 
@@ -66,11 +53,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     1. counterparty: Optional[str] -- Used to mark the protocol name, for example curve or liquity.
 
-    2. product: Optional[EvmProduct] -- For example if we are interacting with a
-    pool, staking contract
-    or others. This will help when filtering the events adding easier granularity to the searches.
-
-    3. Optional[address]: ChecksumEvmAddress -- If we are working with evm information this would
+    2. Optional[address]: ChecksumEvmAddress -- If we are working with evm information this would
     be the address of the contract. This would help to filter by older versions or limit searches
     to certain subsets of contracts. For example this would help filtering interactions with
     curve gauges.
@@ -93,7 +76,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
             notes: str | None = None,
             identifier: int | None = None,
             counterparty: str | None = None,
-            product: EvmProduct | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
             event_identifier: str | None = None,
@@ -120,7 +102,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
         )
         self.address = address
         self.tx_hash = tx_hash
-        self.product = product
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
@@ -129,7 +110,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
     def _serialize_evm_event_tuple_for_db(self) -> tuple[
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
             tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
-            tuple[str, str, EVM_EVENT_FIELDS_TYPE],
     ]:
         return (
             self._serialize_base_tuple_for_db(),
@@ -141,17 +121,11 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
                     self.address,
                 ),
             ),
-            (
-                'evm_events_info(identifier, product) VALUES (?, ?)',
-                'UPDATE evm_events_info SET product=?',
-                (self.product.serialize() if self.product is not None else None,),
-            ),
         )
 
     def serialize_for_db(self) -> tuple[
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
             tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
-            tuple[str, str, EVM_EVENT_FIELDS_TYPE],
     ]:
         return self._serialize_evm_event_tuple_for_db()
 
@@ -159,7 +133,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
         return HistoryBaseEntry.serialize(self) | {  # not using super() since it has unexpected results due to diamond shaped inheritance.  # noqa: E501
             'tx_hash': self.tx_hash.hex(),
             'counterparty': self.counterparty,
-            'product': self.product.serialize() if self.product is not None else None,
             'address': self.address,
         }
 
@@ -184,7 +157,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     @classmethod
     def deserialize_from_db(cls: type['EvmEvent'], entry: tuple) -> 'EvmEvent':
-        entry = cast('EVM_EVENT_DB_TUPLE_READ', entry)
+        entry = cast('CHAIN_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[7], 'amount', 'evm event')
         return cls(
             identifier=entry[0],
@@ -202,7 +175,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
             tx_hash=deserialize_evm_tx_hash(entry[13]),
             counterparty=entry[14],
             address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
-            product=EvmProduct.deserialize(entry[16]) if entry[16] is not None else None,
         )
 
     def has_details(self) -> bool:
@@ -226,7 +198,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
                 tx_hash=deserialize_evm_tx_hash(data['tx_hash']),
                 address=deserialize_optional(data['address'], string_to_evm_address),
                 counterparty=deserialize_optional(data['counterparty'], str),
-                product=deserialize_optional(data['product'], EvmProduct.deserialize),
             )
         except KeyError as e:
             raise DeserializationError(f'Did not find key {e!s} in Evm Event data') from e
@@ -236,7 +207,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
             HistoryBaseEntry.__eq__(self, other) is True and
             self.counterparty == other.counterparty and  # type: ignore
             self.tx_hash == other.tx_hash and  # type: ignore
-            self.product == other.product and  # type: ignore
             self.address == other.address  # type: ignore
         )
 
@@ -244,7 +214,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
         fields = self._history_base_entry_repr_fields() + [
             f'{self.tx_hash=}',
             f'{self.counterparty=}',
-            f'{self.product=}',
             f'{self.address=}',
         ]
         return f'EvmEvent({", ".join(fields)})'

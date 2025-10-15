@@ -15,7 +15,7 @@ from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount, Location, TimestampMS
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE
-from .evm_event import CHAIN_EVENT_FIELDS_TYPE, EVM_EVENT_FIELDS_TYPE
+from .evm_event import CHAIN_EVENT_FIELDS_TYPE
 
 if TYPE_CHECKING:
     from more_itertools import peekable
@@ -101,10 +101,6 @@ class SwapEvent(HistoryBaseEntry):
         return HistoryBaseEntryType.SWAP_EVENT
 
     def serialize_for_db(self) -> tuple[tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE]] | tuple[
-            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
-            tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
-            tuple[str, str, EVM_EVENT_FIELDS_TYPE],
-    ] | tuple[
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
             tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
     ]:

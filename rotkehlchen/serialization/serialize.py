@@ -39,7 +39,6 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBala
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import (
     EventCategory,
     EventCategoryDetails,
@@ -114,7 +113,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             HistoryEventType |
             HistoryEventSubType |
             EventDirection |
-            EvmProduct |
             DBSettings |
             TxAccountingTreatment |
             EventCategoryDetails |

@@ -16,7 +16,7 @@ from rotkehlchen.chain.optimism.modules.extrafi.constants import EXTRAFI_COMMUNI
 from rotkehlchen.constants.assets import A_ETH, A_OP
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -217,7 +217,6 @@ def test_extrafi_lock_token(
             notes=f'Lock {locked_amount} EXTRA until 21/08/2025 00:00:00',
             counterparty=CPT_EXTRAFI,
             address=VOTE_ESCROW,
-            product=EvmProduct.STAKING,
         ),
     ]
 
@@ -585,7 +584,6 @@ def test_vested_extra_base(base_inquirer, base_accounts):
             notes=f'Lock {locked_amount} EXTRA until 08/08/2024 00:00:00',
             counterparty=CPT_EXTRAFI,
             address=VOTE_ESCROW,
-            product=EvmProduct.STAKING,
         ),
     ]
 

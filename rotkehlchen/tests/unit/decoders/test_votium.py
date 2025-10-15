@@ -5,7 +5,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.votium.constants import CPT_VOTIUM, VOTIUM_CONTRACTS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -48,7 +48,6 @@ def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
             notes=f'Receive {amount} FXS from votium bribe',
             counterparty=CPT_VOTIUM,
             address=VOTIUM_CONTRACTS[0],
-            product=EvmProduct.BRIBE,
         )]
     assert events == expected_events
 
@@ -89,6 +88,5 @@ def test_votium_claim_2(ethereum_inquirer, ethereum_accounts):
             notes=f'Receive {amount} GNO from votium bribe',
             counterparty=CPT_VOTIUM,
             address=VOTIUM_CONTRACTS[1],
-            product=EvmProduct.BRIBE,
         )]
     assert events == expected_events

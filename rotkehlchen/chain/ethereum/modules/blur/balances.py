@@ -13,7 +13,6 @@ from rotkehlchen.chain.ethereum.modules.blur.constants import (
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -45,7 +44,7 @@ class BlurBalances(ProtocolWithBalance):
         balances: BalancesSheetType = defaultdict(BalanceSheet)
 
         # fetch deposit events
-        if len(addresses_with_deposits := list(self.addresses_with_deposits(products=[EvmProduct.STAKING]))) == 0:  # noqa: E501
+        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
             return balances
 
         staking_contract = self.evm_inquirer.contracts.contract(BLUR_STAKING_CONTRACT)

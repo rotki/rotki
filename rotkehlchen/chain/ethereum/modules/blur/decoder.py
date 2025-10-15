@@ -17,7 +17,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -79,7 +78,6 @@ class BlurDecoder(EvmDecoderInterface):
             location_label=user_address,
             notes=f'Stake {stake_amount_norm} BLUR',
             counterparty=CPT_BLUR,
-            product=EvmProduct.STAKING,
             address=BLUR_STAKING_CONTRACT,
         )
         return EvmDecodingOutput(action_items=[action_item], events=[event])

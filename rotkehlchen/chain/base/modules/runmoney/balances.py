@@ -46,7 +46,7 @@ class RunmoneyBalances(ProtocolWithBalance):
 
     def query_balances(self) -> 'BalancesSheetType':
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := list(self.addresses_with_deposits(products=None))) == 0:
+        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
             return balances
 
         try:

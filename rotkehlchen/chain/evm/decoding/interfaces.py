@@ -22,7 +22,6 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
@@ -161,13 +160,6 @@ class EvmDecoderInterface(DecoderInterface['ChecksumEvmAddress', 'EvmNodeInquire
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
             f'try to decode the event again {event.tx_hash.hex()}.',
         )
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        """Returns a mapping of counterparty to possible evmproducts associated with it
-        for the decoder.
-        """
-        return {}
 
 
 VOTE_CAST_WITH_PARAMS: Final = b'\xe2\xba\xbf\xba\xc5\x88\x9ap\x9bc\xbb\x7fY\x8b2N\x08\xbcZO\xb9\xecd\x7f\xb3\xcb\xc9\xec\x07\xeb\x87\x12'  # noqa: E501

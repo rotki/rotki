@@ -10,7 +10,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -99,7 +99,6 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             location_label=user_address,
             counterparty=CPT_AERODROME,
             address=WSTETH_POOL_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Deposit {deposited_wsteth} wstETH in aerodrome pool {WSTETH_POOL_ADDRESS}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -113,7 +112,6 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             location_label=user_address,
             counterparty=CPT_AERODROME,
             address=WSTETH_POOL_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Deposit {deposited_weth} WETH in aerodrome pool {WSTETH_POOL_ADDRESS}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -127,7 +125,6 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             location_label=user_address,
             counterparty=CPT_AERODROME,
             address=ZERO_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Receive {received_amount} vAMM-WETH/wstETH after depositing in aerodrome pool {WSTETH_POOL_ADDRESS}',  # noqa: E501
         ),
     ]
@@ -187,7 +184,6 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
             counterparty=CPT_AERODROME,
             address=WSTETH_GAUGE_ADDRESS,
             notes=f'Deposit {deposited_amount} vAMM-WETH/wstETH into {WSTETH_GAUGE_ADDRESS} aerodrome gauge',  # noqa: E501
-            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events
@@ -250,7 +246,6 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             location_label=user_address,
             counterparty=CPT_AERODROME,
             address=pool_address,
-            product=EvmProduct.POOL,
             notes=f'Return {lp_amount} vAMM-AERO/USDbC',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -264,7 +259,6 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             location_label=user_address,
             counterparty=CPT_AERODROME,
             address=pool_address,
-            product=EvmProduct.POOL,
             notes=f'Remove {aero_amount} AERO from aerodrome pool {pool_address}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -278,7 +272,6 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             location_label=user_address,
             counterparty=CPT_AERODROME,
             address=pool_address,
-            product=EvmProduct.POOL,
             notes=f'Remove {usdbc_amount} USDbC from aerodrome pool {pool_address}',
         ),
     ]

@@ -19,8 +19,6 @@ from rotkehlchen.db.constants import (
     CHAIN_FIELD_LENGTH,
     ETH_STAKING_EVENT_FIELDS,
     ETH_STAKING_FIELD_LENGTH,
-    EVM_EVENT_FIELDS,
-    EVM_FIELD_LENGTH,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
@@ -29,7 +27,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
-    EVM_EVENT_JOIN,
+    EVENTS_WITH_COUNTERPARTY_JOIN,
     EthDepositEventFilterQuery,
     EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
@@ -393,7 +391,7 @@ class DBHistoryEvents:
         """Returns the EVM event with the given identifier"""
         with self.db.conn.read_ctx() as cursor:
             event_data = cursor.execute(
-                f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE history_events.identifier=? AND entry_type=?',  # noqa: E501
+                f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS} {EVENTS_WITH_COUNTERPARTY_JOIN} WHERE history_events.identifier=? AND entry_type=?',  # noqa: E501
                 (identifier, HistoryBaseEntryType.EVM_EVENT.value),
             ).fetchone()
             if event_data is None:
@@ -416,7 +414,7 @@ class DBHistoryEvents:
             match_exact_events: bool = True,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
-        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
         if group_by_event_ids:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
@@ -664,7 +662,7 @@ class DBHistoryEvents:
                 if entry_type == HistoryBaseEntryType.EVM_EVENT:
                     data = (
                         entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +
-                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH + 1]    # noqa: E501
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + 1]    # noqa: E501
                     )
                     deserialized_event = EvmEvent.deserialize_from_db(data)
                 elif entry_type in (
@@ -677,7 +675,7 @@ class DBHistoryEvents:
                         location_label_tuple +
                         entry[data_start_idx + 7:data_start_idx + 8] +
                         entry[data_start_idx + 10:data_start_idx + 12] +
-                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH + 1]  # noqa: E501
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH + 1]  # noqa: E501
                     )
                     if entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
                         deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
@@ -698,7 +696,7 @@ class DBHistoryEvents:
                         entry[data_start_idx + 5:data_start_idx + 6] +
                         entry[data_start_idx + 7:data_start_idx + 9] +
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +  # noqa: E501
-                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + 1]  # noqa: E501
                     )
                     deserialized_event = EthDepositEvent.deserialize_from_db(data)
                 elif entry_type == HistoryBaseEntryType.SOLANA_EVENT:

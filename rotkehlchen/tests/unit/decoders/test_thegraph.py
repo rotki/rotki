@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_GRT, A_GRT_ARB
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -75,7 +75,6 @@ def test_thegraph_delegate(ethereum_inquirer):
             counterparty=CPT_THEGRAPH,
             address=CONTRACT_STAKING,
             extra_data={'indexer': indexer_address},
-            product=EvmProduct.STAKING,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=360,
@@ -211,7 +210,6 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer
             tx_hash=tx_hash,
             counterparty=CPT_THEGRAPH,
             address=contract,
-            product=EvmProduct.STAKING,
             extra_data={'delegator_l2': delegator_l2, 'indexer_l2': indexer_l2, 'beneficiary': ADDY_ROTKI},  # noqa: E501
         ),
     ]
@@ -266,7 +264,6 @@ def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
             tx_hash=tx_hash,
             counterparty=CPT_THEGRAPH,
             address=CONTRACT_STAKING,
-            product=EvmProduct.STAKING,
             extra_data={'delegator_l2': delegator_l2, 'indexer_l2': indexer_l2, 'beneficiary': ADDY_ROTKI},  # noqa: E501
         ),
     ]
@@ -403,7 +400,6 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
             counterparty=CPT_THEGRAPH,
             address=CONTRACT_STAKING_ARB,
             extra_data={'indexer': indexer_address},
-            product=EvmProduct.STAKING,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=60,

@@ -45,7 +45,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
@@ -133,7 +132,6 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Deposit {event.amount} {crypto_asset.symbol} in {self.counterparty} pool {event.address}'  # noqa: E501
-                event.product = EvmProduct.POOL
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -142,7 +140,6 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Receive {event.amount} {crypto_asset.symbol} after depositing in {self.counterparty} pool {tx_log.address}'  # noqa: E501
-                event.product = EvmProduct.POOL
                 GlobalDBHandler.set_tokens_protocol_if_missing(
                     tokens=[event.asset.resolve_to_evm_token()],
                     new_protocol=self.counterparty,
@@ -166,7 +163,6 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Return {event.amount} {crypto_asset.symbol}'
-                event.product = EvmProduct.POOL
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -176,7 +172,6 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Remove {event.amount} {crypto_asset.symbol} from {self.counterparty} pool {tx_log.address}'  # noqa: E501
-                event.product = EvmProduct.POOL
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -260,7 +255,6 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.amount == asset_normalized_value(amount=raw_amount, asset=crypto_asset)
             ):
                 event.counterparty = self.counterparty
-                event.product = EvmProduct.GAUGE
                 found_event_modifying_balances = True
                 if context.tx_log.topics[0] == GAUGE_DEPOSIT_V2:
                     event.event_type = HistoryEventType.DEPOSIT

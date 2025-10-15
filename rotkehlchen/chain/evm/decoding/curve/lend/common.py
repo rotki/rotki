@@ -27,7 +27,6 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -54,7 +53,6 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
             evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            evm_product: Literal[EvmProduct.LENDING, EvmProduct.MINTING],
             leverage_zap: 'ChecksumEvmAddress | None' = None,
     ) -> None:
         """Decoder for Curve borrow/repay events.
@@ -68,7 +66,6 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
         )
         self.controllers: set[ChecksumEvmAddress] = set()  # populated via reload_data in subclasses  # noqa: E501
         self.leverage_zap = leverage_zap
-        self.evm_product = evm_product
 
     def _maybe_get_cached_address_from_contract(
             self,
@@ -201,7 +198,6 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.notes = f'Borrow {borrowed_amount} {borrowed_token.symbol} from Curve'
                 event.counterparty = CPT_CURVE
-                event.product = self.evm_product
                 event.extra_data = {'controller_address': context.tx_log.address}
                 in_event = event
 
@@ -234,7 +230,6 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 to_notes=f'Borrow {borrowed_amount} {borrowed_token.symbol} from Curve',
                 to_counterparty=CPT_CURVE,
-                to_product=self.evm_product,
                 extra_data={'controller_address': context.tx_log.address},
             ),
         ])

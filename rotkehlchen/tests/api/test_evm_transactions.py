@@ -13,12 +13,8 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.constants import CHAIN_EVENT_FIELDS
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.db.history_events import (
-    EVM_EVENT_FIELDS,
-    EVM_EVENT_JOIN,
-    HISTORY_BASE_ENTRY_FIELDS,
-)
+from rotkehlchen.db.filtering import EVENTS_WITH_COUNTERPARTY_JOIN, EvmTransactionsFilterQuery
+from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -205,7 +201,7 @@ def test_transaction_reference_addition(rotkehlchen_api_server: 'APIServer', sol
             address=ADDY,
             transaction_should_exist=True,
         )
-        cursor.execute(f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE tx_ref=?', (hexstring_to_bytes(tx_hash),))  # noqa: E501
+        cursor.execute(f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS} {EVENTS_WITH_COUNTERPARTY_JOIN} WHERE tx_ref=?', (hexstring_to_bytes(tx_hash),))  # noqa: E501
         events = [EvmEvent.deserialize_from_db(entry[1:]) for entry in cursor]
         assert expected_decoded_events == events
 

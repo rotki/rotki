@@ -13,7 +13,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -51,7 +50,7 @@ class HopBalances(ProtocolWithBalance):
         4. Converts balances and rewards to USD and updates the balance sheet.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := self.addresses_with_deposits(products=[EvmProduct.STAKING])) == 0:  # noqa: E501
+        if len(addresses_with_deposits := self.addresses_with_deposits()) == 0:
             return balances
 
         # Group addresses by staking contract

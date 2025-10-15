@@ -211,7 +211,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     get_event_type_identifier,
 )
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import (
     generate_events_export_filename,
@@ -4745,31 +4745,6 @@ class RestAPI:
                     result=list(self.rotkehlchen.chains_aggregator.get_all_counterparties()),
                 ),
             ),
-            status_code=HTTPStatus.OK,
-        )
-
-    def get_evm_products(self) -> Response:
-        """
-        Collect the mappings of counterparties to the products they list
-        """
-        products_mappings: dict[str, list[EvmProduct]] = {}
-        for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
-            decoder_products = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.get_decoders_products()  # noqa: E501
-            for decoder, products in decoder_products.items():
-                if decoder in products_mappings:
-                    for product in products:
-                        # checking if it's not already in the list to avoid overwriting the existing list  # noqa: E501
-                        if product not in products_mappings[decoder]:
-                            products_mappings[decoder].append(product)
-                else:
-                    products_mappings[decoder] = products
-        return api_response(
-            result=process_result(_wrap_in_ok_result(
-                {
-                    'mappings': products_mappings,
-                    'products': [product.serialize() for product in EvmProduct],
-                },
-            )),
             status_code=HTTPStatus.OK,
         )
 

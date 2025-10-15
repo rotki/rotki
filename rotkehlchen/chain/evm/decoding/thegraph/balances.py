@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -47,7 +47,8 @@ class ThegraphCommonBalances(ProtocolWithBalance):
     def _get_staking_events(self, location: Location | None = None) -> list[EvmEvent] | None:
         db_filter = EvmEventFilterQuery.make(
             counterparties=[self.counterparty],
-            products=[EvmProduct.STAKING],
+            event_types=[HistoryEventType.STAKING, HistoryEventType.INFORMATIONAL],
+            event_subtypes=[HistoryEventSubType.DEPOSIT_ASSET, HistoryEventSubType.NONE],
             location=location,
         )
         with self.event_db.db.conn.read_ctx() as cursor:
@@ -56,6 +57,7 @@ class ThegraphCommonBalances(ProtocolWithBalance):
                     filter_query=db_filter,
             )) == 0:
                 return None
+
         return events
 
     def process_staking_events(

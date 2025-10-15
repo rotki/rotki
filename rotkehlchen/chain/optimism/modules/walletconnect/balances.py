@@ -43,7 +43,7 @@ class WalletconnectBalances(ProtocolWithBalance):
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         wct_token = Asset(WCT_TOKEN_ID)
         wct_price = Inquirer.find_usd_price(Asset(WCT_TOKEN_ID))
-        for address, events in self.addresses_with_deposits(products=None).items():
+        for address, events in self.addresses_with_deposits().items():
             amount = ZERO
             for event in events:
                 if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.asset == wct_token:  # noqa: E501

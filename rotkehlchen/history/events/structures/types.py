@@ -10,12 +10,7 @@ CHAIN_EVENT_FIELDS_TYPE = tuple[
     str | None,  # address
 ]
 
-EVM_EVENT_FIELDS_TYPE = tuple[
-    str | None,  # product
-]
-
-
-EVM_EVENT_DB_TUPLE_READ = tuple[
+CHAIN_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
     str,            # event_identifier
     int,            # sequence_index
@@ -30,26 +25,6 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
     str | None,     # extra_data
     int,            # ignored
     bytes,          # tx_hash
-    str,            # address
-    str | None,  # counterparty
-    str | None,  # product
-]
-
-SOLANA_EVENT_DB_TUPLE_READ = tuple[
-    int,            # identifier
-    str,            # event_identifier
-    int,            # sequence_index
-    int,            # timestamp
-    str,            # location
-    str | None,  # location label
-    str,            # asset
-    str,            # amount
-    str | None,  # notes
-    str,            # type
-    str,            # subtype
-    str | None,     # extra_data
-    int,            # ignored
-    bytes,          # signature
     str,            # address
     str | None,  # counterparty
 ]

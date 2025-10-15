@@ -56,11 +56,11 @@ class VelodromeLikeBalances(ProtocolWithGauges):
         self.voting_escrow_address = voting_escrow_address
 
     def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
-        return event.address
+        return event.address if event.asset != self.protocol_token else None
 
     def query_balances(self) -> BalancesSheetType:
         balances = super().query_balances()
-        if len(addresses_with_deposits := self.addresses_with_deposits(products=None)) == 0:
+        if len(addresses_with_deposits := self.addresses_with_deposits()) == 0:
             return balances
 
         addresses_to_token_ids = {

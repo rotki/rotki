@@ -14,7 +14,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import (
     AddressbookEntry,
@@ -144,7 +144,6 @@ def make_ethereum_event(
         event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
         timestamp: TimestampMS = ZERO_TIMESTAMP_MS,
         address: ChecksumEvmAddress | None = None,
-        product: EvmProduct | None = None,
 ) -> EvmEvent:
     if tx_hash is None:
         tx_hash = make_random_bytes(32)
@@ -161,7 +160,6 @@ def make_ethereum_event(
         amount=ONE,
         counterparty=counterparty,
         address=address,
-        product=product,
     )
 
 

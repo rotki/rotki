@@ -34,7 +34,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants.assets import A_WETH, A_WETH_ARB, A_WETH_OPT
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
@@ -252,7 +251,6 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_GEARBOX
-                event.product = EvmProduct.STAKING
                 event.notes = f'Stake {amount} GEAR'
                 break
         else:
@@ -276,7 +274,6 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_GEARBOX
-                event.product = EvmProduct.STAKING
                 event.notes = f'Unstake {amount} GEAR'
                 break
         else:
@@ -323,12 +320,6 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
 
     def enricher_rules(self) -> list[Callable]:
         return [self._maybe_enrich_gearbox_claims]
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {
-            CPT_GEARBOX: [EvmProduct.STAKING],
-        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

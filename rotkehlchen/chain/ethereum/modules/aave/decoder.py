@@ -14,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_AAVE
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -77,7 +76,6 @@ class AaveDecoder(EvmDecoderInterface):
                 event.notes = f'Claim {amount} AAVE from staking'
                 if from_address != to_address:
                     event.notes += f' for {to_address}'
-                event.product = EvmProduct.STAKING
                 event.counterparty = CPT_AAVE
                 event.address = STK_AAVE_ADDR
                 break
@@ -108,7 +106,6 @@ class AaveDecoder(EvmDecoderInterface):
                 event.notes = f'Stake {amount} AAVE'
                 if from_address != to_address:
                     event.notes += f' for {to_address}'
-                event.product = EvmProduct.STAKING
                 event.counterparty = CPT_AAVE
                 out_event = event
             elif (
@@ -148,7 +145,6 @@ class AaveDecoder(EvmDecoderInterface):
                 event.notes = f'Unstake {amount} stkAAVE'
                 if from_address != to_address:
                     event.notes += f' for {to_address}'
-                event.product = EvmProduct.STAKING
                 event.counterparty = CPT_AAVE
             elif (
                 event.event_type == HistoryEventType.RECEIVE and

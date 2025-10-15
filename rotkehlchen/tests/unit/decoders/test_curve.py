@@ -39,7 +39,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
@@ -872,7 +872,6 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
             notes='Reset vote for 0x740BA8aa0052E07b925908B380248cb03f3DE5cB curve gauge',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x740BA8aa0052E07b925908B380248cb03f3DE5cB'),
-            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events
@@ -931,7 +930,6 @@ def test_gauge_deposit(
             notes='Deposit 7985.261401730774426743 crvPlain3andSUSD into 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
-            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events
@@ -975,7 +973,6 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_gl
             notes='Withdraw 37939.72737243936267785 crvPlain3andSUSD from 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
-            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events
@@ -1893,7 +1890,6 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, 
             notes=f'Deposit {deposit_amount} 3CRV-OP into {gauge_address} curve gauge',
             counterparty=CPT_CURVE,
             address=string_to_evm_address(gauge_address),
-            product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -1970,7 +1966,6 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
             notes=f'Withdraw {withdraw_amount} crvUSDsDAI from {gauge_address} curve gauge',
             counterparty=CPT_CURVE,
             address=string_to_evm_address(gauge_address),
-            product=EvmProduct.GAUGE,
         ),
     ]
     assert expected_events == events
@@ -2336,7 +2331,6 @@ def test_gauge_deposit_and_stake(gnosis_inquirer, gnosis_accounts, load_global_c
             notes=f'Deposit {deposited_amount} EURe into {gauge_address} curve gauge',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD'),
-            product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -2392,7 +2386,6 @@ def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load
             notes=f'Deposit {deposited_eur} EURe into {gauge_address} curve gauge',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD'),
-            product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -2406,7 +2399,6 @@ def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load
             notes=f'Deposit {deposited_usdc} USDC into {gauge_address} curve gauge',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD'),
-            product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=3,
@@ -2596,7 +2588,6 @@ def test_deposit_order(gnosis_inquirer, gnosis_accounts, load_global_caches):
             notes=f'Deposit {deposited_eure} EURe into {gauge_address} curve gauge',
             counterparty=CPT_CURVE,
             address=contract,
-            product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=12,
@@ -2610,7 +2601,6 @@ def test_deposit_order(gnosis_inquirer, gnosis_accounts, load_global_caches):
             notes=f'Deposit {deposited_usdc} USDC into {gauge_address} curve gauge',
             counterparty=CPT_CURVE,
             address=contract,
-            product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=13,

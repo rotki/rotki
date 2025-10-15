@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -753,7 +753,6 @@ def test_gearbox_staking(
             notes=f'Stake {stake_amount} GEAR',
             tx_hash=tx_hash,
             counterparty=CPT_GEARBOX,
-            product=EvmProduct.STAKING,
             address=GEAR_STAKING_CONTRACT,
         ),
     ]
@@ -794,7 +793,6 @@ def test_gearbox_unstaking(
             notes=f'Unstake {stake_amount} GEAR',
             tx_hash=tx_hash,
             counterparty=CPT_GEARBOX,
-            product=EvmProduct.STAKING,
             address=GEAR_STAKING_CONTRACT,
         ),
     ]

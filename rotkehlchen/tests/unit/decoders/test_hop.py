@@ -22,7 +22,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_value
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -1045,7 +1045,6 @@ def test_hop_stake(
             notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
             tx_hash=tx_hash,
             counterparty=CPT_HOP,
-            product=EvmProduct.STAKING,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ), EvmEvent(
             sequence_index=2,
@@ -1103,7 +1102,6 @@ def test_hop_stake_2(
             notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
             tx_hash=tx_hash,
             counterparty=CPT_HOP,
-            product=EvmProduct.STAKING,
             address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
         ), EvmEvent(
             sequence_index=44,
@@ -1341,7 +1339,6 @@ def test_hop_stake_gnosis(
             notes=f'Stake {stake_amount} HOP-LP-USDT in Hop',
             tx_hash=tx_hash,
             counterparty=CPT_HOP,
-            product=EvmProduct.STAKING,
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ), EvmEvent(
             sequence_index=2002,

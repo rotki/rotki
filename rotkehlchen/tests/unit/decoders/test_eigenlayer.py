@@ -26,7 +26,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.eigenlayer import add_create_eigenpod_event
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -79,7 +79,6 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Deposit {deposited_amount} swETH in EigenLayer',
         counterparty=CPT_EIGENLAYER,
         extra_data={'strategy': strategy_addr},
-        product=EvmProduct.STAKING,
         address=strategy_addr,
     )]
     assert events == expected_events
@@ -117,7 +116,6 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Unstake {withdrawn_amount} swETH from EigenLayer',
         counterparty=CPT_EIGENLAYER,
-        product=EvmProduct.STAKING,
         address=strategy_addr,
     )]
     assert events == expected_events
@@ -239,7 +237,6 @@ def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
         notes=f'Deposit {staked_amount} EIGEN in EigenLayer',
         counterparty=CPT_EIGENLAYER,
         extra_data={'strategy': strategy_addr},
-        product=EvmProduct.STAKING,
         address=strategy_addr,
     )]
     assert events == expected_events

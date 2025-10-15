@@ -41,7 +41,7 @@ class OctantBalances(ProtocolWithBalance):
         balances: BalancesSheetType = defaultdict(BalanceSheet)
 
         # fetch deposit events
-        addresses_with_deposits = list(self.addresses_with_deposits(products=None))
+        addresses_with_deposits = list(self.addresses_with_deposits())
 
         deposits_contract = self.evm_inquirer.contracts.contract(OCTANT_DEPOSITS)
         try:
