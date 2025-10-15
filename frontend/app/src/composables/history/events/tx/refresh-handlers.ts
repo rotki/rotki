@@ -81,7 +81,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
 
   const queryExchange = async (payload: Exchange): Promise<void> => {
     logger.debug(`querying exchange events for ${payload.location} (${payload.name})`);
-    const exchange = omit(payload, ['krakenAccountType']);
+    const exchange = omit(payload, ['krakenAccountType', 'okxLocation']);
     const taskType = TaskType.QUERY_EXCHANGE_EVENTS;
     const taskMeta = {
       description: t('actions.exchange_events.task.description', exchange),
