@@ -90,8 +90,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
+    CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS_TYPE,
-    CHAINS_WITH_TX_DECODING,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
@@ -1321,7 +1321,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             operator.or_,
             [
                 self.get_chain_manager(chain).transactions_decoder.rules.all_counterparties  # type: ignore[attr-defined]
-                for chain in CHAINS_WITH_TX_DECODING
-                if chain != SupportedBlockchain.ZKSYNC_LITE
+                for chain in CHAINS_WITH_TRANSACTION_DECODERS
             ],
         )
