@@ -143,7 +143,7 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     QueryAddressbookSchema,
     QueryCalendarSchema,
-    RefetchEvmTransactionsSchema,
+    RefetchTransactionsSchema,
     RefreshProtocolDataSchema,
     ResolveEnsSchema,
     ReverseEnsSchema,
@@ -239,9 +239,9 @@ from rotkehlchen.serialization.schemas import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
     CHAINS_WITH_TRANSACTIONS_TYPE,
     CHAINS_WITH_TX_DECODING_TYPE,
-    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -3405,10 +3405,10 @@ class HistoricalPricesPerAssetResource(BaseMethodView):
         )
 
 
-class RefetchEvmTransactionsResource(BaseMethodView):
+class RefetchTransactionsResource(BaseMethodView):
 
-    def make_post_schema(self) -> RefetchEvmTransactionsSchema:
-        return RefetchEvmTransactionsSchema(db=self.rest_api.rotkehlchen.data.db)
+    def make_post_schema(self) -> RefetchTransactionsSchema:
+        return RefetchTransactionsSchema(db=self.rest_api.rotkehlchen.data.db)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_post_schema, location='json')
@@ -3417,12 +3417,12 @@ class RefetchEvmTransactionsResource(BaseMethodView):
             async_query: bool,
             to_timestamp: Timestamp,
             from_timestamp: Timestamp,
-            address: ChecksumEvmAddress | None = None,
-            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE | None = None,
+            chain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
+            address: ChecksumEvmAddress | SolanaAddress | None = None,
     ) -> Response:
-        return self.rest_api.force_refetch_evm_transactions(
+        return self.rest_api.force_refetch_transactions(
             address=address,
-            evm_chain=evm_chain,
+            chain=chain,
             async_query=async_query,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,

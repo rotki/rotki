@@ -118,6 +118,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS,
     CHAINS_WITH_TX_DECODING,
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -3620,7 +3621,7 @@ class TransactionReferenceAdditionSchema(AsyncQueryArgumentSchema):
     blockchain = BlockchainField(
         required=True,
         validate=validate.OneOf(
-            choices=EVM_CHAINS_WITH_TRANSACTIONS + (SupportedBlockchain.SOLANA,),
+            choices=CHAINS_WITH_TRANSACTION_DECODERS,
             error='rotki does not support transactions for {input}',
         ),
     )
@@ -4280,11 +4281,11 @@ class RefreshProtocolDataSchema(AsyncQueryArgumentSchema):
     )
 
 
-class RefetchEvmTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
-    address = EvmAddressField(load_default=None)
-    evm_chain = EvmChainNameField(
-        load_default=None,
-        limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS),
+class RefetchTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
+    address = EmptyAsNoneStringField(load_default=None)
+    chain = BlockchainField(
+        required=True,
+        allow_only=CHAINS_WITH_TRANSACTION_DECODERS,
     )
 
     def __init__(self, db: 'DBHandler') -> None:
@@ -4304,15 +4305,25 @@ class RefetchEvmTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchem
             )
 
         if (address := data['address']) is not None:
-            with self.db.conn.read_ctx() as cursor:
-                query, bindings = 'SELECT COUNT(*) FROM blockchain_accounts WHERE account=?', [address]  # noqa: E501
-                if (evm_chain := data['evm_chain']) is not None:
-                    query += ' AND blockchain=?'
-                    bindings.append(evm_chain.to_blockchain().value)
+            for deserialize_fn in (deserialize_evm_address, deserialize_solana_address):
+                try:
+                    data['address'] = deserialize_fn(address)
+                    break
+                except DeserializationError:
+                    continue
+            else:
+                raise ValidationError(
+                    message=f'Given value {address} is not a valid EVM or Solana address',
+                    field_name='address',
+                )
 
-                if cursor.execute(query, bindings).fetchone()[0] == 0:
+            with self.db.conn.read_ctx() as cursor:
+                if cursor.execute(
+                    'SELECT COUNT(*) FROM blockchain_accounts WHERE account=? AND blockchain=?',
+                    (address, (chain := data['chain']).value),
+                ).fetchone()[0] == 0:
                     raise ValidationError(
-                        message=f'Account {address} with chain {evm_chain.to_name()} is not tracked by rotki',  # noqa: E501
+                        message=f'Account {address} with chain {chain.name.lower()} is not tracked by rotki',  # noqa: E501
                         field_name='address',
                     )
 

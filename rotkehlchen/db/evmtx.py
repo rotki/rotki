@@ -671,7 +671,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             return None
         return result[0]
 
-    def get_transactions_in_range(
+    def count_transactions_in_range(
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             from_ts: Timestamp,

@@ -305,12 +305,13 @@ class SolanaInquirer(SolanaRPCMixin):
     def query_tx_signatures_for_address(
             self,
             address: SolanaAddress,
+            before: Signature | None = None,
             until: Signature | None = None,
     ) -> list[Signature]:
         """Query all the transaction signatures for the given address.
         May raise RemoteError if there is a problem with querying the external service.
         """
-        signatures, before = [], None
+        signatures = []
         while True:
             response: GetSignaturesForAddressResp = self.query(
                 method=lambda client, _before=before, _until=until: client.get_signatures_for_address(  # type: ignore[misc]  # noqa: E501

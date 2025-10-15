@@ -246,6 +246,7 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
+    CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
     CHAINS_WITH_TRANSACTIONS,
     CHAINS_WITH_TRANSACTIONS_TYPE,
     CHAINS_WITH_TX_DECODING_TYPE,
@@ -5717,67 +5718,90 @@ class RestAPI:
         })
 
     @async_api_call()
-    def force_refetch_evm_transactions(
+    def force_refetch_transactions(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            address: ChecksumEvmAddress | None = None,
-            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE | None = None,
+            chain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
+            address: ChecksumEvmAddress | SolanaAddress | None = None,
     ) -> dict[str, Any]:
-        """Re-query EVM transactions for a given time range, adding only missing transactions.
+        """Re-query transactions for a given time range, adding only missing transactions.
 
         This function requests a force refetch of transactions for the specified time range,
         bypassing the normal query range checks. This can be useful in cases where transactions
         might have been missed due to API issues or other temporary problems.
+
+        The schema validates that if an address is passed it is a valid tracked address
+        in the specified chain.
         """
         log.debug(
-            'Force refetching EVM transactions',
+            'Force refetching transactions',
             from_ts=from_timestamp,
             to_ts=to_timestamp,
-            chain=evm_chain.name if evm_chain else 'all supported chains',
+            chain=chain.name if chain else 'all supported chains',
             address=address or 'all addresses',
         )
 
-        transaction_count = 0
-        db_evmtx = DBEvmTx(self.rotkehlchen.data.db)
-        chains_to_query: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = [evm_chain] if evm_chain else list(EVM_CHAIN_IDS_WITH_TRANSACTIONS)  # noqa: E501
-        for chain_id in chains_to_query:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
-            if address:
-                addresses_to_query: tuple[ChecksumEvmAddress, ...] = (address,)
-            else:
-                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                    addresses_to_query = self.rotkehlchen.data.db.get_blockchain_accounts(cursor).get(chain_manager.node_inquirer.blockchain)  # noqa: E501
-
-            if len(addresses_to_query) == 0:
-                continue
-
-            # Get total count before query
-            before_count = db_evmtx.get_transactions_in_range(
-                chain_id=chain_id,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
+        if chain == SupportedBlockchain.SOLANA:
+            transaction_count = self._query_txs_for_range(
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                address=address,
+                blockchain=SupportedBlockchain.SOLANA,
+                get_count_fn=DBSolanaTx(self.rotkehlchen.data.db).count_transactions_in_range,
+                query_for_range_fn=self.rotkehlchen.chains_aggregator.solana.transactions.query_transactions_in_range,
             )
-            for addr in addresses_to_query:
-                try:
-                    chain_manager.transactions.refetch_transactions_for_address(
-                        address=addr,
-                        start_ts=from_timestamp,
-                        end_ts=to_timestamp,
-                    )
-                except (sqlcipher.OperationalError, RemoteError, DeserializationError) as e:  # pylint: disable=no-member
-                    log.debug(f'Skipping transaction refetching for {addr} on {chain_id} due to: {e!s}')  # noqa: E501
-                    continue
-
-            # Get total count after query and count the difference as addition
-            after_count = db_evmtx.get_transactions_in_range(
-                chain_id=chain_id,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
+        else:  # EVM chain
+            db_evmtx = DBEvmTx(self.rotkehlchen.data.db)
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(
+                chain_id=(chain_id := chain.to_chain_id()),
             )
-            transaction_count += (after_count - before_count)
+            transaction_count = self._query_txs_for_range(
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                address=address,
+                blockchain=chain,
+                get_count_fn=lambda from_ts, to_ts, _chain_id=chain_id: db_evmtx.count_transactions_in_range(  # type: ignore[misc]  # noqa: E501
+                    chain_id=_chain_id,
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                ),
+                query_for_range_fn=chain_manager.transactions.refetch_transactions_for_address,
+            )
 
         return _wrap_in_ok_result({'new_transactions_count': transaction_count})
+
+    def _query_txs_for_range(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            address: ChecksumEvmAddress | SolanaAddress | None,
+            blockchain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
+            get_count_fn: Callable[[Timestamp, Timestamp], int],
+            query_for_range_fn: Callable[[ChecksumEvmAddress, Timestamp, Timestamp], None] | Callable[[SolanaAddress, Timestamp, Timestamp], None],  # noqa: E501
+    ) -> int:
+        if address:
+            addresses_to_query: tuple[ChecksumEvmAddress | SolanaAddress, ...] = (address,)
+        else:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                addresses_to_query = self.rotkehlchen.data.db.get_blockchain_accounts(cursor).get(blockchain)  # noqa: E501
+
+        if len(addresses_to_query) == 0:
+            return 0
+
+        # Get total count before query
+        before_count = get_count_fn(from_timestamp, to_timestamp)
+        for addr in addresses_to_query:
+            try:
+                query_for_range_fn(addr, from_timestamp, to_timestamp)  # type: ignore[arg-type]
+            except (sqlcipher.OperationalError, RemoteError, DeserializationError) as e:  # pylint: disable=no-member
+                log.debug(
+                    f'Skipping transaction refetching for {addr} on {blockchain.name.lower()} due to: {e!s}')  # noqa: E501
+                continue
+
+        # Get total count after query and count the difference as addition
+        after_count = get_count_fn(from_timestamp, to_timestamp)
+        return after_count - before_count
 
     def addresses_interacted_before(
             self,

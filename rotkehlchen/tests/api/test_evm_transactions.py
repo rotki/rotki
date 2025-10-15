@@ -328,12 +328,12 @@ def test_force_refetch_evm_transactions_success(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'refetchevmtransactionsresource',
+            'refetchtransactionsresource',
         ), json={
             'async_query': False,
             'from_timestamp': four_days_ago,
             'to_timestamp': now,
-            'evm_chain': ChainID.ETHEREUM.to_name(),
+            'chain': SupportedBlockchain.ETHEREUM.serialize(),
         },
     )
     result = assert_proper_sync_response_with_result(response)
@@ -346,13 +346,13 @@ def test_force_refetch_evm_transactions_success(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'refetchevmtransactionsresource',
+            'refetchtransactionsresource',
         ), json={
             'async_query': False,
             'from_timestamp': four_days_ago,
             'to_timestamp': now,
             'address': ZERO_ADDRESS,
-            'evm_chain': ChainID.ETHEREUM.to_name(),
+            'chain': SupportedBlockchain.ETHEREUM.serialize(),
         },
     )
     assert_error_response(
@@ -364,13 +364,13 @@ def test_force_refetch_evm_transactions_success(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'refetchevmtransactionsresource',
+            'refetchtransactionsresource',
         ), json={
             'async_query': False,
             'from_timestamp': four_days_ago,
             'to_timestamp': now,
             'address': ethereum_accounts[0],
-            'evm_chain': ChainID.ARBITRUM_ONE.to_name(),
+            'chain': SupportedBlockchain.ARBITRUM_ONE.serialize(),
         },
     )
     assert_error_response(
