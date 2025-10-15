@@ -358,7 +358,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
                         # is not valid is 104002 https://docs3.loopring.io/en/?q=104002
                         if code == 104002:
                             raise LoopringInvalidApiKey
-                        # This code is returned when an user is not found at loopring
+                        # This code is returned when a user is not found at loopring
                         # https://docs3.loopring.io/en/?q=101002
                         if code == 101002:
                             raise LoopringUserNotFound

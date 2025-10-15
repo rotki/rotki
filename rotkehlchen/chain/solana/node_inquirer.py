@@ -135,7 +135,7 @@ class SolanaInquirer(SolanaRPCMixin):
                     if (
                         (
                             isinstance(e.__cause__, HTTPStatusError) and
-                            (ratelimit_response := e.__cause__.response).status_code == 429  # pylint: disable=no-member  # cause is a HTTPStatusError here.
+                            (ratelimit_response := e.__cause__.response).status_code == 429  # pylint: disable=no-member  # cause is an HTTPStatusError here.
                         ) or
                         isinstance(e.__cause__, ReadTimeout)  # Some RPCs (publicnode.com) do a read timeout instead of a proper 429 response  # noqa: E501
                     ):
