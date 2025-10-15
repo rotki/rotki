@@ -2,39 +2,31 @@
 import type { OAuthResult } from '@shared/ipc';
 import { Severity } from '@rotki/common';
 import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
-import { useMoneriumOAuthApi } from '@/composables/api/settings/monerium-oauth';
 import { useInterop } from '@/composables/electron-interop';
+import { useMoneriumOAuth } from '@/composables/settings/api-keys/external/monerium-oauth';
 import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useNotificationsStore } from '@/store/notifications';
-import { useMoneriumOAuthStore } from '@/store/settings/monerium-oauth';
 import { logger } from '@/utils/logging';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const websiteUrl = import.meta.env.VITE_ROTKI_WEBSITE_URL as string | undefined;
 
-const isAuthorizing = ref(false);
-const showTokenInput = ref(false);
-const manualAccessToken = ref('');
-const manualRefreshToken = ref('');
+const isAuthorizing = ref<boolean>(false);
+const showTokenInput = ref<boolean>(false);
+const manualAccessToken = ref<string>('');
+const manualRefreshToken = ref<string>('');
 
-const moneriumApi = useMoneriumOAuthApi();
 const { isPackaged, openUrl } = useInterop();
 const { notify } = useNotificationsStore();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessagesStore();
-const moneriumStore = useMoneriumOAuthStore();
-const { authenticated, status } = storeToRefs(moneriumStore);
+const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
 
-const moneriumConnected = computed(() => get(authenticated));
-const connectedEmail = computed(() => get(status)?.userEmail ?? '');
-
-async function loadStatus() {
-  await moneriumStore.refreshStatus();
-}
+const moneriumConnected = computed<boolean>(() => get(authenticated));
+const connectedEmail = computed<string>(() => get(status)?.userEmail ?? '');
 
 function notifyOAuthError(error: any): void {
   logger.error('Monerium OAuth failed:', error);
@@ -63,20 +55,11 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
     }
 
     set(isAuthorizing, true);
-    const result = await moneriumApi.completeOAuth(
+    const result = await completeOAuth(
       accessToken,
       refreshToken,
       expiresIn ?? 3600,
     );
-
-    moneriumStore.setStatus({
-      authenticated: true,
-      defaultProfileId: result.defaultProfileId,
-      profiles: result.profiles,
-      userEmail: result.userEmail,
-    });
-
-    await moneriumStore.refreshStatus();
 
     notify({
       display: true,
@@ -113,7 +96,6 @@ async function connect(): Promise<void> {
     else {
       window.open(oauthUrl, '_blank');
       set(showTokenInput, true);
-      set(isAuthorizing, false);
     }
 
     notify({
@@ -125,6 +107,8 @@ async function connect(): Promise<void> {
   }
   catch (error: any) {
     notifyOAuthError(error);
+  }
+  finally {
     set(isAuthorizing, false);
   }
 }
@@ -132,8 +116,7 @@ async function connect(): Promise<void> {
 async function disconnect(): Promise<void> {
   set(isAuthorizing, true);
   try {
-    await moneriumApi.disconnect();
-    moneriumStore.setStatus({ authenticated: false });
+    await disconnectOAuth();
     notify({
       display: true,
       message: t('external_services.monerium.disconnected'),
@@ -149,7 +132,7 @@ async function disconnect(): Promise<void> {
   }
 }
 
-async function submitManualToken() {
+async function submitManualToken(): Promise<void> {
   if (!get(manualAccessToken) || !get(manualRefreshToken)) {
     notify({
       display: true,
@@ -168,25 +151,24 @@ async function submitManualToken() {
   });
 }
 
-function cancelTokenInput() {
+function cancelTokenInput(): void {
   set(showTokenInput, false);
   set(manualAccessToken, '');
   set(manualRefreshToken, '');
 }
 
-const primaryActionLabel = computed(() => moneriumConnected.value
+const primaryActionLabel = computed<string>(() => get(moneriumConnected)
   ? t('external_services.monerium.disconnect')
   : t('external_services.monerium.connect'));
 
-async function primaryActionHandler() {
-  if (moneriumConnected.value)
+async function primaryActionHandler(): Promise<void> {
+  if (get(moneriumConnected))
     await disconnect();
   else
     await connect();
 }
 
 onMounted(() => {
-  loadStatus();
   registerOAuthCallbackHandler(handleOAuthCallback);
 });
 
