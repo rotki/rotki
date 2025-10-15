@@ -188,3 +188,15 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
             bindings.append(signature.to_bytes())
 
         write_cursor.execute(query, bindings)
+
+    def count_transactions_in_range(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> int:
+        """Return the number of transactions between from_ts and to_ts"""
+        with self.db.conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT COUNT(*) FROM solana_transactions WHERE block_time BETWEEN ? AND ?',
+                (from_ts, to_ts),
+            ).fetchone()[0]

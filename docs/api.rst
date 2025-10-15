@@ -14041,10 +14041,10 @@ Historical Balance Queries
       :statuscode 500: Internal Rotki error
 
 
-Refetch EVM transactions for a specific time period
+Refetch transactions for a specific time period
 ===================================================
 
-.. http:post:: /api/(version)/blockchains/evm/transactions/refetch
+.. http:post:: /api/(version)/blockchains/transactions/refetch
 
    Doing a POST on the transactions refetch endpoint will force a re-query of transactions for the
    specified time period. This is useful to recover potentially missed transactions due to API
@@ -14058,7 +14058,7 @@ Refetch EVM transactions for a specific time period
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/evm/transactions/refetch HTTP/1.1
+      POST /api/1/blockchains/transactions/refetch HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -14066,15 +14066,15 @@ Refetch EVM transactions for a specific time period
           "async_query": false,
           "from_timestamp": 1640995200,
           "to_timestamp": 1672531200,
-          "evm_chain": "ethereum",
+          "chain": "eth",
           "address": "0xb8553D9ee35dd23BB96fbd679E651B929821969B"
       }
 
    :reqjson bool async_query: If true, the query will be processed asynchronously.
    :reqjson int from_timestamp: Start of the time period to refetch transactions for.
    :reqjson int to_timestamp: End of the time period to refetch transactions for.
-   :reqjson string evm_chain: Optional. The EVM chain to query (e.g., "ethereum", "optimism"). If not provided, all supported chains will be queried.
-   :reqjson string address: Optional. The address to query transactions for. If not provided, all tracked addresses will be queried.
+   :reqjson string chain: The chain to query (e.g., "eth", "optimism", "solana"). Only supports Solana and EVM chains.
+   :reqjson string address: Optional. The address to query transactions for. If not provided, all tracked addresses for the specified chain will be queried.
 
    **Example Response**:
 

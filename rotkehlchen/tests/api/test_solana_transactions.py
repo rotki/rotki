@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
-from rotkehlchen.types import SolanaAddress
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -128,3 +128,54 @@ def test_query_solana_transactions(
             deserialize_tx_signature(x.event_identifier) for x in events
         }
         assert str(fake_signature) in rotki.data.db.get_ignored_action_ids(cursor=cursor)
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
+def test_refetch_txs_in_range(
+        rotkehlchen_api_server: 'APIServer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    """Test that refetching transactions in a given range works properly.
+    First queries 3 transactions and then queries a range between the first and the third, which
+    results in 2 more txs being pulled.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    solana_tx_db = DBSolanaTx(rotki.data.db)
+    for signature in (
+        (signature1 := '5yPBcj2gPfWhkbRi3MFNigkJUzn67WKq4Xj8jEevBpwXRezZgBN6VArxDYTtggvW8xsbTvBJFntSkqiQoz4cgMbU'),  # noqa: E501
+        (signature2 := 'zXGZgpE77nKe41FLFAvCrnK4BrnQvQzvcD9ddRJuPvBDca16BZbQe4zJYQSs9VWpYqvVL2Sqm2E3QQLwbA7ZjjV'),  # noqa: E501
+        (signature3 := '2ZYFMzQMpDFcAmXo2UMhGErSitNpuZ4zeu548QvMU8k37cgetF91wTYnGmN1oZq6EG7zXaZyNPCzWtakDnSJEtgF'),  # noqa: E501
+    ):
+        rotki.chains_aggregator.solana.transactions.get_or_create_transaction(
+            signature=deserialize_tx_signature(signature),
+            relevant_address=(user_address := solana_accounts[0]),
+        )
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'refetchtransactionsresource'),
+        json={
+            'async_query': False,
+            'from_timestamp': 1753836930,
+            'to_timestamp': 1753911940,
+            'chain': SupportedBlockchain.SOLANA.serialize(),
+            'address': user_address,
+        },
+    ))
+    assert result['new_transactions_count'] == 2
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert [
+            (tx.block_time, str(tx.signature))
+            for tx in solana_tx_db.get_transactions(
+                cursor=cursor,
+                filter_=SolanaTransactionsFilterQuery.make(),
+            )
+        ] == [
+            (1753836925, signature1),
+            (1753836965, '5HzJs4E3KobYW4dfDAvxzuUPriKdK71iPG7g7w3VQBC1bgpQmHjeevkBBmp8WFf3FeosqMkcgSHV5LPqwDfmvr2X'),  # noqa: E501
+            (1753836967, signature2),
+            (1753836968, '4UoyrhPVWBCkiWUMWdyHUQQ29qMxCFXM6iXt7pL9ufaGgcnA8nz1qGQZfgKJcRURgvwmpLWeBVwfp1EJDZoVXPDA'),  # noqa: E501
+            (1753911942, signature3),
+        ]
