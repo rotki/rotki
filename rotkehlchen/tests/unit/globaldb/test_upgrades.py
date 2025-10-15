@@ -9,9 +9,10 @@ from eth_utils.address import to_checksum_address
 from freezegun import freeze_time
 from rsqlite import IntegrityError
 
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.constants.assets import A_PAX, A_USDT
+from rotkehlchen.constants.assets import A_PAX, A_SOL, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
@@ -1397,6 +1398,9 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute('SELECT identifier, symbol FROM common_asset_details WHERE identifier = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
             (new_solana_id, 'SOL'),
         ]
+        # ensure that the asset can be resolved
+        AssetResolver.clean_memory_cache(A_SOL.identifier)
+        assert A_SOL.resolve_to_asset_with_oracles().identifier == 'SOL'
         assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings WHERE local_id = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT location, exchange_symbol, local_id FROM location_asset_mappings WHERE local_id = ? ORDER BY location, exchange_symbol', (new_solana_id,)).fetchall() == [  # noqa: E501
             (None, 'SOL', new_solana_id),

@@ -24,6 +24,7 @@ def migrate_to_v14(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         """Swaps SOL-2 to SOL throughout the global database."""
         asset_columns = [
             ('assets', 'identifier'),
+            ('common_asset_details', 'identifier'),
             ('counterparty_asset_mappings', 'local_id'),
             ('location_asset_mappings', 'local_id'),
         ]
