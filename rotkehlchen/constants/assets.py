@@ -241,7 +241,4 @@ A_WETH_BASE: Final = Asset('eip155:8453/erc20:0x42000000000000000000000000000000
 A_WETH_POLYGON: Final = Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619')
 A_WETH_SCROLL: Final = Asset('eip155:534352/erc20:0x5300000000000000000000000000000000000004')
 
-# Solana tokens
-A_WSOL: Final = Asset('solana/token:So11111111111111111111111111111111111111112')
-
 CONSTANT_ASSETS = {var_data for var_name, var_data in locals().items() if var_name.startswith('A_')}  # noqa: E501

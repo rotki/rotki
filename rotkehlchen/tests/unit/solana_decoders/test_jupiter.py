@@ -5,7 +5,6 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.solana.modules.jupiter.constants import CPT_JUPITER
-from rotkehlchen.constants.assets import A_WSOL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
@@ -111,7 +110,7 @@ def test_swap_with_temp_token_account(
         sequence_index=2,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_WSOL,
+        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
         amount=FVal(receive_amount := '0.029137025'),
         location_label=solana_accounts[0],
         notes=f'Receive {receive_amount} SOL as the result of a swap in Jupiter',
@@ -203,7 +202,7 @@ def test_arbitrage_swap(
         sequence_index=9,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_WSOL,
+        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
         amount=(in_amount_2 := FVal('0.039404601')),
         location_label=user,
         notes=f'Receive {in_amount_2} SOL as the result of a swap in Jupiter',
@@ -214,7 +213,7 @@ def test_arbitrage_swap(
         sequence_index=10,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.SPEND,
-        asset=A_WSOL,
+        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
         amount=(out_amount_3 := FVal('0.039406767')),
         location_label=user,
         notes=f'Swap {out_amount_3} SOL in Jupiter',
