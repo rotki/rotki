@@ -2,9 +2,8 @@
 import { getTextToken, toHumanReadable } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
-import { storeToRefs } from 'pinia';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import { useMoneriumOAuthStore } from '@/store/settings/monerium-oauth';
+import { useMoneriumOAuth } from '@/composables/settings/api-keys/external/monerium-oauth';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
@@ -24,8 +23,7 @@ const queries: OnlineHistoryEventsQueryType[] = [
 const { t } = useI18n();
 
 const { apiKey, load } = useExternalApiKeys(t);
-const moneriumStore = useMoneriumOAuthStore();
-const { authenticated: moneriumAuthenticated } = storeToRefs(moneriumStore);
+const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
 
 interface QueryConfig {
   enabled: boolean;
@@ -77,7 +75,7 @@ function updateSelection(selection: OnlineHistoryEventsQueryType[]): void {
 }
 
 onBeforeMount(async () => {
-  await Promise.all([load(), moneriumStore.refreshStatus()]);
+  await load();
 });
 
 defineExpose({
