@@ -1867,6 +1867,7 @@ Get a list of setup exchanges
       {
           "result": [
                {"location": "kraken", "name": "kraken1", "kraken_account_type": "starter"},
+               {"location": "okx", "name": "okx1", "okx_location": "global"},
                {"location": "poloniex", "name": "poloniex1"},
                {"location": "binance", "name": "binance1"}
            ],
@@ -1973,7 +1974,7 @@ Edit an exchange entry
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate"}
+      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate", "okx_location": "eea"}
 
    :reqjson string name: The name of the exchange key to edit
    :reqjson string location: The location of the exchange to edit
@@ -1982,6 +1983,7 @@ Edit an exchange entry
    :reqjson string api_secret: Optional. If given this will be the new api secret for the exchange credentials.
    :reqjson string passphrase: Optional. If given this will be the new passphrase. Only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: Optional. An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
+   :reqjson string okx_location: Optional. An optional setting for okx. The location of the user's account, needed to route to specific subdomain API. Valid values are "global", "eea" and "usd".
 
    **Example Response**:
 

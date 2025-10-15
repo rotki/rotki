@@ -304,6 +304,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -701,6 +702,7 @@ class RestAPI:
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -713,6 +715,7 @@ class RestAPI:
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_selected_trade_pairs=binance_markets,
+            okx_location=okx_location,
         )
         if not result:
             result = None
@@ -730,6 +733,7 @@ class RestAPI:
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
             name=name,
@@ -740,6 +744,7 @@ class RestAPI:
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_selected_trade_pairs=binance_markets,
+            okx_location=okx_location,
         )
         result: bool | None = True
         status_code = HTTPStatus.OK

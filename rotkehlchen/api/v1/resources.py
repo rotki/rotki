@@ -282,6 +282,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.db.filtering import HistoryEventFilterQuery
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -552,6 +553,7 @@ class ExchangesResource(BaseMethodView):
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -561,6 +563,7 @@ class ExchangesResource(BaseMethodView):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            okx_location=okx_location,
         )
 
     @require_loggedin_user()
@@ -575,6 +578,7 @@ class ExchangesResource(BaseMethodView):
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -585,6 +589,7 @@ class ExchangesResource(BaseMethodView):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            okx_location=okx_location,
         )
 
     @require_loggedin_user()
