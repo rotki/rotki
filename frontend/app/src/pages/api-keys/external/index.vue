@@ -18,6 +18,10 @@ const services = [
     name: 'blockscout',
   },
   {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/HeliusApiKey.vue')),
+    name: 'helius',
+  },
+  {
     component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CryptoCompareApiKey.vue')),
     name: 'cryptocompare',
   },
@@ -56,10 +60,6 @@ const services = [
   {
     component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/AlchemyApiKey.vue')),
     name: 'alchemy',
-  },
-  {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/HeliusApiKey.vue')),
-    name: 'helius',
   },
 ];
 

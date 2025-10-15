@@ -2449,7 +2449,7 @@
       "token_required": "Please enter a valid access token"
     },
     "helius": {
-      "description": "Used to query Solana blockchain data including transactions and balances. An API key improves rate limits and reliability.",
+      "description": "Recommended for Solana to query transaction data without the heavy rate limits of public RPCs.",
       "hint": "Enter your Helius API key",
       "title": "Helius"
     },
