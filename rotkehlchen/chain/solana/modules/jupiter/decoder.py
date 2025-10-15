@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from construct import Bytes, Int64ul, Struct
 from construct.core import ConstructError
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -15,7 +16,7 @@ from rotkehlchen.chain.solana.decoding.structures import (
     SolanaDecoderContext,
     SolanaDecodingOutput,
 )
-from rotkehlchen.constants.assets import A_SOL, A_WSOL
+from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SolanaAddress
@@ -33,7 +34,6 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,7 @@ SWAP_EVENT_LAYOUT = Struct(
     'outputMint' / Bytes(32),   # Token mint being swapped to
     'outputAmount' / Int64ul,   # Amount of output tokens (raw units)
 )
+A_WSOL = Asset('solana/token:So11111111111111111111111111111111111111112')
 
 
 class JupiterDecoder(SolanaDecoderInterface):

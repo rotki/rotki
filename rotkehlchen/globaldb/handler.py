@@ -2149,6 +2149,8 @@ class GlobalDBHandler:
         elif asset.asset_type == AssetType.EVM_TOKEN:
             # in this case the asset exists and needs to be updated
             self.edit_evm_token(cast('EvmToken', asset))
+        elif asset.asset_type == AssetType.SOLANA_TOKEN:
+            self.edit_solana_token(cast('SolanaToken', asset))
         else:
             self.edit_user_asset(cast('CryptoAsset', asset))
 
