@@ -55,7 +55,6 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -365,14 +364,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             limit=limit,
             chain_id=self.evm_inquirer.chain_id,
         )
-
-    def get_decoders_products(self) -> dict[str, list[EvmProduct]]:
-        """Get the list of possible products"""
-        possible_products: dict[str, list[EvmProduct]] = {}
-        for decoder in self.decoders.values():
-            possible_products |= decoder.possible_products()
-
-        return possible_products
 
     def _reload_single_decoder(self, cursor: 'DBCursor', decoder: 'EvmDecoderInterface') -> None:
         """Reload data for a single decoder"""
@@ -1085,8 +1076,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
-                if action_item.to_product is not None:
-                    transfer.product = action_item.to_product
                 if action_item.extra_data is not None:
                     transfer.extra_data = action_item.extra_data
                 if action_item.to_address is not None:
@@ -1276,7 +1265,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             extra_data=trade_event.extra_data,
             location_label=trade_event.location_label if trade_event.location_label is not None else spend_event.location_label,  # noqa: E501
             counterparty=spend_event.counterparty,
-            product=spend_event.product,
             address=spend_event.address,
         )
 

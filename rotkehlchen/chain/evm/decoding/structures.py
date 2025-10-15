@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
-    from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.types import EvmTransaction
 
@@ -28,7 +28,6 @@ class ActionItem:
     to_event_subtype: Optional['HistoryEventSubType'] = None
     to_notes: str | None = None
     to_counterparty: str | None = None
-    to_product: 'EvmProduct | None' = None
     to_address: ChecksumEvmAddress | None = None
     to_location_label: str | None = None
     extra_data: dict | None = None

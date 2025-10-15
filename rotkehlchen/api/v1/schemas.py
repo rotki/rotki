@@ -97,7 +97,7 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthDepositEvent,
     EthWithdrawalEvent,
 )
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
@@ -607,9 +607,6 @@ class HistoryEventSchema(
     # EVM or Solana
     addresses = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
 
-    # EvmEvent only
-    products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
-
     # EthStakingEvent only
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
 
@@ -655,7 +652,7 @@ class HistoryEventSchema(
                     message='Filtering by counterparty ETH2 does not work in combination with entry type',  # noqa: E501
                     field_name='counterparties',
                 )
-            for x in ('products', 'tx_refs', 'addresses'):
+            for x in ('tx_refs', 'addresses'):
                 if data[x] is not None:
                     raise ValidationError(
                         message=f'Filtering by counterparty ETH2 does not work in combination with filtering by {x}',  # noqa: E501
@@ -741,7 +738,6 @@ class HistoryEventSchema(
 
         filter_query: HistoryEventFilterQuery | HistoryEventWithTxRefFilterQuery | HistoryEventWithCounterpartyFilterQuery | SolanaEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)  # noqa: E501
         if (not should_query_eth_staking_event and not multi_chain_query and (
-            data['products'] is not None or
             tx_ref_types == {ChainType.EVM} or
             (addresses is not None and all_addrs_are_evm) or
             (location_labels is not None and all(is_checksum_address(x) for x in location_labels))
@@ -749,7 +745,6 @@ class HistoryEventSchema(
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
                 tx_hashes=tx_refs,
-                products=data['products'],
                 addresses=addresses,
                 counterparties=counterparties,
             )
@@ -834,7 +829,6 @@ class CreateHistoryEventSchema(Schema):
         tx_hash = EVMTransactionHashField(required=True)
         event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         counterparty = EmptyAsNoneStringField(load_default=None)
-        product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
         address = EvmAddressField(load_default=None)
         extra_data = fields.Dict(load_default=None)
         location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
@@ -1214,7 +1208,6 @@ class CreateHistoryEventSchema(Schema):
             """Create an EvmSwapEvent with EVM-specific fields"""
             return EvmSwapEvent(
                 tx_hash=data['tx_hash'],
-                product=data['product'],
                 address=data['address'],
                 location=data['location'],
                 **kwargs,

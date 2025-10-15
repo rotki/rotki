@@ -28,7 +28,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
-    from rotkehlchen.history.events.structures.types import SOLANA_EVENT_DB_TUPLE_READ
+    from rotkehlchen.history.events.structures.types import CHAIN_EVENT_DB_TUPLE_READ
 
 
 logger = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     @classmethod
     def deserialize_from_db(cls: type['SolanaEvent'], entry: tuple) -> 'SolanaEvent':
-        entry = cast('SOLANA_EVENT_DB_TUPLE_READ', entry)
+        entry = cast('CHAIN_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[7], 'amount', 'solana event')
         return cls(
             identifier=entry[0],

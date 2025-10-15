@@ -20,7 +20,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants.assets import A_CRV, A_CRV_3CRV, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -125,7 +124,6 @@ class CurveDecoder(CurveCommonDecoder):
             notes=f'{verb}{user_note} for {gauge_address} curve gauge{weight_note}',
             address=gauge_address,
             counterparty=CPT_CURVE,
-            product=EvmProduct.GAUGE,
         )
         return EvmDecodingOutput(events=[event], refresh_balances=False)
 
@@ -201,11 +199,6 @@ class CurveDecoder(CurveCommonDecoder):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {
-            CPT_CURVE: super(CurveDecoder, CurveDecoder).possible_products().get(CPT_CURVE, []) + [EvmProduct.BRIBE],  # noqa: E501
-        }
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {

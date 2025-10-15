@@ -32,7 +32,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
@@ -746,7 +746,6 @@ def test_query_transactions_check_decoded_events(
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'user_notes': 'Burn 0.00863351371344 ETH for gas',
-            'product': None,
             'sequence_index': 0,
             'timestamp': 1642802807000,
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
@@ -767,7 +766,6 @@ def test_query_transactions_check_decoded_events(
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'user_notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
-            'product': None,
             'sequence_index': 1,
             'timestamp': 1642802807000,
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
@@ -790,7 +788,6 @@ def test_query_transactions_check_decoded_events(
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'user_notes': 'Burn 0.017690836625228792 ETH for gas',
-            'product': None,
             'sequence_index': 0,
             'timestamp': 1642802735000,
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
@@ -811,7 +808,6 @@ def test_query_transactions_check_decoded_events(
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'user_notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
-            'product': None,
             'sequence_index': 308,
             'timestamp': 1642802735000,
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
@@ -834,7 +830,6 @@ def test_query_transactions_check_decoded_events(
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'user_notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
-            'product': None,
             'sequence_index': 0,
             'timestamp': 1642802651000,
             'tx_hash': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
@@ -857,7 +852,6 @@ def test_query_transactions_check_decoded_events(
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'user_notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
-            'product': None,
             'sequence_index': 385,
             'timestamp': 1642802286000,
             'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
@@ -894,7 +888,6 @@ def test_query_transactions_check_decoded_events(
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'user_notes': 'Some kind of deposit',
-            'product': 'pool',
             'sequence_index': 1,
             'timestamp': 1642802286000,
             'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
@@ -1033,7 +1026,7 @@ def test_events_filter_params(
     tx3 = make_ethereum_transaction(tx_hash=b'3', timestamp=Timestamp(3))
     tx4 = make_ethereum_transaction(tx_hash=b'4', timestamp=Timestamp(4))
     test_contract_address = make_evm_address()
-    event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH, timestamp=TimestampMS(1), location_label=ethereum_accounts[0], product=EvmProduct.STAKING)  # noqa: E501
+    event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH, timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
     event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
     event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_WETH, timestamp=TimestampMS(2), location_label=ethereum_accounts[0])  # noqa: E501
@@ -1047,22 +1040,21 @@ def test_events_filter_params(
         dbevmtx.add_transactions(cursor, [tx4], relevant_address=ethereum_accounts[2])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4, event5, event6])
 
-    for attribute in ('counterparties', 'products'):
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'historyeventresource',
-            ),
-            json={
-                'location': 'ethereum',
-                'asset': A_WETH.serialize(),
-                attribute: [],
-            },
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg=f'{{"{attribute}": ["List cant be empty"]}}',
-        )
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={
+            'location': 'ethereum',
+            'asset': A_WETH.serialize(),
+            'counterparties': [],
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='{"counterparties": ["List cant be empty"]}',
+    )
 
     entries_limit = TEST_PREMIUM_HISTORY_EVENTS_LIMIT if start_with_valid_premium else FREE_HISTORY_EVENTS_LIMIT  # noqa: E501
     returned_events = query_events(
@@ -1156,19 +1148,6 @@ def test_events_filter_params(
         data=[event5],
         accounting_status=EventAccountingRuleStatus.NOT_PROCESSED,
     )
-    assert returned_events == expected
-
-    # test filtering by products
-    returned_events = query_events(
-        rotkehlchen_api_server,
-        json={
-            'products': [EvmProduct.STAKING.serialize()],
-        },
-        expected_num_with_grouping=1,
-        expected_totals_with_grouping=3,
-        entries_limit=entries_limit,
-    )
-    expected = generate_events_response([event1])
     assert returned_events == expected
 
     # test filtering by address

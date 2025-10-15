@@ -13,7 +13,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ARB, A_ETH, A_WBTC, A_WETH_ARB
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_unique_cache_value
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -319,7 +319,6 @@ def test_create_loan(
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
-            product=EvmProduct.LENDING,
             address=string_to_evm_address('0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'),
             extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ),
@@ -375,7 +374,6 @@ def test_borrow_more(
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
-            product=EvmProduct.LENDING,
             address=string_to_evm_address('0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'),
             extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ),
@@ -417,7 +415,6 @@ def test_create_leveraged_position_with_collateral_asset(
             location_label=user_address,
             notes=f'Deposit {deposit_amount} WBTC into a leveraged Curve position',
             counterparty=CPT_CURVE,
-            product=EvmProduct.LENDING,
             address=string_to_evm_address('0x8eeDE294459EFaFf55d580bc95C98306Ab03F0C8'),
             extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ),
@@ -460,7 +457,6 @@ def test_create_leveraged_position_with_borrowed_asset(
             location_label=user_address,
             notes=f'Deposit {deposit_amount} crvUSD into a leveraged Curve position',
             counterparty=CPT_CURVE,
-            product=EvmProduct.LENDING,
             address=string_to_evm_address('0x61C404B60ee9c5fB09F70F9A645DD38fE5b3A956'),
             extra_data={'controller_address': '0xB5c6082d3307088C98dA8D79991501E113e6365d'},
         ), EvmEvent(
@@ -779,7 +775,6 @@ def test_deposit_into_lending_vault_gauge(
             location_label=user_address,
             notes=f'Deposit {deposit_and_receive_amount} cvcrvUSD into cvcrvUSD-gauge',
             counterparty=CPT_CURVE,
-            product=EvmProduct.GAUGE,
             address=string_to_evm_address('0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -845,7 +840,6 @@ def test_withdraw_from_lending_vault_gauge(
             asset=Asset('eip155:42161/erc20:0x0E6Ad128D7E217439bEEa90695FE7ec859c7F98C'),
             amount=FVal(return_and_withdrawn_amount),
             location_label=user_address,
-            product=EvmProduct.GAUGE,
             counterparty=CPT_CURVE,
             notes=f'Withdraw {return_and_withdrawn_amount} cvcrvUSD from cvcrvUSD-gauge',
             address=string_to_evm_address('0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),

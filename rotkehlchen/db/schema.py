@@ -554,15 +554,6 @@ CREATE TABLE IF NOT EXISTS chain_events_info (
 );
 """  # noqa: E501
 
-# Table that stores EVM-specific metadata for events.
-DB_CREATE_EVM_EVENTS_INFO = """
-CREATE TABLE IF NOT EXISTS evm_events_info(
-    identifier INTEGER PRIMARY KEY,
-    product TEXT,
-    FOREIGN KEY(identifier) REFERENCES chain_events_info(identifier) ON UPDATE CASCADE ON DELETE CASCADE
-);
-"""  # noqa: E501
-
 # Table that extends history events table and stores data specific to ethereum staking
 DB_CREATE_ETH_STAKING_EVENTS_INFO = """
 CREATE TABLE IF NOT EXISTS eth_staking_events_info(
@@ -886,7 +877,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH_VALIDATORS_DATA_CACHE}
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_CHAIN_EVENTS_INFO}
-{DB_CREATE_EVM_EVENTS_INFO}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_IGNORED_ACTIONS}

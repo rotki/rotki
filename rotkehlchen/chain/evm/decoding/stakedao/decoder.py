@@ -25,7 +25,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
@@ -120,7 +119,6 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_STAKEDAO
                 event.notes = f'Claim {normalized_amount} {claimed_token.symbol} from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}'  # noqa: E501
-                event.product = EvmProduct.BRIBE
                 break
         else:  # not found
             log.error(f'Stakedao bribe transfer was not found for {context.transaction}')
@@ -304,10 +302,6 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {CPT_STAKEDAO: [EvmProduct.BRIBE]}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoders = dict.fromkeys(self.gauges, (self._decode_deposit_withdrawal_events, ))

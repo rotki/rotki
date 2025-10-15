@@ -11,7 +11,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -105,7 +105,6 @@ def test_create_loan(
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
-            product=EvmProduct.MINTING,
             address=crvusd_controller,
             extra_data={'controller_address': crvusd_controller},
         ),
@@ -148,7 +147,6 @@ def test_borrow_more(
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
-            product=EvmProduct.MINTING,
             address=crvusd_controller,
             extra_data={'controller_address': crvusd_controller},
         ),
@@ -284,7 +282,6 @@ def test_borrow_extended(
         location_label=user_address,
         notes=f'Deposit {deposit_amount} WBTC into a leveraged Curve position',
         counterparty=CPT_CURVE,
-        product=EvmProduct.MINTING,
         address=string_to_evm_address('0xE0438Eb3703bF871E31Ce639bd351109c88666ea'),
         extra_data={'controller_address': '0x4e59541306910aD6dC1daC0AC9dFB29bD9F15c67'},
     )]

@@ -80,7 +80,6 @@ def assert_csv_export_response(
         # evm event
         'tx_hash',
         'counterparty',
-        'product',
         'address',
 
         # eth staking events

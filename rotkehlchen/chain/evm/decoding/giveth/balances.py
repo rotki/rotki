@@ -50,7 +50,7 @@ class GivethCommonBalances(ProtocolWithBalance):
     def query_balances(self) -> 'BalancesSheetType':
         """Query balances of staked/locked GIV"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        address_to_deposits = self.addresses_with_deposits(products=None)
+        address_to_deposits = self.addresses_with_deposits()
         staking_contract = EvmContract(
             address=self.staking_address,
             abi=DEPOSIT_BALANCE_ABI if self.query_method == 'depositTokenBalance' else self.evm_inquirer.contracts.abi('ERC20_TOKEN'),  # noqa: E501

@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token
@@ -14,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.curve.lend.constants import CURVE_VAULT_CONT
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -37,7 +36,6 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
             self,
             evm_inquirer: 'EvmNodeInquirer',
             tx_decoder: 'EVMTransactionDecoder',
-            evm_product: Literal[EvmProduct.LENDING, EvmProduct.MINTING],
     ):
         """Common balances class for both curve lend and crvusd controllers.
         `evm_product` is used with addresses_with_deposits to get addresses and events for the
@@ -52,7 +50,6 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
             },
         )
-        self.evm_product = evm_product
 
     @abstractmethod
     def get_collateral_and_borrowed_tokens(
@@ -67,7 +64,7 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
         Returns a dict of controller addresses -> set of user addresses with possible balances.
         """
         controllers: dict[ChecksumEvmAddress, set[ChecksumEvmAddress]] = defaultdict(set)
-        for address, events in self.addresses_with_deposits(products=[self.evm_product]).items():
+        for address, events in self.addresses_with_deposits().items():
             for event in events:
                 if event.extra_data is None or 'controller_address' not in event.extra_data:
                     continue  # skip any deposits without a controller address
@@ -202,7 +199,6 @@ class CurveLendBalances(CurveControllerCommonBalances):
         super().__init__(
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
-            evm_product=EvmProduct.LENDING,
         )
 
     def get_collateral_and_borrowed_tokens(

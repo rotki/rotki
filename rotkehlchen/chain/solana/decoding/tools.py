@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Signature, SolanaEvent, None]):  # noqa: E501
+class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Signature, SolanaEvent]):  # noqa: E501
     def __init__(
             self,
             database: 'DBHandler',
@@ -49,7 +49,6 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
-            product: None = None,
             address: SolanaAddress | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> 'SolanaEvent':

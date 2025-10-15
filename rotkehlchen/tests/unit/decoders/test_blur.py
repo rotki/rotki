@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.modules.blur.constants import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
@@ -65,7 +65,6 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
             location_label=ethereum_accounts[0],
             notes=f'Stake {stake_amount} BLUR',
             counterparty=CPT_BLUR,
-            product=EvmProduct.STAKING,
             address=BLUR_STAKING_CONTRACT,
         ),
     ]
@@ -104,7 +103,6 @@ def test_blur_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             notes=f'Stake {stake_amount} BLUR',
             counterparty=CPT_BLUR,
             address=BLUR_STAKING_CONTRACT,
-            product=EvmProduct.STAKING,
         ),
     ]
     assert expected_events == events

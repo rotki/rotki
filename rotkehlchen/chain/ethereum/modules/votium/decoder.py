@@ -10,7 +10,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -44,7 +43,6 @@ class VotiumDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_VOTIUM
                 event.notes = f'Receive {event.amount} {crypto_asset.symbol} from votium bribe'
-                event.product = EvmProduct.BRIBE
                 break
 
         else:  # not found
@@ -53,10 +51,6 @@ class VotiumDecoder(EvmDecoderInterface):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {CPT_VOTIUM: [EvmProduct.BRIBE]}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(VOTIUM_CONTRACTS, (self._decode_claim,))

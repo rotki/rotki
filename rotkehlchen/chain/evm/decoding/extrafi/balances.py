@@ -29,7 +29,6 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -62,7 +61,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
     def query_balances(self) -> 'BalancesSheetType':
         """Query balances of lending pools and extra locking"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        address_to_deposits = self.addresses_with_deposits(products=None)
+        address_to_deposits = self.addresses_with_deposits()
         for address, events in address_to_deposits.items():
             unique_reserves = set()
             farm_positions: set[tuple[int, int]] = set()
@@ -92,8 +91,9 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                     balances=balances,
                 )
 
-        if len(locked_extra_addresses := list(self.addresses_with_deposits(
-            products=[EvmProduct.STAKING],
+        if len(locked_extra_addresses := list(self.addresses_with_activity(
+            event_types=self.deposit_event_types,
+            assets=(self.extrafi_token,),
         ).keys())) != 0:
             self._query_locked_extra(addresses=locked_extra_addresses, balances=balances)
 

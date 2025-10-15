@@ -35,7 +35,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
-from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
@@ -1192,7 +1192,6 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'sequence_index': 123,
         'tx_hash': tx_hash_str,
         'counterparty': 'some counterparty',
-        'product': 'pool',
         'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
     }]
     add_test_evm_tx(
@@ -1354,7 +1353,6 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             location_label=location_label,
             tx_hash=tx_hash,
             counterparty=counterparty,
-            product=(product := EvmProduct.POOL),
             address=(addr2 := string_to_evm_address('0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511')),
         ), EvmSwapEvent(
             identifier=7,
@@ -1367,7 +1365,6 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             location_label=location_label,
             tx_hash=tx_hash,
             counterparty=counterparty,
-            product=product,
             address=addr2,
         )]
 
@@ -1387,7 +1384,6 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'extra_data': None,
         'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         'counterparty': 'some counterparty',
-        'product': 'pool',
         'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
     }
 

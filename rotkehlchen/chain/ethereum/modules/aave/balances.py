@@ -11,7 +11,6 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.constants.assets import A_AAVE
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -45,7 +44,7 @@ class AaveBalances(ProtocolWithBalance):
         much AAVE is staked, that is the stkAAVE balance which should appear as
         part of balance queries and is 1-1 to AAVE."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := list(self.addresses_with_deposits(products=[EvmProduct.STAKING]))) == 0:  # noqa: E501
+        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
             return balances
 
         staking_contract = self.evm_inquirer.contracts.contract(address=STK_AAVE_ADDR)

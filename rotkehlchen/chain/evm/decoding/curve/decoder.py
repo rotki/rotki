@@ -56,7 +56,6 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction, TokenKind
@@ -765,7 +764,6 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             ):
                 evm_asset = event.asset.resolve_to_evm_token()
                 event.counterparty = CPT_CURVE
-                event.product = EvmProduct.GAUGE
                 found_event_modifying_balances = True
                 gauge_events.append(event)
                 if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
@@ -857,10 +855,6 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {CPT_CURVE: [EvmProduct.GAUGE]}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mappings = dict.fromkeys(self.curve_swap_routers, (self._decode_pool_events,))

@@ -73,9 +73,6 @@ HISTORY_BASE_ENTRY_LENGTH: Final = 13
 CHAIN_EVENT_FIELDS: Final = 'tx_ref, counterparty, address'
 CHAIN_FIELD_LENGTH: Final = 3
 
-EVM_EVENT_FIELDS: Final = 'product'
-EVM_FIELD_LENGTH: Final = 1
-
 ETH_STAKING_EVENT_FIELDS: Final = 'validator_index, is_exit_or_blocknumber'
 ETH_STAKING_FIELD_LENGTH: Final = 2
 

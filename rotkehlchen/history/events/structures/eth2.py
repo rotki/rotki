@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -29,15 +30,11 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 
-from .evm_event import EvmProduct
+from .base import HISTORY_EVENT_DB_TUPLE_WRITE, HistoryBaseEntry, HistoryBaseEntryType
+from .evm_event import CHAIN_EVENT_FIELDS_TYPE, EvmEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-
-from rotkehlchen.constants.assets import A_ETH
-
-from .base import HISTORY_EVENT_DB_TUPLE_WRITE, HistoryBaseEntry, HistoryBaseEntryType
-from .evm_event import CHAIN_EVENT_FIELDS_TYPE, EVM_EVENT_FIELDS_TYPE, EvmEvent
 
 ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
@@ -484,7 +481,6 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             location_label=depositor,
             notes=f'Deposit {amount} ETH to validator {suffix}',
             counterparty=CPT_ETH2,
-            product=EvmProduct.STAKING,
             address=ETH2_DEPOSIT_ADDRESS,
             identifier=identifier,
             event_identifier=event_identifier,
@@ -509,14 +505,12 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
     def serialize_for_db(self) -> tuple[  # type: ignore  # wont match EvmEvent supertype
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
             tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
-            tuple[str, str, EVM_EVENT_FIELDS_TYPE],
             tuple[str, str, tuple[int, int]],
     ]:
-        base_tuple, chain_tuple, evm_tuple = self._serialize_evm_event_tuple_for_db()
+        base_tuple, chain_tuple = self._serialize_evm_event_tuple_for_db()
         return (
             base_tuple,
             chain_tuple,
-            evm_tuple,
             (STAKING_DB_INSERT_QUERY_STR, STAKING_DB_UPDATE_QUERY_STR, (self.validator_index, 0)),
         )
 

@@ -15,7 +15,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -89,7 +88,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         self.evm_inquirer: EthereumInquirer
 
     def _query_lst_deposits(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
-        addresses_with_deposits = self.addresses_with_deposits(products=[EvmProduct.STAKING])
+        addresses_with_deposits = self.addresses_with_deposits()
         # remap all events into a list that will contain all pairs (depositor, strategy)
         deposits = set()
         for depositor, event_list in addresses_with_deposits.items():

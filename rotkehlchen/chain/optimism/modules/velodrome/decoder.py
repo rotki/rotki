@@ -7,7 +7,6 @@ from rotkehlchen.chain.evm.decoding.velodrome.decoder import VelodromeLikeDecode
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     read_velodrome_pools_and_gauges_from_cache,
 )
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType
 
@@ -44,12 +43,6 @@ class VelodromeDecoder(VelodromeLikeDecoder):
             pool_cache_type=CacheType.VELODROME_POOL_ADDRESS,
             read_fn=read_velodrome_pools_and_gauges_from_cache,
         )
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {
-            CPT_VELODROME: [EvmProduct.POOL, EvmProduct.GAUGE],
-        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

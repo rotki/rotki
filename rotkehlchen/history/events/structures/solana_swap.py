@@ -16,7 +16,7 @@ from .swap import SwapEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.fval import FVal
-    from rotkehlchen.history.events.structures.types import SOLANA_EVENT_DB_TUPLE_READ
+    from rotkehlchen.history.events.structures.types import CHAIN_EVENT_DB_TUPLE_READ
 
 
 class SolanaSwapEvent(SolanaEvent, SwapEvent):
@@ -79,7 +79,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
         But these exceptions shouldn't normally happen since
         the data from the db should already be correct.
         """
-        entry = cast('SOLANA_EVENT_DB_TUPLE_READ', entry)
+        entry = cast('CHAIN_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[7], 'amount', 'solana swap event')
         return cls(
             identifier=entry[0],

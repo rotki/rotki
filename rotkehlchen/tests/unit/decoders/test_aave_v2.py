@@ -31,7 +31,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -1064,7 +1064,6 @@ def test_aave_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             notes=f'Stake {staked} AAVE',
             tx_hash=tx_hash,
             counterparty=CPT_AAVE,
-            product=EvmProduct.STAKING,
             address=STK_AAVE_ADDR,
         ), EvmEvent(
             sequence_index=66,
@@ -1129,7 +1128,6 @@ def test_aave_stake_behalfof(ethereum_inquirer: 'EthereumInquirer', ethereum_acc
             notes=f'Stake {staked} AAVE',
             tx_hash=tx_hash,
             counterparty=CPT_AAVE,
-            product=EvmProduct.STAKING,
             address=STK_AAVE_ADDR,
         ), EvmEvent(
             sequence_index=125,
@@ -1182,7 +1180,6 @@ def test_aave_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             tx_hash=tx_hash,
             address=ZERO_ADDRESS,
             counterparty=CPT_AAVE,
-            product=EvmProduct.STAKING,
         ), EvmEvent(
             sequence_index=450,
             timestamp=timestamp,
@@ -1234,7 +1231,6 @@ def test_aave_unstake_old(ethereum_inquirer: 'EthereumInquirer', ethereum_accoun
             tx_hash=tx_hash,
             address=ZERO_ADDRESS,
             counterparty=CPT_AAVE,
-            product=EvmProduct.STAKING,
         ), EvmEvent(
             sequence_index=368,
             timestamp=timestamp,
@@ -1286,7 +1282,6 @@ def test_stake_reward(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             tx_hash=tx_hash,
             address=STK_AAVE_ADDR,
             counterparty=CPT_AAVE,
-            product=EvmProduct.STAKING,
         ),
     ]
     assert events == expected_events

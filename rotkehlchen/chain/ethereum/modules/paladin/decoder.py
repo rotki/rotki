@@ -10,7 +10,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp
@@ -46,17 +45,12 @@ class PaladinDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_PALADIN
                 event.notes = f'Claim {normalized_amount} {claimed_token.symbol} from Paladin veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}'  # noqa: E501
-                event.product = EvmProduct.BRIBE
                 break
         else:  # not found
             log.error(f'Paladin bribe transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {CPT_PALADIN: [EvmProduct.BRIBE]}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {PALADIN_MERKLE_DISTRIBUTOR_V2: (self._decode_claim_quest,)}

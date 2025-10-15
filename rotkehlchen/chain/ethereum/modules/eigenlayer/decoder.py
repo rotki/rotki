@@ -53,7 +53,6 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
@@ -121,7 +120,6 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 asset = event.asset.resolve_to_crypto_asset()
                 event.notes = f'Deposit {event.amount} {asset.symbol} in EigenLayer'
                 event.extra_data = {'strategy': strategy}
-                event.product = EvmProduct.STAKING
                 event.counterparty = CPT_EIGENLAYER
 
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -155,7 +153,6 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.event_type = event_type
                 event.event_subtype = event_subtype
                 event.counterparty = CPT_EIGENLAYER
-                event.product = EvmProduct.STAKING
                 event.notes = notes.format(amount=event.amount, symbol=event.asset.resolve_to_crypto_asset().symbol)  # noqa: E501
                 break
         else:
@@ -647,10 +644,6 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (EIGENLAYER_CPT_DETAILS,)
-
-    @staticmethod
-    def possible_products() -> dict[str, list[EvmProduct]]:
-        return {CPT_EIGENLAYER: [EvmProduct.STAKING]}
 
     # -- ReloadableDecoderMixin methods
 

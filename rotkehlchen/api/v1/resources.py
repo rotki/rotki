@@ -2990,12 +2990,6 @@ class CounterpartiesResource(BaseMethodView):
         return self.rest_api.get_counterparties_details()
 
 
-class EvmProductsResource(BaseMethodView):
-
-    def get(self) -> Response:
-        return self.rest_api.get_evm_products()
-
-
 class LocationResource(BaseMethodView):
 
     def get(self) -> Response:

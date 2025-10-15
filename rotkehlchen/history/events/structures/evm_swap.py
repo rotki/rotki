@@ -10,12 +10,12 @@ from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_
 from rotkehlchen.types import EVMTxHash, Location, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
-from .evm_event import EvmEvent, EvmProduct
+from .evm_event import EvmEvent
 from .swap import SwapEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.fval import FVal
-    from rotkehlchen.history.events.structures.types import EVM_EVENT_DB_TUPLE_READ
+    from rotkehlchen.history.events.structures.types import CHAIN_EVENT_DB_TUPLE_READ
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -42,7 +42,6 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             notes: str | None = None,
             identifier: int | None = None,
             counterparty: str | None = None,
-            product: EvmProduct | None = None,
             address: 'ChecksumEvmAddress | None' = None,
             extra_data: dict[str, Any] | None = None,
             event_identifier: str | None = None,
@@ -64,7 +63,6 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             notes=notes,
             identifier=identifier,
             counterparty=counterparty,
-            product=product,
             address=address,
             extra_data=extra_data,
             event_identifier=event_identifier,
@@ -83,7 +81,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
         But these exceptions shouldn't normally happen since
         the data from the db should already be correct.
         """
-        entry = cast('EVM_EVENT_DB_TUPLE_READ', entry)
+        entry = cast('CHAIN_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[7], 'amount', 'evm swap event')
         return cls(
             identifier=entry[0],
@@ -101,7 +99,6 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             tx_hash=deserialize_evm_tx_hash(entry[13]),
             counterparty=entry[14],
             address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
-            product=EvmProduct.deserialize(entry[16]) if entry[16] is not None else None,
         )
 
     def serialize(self) -> dict[str, Any]:
@@ -118,7 +115,6 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
                 tx_hash=deserialize_evm_tx_hash(data['tx_hash']),
                 sequence_index=base_data['sequence_index'],
                 counterparty=deserialize_optional(data['counterparty'], str),
-                product=deserialize_optional(data['product'], EvmProduct.deserialize),
                 address=deserialize_optional(data['address'], string_to_evm_address),
             )
         except KeyError as e:
@@ -128,7 +124,6 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
         fields = self._history_base_entry_repr_fields() + [
             f'{self.tx_hash=}',
             f'{self.counterparty=}',
-            f'{self.product=}',
             f'{self.address=}',
         ]
         return f'EvmSwapEvent({", ".join(fields)})'

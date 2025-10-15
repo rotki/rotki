@@ -35,7 +35,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
@@ -514,7 +514,6 @@ class HopCommonDecoder(EvmDecoderInterface):
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 action='Stake',
                 preposition='in',
-                product=EvmProduct.STAKING,
             )
 
         if context.tx_log.topics[0] == REWARD_PAID_TOPIC_V2:
@@ -565,7 +564,6 @@ class HopCommonDecoder(EvmDecoderInterface):
             event_subtype: HistoryEventSubType,
             action: str,
             preposition: str,
-            product: EvmProduct | None = None,
     ) -> EvmDecodingOutput:
         amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data[:32]),
@@ -581,7 +579,6 @@ class HopCommonDecoder(EvmDecoderInterface):
                 event.event_subtype = event_subtype
                 event.counterparty = CPT_HOP
                 event.notes = f'{action} {amount} {event.asset.symbol_or_name()} {preposition} Hop'
-                event.product = product
                 break
 
         return DEFAULT_EVM_DECODING_OUTPUT

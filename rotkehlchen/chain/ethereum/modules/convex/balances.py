@@ -8,7 +8,6 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CVX
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -85,8 +84,9 @@ class ConvexBalances(ProtocolWithGauges):
 
     def query_balances(self) -> 'BalancesSheetType':
         balances = super().query_balances()  # Query the gauges
-        addresses_with_stake_mapping = self.addresses_with_deposits(
-            products=[EvmProduct.STAKING],
+        addresses_with_stake_mapping = self.addresses_with_activity(
+            event_types=self.deposit_event_types,
+            assets=(A_CVX,),
         )
         # addresses_with_deposits returns a mapping of address to evm event but since we will call
         # the staking contracts with the addresses as arguments we need the list of addresses to

@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.modules.paladin.constants import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -49,7 +49,6 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {amount} T from Paladin veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_PALADIN,
             address=PALADIN_MERKLE_DISTRIBUTOR_V2,
-            product=EvmProduct.BRIBE,
         ),
     ]
     assert events == expected_events

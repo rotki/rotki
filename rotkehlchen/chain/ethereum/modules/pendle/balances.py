@@ -47,7 +47,7 @@ class PendleBalances(ProtocolWithBalance):
     def query_balances(self) -> BalancesSheetType:
         """Query locked PENDLE balances."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := list(self.addresses_with_deposits(None))) == 0:
+        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
             return balances
 
         _, call_order = get_chunk_size_call_order(self.evm_inquirer)

@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH, A_OP, A_WETH_OPT
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -82,7 +82,6 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=WETH_OP_POOL_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Deposit 0.005 WETH in velodrome pool {WETH_OP_POOL_ADDRESS}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -108,7 +107,6 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=WETH_OP_POOL_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Deposit 5.960043211306826894 OP in velodrome pool {WETH_OP_POOL_ADDRESS}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -122,7 +120,6 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=ZERO_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Receive 0.172627291949741834 vAMMV2-WETH/OP after depositing in velodrome pool {WETH_OP_POOL_ADDRESS}',  # noqa: E501
         ),
     ]
@@ -170,7 +167,6 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=pool,
-            product=EvmProduct.POOL,
             notes=f'Deposit 3.58533080911795905 RED in velodrome pool {pool}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -184,7 +180,6 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=pool,
-            product=EvmProduct.POOL,
             notes=f'Deposit 124.057046 VELO in velodrome pool {pool}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -198,7 +193,6 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=ZERO_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Receive 21.069827457300304618 vAMM-RED/VELO after depositing in velodrome pool {pool}',  # noqa: E501
         ),
     ]
@@ -263,7 +257,6 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=WETH_OP_POOL_ADDRESS,
-            product=EvmProduct.POOL,
             notes='Return 0.086313645974870917 vAMMV2-WETH/OP',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -277,7 +270,6 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=WETH_OP_POOL_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Remove 0.002487103206849621 WETH from velodrome pool {WETH_OP_POOL_ADDRESS}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -291,7 +283,6 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=WETH_OP_POOL_ADDRESS,
-            product=EvmProduct.POOL,
             notes=f'Remove 2.995474411210852897 OP from velodrome pool {WETH_OP_POOL_ADDRESS}',
         ),
     ]
@@ -349,7 +340,6 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=pool,
-            product=EvmProduct.POOL,
             notes='Return 0.000174407012524167 vAMM-OP/USDC',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -363,7 +353,6 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=pool,
-            product=EvmProduct.POOL,
             notes=f'Remove 148.123832466418929782 OP from velodrome pool {pool}',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -377,7 +366,6 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=pool,
-            product=EvmProduct.POOL,
             notes=f'Remove 205.545843 USDC.e from velodrome pool {pool}',
         ),
     ]
@@ -795,8 +783,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=WETH_OP_GAUGE_ADDRESS,
-            notes=f'Deposit 0.172627291949741834 vAMMV2-WETH/OP into {WETH_OP_GAUGE_ADDRESS} velodrome gauge',  # noqa: E501
-            product=EvmProduct.GAUGE,
+            notes=f'Deposit 0.172627291949741834 vAMMV2-WETH/OP into {WETH_OP_GAUGE_ADDRESS} velodrome gauge',  # noqa: E501,
         ),
     ]
     assert events == expected_events
@@ -841,8 +828,7 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=WETH_OP_GAUGE_ADDRESS,
-            notes=f'Withdraw 0.172627291949741834 vAMMV2-WETH/OP from {WETH_OP_GAUGE_ADDRESS} velodrome gauge',  # noqa: E501
-            product=EvmProduct.GAUGE,
+            notes=f'Withdraw 0.172627291949741834 vAMMV2-WETH/OP from {WETH_OP_GAUGE_ADDRESS} velodrome gauge',  # noqa: E501,
         ),
     ]
     assert events == expected_events
@@ -887,8 +873,7 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
             location_label=user_address,
             counterparty=CPT_VELODROME,
             address=gauge_address,
-            notes=f'Receive 872.22115188616298484 VELO rewards from {gauge_address} velodrome gauge',  # noqa: E501
-            product=EvmProduct.GAUGE,
+            notes=f'Receive 872.22115188616298484 VELO rewards from {gauge_address} velodrome gauge',  # noqa: E501,
         ),
     ]
     assert events == expected_events

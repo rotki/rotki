@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVMTxHash, EvmEvent, EvmProduct]):  # noqa: E501
+class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVMTxHash, EvmEvent]):
     """A class that keeps a common state and offers some common decoding functionality"""
 
     def __init__(
@@ -166,7 +166,6 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
-            product: EvmProduct | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
@@ -184,7 +183,6 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
-            product=product,
             address=address,
             extra_data=extra_data,
         )
@@ -200,7 +198,6 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
-            product: EvmProduct | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
@@ -218,7 +215,6 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
-            product=product,
             address=address,
             extra_data=extra_data,
         )
@@ -234,7 +230,6 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
-            product: EvmProduct | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
@@ -250,7 +245,6 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
-            product=product,
             address=address,
             extra_data=extra_data,
         )
