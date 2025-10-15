@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
+import { getNftAssetIdDetail, isEvmIdentifierWithNftId } from '@rotki/common/lib';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
@@ -29,6 +30,11 @@ const name = useRefMap(asset, asset => asset.name ?? '');
 const identifier = useRefMap(asset, asset => asset.identifier);
 
 const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
+
+const [DefineNftDetails, ReuseNftDetails] = createReusableTemplate<{
+  contractAddress: string;
+  nftId: string;
+}>();
 
 type ConfirmType = 'ignore' | 'mark_as_spam';
 const confirm = ref(false);
@@ -222,6 +228,33 @@ defineExpose({
         :truncate-length="9"
       />
     </div>
+    <DefineNftDetails #default="{ contractAddress, nftId }">
+      <div class="pt-2 pb-1 px-1 border-t border-default">
+        <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
+          {{ t('transactions.events.form.contract_address.label') }}
+        </div>
+        <HashLink
+          :text="contractAddress"
+          :location="asset?.evmChain ?? undefined"
+          type="token"
+          class="text-[11px]"
+          :truncate-length="9"
+        />
+      </div>
+      <div class="pt-2 pb-1 px-1 border-t border-default">
+        <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
+          {{ t('nft_balance_table.token_id') }}
+        </div>
+
+        <div class="text-xs py-1">
+          #{{ nftId }}
+        </div>
+      </div>
+    </DefineNftDetails>
+    <ReuseNftDetails
+      v-if="isEvmIdentifierWithNftId(asset.identifier)"
+      v-bind="getNftAssetIdDetail(asset.identifier)!"
+    />
     <div
       v-if="iconOnly"
       class="pt-2 pb-1 px-1 border-t border-default"
