@@ -75,7 +75,7 @@ class OkxLocation(StrEnum):
     US = 'app'
 
     def serialize(self) -> str:
-        return self.name
+        return self.name.lower()
 
     @classmethod
     def deserialize(cls, value: str) -> Self:
