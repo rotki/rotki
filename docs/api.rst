@@ -13042,6 +13042,9 @@ Managing custom accounting rules
 
   Doing a PUT request on this endpoint will allow to create a new accounting rule.
 
+  .. note::
+     If ``event_ids`` id provided, those event IDs are first removed from any existing rules. They are then either added to an existing event-specific rule with matching settings or a new event-specific rule is created.
+
   **Example Request**
 
   .. http:example:: curl wget httpie python-requests

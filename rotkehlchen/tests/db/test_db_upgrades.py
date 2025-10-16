@@ -3684,10 +3684,10 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
             (2, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0] == 1  # TEST_EVENT_2 is customized.
         assert not table_exists(cursor=cursor, name='accounting_rule_events')
-        assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules').fetchall() == (rules := [  # noqa: E501
-            ('deposit', 'deposit asset', NO_ACCOUNTING_COUNTERPARTY),
-            ('receive', 'reward', 'aave-v1'),
+        assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules ORDER BY identifier').fetchall() == (rules := [  # noqa: E501
             ('spend', 'return wrapped', 'aave-v1'),
+            ('receive', 'reward', 'aave-v1'),
+            ('deposit', 'deposit asset', NO_ACCOUNTING_COUNTERPARTY),
         ])
 
         # Check that SOL-2 exists in the respective tables
@@ -3729,7 +3729,7 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
             (3, 'TEST_EVENT_3', 'Cryptocom 1'),
         ]
         assert table_exists(cursor=cursor, name='accounting_rule_events')
-        assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules').fetchall() == rules  # noqa: E501
+        assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules ORDER BY identifier').fetchall() == rules  # noqa: E501
 
         # Check that SOL-2 no longer exists in assets table
         assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501

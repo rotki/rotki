@@ -89,24 +89,57 @@ class DBAccountingRules:
             event_ids: list[int] | None = None,
     ) -> int:
         """
-        Add a single accounting rule to the database. It returns the identifier
+        Adds a single accounting rule to the database and returns the identifier
         of the created rule.
+
+        For event-specific rules (when event_ids is provided), removes the event IDs from any existing rules.
+        Then either adds them to an existing event-specific rule with identical settings
+        (type/subtype/counterparty and all rule properties) or creates a new event-specific rule.
+
         May raise:
         - InputError: If the combination of type, subtype and counterparty already exists
         and we are not force updating.
-        """
+        """  # noqa: E501
+        if event_ids is not None and len(event_ids) > 0:
+            with self.db.conn.write_ctx() as write_cursor:
+                write_cursor.executemany(  # remove event IDs from any existing rules first
+                    'DELETE FROM accounting_rule_events WHERE event_id=?',
+                    [(event_id,) for event_id in event_ids],
+                )
+
+                # Check if there's already an event-specific rule
+                # with identical settings (type/subtype/counterparty/rule properties)
+                if (existing_rule := write_cursor.execute(
+                    'SELECT identifier FROM accounting_rules '
+                    'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=1 '
+                    'AND taxable=? AND count_entire_amount_spend=? AND count_cost_basis_pnl=? '
+                    'AND accounting_treatment IS ?',
+                    (
+                        event_type.serialize(),
+                        event_subtype.serialize(),
+                        counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
+                        *rule.serialize_for_db(),
+                    ),
+                ).fetchone()) is not None:  # add event IDs to the existing event-specific rule
+                    write_cursor.executemany(
+                        'INSERT INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',
+                        ((existing_rule[0], event_id) for event_id in event_ids),
+                    )
+                    return existing_rule[0]
+
         verb = 'INSERT OR REPLACE' if force_update else 'INSERT'
         with self.db.conn.write_ctx() as write_cursor:
             try:
                 write_cursor.execute(
                     f'{verb} INTO accounting_rules(type, subtype, counterparty, taxable, '
                     'count_entire_amount_spend, count_cost_basis_pnl, '
-                    'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING identifier',
+                    'accounting_treatment, is_event_specific) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING identifier',  # noqa: E501
                     (
                         event_type.serialize(),
                         event_subtype.serialize(),
                         counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
                         *rule.serialize_for_db(),
+                        event_ids is not None and len(event_ids) > 0,
                     ),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -430,7 +463,7 @@ class DBAccountingRules:
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO accounting_rules(identifier, type, subtype, '
                     'counterparty, taxable, count_entire_amount_spend, count_cost_basis_pnl, '
-                    'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
+                    'accounting_treatment, is_event_specific) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);',
                     [
                         (
                             identifier,
@@ -438,6 +471,7 @@ class DBAccountingRules:
                             rule_info['event_subtype'],
                             rule_info['counterparty'] if rule_info['counterparty'] is not None else NO_ACCOUNTING_COUNTERPARTY,  # noqa: E501
                             *BaseEventSettings.deserialize(rule_info['rule']).serialize_for_db(),
+                            rule_info['event_ids'] is not None and len(rule_info['event_ids']) > 0,
                         )
                         for identifier, rule_info in accounting_rules.items()
                     ],
@@ -507,16 +541,14 @@ def _events_to_consume(
     else:  # if no event-specific rule found, try type-based rules
         queries = [(  # 2. Type-based rule with counterparty
             'SELECT accounting_treatment FROM accounting_rules '
-            'WHERE type=? AND subtype=? AND counterparty=? AND NOT EXISTS '
-            '(SELECT 1 FROM accounting_rule_events WHERE rule_id = accounting_rules.identifier)',
+            'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=0',
             (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY if counterparty is None else counterparty),  # noqa: E501
         )]
 
         if counterparty is not None:
             queries.append((  # 3. Type-based rule without counterparty
                 'SELECT accounting_treatment FROM accounting_rules '
-                'WHERE type=? AND subtype=? AND counterparty=? AND NOT EXISTS '
-                '(SELECT 1 FROM accounting_rule_events WHERE rule_id = accounting_rules.identifier)',  # noqa: E501
+                'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=0',
                 (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY),
             ))
 
@@ -599,7 +631,7 @@ def query_missing_accounting_rules(
     SELECT COUNT(DISTINCT accounting_rules.identifier)
     FROM accounting_rules
     LEFT JOIN accounting_rule_events ON accounting_rules.identifier = accounting_rule_events.rule_id
-    WHERE event_id = ? OR (type = ? AND subtype = ? AND (counterparty = ? OR counterparty = ?) AND event_id IS NULL)
+    WHERE event_id = ? OR (type = ? AND subtype = ? AND (counterparty = ? OR counterparty = ?) AND is_event_specific=0)
     """  # noqa: E501
     bindings = [
         (

@@ -65,23 +65,27 @@ for name, properties in regexp_result:
     lines.append(f'    "{name}": "{properties}",')
 lines.append('}')
 
-# Parse indexes by first extracting each CREATE INDEX statement
+# Parse indexes by first extracting each CREATE INDEX/CREATE UNIQUE statement
 index_regexp_result = []
 index_pattern = re.compile(
-    r'CREATE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+(\S+)\s+ON\s+(\S+)\s*\(([^)]+)\)',
+    r'CREATE\s+(UNIQUE\s+)?INDEX\s+IF\s+NOT\s+EXISTS\s+(\S+)\s+ON\s+(\S+)\s*\(([^)]+)\)(.*)$',
     re.IGNORECASE,
 )
 for entry in index_script.strip().split(';'):
     statement = entry.strip()
     if statement and (_match := index_pattern.match(statement)):
-        index_name = _match.group(1).lower()
-        table_name = _match.group(2).lower()
-        columns = _match.group(3).lower().replace(' ', '')
-        index_regexp_result.append((index_name, table_name, columns))
+        is_unique = _match.group(1) is not None
+        index_name = _match.group(2).lower()
+        table_name = _match.group(3).lower()
+        columns = _match.group(4).lower().replace(' ', '')
+        where_clause = _match.group(5).strip() if _match.group(5) else ''
+        index_regexp_result.append((index_name, table_name, columns, is_unique, where_clause))
 
 lines.extend(('', f'MINIMIZED_{db_name.upper()}_DB_INDEXES = {{'))
-for index_name, table_name, columns in index_regexp_result:
-    index_definition = f'createindexifnotexists{index_name}on{table_name}({columns})'
+for index_name, table_name, columns, is_unique, where_clause in index_regexp_result:
+    prefix = 'createuniqueindexifnotexists' if is_unique else 'createindexifnotexists'
+    where_part = where_clause.lower().replace(' ', '') if len(where_clause) > 0 else where_clause
+    index_definition = f'{prefix}{index_name}on{table_name}({columns}){where_part}'
     lines.append(f'    "{index_name}": "{index_definition}",')
 lines.append('}')
 
