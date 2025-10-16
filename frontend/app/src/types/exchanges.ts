@@ -8,10 +8,15 @@ export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 
+export const OkxLocation = z.enum(['GLOBAL', 'EEA', 'US']);
+
+export type OkxLocation = z.infer<typeof OkxLocation>;
+
 export const Exchange = z.object({
   krakenAccountType: KrakenAccountType.optional(),
   location: z.string(),
   name: z.string(),
+  okxLocation: OkxLocation.optional(),
 });
 
 export type Exchange = z.infer<typeof Exchange>;
@@ -41,6 +46,7 @@ export interface ExchangePayload {
   readonly passphrase: string;
   readonly krakenAccountType?: KrakenAccountType;
   readonly binanceMarkets?: string[];
+  readonly okxLocation?: OkxLocation;
 }
 
 export interface ExchangeFormData extends ExchangePayload {

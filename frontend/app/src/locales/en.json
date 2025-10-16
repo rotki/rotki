@@ -1358,6 +1358,13 @@
           "pro": "Pro",
           "starter": "Starter / Express"
         }
+      },
+      "okx": {
+        "location": {
+          "eea": "European Economic Area (EEA)",
+          "global": "Global",
+          "us": "United States (US)"
+        }
       }
     },
     "profit_loss_event_type": {
@@ -2249,6 +2256,7 @@
     "name": {
       "non_empty": "The name field cannot be empty."
     },
+    "region": "Region",
     "validation": {
       "non_empty": "This field cannot be empty."
     },
