@@ -270,26 +270,28 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         """
         https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-balance
         https://www.okx.com/docs-v5/en/#funding-account-rest-api-get-balance
-
-        May raise
-        - RemoteError if the OKX API or price oracle returns an unexpected response
         """
         currencies_data: list[dict] = []
-        data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
+        try:
+            data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
+        except RemoteError as e:
+            msg = str(e)
+            log.error(f'{self.name} Api request failed due to {msg}')
+            return None, msg
+
         if not (len(data) == 1 and isinstance(data[0], dict)):
-            raise RemoteError(
-                f'{self.name} trading balance response does not contain dict data[0]',
-            )
+            msg = 'trading balance response does not contain dict data[0]'
+            log.error(f'{self.name} API request failed due to {msg}')
+            return None, msg
+
         try:
             currencies_data.extend(data[0]['details'])
         except KeyError as e:
             msg = f'Missing key: {e!s}'
-            raise RemoteError(
-                f'{self.name} trading balance API request failed due to unexpected response {msg}',
-            ) from e
+            log.error(f'{self.name} API request failed due to {msg}')
+            return None, msg
 
         currencies_data.extend(self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE))
-
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for currency_data in currencies_data:
             try:
