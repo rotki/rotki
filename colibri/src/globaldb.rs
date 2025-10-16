@@ -119,6 +119,7 @@ impl GlobalDB {
 macro_rules! create_globaldb {
     () => {{
         use crate::globaldb::GlobalDB;
+        use rand::{rngs::StdRng, SeedableRng};
         use std::{env, path::PathBuf, time::SystemTime};
         use tokio::fs;
 
@@ -126,8 +127,9 @@ macro_rules! create_globaldb {
             .duration_since(SystemTime::UNIX_EPOCH)
             .expect("Time went backwards")
             .as_nanos();
-        let pid = std::process::id();
-        let tmp_dir = env::temp_dir().join(format!("global_{}_{}", timestamp, pid));
+        let rnd = StdRng::from_rng(&mut rand::rng());
+
+        let tmp_dir = env::temp_dir().join(format!("global_{}_{:?}", timestamp, rnd));
         fs::create_dir_all(tmp_dir.clone())
             .await
             .expect("Failed to create temp folder for globaldb");
