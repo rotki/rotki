@@ -8,15 +8,30 @@ export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 
-export const OkxLocation = z.enum(['GLOBAL', 'EEA', 'US']);
+const OKX_LOCATIONS = ['global', 'eea', 'us'];
+
+export const OkxLocation = z.enum(OKX_LOCATIONS);
 
 export type OkxLocation = z.infer<typeof OkxLocation>;
+
+function isValidOkxLocation(val: unknown): val is OkxLocation {
+  return typeof val === 'string' && OKX_LOCATIONS.includes(val);
+}
 
 export const Exchange = z.object({
   krakenAccountType: KrakenAccountType.optional(),
   location: z.string(),
   name: z.string(),
-  okxLocation: OkxLocation.optional(),
+  okxLocation: z.preprocess(
+    (val) => {
+      if (val === undefined)
+        return undefined;
+      if (isValidOkxLocation(val))
+        return val;
+      return 'global';
+    },
+    OkxLocation.optional(),
+  ),
 });
 
 export type Exchange = z.infer<typeof Exchange>;

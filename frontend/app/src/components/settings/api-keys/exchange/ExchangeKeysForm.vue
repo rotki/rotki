@@ -233,7 +233,7 @@ function onExchangeChange(exchange?: string) {
     mode: get(modelValue, 'mode'),
     name: suggestedName(name),
     newName: '',
-    okxLocation: name === 'okx' ? 'GLOBAL' : undefined,
+    okxLocation: name === 'okx' ? 'global' : undefined,
     passphrase: '',
   });
 
