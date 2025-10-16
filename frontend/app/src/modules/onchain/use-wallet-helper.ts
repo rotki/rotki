@@ -1,5 +1,5 @@
+import type { Blockchain } from '@rotki/common';
 import type { RecentTransaction } from '@/modules/onchain/types';
-import { assert, type Blockchain } from '@rotki/common';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
@@ -15,7 +15,7 @@ interface UseWalletHelperReturn {
 }
 
 export function useWalletHelper(): UseWalletHelperReturn {
-  const { allEvmChains, getChain, getEvmChainName } = useSupportedChains();
+  const { allEvmChains, getChain } = useSupportedChains();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const { addTransactionHash } = useHistoryTransactions();
 
@@ -40,8 +40,6 @@ export function useWalletHelper(): UseWalletHelperReturn {
       return;
 
     const { chain, initiatorAddress: address } = tx;
-    const evmChain = getEvmChainName(chain);
-    assert(evmChain);
 
     await Promise.all([
       fetchBlockchainBalances({
@@ -50,8 +48,8 @@ export function useWalletHelper(): UseWalletHelperReturn {
       }),
       addTransactionHash({
         associatedAddress: address,
-        evmChain,
-        txHash: tx.hash,
+        blockchain: chain,
+        txRef: tx.hash,
       }),
     ]);
   };

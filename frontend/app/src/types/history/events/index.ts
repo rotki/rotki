@@ -60,8 +60,8 @@ export interface LocationAndSignature {
 }
 
 export interface AddTransactionHashPayload {
-  readonly evmChain: string;
-  readonly txHash: string;
+  readonly blockchain: string;
+  readonly txRef: string;
   readonly associatedAddress: string;
 }
 
@@ -84,8 +84,7 @@ interface TimeRange {
   readonly toTimestamp: number;
 }
 
-export interface RepullingTransactionPayload extends Partial<EvmChainAddress>, TimeRange {
-}
+export interface RepullingTransactionPayload extends Partial<ChainAddress>, TimeRange { }
 
 export interface RepullingTransactionResponse {
   newTransactionsCount: number;

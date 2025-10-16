@@ -1,11 +1,9 @@
 <script lang="ts" setup>
 import type { AddTransactionHashPayload, LocationAndTxHash } from '@/types/history/events';
-import { assert } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import TransactionForm from '@/components/history/events/tx/TransactionForm.vue';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
 
 const modelValue = defineModel<AddTransactionHashPayload | undefined>({ required: true });
@@ -32,7 +30,6 @@ const stateUpdated = ref(false);
 
 const { setMessage } = useMessageStore();
 const { addTransactionHash } = useHistoryTransactions();
-const { getEvmChainName } = useSupportedChains();
 
 async function save() {
   if (!isDefined(modelValue))
@@ -43,15 +40,7 @@ async function save() {
   if (!valid)
     return false;
 
-  const data = get(modelValue);
-
-  const evmChain = getEvmChainName(data.evmChain) || data.evmChain;
-  assert(evmChain);
-
-  const payload: AddTransactionHashPayload = {
-    ...data,
-    evmChain,
-  };
+  const payload = get(modelValue);
 
   set(submitting, true);
   const result = await addTransactionHash(payload);
@@ -60,8 +49,8 @@ async function save() {
   if (result.success) {
     set(modelValue, undefined);
     emit('reload', {
-      location: evmChain,
-      txHash: data.txHash,
+      location: payload.blockchain,
+      txHash: payload.txRef,
     });
   }
   else if (result.message) {

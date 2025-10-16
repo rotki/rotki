@@ -58,12 +58,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     const messagePayload = {
       address: payload.address,
-      chain: payload.evmChain ? toHumanReadable(payload.evmChain) : undefined,
+      chain: payload.chain ? toHumanReadable(payload.chain) : undefined,
       from: formatTimestamp(payload.fromTimestamp),
       to: formatTimestamp(payload.toTimestamp),
     };
 
-    const isAddressSpecified = payload.address && payload.evmChain;
+    const isAddressSpecified = payload.address && payload.chain;
 
     const taskMeta = {
       description: isAddressSpecified

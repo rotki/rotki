@@ -26,7 +26,7 @@ const accountType = defineModel<AccountType>('accountType', { default: 'blockcha
 
 const { t } = useI18n({ useScope: 'global' });
 
-const evmChain = useRefPropVModel(modelValue, 'evmChain');
+const chain = useRefPropVModel(modelValue, 'chain');
 const address = useRefPropVModel(modelValue, 'address');
 const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
 const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
@@ -35,8 +35,9 @@ const exchange = ref<Exchange | undefined>(undefined);
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { evmAndEvmLikeTxChainsInfo, getChain } = useSupportedChains();
+const { evmAndEvmLikeTxChainsInfo, getChain, solanaChainsData } = useSupportedChains();
 const txChains = useArrayMap(evmAndEvmLikeTxChainsInfo, x => x.id);
+const solanaChains = useArrayMap(solanaChainsData, x => x.id);
 
 const accountTypeOptions = computed<{ text: string; value: AccountType }[]>(() => [
   { text: t('transactions.repulling.account_type.blockchain'), value: 'blockchain' },
@@ -51,16 +52,17 @@ const chainOptions = computed(() => {
   return [
     'evm',
     ...get(txChains).filter(chain => accountChains.includes(chain)),
+    ...get(solanaChains).filter(chain => accountChains.includes(chain)),
   ];
 });
 
 const usableChains = computed<string[]>(() => {
-  const evmChainVal = get(evmChain);
-  if (!evmChainVal || evmChainVal === 'evm') {
+  const chainVal = get(chain);
+  if (!chainVal || chainVal === 'evm') {
     return get(chainOptions);
   }
 
-  return [getChain(evmChainVal)];
+  return [getChain(chainVal)];
 });
 
 const accounts = computed<BlockchainAccount<AddressData>[]>({
@@ -72,7 +74,7 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
       .find(
         item =>
           getAccountAddress(item) === model.address
-          && (!model.evmChain || model.evmChain === 'evm' || model.evmChain === item.chain),
+          && (!model.chain || model.chain === 'evm' || model.chain === item.chain),
       );
 
     if (accountFound) {
@@ -101,7 +103,7 @@ const rules = computed(() => {
   if (get(isBlockchainType)) {
     return {
       address: { externalServerValidation: () => true },
-      evmChain: { required },
+      chain: { required },
       exchange: {},
       fromTimestamp: { required },
       toTimestamp: { required },
@@ -109,7 +111,7 @@ const rules = computed(() => {
   }
   return {
     address: {},
-    evmChain: {},
+    chain: {},
     exchange: { required },
     fromTimestamp: { required },
     toTimestamp: { required },
@@ -118,7 +120,7 @@ const rules = computed(() => {
 
 const states = {
   address,
-  evmChain,
+  chain,
   exchange,
   fromTimestamp,
   toTimestamp,
@@ -139,9 +141,9 @@ onBeforeUnmount(() => {
   set(errors, {});
 });
 
-watchImmediate(evmChain, (chain) => {
-  if (chain === '') {
-    set(evmChain, 'evm');
+watchImmediate(chain, (chainVal) => {
+  if (chainVal === '') {
+    set(chain, 'evm');
   }
 });
 
@@ -178,10 +180,10 @@ defineExpose({
       class="flex gap-2"
     >
       <ChainSelect
-        v-model="evmChain"
+        v-model="chain"
         class="max-w-[20rem]"
         :items="chainOptions"
-        :error-messages="toMessages(v$.evmChain)"
+        :error-messages="toMessages(v$.chain)"
       />
       <BlockchainAccountSelector
         v-model="accounts"

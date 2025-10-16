@@ -107,9 +107,9 @@ describe('composables::history/events/tx', () => {
 
     // add a hash and check the spy function is called
     await addTransactionHash({
-      txHash: '0x9',
+      txRef: '0x9',
       associatedAddress: '0x0...',
-      evmChain: '',
+      blockchain: '',
     });
 
     expect(addHistorySpy).toHaveBeenCalledOnce();

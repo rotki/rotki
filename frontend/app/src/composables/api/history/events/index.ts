@@ -48,7 +48,7 @@ export type EvmTransactionStatus = z.infer<typeof EvmTransactionStatusSchema>;
 
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
-  deleteTransactions: (chain: string, txHash?: string) => Promise<boolean>;
+  deleteTransactions: (chain: string, txRef?: string) => Promise<boolean>;
   pullAndRecodeTransactionRequest: (payload: PullTransactionPayload) => Promise<PendingTask>;
   getUndecodedTransactionsBreakdown: () => Promise<PendingTask>;
   decodeTransactions: (chains: string, ignoreCache?: boolean) => Promise<PendingTask>;
@@ -98,9 +98,9 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     payload: TransactionRequestPayload,
   ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true);
 
-  const deleteTransactions = async (chain: string, txHash?: string): Promise<boolean> => {
+  const deleteTransactions = async (chain: string, txRef?: string): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/transactions', {
-      data: chain ? snakeCaseTransformer({ chain, txHash }) : null,
+      data: chain ? snakeCaseTransformer({ chain, txRef }) : null,
       validateStatus: validStatus,
     });
 
@@ -187,7 +187,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const addTransactionHash = async (payload: AddTransactionHashPayload): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
-      '/blockchains/evm/transactions/add-hash',
+      '/blockchains/transactions',
       snakeCaseTransformer(payload),
       {
         validateStatus: validTaskStatus,
@@ -199,7 +199,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const repullingTransactions = async (payload: RepullingTransactionPayload): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
-      '/blockchains/evm/transactions/refetch',
+      '/blockchains/transactions/refetch',
       snakeCaseTransformer({
         ...payload,
         asyncQuery: true,
