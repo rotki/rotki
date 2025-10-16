@@ -6,6 +6,7 @@ import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
+import OkxRegionSelectorItem from '@/components/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
 import { useRefMap } from '@/composables/utils/useRefMap';
@@ -304,7 +305,20 @@ defineExpose({
       key-attr="identifier"
       text-attr="label"
       variant="outlined"
-    />
+    >
+      <template #selection="{ item }">
+        <OkxRegionSelectorItem
+          :identifier="item.identifier"
+          :label="item.label"
+        />
+      </template>
+      <template #item="{ item }">
+        <OkxRegionSelectorItem
+          :identifier="item.identifier"
+          :label="item.label"
+        />
+      </template>
+    </RuiMenuSelect>
 
     <div
       v-if="editMode"
