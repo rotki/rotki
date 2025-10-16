@@ -39,7 +39,7 @@ const stateUpdated = ref<boolean>(false);
 
 const { setMessage } = useMessageStore();
 const { repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
-const { getEvmChainName, matchChain, txEvmChains } = useSupportedChains();
+const { allTxChainsInfo, matchChain } = useSupportedChains();
 const { useIsTaskRunning } = useTaskStore();
 
 const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
@@ -47,7 +47,7 @@ const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 function defaults(): RepullingTransactionPayload {
   return {
     address: '',
-    evmChain: '',
+    chain: '',
     fromTimestamp: dayjs().subtract(1, 'year').unix(),
     toTimestamp: dayjs().unix(),
   };
@@ -82,11 +82,11 @@ async function submit(): Promise<void> {
       }
     }
     else {
-      const evmChainVal = data.evmChain;
-      const evmChain = evmChainVal && evmChainVal !== 'evm' ? getEvmChainName(evmChainVal) : undefined;
+      const chain = data.chain;
+      const usedChain = chain && chain !== 'evm' ? chain : undefined;
       const blockchainPayload = {
         address: data.address || undefined,
-        evmChain,
+        chain: usedChain,
         fromTimestamp: data.fromTimestamp,
         toTimestamp: data.toTimestamp,
       };
@@ -94,11 +94,11 @@ async function submit(): Promise<void> {
       const newTransactionsDetected = await repullingTransactions(blockchainPayload);
       if (newTransactionsDetected) {
         let chains: string[];
-        if (evmChainVal === 'evm' || !evmChainVal) {
-          chains = get(txEvmChains).map(chain => chain.id);
+        if (chain === 'evm' || !chain) {
+          chains = get(allTxChainsInfo).map(chain => chain.id);
         }
         else {
-          const chainId = matchChain(evmChainVal);
+          const chainId = matchChain(chain);
           assert(chainId);
           chains = [chainId];
         }

@@ -31,8 +31,8 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
         openDialog({
           data: options.data || {
             associatedAddress: '',
-            evmChain: '',
-            txHash: '',
+            blockchain: '',
+            txRef: '',
           },
           type: DIALOG_TYPES.TRANSACTION_FORM,
         });
@@ -53,8 +53,8 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
         openDialog({
           data: {
             associatedAddress: '',
-            evmChain: '',
-            txHash: '',
+            blockchain: '',
+            txRef: '',
           },
           type: DIALOG_TYPES.TRANSACTION_FORM,
         });

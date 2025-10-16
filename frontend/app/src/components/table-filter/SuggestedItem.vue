@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Suggestion } from '@/types/filtering';
-import { isValidAddress } from '@rotki/common';
+import { isValidAddress, isValidTxHashOrSignature } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -168,7 +168,7 @@ watch(search, (value) => {
           class="font-normal"
           :title="displayValue"
         >
-          {{ isValidAddress(displayValue) ? truncateAddress(displayValue, 8) : displayValue }}
+          {{ isValidAddress(displayValue) || isValidTxHashOrSignature(displayValue) ? truncateAddress(displayValue, 8) : displayValue }}
         </span>
       </template>
     </template>
