@@ -8895,7 +8895,7 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
+      Supported blockchains: ``"BTC", "BCH", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
@@ -9200,7 +9200,7 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
+      Supported blockchains: ``"BTC", "BCH", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
@@ -9273,7 +9273,7 @@ Account operations by chain type
 .. http:patch:: /api/(version)/blockchains/type/(chain_type)/accounts
 
    .. note::
-      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE``
+      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE, SOLANA``
 
    .. note::
       This endpoint doesn't support ENS resolution
@@ -9338,7 +9338,7 @@ Account operations by chain type
 .. http:delete:: /api/(version)/blockchains/type/(chain_type)/accounts
 
    .. note::
-      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE``
+      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE, SOLANA``
 
    .. note::
       This endpoint doesn't support ENS resolution
@@ -9390,7 +9390,7 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
+      Supported blockchains: ``"BTC", "BCH", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 

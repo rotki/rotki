@@ -76,6 +76,7 @@ from rotkehlchen.db.settings import (
     db_settings_from_dict,
     serialize_db_setting,
 )
+from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DBAssetBalance,
@@ -1417,13 +1418,17 @@ class DBHandler:
             for address in accounts:
                 self.delete_data_for_evm_address(write_cursor, address, blockchain)  # type: ignore
 
-        if blockchain in SUPPORTED_EVMLIKE_CHAINS:
+        elif blockchain in SUPPORTED_EVMLIKE_CHAINS:
             for address in accounts:
                 self.delete_data_for_evmlike_address(write_cursor, address, blockchain)  # type: ignore
 
-        if blockchain in SUPPORTED_BITCOIN_CHAINS:
+        elif blockchain in SUPPORTED_BITCOIN_CHAINS:
             for address in accounts:
                 self.delete_data_for_bitcoin_address(write_cursor, address, blockchain)  # type: ignore  # mypy doesn't understand the blockchain if check
+        elif blockchain == SupportedBlockchain.SOLANA:
+            solana_tx_db = DBSolanaTx(self)
+            for address in accounts:
+                solana_tx_db.delete_data_for_address(write_cursor, address)  # type: ignore
 
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE object_reference = ?;',
