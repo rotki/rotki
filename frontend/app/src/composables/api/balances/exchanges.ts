@@ -60,15 +60,10 @@ export function useExchangeApi(): UseExchangeApiReturn {
   const callSetupExchange = async ({ mode, ...payload }: ExchangeFormData): Promise<boolean> => {
     let response: AxiosResponse<ActionResult<boolean>>;
 
-    const newPayload = {
-      ...payload,
-      okxLocation: payload.okxLocation ? payload.okxLocation.toLowerCase() : undefined,
-    };
-
     if (mode === 'edit') {
       response = await api.instance.patch<ActionResult<boolean>>(
         '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(newPayload, {
+        snakeCaseTransformer(nonEmptyProperties(payload, {
           alwaysPickKeys: ['binanceMarkets'],
           removeEmptyString: true,
         })),
@@ -80,7 +75,7 @@ export function useExchangeApi(): UseExchangeApiReturn {
     else {
       response = await api.instance.put<ActionResult<boolean>>(
         '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(newPayload, {
+        snakeCaseTransformer(nonEmptyProperties(payload, {
           removeEmptyString: true,
         })),
         {
