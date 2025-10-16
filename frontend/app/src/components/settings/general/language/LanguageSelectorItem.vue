@@ -1,16 +1,10 @@
 <script setup lang="ts">
+import Flag from '@/components/common/Flag.vue';
+
 defineProps<{
   countries: string[];
   label: string;
 }>();
-
-function getFlagEmoji(code: string) {
-  const codePoints = code
-    .toUpperCase()
-    .split('')
-    .map(char => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-}
 </script>
 
 <template>
@@ -27,9 +21,7 @@ function getFlagEmoji(code: string) {
         >
           /
         </span>
-        <span :class="$style.flag">
-          {{ getFlagEmoji(country) }}
-        </span>
+        <Flag :iso="country" />
       </div>
     </div>
     <div class="ml-3">
@@ -37,9 +29,3 @@ function getFlagEmoji(code: string) {
     </div>
   </div>
 </template>
-
-<style lang="scss" module>
-.flag {
-  font-size: 1.5rem;
-}
-</style>
