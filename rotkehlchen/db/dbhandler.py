@@ -1856,7 +1856,7 @@ class DBHandler:
                     'INSERT INTO user_credentials_mappings '
                     '(credential_name, credential_location, setting_name, setting_value) '
                     'VALUES (?, ?, ?, ?)',
-                    (name, location.serialize_for_db(), OKX_LOCATION_KEY, okx_location.value),
+                    (name, location.serialize_for_db(), OKX_LOCATION_KEY, okx_location.serialize()),  # noqa: E501
                 )
 
             if location in (Location.BINANCE, Location.BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
@@ -1932,7 +1932,7 @@ class DBHandler:
                         new_name if new_name is not None else name,
                         location.serialize_for_db(),
                         OKX_LOCATION_KEY,
-                        okx_location.value,
+                        okx_location.serialize(),
                     ),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
