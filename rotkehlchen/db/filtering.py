@@ -700,20 +700,6 @@ class DBNullFilter(DBFilter):
         return [f'{column} {self.verb} NULL' for column in self.columns], []
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBAccountingRuleHasEventIdsFilter(DBFilter):
-    """Filter rules based on whether they have associated event IDs."""
-
-    has_event_ids: bool  # True = only with, False = only without
-
-    def prepare(self) -> tuple[list[str], list[Any]]:
-        exists_clause = (
-            'EXISTS (SELECT 1 FROM accounting_rule_events '
-            'WHERE rule_id = accounting_rules.identifier)'
-        )
-        return [exists_clause if self.has_event_ids else f'NOT {exists_clause}'], []
-
-
 @dataclass
 class DBAccountingRuleEventIdFilter(DBFilter):
     """Filter rules that are linked to specific event IDs."""
@@ -2291,10 +2277,12 @@ class AccountingRulesFilterQuery(DBFilterQuery):
                 column='accounting_rules.identifier',
                 values=identifiers,
             ))
-        if custom_rule_handling == 'only':
-            filters.append(DBAccountingRuleHasEventIdsFilter(and_op=True, has_event_ids=True))
-        elif custom_rule_handling == 'exclude':
-            filters.append(DBAccountingRuleHasEventIdsFilter(and_op=True, has_event_ids=False))
+        if custom_rule_handling != 'all':
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='is_event_specific',
+                value=0 if custom_rule_handling == 'exclude' else 1,
+            ))
         if event_ids is not None:
             filters.append(DBAccountingRuleEventIdFilter(
                 and_op=True,

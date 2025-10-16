@@ -654,7 +654,7 @@ CREATE TABLE IF NOT EXISTS accounting_rules(
     count_entire_amount_spend INTEGER NOT NULL CHECK (count_entire_amount_spend IN (0, 1)),
     count_cost_basis_pnl INTEGER NOT NULL CHECK (count_cost_basis_pnl IN (0, 1)),
     accounting_treatment TEXT,
-    UNIQUE(type, subtype, counterparty)
+    is_event_specific INTEGER NOT NULL CHECK (is_event_specific IN (0, 1)) DEFAULT 0
 );
 """
 
@@ -837,7 +837,8 @@ CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);
 CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
 CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
-"""
+CREATE UNIQUE INDEX IF NOT EXISTS unique_generic_accounting_rules ON accounting_rules(type, subtype, counterparty) WHERE is_event_specific = 0;
+"""  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;

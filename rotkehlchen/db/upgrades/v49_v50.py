@@ -28,6 +28,44 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         )
 
+    @progress_step(description='Update accounting_rules table with is_event_specific column and constraint.')  # noqa: E501
+    def _update_accounting_rules_table(write_cursor: 'DBCursor') -> None:
+        """Does the following:
+        - Add is_event_specific column to accounting_rules table
+        - Create partial unique index for generic rules only
+        """
+        write_cursor.switch_foreign_keys('OFF')
+        write_cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS accounting_rules_new(
+            identifier INTEGER NOT NULL PRIMARY KEY,
+            type TEXT NOT NULL,
+            subtype TEXT NOT NULL,
+            counterparty TEXT NOT NULL,
+            taxable INTEGER NOT NULL CHECK (taxable IN (0, 1)),
+            count_entire_amount_spend INTEGER NOT NULL CHECK (count_entire_amount_spend IN (0, 1)),
+            count_cost_basis_pnl INTEGER NOT NULL CHECK (count_cost_basis_pnl IN (0, 1)),
+            accounting_treatment TEXT,
+            is_event_specific INTEGER NOT NULL CHECK (is_event_specific IN (0, 1)) DEFAULT 0
+        );
+        """)
+        write_cursor.execute(
+            'INSERT INTO accounting_rules_new(identifier, type, subtype, counterparty, taxable, '
+            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment, is_event_specific) '  # noqa: E501
+            'SELECT identifier, type, subtype, counterparty, taxable, '
+            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment, 0 '
+            'FROM accounting_rules ORDER BY identifier',
+        )
+        write_cursor.execute('DROP TABLE accounting_rules')
+        write_cursor.execute('ALTER TABLE accounting_rules_new RENAME TO accounting_rules')
+
+        # Create partial unique index to maintain uniqueness for generic rules only
+        write_cursor.execute("""
+        CREATE UNIQUE INDEX unique_generic_accounting_rules
+        ON accounting_rules(type, subtype, counterparty)
+        WHERE is_event_specific = 0
+        """)
+        write_cursor.switch_foreign_keys('ON')
+
     @progress_step(description='Create table for linking accounting rules to specific events.')
     def _create_accounting_rule_events_table(write_cursor: 'DBCursor') -> None:
         """Create a table to link accounting rules to specific events."""

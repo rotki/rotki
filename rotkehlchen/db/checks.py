@@ -57,7 +57,7 @@ def sanity_check_impl(
     # Fetch indexes (excluding auto-generated ones)
     cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL")
     for (name, raw_script) in cursor:
-        normalized_script = db_script_normalizer(raw_script).replace('createindexifnotexists', 'createindex')  # noqa: E501
+        normalized_script = db_script_normalizer(raw_script).replace('createindexifnotexists', 'createindex').replace('createuniqueindexifnotexists', 'createuniqueindex')  # noqa: E501
         db_objects['index'][name] = (normalized_script, raw_script)
 
     # Check for extra structures such as views
@@ -107,7 +107,7 @@ def sanity_check_impl(
                     if obj_data[0] != expected.lower():
                         differing[obj_name] = (obj_data, expected)
                 else:  # For indexes, normalize both sides by removing "ifnotexists"
-                    expected_normalized = expected.replace('createindexifnotexists', 'createindex')
+                    expected_normalized = expected.replace('createindexifnotexists', 'createindex').replace('createuniqueindexifnotexists', 'createuniqueindex')  # noqa: E501
                     if obj_data[0] != expected_normalized:
                         differing[obj_name] = (obj_data, expected)
 

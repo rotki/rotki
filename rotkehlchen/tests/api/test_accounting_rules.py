@@ -741,8 +741,8 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         assert cursor.execute(
             'SELECT * FROM accounting_rules WHERE identifier IN (1, 82);',
         ).fetchall() == [
-            (1, 'deposit', 'deposit asset', 'aave-v1', 0, 0, 1, 'A'),
-            (82, 'deposit', 'fee', NO_ACCOUNTING_COUNTERPARTY, 1, 0, 1, None),
+            (1, 'deposit', 'deposit asset', 'aave-v1', 0, 0, 1, 'A', 0),
+            (82, 'deposit', 'fee', NO_ACCOUNTING_COUNTERPARTY, 1, 0, 1, None, 0),
         ] == initial_rules
 
         assert cursor.execute('SELECT * FROM linked_rules_properties').fetchall() == [
