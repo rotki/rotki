@@ -4129,6 +4129,17 @@ class QueryCalendarSchema(
             counterparties={x.identifier for x in chain_aggregator.get_all_counterparties()},
         )
 
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['to_timestamp'] is None:
+            return None
+
+        return super().validate_schema(data, **_kwargs)
+
     @post_load
     def make_calendar_query(
             self,
