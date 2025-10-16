@@ -130,6 +130,8 @@ class Defillama(
                 chain_name = str(asset.chain_id)
 
             return f'{chain_name}:{asset.evm_address}'
+        elif asset.is_solana_token():
+            return f'solana:{asset.resolve_to_solana_token().mint_address}'
 
         return f'coingecko:{asset.to_coingecko()}'
 

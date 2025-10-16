@@ -1,12 +1,23 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.assets.utils import get_or_create_solana_token
 from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_EUR, A_LINK, A_USD, A_USDC, A_USDT
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials, Price
+from rotkehlchen.types import (
+    ApiKey,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    Price,
+    SolanaAddress,
+)
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
 
 defillama_mocked_historical_prices = {
     'USD': {
@@ -142,3 +153,23 @@ def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_d
 
         # Should have 4 prices from the 2 successful chunks (chunks 2 and 3)
         assert len(prices) == 4
+
+
+@pytest.mark.vcr
+def test_query_solana_token_price_using_address(
+        session_defillama: 'Defillama',
+        solana_inquirer: 'SolanaInquirer',
+) -> None:
+    """Test that current price queries work correctly for Solana tokens."""
+    solana_token = get_or_create_solana_token(  # aura token.
+        userdb=solana_inquirer.database,
+        solana_inquirer=solana_inquirer,
+        address=SolanaAddress('DtR4D9FtVoTX2569gaL837ZgrB6wNjj6tkmnX9Rdk9B2'),
+    )
+
+    # Test querying current price for the Solana token
+    price = session_defillama.query_current_price(
+        from_asset=solana_token.resolve_to_asset_with_oracles(),
+        to_asset=A_USD.resolve_to_asset_with_oracles(),
+    )
+    assert price == FVal('0.0827225214838227')
