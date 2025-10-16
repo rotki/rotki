@@ -229,6 +229,34 @@ def test_basic_calendar_operations(
     assert result[0]['blockchain'] == SupportedBlockchain.ETHEREUM.serialize()
     assert result[1]['blockchain'] == SupportedBlockchain.GNOSIS.serialize()
 
+    # Test query with None to_timestamp (should not cause TypeError)
+    assert_proper_response(requests.post(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json={
+            'from_timestamp': 1760652000,
+            'limit': 5,
+            'offset': 0,
+            'ascending': [True],
+            'order_by_attributes': ['timestamp'],
+        },
+    ))
+
+    # Test validation still works when to_timestamp is provided and invalid
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json={
+            'from_timestamp': 1977652500,  # after the ens event timestamp
+            'to_timestamp': 1977652300,    # before the ens event timestamp
+            'limit': 5,
+            'offset': 0,
+        },
+    )
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='from_timestamp must be less than or equal to to_timestamp',
+    )
+
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
