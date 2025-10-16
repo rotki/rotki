@@ -127,6 +127,7 @@ from rotkehlchen.api.v1.schemas import (
     ModuleBalanceProcessingSchema,
     ModuleBalanceWithVersionProcessingSchema,
     ModuleHistoryProcessingSchema,
+    MoneriumOAuthCredentialsSchema,
     MultipleAccountingRuleConflictsResolutionSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
@@ -281,6 +282,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.db.filtering import HistoryEventFilterQuery
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -551,6 +553,7 @@ class ExchangesResource(BaseMethodView):
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -560,6 +563,7 @@ class ExchangesResource(BaseMethodView):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            okx_location=okx_location,
         )
 
     @require_loggedin_user()
@@ -574,6 +578,7 @@ class ExchangesResource(BaseMethodView):
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -584,6 +589,7 @@ class ExchangesResource(BaseMethodView):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            okx_location=okx_location,
         )
 
     @require_loggedin_user()
@@ -676,6 +682,15 @@ class EvmTransactionsStatusResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_evm_transactions_status(async_query=async_query)
+
+
+class HistoryStatusSummaryResource(BaseMethodView):
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_history_status_summary(async_query=async_query)
 
 
 class TransactionsDecodingResource(BaseMethodView):
@@ -1702,6 +1717,16 @@ class BlockchainsAccountsResource(BaseMethodView):
             blockchain=blockchain,
             accounts=accounts,
         )
+
+
+class GnosisPaySafeAdminsResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_gnosis_pay_safe_admin_addresses(async_query=async_query)
 
 
 class ChainTypeAccountResource(BaseMethodView):
@@ -3303,6 +3328,29 @@ class GoogleCalendarResource(BaseMethodView):
     def delete(self) -> Response:
         """Disconnect Google Calendar integration."""
         return self.rest_api.disconnect_google_calendar()
+
+
+class MoneriumOAuthResource(BaseMethodView):
+    """Endpoints for managing Monerium OAuth credentials."""
+
+    put_schema = MoneriumOAuthCredentialsSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_monerium_status()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(put_schema, location='json')
+    def put(self, access_token: str, refresh_token: str, expires_in: int) -> Response:
+        return self.rest_api.complete_monerium_oauth(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=expires_in,
+        )
+
+    @require_loggedin_user()
+    def delete(self) -> Response:
+        return self.rest_api.disconnect_monerium()
 
 
 class EventsAnalysisResource(BaseMethodView):

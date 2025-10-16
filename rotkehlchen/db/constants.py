@@ -5,26 +5,27 @@ from rotkehlchen.errors.serialization import DeserializationError
 
 KDF_ITER: Final = 64000
 
-KRAKEN_ACCOUNT_TYPE_KEY = 'kraken_account_type'
-BINANCE_MARKETS_KEY = 'binance_selected_trade_pairs'
-USER_CREDENTIAL_MAPPING_KEYS = (KRAKEN_ACCOUNT_TYPE_KEY, BINANCE_MARKETS_KEY)
+KRAKEN_ACCOUNT_TYPE_KEY: Final = 'kraken_account_type'
+OKX_LOCATION_KEY: Final = 'okx_location'
+BINANCE_MARKETS_KEY: Final = 'binance_selected_trade_pairs'
+USER_CREDENTIAL_MAPPING_KEYS: Final = (KRAKEN_ACCOUNT_TYPE_KEY, BINANCE_MARKETS_KEY, OKX_LOCATION_KEY)  # noqa: E501
 
 
 # -- EVM transactions attributes values -- used in evm_tx_mappings
-TX_DECODED = 0
-TX_SPAM = 1
+TX_DECODED: Final = 0
+TX_SPAM: Final = 1
 
 # -- history_events_mappings values --
-HISTORY_MAPPING_KEY_STATE = 'state'
-HISTORY_MAPPING_STATE_CUSTOMIZED = 1
+HISTORY_MAPPING_KEY_STATE: Final = 'state'
+HISTORY_MAPPING_STATE_CUSTOMIZED: Final = 1
 
 
-EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS = 'last_queried_timestamp'
-EVM_ACCOUNTS_DETAILS_TOKENS = 'tokens'
+EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS: Final = 'last_queried_timestamp'
+EVM_ACCOUNTS_DETAILS_TOKENS: Final = 'tokens'
 
 # sqlite treats NULLs as different values in UNIQUE checks.
 # we use "NONE" instead of NULL so that only one "no value" row can exist.
-NO_ACCOUNTING_COUNTERPARTY = 'NONE'
+NO_ACCOUNTING_COUNTERPARTY: Final = 'NONE'
 LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[
     'include_gas_costs',
     'include_crypto2crypto',

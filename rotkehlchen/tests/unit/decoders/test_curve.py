@@ -99,12 +99,11 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
     https://etherscan.io/tx/0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982
     tests that a deposit for the aave pool in curve works correctly
     """
-    tx_hex = '0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982'
+    tx_hash = deserialize_evm_tx_hash('0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982')  # noqa: E501
     location_label = '0x57bF3B0f29E37619623994071C9e12091919675c'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         chain_id=ChainID.ETHEREUM,
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         timestamp=1650276061,
         block_number=14608535,
         from_address=string_to_evm_address('0x57bF3B0f29E37619623994071C9e12091919675c'),
@@ -117,7 +116,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
         nonce=599,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -173,7 +172,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -185,7 +184,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -198,7 +197,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -211,7 +210,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -236,11 +235,10 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     This tests uses the steth/eth pool to verify that deposits including transfer of ETH work
     properly
     """
-    tx_hex = '0x51c052c8fb60f092f98ffc3cab6340c7c5348ee3b339582feba1c17cbd97ea56'
+    tx_hash = deserialize_evm_tx_hash('0x51c052c8fb60f092f98ffc3cab6340c7c5348ee3b339582feba1c17cbd97ea56')  # noqa: E501
     location_label = '0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=1650276061,
         block_number=14608535,
@@ -254,7 +252,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
         nonce=5,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -310,7 +308,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -322,7 +320,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=415,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -334,7 +332,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             notes='Set stETH spending approval of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 to 115792089237316195423570985008687907853269984665640564039457.384070053129639935',  # noqa: E501
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=416,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -347,7 +345,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=417,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -360,7 +358,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=418,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -388,11 +386,10 @@ def test_curve_remove_liquidity(
     https://etherscan.io/tx/0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0
     This tests uses the link pool to verify that withdrawals are correctly decoded
     """
-    tx_hex = '0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0'
+    tx_hash = deserialize_evm_tx_hash('0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0')  # noqa: E501
     location_label = string_to_evm_address('0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6')
-    evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1650276061),
         block_number=14608535,
@@ -406,7 +403,7 @@ def test_curve_remove_liquidity(
         nonce=5,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -463,7 +460,7 @@ def test_curve_remove_liquidity(
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -475,7 +472,7 @@ def test_curve_remove_liquidity(
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -488,7 +485,7 @@ def test_curve_remove_liquidity(
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -512,11 +509,10 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
     internal transaction is made for eth transfers
     """
-    tx_hex = '0x30bb99f3e34fb1fbcf009320af7e290caf18b04b207319e15aa8ffbf645f4ad9'
+    tx_hash = deserialize_evm_tx_hash('0x30bb99f3e34fb1fbcf009320af7e290caf18b04b207319e15aa8ffbf645f4ad9')  # noqa: E501
     location_label = '0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=1650276061,
         block_number=14647221,
@@ -530,7 +526,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
         nonce=5,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -557,7 +553,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
         ],
     )
     internal_tx = EvmInternalTransaction(
-        parent_tx_hash=evmhash,
+        parent_tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         trace_id=27,
         from_address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
@@ -578,7 +574,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -590,7 +586,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -603,7 +599,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -627,11 +623,10 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
     internal transaction is made for eth transfers
     """
-    tx_hex = '0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8'
+    tx_hash = deserialize_evm_tx_hash('0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8')  # noqa: E501
     location_label = '0x2fac74A3a04B031F240923621a578724C40678af'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=1650276061,
         block_number=14647221,
@@ -645,7 +640,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
         nonce=5,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -737,7 +732,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -749,7 +744,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -762,7 +757,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -783,17 +778,16 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Bb553FFC5716782051f51b564Bb149D9946f0d2']])
 def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check the case for a pool where multiple deposit events appear in the transaction"""
-    tx_hex = deserialize_evm_tx_hash('0xe954a396a02ebbea45a1d206c9918f717c55509c8138fccc63155d0262ef4dc4 ')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xe954a396a02ebbea45a1d206c9918f717c55509c8138fccc63155d0262ef4dc4 ')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
@@ -805,7 +799,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             notes='Burn 0.011180845456491718 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
@@ -818,7 +812,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA5407eAE9Ba41422680e2e00537571bcC53efBfD'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
@@ -838,17 +832,16 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x66215D23B8A247C80c2D1B7beF4BefC2AB384bCE']])
 def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
-    tx_hex = deserialize_evm_tx_hash('0xf67308b01613b3f75a71f2a3cea198acc063c987f17be4aaf5505a1ad70751ef')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xf67308b01613b3f75a71f2a3cea198acc063c987f17be4aaf5505a1ad70751ef')  # noqa: E501
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1685562071000)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=cast('EthereumInquirer', ethereum_transaction_decoder.evm_inquirer),
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -860,7 +853,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
             notes='Burn 0.01847747115186684 ETH for gas',
             counterparty='gas',
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=191,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -887,12 +880,11 @@ def test_gauge_deposit(
         ethereum_transaction_decoder,
         load_global_caches,
 ) -> None:
-    tx_hex = deserialize_evm_tx_hash('0x5ae70d68241d85feac65c90e4546154e232dba9fecad9036bcec10082acc9d46')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x5ae70d68241d85feac65c90e4546154e232dba9fecad9036bcec10082acc9d46')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=cast('EthereumInquirer', ethereum_transaction_decoder.evm_inquirer),
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     mocked_notifier = database.msg_aggregator.rotki_notifier
@@ -906,7 +898,7 @@ def test_gauge_deposit(
     )
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1679313731000),
             location=Location.ETHEREUM,
@@ -918,7 +910,7 @@ def test_gauge_deposit(
             notes='Burn 0.007333038632457846 ETH for gas',
             counterparty='gas',
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=200,
             timestamp=TimestampMS(1679313731000),
             location=Location.ETHEREUM,
@@ -939,16 +931,16 @@ def test_gauge_deposit(
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd80DF837766C8Edb6f11Bf7fD35703f87F2a31fB']])
 def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
-    tx_hex = deserialize_evm_tx_hash('0x055fc6cafcdae6b367d934e9385816f89153314c5abc5d3659a65778c90342d2')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x055fc6cafcdae6b367d934e9385816f89153314c5abc5d3659a65778c90342d2')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1679346575000),
             location=Location.ETHEREUM,
@@ -961,7 +953,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_gl
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=43,
             timestamp=TimestampMS(1679346575000),
             location=Location.ETHEREUM,
@@ -982,16 +974,16 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_gl
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0E9Fed33f6a202146a615De0FA1985adFb461467']])
 def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
-    tx_hex = deserialize_evm_tx_hash('0xe01bc48ddb3df6eb721c122c5ddaea705b771bfb8db407e3a96ae9bab6584453')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xe01bc48ddb3df6eb721c122c5ddaea705b771bfb8db407e3a96ae9bab6584453')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1679342423000),
             location=Location.ETHEREUM,
@@ -1004,7 +996,7 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, lo
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=112,
             timestamp=TimestampMS(1679342423000),
             location=Location.ETHEREUM,
@@ -1026,16 +1018,16 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, lo
 @pytest.mark.parametrize('ethereum_accounts', [['0xA8d7Fb04877C3FBf175DE76FA3D2fa66c770537F']])
 def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Test that trading token to token in curve is decoded correctly"""
-    tx_hex = deserialize_evm_tx_hash('0xaa176ce742d62b663656572f8cc53d63d6c00cd2c3adde32293e4028a5e0693c ')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xaa176ce742d62b663656572f8cc53d63d6c00cd2c3adde32293e4028a5e0693c ')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
@@ -1048,7 +1040,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             counterparty='gas',
             address=None,
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
@@ -1060,7 +1052,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
@@ -1081,16 +1073,16 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
 @pytest.mark.parametrize('ethereum_accounts', [['0x8a1B73A88E1854Dd3EeBEe4354Bd4DbA23861E3A']])
 def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Test that trading eth to token in curve is decoded correctly"""
-    tx_hex = deserialize_evm_tx_hash('0x34d6674d8d46b8a6c546b04b4c748b82d42a688f562fe80a8d02e9180a684d09')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x34d6674d8d46b8a6c546b04b4c748b82d42a688f562fe80a8d02e9180a684d09')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
@@ -1103,7 +1095,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
             counterparty='gas',
             address=None,
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
@@ -1115,7 +1107,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2'),
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
@@ -1136,16 +1128,16 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
 @pytest.mark.parametrize('ethereum_accounts', [['0x38abab9766e0b27d2912718a884292b8E7eb2803']])
 def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Test that if exchange_underlying is happening the trade is decoded correctly"""
-    tx_hex = deserialize_evm_tx_hash('0xed73e8717c9b2571a9cd7c0563e013c569e757920a050b1120ff1e6f5f3d3b8f ')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xed73e8717c9b2571a9cd7c0563e013c569e757920a050b1120ff1e6f5f3d3b8f ')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
@@ -1158,7 +1150,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             counterparty='gas',
             address=None,
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
@@ -1170,7 +1162,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'),
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
@@ -1190,15 +1182,15 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
 @pytest.mark.parametrize('ethereum_accounts', [['0x3Da232a0c0A5C59918D7B5fF77bf1c8Fc93aeE1B']])
 def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
     """Test that transactions made via curve swap router are decoded correctly"""
-    tx_hex = deserialize_evm_tx_hash('0xd561728d989c4d8a25ca6708051cdb265dbc455927bb8c355083b790101487e9 ')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xd561728d989c4d8a25ca6708051cdb265dbc455927bb8c355083b790101487e9 ')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
@@ -1211,7 +1203,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             counterparty='gas',
             address=None,
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
@@ -1223,7 +1215,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
         ), EvmSwapEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
@@ -1244,17 +1236,17 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0xdE206bC0Fde2eF5C8BB6A1d552a64F82A2407Be4']])
 def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check that adding liquidity to a curve pool using the USDN contract is properly decoded."""
-    tx_hex = deserialize_evm_tx_hash('0x6c28df56ae4a7f784577273f72402a9b6640024327ee952fdde72c9cfdf08da5')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x6c28df56ae4a7f784577273f72402a9b6640024327ee952fdde72c9cfdf08da5')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(Timestamp(1674470159000))
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1266,7 +1258,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             counterparty=CPT_GAS,
             notes='Burn 0.005672980418415474 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1279,7 +1271,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
             notes='Deposit 761.396655 USDC in curve pool 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1301,17 +1293,17 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
 @pytest.mark.parametrize('ethereum_accounts', [['0x6d84264A7bD2Cffa4A117BA2350403b3A9866949']])
 def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check that removing liquidity from a curve pool using the USDN contract is properly decoded."""  # noqa: E501
-    tx_hex = deserialize_evm_tx_hash('0x4d77fba437b9dee6679dbb0f238b123f01b7b1bdd41bf46e35b00ce016cf8ab2')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x4d77fba437b9dee6679dbb0f238b123f01b7b1bdd41bf46e35b00ce016cf8ab2')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(Timestamp(1676708639000))
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1323,7 +1315,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             notes='Burn 0.009847222 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1336,7 +1328,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1349,7 +1341,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=235,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1362,7 +1354,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=236,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1375,7 +1367,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=237,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1397,17 +1389,17 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
 @pytest.mark.parametrize('ethereum_accounts', [['0xcbE942516AE7687d80a5fF94F8f9A203Be800713']])
 def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
     """Check that adding liquidity to a curve pool using the 3Pool zap contract is properly decoded."""  # noqa: E501
-    tx_hex = deserialize_evm_tx_hash('0xf7c6764b832069785eeee22a078f4cb3c92149c25eb0bdc6bba36ebd1598c255')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xf7c6764b832069785eeee22a078f4cb3c92149c25eb0bdc6bba36ebd1598c255')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(1680503171000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1419,7 +1411,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, lo
             counterparty=CPT_GAS,
             notes='Burn 0.006158572854866488 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1432,7 +1424,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, lo
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
             notes='Deposit 200000 USDT in curve pool 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1454,17 +1446,17 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, lo
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7BFb2ED20D14407C78cc1FC4a4Abe39f1964964']])
 def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check that removing liquidity from a curve pool using the 3Pool zap contract is properly decoded."""  # noqa: E501
-    tx_hex = deserialize_evm_tx_hash('0xbf4a445d0452e2f1e046c3ab3d10018c801e2acae89051c98332e9264f36d7f7')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xbf4a445d0452e2f1e046c3ab3d10018c801e2acae89051c98332e9264f36d7f7')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(1680390095000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1476,7 +1468,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
             notes='Burn 0.007508781310937599 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1489,7 +1481,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1502,7 +1494,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=50,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1515,7 +1507,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=51,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1528,7 +1520,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=52,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1553,16 +1545,16 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, 
     Test that if liquidity is removed from a pool with a(aave) tokens,
     the events are decoded correctly.
     """
-    tx_hex = deserialize_evm_tx_hash('0xb0a45bc41a83b2bdf2e06b9913a2e4c8b0d7f3080030807a0a06f301287424e9')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xb0a45bc41a83b2bdf2e06b9913a2e4c8b0d7f3080030807a0a06f301287424e9')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1682041175000),
             location=Location.ETHEREUM,
@@ -1575,7 +1567,7 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, 
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1682041175000),
             location=Location.ETHEREUM,
@@ -1588,7 +1580,7 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, 
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1682041175000),
             location=Location.ETHEREUM,
@@ -1613,16 +1605,16 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
     Test that deposits via a zap to a metapool (when there are 2 AddLiquidity events emitted)
     are decoded correctly.
     """
-    tx_hex = deserialize_evm_tx_hash('0x3e39ef142826b80da629023bdbdbee77fcc7402d5845f92507c60c404f4441b8')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x3e39ef142826b80da629023bdbdbee77fcc7402d5845f92507c60c404f4441b8')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1683177731000),
             location=Location.ETHEREUM,
@@ -1635,7 +1627,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1683177731000),
             location=Location.ETHEREUM,
@@ -1648,7 +1640,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1683177731000),
             location=Location.ETHEREUM,
@@ -1661,7 +1653,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=3,
             timestamp=TimestampMS(1683177731000),
             location=Location.ETHEREUM,
@@ -1686,16 +1678,16 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_glob
     Checks that if a curve zap is used, but there is no zap-specific event emitted (only event from
     the used pool is emitted), transaction is still decoded correctly.
     """
-    tx_hex = deserialize_evm_tx_hash('0xc8617f0adcd6273c522359a244bb6908f8ea9232879884d572fd64d5b33e5e83 ')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xc8617f0adcd6273c522359a244bb6908f8ea9232879884d572fd64d5b33e5e83 ')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1683629339000),
             location=Location.ETHEREUM,
@@ -1708,7 +1700,7 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_glob
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=112,
             timestamp=TimestampMS(1683629339000),
             location=Location.ETHEREUM,
@@ -1721,7 +1713,7 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_glob
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=114,
             timestamp=TimestampMS(1683629339000),
             location=Location.ETHEREUM,
@@ -1741,15 +1733,15 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_glob
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x1d5E65a087eBc3d03a294412E46CE5D6882969f4']])
 def test_gauge_bribe_v2(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x5ac0cf3073b0c6c722b17d08d56cc1d9064717405d7e23b1f92e5a8c88e647e1')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x5ac0cf3073b0c6c722b17d08d56cc1d9064717405d7e23b1f92e5a8c88e647e1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1680736307000), '0.007331605001682333', '14.752122471808652238'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1761,7 +1753,7 @@ def test_gauge_bribe_v2(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hex,
+            tx_hash=tx_hash,
             sequence_index=288,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2091,16 +2083,15 @@ def test_deposit_via_zap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5e216ceCB65E1E1B86fE8C46c730af287c4492Dc']])
 def test_fee_distributor_3crv(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0xae8a3781fc8f8b032f4e14db7745f9e4297f61e58a3deebc93d55ef4ed99d728')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xae8a3781fc8f8b032f4e14db7745f9e4297f61e58a3deebc93d55ef4ed99d728')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1697289611000), '0.002010414684866136', '112.875618618497828084'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2112,7 +2103,7 @@ def test_fee_distributor_3crv(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=123,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2132,16 +2123,15 @@ def test_fee_distributor_3crv(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6544df975cF58A0b2C9a361a8db2e00D338e10c1']])
 def test_fee_distributor_crvusd(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x200c154d4206ece5b7c4075064991d10afdcc488da29c88b366409b0d7e348c1')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x200c154d4206ece5b7c4075064991d10afdcc488da29c88b366409b0d7e348c1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1746466763000), '0.000382962892805733', '13.357652880447616117'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2153,7 +2143,7 @@ def test_fee_distributor_crvusd(ethereum_transaction_decoder, ethereum_accounts)
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=139,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2173,16 +2163,15 @@ def test_fee_distributor_crvusd(ethereum_transaction_decoder, ethereum_accounts)
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x510B0068C0756bBEFCBaffB6567e467d661291FE']])
 def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x2675807cf1950b8a8fbd64e1a0fe0ec3b894ba88fbb8e544ddf279aff12c6d55')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x2675807cf1950b8a8fbd64e1a0fe0ec3b894ba88fbb8e544ddf279aff12c6d55')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     user_address, timestamp, gas, amount, locktime = ethereum_accounts[0], TimestampMS(1671946199000), '0.002774219663106188', '128.808146476393839874', Timestamp(1778112000)  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2194,7 +2183,7 @@ def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=150,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2215,16 +2204,15 @@ def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3142A7Cb03dB13419884b275f61f8542C8850174']])
 def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x5bae0df2aeedc70f82488e8b19030c39d782cd5f58ca66155a5347320c4349a5')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x5bae0df2aeedc70f82488e8b19030c39d782cd5f58ca66155a5347320c4349a5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1671887987000), '0.002702199385335098', '1.872144205854855426'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2236,7 +2224,7 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=220,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2256,16 +2244,15 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x98C5adD2e63C02beB8CCAA0156E4FefD480C3267']])
 def test_crv_minter(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x05b5da4f6f0def6075c2cb51b8c46553144424368c69b9ad9f986cf925ac0fae')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x05b5da4f6f0def6075c2cb51b8c46553144424368c69b9ad9f986cf925ac0fae')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1746419195000), '0.000161308740471675', '86.51016103664373998'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2277,7 +2264,7 @@ def test_crv_minter(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=161,
             timestamp=timestamp,
             location=Location.ETHEREUM,

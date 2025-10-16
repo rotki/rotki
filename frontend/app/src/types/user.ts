@@ -205,13 +205,6 @@ const ApiKey = z.object({
   apiKey: z.string(),
 });
 
-const Auth = z.object({
-  password: z.string(),
-  username: z.string(),
-});
-
-export type Auth = z.infer<typeof Auth>;
-
 export const ExternalServiceKeys = z.object({
   alchemy: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
@@ -224,7 +217,7 @@ export const ExternalServiceKeys = z.object({
   gnosis_pay: ApiKey.optional(),
   helius: ApiKey.optional(),
   loopring: ApiKey.optional(),
-  monerium: Auth.optional(),
+  monerium: ApiKey.optional(),
   opensea: ApiKey.optional(),
   thegraph: ApiKey.optional(),
 });
@@ -233,18 +226,10 @@ export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
 
 export type ExternalServiceName = ToSnakeCase<keyof ExternalServiceKeys>;
 
-export interface ExternalServicePayloadWithApiKey {
+export interface ExternalServiceKey {
   readonly name: string;
   readonly apiKey: string;
 }
-
-export interface ExternalServicePayloadWithAuth {
-  readonly name: string;
-  readonly username: string;
-  readonly password: string;
-}
-
-export type ExternalServiceKey = ExternalServicePayloadWithApiKey | ExternalServicePayloadWithAuth;
 
 export const ExchangeRates = z.record(z.string(), NumericString);
 

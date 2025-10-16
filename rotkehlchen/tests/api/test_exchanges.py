@@ -25,6 +25,7 @@ from rotkehlchen.exchanges.constants import (
 )
 from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
+from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -932,7 +933,10 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
         if location in (Location.BINANCE, Location.BINANCEUS):
             data['binance_markets'] = ['ETHBTC']
         elif location == Location.KRAKEN:
-            data['kraken_account_type'] = KrakenAccountType.STARTER.serialize()
+            data['kraken_account_type'] = KrakenAccountType.INTERMEDIATE.serialize()
+        elif location == Location.OKX:
+            data['okx_location'] = OkxLocation.EEA.serialize()
+
         with mock_validate_api_key_success(location):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_simple_ok_response(response)
@@ -976,6 +980,16 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             # all of the api keys end up in session headers. Check they are properly
             # updated there
             assert any(new_key in value for value in exchange.session.headers.values())
+
+        with rotki.data.db.conn.read_ctx() as cursor:  # reinitialize the exchanges, to see the edited credentials are loaded from the DB  # noqa: E501
+            rotki.exchange_manager.delete_all_exchanges()
+            exchange_credentials = rotki.data.db.get_exchange_credentials(cursor)
+            rotki.exchange_manager.initialize_exchanges(
+                exchange_credentials=exchange_credentials,
+                database=rotki.data.db,
+            )
+        assert rotki.exchange_manager.connected_exchanges[Location.OKX][0].okx_location == OkxLocation.EEA   # type: ignore  # noqa: E501
+        assert rotki.exchange_manager.connected_exchanges[Location.KRAKEN][0].account_type == KrakenAccountType.INTERMEDIATE    # type: ignore  # noqa: E501
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])

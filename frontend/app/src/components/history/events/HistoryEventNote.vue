@@ -70,7 +70,7 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
       <template v-if="note.type === NoteType.FLAG && note.countryCode">
         <Flag
           :iso="note.countryCode"
-          class="mx-1 rounded-sm"
+          class="mx-1"
         />
       </template>
       <template v-else-if="note.type === NoteType.WORD && note.word">

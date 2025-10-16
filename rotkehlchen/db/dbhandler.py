@@ -53,6 +53,7 @@ from rotkehlchen.db.constants import (
     EXTRAINTERNALTXPREFIX,
     KDF_ITER,
     KRAKEN_ACCOUNT_TYPE_KEY,
+    OKX_LOCATION_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
@@ -110,6 +111,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -661,7 +663,10 @@ class DBHandler:
     def get_static_cache(
             self,
             cursor: 'DBCursor',
-            name: Literal[DBCacheStatic.DOCKER_DEVICE_INFO],
+            name: Literal[
+                DBCacheStatic.DOCKER_DEVICE_INFO,
+                DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+            ],
     ) -> str | None:
         ...
 
@@ -711,8 +716,11 @@ class DBHandler:
         ).fetchone()) is None:
             return None
 
-        # Return string for DOCKER_DEVICE_INFO, timestamp for all others
-        if name == DBCacheStatic.DOCKER_DEVICE_INFO:
+        # Return string for DOCKER_DEVICE_INFO & MONERIUM_OAUTH_CREDENTIALS, timestamp for all others  # noqa: E501
+        if name in (
+            DBCacheStatic.DOCKER_DEVICE_INFO,
+            DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+        ):
             return value[0]
 
         return Timestamp(int(value[0]))
@@ -1024,6 +1032,12 @@ class DBHandler:
                 'DELETE FROM external_service_credentials WHERE name=?;',
                 [(service.name.lower(),) for service in services],
             )
+            # Also delete Monerium OAuth credentials if Monerium is in the services list
+            if ExternalService.MONERIUM in services:
+                cursor.execute(
+                    'DELETE FROM key_value_cache WHERE name=?',
+                    (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
+                )
 
     def get_all_external_service_credentials(self) -> list[ExternalServiceApiCredentials]:
         """Returns a list with all the external service credentials saved in the DB"""
@@ -1845,6 +1859,7 @@ class DBHandler:
             passphrase: str | None = None,
             kraken_account_type: KrakenAccountType | None = None,
             binance_selected_trade_pairs: list[str] | None = None,
+            okx_location: OkxLocation | None = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
             raise InputError(f'Unsupported exchange {location!s}')
@@ -1864,6 +1879,14 @@ class DBHandler:
                     (name, location.serialize_for_db(), KRAKEN_ACCOUNT_TYPE_KEY, kraken_account_type.serialize()),  # noqa: E501
                 )
 
+            if location == Location.OKX and okx_location is not None:
+                cursor.execute(
+                    'INSERT INTO user_credentials_mappings '
+                    '(credential_name, credential_location, setting_name, setting_value) '
+                    'VALUES (?, ?, ?, ?)',
+                    (name, location.serialize_for_db(), OKX_LOCATION_KEY, okx_location.serialize()),  # noqa: E501
+                )
+
             if location in (Location.BINANCE, Location.BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
                 self.set_binance_pairs(cursor, name=name, pairs=binance_selected_trade_pairs, location=location)  # noqa: E501
 
@@ -1878,6 +1901,7 @@ class DBHandler:
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_selected_trade_pairs: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
         if location not in SUPPORTED_EXCHANGES:
@@ -1921,6 +1945,22 @@ class DBHandler:
                         location.serialize_for_db(),
                         KRAKEN_ACCOUNT_TYPE_KEY,
                         kraken_account_type.serialize(),
+                    ),
+                )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
+
+        if location == Location.OKX and okx_location is not None:
+            try:
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO user_credentials_mappings '
+                    '(credential_name, credential_location, setting_name, setting_value) '
+                    'VALUES (?, ?, ?, ?)',
+                    (
+                        new_name if new_name is not None else name,
+                        location.serialize_for_db(),
+                        OKX_LOCATION_KEY,
+                        okx_location.serialize(),
                     ),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
@@ -2063,6 +2103,11 @@ class DBHandler:
                         extras[key] = KrakenAccountType.deserialize(entry[1])
                     except DeserializationError as e:
                         log.error(f'Couldnt deserialize kraken account type from DB. {e!s}')
+                elif key == OKX_LOCATION_KEY:
+                    try:  # type is checked above
+                        extras[key] = OkxLocation.deserialize(entry[1])  # type: ignore
+                    except DeserializationError as e:
+                        log.error(f'Couldnt deserialize okx location from DB. {e!s}')
                 else:  # can only be BINANCE_MARKETS_KEY
                     try:
                         extras[key] = json.loads(entry[1])

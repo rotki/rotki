@@ -13,6 +13,9 @@ Changelog
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
 * :feature:`-` Cowswap in BNB smart chain is now supported.
+* :feature:`-` Monerium users will be able to authenticate just by signing in with monerium via oauth.
+* :feature:`-` OKX users of EEA or US will be able to choose their location and use the OKX api properly again.
+* :bug:`-` Filtering of events by accounts will now only include tracked accounts and exchange labels.
 * :bug:`10652` Cowswap swaps with a missing `fullAppData` field will now be properly decoded.
 * :bug:`-` Monerium aave v3 events will now always have the earn event at the end.
 * :bug:`-` Cowswap swaps that use the new ethflow contract or route through Spark Savings now decode correctly.

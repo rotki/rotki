@@ -6,12 +6,13 @@ import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
+import OkxRegionSelectorItem from '@/components/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
+import { type ExchangeFormData, KrakenAccountType, OkxLocation } from '@/types/exchanges';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
@@ -59,6 +60,11 @@ const isCoinbasePro = computed(() => {
   return ['coinbaseprime'].includes(location);
 });
 
+const isOkx = computed(() => {
+  const { location } = get(modelValue);
+  return ['okx'].includes(location);
+});
+
 const location = useRefMap(modelValue, item => item.location);
 const experimental = useIsExperimentalExchange(location);
 
@@ -97,6 +103,7 @@ const apiSecretModel = refWithAsterisk(apiSecret);
 const passphrase = useRefPropVModel(modelValue, 'passphrase');
 const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
 const binanceMarkets = useRefPropVModel(modelValue, 'binanceMarkets');
+const okxLocation = useRefPropVModel(modelValue, 'okxLocation');
 
 const name = computed<string>({
   get() {
@@ -118,6 +125,7 @@ useFormStateWatcher({
   binanceMarkets,
   krakenAccountType,
   name,
+  okxLocation,
   passphrase,
 }, stateUpdated);
 
@@ -142,6 +150,16 @@ function toggleEdit() {
 const krakenAccountTypes = KrakenAccountType.options.map((item) => {
   const translationKey = `backend_mappings.exchanges.kraken.type.${item}`;
   const label = te(translationKey) ? t(translationKey) : toSentenceCase(item);
+
+  return {
+    identifier: item,
+    label,
+  };
+});
+
+const okxLocations = OkxLocation.options.map((item) => {
+  const translationKey = `backend_mappings.exchanges.okx.location.${item.toLowerCase()}`;
+  const label = te(translationKey) ? t(translationKey) : item;
 
   return {
     identifier: item,
@@ -182,6 +200,12 @@ const v$ = useVuelidate({
       requiredIf(editMode),
     ),
   },
+  okxLocation: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.validation.non_empty'),
+      requiredIf(isOkx),
+    ),
+  },
   passphrase: {
     required: helpers.withMessage(
       t('exchange_keys_form.validation.non_empty'),
@@ -194,6 +218,7 @@ const v$ = useVuelidate({
   binanceMarkets,
   name: nameProp,
   newName: newNameProp,
+  okxLocation,
   passphrase,
 }, { $autoDirty: true, $externalResults: errorMessages });
 
@@ -208,6 +233,7 @@ function onExchangeChange(exchange?: string) {
     mode: get(modelValue, 'mode'),
     name: suggestedName(name),
     newName: '',
+    okxLocation: name === 'okx' ? 'global' : undefined,
     passphrase: '',
   });
 
@@ -269,6 +295,30 @@ defineExpose({
       text-attr="label"
       variant="outlined"
     />
+
+    <RuiMenuSelect
+      v-if="isOkx"
+      v-model="okxLocation"
+      data-cy="okx-location"
+      :options="okxLocations"
+      :label="t('exchange_keys_form.region')"
+      key-attr="identifier"
+      text-attr="label"
+      variant="outlined"
+    >
+      <template #selection="{ item }">
+        <OkxRegionSelectorItem
+          :identifier="item.identifier"
+          :label="item.label"
+        />
+      </template>
+      <template #item="{ item }">
+        <OkxRegionSelectorItem
+          :identifier="item.identifier"
+          :label="item.label"
+        />
+      </template>
+    </RuiMenuSelect>
 
     <div
       v-if="editMode"

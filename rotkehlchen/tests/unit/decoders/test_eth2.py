@@ -30,12 +30,12 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             validators=[validator],
         )
 
-    evmhash = deserialize_evm_tx_hash('0xb3658f940cab23f95273bb7c199eec5c71424a8bf2f111201f5cc2a1491d3471')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xb3658f940cab23f95273bb7c199eec5c71424a8bf2f111201f5cc2a1491d3471')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1674558203000),
             location=Location.ETHEREUM,
@@ -47,7 +47,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.000788637337054068 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             validator_index=validator.validator_index,
             sequence_index=178,
             timestamp=TimestampMS(1674558203000),
@@ -60,9 +60,9 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3e5fd0244e13d82fC230f3Fc610bcd76b3c8217C']])
 def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
-    evmhash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     dbeth2 = DBEth2(database)
     validators = [
         ValidatorDetails(
@@ -86,7 +86,7 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
         )
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1608594280000),
             location=Location.ETHEREUM,
@@ -99,21 +99,21 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EthDepositEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             validator_index=55750,
             sequence_index=62,
             timestamp=TimestampMS(1608594280000),
             amount=FVal('32'),
             depositor=user_address,
         ), EthDepositEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             validator_index=55751,
             sequence_index=63,
             timestamp=TimestampMS(1608594280000),
             amount=FVal('32'),
             depositor=user_address,
         ), EthDepositEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             validator_index=55752,
             sequence_index=64,
             timestamp=TimestampMS(1608594280000),
@@ -140,14 +140,14 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             write_cursor,
             validators=[validator],
         )
-    evmhash = deserialize_evm_tx_hash('0xd455d892453de3c5b06a00ebedc1994b8d66eeba69e6b08bd20508281e690e80')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xd455d892453de3c5b06a00ebedc1994b8d66eeba69e6b08bd20508281e690e80')  # noqa: E501
     user_address = ethereum_accounts[0]
     proxy_address = ethereum_accounts[1]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1669806275000)
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -159,7 +159,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             notes='Burn 0.00071529566834925 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             validator_index=validator.validator_index,
             sequence_index=431,
             timestamp=timestamp,

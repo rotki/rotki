@@ -86,6 +86,7 @@ from rotkehlchen.exchanges.constants import (
     SUPPORTED_EXCHANGES,
 )
 from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
@@ -1697,7 +1698,7 @@ class ManualBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSche
 
 
 class ExternalServiceSchema(Schema):
-    name = SerializableEnumField(enum_class=ExternalService, required=True)
+    name = SerializableEnumField(enum_class=ExternalService, required=True, exclude_types=(ExternalService.MONERIUM,))  # noqa: E501
     api_key = EmptyAsNoneStringField(required=False)
     username = EmptyAsNoneStringField(required=False)
     password = EmptyAsNoneStringField(required=False)
@@ -1709,22 +1710,9 @@ class ExternalServiceSchema(Schema):
             **_kwargs: Any,
     ) -> None:
         if data.get('api_key') is None:
-            if data['name'] != ExternalService.MONERIUM:
-                raise ValidationError(
-                    message=f'an api key is needed for {data["name"].name.lower()}',
-                    field_name='api_key',
-                )
-
-        elif None not in (data.get('username'), data.get('password')):
             raise ValidationError(
-                message='username and password is only given for monerium',
-                field_name='username',
-            )
-
-        if data['name'] == ExternalService.MONERIUM and None in (data.get('username'), data.get('password')):  # noqa: E501
-            raise ValidationError(
-                message='monerium needs a username and password',
-                field_name='username',
+                message=f'an api key is needed for {data["name"].name.lower()}',
+                field_name='api_key',
             )
 
     @post_load
@@ -1748,6 +1736,12 @@ class ExternalServicesResourceAddSchema(Schema):
 
 class ExternalServicesResourceDeleteSchema(Schema):
     services = fields.List(SerializableEnumField(enum_class=ExternalService), required=True)
+
+
+class MoneriumOAuthCredentialsSchema(Schema):
+    access_token = NonEmptyStringField(required=True)  # used to authenticate requests to the API
+    refresh_token = NonEmptyStringField(required=True)  # get a new token once the previous one has expired  # noqa: E501
+    expires_in = fields.Integer(required=True, validate=validate.Range(min=1))  # number of seconds since the token creation left before the access token expires  # noqa: E501
 
 
 class BinanceMarketsSchemaMixin(Schema):
@@ -1779,6 +1773,7 @@ class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin):
     api_secret = ApiSecretField(load_default=None)
     passphrase = EmptyAsNoneStringField(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
+    okx_location = SerializableEnumField(enum_class=OkxLocation, load_default=None)
 
 
 class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin):
@@ -1787,6 +1782,7 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin):
     api_secret = ApiSecretField(load_default=None)
     passphrase = EmptyAsNoneStringField(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
+    okx_location = SerializableEnumField(enum_class=OkxLocation, load_default=None)
 
     @validates_schema
     def validate_schema(

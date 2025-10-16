@@ -70,6 +70,7 @@ function createNewExchange(): ExchangeFormData {
     mode: 'add',
     name: '',
     newName: '',
+    okxLocation: 'global',
     passphrase: '',
   };
 }

@@ -16,15 +16,14 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_attest_optimism(optimism_inquirer, optimism_accounts):
-    tx_hex = deserialize_evm_tx_hash('0xf843f6d09e8dec2ee2d1b5fdeade9a9744857f598cf593b6c259166c32dfd05a')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xf843f6d09e8dec2ee2d1b5fdeade9a9744857f598cf593b6c259166c32dfd05a')  # noqa: E501
     user_address = optimism_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1700569289000)
     gas_amount_str = '0.000136427902240075'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -36,7 +35,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=10,
             timestamp=timestamp,
             location=Location.OPTIMISM,

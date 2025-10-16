@@ -171,7 +171,6 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         amount + orders amount, per asset).
         """
         response = self._api_query('balance')
-
         if response.status_code != HTTPStatus.OK:
             result, msg = self._process_unsuccessful_response(
                 response=response,
