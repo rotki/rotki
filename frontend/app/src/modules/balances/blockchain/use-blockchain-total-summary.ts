@@ -41,7 +41,6 @@ export function useBlockchainTotalSummary(): UseBlockchainTotalsSummaryReturn {
       .sort(([, aUsdValue], [, bUsdValue]) => sortDesc(aUsdValue, bUsdValue))
       .map(([chain, usdValue]) => ({
         chain,
-        children: [],
         loading: false,
         usdValue,
       }) satisfies BlockchainTotal);

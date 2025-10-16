@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import type { ActionDataEntry } from '@/types/action';
+import type { BlockchainTotal } from '@/types/blockchain';
 import { Blockchain, toSentenceCase } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import ListItem from '@/components/common/ListItem.vue';
-import BlockchainBalanceCardDetails from '@/components/dashboard/blockchain-balance/BlockchainBalanceCardDetails.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
 
 interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;
@@ -27,10 +25,6 @@ const name = getChainName(chain);
 const navTarget = computed<RouteLocationRaw>(() => ({
   path: getBlockchainRedirectLink(props.total.chain),
 }));
-
-function childData(identifier: string): ActionDataEntry | null {
-  return SupportedSubBlockchainProtocolData.find(item => item.identifier === identifier) || null;
-}
 </script>
 
 <template>
@@ -66,16 +60,5 @@ function childData(identifier: string): ActionDataEntry | null {
         </div>
       </ListItem>
     </RouterLink>
-    <div v-if="total.children.length > 0">
-      <template
-        v-for="child in total.children"
-        :key="child.protocol"
-      >
-        <BlockchainBalanceCardDetails
-          :child="child"
-          :details="childData(child.protocol)"
-        />
-      </template>
-    </div>
   </div>
 </template>
