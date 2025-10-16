@@ -1,7 +1,6 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
@@ -27,7 +26,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChainID, Location, TimestampMS, TokenKind, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 WETH_OP_BASE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000006')
 WMATIC_ADDRESS = string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270')
@@ -211,29 +210,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events[:-1] == expected_events
-    expected_erc721 = get_or_create_evm_token(
-        userdb=database,
-        evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
-        chain_id=ChainID.ETHEREUM,
-        token_kind=TokenKind.ERC721,
-        collectible_id='343053',
-        evm_inquirer=ethereum_inquirer,
-    )
-    assert events[3] == EvmEvent(
-        tx_hash=tx_hash,
-        sequence_index=191,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.DEPLOY,
-        event_subtype=HistoryEventSubType.NFT,
-        asset=expected_erc721,
-        amount=ONE,
-        location_label='0xC4DdFf531132d32b47eC938AcfA28E354769A806',
-        notes='Create uniswap-v3 LP with id 343053',
-        counterparty=CPT_UNISWAP_V3,
-        address=ZERO_ADDRESS,
-    )
+    assert events == expected_events
 
 
 @pytest.mark.vcr

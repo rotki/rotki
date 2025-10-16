@@ -463,9 +463,9 @@ class GnosisPay:
         tx_timestamps: dict[EVMTxHash, Timestamp] = {}
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT EI.tx_hash, H.timestamp '
+                'SELECT EI.tx_ref, H.timestamp '
                 'FROM history_events H '
-                'INNER JOIN evm_events_info EI ON EI.identifier = H.identifier '
+                'INNER JOIN chain_events_info EI ON EI.identifier = H.identifier '
                 'WHERE H.location = ? AND EI.counterparty = ? AND H.notes LIKE ?',
                 (Location.GNOSIS.serialize_for_db(), CPT_GNOSIS_PAY, 'Spend% via Gnosis Pay'),
             )

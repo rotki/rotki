@@ -331,7 +331,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
         )
         identifier = write_cursor.fetchone()[0]
         write_cursor.execute(
-            'INSERT INTO evm_events_info(identifier, tx_hash, counterparty) VALUES (?, ?, ?)',
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty) VALUES (?, ?, ?)',
             (identifier, tx_hash, CPT_GNOSIS_PAY),
         )
         write_cursor.execute(
@@ -340,7 +340,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
         )
         second_identifier = write_cursor.fetchone()[0]
         write_cursor.execute(
-            'INSERT INTO evm_events_info(identifier, tx_hash, counterparty) VALUES (?, ?, ?)',
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty) VALUES (?, ?, ?)',
             (second_identifier, second_tx_hash, CPT_GNOSIS_PAY),
         )
 
