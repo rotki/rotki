@@ -11,6 +11,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { AccountAssetBalances } from '@/types/balances';
+import { LOOPRING_CHAIN } from '@/types/blockchain';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -37,11 +38,11 @@ export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
 
     const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
 
-    if (fetchDisabled(refresh, { subsection: 'loopring' }))
+    if (fetchDisabled(refresh, { subsection: LOOPRING_CHAIN }))
       return;
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, { subsection: 'loopring' });
+    setStatus(newStatus, { subsection: LOOPRING_CHAIN });
 
     try {
       const taskType = TaskType.L2_LOOPRING;
@@ -52,7 +53,7 @@ export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
 
       const loopringBalances = AccountAssetBalances.parse(result);
       const accounts = Object.keys(loopringBalances).map(address => ({
-        chain: 'loopring',
+        chain: LOOPRING_CHAIN,
         data: {
           address,
           type: 'address',
@@ -96,9 +97,9 @@ export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
         },
       };
 
-      updateBalances('loopring', updatedTotals);
-      updateAccounts('loopring', accounts);
-      setStatus(Status.LOADED, { subsection: 'loopring' });
+      updateBalances(LOOPRING_CHAIN, updatedTotals);
+      updateAccounts(LOOPRING_CHAIN, accounts);
+      setStatus(Status.LOADED, { subsection: LOOPRING_CHAIN });
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
@@ -110,7 +111,7 @@ export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
           title: t('actions.balances.loopring.error.title'),
         });
       }
-      resetStatus({ subsection: 'loopring' });
+      resetStatus({ subsection: LOOPRING_CHAIN });
     }
   };
 
