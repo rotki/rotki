@@ -58,7 +58,7 @@ impl EvmNodeInquirer {
             .endpoint
             .parse()
             .map_err(|e| format!("Invalid endpoint URL: {}", e))?;
-        let provider = DynProvider::new(ProviderBuilder::new().on_http(endpoint));
+        let provider = DynProvider::new(ProviderBuilder::new().connect_http(endpoint));
         let mut mapping = self.provider_mapping.write().await;
         mapping.insert(node.clone(), Box::new(provider.clone()));
 

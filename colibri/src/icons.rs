@@ -145,7 +145,7 @@ async fn query_uniswap_v3_position_icon(
 
         // try to get the token URI
         let token_uri = match contract.tokenURI(token_id).call().await {
-            Ok(result) => result._0,
+            Ok(result) => result,
             Err(e) => {
                 // Check if this is a contract-related error
                 let error_message = e.to_string();
