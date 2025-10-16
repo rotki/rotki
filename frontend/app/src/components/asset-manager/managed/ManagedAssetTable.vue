@@ -2,7 +2,6 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters, Matcher } from '@/composables/filters/assets';
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Collection } from '@/types/collection';
 import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/components/asset-manager/managed/ManagedAssetActions.vue';
@@ -17,6 +16,7 @@ import { useManagedAssetOperations } from '@/composables/asset-manager/use-manag
 import { useManagedAssetTable } from '@/composables/asset-manager/use-managed-asset-table';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { EVM_TOKEN, type IgnoredAssetsHandlingType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 
 interface IgnoredFilter {
   onlyShowOwned: boolean;
@@ -78,6 +78,16 @@ const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset, showMoreO
 );
 
 const { fetchIgnoredAssets } = useIgnoredAssetsStore();
+
+function getAssetLocation(row: SupportedAsset): string | undefined {
+  if (row.assetType === EVM_TOKEN)
+    return row?.evmChain ?? undefined;
+
+  if (row.assetType === SOLANA_TOKEN)
+    return SOLANA_CHAIN;
+
+  return undefined;
+}
 </script>
 
 <template>
@@ -124,7 +134,7 @@ const { fetchIgnoredAssets } = useIgnoredAssetsStore();
         <HashLink
           v-if="row.address"
           :text="row.address"
-          :location="row?.evmChain ?? undefined"
+          :location="getAssetLocation(row)"
           type="token"
         />
       </template>
