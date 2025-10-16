@@ -38,7 +38,7 @@ ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', '.jpeg', '.jpg', '.webp')
 
 
 def _build_http_header_for_images(image_path: Path) -> dict[str, str]:
-    """Given a path to an image return the headers to be used when sending it in a http request"""
+    """Given a path to an image return the headers to be used when sending it in an http request"""
     http_type = image_path.suffix[1:]
     if http_type == 'svg':
         http_type = 'svg+xml'

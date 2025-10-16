@@ -192,7 +192,7 @@ base_args = [
     '0.0.0.0',
 ]
 
-# Arguments needs to be sanitized for `subprocess.Popen`, as it does not accept `int`
+# Arguments need to be sanitized for `subprocess.Popen`, as it does not accept `int`
 cmd = [str(arg) for arg in (base_args + config_args)]
 
 logger.info(f'starting rotki backend with arguments {cmd}')
