@@ -97,7 +97,6 @@ describe('component/HistoryEventForm.vue', () => {
       identifier: 14344,
       location: 'ethereum',
       locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
-      product: null,
       sequenceIndex: 2411,
       timestamp: 1686495083,
       txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',

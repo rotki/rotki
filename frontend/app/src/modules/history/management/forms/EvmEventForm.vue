@@ -12,7 +12,6 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
@@ -35,7 +34,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { data } = toRefs(props);
 
-const { historyEventProductsMapping } = useHistoryEventProductMappings();
 const { counterparties } = useHistoryEventCounterpartyMappings();
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
@@ -55,7 +53,6 @@ const address = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
 const counterparty = ref<string>('');
-const product = ref<string>('');
 const extraData = ref<object>({});
 
 const errorMessages = ref<Record<string, string[]>>({});
@@ -64,16 +61,6 @@ const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
 const isInformationalEvent = computed(() => get(eventType) === 'informational');
-
-const historyEventLimitedProducts = computed<string[]>(() => {
-  const counterpartyVal = get(counterparty);
-  const mapping = get(historyEventProductsMapping);
-
-  if (!counterpartyVal)
-    return [];
-
-  return mapping[counterpartyVal] ?? [];
-});
 
 const rules = {
   address: commonRules.createValidEthAddressRule(),
@@ -86,7 +73,6 @@ const rules = {
   location: commonRules.createRequiredLocationRule(),
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
-  product: commonRules.createValidProductRule(historyEventLimitedProducts),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
   timestamp: commonRules.createExternalValidationRule(),
   txHash: commonRules.createValidTxHashRule(),
@@ -110,7 +96,6 @@ const states = {
   location,
   locationLabel,
   notes,
-  product,
   sequenceIndex,
   timestamp,
   txHash,
@@ -140,7 +125,6 @@ function reset() {
   set(amount, '0');
   set(notes, '');
   set(counterparty, '');
-  set(product, '');
   set(extraData, {});
   set(errorMessages, {});
 
@@ -161,7 +145,6 @@ function applyEditableData(entry: EvmHistoryEvent) {
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.userNotes ?? '');
   set(counterparty, entry.counterparty ?? '');
-  set(product, entry.product ?? '');
   set(extraData, entry.extraData || {});
 
   // Capture state snapshot for edit mode comparison
@@ -204,7 +187,6 @@ async function save(): Promise<boolean> {
     extraData: get(extraData) || null,
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    product: get(product) || null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp: get(timestamp),
     txHash: get(txHash),
@@ -241,12 +223,6 @@ watch(location, (location: string) => {
 
 watch(data, checkPropsData);
 
-watch(historyEventLimitedProducts, (products) => {
-  const selected = get(product);
-  if (!products.includes(selected))
-    set(product, '');
-});
-
 onMounted(() => {
   checkPropsData();
 });
@@ -262,6 +238,7 @@ defineExpose({
       <EventDateLocation
         v-model:timestamp="timestamp"
         v-model:location="location"
+        class="col-span-2"
         :location-disabled="data.type !== 'add'"
         :locations="txChainsToLocation"
         :error-messages="{
@@ -317,7 +294,7 @@ defineExpose({
       @blur="v$[$event].$touch()"
     />
 
-    <div class="grid md:grid-cols-3 gap-4">
+    <div class="grid md:grid-cols-2 gap-4">
       <AmountInput
         v-model="sequenceIndex"
         variant="outlined"
@@ -333,18 +310,6 @@ defineExpose({
         data-cy="counterparty"
         :error-messages="toMessages(v$.counterparty)"
         @blur="v$.counterparty.$touch()"
-      />
-      <RuiAutoComplete
-        v-model="product"
-        clearable
-        variant="outlined"
-        auto-select-first
-        :disabled="historyEventLimitedProducts.length === 0"
-        :label="t('transactions.events.form.product.label')"
-        :options="historyEventLimitedProducts"
-        data-cy="product"
-        :error-messages="toMessages(v$.product)"
-        @blur="v$.product.$touch()"
       />
     </div>
 

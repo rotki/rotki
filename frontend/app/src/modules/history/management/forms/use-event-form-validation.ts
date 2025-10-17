@@ -23,7 +23,6 @@ interface CreateCommonRules {
   createValidCounterpartyRule: <T>(counterparties: Ref<string[]>) => ValidationRuleCollection<T>;
   createValidEthAddressRule: <T>() => ValidationRuleCollection<T>;
   createValidSolanaAddressRule: <T>() => ValidationRuleCollection<T>;
-  createValidProductRule: <T>(products: Ref<string[]>) => ValidationRuleCollection<T>;
   createValidTxHashRule: <T>() => ValidationRuleCollection<T>;
   createValidSolanaSignatureRule: <T>() => ValidationRuleCollection<T>;
 }
@@ -118,12 +117,6 @@ export function useEventFormValidation(): UseEventFormValidationReturn {
       isValid: helpers.withMessage(
         t('transactions.events.form.address.validation.valid'),
         (value: string) => !value || isValidEthAddress(value),
-      ),
-    }),
-    createValidProductRule: (products: Ref<string[]>) => ({
-      isValid: helpers.withMessage(
-        t('transactions.events.form.product.validation.valid'),
-        (value: string) => !value || get(products).includes(value),
       ),
     }),
     createValidSolanaAddressRule: () => ({

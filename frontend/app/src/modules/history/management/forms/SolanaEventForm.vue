@@ -224,6 +224,7 @@ defineExpose({
       <EventDateLocation
         v-model:timestamp="timestamp"
         v-model:location="location"
+        class="col-span-2"
         location-disabled
         :error-messages="{
           location: toMessages(v$.location),

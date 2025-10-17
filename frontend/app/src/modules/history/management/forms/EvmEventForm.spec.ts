@@ -12,7 +12,6 @@ import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useLocations } from '@/composables/locations';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import { setupDayjs } from '@/utils/date';
@@ -66,7 +65,6 @@ describe('forms/EvmEventForm.vue', () => {
     identifier: 14344,
     location: 'ethereum',
     locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
-    product: null,
     sequenceIndex: 2411,
     timestamp: 1686495083,
     txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
@@ -228,33 +226,6 @@ describe('forms/EvmEventForm.vue', () => {
       expect(keysFromGlobalMappings.includes(spans.at(i)!.text())).toBeTruthy();
   });
 
-  it('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    await vi.advanceTimersToNextTimerAsync();
-
-    expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');
-
-    // input is still disabled if the counterparty doesn't have mapped products.
-    await wrapper.find('[data-cy=counterparty] input').setValue('1inch');
-    await vi.advanceTimersToNextTimerAsync();
-
-    expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');
-
-    // the product options should be displayed correctly if the counterparty has mapped products.
-    const selectedCounterparty = 'convex';
-    await wrapper.find('[data-cy=counterparty] input').setValue(selectedCounterparty);
-    await vi.advanceTimersToNextTimerAsync();
-
-    const { historyEventProductsMapping } = useHistoryEventProductMappings();
-
-    const products = get(historyEventProductsMapping)[selectedCounterparty];
-
-    const spans = wrapper.findAll('[data-cy=product] .selections span');
-    expect(spans).toHaveLength(products.length);
-
-    for (let i = 0; i < products.length; i++) expect(products.includes(spans.at(i)!.text())).toBeTruthy();
-  });
-
   it('should add a new evm event when form is submitted', async () => {
     wrapper = createWrapper();
     await nextTick();
@@ -273,10 +244,6 @@ describe('forms/EvmEventForm.vue', () => {
 
     if (group.counterparty) {
       await wrapper.find('[data-cy=counterparty] input').setValue(group.counterparty);
-    }
-
-    if (group.product) {
-      await wrapper.find('[data-cy=product] input').setValue(group.product);
     }
 
     if (group.eventSubtype) {
@@ -304,7 +271,6 @@ describe('forms/EvmEventForm.vue', () => {
       extraData: {},
       location: group.location,
       locationLabel: group.locationLabel,
-      product: group.product,
       sequenceIndex: group.sequenceIndex.toString(),
       timestamp: group.timestamp,
       txHash: group.txHash,
@@ -380,7 +346,6 @@ describe('forms/EvmEventForm.vue', () => {
       identifier: group.identifier,
       location: group.location,
       locationLabel: group.locationLabel,
-      product: group.product,
       sequenceIndex: '2111',
       timestamp: group.timestamp,
       txHash: group.txHash,

@@ -23,7 +23,6 @@ export const EvmHistoryEvent = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.EVM_EVENT),
   extraData: z.unknown().nullish(),
-  product: z.string().nullable(),
   txHash: z.string(),
 });
 
@@ -57,7 +56,6 @@ export const EthDepositEvent = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.ETH_DEPOSIT_EVENT),
   extraData: z.unknown().nullable().nullish(),
-  product: z.string().nullable(),
   txHash: z.string(),
   validatorIndex: z.number(),
 });

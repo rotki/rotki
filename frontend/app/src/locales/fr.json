@@ -3576,12 +3576,6 @@
         "notes": {
           "hint": "[Facultatif] Notes supplémentaires à enregistrer pour l'action"
         },
-        "product": {
-          "label": "Produit",
-          "validation": {
-            "valid": "Le champ produit est invalide, remplissez-le avec des produits disponibles"
-          }
-        },
         "resulting_combination": {
           "label": "Combinaison résultante",
           "unknown": "La combinaison résultante est inconnue, cet événement ne sera pas traité correctement."
@@ -3680,7 +3674,6 @@
       "event_subtype": "filtrer par sous-type d'événement",
       "event_type": "filtrer par type d'événement",
       "location": "filtrer par emplacement de l'événement",
-      "product": "filtrer par produit",
       "protocol": "filtrer par le protocole des événements",
       "show_ignored_assets": "Afficher les entrées avec des actifs ignorés",
       "start_date": "filtrer par la date de début de la période des transactions",
