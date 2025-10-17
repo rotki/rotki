@@ -2,8 +2,8 @@ import datetime
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal
+from enum import Enum, StrEnum
+from typing import TYPE_CHECKING, Any, Final, Literal, Self
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -12,11 +12,16 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.constants import OKX_LOCATION_KEY
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    ExchangeWithExtras,
+)
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, deserialize_asset_movement_address
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -64,13 +69,36 @@ class OkxEndpoint(Enum):
     WITHDRAWALS = '/api/v5/asset/withdrawal-history'
 
 
-class Okx(ExchangeInterface, SignatureGeneratorMixin):
+class OkxLocation(StrEnum):
+    GLOBAL = 'www'
+    EEA = 'my'
+    US = 'app'
+
+    def serialize(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def deserialize(cls, value: str) -> Self:
+        """May raise DeserializationError if the given value can't be deserialized"""
+        if not isinstance(value, str):
+            raise DeserializationError(
+                f'Failed to deserialize {cls.__name__} value from non string value: {value}',
+            )
+
+        upper_value = value.replace(' ', '_').upper()
+        try:
+            return getattr(cls, upper_value)
+        except AttributeError as e:
+            raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
+
+
+class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     """
     OKX exchange API docs: https://www.okx.com/docs-v5
     """
 
     # Maximum results returned by an OKX API request
-    MAX_RESULTS = 100
+    MAX_RESULTS: Final = 100
 
     def __init__(
             self,
@@ -80,6 +108,7 @@ class Okx(ExchangeInterface, SignatureGeneratorMixin):
             passphrase: str,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
+            okx_location: OkxLocation = OkxLocation.GLOBAL,
     ):
         super().__init__(
             name=name,
@@ -90,7 +119,8 @@ class Okx(ExchangeInterface, SignatureGeneratorMixin):
             msg_aggregator=msg_aggregator,
         )
         self.passphrase = passphrase
-        self.base_uri = 'https://www.okx.com/'
+        self.okx_location = okx_location
+        self.base_uri = f'https://{okx_location.value}.okx.com/'
         self.session.headers.update({
             'OK-ACCESS-KEY': self.api_key,
             'OK-ACCESS-PASSPHRASE': self.passphrase,
@@ -103,6 +133,14 @@ class Okx(ExchangeInterface, SignatureGeneratorMixin):
         if credentials.passphrase is not None:
             self.session.headers.update({'OK-ACCESS-PASSPHRASE': credentials.passphrase})
         return changed
+
+    def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
+        okx_location = extras.get(OKX_LOCATION_KEY)
+        if okx_location is not None:
+            self.okx_location = okx_location
+            self.base_uri = f'https://{okx_location.value}.okx.com/'
+
+        return True, ''
 
     def _generate_signature(
             self,
@@ -232,26 +270,28 @@ class Okx(ExchangeInterface, SignatureGeneratorMixin):
         """
         https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-balance
         https://www.okx.com/docs-v5/en/#funding-account-rest-api-get-balance
-
-        May raise
-        - RemoteError if the OKX API or price oracle returns an unexpected response
         """
         currencies_data: list[dict] = []
-        data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
+        try:
+            data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
+        except RemoteError as e:
+            msg = str(e)
+            log.error(f'{self.name} Api request failed due to {msg}')
+            return None, msg
+
         if not (len(data) == 1 and isinstance(data[0], dict)):
-            raise RemoteError(
-                f'{self.name} trading balance response does not contain dict data[0]',
-            )
+            msg = 'trading balance response does not contain dict data[0]'
+            log.error(f'{self.name} API request failed due to {msg}')
+            return None, msg
+
         try:
             currencies_data.extend(data[0]['details'])
         except KeyError as e:
             msg = f'Missing key: {e!s}'
-            raise RemoteError(
-                f'{self.name} trading balance API request failed due to unexpected response {msg}',
-            ) from e
+            log.error(f'{self.name} API request failed due to {msg}')
+            return None, msg
 
         currencies_data.extend(self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE))
-
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for currency_data in currencies_data:
             try:

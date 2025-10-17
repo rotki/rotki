@@ -1676,11 +1676,11 @@ def test_swap_via_another_settler_on_base(base_inquirer, base_accounts) -> None:
 @pytest.mark.parametrize('base_accounts', [['0x602CB34cE1B1d3133219D8a79c773fe9FAe3656e']])
 def test_farcaster_zerox_swap(base_inquirer, base_accounts):
     """It uses a new version of the zerox settler contract"""
-    evmhash = deserialize_evm_tx_hash('0x0f9229bfaeadac5c6e8b7f6525b8e713ac848149be2ee0d98ee19732879ec14d')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
+    tx_hash = deserialize_evm_tx_hash('0x0f9229bfaeadac5c6e8b7f6525b8e713ac848149be2ee0d98ee19732879ec14d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
 
     assert events == [EvmEvent(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1758742915000)),
         location=Location.BASE,
@@ -1692,7 +1692,7 @@ def test_farcaster_zerox_swap(base_inquirer, base_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BASE,
@@ -1704,7 +1704,7 @@ def test_farcaster_zerox_swap(base_inquirer, base_accounts):
         counterparty=CPT_ZEROX,
         address=string_to_evm_address('0x47146d81B68b737316d0636D5135849d364bB0c8'),
     ), EvmSwapEvent(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BASE,

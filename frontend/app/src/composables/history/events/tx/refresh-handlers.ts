@@ -26,7 +26,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { awaitTask } = useTaskStore();
   const { isModuleEnabled } = useModules();
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
-  const { apiKey, credential } = useExternalApiKeys(t);
+  const { apiKey } = useExternalApiKeys(t);
 
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
     const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
@@ -41,7 +41,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
       return;
     }
 
-    if (!get(credential('monerium')) && queryType === OnlineHistoryEventsQueryType.MONERIUM) {
+    if (!get(apiKey('monerium')) && queryType === OnlineHistoryEventsQueryType.MONERIUM) {
       return;
     }
 
@@ -81,7 +81,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
 
   const queryExchange = async (payload: Exchange): Promise<void> => {
     logger.debug(`querying exchange events for ${payload.location} (${payload.name})`);
-    const exchange = omit(payload, ['krakenAccountType']);
+    const exchange = omit(payload, ['krakenAccountType', 'okxLocation']);
     const taskType = TaskType.QUERY_EXCHANGE_EVENTS;
     const taskMeta = {
       description: t('actions.exchange_events.task.description', exchange),

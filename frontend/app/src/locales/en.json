@@ -1372,6 +1372,13 @@
           "pro": "Pro",
           "starter": "Starter / Express"
         }
+      },
+      "okx": {
+        "location": {
+          "eea": "European Economic Area (EEA)",
+          "global": "Global",
+          "us": "United States (US)"
+        }
       }
     },
     "profit_loss_event_type": {
@@ -2293,6 +2300,7 @@
     "name": {
       "non_empty": "The name field cannot be empty."
     },
+    "region": "Region",
     "validation": {
       "non_empty": "This field cannot be empty."
     },
@@ -2391,10 +2399,6 @@
       "message": "Are you sure you want to delete this API Key?",
       "title": "Delete API Key"
     },
-    "credential": {
-      "password": "Password",
-      "username": "Username"
-    },
     "cryptocompare": {
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
@@ -2418,13 +2422,31 @@
     },
     "get_api_key": "You can apply for an API key {link}",
     "gnosispay": {
-      "api_key_hint": "Enter your Gnosis Pay session token",
-      "api_key_label": "Session Token",
-      "description": "Add your Gnosis Pay session token to integrate Gnosis Pay transactions.",
-      "session_token_instructions": "Follow the guide to obtain your Gnosis Pay session token {link}",
-      "title": "Gnosis Pay",
-      "understand": "I understand",
-      "warning": "Gnosis Pay integration is experimental. The session token provides read-only access to your Gnosis Pay data."
+      "description": "Authenticate with Gnosis Pay using your Ethereum wallet to access your transaction data.",
+      "errors": {
+        "allowed_admin_addresses": "Allowed admin addresses:",
+        "connection_failed": "Failed to connect wallet",
+        "invalid_address": "This address is not registered as an on-chain admin for any Gnosis Pay account. You can still proceed with sign-in as there may be other authorized addresses not visible on-chain. The registered admin addresses are listed below for reference.",
+        "no_registered_accounts": "No Gnosis Pay safe accounts are registered in rotki. Please add a Gnosis Pay safe account first before attempting to authenticate.",
+        "no_wallet_connected": "No wallet connected",
+        "signature_rejected": "Signature request was rejected by user",
+        "unknown": "An unknown error occurred"
+      },
+      "siwe": {
+        "checking_accounts": "Checking for registered Gnosis Pay accounts...",
+        "connected_address": "Connected Address",
+        "controlled_safe": "Controlled Gnosis Pay Safe account(s):",
+        "disconnect": "Disconnect Wallet",
+        "explanation": "To authenticate with Gnosis Pay, you need to sign a message with your Ethereum wallet. Connect your wallet and sign the message to generate a session token.",
+        "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
+        "sign_message": "Sign Message to Authenticate",
+        "step1_title": "Select Wallet Mode & Connect",
+        "step2_title": "Checking connected address eligibility",
+        "step3_title": "Sign Authentication Message",
+        "success": "Successfully authenticated with Gnosis Pay! You can now close this dialog.",
+        "validating_address": "Validating address..."
+      },
+      "title": "Gnosis Pay"
     },
     "google_calendar": {
       "access_token": "Access Token",
@@ -2461,10 +2483,25 @@
       "title": "Loopring"
     },
     "monerium": {
+      "access_token": "Access token",
+      "auth_failed": "Failed to authorize with Monerium",
+      "authorizing": "Authorizing with Monerium",
+      "connect": "Get access token",
+      "connected_as": "Connected as {email}",
       "description": "Used to augment Monerium EVM transactions with banking information.",
+      "disconnect": "Disconnect",
+      "disconnected": "Disconnected from Monerium.",
+      "error": "Monerium OAuth",
+      "instructions": "Connect with Monerium to keep your rotki data in sync with your account.",
+      "opening_browser": "Opening browser to complete Monerium authorization...",
+      "refresh_token": "Refresh token",
+      "submit_token": "Submit tokens",
+      "success": "Monerium OAuth",
       "title": "Monerium",
-      "understand": "I understand the risk",
-      "warning": "At the moment, Monerium uses basic authentication only, so these are not read-only credentials."
+      "token_required": "Both access and refresh tokens are required.",
+      "unknown_email": "unknown email",
+      "warning": "Authorize Monerium to allow rotki to enrich your transactions with banking context. Tokens are stored locally and used read-only.",
+      "website_url_missing": "Monerium OAuth website URL is not configured."
     },
     "need_premium": "Upgrade to premium to use this feature.",
     "no_services_found": "No services found",
@@ -2482,14 +2519,6 @@
       },
       "success": {
         "message": "Successfully updated the key for {serviceName}"
-      }
-    },
-    "set_credential": {
-      "error": {
-        "message": "Error while settings external service credentials: {error}"
-      },
-      "success": {
-        "message": "Successfully updated the credentials for {serviceName}"
       }
     },
     "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
@@ -4231,9 +4260,12 @@
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
+    "go_to_history": "Go to History Events",
     "loading": "Please wait while your PnL report is loading",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "loading_message": "Please wait while your report is generated...",
+    "out_of_sync_alert": "Your history events data is out of sync. Please update your history events before generating a report.",
+    "processing_alert": "History events are currently being processed. Please wait until processing is complete.",
     "report_period": "Report starting from {start} to {end}",
     "settings_tooltip": "Open the accounting settings",
     "upgrade": "{processed} total events have been processed starting from {start}.",

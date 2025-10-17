@@ -34,6 +34,7 @@ from rotkehlchen.db.dbtx import T_TxHash
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -417,7 +418,7 @@ class SerializableEnumField(fields.Field):
     """A field that takes an enum following the SerializableEnumMixin interface"""
     def __init__(
             self,
-            enum_class: type[SerializableEnumNameMixin | (SerializableEnumIntValueMixin | (DBCharEnumMixIn | DBIntEnumMixIn))],  # noqa: E501
+            enum_class: type[SerializableEnumNameMixin | (SerializableEnumIntValueMixin | (DBCharEnumMixIn | DBIntEnumMixIn | OkxLocation))],  # noqa: E501
             exclude_types: Sequence[Enum] | None = None,
             allow_only: Sequence[Enum] | None = None,
             **kwargs: Any,

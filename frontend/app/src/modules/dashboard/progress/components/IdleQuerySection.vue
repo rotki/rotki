@@ -5,7 +5,7 @@ interface Props {
   justUpdated: boolean;
   isNeverQueried: boolean;
   longQuery: boolean;
-  transactionStatus: any;
+  hasUndecodedTxs: any;
   lastQueriedDisplay: string;
   lastQueriedTimestamp: number;
 }
@@ -18,7 +18,6 @@ const {
   lastQueriedDisplay,
   lastQueriedTimestamp,
   longQuery,
-  transactionStatus,
 } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
@@ -62,7 +61,7 @@ const [DefineTimeTooltip, ReuseTimeTooltip] = createReusableTemplate();
         </template>
       </i18n-t>
       <i18n-t
-        v-if="transactionStatus && transactionStatus.undecodedTxCount === 0"
+        v-if="!hasUndecodedTxs"
         keypath="dashboard.history_query_indicator.last_queried"
       >
         <template #time>

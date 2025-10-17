@@ -17,16 +17,15 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x806081bcc60a40db22bae2c1729f240f48de4b73e76b673fc4767bcee4f1c704')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x806081bcc60a40db22bae2c1729f240f48de4b73e76b673fc4767bcee4f1c704')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1690964039000)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -39,7 +38,7 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ),
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=94,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -58,13 +57,12 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_diva_claim(ethereum_inquirer, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0xc66dd53da9837e5197f95d32065807706a118dc2ff326a5e3bf8844b8ee261c2')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xc66dd53da9837e5197f95d32065807706a118dc2ff326a5e3bf8844b8ee261c2')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1688847971000)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -77,7 +75,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ),
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=175,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -92,7 +90,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'diva'},
         ),
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=177,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -112,15 +110,14 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_vote_cast(ethereum_inquirer, ethereum_accounts):
     """Test voting for DIVA governance"""
-    tx_hex = deserialize_evm_tx_hash('0x640818700732a7345f085d14377adf285098ae33747da21444e594a64c905d41')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x640818700732a7345f085d14377adf285098ae33747da21444e594a64c905d41')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1694557811000)
     gas_str = '0.00074796777559248'
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -133,7 +130,7 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=400,
             timestamp=timestamp,
             location=Location.ETHEREUM,

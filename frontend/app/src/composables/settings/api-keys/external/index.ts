@@ -1,8 +1,7 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import type ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
-import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
+import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import { assert, toCapitalCase, transformCase } from '@rotki/common';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { useConfirmStore } from '@/store/confirm';
@@ -27,7 +26,6 @@ interface UseExternalApiKeysReturn {
   loading: Ref<boolean>;
   getName: (name: ExternalServiceName, chain?: string) => string;
   apiKey: (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>) => ComputedRef<string>;
-  credential: (name: MaybeRef<ExternalServiceName>) => ComputedRef<Auth | null>;
   actionStatus: (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>) => ComputedRef<Status | undefined>;
   load: () => Promise<void>;
   save: (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => Promise<void>;
@@ -76,21 +74,6 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     return '';
   });
 
-  const credential = (name: MaybeRef<ExternalServiceName>): ComputedRef<Auth | null> => computed(() => {
-    const items = get(keys);
-    const service = get(name);
-
-    if (!items || service === 'blockscout')
-      return null;
-
-    const itemService = items[service];
-
-    if (itemService && 'username' in itemService)
-      return itemService;
-
-    return null;
-  });
-
   const actionStatus = (
     name: MaybeRef<ExternalServiceName>,
     chain?: MaybeRef<string>,
@@ -128,7 +111,6 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
 
   const save = async (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> => {
     const { name } = payload;
-    const isPayloadWithCredential = 'username' in payload;
     resetStatus(name);
     try {
       set(loading, true);
@@ -137,13 +119,9 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
       const serviceName = toCapitalCase(name.split('_').join(' '));
 
       setStatus(name, {
-        message: isPayloadWithCredential
-          ? t('external_services.set_credential.success.message', {
-              serviceName,
-            })
-          : t('external_services.set.success.message', {
-              serviceName,
-            }),
+        message: t('external_services.set.success.message', {
+          serviceName,
+        }),
         success: true,
       });
       await postConfirmAction?.();
@@ -151,13 +129,9 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     catch (error: any) {
       const errorMessage = error.message;
       setStatus(name, {
-        message: isPayloadWithCredential
-          ? t('external_services.set_credential.error.message', {
-              error: errorMessage,
-            })
-          : t('external_services.set.error.message', {
-              error: errorMessage,
-            }),
+        message: t('external_services.set.error.message', {
+          error: errorMessage,
+        }),
       });
     }
     finally {
@@ -201,7 +175,6 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     actionStatus,
     apiKey,
     confirmDelete,
-    credential,
     getName,
     keys,
     load,
@@ -210,12 +183,12 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
   };
 });
 
-interface UseServiceKeyHandlerReturn<T extends InstanceType<typeof ServiceKey | typeof ServiceWithAuth>> {
+interface UseServiceKeyHandlerReturn<T extends InstanceType<typeof ServiceKey>> {
   serviceKeyRef: Ref<T | undefined>;
   saveHandler: () => void;
 }
 
-export function useServiceKeyHandler<T extends InstanceType<typeof ServiceKey | typeof ServiceWithAuth>>(): UseServiceKeyHandlerReturn<T> {
+export function useServiceKeyHandler<T extends InstanceType<typeof ServiceKey>>(): UseServiceKeyHandlerReturn<T> {
   const serviceKeyRef = ref<T | undefined>();
 
   const saveHandler = (): void => {

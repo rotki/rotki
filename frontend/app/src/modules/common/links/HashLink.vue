@@ -143,9 +143,6 @@ const addressSource = computed<string | undefined>(() => {
 });
 
 const displayText = computed<string>(() => {
-  if (props.type !== 'address' && !isDefined(blockchain))
-    return props.text;
-
   const linkText = props.text;
 
   if (props.noScramble) {

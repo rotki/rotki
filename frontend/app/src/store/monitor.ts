@@ -12,6 +12,7 @@ import { useHistoryStore } from '@/store/history';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { useWebsocketStore } from '@/store/websocket';
 import { BalanceSource } from '@/types/settings/frontend-settings';
@@ -35,7 +36,8 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const { removeIgnoredAssets } = useBalancesStore();
   const { processing } = useHistoryEventsStatus();
-  const { fetchEvmTransactionStatus } = useHistoryStore();
+  const { fetchTransactionStatusSummary } = useHistoryStore();
+  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
   const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
@@ -98,11 +100,11 @@ export const useMonitorStore = defineStore('monitor', () => {
     const period = 10 * 60 * 1000; // fetch every 10 mins
     if (!activeMonitors[EVM_EVENTS_STATUS]) {
       if (get(canRequestData))
-        startPromise(fetchEvmTransactionStatus());
+        startPromise(fetchTransactionStatusSummary());
 
       activeMonitors[EVM_EVENTS_STATUS] = setInterval(() => {
         if (get(canRequestData))
-          startPromise(fetchEvmTransactionStatus());
+          startPromise(fetchTransactionStatusSummary());
       }, period);
       set(monitors, activeMonitors);
     }
@@ -162,9 +164,9 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   });
 
-  watch(processing, async (currentProcessing, previousProcessing) => {
-    if (currentProcessing !== previousProcessing) {
-      await fetchEvmTransactionStatus();
+  watch([processing, connectedExchanges], async ([currentProcessing, connectedExchanges], [previousProcessing, previousConnectedExchanges]) => {
+    if (currentProcessing !== previousProcessing || !isEqual(connectedExchanges, previousConnectedExchanges)) {
+      await fetchTransactionStatusSummary();
     }
   });
 

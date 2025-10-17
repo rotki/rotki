@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { getTextToken, toHumanReadable } from '@rotki/common';
+import { get, set } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useMoneriumOAuth } from '@/composables/settings/api-keys/external/monerium-oauth';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
@@ -20,7 +22,8 @@ const queries: OnlineHistoryEventsQueryType[] = [
 
 const { t } = useI18n();
 
-const { apiKey, credential, load } = useExternalApiKeys(t);
+const { apiKey, load } = useExternalApiKeys(t);
+const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
 
 interface QueryConfig {
   enabled: boolean;
@@ -29,7 +32,7 @@ interface QueryConfig {
 
 const queryConfigs = computed<Record<OnlineHistoryEventsQueryType, QueryConfig>>(() => {
   const gnosisPayEnabled = !!get(apiKey('gnosis_pay'));
-  const moneriumEnabled = !!get(credential('monerium'));
+  const moneriumEnabled = !!get(moneriumAuthenticated);
 
   return {
     [OnlineHistoryEventsQueryType.GNOSIS_PAY]: {

@@ -191,12 +191,12 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-from rotkehlchen.externalapis.monerium import init_monerium
+from rotkehlchen.externalapis.monerium import Monerium, init_monerium
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
@@ -310,6 +310,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -673,14 +674,18 @@ class RestAPI:
                 credentials=services,
             )
 
-        if (
-                updates_gnosispay and
-                (gnosispay_decoder := cast(
-                    'GnosisPayDecoder',
-                    self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS).transactions_decoder.decoders.get('GnosisPay'),
-                )) is not None
-        ):
-            gnosispay_decoder.reload_data()
+        if updates_gnosispay:
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
+            gnosispay_decoder = cast(
+                'GnosisPayDecoder',
+                chain_manager.transactions_decoder.decoders.get('GnosisPay'),
+            )
+            if gnosispay_decoder is not None:
+                gnosispay_decoder.reload_data()
+                if gnosispay_decoder.gnosispay_api is not None:
+                    gevent.spawn(
+                        gnosispay_decoder.gnosispay_api.backfill_missing_events,
+                    )
 
         return self._return_external_services_response()
 
@@ -703,6 +708,7 @@ class RestAPI:
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -715,6 +721,7 @@ class RestAPI:
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_selected_trade_pairs=binance_markets,
+            okx_location=okx_location,
         )
         if not result:
             result = None
@@ -732,6 +739,7 @@ class RestAPI:
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> Response:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
             name=name,
@@ -742,6 +750,7 @@ class RestAPI:
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_selected_trade_pairs=binance_markets,
+            okx_location=okx_location,
         )
         result: bool | None = True
         status_code = HTTPStatus.OK
@@ -3117,6 +3126,53 @@ class RestAPI:
         return _wrap_in_ok_result({'decoded_tx_number': decoded_count})
 
     @async_api_call()
+    def get_history_status_summary(self) -> dict[str, Any]:
+        """Get the last timestamp when evm transactions and exchanges were queried and how many
+        transactions are waiting to be decoded.
+        """
+        evm_where_str = ' OR '.join(['name LIKE ?'] * len(EVM_CHAINS_WITH_TRANSACTIONS))
+        evm_bindings = [
+            f'{blockchain.to_range_prefix("txs")}_%'
+            for blockchain in EVM_CHAINS_WITH_TRANSACTIONS
+        ]
+        exchanges_where_str = ' OR '.join(['name LIKE ?'] * len(SUPPORTED_EXCHANGES))
+        exchanges_bindings = [
+            f'{location!s}_history_events_%'
+            for location in SUPPORTED_EXCHANGES
+        ]
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            evm_last_queried_ts = cursor.execute(
+                f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {evm_where_str}',
+                evm_bindings,
+            ).fetchone()[0] or Timestamp(0)
+            exchanges_last_queried_ts = cursor.execute(
+                f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {exchanges_where_str}',
+                exchanges_bindings,
+            ).fetchone()[0] or Timestamp(0)
+            has_evm_accounts = cursor.execute(
+                f'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain IN ({",".join(["?"] * len(EVM_CHAINS_WITH_TRANSACTIONS))})',  # noqa: E501
+                [blockchain.value for blockchain in EVM_CHAINS_WITH_TRANSACTIONS],
+            ).fetchone()[0] > 0
+            exchanges_bindings_with_rotkehlchen = [
+                location.serialize_for_db() for location in SUPPORTED_EXCHANGES
+            ] + ['rotkehlchen']
+            has_exchanges_accounts = cursor.execute(
+                f'SELECT COUNT(*) FROM user_credentials WHERE location IN ({",".join(["?"] * len(SUPPORTED_EXCHANGES))}) AND name != ?',  # noqa: E501
+                exchanges_bindings_with_rotkehlchen,
+            ).fetchone()[0] > 0
+
+        undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
+            filter_query=EvmTransactionsNotDecodedFilterQuery.make(),
+        )
+        return _wrap_in_ok_result({
+            'evm_last_queried_ts': evm_last_queried_ts,
+            'exchanges_last_queried_ts': exchanges_last_queried_ts,
+            'undecoded_tx_count': undecoded_count,
+            'has_evm_accounts': has_evm_accounts,
+            'has_exchanges_accounts': has_exchanges_accounts,
+        })
+
+    @async_api_call()
     def get_evm_transactions_status(self) -> dict[str, Any]:
         """Get the last timestamp when evm transactions were queried and how many
         transactions are waiting to be decoded.
@@ -3767,14 +3823,22 @@ class RestAPI:
             # Get distinct location_labels with their corresponding location
             # Ordered by frequency (most frequent first)
             # When multiple locations exist for a label, we take the first one
+            # Only include labels that correspond to tracked blockchain accounts
+            # For exchanges, include all labels since users' credentials can be removed.
+            exchange_locations = tuple(loc.serialize_for_db() for loc in SUPPORTED_EXCHANGES)
+            placeholders = ','.join(['?' for _ in exchange_locations])
             labels = [{
                 'location_label': row[0],
                 'location': Location.deserialize_from_db(row[1]).serialize(),
             } for row in cursor.execute(
-                'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
-                'FROM history_events WHERE location_label IS NOT NULL '
-                'GROUP BY location_label '
-                'ORDER BY frequency DESC',
+                f'SELECT location_label, MIN(location) as location, COUNT(*) as frequency '
+                f'FROM history_events '
+                f'WHERE location_label IS NOT NULL '
+                f'AND (location_label IN (SELECT account FROM blockchain_accounts) '
+                f'OR location IN ({placeholders})) '
+                f'GROUP BY location_label '
+                f'ORDER BY frequency DESC',
+                exchange_locations,
             )]
 
         return api_response(
@@ -5524,6 +5588,26 @@ class RestAPI:
         except Exception as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
+    def get_monerium_status(self) -> Response:
+        monerium = Monerium(self.rotkehlchen.data.db)
+        return api_response(_wrap_in_ok_result(monerium.oauth_client.get_status()))
+
+    def complete_monerium_oauth(self, access_token: str, refresh_token: str, expires_in: int) -> Response:  # noqa: E501
+        try:
+            result = Monerium(self.rotkehlchen.data.db).oauth_client.complete_oauth(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                expires_in=expires_in,
+            )
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(_wrap_in_ok_result(result))
+
+    def disconnect_monerium(self) -> Response:
+        Monerium(self.rotkehlchen.data.db).oauth_client.clear_credentials()
+        return api_response(OK_RESULT)
+
     def query_wrap_stats(self, from_ts: Timestamp, to_ts: Timestamp) -> Response:
         """Query starts in the time range selected.
         This endpoint is temporary and will be removed.
@@ -5839,6 +5923,20 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
 
         return _wrap_in_ok_result(result=payload)
+
+    @async_api_call()
+    def get_gnosis_pay_safe_admin_addresses(self) -> dict[str, Any]:
+        if not (tracked_addresses := self.rotkehlchen.chains_aggregator.accounts.gnosis):
+            return _wrap_in_ok_result({})
+
+        gnosis_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
+
+        try:
+            addresses_with_admins = gnosis_manager.node_inquirer.get_safe_admins_for_addresses(tracked_addresses)  # type: ignore  # mypy doesn't identify the inquirer as GnosisInquirer  # noqa: E501
+        except (RemoteError, DeserializationError) as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return _wrap_in_ok_result(addresses_with_admins)
 
     @async_api_call()
     def prepare_native_transfer(

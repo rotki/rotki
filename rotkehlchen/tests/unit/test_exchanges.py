@@ -136,6 +136,7 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
             passphrase=TEST_CREDENTIALS_2.passphrase,
             kraken_account_type=None,
             binance_selected_trade_pairs=None,
+            okx_location=None,
         )
         assert success is False, 'Should not have been able to change credentials'
         with rotki.data.db.conn.read_ctx() as cursor:
@@ -156,6 +157,7 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
             passphrase=TEST_CREDENTIALS_3.passphrase,
             kraken_account_type=None,
             binance_selected_trade_pairs=None,
+            okx_location=None,
         )
         assert success is True, 'Should have been able to change credentials'
         with rotki.data.db.conn.read_ctx() as cursor:

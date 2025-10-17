@@ -3,23 +3,21 @@ const props = withDefaults(
   defineProps<{
     iso: string;
     title?: string;
-    squared?: boolean;
   }>(),
   {
-    squared: false,
     title: '',
   },
 );
 
 const flagIconClass = computed(() =>
-  `fi-${props.iso.toLowerCase()} ${props.squared ? 'fis ' : ''}`,
+  `fi-${props.iso.toLowerCase()}`,
 );
 </script>
 
 <template>
   <span
     v-if="iso"
-    class="fi"
+    class="fi text-base rounded-sm"
     :class="flagIconClass"
     :title="title || iso"
   />

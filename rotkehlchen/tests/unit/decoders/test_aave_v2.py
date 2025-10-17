@@ -263,11 +263,10 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
     Data taken from
     https://etherscan.io/tx/0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e
     """
-    tx_hex = '0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e')  # noqa: E501
     user_address = string_to_evm_address('0x2715273613632226985186221669179813245119')
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -281,7 +280,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
         nonce=0,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -310,7 +309,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -324,7 +323,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=252,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -349,11 +348,10 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
     Data taken from
     https://etherscan.io/tx/0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c
     """
-    tx_hex = '0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c')  # noqa: E501
     user_address = string_to_evm_address('0x2715273613632226985186221669179813245119')
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -367,7 +365,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
         nonce=0,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -396,7 +394,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -410,7 +408,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=25,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -435,11 +433,10 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
     Data taken from
     https://etherscan.io/tx/0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a
     """
-    tx_hex = '0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a')  # noqa: E501
     user_address = string_to_evm_address('0x2715273613632226985186221669179813245119')
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -453,7 +450,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         nonce=0,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -502,7 +499,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -516,7 +513,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -531,7 +528,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
             address=string_to_evm_address('0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -685,11 +682,10 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
     Data taken from
     https://etherscan.io/tx/0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11
     """
-    tx_hex = '0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11')  # noqa: E501
     user_address = string_to_evm_address('0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9')
     transaction = EvmTransaction(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -703,7 +699,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         nonce=0,
     )
     receipt = EvmTxReceipt(
-        tx_hash=evmhash,
+        tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
         contract_address=None,
         status=True,
@@ -751,7 +747,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -765,7 +761,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -780,7 +776,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=0,
             location=Location.ETHEREUM,

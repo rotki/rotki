@@ -110,6 +110,9 @@ function notifyOAuthError(error: any): void {
 }
 
 async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
+  if (oAuthResult.service !== 'google')
+    return;
+
   try {
     if (!oAuthResult.success) {
       notifyOAuthError(oAuthResult.error);
@@ -117,6 +120,15 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
     }
 
     const { accessToken, refreshToken } = oAuthResult;
+    if (!refreshToken) {
+      notify({
+        display: true,
+        message: t('external_services.google_calendar.auth_failed'),
+        severity: Severity.ERROR,
+        title: t('external_services.google_calendar.error'),
+      });
+      return;
+    }
     const result = await googleCalendarApi.completeOAuth(accessToken, refreshToken);
     logger.debug('received oauth result', result);
 
@@ -196,6 +208,7 @@ async function submitManualToken() {
     await handleOAuthCallback({
       accessToken: get(manualToken).trim(),
       refreshToken: get(manualRefreshToken).trim(),
+      service: 'google',
       success: true,
     });
     set(manualToken, '');

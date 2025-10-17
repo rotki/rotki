@@ -23,14 +23,13 @@ def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
     Data for trade taken from
     https://etherscan.io/tx/0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87
     """
-    tx_hex = deserialize_evm_tx_hash('0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
 
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -42,7 +41,7 @@ def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.01212979988 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -54,7 +53,7 @@ def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_KYBER_LEGACY,
             address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -75,14 +74,13 @@ def test_kyber_legacy_new_contract(ethereum_inquirer):
     """Data for trade taken from
     https://etherscan.io/tx/0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22
     """
-    tx_hex = deserialize_evm_tx_hash('0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
 
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
@@ -94,7 +92,7 @@ def test_kyber_legacy_new_contract(ethereum_inquirer):
             notes='Burn 0.066614401 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
@@ -106,7 +104,7 @@ def test_kyber_legacy_new_contract(ethereum_inquirer):
             counterparty=CPT_KYBER_LEGACY,
             address=string_to_evm_address('0x7C66550C9c730B6fdd4C03bc2e73c5462c5F7ACC'),
         ), EvmSwapEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=2,
             timestamp=1644182638000,
             location=Location.ETHEREUM,

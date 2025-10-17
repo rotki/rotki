@@ -29,6 +29,44 @@ export function isEvmIdentifier(identifier?: string): boolean {
   return !(!address || !isValidEthAddress(address));
 }
 
+export function isEvmIdentifierWithNftId(identifier?: string): boolean {
+  if (!identifier)
+    return false;
+
+  // Check if it's a valid EVM identifier format (eip155:chainId/erc721:address/nftId)
+  // by temporarily removing the /nftId suffix
+  const { address, nftId } = getAddressAndNftIdFromIdentifier(identifier);
+  if (!nftId || !/^\d+$/.test(nftId))
+    return false;
+
+  // Reconstruct without the nftId to validate as a standard EVM identifier
+  const parts = identifier.split(':');
+  if (parts.length !== 3)
+    return false;
+
+  const baseIdentifier = `${parts[0]}:${parts[1]}:${address}`;
+
+  // Check if base format is valid and protocol is erc721
+  if (!isEvmIdentifier(baseIdentifier))
+    return false;
+
+  const protocol = parts[1]?.split('/')[1];
+  return protocol === 'erc721';
+}
+
+export function getNftAssetIdDetail(identifier?: string): { contractAddress: string; nftId: string } | undefined {
+  if (!identifier || !isEvmIdentifierWithNftId(identifier)) {
+    return { contractAddress: '', nftId: '' };
+  }
+
+  const { address, nftId } = getAddressAndNftIdFromIdentifier(identifier);
+
+  return {
+    contractAddress: address,
+    nftId,
+  };
+}
+
 export function isSolanaTokenIdentifier(identifier?: string): boolean {
   if (!identifier)
     return false;
@@ -49,6 +87,15 @@ export function getAddressFromEvmIdentifier(identifier?: string): string {
     return '';
 
   return identifier.split(':')[2] ?? '';
+}
+
+function getAddressAndNftIdFromIdentifier(identifier: string): { address: string; nftId: string } {
+  const addressAndId = identifier.split(':')[2];
+  const addressParts = addressAndId?.split('/') ?? [];
+  return {
+    address: addressParts[0] ?? '',
+    nftId: addressParts[1] ?? '',
+  };
 }
 
 export function createEvmIdentifierFromAddress(address: string, chain = '1'): string {

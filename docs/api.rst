@@ -1907,6 +1907,7 @@ Get a list of setup exchanges
       {
           "result": [
                {"location": "kraken", "name": "kraken1", "kraken_account_type": "starter"},
+               {"location": "okx", "name": "okx1", "okx_location": "global"},
                {"location": "poloniex", "name": "poloniex1"},
                {"location": "binance", "name": "binance1"}
            ],
@@ -2013,7 +2014,7 @@ Edit an exchange entry
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate"}
+      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate", "okx_location": "eea"}
 
    :reqjson string name: The name of the exchange key to edit
    :reqjson string location: The location of the exchange to edit
@@ -2022,6 +2023,7 @@ Edit an exchange entry
    :reqjson string api_secret: Optional. If given this will be the new api secret for the exchange credentials.
    :reqjson string passphrase: Optional. If given this will be the new passphrase. Only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: Optional. An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
+   :reqjson string okx_location: Optional. An optional setting for okx. The location of the user's account, needed to route to specific subdomain API. Valid values are "global", "eea" and "usd".
 
    **Example Response**:
 
@@ -14092,13 +14094,13 @@ Refetch transactions for a specific time period
    :statuscode 500: Internal rotki error
 
 
-Get EVM transaction status
-===========================
+Get history status summary
+======================
 
-.. http:post:: /api/(version)/blockchains/evm/transactions/status
+.. http:post:: /api/(version)/history/status/summary
 
    Doing a GET on the transactions status endpoint will query status information about how recently all EVM chains
-   have been queried for transactions and how many transactions are waiting to be decoded.
+   and exchanges have been queried for transactions/events and how many transactions are waiting to be decoded.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -14107,7 +14109,7 @@ Get EVM transaction status
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/evm/transactions/status HTTP/1.1
+      GET /api/1/history/status/summary HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -14120,12 +14122,14 @@ Get EVM transaction status
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {"result": {"last_queried_ts": 1600000000, "undecoded_tx_count": 3, "has_evm_accounts": true}, "message": "" }
+      {"result": {"evm_last_queried_ts": 1600000000, "exchanges_last_queried_ts": 1599999000, "undecoded_tx_count": 3, "has_evm_accounts": true, "has_exchanges_accounts": true}, "message": "" }
 
    :resjson object result: An object containing the status data
-   :resjson integer last_queried_ts: The last timestamp when transactions for all EVM chains have been queried.
+   :resjson integer evm_last_queried_ts: The last timestamp when transactions for all EVM chains have been queried.
+   :resjson integer exchanges_last_queried_ts: The last timestamp when history events for all exchanges have been queried.
    :resjson integer undecoded_tx_count: The number of transactions waiting to be decoded.
    :resjson boolean has_evm_accounts: Whether there are any EVM accounts added to rotki.
+   :resjson boolean has_exchanges_accounts: Whether there are any exchange accounts added to rotki.
    :statuscode 200: Status successfully queried.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
@@ -14462,3 +14466,143 @@ Solana Token Migration
    :statuscode 401: No user is currently logged in.
    :statuscode 409: Token does not exist in user_added_solana_tokens table, or failed to create the new Solana token due to unknown asset or input error.
    :statuscode 500: Internal rotki error.
+
+Monerium OAuth
+===============
+
+.. http:get:: /api/(version)/services/monerium
+
+   Doing a GET on this endpoint returns the Monerium authentication status.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "authenticated": true,
+              "user_email": "alice@example.com",
+              "default_profile_id": "profile-123",
+              "profiles": [],
+              "expires_at": 1700000000,
+          },
+          "message": ""
+      }
+
+   :resjson object result: Status payload describing the saved Monerium OAuth credentials.
+   :resjson bool authenticated: ``true`` when access tokens are stored, ``false`` otherwise.
+   :resjson str user_email: Email address of the connected Monerium account. Present only when authenticated.
+   :resjson str default_profile_id: Identifier of the default Monerium profile. Present only when authenticated.
+   :resjson list profiles: List of available Monerium profiles with metadata. Present only when authenticated.
+   :resjson int expires_at: Unix timestamp when the cached access token expires. Present only when authenticated.
+
+   :statuscode 200: Status queried successfully.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:put:: /api/(version)/services/monerium
+
+   Doing a PUT on this endpoint stores Monerium OAuth tokens obtained from the external OAuth flow and fetches the user context.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/services/monerium HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "access_token": "access-token",
+          "refresh_token": "refresh-token",
+          "expires_in": 3600
+      }
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "success": true,
+              "message": "Successfully authenticated with Monerium",
+              "user_email": "alice@example.com",
+              "default_profile_id": "profile-123",
+              "profiles": []
+          },
+          "message": ""
+      }
+
+   :reqjson str access_token: Access token returned by the Monerium OAuth callback.
+   :reqjson str refresh_token: Refresh token returned by the OAuth callback.
+   :reqjson int expires_in: Lifetime of the access token in seconds.
+   :resjson object result: Confirmation payload containing the stored user context.
+   :resjson bool success: ``true`` when the credentials were stored successfully.
+   :resjson str message: Confirmation message returned by rotki.
+   :resjson str user_email: Email address retrieved from Monerium.
+   :resjson str default_profile_id: Default profile identifier fetched from Monerium.
+   :resjson list profiles: List of Monerium profiles associated with the account.
+   :statuscode 200: Credentials stored successfully.
+   :statuscode 400: Failed to validate or store the credentials, or Monerium returned an error.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/services/monerium
+
+   Doing a DELETE on this endpoint removes stored Monerium OAuth credentials.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :statuscode 200: Credentials removed successfully.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+GnosisPay admins
+=================
+
+.. http:get:: /api/(version)/services/gnosispay/admins
+
+   Retrieve tracked Gnosis addresses whose corresponding safe has at least one administrator
+   reported by the Gnosis Pay contract.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xaCFEb570426e260Eb930971FE528c8014f1002a0": [
+                  "0x37f18A82493cdF80675fF01e58c1A1b39637cf50",
+                  "0xc37b40ABdB939635068d3c5f13E7faF686F03B65"
+              ]
+          },
+          "message": ""
+      }
+
+   :resjson object result: Mapping of tracked safe addresses to the list of admin addresses.
+   :statuscode 200: The request was successful.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Error querying the on chain information.
+   :statuscode 502: Failed to query the external contract.

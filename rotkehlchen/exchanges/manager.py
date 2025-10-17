@@ -5,7 +5,7 @@ from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional
 
-from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY
+from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY, OKX_LOCATION_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
@@ -26,6 +26,7 @@ from .constants import EXCHANGES_WITHOUT_API_SECRET, SUPPORTED_EXCHANGES
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.exchanges.okx import OkxLocation
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -82,6 +83,7 @@ class ExchangeManager:
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_selected_trade_pairs: list[str] | None,
+            okx_location: Optional['OkxLocation'],
     ) -> tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -113,6 +115,7 @@ class ExchangeManager:
             success, msg = exchangeobj.edit_exchange_extras({
                 KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type,
                 BINANCE_MARKETS_KEY: binance_selected_trade_pairs,
+                OKX_LOCATION_KEY: okx_location,
             })
             if success is False:
                 exchangeobj.reset_to_db_credentials()
@@ -130,6 +133,7 @@ class ExchangeManager:
                     passphrase=passphrase,
                     kraken_account_type=kraken_account_type,
                     binance_selected_trade_pairs=binance_selected_trade_pairs,
+                    okx_location=okx_location,
                 )
         except InputError as e:
             exchangeobj.reset_to_db_credentials()  # DB is already rolled back at this point
@@ -179,6 +183,9 @@ class ExchangeManager:
                 data = {'location': str(location), 'name': exchangeobj.name}
                 if location == Location.KRAKEN:  # ignore type since we know this is kraken here
                     data[KRAKEN_ACCOUNT_TYPE_KEY] = str(exchangeobj.account_type)  # type: ignore
+                elif location == Location.OKX:  # ignore type since we know this is okx here
+                    data[OKX_LOCATION_KEY] = exchangeobj.okx_location.serialize()  # type: ignore
+
                 exchange_info.append(data)
 
         return exchange_info

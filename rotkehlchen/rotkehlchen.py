@@ -133,6 +133,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.exchanges.okx import OkxLocation
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1370,6 +1371,7 @@ class Rotkehlchen:
             passphrase: str | None = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
             binance_selected_trade_pairs: list[str] | None = None,
+            okx_location: Optional['OkxLocation'] = None,
     ) -> tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
@@ -1382,6 +1384,7 @@ class Rotkehlchen:
             database=self.data.db,
             passphrase=passphrase,
             binance_selected_trade_pairs=binance_selected_trade_pairs,
+            okx_location=okx_location,
         )
         if is_success:
             # Success, save the result in the DB
@@ -1393,6 +1396,7 @@ class Rotkehlchen:
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
                 binance_selected_trade_pairs=binance_selected_trade_pairs,
+                okx_location=okx_location,
             )
         return is_success, msg
 

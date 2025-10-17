@@ -10,7 +10,6 @@ import { computed } from 'vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
-import ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import ExternalServices from '@/pages/api-keys/external/index.vue';
 import { useConfirmStore } from '@/store/confirm';
@@ -81,7 +80,6 @@ describe('/settings/api-keys/external-services', () => {
           EvmChainIcon,
           ServiceKeyCard,
           ServiceKey,
-          ServiceWithAuth,
         },
       },
     });

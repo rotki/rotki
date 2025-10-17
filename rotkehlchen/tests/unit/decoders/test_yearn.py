@@ -651,13 +651,12 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
     In the case of deposits and withdrawals for yearn there are two different signatures for
     the functions used. If no amount is provided all the available amount is deposited/withdrawn.
     """
-    tx_hex = deserialize_evm_tx_hash('0x02486ccc1fe49b3c7df60c51efad78ddca5af025834e30ba1a736ff352b33592')  # noqa: E501
-    evmhash = deserialize_evm_tx_hash(tx_hex)
+    tx_hash = deserialize_evm_tx_hash('0x02486ccc1fe49b3c7df60c51efad78ddca5af025834e30ba1a736ff352b33592')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
@@ -669,7 +668,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.0108951 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=224,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
@@ -682,7 +681,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             counterparty=None,
             address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=225,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
@@ -695,7 +694,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_YEARN_V2,
             address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=226,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,

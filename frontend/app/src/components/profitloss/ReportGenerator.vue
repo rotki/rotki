@@ -2,6 +2,7 @@
 import type { ProfitLossReportPeriod } from '@/types/reports';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { useTransactionStatusCheck } from '@/modules/dashboard/progress/composables/use-transaction-status-check';
 import { Routes } from '@/router/routes';
 
 const emit = defineEmits<{
@@ -12,18 +13,22 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const range = ref({ end: 0, start: 0 });
+const { isOutOfSync, navigateToHistory, processing } = useTransactionStatusCheck();
+
+const range = ref<ProfitLossReportPeriod>({ end: 0, start: 0 });
 const valid = ref<boolean>(false);
 
-function generate() {
+const canGenerate = computed<boolean>(() => get(valid) && !get(processing) && !get(isOutOfSync));
+
+function generate(): void {
   emit('generate', get(range));
 }
 
-function exportReportData() {
+function exportReportData(): void {
   emit('export-data', get(range));
 }
 
-function importReportData() {
+function importReportData(): void {
   emit('import-data');
 }
 
@@ -60,6 +65,28 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
       v-model="range"
       @update:valid="valid = $event"
     />
+    <RuiAlert
+      v-if="isOutOfSync || processing"
+      type="warning"
+      class="mt-6"
+    >
+      <template v-if="processing">
+        {{ t('profit_loss_report.processing_alert') }}
+      </template>
+      <template v-else>
+        <div class="flex flex-col items-start gap-2">
+          <div>{{ t('profit_loss_report.out_of_sync_alert') }}</div>
+          <RuiButton
+            size="sm"
+            color="primary"
+            variant="outlined"
+            @click="navigateToHistory()"
+          >
+            {{ t('profit_loss_report.go_to_history') }}
+          </RuiButton>
+        </div>
+      </template>
+    </RuiAlert>
     <template #footer>
       <div class="flex gap-4 w-full">
         <div class="grow">
@@ -67,7 +94,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
             class="w-full"
             color="primary"
             size="lg"
-            :disabled="!valid"
+            :disabled="!canGenerate"
             @click="generate()"
           >
             <template #prepend>

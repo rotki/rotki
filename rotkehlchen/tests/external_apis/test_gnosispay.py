@@ -79,5 +79,5 @@ def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
 
     assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(
         message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
-        data={'error': 'No authorization token was found'},
+        data={'error': 'Please sign in with GnosisPay again to refresh your data'},
     )

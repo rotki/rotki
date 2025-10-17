@@ -54,11 +54,11 @@ def test_get_balances(
     """Check querying the sushiswap balances endpoint works. Uses real data. Needs the deposit
     event in uniswap to trigger the logic based on events to query pool balances.
     """
-    tx_hex = deserialize_evm_tx_hash('0xbc99e10c1e48969f4a580229abebc97f7a358b7ba8365dca1f829f9c387bec51')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xbc99e10c1e48969f4a580229abebc97f7a358b7ba8365dca1f829f9c387bec51')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=tx_hash,
     )
     async_query = random.choice([False, True])
     response = requests.get(

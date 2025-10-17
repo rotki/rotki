@@ -28,6 +28,7 @@ class DBCacheStatic(Enum):
     LAST_SPARK_ASSETS_UPDATE: Final = 'last_spark_assets_update'
     LAST_DB_UPGRADE: Final = 'last_db_upgrade'
     DOCKER_DEVICE_INFO: Final = 'docker_device_info'
+    MONERIUM_OAUTH_CREDENTIALS: Final = 'monerium_oauth_credentials'
 
 
 class LabeledLocationArgsType(TypedDict):

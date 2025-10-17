@@ -12,23 +12,23 @@ const justUpdated = ref<boolean>(false);
 
 const { appVersion } = storeToRefs(useMainStore());
 
-const router = useRouter();
-
 const {
   balanceProgress,
   dismissalThresholdMs,
   hasTxAccounts,
+  hasUndecodedTransactions,
   historyProgress,
   isNeverQueried,
   lastQueriedDisplay,
   lastQueriedTimestamp,
   longQuery,
+  navigateToHistory,
   processing,
   processingMessage,
   processingPercentage,
   queryStatus,
   showIdleMessage,
-  transactionStatus,
+  transactionStatusSummary,
 } = useUnifiedProgress();
 
 const historyStatusDismissedRecently = computed(() => {
@@ -44,10 +44,6 @@ const balanceStatusDismissedRecently = computed(() => {
   const { lastBalanceProgressDismissedTs } = get(queryStatus);
   return now - lastBalanceProgressDismissedTs < dismissalMs;
 });
-
-function navigateToHistory(): void {
-  router.push('/history');
-}
 
 function dismissHistoryProgress(): void {
   set(queryStatus, {
@@ -138,7 +134,8 @@ onMounted(async () => {
           :just-updated="justUpdated"
           :is-never-queried="isNeverQueried"
           :long-query="longQuery"
-          :transaction-status="transactionStatus"
+          :has-undecoded-txs="hasUndecodedTransactions"
+          :transaction-status="transactionStatusSummary"
           :last-queried-display="lastQueriedDisplay"
           :last-queried-timestamp="lastQueriedTimestamp"
         />
