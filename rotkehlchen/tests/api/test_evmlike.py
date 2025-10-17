@@ -313,7 +313,7 @@ def test_decode_pending_evmlike(
     assert len(result['entries']) == 17
     compare_events_without_id(result['entries'][0]['entry'], EvmEvent(
         event_identifier='zkl0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
-        tx_hash=tx_hash1,
+        tx_ref=tx_hash1,
         sequence_index=0,
         timestamp=TimestampMS(1708431030000),
         location=Location.ZKSYNC_LITE,
@@ -327,7 +327,7 @@ def test_decode_pending_evmlike(
     ).serialize())
     compare_events_without_id(result['entries'][1]['entry'], EvmEvent(
         event_identifier='zkl0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
-        tx_hash=tx_hash1,
+        tx_ref=tx_hash1,
         sequence_index=1,
         timestamp=TimestampMS(1708431030000),
         location=Location.ZKSYNC_LITE,
@@ -341,7 +341,7 @@ def test_decode_pending_evmlike(
     ).serialize())
     compare_events_without_id(result['entries'][2]['entry'], EvmEvent(
         event_identifier='zkl0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb',
-        tx_hash=tx_hash2,
+        tx_ref=tx_hash2,
         sequence_index=0,
         timestamp=TimestampMS(1659010582000),
         location=Location.ZKSYNC_LITE,
@@ -358,10 +358,10 @@ def test_decode_pending_evmlike(
     # It's multiple "batched" transfers, a ChangePubkey event and the fee at the end
     # with a 0 transfer to self
     for x in result['entries'][4:10]:  # normal transfer part of the batch
-        if x['entry']['tx_hash'] == '0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7':  # noqa: E501
+        if x['entry']['tx_ref'] == '0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7':  # noqa: E501
             compare_events_without_id(x['entry'], EvmEvent(
                 event_identifier='zkl0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7',
-                tx_hash=deserialize_evm_tx_hash('0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7'),
+                tx_ref=deserialize_evm_tx_hash('0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
                 location=Location.ZKSYNC_LITE,
@@ -378,10 +378,10 @@ def test_decode_pending_evmlike(
         raise AssertionError('Did not find the event')
 
     for x in result['entries'][4:10]:  # changepubkey
-        if x['entry']['tx_hash'] == '0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7':  # noqa: E501
+        if x['entry']['tx_ref'] == '0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7':  # noqa: E501
             compare_events_without_id(x['entry'], EvmEvent(
                 event_identifier='zkl0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7',
-                tx_hash=deserialize_evm_tx_hash('0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7'),
+                tx_ref=deserialize_evm_tx_hash('0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
                 location=Location.ZKSYNC_LITE,
@@ -398,10 +398,10 @@ def test_decode_pending_evmlike(
 
     for x in result['entries'][4:10]:  # fee by 0 transaction to self - transaction
         entry = x['entry']
-        if entry['tx_hash'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'none':  # noqa: E501
+        if entry['tx_ref'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'none':  # noqa: E501
             compare_events_without_id(entry, EvmEvent(
                 event_identifier='zkl0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
-                tx_hash=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
+                tx_ref=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
                 location=Location.ZKSYNC_LITE,
@@ -419,10 +419,10 @@ def test_decode_pending_evmlike(
 
     for x in result['entries'][4:10]:  # fee by 0 transaction to self - fee
         entry = x['entry']
-        if entry['tx_hash'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'fee':  # noqa: E501
+        if entry['tx_ref'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'fee':  # noqa: E501
             compare_events_without_id(entry, EvmEvent(
                 event_identifier='zkl0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
-                tx_hash=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
+                tx_ref=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
                 sequence_index=1,
                 timestamp=TimestampMS(1656022105000),
                 location=Location.ZKSYNC_LITE,
@@ -498,7 +498,7 @@ def test_add_edit_evmlike_event(
     # Add an event with the existing tx hash
     entry = (event := EvmEvent(
         event_identifier='xyz',
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(1600000000000),
         location=Location.ZKSYNC_LITE,
@@ -532,7 +532,7 @@ def test_add_edit_evmlike_event(
         ) == [event]
 
     # Try to edit with a tx hash that is not in the db or onchain
-    entry['tx_hash'] = f'0x{"0" * 64}'  # don't use make_evm_tx_hash so this is always the same for the vcr.  # noqa: E501
+    entry['tx_ref'] = f'0x{"0" * 64}'  # don't use make_evm_tx_hash so this is always the same for the vcr.  # noqa: E501
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=entry,
@@ -544,7 +544,7 @@ def test_add_edit_evmlike_event(
     )
 
     # Check that setting a real tx hash that's only missing from the DB pulls the tx from onchain.
-    entry['tx_hash'] = '0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb'
+    entry['tx_ref'] = '0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb'
     assert_simple_ok_response(requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=entry,
@@ -552,5 +552,5 @@ def test_add_edit_evmlike_event(
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM zksynclite_transactions WHERE tx_hash=?',
-            (deserialize_evm_tx_hash(entry['tx_hash']),),
+            (deserialize_evm_tx_hash(entry['tx_ref']),),
         ).fetchone()[0] == 1

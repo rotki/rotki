@@ -108,7 +108,7 @@ def test_include_gas_costs(accountant, google_service):
         spend=AssetAmount(asset=A_EUR, amount=FVal('1687')),
         receive=AssetAmount(asset=A_ETH, amount=FVal(10)),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,

@@ -748,7 +748,7 @@ def test_query_transactions_check_decoded_events(
             'user_notes': 'Burn 0.00863351371344 ETH for gas',
             'sequence_index': 0,
             'timestamp': 1642802807000,
-            'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+            'tx_ref': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             'extra_data': None,
         },
         'event_accounting_rule_status': 'not processed',
@@ -768,7 +768,7 @@ def test_query_transactions_check_decoded_events(
             'user_notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
             'sequence_index': 1,
             'timestamp': 1642802807000,
-            'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+            'tx_ref': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             'extra_data': None,
         },
         'event_accounting_rule_status': 'not processed',
@@ -790,7 +790,7 @@ def test_query_transactions_check_decoded_events(
             'user_notes': 'Burn 0.017690836625228792 ETH for gas',
             'sequence_index': 0,
             'timestamp': 1642802735000,
-            'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+            'tx_ref': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
             'extra_data': None,
         },
         'event_accounting_rule_status': 'not processed',
@@ -810,7 +810,7 @@ def test_query_transactions_check_decoded_events(
             'user_notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
             'sequence_index': 308,
             'timestamp': 1642802735000,
-            'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+            'tx_ref': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
             'extra_data': None,
         },
         'event_accounting_rule_status': 'not processed',
@@ -832,7 +832,7 @@ def test_query_transactions_check_decoded_events(
             'user_notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
             'sequence_index': 0,
             'timestamp': 1642802651000,
-            'tx_hash': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
+            'tx_ref': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
             'extra_data': None,
         },
         'event_accounting_rule_status': 'not processed',
@@ -854,7 +854,7 @@ def test_query_transactions_check_decoded_events(
             'user_notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
             'sequence_index': 385,
             'timestamp': 1642802286000,
-            'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
+            'tx_ref': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
             'extra_data': None,
         },
         'event_accounting_rule_status': 'not processed',
@@ -890,7 +890,7 @@ def test_query_transactions_check_decoded_events(
             'user_notes': 'Some kind of deposit',
             'sequence_index': 1,
             'timestamp': 1642802286000,
-            'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
+            'tx_ref': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
             'extra_data': None,
         },
         'customized': True,
@@ -1026,12 +1026,12 @@ def test_events_filter_params(
     tx3 = make_ethereum_transaction(tx_hash=b'3', timestamp=Timestamp(3))
     tx4 = make_ethereum_transaction(tx_hash=b'4', timestamp=Timestamp(4))
     test_contract_address = make_evm_address()
-    event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH, timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
-    event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
-    event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
-    event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_WETH, timestamp=TimestampMS(2), location_label=ethereum_accounts[0])  # noqa: E501
-    event5 = make_ethereum_event(tx_hash=b'4', index=5, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.DEPOSIT_ASSET, timestamp=TimestampMS(4), location_label=ethereum_accounts[2], address=test_contract_address)  # noqa: E501
-    event6 = make_ethereum_event(tx_hash=b'4', index=6, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.REMOVE_ASSET, timestamp=TimestampMS(4), location_label=ethereum_accounts[2])  # noqa: E501
+    event1 = make_ethereum_event(tx_ref=b'1', index=1, asset=A_ETH, timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
+    event2 = make_ethereum_event(tx_ref=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
+    event3 = make_ethereum_event(tx_ref=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
+    event4 = make_ethereum_event(tx_ref=b'2', index=4, asset=A_WETH, timestamp=TimestampMS(2), location_label=ethereum_accounts[0])  # noqa: E501
+    event5 = make_ethereum_event(tx_ref=b'4', index=5, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.DEPOSIT_ASSET, timestamp=TimestampMS(4), location_label=ethereum_accounts[2], address=test_contract_address)  # noqa: E501
+    event6 = make_ethereum_event(tx_ref=b'4', index=6, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.REMOVE_ASSET, timestamp=TimestampMS(4), location_label=ethereum_accounts[2])  # noqa: E501
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:
@@ -1185,10 +1185,10 @@ def test_ignored_assets(
     tx1 = make_ethereum_transaction(timestamp=Timestamp(1))
     tx2 = make_ethereum_transaction(timestamp=Timestamp(2))
     tx3 = make_ethereum_transaction(timestamp=Timestamp(3))
-    event1 = make_ethereum_event(tx_hash=tx1.tx_hash, index=1, asset=A_ETH, timestamp=TimestampMS(1))  # noqa: E501
-    event2 = make_ethereum_event(tx_hash=tx1.tx_hash, index=2, asset=A_BTC, timestamp=TimestampMS(1))  # noqa: E501
-    event3 = make_ethereum_event(tx_hash=tx2.tx_hash, index=3, asset=A_MKR, timestamp=TimestampMS(1))  # noqa: E501
-    event4 = make_ethereum_event(tx_hash=tx3.tx_hash, index=4, asset=A_DAI, timestamp=TimestampMS(2))  # noqa: E501
+    event1 = make_ethereum_event(tx_ref=tx1.tx_hash, index=1, asset=A_ETH, timestamp=TimestampMS(1))  # noqa: E501
+    event2 = make_ethereum_event(tx_ref=tx1.tx_hash, index=2, asset=A_BTC, timestamp=TimestampMS(1))  # noqa: E501
+    event3 = make_ethereum_event(tx_ref=tx2.tx_hash, index=3, asset=A_MKR, timestamp=TimestampMS(1))  # noqa: E501
+    event4 = make_ethereum_event(tx_ref=tx3.tx_hash, index=4, asset=A_DAI, timestamp=TimestampMS(2))  # noqa: E501
     with db.user_write() as cursor:
         dbevmtx.add_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
@@ -1549,7 +1549,7 @@ def test_monerium_gnosis_pay_events_update(
         DBHistoryEvents(rotki.data.db).add_history_events(
             write_cursor=write_cursor,
             history=[(gnosispay_event1 := EvmEvent(
-                tx_hash=gnosis_pay_tx_1,
+                tx_ref=gnosis_pay_tx_1,
                 sequence_index=0,
                 timestamp=gnosis_pay_ts_1,
                 location=Location.GNOSIS,
@@ -1559,7 +1559,7 @@ def test_monerium_gnosis_pay_events_update(
                 amount=ONE,
                 counterparty=CPT_GNOSIS_PAY,
             )), (gnosispay_event2 := EvmEvent(
-                tx_hash=make_evm_tx_hash(),
+                tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1610000000),
                 location=Location.GNOSIS,
@@ -1569,7 +1569,7 @@ def test_monerium_gnosis_pay_events_update(
                 amount=ONE,
                 counterparty=CPT_GNOSIS_PAY,
             )), (monerium_event := EvmEvent(
-                tx_hash=make_evm_tx_hash(),
+                tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1620000000),
                 location=Location.ARBITRUM_ONE,
@@ -1579,7 +1579,7 @@ def test_monerium_gnosis_pay_events_update(
                 amount=ONE,
                 counterparty=CPT_MONERIUM,
             )), EvmEvent(
-                tx_hash=make_evm_tx_hash(),
+                tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1630000000),
                 location=Location.GNOSIS,
@@ -1613,13 +1613,13 @@ def test_monerium_gnosis_pay_events_update(
         assert_proper_response(requests.put(
             api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
             json={'chain': 'gnosis', 'tx_refs': [
-                str(gnosispay_event1.tx_hash),
-                str(gnosispay_event2.tx_hash),
+                str(gnosispay_event1.tx_ref),
+                str(gnosispay_event2.tx_ref),
             ]},
         ))
         assert_proper_response(requests.put(
             api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
-            json={'chain': 'arbitrum_one', 'tx_refs': [str(monerium_event.tx_hash)]},
+            json={'chain': 'arbitrum_one', 'tx_refs': [str(monerium_event.tx_ref)]},
         ))
 
         if start_with_valid_premium:

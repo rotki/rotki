@@ -20,7 +20,7 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1693477115000),
             location=Location.ETHEREUM,
@@ -32,7 +32,7 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.0008732662 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1693477115000),
             location=Location.ETHEREUM,
@@ -56,7 +56,7 @@ def test_withdraw_eth(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1693477571000),
             location=Location.ETHEREUM,
@@ -68,7 +68,7 @@ def test_withdraw_eth(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.0011436799352069 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1693477571000),
             location=Location.ETHEREUM,
@@ -92,7 +92,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1693480187000),
             location=Location.ETHEREUM,
@@ -104,7 +104,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.00227258431919723 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=476,
             timestamp=TimestampMS(1693480187000),
             location=Location.ETHEREUM,
@@ -128,7 +128,7 @@ def test_withdraw_token(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1693479923000),
             location=Location.ETHEREUM,
@@ -140,7 +140,7 @@ def test_withdraw_token(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.002955477492625515 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=196,
             timestamp=TimestampMS(1693479923000),
             location=Location.ETHEREUM,

@@ -30,7 +30,7 @@ def test_refund_dgd(
     tx_hash = deserialize_evm_tx_hash('0x34d616263b24cad995a58320d910ee6a2b7fc71c0231c94776845ecb158effe0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1710097595000)),
         location=Location.ETHEREUM,
@@ -42,7 +42,7 @@ def test_refund_dgd(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -55,7 +55,7 @@ def test_refund_dgd(
         counterparty=CPT_DIGIXDAO,
         address=ZERO_ADDRESS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,

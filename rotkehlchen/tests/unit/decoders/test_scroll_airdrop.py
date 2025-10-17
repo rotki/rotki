@@ -32,7 +32,7 @@ def test_claim_scroll_airdop(
     user_address, timestamp, gas_amount, airdrop_amount = scroll_accounts[0], TimestampMS(1729588449000), '0.00001063050890817', '106.1909'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -44,7 +44,7 @@ def test_claim_scroll_airdop(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=64,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -71,7 +71,7 @@ def test_receive_offchain_scroll_airdop(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     user_address, timestamp, airdrop_amount = scroll_accounts[0], TimestampMS(1729786831000), '2500'  # noqa: E501
     assert events == [EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=58,
             timestamp=timestamp,
             location=Location.SCROLL,

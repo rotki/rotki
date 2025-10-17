@@ -492,7 +492,7 @@ def test_add_get_edit_delete_eth2_validators(
     events = [
         EthDepositEvent(
             identifier=1,
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             validator_index=validators[0].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             sequence_index=1,
             timestamp=TimestampMS(1601379127000),
@@ -973,7 +973,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'evm event'
             assert entry['amount'] == mev_reward
-            assert entry['tx_hash'] == tx_hash.hex()  # pylint: disable=no-member
+            assert entry['tx_ref'] == tx_hash.hex()  # pylint: disable=no-member
             assert entry['user_notes'] == f'Receive {mev_reward} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}'  # pylint: disable=no-member  # noqa: E501
         else:
             raise AssertionError('Should not get to this sequence index')
@@ -1268,7 +1268,7 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
                 block_number=block_number,
                 is_mev_reward=True,
             ), EvmEvent(
-                tx_hash=(tx_hash := deserialize_evm_tx_hash(tx_hash_str := '0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')),  # noqa: E501
+                tx_ref=(tx_hash := deserialize_evm_tx_hash(tx_hash_str := '0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')),  # noqa: E501
                 sequence_index=0,
                 timestamp=timestamp,
                 location=Location.ETHEREUM,

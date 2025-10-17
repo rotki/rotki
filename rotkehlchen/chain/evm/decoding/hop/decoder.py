@@ -211,7 +211,7 @@ class HopCommonDecoder(EvmDecoderInterface):
                 if bonder_fee > ZERO:
                     event.amount = amount - bonder_fee
                     fee_event = self.base.make_event_next_index(
-                        tx_hash=event.tx_hash,
+                        tx_ref=event.tx_ref,
                         timestamp=context.transaction.timestamp,
                         event_type=HistoryEventType.SPEND,
                         event_subtype=HistoryEventSubType.FEE,

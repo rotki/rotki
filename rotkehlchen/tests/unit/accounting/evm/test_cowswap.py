@@ -32,7 +32,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
     fee_amount_str = '0.01'
     receive_amount_str = '10000'
     events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -45,7 +45,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         counterparty=CPT_COWSWAP,
         address=contract_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -58,7 +58,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         counterparty=CPT_COWSWAP,
         address=contract_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -77,8 +77,8 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
 
     extra_data = {
-        'group_id': '1' + tx_hash.hex() + '12',  # pylint: disable=no-member
-        'tx_hash': tx_hash.hex(),  # pylint: disable=no-member
+        'group_id': '1' + str(tx_hash) + '12',
+        'tx_ref': str(tx_hash),
     }
     expected_processed_events = [
         ProcessedAccountingEvent(

@@ -64,7 +64,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
     pool_token = Asset('eip155:8453/erc20:0xA6385c73961dd9C58db2EF0c4EB98cE4B60651e8')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -76,7 +76,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=14,
             timestamp=timestamp,
             location=Location.BASE,
@@ -88,7 +88,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             address=ROUTER,
             notes=f'Revoke wstETH spending approval of {user_address} by {ROUTER}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=15,
             timestamp=timestamp,
             location=Location.BASE,
@@ -101,7 +101,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             address=WSTETH_POOL_ADDRESS,
             notes=f'Deposit {deposited_wsteth} wstETH in aerodrome pool {WSTETH_POOL_ADDRESS}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=16,
             timestamp=timestamp,
             location=Location.BASE,
@@ -114,7 +114,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             address=WSTETH_POOL_ADDRESS,
             notes=f'Deposit {deposited_weth} WETH in aerodrome pool {WSTETH_POOL_ADDRESS}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=17,
             timestamp=timestamp,
             location=Location.BASE,
@@ -148,7 +148,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
     gas_amount, deposited_amount = '0.000038383457555312', '2.787544746858080184'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -160,7 +160,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
@@ -172,7 +172,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
             address=WSTETH_GAUGE_ADDRESS,
             notes=f'Revoke vAMM-WETH/wstETH spending approval of {user_address} by {WSTETH_GAUGE_ADDRESS}',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -211,7 +211,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
     ))
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -223,7 +223,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -235,7 +235,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             address=ROUTER,
             notes=f'Revoke vAMM-AERO/USDbC spending approval of {user_address} by {ROUTER}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.BASE,
@@ -248,7 +248,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             address=pool_address,
             notes=f'Return {lp_amount} vAMM-AERO/USDbC',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
             location=Location.BASE,
@@ -261,7 +261,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             address=pool_address,
             notes=f'Remove {aero_amount} AERO from aerodrome pool {pool_address}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=6,
             timestamp=timestamp,
             location=Location.BASE,
@@ -288,7 +288,7 @@ def test_unlock_aero(base_accounts, base_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1740994131000)),
             location=Location.BASE,
@@ -300,7 +300,7 @@ def test_unlock_aero(base_accounts, base_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=140,
             timestamp=timestamp,
             location=Location.BASE,
@@ -313,7 +313,7 @@ def test_unlock_aero(base_accounts, base_transaction_decoder):
             address=ZERO_ADDRESS,
             notes=f'Burn veNFT-71294 to unlock {(withdrawn_amt := "320.702116818286038014")} AERO from vote escrow',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=141,
             timestamp=timestamp,
             location=Location.BASE,
@@ -340,7 +340,7 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741005765000)),
             location=Location.BASE,
@@ -352,7 +352,7 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=309,
             timestamp=timestamp,
             location=Location.BASE,
@@ -364,7 +364,7 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
             address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
             notes=f'Revoke AERO spending approval of {user_address} by 0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=310,
             timestamp=timestamp,
             location=Location.BASE,
@@ -378,7 +378,7 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
             notes=f'Lock {lock_amount} AERO in vote escrow until 06/03/2025',
             extra_data={'token_id': 71991, 'lock_time': 1741219200},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=311,
             timestamp=timestamp,
             location=Location.BASE,
@@ -405,7 +405,7 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741022997000)),
             location=Location.BASE,
@@ -417,7 +417,7 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=271,
             timestamp=timestamp,
             location=Location.BASE,
@@ -429,7 +429,7 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
             address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
             notes=f'Set AERO spending approval of {user_address} by 0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4 to {approval_amount}',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=272,
             timestamp=timestamp,
             location=Location.BASE,
@@ -456,7 +456,7 @@ def test_increase_unlock_time(base_accounts, base_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741016501000)),
             location=Location.BASE,
@@ -468,7 +468,7 @@ def test_increase_unlock_time(base_accounts, base_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2854,
             timestamp=timestamp,
             location=Location.BASE,
@@ -496,7 +496,7 @@ def test_vote(base_accounts, base_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741030415000)),
             location=Location.BASE,
@@ -508,7 +508,7 @@ def test_vote(base_accounts, base_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=278,
             timestamp=timestamp,
             location=Location.BASE,
@@ -541,7 +541,7 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         load_global_caches=load_global_caches,
     )
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1731334851000)),
         location=Location.BASE,
@@ -553,7 +553,7 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         counterparty=CPT_GAS,
         notes=f'Burn {gas_amount} ETH for gas',
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=425,
         timestamp=timestamp,
         location=Location.BASE,
@@ -565,7 +565,7 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         address=ZERO_ADDRESS,
         notes=f'Send {burn_amount} fBOMB from {user_address} to {ZERO_ADDRESS}',
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=426,
         timestamp=timestamp,
         location=Location.BASE,
@@ -577,7 +577,7 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         address=string_to_evm_address('0x6Cb442acF35158D5eDa88fe602221b67B400Be3E'),
         notes=f'Revoke fBOMB spending approval of {user_address} by 0x6Cb442acF35158D5eDa88fe602221b67B400Be3E',  # noqa: E501
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=427,
         timestamp=timestamp,
         location=Location.BASE,
@@ -590,7 +590,7 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         address=string_to_evm_address('0x4F9Dc2229f2357B27C22db56cB39582c854Ad6d5'),
         notes=f'Swap {spend_amount} fBOMB in aerodrome',
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=428,
         timestamp=timestamp,
         location=Location.BASE,

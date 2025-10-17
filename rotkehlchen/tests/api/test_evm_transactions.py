@@ -150,7 +150,7 @@ def test_transaction_reference_addition(rotkehlchen_api_server: 'APIServer', sol
         # gas transaction is only added for tracked accounts.
         EvmEvent(
             identifier=1,
-            tx_hash=deserialize_evm_tx_hash(tx_hash),
+            tx_ref=deserialize_evm_tx_hash(tx_hash),
             sequence_index=22,
             timestamp=TimestampMS(1513958719000),
             location=Location.ETHEREUM,

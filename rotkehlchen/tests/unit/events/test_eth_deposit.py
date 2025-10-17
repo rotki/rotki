@@ -11,7 +11,7 @@ def make_deposit_event():
     depositor = make_evm_address()
     return EthDepositEvent(
         identifier=1,
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         validator_index=42,
         sequence_index=1,
         timestamp=TimestampMS(69000),

@@ -21,7 +21,7 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
     user_address, timestamp, gas_str, deposit_amount, receive_amount, approve_amount = arbitrum_one_accounts[0], TimestampMS(1732504225000), '0.00000372964', '2.862546191448752712', '2.054508357973208982', '115792089237316195423570985008687907853269984665640564039448.345378216051229581'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -33,7 +33,7 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -45,7 +45,7 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             address=string_to_evm_address('0x4EA9317D90b61fc28C418C247ad0CA8939Bbb0e9'),
             notes=f'Set auraBAL spending approval of {user_address} by 0x4EA9317D90b61fc28C418C247ad0CA8939Bbb0e9 to {approve_amount}',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -58,7 +58,7 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             address=string_to_evm_address('0x4B5D2848678Db574Fbc2d2f629143d969a4f41Cb'),
             counterparty=CPT_AURA_FINANCE,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=6,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -83,7 +83,7 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2 = base_accounts[0], TimestampMS(1721018721000), '0.000001321340972471', '8.383663297617516524', '6.566591452101315364'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -95,7 +95,7 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=18,
             timestamp=timestamp,
             location=Location.BASE,
@@ -108,7 +108,7 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
             address=string_to_evm_address('0xEe374580BFf150be6b955954aC3b9899D890cB57'),
             counterparty=CPT_AURA_FINANCE,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=19,
             timestamp=timestamp,
             location=Location.BASE,
@@ -133,7 +133,7 @@ def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accoun
     user_address, timestamp, gas_str, bridge_fee_amount, locked_amount = base_accounts[0], TimestampMS(1732631175000), '0.000007432156846576', '0.011914017676630994', '90'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -145,7 +145,7 @@ def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accoun
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -158,7 +158,7 @@ def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accoun
             address=string_to_evm_address('0x1509706a6c66CA549ff0cB464de88231DDBe213B'),
             counterparty=CPT_AURA_FINANCE,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=132,
             timestamp=timestamp,
             location=Location.BASE,
@@ -183,7 +183,7 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas_str, approval_amount, locked_amount = ethereum_accounts[0], TimestampMS(1732623719000), '0.002081603016233576', '115792089237316195423570985008687907853269984665640563943628.250490697661436953', '4675.24673564105539589'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -195,7 +195,7 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=200,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -208,7 +208,7 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0x3Fa73f1E5d8A792C80F426fc8F84FBF7Ce9bBCAC'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=201,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -232,7 +232,7 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
     user_address, timestamp, gas_str, approval_amount, deposit_amount, receive_amount = ethereum_accounts[0], TimestampMS(1732603247000), '0.004522784347764904', '3046599999999999952014.290938920480356746', '17520.54161498940427181', '17520.54161498940427181'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -244,7 +244,7 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=159,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -256,7 +256,7 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
             notes=f'Set ECLP-GYD-USDT spending approval of {user_address} by 0xA57b8d98dAE62B26Ec3bcC4a365338157060B234 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0xA57b8d98dAE62B26Ec3bcC4a365338157060B234'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=160,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -269,7 +269,7 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0xaF52695E1bB01A16D33D7194C28C42b10e0Dbec2'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=161,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -294,7 +294,7 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = arbitrum_one_accounts[0], TimestampMS(1735459868000), '0.00000266091', '0.096740702346661316', '0.097900452506457258', '0.14964073351979476'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -306,7 +306,7 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=8,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -319,7 +319,7 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
             address=string_to_evm_address('0xAc7025Dec5E216025C76414f6ac1976227c20Ff0'),
             counterparty=CPT_AURA_FINANCE,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -332,7 +332,7 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0xeC1c780A275438916E7CEb174D80878f29580606'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=11,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -357,7 +357,7 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = base_accounts[0], TimestampMS(1733666205000), '0.000003758872604736', '0.016918933596764049', '0.018407669504926201', '0.018747704109670571'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -369,7 +369,7 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1063,
             timestamp=timestamp,
             location=Location.BASE,
@@ -382,7 +382,7 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
             address=string_to_evm_address('0x636fCa3ADC5D614E15F5C5a574fFd2CAEE578126'),
             counterparty=CPT_AURA_FINANCE,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1064,
             timestamp=timestamp,
             location=Location.BASE,
@@ -395,7 +395,7 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0x8b2970c237656d3895588B99a8bFe977D5618201'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1066,
             timestamp=timestamp,
             location=Location.BASE,
@@ -420,7 +420,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3, claim_amount_4, claim_amount_5, claim_amount_6, claim_amount_7, claim_amount_8 = ethereum_accounts[0], TimestampMS(1735498547000), '0.002203275422715936', '112.627896656336279713', '114.159636050862453116', '77.020600939024296766', '8.274820603749552408', '184.126157708212142242', '186.630273453043827374', '170.528893362154769237', '216.7944203094842023'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -432,7 +432,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=175,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -445,7 +445,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D'),
             counterparty=CPT_AURA_FINANCE,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=176,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -458,7 +458,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=178,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -471,7 +471,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0xc6065734B898eEdCf450b28Ec2fC5a45a7DCdb2b'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=180,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -484,7 +484,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0xcaB7Ee4EFae2D27add6f5EBB64cdef9d74Beba21'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=182,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -497,7 +497,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0x2a14dB8D09dB0542f6A371c0cB308A768227D67D'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=183,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -510,7 +510,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=185,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -523,7 +523,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0xBA45e6500c49570C3C3e3a83C000e47ae1D4C095'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=187,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -549,7 +549,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
         tx_hash=tx_hash,
     )
     assert events == [EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1738262008000)),
             location=Location.ARBITRUM_ONE,
@@ -561,7 +561,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -574,7 +574,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -587,7 +587,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0x98Ef32edd24e2c92525E59afc4475C1242a30184'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=17,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -600,7 +600,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0x17F061160A167d4303d5a6D32C2AC693AC87375b'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=18,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -613,7 +613,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0xeC1c780A275438916E7CEb174D80878f29580606'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=20,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -626,7 +626,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0x35fe1130F5934fc04c432989823E8E1fb26d3E2e'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=22,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -639,7 +639,7 @@ def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_AURA_FINANCE,
             address=string_to_evm_address('0x5474Bf4a9d823dBb3DB475679d0D611c2e9d9761'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=25,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,

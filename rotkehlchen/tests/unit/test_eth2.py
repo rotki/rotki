@@ -180,7 +180,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
         dbevents.add_history_events(
             write_cursor=cursor,
             history=[EvmEvent(
-                tx_hash=tx_hash1,
+                tx_ref=tx_hash1,
                 sequence_index=0,
                 timestamp=TimestampMS(1),
                 location=Location.ETHEREUM,
@@ -192,7 +192,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 notes=f'Deposit 32 ETH to validator with pubkey {pubkey1}. Deposit index: 519464. Withdrawal credentials: 0x00c5af874f28011e2f559e1214131da5f11b12845921b0d8e436f0cd37d683a8',  # noqa: E501
                 counterparty=CPT_ETH2,
             ), EvmEvent(
-                tx_hash=tx_hash1,
+                tx_ref=tx_hash1,
                 sequence_index=1,
                 timestamp=TimestampMS(2),
                 location=Location.ETHEREUM,
@@ -203,7 +203,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 notes='Some fees',
                 counterparty=CPT_GAS,
             ), EvmEvent(
-                tx_hash=tx_hash2,
+                tx_ref=tx_hash2,
                 sequence_index=0,
                 timestamp=TimestampMS(3),
                 location=Location.ETHEREUM,
@@ -300,7 +300,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 block_number=block_number + 1,
                 is_mev_reward=True,
             ), EvmEvent(
-                tx_hash=tx_hash,
+                tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(timestampms + (4 * (HOUR_IN_SECONDS * 1000))),
                 location=Location.ETHEREUM,
@@ -312,7 +312,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 notes=f'Received {mev_reward_1} ETH from {mev_builder_address}',
                 extra_data={'validator_index': vindex1},
             ), EvmEvent(
-                tx_hash=tx_hash_2,
+                tx_ref=tx_hash_2,
                 sequence_index=0,
                 timestamp=TimestampMS(timestampms + (5 * (HOUR_IN_SECONDS * 1000))),
                 location=Location.ETHEREUM,
@@ -448,7 +448,7 @@ def test_eth_accumulating_validators_performance(
 
     tx_hash_1, timestamp, user_address, hour_in_ms = make_evm_tx_hash(), TimestampMS(1746119141000), ethereum_accounts[0], ts_sec_to_ms(Timestamp(HOUR_IN_SECONDS))  # noqa: E501
     events: list[HistoryBaseEntry] = [EthDepositEvent(
-        tx_hash=tx_hash_1,
+        tx_ref=tx_hash_1,
         validator_index=validator.validator_index,  # type: ignore[arg-type]  # validator_index has been set
         sequence_index=idx,
         timestamp=timestamp,
@@ -456,14 +456,14 @@ def test_eth_accumulating_validators_performance(
         depositor=user_address,
     ) for idx, validator in enumerate(validators)]
     events.extend([EthDepositEvent(
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         validator_index=validator3.validator_index,  # type: ignore[arg-type]
         sequence_index=1,
         timestamp=TimestampMS(timestamp + (1 * hour_in_ms)),
         amount=FVal('64'),
         depositor=user_address,
     ), EthDepositEvent(
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         validator_index=validator4.validator_index,  # type: ignore[arg-type]
         sequence_index=1,
         timestamp=TimestampMS(timestamp + (1 * hour_in_ms)),
@@ -476,7 +476,7 @@ def test_eth_accumulating_validators_performance(
         withdrawal_address=user_address,
         is_exit=False,
     ), EvmEvent(
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         sequence_index=1,
         timestamp=TimestampMS(timestamp + (3 * hour_in_ms)),
         location=Location.ETHEREUM,
@@ -511,7 +511,7 @@ def test_eth_accumulating_validators_performance(
         is_mev_reward=False,
     )])
     events.extend([EvmEvent(
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         sequence_index=1,
         timestamp=TimestampMS(timestamp + (40 * hour_in_ms)),
         location=Location.ETHEREUM,
@@ -688,7 +688,7 @@ def test_combine_block_with_tx_events(eth2, database):
                 block_number=block_number,
                 is_mev_reward=True,
             ), EvmEvent(
-                tx_hash=tx_hash,
+                tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=timestampms,
                 location=Location.ETHEREUM,
@@ -712,7 +712,7 @@ def test_combine_block_with_tx_events(eth2, database):
 
     modified_event = EvmEvent(
         identifier=3,
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestampms,
         location=Location.ETHEREUM,
@@ -759,7 +759,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
 
     starting_events = [EthDepositEvent(
         identifier=1,
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         validator_index=validator1.validator_index,
         sequence_index=1,
         timestamp=TimestampMS(360000),
@@ -767,7 +767,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         depositor=string_to_evm_address('0xA3E5ff1230a38243BB64Dc1423Df40B63a4CA0c3'),
     ), EthDepositEvent(
         identifier=2,
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         validator_index=UNKNOWN_VALIDATOR_INDEX,  # actual value should be 207003
         sequence_index=2,
         timestamp=TimestampMS(460000),
@@ -776,7 +776,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         extra_data={'public_key': validator2.public_key},
     ), EthDepositEvent(
         identifier=3,
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         validator_index=UNKNOWN_VALIDATOR_INDEX,  # actual value should be 4523
         sequence_index=3,
         timestamp=TimestampMS(660000),
@@ -865,7 +865,7 @@ def test_get_active_validator_indices(database):
 
         # Add consolidation event to make consolidated_index consolidated
         dbevents.add_history_events(write_cursor, [EvmEvent(
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=TimestampMS(1699801559000),
             location=Location.ETHEREUM,

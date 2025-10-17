@@ -36,7 +36,7 @@ def test_airdrop_claim(
     timestamp, user_address, gas_amount, token_amount = TimestampMS(1732720037000), optimism_accounts[0], '0.000002227023099306', '181.44172120901'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -48,7 +48,7 @@ def test_airdrop_claim(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=185,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -76,7 +76,7 @@ def test_stake(
     timestamp, user_address, gas_amount, token_amount, lock_timestamp = TimestampMS(1732726673000), optimism_accounts[0], '0.000000666285515991', '184.286559270201', 1734566400  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -88,7 +88,7 @@ def test_stake(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=75,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -116,7 +116,7 @@ def test_unstake(
     timestamp, user_address, gas_amount, token_amount = TimestampMS(1732792847000), optimism_accounts[0], '0.000004252055654884', '248'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -128,7 +128,7 @@ def test_unstake(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -162,7 +162,7 @@ def test_increase_lock(
     timestamp, user_address, gas_amount, unlock_time = TimestampMS(1732793011000), optimism_accounts[0], '0.000002761170017713', 1736985600  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -174,7 +174,7 @@ def test_increase_lock(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=72,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -203,7 +203,7 @@ def test_update_lock(
     timestamp, user_address, gas_amount, token_amount, unlock_time = TimestampMS(1732792963000), optimism_accounts[0], '0.000003454138559574', '100.003508602839', 1738800000  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -215,7 +215,7 @@ def test_update_lock(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=47,
             timestamp=timestamp,
             location=Location.OPTIMISM,

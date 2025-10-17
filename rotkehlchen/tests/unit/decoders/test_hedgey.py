@@ -37,7 +37,7 @@ def test_delegate_vested_tokens_with_vault_creation(
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=479,
@@ -49,7 +49,7 @@ def test_delegate_vested_tokens_with_vault_creation(
             amount=ZERO,
             location_label=user_address,
             notes=f'Change ENS delegate for {user_address} Hedgey token lockup 290 to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HEDGEY,
             address=ENS_ADDRESS,
         ),
@@ -77,7 +77,7 @@ def test_delegate_plans(
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=502,
@@ -89,7 +89,7 @@ def test_delegate_plans(
             amount=ZERO,
             location_label=user_address,
             notes=f'Change ENS delegate for {user_address} Hedgey token lockup 290 from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HEDGEY,
             address=ENS_ADDRESS,
         ),
@@ -117,7 +117,7 @@ def test_redeem_plans(
             amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=386,
@@ -129,7 +129,7 @@ def test_redeem_plans(
             amount=FVal(amount),
             location_label=user_address,
             notes=f'Redeem {amount} ENS from Hedgey token lockup 14',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HEDGEY,
             address=VOTING_TOKEN_LOCKUPS,
         ),

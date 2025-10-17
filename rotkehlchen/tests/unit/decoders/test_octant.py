@@ -26,7 +26,7 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
     amount_str = '1000'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -38,7 +38,7 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=347,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -50,7 +50,7 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             notes=f'Set GLM spending approval of {user_address} by {OCTANT_DEPOSITS} to {approval_str}',  # noqa: E501
             address=OCTANT_DEPOSITS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=348,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -78,7 +78,7 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
     amount_str = '500'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -90,7 +90,7 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=180,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -118,7 +118,7 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
     amount_str = '7.989863001451442888'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -130,7 +130,7 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,

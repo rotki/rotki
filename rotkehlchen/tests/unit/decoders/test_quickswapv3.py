@@ -30,7 +30,7 @@ def test_swap(
     tx_hash = deserialize_evm_tx_hash('0x50c55589a2a7b97bdb0c46815783993133c8bd099d9fcc8b91e2e465f00f4687')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756239853000)),
         location=Location.POLYGON_POS,
         sequence_index=0,
@@ -42,7 +42,7 @@ def test_swap(
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=1,
@@ -54,7 +54,7 @@ def test_swap(
         notes=f'Set LGNS spending approval of {user_address} by 0xf5b509bB0909a69B1c207E495f687a596C168E12 to {approval_amount}',  # noqa: E501
         address=string_to_evm_address('0xf5b509bB0909a69B1c207E495f687a596C168E12'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=2,
@@ -67,7 +67,7 @@ def test_swap(
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xB135Aa990D02E0a31cE953Af2bD7ed0EF6587403'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=3,
@@ -91,7 +91,7 @@ def test_create_lp_position(
     tx_hash = deserialize_evm_tx_hash('0xf09695f1682f0e6a8bc80eb7cfb7f4e39da22022c283c4633096fcde4e9c5557')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756380415000)),
         location=Location.POLYGON_POS,
         sequence_index=0,
@@ -103,7 +103,7 @@ def test_create_lp_position(
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=1,
@@ -116,7 +116,7 @@ def test_create_lp_position(
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xE4Fd591b652CC3e566f1fA2f9891b58633A04c54'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=2,
@@ -129,7 +129,7 @@ def test_create_lp_position(
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0xE4Fd591b652CC3e566f1fA2f9891b58633A04c54'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=3,
@@ -153,7 +153,7 @@ def test_add_liquidity(
     tx_hash = deserialize_evm_tx_hash('0x0898cb40572a122d377248eb7f7926fd2a913839318c3b4a8be2b082bfea5b55')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756388739000)),
         location=Location.POLYGON_POS,
         sequence_index=0,
@@ -165,7 +165,7 @@ def test_add_liquidity(
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=1,
@@ -178,7 +178,7 @@ def test_add_liquidity(
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x74D1578E3Db15AE7605E1420dFC3801eEe98428e'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=2,
@@ -202,7 +202,7 @@ def test_remove_liquidity(
     tx_hash = deserialize_evm_tx_hash('0x7d9aa2df466775303d7b9f3e108d2ae418b8940d2db3c0681b0fdc3d3f8dca3d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756389021000)),
         location=Location.POLYGON_POS,
         sequence_index=0,
@@ -214,7 +214,7 @@ def test_remove_liquidity(
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=1,
@@ -227,7 +227,7 @@ def test_remove_liquidity(
         counterparty=CPT_QUICKSWAP_V3,
         address=string_to_evm_address('0x14Ef96A0f7d738Db906bdD5260E46AA47B1e6E45'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=2,

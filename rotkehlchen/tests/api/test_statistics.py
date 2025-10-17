@@ -526,7 +526,7 @@ def test_query_events_analysis(
             write_cursor=write_cursor,
             history=[
                 EvmEvent(
-                    tx_hash=tx_hash,
+                    tx_ref=tx_hash,
                     sequence_index=1,
                     timestamp=TimestampMS(1734373795000),
                     location=chain,
@@ -539,7 +539,7 @@ def test_query_events_analysis(
                 )
             for tx_hash, chain in tx_hash_to_chain.items()] + [
                 EvmEvent(  # event happening last year
-                    tx_hash=tx_hash1,
+                    tx_ref=tx_hash1,
                     sequence_index=1,
                     timestamp=TimestampMS(1702751395000),
                     location=Location.BASE,
@@ -551,7 +551,7 @@ def test_query_events_analysis(
                     location_label=ethereum_accounts[0],
                 ),
                 EvmEvent(  # event to test counterparties
-                    tx_hash=tx_hash2,
+                    tx_ref=tx_hash2,
                     sequence_index=1,
                     timestamp=TimestampMS(1734373795000),
                     location=Location.ETHEREUM,
@@ -563,7 +563,7 @@ def test_query_events_analysis(
                     location_label=ethereum_accounts[0],
                 ),
                 EvmEvent(  # second event with the same tx hash - should not be counted separately
-                    tx_hash=tx_hash2,
+                    tx_ref=tx_hash2,
                     sequence_index=2,
                     timestamp=TimestampMS(1734373795000),
                     location=Location.ETHEREUM,
@@ -574,7 +574,7 @@ def test_query_events_analysis(
                     location_label=ethereum_accounts[0],
                 ),
                 EvmEvent(  # event with ignored asset
-                    tx_hash=tx_hash3,
+                    tx_ref=tx_hash3,
                     sequence_index=1,
                     timestamp=TimestampMS(1734373795000),
                     location=Location.GNOSIS,
@@ -585,7 +585,7 @@ def test_query_events_analysis(
                     location_label=ethereum_accounts[0],
                 ),
                 EvmEvent(  # ENS event outside date range - should not be counted
-                    tx_hash=tx_hash4,
+                    tx_ref=tx_hash4,
                     sequence_index=1,
                     timestamp=TimestampMS(1640995200000),  # 2022 - outside range
                     location=Location.ETHEREUM,

@@ -22,7 +22,7 @@ def test_subscribe(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas = ethereum_accounts[0], TimestampMS(1676641271000), '0.02686452'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -35,7 +35,7 @@ def test_subscribe(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=304,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -63,7 +63,7 @@ def test_deactivate_sub(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas = ethereum_accounts[0], TimestampMS(1677329195000), '0.00099726'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -76,7 +76,7 @@ def test_deactivate_sub(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=74,
             timestamp=timestamp,
             location=Location.ETHEREUM,

@@ -695,7 +695,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 notes = f'Execute account delegation to {delegated_address}'
 
             events.append(self.base.make_event(
-                tx_hash=transaction.tx_hash,
+                tx_ref=transaction.tx_hash,
                 sequence_index=self.base.get_next_sequence_index(),
                 timestamp=transaction.timestamp,
                 event_type=HistoryEventType.INFORMATIONAL,
@@ -798,7 +798,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             counterparty_or_address = counterparty or address
             preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
             events.append(self.base.make_event(
-                tx_hash=tx.tx_hash,
+                tx_ref=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                 timestamp=tx.timestamp,
                 event_type=event_type,
@@ -823,7 +823,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
         return self.base.make_event(
-            tx_hash=tx.tx_hash,
+            tx_ref=tx.tx_hash,
             sequence_index=self.base.get_next_sequence_index_pre_decoding(),
             timestamp=tx.timestamp,
             event_type=event_type,
@@ -939,7 +939,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     event_type = HistoryEventType.FAIL
 
                 events.append(self.base.make_event(
-                    tx_hash=tx.tx_hash,
+                    tx_ref=tx.tx_hash,
                     sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                     timestamp=tx.timestamp,
                     event_type=event_type,
@@ -974,7 +974,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 event_subtype = HistoryEventSubType.SPEND
 
             events.append(self.base.make_event(  # contract deployment
-                tx_hash=tx.tx_hash,
+                tx_ref=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                 timestamp=tx.timestamp,
                 event_type=HistoryEventType.DEPLOY,
@@ -1253,7 +1253,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
     ) -> 'EvmEvent':
         """Creates an EvmSwapEvent from trade event data."""
         return EvmSwapEvent(
-            tx_hash=trade_event.tx_hash,
+            tx_ref=trade_event.tx_ref,
             sequence_index=sequence_index,
             timestamp=trade_event.timestamp,
             location=trade_event.location,

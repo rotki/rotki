@@ -20,7 +20,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
     gas, amount, timestamp = '0.0013334084', '1575.363922839504794511', TimestampMS(1660127734000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -32,7 +32,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -63,7 +63,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
             ], strict=False,
     ):
         assert event == EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=idx,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -87,7 +87,7 @@ def test_enduser_collect(ethereum_inquirer, ethereum_accounts):
     gas, amount, timestamp = '0.0003162699', '125.835582561728229714', TimestampMS(1660733511000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -99,7 +99,7 @@ def test_enduser_collect(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=421,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -123,7 +123,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas, amount, timestamp = '0.00449242', '149.99999999999904', TimestampMS(1655506732000)
     assert events[0] == EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -151,7 +151,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
             ], strict=False,
     ):
         assert events[idx] == EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -166,7 +166,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
         )
 
         assert events[9] == EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=531,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -193,7 +193,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
             ], strict=False,
     ):
         assert events[idx] == EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -216,7 +216,7 @@ def test_give(ethereum_inquirer, ethereum_accounts):
     gas, amount, timestamp = '0.001515204384196608', '1', TimestampMS(1660666663000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -228,7 +228,7 @@ def test_give(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=688,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -253,7 +253,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
     gas, amount, timestamp, per_sec_amount, end_ts = '0.005778677878564032', '50', TimestampMS(1654597232000), '0.000001929012345679', 1667557232  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -265,7 +265,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -278,7 +278,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_DRIPS,
             address=string_to_evm_address('0x73043143e0A6418cc45d82D4505B096b802FD365'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -291,7 +291,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_DRIPS,
             address=string_to_evm_address('0x73043143e0A6418cc45d82D4505B096b802FD365'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,

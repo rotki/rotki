@@ -39,7 +39,7 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
 
     def make_event(
             self,
-            tx_hash: Signature,
+            tx_ref: Signature,
             sequence_index: int,
             timestamp: Timestamp,
             event_type: HistoryEventType,
@@ -54,7 +54,7 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
     ) -> 'SolanaEvent':
         """A convenience function to create a SolanaEvent"""
         return SolanaEvent(
-            signature=tx_hash,
+            tx_ref=tx_ref,
             sequence_index=sequence_index,
             timestamp=ts_sec_to_ms(timestamp),
             event_type=event_type,

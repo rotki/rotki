@@ -36,7 +36,7 @@ HASH1, HASH2 = make_evm_tx_hash(), make_evm_tx_hash()
 def test_v2_withdraw(accountant: 'Accountant'):
     pot = accountant.pots[0]
     events_iterator = peekable([EvmEvent(
-        tx_hash=HASH1,
+        tx_ref=HASH1,
         sequence_index=0,
         timestamp=TSMS1,
         location=Location.ETHEREUM,
@@ -48,7 +48,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         notes='Deposit 1000 DAI into AAVE v2',
         counterparty=CPT_AAVE_V2,
     ), EvmEvent(
-        tx_hash=HASH1,
+        tx_ref=HASH1,
         sequence_index=2,
         timestamp=TSMS1,
         location=Location.ETHEREUM,
@@ -60,7 +60,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         notes='Receive 1000 aDAI from AAVE v2',
         counterparty=CPT_AAVE_V2,
     ), EvmEvent(
-        tx_hash=HASH2,
+        tx_ref=HASH2,
         sequence_index=0,
         timestamp=TSMS2,
         location=Location.ETHEREUM,
@@ -72,7 +72,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         notes='Return 1050 aDAI to AAVE v2',
         counterparty=CPT_AAVE_V2,
     ), EvmEvent(
-        tx_hash=HASH2,
+        tx_ref=HASH2,
         sequence_index=2,
         timestamp=TSMS2,
         location=Location.ETHEREUM,
@@ -100,7 +100,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=0,
-            extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH1)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Receive 1000 aDAI from AAVE v2',
@@ -113,7 +113,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=1,
-            extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH1)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Return 1050 aDAI to AAVE v2',
@@ -126,7 +126,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=2,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Gained 50 DAI on Aave v2 as interest rate for {USER_ADDRESS}',
@@ -139,7 +139,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=FVal(50), free=ZERO),  # $50 interest gained
             cost_basis=None,
             index=3,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Withdraw 1050 DAI from AAVE v2',
@@ -152,7 +152,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=4,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ),
     ]
     expected_events[3].count_cost_basis_pnl = True  # can't be set by init()
@@ -164,7 +164,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
 def test_v2_payback(accountant: 'Accountant'):
     pot = accountant.pots[0]
     events_iterator = peekable([EvmEvent(
-        tx_hash=HASH1,
+        tx_ref=HASH1,
         sequence_index=0,
         timestamp=TSMS1,
         location=Location.ETHEREUM,
@@ -176,7 +176,7 @@ def test_v2_payback(accountant: 'Accountant'):
         notes='Receive 1000 variableDebtREN from AAVE v2',
         counterparty=CPT_AAVE_V2,
     ), EvmEvent(
-        tx_hash=HASH1,
+        tx_ref=HASH1,
         sequence_index=2,
         timestamp=TSMS1,
         location=Location.ETHEREUM,
@@ -188,7 +188,7 @@ def test_v2_payback(accountant: 'Accountant'):
         notes='Borrow 1000 REN from AAVE v2 with variable APY 0.80%',
         counterparty=CPT_AAVE_V2,
     ), EvmEvent(
-        tx_hash=HASH2,
+        tx_ref=HASH2,
         sequence_index=0,
         timestamp=TSMS2,
         location=Location.ETHEREUM,
@@ -200,7 +200,7 @@ def test_v2_payback(accountant: 'Accountant'):
         notes='Return 1050 variableDebtREN to AAVE v2',
         counterparty=CPT_AAVE_V2,
     ), EvmEvent(
-        tx_hash=HASH2,
+        tx_ref=HASH2,
         sequence_index=2,
         timestamp=TSMS2,
         location=Location.ETHEREUM,
@@ -234,7 +234,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=0,
-            extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH1)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Borrow 1000 REN from AAVE v2 with variable APY 0.80%',
@@ -247,7 +247,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=1,
-            extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH1)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Return 1050 variableDebtREN to AAVE v2',
@@ -260,7 +260,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=2,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Lost 50 REN as debt during payback to Aave v2 loan for {USER_ADDRESS}',
@@ -279,7 +279,7 @@ def test_v2_payback(accountant: 'Accountant'):
                 is_complete=True,
             ),
             index=3,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Repay 1050 REN on AAVE v2',
@@ -292,7 +292,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=4,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ),
     ]
     expected_events[3].count_cost_basis_pnl = True  # can't be set by init()

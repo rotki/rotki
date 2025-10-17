@@ -49,7 +49,7 @@ class ThegraphAccountant(ModuleAccountantInterface):
                 asset=event.asset,
                 amount=gain,
                 taxable=True,
-                extra_data={'tx_hash': event.tx_hash.hex()},
+                extra_data={'tx_ref': str(event.tx_ref)},
             )
             self.assets_supplied[address] = ZERO
         return 1

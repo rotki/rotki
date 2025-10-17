@@ -55,7 +55,7 @@ def test_hop_l2_deposit(ethereum_inquirer):
     timestamp = TimestampMS(1653219722000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -67,7 +67,7 @@ def test_hop_l2_deposit(ethereum_inquirer):
             notes='Burn 0.001964214783875487 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -91,7 +91,7 @@ def test_hop_l2_deposit_usdc(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_fee, bridge_amount = TimestampMS(1710955643000), '0.005802319111323689', '3700'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -103,7 +103,7 @@ def test_hop_l2_deposit_usdc(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=363,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -130,7 +130,7 @@ def test_hop_optimism_eth_receive(optimism_inquirer):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1653220466000),
             location=Location.OPTIMISM,
@@ -159,7 +159,7 @@ def test_hop_optimism_eth_receive_no_event(optimism_inquirer, optimism_accounts)
     bridge_amount, timestamp, user_address = '0.03958480553397407', TimestampMS(1666977475000), optimism_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -184,7 +184,7 @@ def test_hop_usdc_bridge(ethereum_inquirer, ethereum_accounts):
     timestamp, bridge_amount, user_address = TimestampMS(1715038763000), '9006.683634', ethereum_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=167,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -209,7 +209,7 @@ def test_hop_eth_bridge_optimism(optimism_inquirer, optimism_accounts):
     timestamp, bridge_amount, user_address = TimestampMS(1643122781000), '0.10392672200478311', optimism_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -234,7 +234,7 @@ def test_hop_eth_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_account
     timestamp, bridge_amount, user_address = TimestampMS(1715179605000), '0.008909890056139906', gnosis_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=11,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -259,7 +259,7 @@ def test_hop_usdc_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accoun
     timestamp, bridge_amount, user_address = TimestampMS(1710961255000), '23.482715', gnosis_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2021,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -284,7 +284,7 @@ def test_hop_hop_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_account
     timestamp, bridge_amount, user_address = TimestampMS(1697084045000), '6854.931542581763573457', gnosis_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -312,7 +312,7 @@ def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: 'PolygonPOSInquirer', 
     timestamp, bridge_amount, user_address = TimestampMS(1715182468000), '0.00371160659018274', polygon_pos_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=30,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -340,7 +340,7 @@ def test_hop_eth_bridge_base(base_inquirer: 'BaseInquirer', base_accounts):
     timestamp, bridge_amount, user_address = TimestampMS(1715184391000), '0.895370313537560075', base_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -369,7 +369,7 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOn
     bridge_amount, gas_fee, hop_fee, user_address = '0.194877831029822766', '0.00000323542', '0.004034870881159123', arbitrum_one_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -381,7 +381,7 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOn
             notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -394,7 +394,7 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOn
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x33ceb27b39d2Bb7D2e61F7564d3Df29344020417'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -419,7 +419,7 @@ def test_hop_eth_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer',
     timestamp, bridge_amount, user_address = TimestampMS(1715614211000), '0.194877831029822766', ethereum_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -449,7 +449,7 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
     approval_amount = '115792089237316195423570985008687907853269984665640563953113.341386879395299329'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -461,7 +461,7 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
             notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=16,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -473,7 +473,7 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
             notes=f'Set MAGIC spending approval of {user_address} by 0x50a3a623d00fd8b8a4F3CbC5aa53D0Bc6FA912DD to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x50a3a623d00fd8b8a4F3CbC5aa53D0Bc6FA912DD'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=17,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -486,7 +486,7 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x50a3a623d00fd8b8a4F3CbC5aa53D0Bc6FA912DD'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=18,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -511,7 +511,7 @@ def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer'
     timestamp, bridge_amount, user_address = TimestampMS(1715208275000), '60786.713495', ethereum_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=182,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -536,7 +536,7 @@ def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: 'GnosisInquirer', gnos
     timestamp, bridge_amount, gas_fees, user_address = TimestampMS(1715204760000), '60786.713495', '0.0001299435', gnosis_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -548,7 +548,7 @@ def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: 'GnosisInquirer', gnos
             notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=462,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -576,7 +576,7 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
     timestamp, gas, bridge_amount, hop_fee, user_address = TimestampMS(1715946201000), '0.00000266018', '0.000880551717232904', '0.000118862618614123', arbitrum_one_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -588,7 +588,7 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -601,7 +601,7 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x33ceb27b39d2Bb7D2e61F7564d3Df29344020417'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -641,7 +641,7 @@ def test_hop_add_liquidity(
             amount=FVal(gas),
             location_label=base_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1,
@@ -653,7 +653,7 @@ def test_hop_add_liquidity(
             amount=FVal(lp_amount),
             location_label=base_accounts[0],
             notes=f'Deposit {lp_amount} WETH to Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ), EvmEvent(
@@ -666,7 +666,7 @@ def test_hop_add_liquidity(
             amount=FVal(lp_token_amount),
             location_label=base_accounts[0],
             notes=f'Receive {lp_token_amount} HOP-LP-ETH after providing liquidity in Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ),
@@ -710,7 +710,7 @@ def test_hop_add_liquidity_2(
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=5,
@@ -722,7 +722,7 @@ def test_hop_add_liquidity_2(
             amount=FVal(approval_amount_1),
             location_label=arbitrum_one_accounts[0],
             notes=f'Set WETH spending approval of {arbitrum_one_accounts[0]} by 0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97 to {approval_amount_1}',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
         ), EvmEvent(
             sequence_index=7,
@@ -734,7 +734,7 @@ def test_hop_add_liquidity_2(
             amount=FVal(approval_amount_2),
             location_label=arbitrum_one_accounts[0],
             notes=f'Set hETH spending approval of {arbitrum_one_accounts[0]} by 0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97 to {approval_amount_2}',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
         ), EvmEvent(
             sequence_index=8,
@@ -746,7 +746,7 @@ def test_hop_add_liquidity_2(
             amount=FVal(lp_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Deposit {lp_amount} WETH to Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
         ), EvmEvent(
@@ -759,7 +759,7 @@ def test_hop_add_liquidity_2(
             amount=FVal(lp_amount_2),
             location_label=arbitrum_one_accounts[0],
             notes=f'Deposit {lp_amount_2} hETH to Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
         ), EvmEvent(
@@ -772,7 +772,7 @@ def test_hop_add_liquidity_2(
             amount=FVal(lp_token_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Receive {lp_token_amount} HOP-LP-ETH after providing liquidity in Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ),
@@ -800,7 +800,7 @@ def test_hop_remove_liquidity(
             amount=FVal(gas),
             location_label=base_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=35,
@@ -812,7 +812,7 @@ def test_hop_remove_liquidity(
             amount=ZERO,
             location_label=base_accounts[0],
             notes=f'Revoke HOP-LP-ETH spending approval of {base_accounts[0]} by 0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ), EvmEvent(
             sequence_index=36,
@@ -824,7 +824,7 @@ def test_hop_remove_liquidity(
             amount=FVal(lp_amount),
             location_label=base_accounts[0],
             notes=f'Return {lp_amount} HOP-LP-ETH',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ), EvmEvent(
@@ -837,7 +837,7 @@ def test_hop_remove_liquidity(
             amount=FVal(withdrawn),
             location_label=base_accounts[0],
             notes=f'Withdraw {withdrawn} WETH from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ),
@@ -865,7 +865,7 @@ def test_hop_remove_liquidity_2(
             amount=FVal(gas),
             location_label=base_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=174,
@@ -877,7 +877,7 @@ def test_hop_remove_liquidity_2(
             amount=ZERO,
             location_label=base_accounts[0],
             notes=f'Revoke HOP-LP-ETH spending approval of {base_accounts[0]} by 0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ), EvmEvent(
             sequence_index=175,
@@ -889,7 +889,7 @@ def test_hop_remove_liquidity_2(
             amount=FVal(lp_amount),
             location_label=base_accounts[0],
             notes=f'Return {lp_amount} HOP-LP-ETH',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ), EvmEvent(
@@ -902,7 +902,7 @@ def test_hop_remove_liquidity_2(
             amount=FVal(withdrawn_1),
             location_label=base_accounts[0],
             notes=f'Withdraw {withdrawn_1} WETH from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ), EvmEvent(
@@ -915,7 +915,7 @@ def test_hop_remove_liquidity_2(
             amount=FVal(withdrawn_2),
             location_label=base_accounts[0],
             notes=f'Withdraw {withdrawn_2} hETH from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ),
@@ -943,7 +943,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             amount=FVal(gas),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=85,
@@ -955,7 +955,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             amount=FVal(approval_amount),
             location_label=gnosis_accounts[0],
             notes=f'Set HOP-LP-USDC spending approval of {gnosis_accounts[0]} by 0x5C32143C8B198F392d01f8446b754c181224ac26 to {approval_amount}',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x5C32143C8B198F392d01f8446b754c181224ac26'),
         ), EvmEvent(
             sequence_index=86,
@@ -967,7 +967,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             amount=FVal(lp_amount),
             location_label=gnosis_accounts[0],
             notes=f'Return {lp_amount} HOP-LP-USDC',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ), EvmEvent(
@@ -980,7 +980,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             amount=FVal(withdrawn),
             location_label=gnosis_accounts[0],
             notes=f'Withdraw {withdrawn} USDC from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x5C32143C8B198F392d01f8446b754c181224ac26'),
         ), EvmEvent(
@@ -993,7 +993,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             amount=FVal(withdrawn_2),
             location_label=gnosis_accounts[0],
             notes=f'Withdraw {withdrawn_2} hUSDC from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x5C32143C8B198F392d01f8446b754c181224ac26'),
         ),
@@ -1031,7 +1031,7 @@ def test_hop_stake(
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1,
@@ -1043,7 +1043,7 @@ def test_hop_stake(
             amount=FVal(stake_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ), EvmEvent(
@@ -1056,7 +1056,7 @@ def test_hop_stake(
             amount=FVal(approval_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Set HOP-LP-ETH spending approval of {arbitrum_one_accounts[0]} by 0x755569159598f3702bdD7DFF6233A317C156d3Dd to {approval_amount}',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ),
     ]
@@ -1088,7 +1088,7 @@ def test_hop_stake_2(
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=43,
@@ -1100,7 +1100,7 @@ def test_hop_stake_2(
             amount=FVal(stake_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
         ), EvmEvent(
@@ -1113,7 +1113,7 @@ def test_hop_stake_2(
             amount=FVal(approval_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Set HOP-LP-ETH spending approval of {arbitrum_one_accounts[0]} by 0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5 to {approval_amount}',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
         ),
     ]
@@ -1143,7 +1143,7 @@ def test_hop_claim_rewards(
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=13,
@@ -1155,7 +1155,7 @@ def test_hop_claim_rewards(
             amount=FVal(reward_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Claim {reward_amount} HOP from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ),
@@ -1186,7 +1186,7 @@ def test_hop_claim_rewards_2(
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=4,
@@ -1198,7 +1198,7 @@ def test_hop_claim_rewards_2(
             amount=FVal(reward_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Claim {reward_amount} ARB from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
         ),
@@ -1229,7 +1229,7 @@ def test_hop_claim_merkle_rewards(
             amount=FVal(gas),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=15,
@@ -1241,7 +1241,7 @@ def test_hop_claim_merkle_rewards(
             amount=FVal(reward_amount),
             location_label=optimism_accounts[0],
             notes=f'Claim {reward_amount} OP from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x45269F59aA76bB491D0Fc4c26F468D8E1EE26b73'),
         ),
@@ -1272,7 +1272,7 @@ def test_hop_unstake(
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=11,
@@ -1284,7 +1284,7 @@ def test_hop_unstake(
             amount=FVal(unstake_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Unstake {unstake_amount} HOP-LP-ETH from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ), EvmEvent(
@@ -1297,7 +1297,7 @@ def test_hop_unstake(
             amount=FVal(reward_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Claim {reward_amount} HOP from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ),
@@ -1325,7 +1325,7 @@ def test_hop_stake_gnosis(
             amount=FVal(gas),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty='gas',
         ), EvmEvent(
             sequence_index=2001,
@@ -1337,7 +1337,7 @@ def test_hop_stake_gnosis(
             amount=FVal(stake_amount),
             location_label=gnosis_accounts[0],
             notes=f'Stake {stake_amount} HOP-LP-USDT in Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ), EvmEvent(
@@ -1350,7 +1350,7 @@ def test_hop_stake_gnosis(
             amount=FVal(approval_amount),
             location_label=gnosis_accounts[0],
             notes=f'Set HOP-LP-USDT spending approval of {gnosis_accounts[0]} by 0x2C2Ab81Cf235e86374468b387e241DF22459A265 to {approval_amount}',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ),
     ]
@@ -1377,7 +1377,7 @@ def test_hop_claim_rewards_gnosis(
             amount=FVal(gas),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=2500,
@@ -1389,7 +1389,7 @@ def test_hop_claim_rewards_gnosis(
             amount=FVal(reward_amount),
             location_label=gnosis_accounts[0],
             notes=f'Claim {reward_amount} GNO from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ),
@@ -1417,7 +1417,7 @@ def test_hop_unstake_gnosis(
             amount=FVal(gas),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=3003,
@@ -1429,7 +1429,7 @@ def test_hop_unstake_gnosis(
             amount=FVal(unstake_amount),
             location_label=gnosis_accounts[0],
             notes=f'Unstake {unstake_amount} HOP-LP-USDT from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ), EvmEvent(
@@ -1442,7 +1442,7 @@ def test_hop_unstake_gnosis(
             amount=FVal(reward_amount),
             location_label=gnosis_accounts[0],
             notes=f'Claim {reward_amount} GNO from Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ),
@@ -1458,7 +1458,7 @@ def test_vote_cast(ethereum_inquirer):
     timestamp, gas = TimestampMS(1671494483000), '0.00186503943913884'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1470,7 +1470,7 @@ def test_vote_cast(ethereum_inquirer):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=307,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1506,7 +1506,7 @@ def test_hop_add_liquidity_optimism_usdc(
             amount=FVal(gas),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=2,
@@ -1518,7 +1518,7 @@ def test_hop_add_liquidity_optimism_usdc(
             amount=FVal(approval_amount),
             location_label=optimism_accounts[0],
             notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by 0x3c0FFAca566fCcfD9Cc95139FEF6CBA143795963 to {approval_amount}',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=string_to_evm_address('0x3c0FFAca566fCcfD9Cc95139FEF6CBA143795963'),
         ), EvmEvent(
             sequence_index=3,
@@ -1530,7 +1530,7 @@ def test_hop_add_liquidity_optimism_usdc(
             amount=FVal(lp_amount),
             location_label=optimism_accounts[0],
             notes=f'Deposit {lp_amount} USDC.e to Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x3c0FFAca566fCcfD9Cc95139FEF6CBA143795963'),
         ), EvmEvent(
@@ -1543,7 +1543,7 @@ def test_hop_add_liquidity_optimism_usdc(
             amount=FVal(lp_token_amount),
             location_label=optimism_accounts[0],
             notes=f'Receive {lp_token_amount} HOP-LP-USDC after providing liquidity in Hop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ),

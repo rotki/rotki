@@ -46,7 +46,7 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1669622603000), '0.001085530186197622'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -58,7 +58,7 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -70,7 +70,7 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -98,7 +98,7 @@ def test_balancer_v1_join(ethereum_inquirer, ethereum_accounts, load_global_cach
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1597144247000), '0.0141724'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -110,7 +110,7 @@ def test_balancer_v1_join(ethereum_inquirer, ethereum_accounts, load_global_cach
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -123,7 +123,7 @@ def test_balancer_v1_join(ethereum_inquirer, ethereum_accounts, load_global_cach
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x13830EB6444768cCea2C9d41308195Ceb18eF772'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -152,7 +152,7 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1597243001000), '0.03071222'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -164,7 +164,7 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -178,7 +178,7 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
             address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
             identifier=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -191,7 +191,7 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -222,7 +222,7 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
     user_address, timestamp = ethereum_accounts[0], TimestampMS(1593186380000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -234,7 +234,7 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             notes='Burn 0.01452447 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=132,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -246,7 +246,7 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             notes='Set mUSD spending approval of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 by 0x9ED47950144e51925166192Bf0aE95553939030a to 115792089237316195423570985008687907853269984665640563907878.636639492077148372',  # noqa: E501
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=133,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -259,7 +259,7 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=134,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -272,7 +272,7 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=135,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -285,7 +285,7 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=136,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -298,7 +298,7 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=137,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -329,7 +329,7 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1643362575000), '0.01196446449981698'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -341,7 +341,7 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -353,7 +353,7 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -410,7 +410,7 @@ def test_balancer_v1_non_proxy_join(
     user_address, timestamp, gas_str, approve_amt, receive_amt, deposit_qqq_amt, deposit_weth_amt = ethereum_accounts[0], TimestampMS(1730837051000), '0.002106711205202376', '0.000000001', '4152.559258169060848717', '3545739.463723403', '0.726672467956343618'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -422,7 +422,7 @@ def test_balancer_v1_non_proxy_join(
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=164,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -434,7 +434,7 @@ def test_balancer_v1_non_proxy_join(
             notes=f'Set QQQ spending approval of {user_address} by {balancer_qqq_weth_pool_token.evm_address} to {approve_amt}',  # noqa: E501
             address=balancer_qqq_weth_pool_token.evm_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=165,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -447,7 +447,7 @@ def test_balancer_v1_non_proxy_join(
             counterparty=CPT_BALANCER_V1,
             address=balancer_qqq_weth_pool_token.evm_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=166,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -460,7 +460,7 @@ def test_balancer_v1_non_proxy_join(
             counterparty=CPT_BALANCER_V1,
             address=balancer_qqq_weth_pool_token.evm_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=167,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -490,7 +490,7 @@ def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_g
     user_address, pool_address, timestamp, gas_str, return_amt, withdrawn_sfrx_eth_amt, withdrawn_fxs_amt = ethereum_accounts[0], string_to_evm_address('0x11F2A400de0a2FC93a32F88D8779d8199152c6a4'), TimestampMS(1730953079000), '0.001983415737154446', '224630.905650719593790621', '11.361467105948316099', '18310.050732769125107569'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -502,7 +502,7 @@ def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_g
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -515,7 +515,7 @@ def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_g
             notes=f'Return {return_amt} BCoW-50sfrxETH-50FXS to a Balancer v1 pool',
             address=pool_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -528,7 +528,7 @@ def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_g
             counterparty=CPT_BALANCER_V1,
             address=pool_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -558,7 +558,7 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
     user_address, pool_address, timestamp, gas_str, return_amt, withdrawn_usdc_amt, withdrawn_wsteth_amt = arbitrum_one_accounts[0], string_to_evm_address('0xFEa755D5523F3A78c0945141AD396d4E970D2fab'), TimestampMS(1728651192000), '0.00000317535', '1.822676898893300983', '11.664549', '0.004234826018688223'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -570,7 +570,7 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -583,7 +583,7 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
             notes=f'Return {return_amt} BCoW-50USDC-50wstETH to a Balancer v1 pool',
             address=pool_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -596,7 +596,7 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
             counterparty=CPT_BALANCER_V1,
             address=pool_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -655,7 +655,7 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
     user_address, timestamp, gas_str, receive_amt, deposit_gno_amt, deposit_cow_amt = gnosis_accounts[0], TimestampMS(1731355510000), '0.0002310674', '68.63749617341156454', '0.048302073768085864', '30.933559190570998685'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -667,7 +667,7 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
             notes=f'Burn {gas_str} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -680,7 +680,7 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
             counterparty=CPT_BALANCER_V1,
             address=balancer_gno_cow_pool_token.evm_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -693,7 +693,7 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
             counterparty=CPT_BALANCER_V1,
             address=balancer_gno_cow_pool_token.evm_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -718,7 +718,7 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas_str, return_amt, withdrawn_rsweth_amt = ethereum_accounts[0], TimestampMS(1731642119000), '0.003934656379000305', '14.957821596922618203', '14.953427656474271108'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -730,7 +730,7 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -743,7 +743,7 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Return {return_amt} weETH/ezETH/rswETH to a Balancer v2 pool',
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -768,7 +768,7 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
     user_address, timestamp, gas_str, return_amt, withdrawn_sdai_amt = gnosis_accounts[0], TimestampMS(1731923340000), '0.0003807456', '2403.555042425564723735', '2215.645258238073851336'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -780,7 +780,7 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
             notes=f'Burn {gas_str} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -793,7 +793,7 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
             notes=f'Return {return_amt} crvUSD/sDAI to a Balancer v2 pool',
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -818,7 +818,7 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
     user_address, timestamp, gas_str, receive_amt, deposit_sdai_amt = gnosis_accounts[0], TimestampMS(1729441770000), '0.0003671558', '2403.555042425564723735', '2229.291979360811376949'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -830,7 +830,7 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
             notes=f'Burn {gas_str} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -843,7 +843,7 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -872,7 +872,7 @@ def test_reth_arb(
     user_address, timestamp, gas_str, receive_amt, deposit_reth_amt = arbitrum_one_accounts[0], TimestampMS(1733867520000), '0.00000838391546', '0.027783312185816836', '0.025'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -884,7 +884,7 @@ def test_reth_arb(
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -896,7 +896,7 @@ def test_reth_arb(
             notes='Revoke rETH spending approval of 0x5dCFE1fb21Fb50fA793de3bA8519e6F9Be6C0617 by 0xBA12222222228d8Ba445958a75a0704d566BF2C8',  # noqa: E501
             address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=6,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -909,7 +909,7 @@ def test_reth_arb(
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=7,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -955,7 +955,7 @@ def test_balancer_v2_join_with_gauge_deposit(
     user_address, timestamp, gas_amount, approval_amount, receive_amount, deposit_usdce_amount, deposit_usdt_amount = optimism_accounts[0], TimestampMS(1706002351000), '0.000273096837250597', '115792089237316195423570985008687907853269984665640564039457584007912319.640092', '1753.970737231540926176', '809.999843', '957.891739'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -967,7 +967,7 @@ def test_balancer_v2_join_with_gauge_deposit(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=57,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -979,7 +979,7 @@ def test_balancer_v2_join_with_gauge_deposit(
             notes=f'Set USDC.e spending approval of {user_address} by 0xBA12222222228d8Ba445958a75a0704d566BF2C8 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=58,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -992,7 +992,7 @@ def test_balancer_v2_join_with_gauge_deposit(
             counterparty=CPT_BALANCER_V2,
             address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=59,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1005,7 +1005,7 @@ def test_balancer_v2_join_with_gauge_deposit(
             counterparty=CPT_BALANCER_V2,
             address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=60,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1018,7 +1018,7 @@ def test_balancer_v2_join_with_gauge_deposit(
             notes=f'Receive {receive_amount} bpt-stablebeets from a Balancer v2 pool',
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=61,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1031,7 +1031,7 @@ def test_balancer_v2_join_with_gauge_deposit(
             counterparty=CPT_BALANCER_V2,
             address=string_to_evm_address('0x03F1ab8b19bcE21EB06C364aEc9e40322572a1e9'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=62,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1077,7 +1077,7 @@ def test_balancer_gauge_withdrawal(
     user_address, timestamp, gas_amount, withdrawn_amount = ethereum_accounts[0], TimestampMS(1719060983000), '0.001454091177763647', '0.426822578640463022'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1089,7 +1089,7 @@ def test_balancer_gauge_withdrawal(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1102,7 +1102,7 @@ def test_balancer_gauge_withdrawal(
             counterparty=CPT_BALANCER_V2,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1128,7 +1128,7 @@ def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x014d174e4f479e9712f877b0fd7db5011d6669cf7843700384da1997410312cf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1717171565000)),
         location=Location.GNOSIS,
@@ -1140,7 +1140,7 @@ def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
         notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.GNOSIS,
@@ -1152,7 +1152,7 @@ def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
         counterparty=CPT_BALANCER_V2,
         address=VAULT_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.GNOSIS,

@@ -243,7 +243,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             else:
                 # If native asset is spent, then there will not be a decoded transfer. Thus we create it.  # noqa: E501
                 spend_event = self.base.make_event_next_index(
-                    tx_hash=transaction.tx_hash,
+                    tx_ref=transaction.tx_hash,
                     timestamp=transaction.timestamp,
                     event_type=HistoryEventType.SPEND,  # Is customized later
                     event_subtype=HistoryEventSubType.NONE,
@@ -272,7 +272,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             fee_event = None
             if swap_data.fee_amount != ZERO:
                 fee_event = self.base.make_event_next_index(
-                    tx_hash=transaction.tx_hash,
+                    tx_ref=transaction.tx_hash,
                     timestamp=transaction.timestamp,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.FEE,

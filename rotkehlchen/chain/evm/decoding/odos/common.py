@@ -109,7 +109,7 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
                 )
             elif amount > ZERO:
                 router_fees.append(self.base.make_event_next_index(
-                    tx_hash=context.transaction.tx_hash,
+                    tx_ref=context.transaction.tx_hash,
                     timestamp=context.transaction.timestamp,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.FEE,

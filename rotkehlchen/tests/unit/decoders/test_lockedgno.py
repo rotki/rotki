@@ -25,7 +25,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
     amount_str = '5.207408513473562376'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -38,7 +38,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=365,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -51,7 +51,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_LOCKEDGNO,
             address=LOCKED_GNO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=366,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -78,7 +78,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
     amount_str = '7.232204655685847974'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -91,7 +91,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=115,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -104,7 +104,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_LOCKEDGNO,
             address=LOCKED_GNO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=116,
             timestamp=timestamp,
             location=Location.ETHEREUM,

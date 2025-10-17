@@ -22,7 +22,7 @@ def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
     timestamp, gas, amount = TimestampMS(1646375440000), '0.005264399856069432', '12.369108326706528256'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -35,7 +35,7 @@ def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=351,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -61,7 +61,7 @@ def test_votium_claim_2(ethereum_inquirer, ethereum_accounts):
     timestamp, gas, amount = TimestampMS(1678972523000), '0.001771703400663612', '0.130390330817010288'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -74,7 +74,7 @@ def test_votium_claim_2(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=167,
             timestamp=timestamp,
             location=Location.ETHEREUM,

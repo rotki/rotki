@@ -37,7 +37,7 @@ def test_thegraph_delegate(ethereum_inquirer):
     indexer_address = string_to_evm_address('0x6125eA331851367716beE301ECDe7F38A7E429e7')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -49,7 +49,7 @@ def test_thegraph_delegate(ethereum_inquirer):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=358,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -62,7 +62,7 @@ def test_thegraph_delegate(ethereum_inquirer):
             counterparty=None,
             address=CONTRACT_STAKING,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=359,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -76,7 +76,7 @@ def test_thegraph_delegate(ethereum_inquirer):
             address=CONTRACT_STAKING,
             extra_data={'indexer': indexer_address},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=360,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -112,7 +112,7 @@ def test_thegraph_contract_deposit_gas(ethereum_inquirer):
             amount=FVal(gas),
             location_label=ADDY_ROTKI,
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1,
@@ -124,7 +124,7 @@ def test_thegraph_contract_deposit_gas(ethereum_inquirer):
             amount=FVal(deposit_amount),
             location_label=ADDY_ROTKI,
             notes=f'Deposit {deposit_amount} ETH to {GRAPH_L1_LOCK_TRANSFER_TOOL} contract to pay for the gas in L2.',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_THEGRAPH,
             address=GRAPH_L1_LOCK_TRANSFER_TOOL,
             extra_data={'indexer': indexer},
@@ -142,7 +142,7 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
     gas = '0.001243940743655704'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -154,7 +154,7 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=415,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -194,7 +194,7 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer
             location_label=ADDY_ROTKI,
             notes=f'Burn {gas} ETH for gas',
             identifier=None,
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=186,
@@ -207,7 +207,7 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer
             location_label=ADDY_ROTKI,
             notes=f'Delegation of {delegation_amount} GRT transferred from indexer {indexer} to L2 indexer {indexer_l2}.',  # noqa: E501
             identifier=None,
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_THEGRAPH,
             address=contract,
             extra_data={'delegator_l2': delegator_l2, 'indexer_l2': indexer_l2, 'beneficiary': ADDY_ROTKI},  # noqa: E501
@@ -237,7 +237,7 @@ def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
             amount=FVal(gas),
             location_label=ADDY_USER_2,
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1,
@@ -249,7 +249,7 @@ def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
             amount=FVal(eth_amount),
             location_label=ADDY_USER_2,
             notes=f'Send {eth_amount} ETH to {CONTRACT_STAKING}',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=CONTRACT_STAKING,
         ), EvmEvent(
             sequence_index=364,
@@ -261,7 +261,7 @@ def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
             amount=FVal(delegation_amount),
             location_label=ADDY_USER_2,
             notes=f'Delegation of {delegation_amount} GRT transferred from indexer {indexer} to L2 indexer {indexer_l2}.',  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_THEGRAPH,
             address=CONTRACT_STAKING,
             extra_data={'delegator_l2': delegator_l2, 'indexer_l2': indexer_l2, 'beneficiary': ADDY_ROTKI},  # noqa: E501
@@ -281,7 +281,7 @@ def test_thegraph_undelegate(ethereum_inquirer):
     indexer_address = string_to_evm_address('0x6125eA331851367716beE301ECDe7F38A7E429e7')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -293,7 +293,7 @@ def test_thegraph_undelegate(ethereum_inquirer):
             notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=297,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -320,7 +320,7 @@ def test_thegraph_delegated_withdrawn(ethereum_inquirer):
     indexer_address = string_to_evm_address('0x6125eA331851367716beE301ECDe7F38A7E429e7')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -332,7 +332,7 @@ def test_thegraph_delegated_withdrawn(ethereum_inquirer):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=208,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -362,7 +362,7 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
     indexer_address = string_to_evm_address('0xE13840A2E92e0Cb17A246609b432D0fA2e418774')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -374,7 +374,7 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=58,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -387,7 +387,7 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
             counterparty=None,
             address=CONTRACT_STAKING_ARB,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=59,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -401,7 +401,7 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
             address=CONTRACT_STAKING_ARB,
             extra_data={'indexer': indexer_address},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=60,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -433,7 +433,7 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
 
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -445,7 +445,7 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=11,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -458,7 +458,7 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
             counterparty=CPT_THEGRAPH,
             address=CONTRACT_STAKING_ARB,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=12,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -488,7 +488,7 @@ def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer):
     indexer_address = string_to_evm_address('0xf92f430Dd8567B0d466358c79594ab58d919A6D4')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -500,7 +500,7 @@ def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer):
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=67,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,

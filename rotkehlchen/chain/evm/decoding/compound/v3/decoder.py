@@ -333,7 +333,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                     event.notes = f'Withdraw {collateral_amount} {collateral_asset.symbol} from Compound v3'  # noqa: E501
 
                 collateral_event = self.base.make_event_next_index(
-                    tx_hash=context.transaction.tx_hash,
+                    tx_ref=context.transaction.tx_hash,
                     timestamp=context.transaction.timestamp,
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.NONE,

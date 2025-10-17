@@ -84,7 +84,7 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         in_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
+            tx_ref=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -128,7 +128,7 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         out_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
+            tx_ref=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,

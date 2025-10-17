@@ -33,7 +33,7 @@ def test_gold_sponsorship(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8896c30e52bfc3a1044eca1cf126973845c46a3782e6d4f274590772b1213e55')),  # noqa: E501
     )
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1756566359000)),
         location=Location.ETHEREUM,
@@ -46,7 +46,7 @@ def test_gold_sponsorship(
         counterparty=CPT_GAS,
         address=None,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=262,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -58,7 +58,7 @@ def test_gold_sponsorship(
         counterparty=CPT_ROTKI,
         address=ROTKI_SPONSORSHIP_TREASURY_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=263,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -83,7 +83,7 @@ def test_silver_sponsorship(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xeac2dce7712615c992b8bbfc85e6480be2d33cf7c184c5134d1369998cd94351')),  # noqa: E501
     )
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1756562735000)),
         location=Location.ETHEREUM,
@@ -96,7 +96,7 @@ def test_silver_sponsorship(
         counterparty=CPT_GAS,
         address=None,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=69,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -108,7 +108,7 @@ def test_silver_sponsorship(
         counterparty=CPT_ROTKI,
         address=ROTKI_SPONSORSHIP_TREASURY_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=70,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -133,7 +133,7 @@ def test_bronze_sponsorship(
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe66898edb1bb96acfe83e9c2a6895c600b666641bacb2ef2060154f6e29cd112')),  # noqa: E501
     )
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1758889799000)),
         location=Location.ETHEREUM,
@@ -146,7 +146,7 @@ def test_bronze_sponsorship(
         counterparty=CPT_GAS,
         address=None,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -158,7 +158,7 @@ def test_bronze_sponsorship(
         counterparty=CPT_ROTKI,
         address=ROTKI_SPONSORSHIP_CONTRACT_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,

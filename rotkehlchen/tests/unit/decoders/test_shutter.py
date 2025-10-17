@@ -24,7 +24,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
     gas_amount_str, claimed_amount = '0.006946508605618104', '1086.95652173913'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -36,7 +36,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=132,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -63,7 +63,7 @@ def test_shu_delegation(ethereum_inquirer, ethereum_accounts):
     gas_amount_str = '0.00549203889835413'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -75,7 +75,7 @@ def test_shu_delegation(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=479,
             timestamp=timestamp,
             location=Location.ETHEREUM,

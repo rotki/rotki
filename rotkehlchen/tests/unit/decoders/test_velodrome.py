@@ -59,7 +59,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
     timestamp = TimestampMS(1693573631000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -71,7 +71,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             counterparty=CPT_GAS,
             notes='Burn 0.000054658008447046 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=68,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -84,7 +84,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             address=WETH_OP_POOL_ADDRESS,
             notes=f'Deposit 0.005 WETH in velodrome pool {WETH_OP_POOL_ADDRESS}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=69,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -96,7 +96,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             address=ROUTER_V2,
             notes=f'Revoke OP spending approval of {user_address} by {ROUTER_V2}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=70,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -109,7 +109,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             address=WETH_OP_POOL_ADDRESS,
             notes=f'Deposit 5.960043211306826894 OP in velodrome pool {WETH_OP_POOL_ADDRESS}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=71,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -144,7 +144,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
     lp_token_identifier = evm_address_to_identifier(pool, ChainID.OPTIMISM, TokenKind.ERC20)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -156,7 +156,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             counterparty=CPT_GAS,
             notes='Burn 0.00016522650722948 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -169,7 +169,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             address=pool,
             notes=f'Deposit 3.58533080911795905 RED in velodrome pool {pool}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -182,7 +182,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             address=pool,
             notes=f'Deposit 124.057046 VELO in velodrome pool {pool}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -222,7 +222,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
     timestamp = TimestampMS(1694677251000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -234,7 +234,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             counterparty=CPT_GAS,
             notes='Burn 0.000024369543627752 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=33,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -246,7 +246,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             address=ROUTER_V2,
             notes=f'Revoke vAMMV2-WETH/OP spending approval of {user_address} by {ROUTER_V2}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=34,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -259,7 +259,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             address=WETH_OP_POOL_ADDRESS,
             notes='Return 0.086313645974870917 vAMMV2-WETH/OP',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -272,7 +272,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             address=WETH_OP_POOL_ADDRESS,
             notes=f'Remove 0.002487103206849621 WETH from velodrome pool {WETH_OP_POOL_ADDRESS}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=37,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -305,7 +305,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
     pool = string_to_evm_address('0x47029bc8f5CBe3b464004E87eF9c9419a48018cd')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -317,7 +317,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             counterparty=CPT_GAS,
             notes='Burn 0.000037049807135563 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=39,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -329,7 +329,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             notes=f'Revoke vAMM-OP/USDC spending approval of {user_address} by 0x9c12939390052919aF3155f41Bf4160Fd3666A6f',  # noqa: E501
             address=string_to_evm_address('0x9c12939390052919aF3155f41Bf4160Fd3666A6f'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=40,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -342,7 +342,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             address=pool,
             notes='Return 0.000174407012524167 vAMM-OP/USDC',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=42,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -355,7 +355,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             address=pool,
             notes=f'Remove 148.123832466418929782 OP from velodrome pool {pool}',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=43,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -387,7 +387,7 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
     timestamp = TimestampMS(1693572877000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -399,7 +399,7 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             counterparty=CPT_GAS,
             notes='Burn 0.000044146364876824 ETH for gas',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -411,7 +411,7 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             address=ROUTER_V2,
             notes=f'Swap 0.01 ETH in {CPT_VELODROME}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -442,7 +442,7 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
     timestamp = TimestampMS(1695194435000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -454,7 +454,7 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             counterparty=CPT_GAS,
             notes='Burn 0.000184626805145159 ETH for gas',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -466,7 +466,7 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             address=ROUTER_V1,
             notes=f'Swap 0.0000857 ETH in {CPT_VELODROME}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -497,7 +497,7 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
     timestamp = TimestampMS(1695108881000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -509,7 +509,7 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             counterparty=CPT_GAS,
             notes='Burn 0.000059095022720367 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=97,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -521,7 +521,7 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             address=ROUTER_V2,
             notes=f'Revoke OP spending approval of {user_address} by {ROUTER_V2}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=98,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -533,7 +533,7 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             address=WETH_OP_POOL_ADDRESS,
             notes=f'Swap 91.173214418890299607 OP in {CPT_VELODROME}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=99,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -564,7 +564,7 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
     timestamp = TimestampMS(1695155023000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -576,7 +576,7 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
             counterparty=CPT_GAS,
             notes='Burn 0.000076204005061914 ETH for gas',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -588,7 +588,7 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
             address=(address := string_to_evm_address('0xe8537b6FF1039CB9eD0B71713f697DDbaDBb717d')),  # velo_usdc_pool_address  # noqa: E501
             notes=f'Swap 5165.602591359381942771 VELO in {CPT_VELODROME}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -619,7 +619,7 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
     timestamp = TimestampMS(1697106165000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -631,7 +631,7 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             counterparty=CPT_GAS,
             notes='Burn 0.000034672969663309 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=92,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -643,7 +643,7 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             address=ROUTER_V2,
             notes=f'Revoke DOLA spending approval of {user_address} by {ROUTER_V2}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=93,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -655,7 +655,7 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             address=(address := string_to_evm_address('0x1f8b46abe1EAbF5A60CbBB5Fb2e4a6A46fA0b6e6')),  # noqa: E501
             notes=f'Swap 1177.178869111912387354 DOLA in {CPT_VELODROME}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=94,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -686,7 +686,7 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
     timestamp = TimestampMS(1695193815000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -698,7 +698,7 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
             counterparty=CPT_GAS,
             notes='Burn 0.00003955388723844 ETH for gas',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -710,7 +710,7 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
             address=string_to_evm_address('0xcdd41009E74bD1AE4F7B2EeCF892e4bC718b9302'),  # weth_op_pool_address_v1  # noqa: E501
             notes=f'Swap 0.056827266981849464 WETH in {CPT_VELODROME}',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -748,7 +748,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
     timestamp = TimestampMS(1694639877000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -760,7 +760,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             counterparty=CPT_GAS,
             notes='Burn 0.000019177994860846 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=19,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -772,7 +772,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             address=WETH_OP_GAUGE_ADDRESS,
             notes=f'Revoke vAMMV2-WETH/OP spending approval of {user_address} by {WETH_OP_GAUGE_ADDRESS}',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=20,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -805,7 +805,7 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
     timestamp = TimestampMS(1694676717000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -817,7 +817,7 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
             counterparty=CPT_GAS,
             notes='Burn 0.00001849989800651 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=85,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -850,7 +850,7 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
     gauge_address = string_to_evm_address('0x84195De69B8B131ddAa4Be4F75633fCD7F430b7c')
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -862,7 +862,7 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
             counterparty=CPT_GAS,
             notes='Burn 0.000024794371949528 ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=35,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -889,7 +889,7 @@ def test_unlock_velo(optimism_accounts, optimism_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741003701000)),
             location=Location.OPTIMISM,
@@ -901,7 +901,7 @@ def test_unlock_velo(optimism_accounts, optimism_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=13,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -914,7 +914,7 @@ def test_unlock_velo(optimism_accounts, optimism_transaction_decoder):
             address=ZERO_ADDRESS,
             notes=f'Burn veNFT-27891 to unlock {(withdrawn_amt := "59.364651461725644131")} VELO from vote escrow',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=14,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -941,7 +941,7 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741011431000)),
             location=Location.OPTIMISM,
@@ -953,7 +953,7 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=99,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -965,7 +965,7 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
             address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
             notes=f'Revoke VELO spending approval of {user_address} by 0xFAf8FD17D9840595845582fCB047DF13f006787d',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=100,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -979,7 +979,7 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
             notes=f'Lock {lock_amount} VELO in vote escrow until 01/03/2029',
             extra_data={'token_id': 30079, 'lock_time': 1867017600},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=101,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1006,7 +1006,7 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741006069000)),
             location=Location.OPTIMISM,
@@ -1018,7 +1018,7 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1030,7 +1030,7 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
             address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
             notes=f'Set VELO spending approval of {user_address} by 0xFAf8FD17D9840595845582fCB047DF13f006787d to {approval_amount}',  # noqa: E501
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1057,7 +1057,7 @@ def test_increase_unlock_time(optimism_accounts, optimism_transaction_decoder):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1740997763000)),
             location=Location.OPTIMISM,
@@ -1069,7 +1069,7 @@ def test_increase_unlock_time(optimism_accounts, optimism_transaction_decoder):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=19,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1109,7 +1109,7 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741027977000)),
             location=Location.OPTIMISM,
@@ -1121,7 +1121,7 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
             counterparty=CPT_GAS,
             notes=f'Burn {gas_str} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=143,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1134,7 +1134,7 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
             counterparty=CPT_VELODROME,
             notes=f'Claim {receive_amount_1} T from velodrome as a bribe',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=145,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1147,7 +1147,7 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
             counterparty=CPT_VELODROME,
             notes=f'Claim {receive_amount_2} OP from velodrome as a bribe',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=147,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -1160,7 +1160,7 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
             counterparty=CPT_VELODROME,
             notes=f'Claim {receive_amount_3} ITP from velodrome as a bribe',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=149,
             timestamp=timestamp,
             location=Location.OPTIMISM,

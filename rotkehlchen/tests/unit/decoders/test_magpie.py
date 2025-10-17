@@ -46,7 +46,7 @@ def test_magpie_eth_to_token_swap(
     receive_amount = '3.603360047987326035'  # actual amount from test
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -58,7 +58,7 @@ def test_magpie_eth_to_token_swap(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
@@ -70,7 +70,7 @@ def test_magpie_eth_to_token_swap(
             counterparty=CPT_MAGPIE,
             address=BASE_MAGPIE_V3_ROUTER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -109,7 +109,7 @@ def test_magpie_token_to_token_swap(
 
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -121,7 +121,7 @@ def test_magpie_token_to_token_swap(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=118,
             timestamp=timestamp,
             location=Location.BASE,
@@ -136,7 +136,7 @@ def test_magpie_token_to_token_swap(
             ),
             address=BASE_MAGPIE_V3_ROUTER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=120,
             timestamp=timestamp,
             location=Location.BASE,
@@ -151,7 +151,7 @@ def test_magpie_token_to_token_swap(
             ),
             address=BASE_MAGPIE_V3_ROUTER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=121,
             timestamp=timestamp,
             location=Location.BASE,
@@ -163,7 +163,7 @@ def test_magpie_token_to_token_swap(
             counterparty=CPT_MAGPIE,
             address=BASE_MAGPIE_V3_ROUTER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=122,
             timestamp=timestamp,
             location=Location.BASE,
@@ -175,7 +175,7 @@ def test_magpie_token_to_token_swap(
             counterparty=CPT_MAGPIE,
             address=BASE_MAGPIE_V3_ROUTER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=123,
             timestamp=timestamp,
             location=Location.BASE,
@@ -213,7 +213,7 @@ def test_magpie_arbitrum_token_to_token_swap(
 
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -225,7 +225,7 @@ def test_magpie_arbitrum_token_to_token_swap(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=7,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -240,7 +240,7 @@ def test_magpie_arbitrum_token_to_token_swap(
             ),
             address=string_to_evm_address('0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -255,7 +255,7 @@ def test_magpie_arbitrum_token_to_token_swap(
             ),
             address=string_to_evm_address('0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=10,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -267,7 +267,7 @@ def test_magpie_arbitrum_token_to_token_swap(
             counterparty=CPT_MAGPIE,
             address=string_to_evm_address('0x9164424A33a89202040F02170431073c59eFa1A9'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=11,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -279,7 +279,7 @@ def test_magpie_arbitrum_token_to_token_swap(
             counterparty=CPT_MAGPIE,
             address=string_to_evm_address('0x9164424A33a89202040F02170431073c59eFa1A9'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=12,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -319,7 +319,7 @@ def test_magpie_ethereum_usds_to_usdc_swap(
 
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -331,7 +331,7 @@ def test_magpie_ethereum_usds_to_usdc_swap(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -343,7 +343,7 @@ def test_magpie_ethereum_usds_to_usdc_swap(
             counterparty=CPT_MAGPIE,
             address=ETHEREUM_MAGPIE_V3_1_ROUTER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -355,7 +355,7 @@ def test_magpie_ethereum_usds_to_usdc_swap(
             counterparty=CPT_MAGPIE,
             address=ETHEREUM_MAGPIE_V3_1_ROUTER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -394,7 +394,7 @@ def test_magpie_polygon_pol_to_usdc_swap(
 
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -406,7 +406,7 @@ def test_magpie_polygon_pol_to_usdc_swap(
             notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -418,7 +418,7 @@ def test_magpie_polygon_pol_to_usdc_swap(
             counterparty=CPT_MAGPIE,
             address=POLYGON_MAGPIE_V3_1_ROUTER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.POLYGON_POS,

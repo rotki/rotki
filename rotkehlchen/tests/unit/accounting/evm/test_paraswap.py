@@ -38,7 +38,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
     """Test that the fee in paraswap is handled correctly during accounting"""
     tx_hash, user_address, contract_address, acquired_from_address, swap_amount_str, fee_amount_str, receive_amount_str = make_evm_tx_hash(), make_evm_address(), make_evm_address(), make_evm_address(), '1', '1', '100'  # noqa: E501
     events = [EvmEvent(  # this event is to create cost basis for wBTC
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(1700000000000),
         location=Location.ETHEREUM,
@@ -51,7 +51,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
         counterparty='0xrandomaddress',
         address=acquired_from_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(1700000001000),
         location=Location.ETHEREUM,
@@ -64,7 +64,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
         counterparty=CPT_PARASWAP,
         address=contract_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TimestampMS(1700000001000),
         location=Location.ETHEREUM,
@@ -77,7 +77,7 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
         counterparty=CPT_PARASWAP,
         address=contract_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=TimestampMS(1700000001000),
         location=Location.ETHEREUM,

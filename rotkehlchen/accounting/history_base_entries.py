@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAcc
 from rotkehlchen.constants import ONE
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
@@ -83,8 +84,8 @@ class EventsAccountant:
             )
 
         general_extra_data = {}
-        if isinstance(event, EvmEvent):
-            general_extra_data['tx_hash'] = event.tx_hash.hex()
+        if isinstance(event, EvmEvent | SolanaEvent):
+            general_extra_data['tx_ref'] = str(event.tx_ref)
 
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
             fee_event = None

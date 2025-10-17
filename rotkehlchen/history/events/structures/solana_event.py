@@ -49,7 +49,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     def __init__(
             self,
-            signature: Signature,
+            tx_ref: Signature,
             sequence_index: int,
             timestamp: TimestampMS,
             event_type: HistoryEventType,
@@ -67,7 +67,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
         self.location = Location.SOLANA
         HistoryEventWithCounterparty.__init__(  # explicitly calling constructor due to some events having  # noqa: E501
             self=self,  # diamond shaped inheritance. Which calls unexpected super()
-            event_identifier=str(signature) if event_identifier is None else event_identifier,
+            event_identifier=str(tx_ref) if event_identifier is None else event_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=self.location,
@@ -82,7 +82,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
             counterparty=counterparty,
         )
         self.address = address
-        self.signature = signature
+        self.tx_ref = tx_ref
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
@@ -97,7 +97,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
             (
                 'chain_events_info(identifier, tx_ref, counterparty, address) VALUES (?, ?, ?, ?)',
                 'UPDATE chain_events_info SET tx_ref=?, counterparty=?, address=?', (
-                    self.signature.to_bytes(),
+                    self.tx_ref.to_bytes(),
                     self.counterparty,
                     self.address,
                 ),
@@ -112,7 +112,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     def serialize(self) -> dict[str, Any]:
         return HistoryBaseEntry.serialize(self) | {  # not using super() since it has unexpected results due to diamond shaped inheritance.  # noqa: E501
-            'signature': str(self.signature),
+            'tx_ref': str(self.tx_ref),
             'counterparty': self.counterparty,
             'address': self.address,
         }
@@ -151,7 +151,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
             event_type=HistoryEventType.deserialize(entry[9]),
             event_subtype=HistoryEventSubType.deserialize(entry[10]),
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
-            signature=Signature.from_bytes(entry[13]),
+            tx_ref=Signature.from_bytes(entry[13]),
             counterparty=entry[14],
             address=deserialize_optional(input_val=entry[15], fn=SolanaAddress),
         )
@@ -163,7 +163,7 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
         try:
             return cls(  # type: ignore[misc]  # location is already removed.
                 **base_data,
-                signature=Signature.from_bytes(data['signature']),
+                tx_ref=Signature.from_bytes(data['tx_ref']),
                 address=deserialize_optional(data['address'], SolanaAddress),
                 counterparty=deserialize_optional(data['counterparty'], str),
             )
@@ -174,13 +174,13 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
         return (  # ignores are due to object and type checks in super not recognized
             HistoryBaseEntry.__eq__(self, other) is True and
             self.counterparty == other.counterparty and  # type: ignore
-            self.signature == other.signature and  # type: ignore
+            self.tx_ref == other.tx_ref and  # type: ignore
             self.address == other.address  # type: ignore
         )
 
     def __repr__(self) -> str:
         fields = self._history_base_entry_repr_fields() + [
-            f'self.signature={self.signature!s}',  # convert to string to avoid newlines from solders library  # noqa: E501
+            f'self.tx_ref={self.tx_ref!s}',  # convert to string to avoid newlines from solders library  # noqa: E501
             f'{self.counterparty=}',
             f'{self.address=}',
         ]
@@ -189,6 +189,6 @@ class SolanaEvent(HistoryEventWithCounterparty):  # hash in superclass
     def __str__(self) -> str:
         return (
             f'{self.event_type} / {self.event_subtype} SolanaEvent with '
-            f'signature={self.signature} and time '
+            f'tx_ref={self.tx_ref} and time '
             f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
         )

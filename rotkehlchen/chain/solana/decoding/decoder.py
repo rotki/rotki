@@ -191,7 +191,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             return None
 
         return self.base.make_event_next_index(
-            tx_hash=transaction.signature,
+            tx_ref=transaction.signature,
             timestamp=transaction.block_time,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -423,7 +423,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         counterparty_or_address = counterparty or address
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
         return self.base.make_event_next_index(
-            tx_hash=transaction.signature,
+            tx_ref=transaction.signature,
             timestamp=transaction.block_time,
             event_type=event_type,
             event_subtype=event_subtype,
@@ -579,7 +579,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     ) -> SolanaEvent:
         """Creates a SolanaSwapEvent from trade event data."""
         return SolanaSwapEvent(
-            signature=trade_event.signature,
+            tx_ref=trade_event.tx_ref,
             sequence_index=sequence_index,
             timestamp=trade_event.timestamp,
             event_type=event_type,  # type: ignore[arg-type]  # will be TRADE or MULTI_TRADE

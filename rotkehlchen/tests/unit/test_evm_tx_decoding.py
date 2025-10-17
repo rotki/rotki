@@ -147,7 +147,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                     assert len(events) == 2
                     assert_events_equal(events[0], EvmEvent(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        tx_hash=approve_tx_hash,
+                        tx_ref=approve_tx_hash,
                         sequence_index=0,
                         timestamp=1569924574000,
                         location=Location.ETHEREUM,
@@ -162,7 +162,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                     ))
                     assert_events_equal(events[1], EvmEvent(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        tx_hash=approve_tx_hash,
+                        tx_ref=approve_tx_hash,
                         sequence_index=163,
                         timestamp=1569924574000,
                         location=Location.ETHEREUM,
@@ -353,7 +353,7 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1746615035000)),
             location=Location.ETHEREUM,
@@ -365,7 +365,7 @@ def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -392,7 +392,7 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1746793655000)),
             location=Location.ETHEREUM,
@@ -404,7 +404,7 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,

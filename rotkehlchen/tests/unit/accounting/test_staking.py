@@ -164,7 +164,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             block_number=block_number,
             is_mev_reward=True,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             event_identifier=f'BP1_{block_number}',
             sequence_index=2,
             timestamp=TimestampMS(1687117319001),
@@ -266,7 +266,7 @@ def test_eth_withdrawal_processing(accountant: Accountant, ethereum_accounts: li
         withdrawal_address=withdraw_address,
         is_exit=False,
     ), EvmEvent(
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         sequence_index=1,
         timestamp=TimestampMS(1689000001000),
         location=Location.ETHEREUM,
@@ -304,7 +304,7 @@ def test_eth_withdrawal_processing(accountant: Accountant, ethereum_accounts: li
         withdrawal_address=withdraw_address,
         is_exit=True,
     ), EthDepositEvent(
-        tx_hash=make_evm_tx_hash(),
+        tx_ref=make_evm_tx_hash(),
         validator_index=v_accum_2,
         sequence_index=1,
         timestamp=TimestampMS(1729100004000),

@@ -27,7 +27,7 @@ def test_arbitrum_airdrop_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
     timestamp, user_address = TimestampMS(1689935876000), arbitrum_one_accounts[0]
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -39,7 +39,7 @@ def test_arbitrum_airdrop_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes='Burn 0.000032717 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -66,7 +66,7 @@ def test_vote_cast(arbitrum_one_inquirer, arbitrum_one_accounts):
     timestamp, user_address = TimestampMS(1707677598000), arbitrum_one_accounts[0]
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -78,7 +78,7 @@ def test_vote_cast(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes='Burn 0.0000821946 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -114,7 +114,7 @@ def test_vote_cast_2(arbitrum_one_inquirer, arbitrum_one_accounts):
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=5,
@@ -126,7 +126,7 @@ def test_vote_cast_2(arbitrum_one_inquirer, arbitrum_one_accounts):
             amount=ZERO,
             location_label=arbitrum_one_accounts[0],
             notes='Vote FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/42524710257895482033293584464762477376427316183960646909542733545381165923770',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_ARBITRUM_ONE,
             address=GOVERNOR_ADDRESSES[3],
         ),
@@ -154,7 +154,7 @@ def test_vote_cast_treasury(arbitrum_one_inquirer, arbitrum_one_accounts):
             amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=10,
@@ -166,7 +166,7 @@ def test_vote_cast_treasury(arbitrum_one_inquirer, arbitrum_one_accounts):
             amount=ZERO,
             location_label=arbitrum_one_accounts[0],
             notes="Vote AGAINST arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/53472400873981607449547539050199074000442490831067826984987297151333310022877 with reasoning: IMO games or arbitrum is a path that is interesting but the amounts are big and I'm not sure how they adjust to the industry. This is giving a lot of money and might be the wrong path where games that no one enjoy get developed and then nothing happens after it. How the money will be spent is described but I believe the amounts are more than what is needed for such a program",  # noqa: E501
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_ARBITRUM_ONE,
             address=GOVERNOR_ADDRESSES[1],
         ),

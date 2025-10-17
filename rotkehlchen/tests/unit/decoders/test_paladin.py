@@ -24,7 +24,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
     timestamp, gas, amount, period = TimestampMS(1672197467000), '0.00120340458490378', '1079.056809836717269824', 1671062400  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -36,7 +36,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=305,
             timestamp=timestamp,
             location=Location.ETHEREUM,

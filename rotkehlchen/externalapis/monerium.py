@@ -241,7 +241,7 @@ class Monerium:
         tx_hashes = set()
         for event in events:
             if not self.is_monerium_event_edited(event_notes=event.notes):
-                tx_hashes.add(event.tx_hash)
+                tx_hashes.add(event.tx_ref)
 
         if len(tx_hashes) <= MAX_INDIVIDUAL_TX_QUERIES:
             for tx_hash in tx_hashes:

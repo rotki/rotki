@@ -418,7 +418,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
 
     tx_hash = make_evm_tx_hash()
     return_wrapped = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
@@ -430,7 +430,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         notes='my notes',
     )
     remove_asset = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,

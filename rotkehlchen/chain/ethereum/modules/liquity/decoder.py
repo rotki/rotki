@@ -412,7 +412,7 @@ class LiquityDecoder(EvmDecoderInterface):
         ):  # Means proxy received it, so create the event manually
             if amount_received != ZERO and existing_reward_event is None:
                 reward_event = self.base.make_event_next_index(
-                    tx_hash=context.transaction.tx_hash,
+                    tx_ref=context.transaction.tx_hash,
                     timestamp=context.transaction.timestamp,
                     event_type=HistoryEventType.STAKING,
                     event_subtype=HistoryEventSubType.REWARD,

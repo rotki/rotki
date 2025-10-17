@@ -50,7 +50,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
     expected_events = [
         EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -62,7 +62,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -74,7 +74,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -99,7 +99,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
     timestamp, spend_amount, receive_amount, fee_amount, a_pendle = TimestampMS(1726757699000), '295.166018766331437412', '1145.856590417709400049', '4.833981233668562588', Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827')  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=222,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -111,7 +111,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             notes=f'Set PENDLE spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 21255',  # noqa: E501
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=223,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -123,7 +123,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=224,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -135,7 +135,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=225,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -163,7 +163,7 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
     expected_events = [
         EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -175,7 +175,7 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -187,7 +187,7 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -214,7 +214,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
     timestamp, approval, amount_out, amount_in, fee_amount = TimestampMS(1718357603000), '115792089237316195423570985008687907853269984665640564039457.584007913129639935', '4987.831513391671511611', '0.861165556733956932', '12.168486608328488389'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -226,7 +226,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             notes=f'Set FLT spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to {approval}',  # noqa: E501
             address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -238,7 +238,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -250,7 +250,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -279,7 +279,7 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
     expected_events = [
         EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -291,7 +291,7 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -303,7 +303,7 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -346,7 +346,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
 
     expected_events = [
         EvmEvent(  # approval
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -359,7 +359,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
 
         ), EvmSwapEvent(  # 1st swap with FUND
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=41,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -371,7 +371,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=42,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -383,7 +383,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=43,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -395,7 +395,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(  # 2nd swap with USDT
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=44,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -407,7 +407,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=45,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -419,7 +419,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=46,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -443,7 +443,7 @@ def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1676987159000),
             location=Location.ETHEREUM,
@@ -455,7 +455,7 @@ def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.001768460133875456 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1676987159000),
             location=Location.ETHEREUM,
@@ -480,7 +480,7 @@ def test_place_xdai_order(gnosis_inquirer, gnosis_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1691568565000),
             location=Location.GNOSIS,
@@ -492,7 +492,7 @@ def test_place_xdai_order(gnosis_inquirer, gnosis_accounts):
             notes='Burn 0.0000901568 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1691568565000),
             location=Location.GNOSIS,
@@ -520,7 +520,7 @@ def test_swap_bnb_to_aave(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
     expected_events = [
         EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1759334123000)),
             location=Location.BINANCE_SC,
@@ -532,7 +532,7 @@ def test_swap_bnb_to_aave(
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BINANCE_SC,
@@ -544,7 +544,7 @@ def test_swap_bnb_to_aave(
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BINANCE_SC,
@@ -571,7 +571,7 @@ def test_bnb_create_order(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1759334099000)),
             location=Location.BINANCE_SC,
@@ -583,7 +583,7 @@ def test_bnb_create_order(
             notes=f'Burn {gas_amount} BNB for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BINANCE_SC,
@@ -608,7 +608,7 @@ def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1677040511000),
             location=Location.ETHEREUM,
@@ -620,7 +620,7 @@ def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.001171136978414093 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1677040511000),
             location=Location.ETHEREUM,
@@ -645,7 +645,7 @@ def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1697119590000),
             location=Location.GNOSIS,
@@ -657,7 +657,7 @@ def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts):
             notes='Burn 0.000369223819835234 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1697119590000),
             location=Location.GNOSIS,
@@ -682,7 +682,7 @@ def test_refund_eth_order(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1677055175000),
             location=Location.ETHEREUM,
@@ -707,7 +707,7 @@ def test_refund_gnosis_order(gnosis_inquirer, gnosis_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1696381750000),
             location=Location.GNOSIS,
@@ -737,7 +737,7 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
     expected_events = [
         EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -749,7 +749,7 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -761,7 +761,7 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -796,7 +796,7 @@ def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             amount=FVal(0.006544511735317699),
             location_label=user_address,
             notes='Burn 0.006544511735317699 ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=379,
@@ -808,7 +808,7 @@ def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             amount=amount,
             location_label=user_address,
             notes=f'Claim {amount} vCOW from cowswap airdrop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=ZERO_ADDRESS,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_mainnet'},
@@ -835,7 +835,7 @@ def test_gnosis_claim_airdrop(gnosis_inquirer, gnosis_accounts):
             amount=FVal(0.000121524),
             location_label=user_address,
             notes='Burn 0.000121524 XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=23,
@@ -847,7 +847,7 @@ def test_gnosis_claim_airdrop(gnosis_inquirer, gnosis_accounts):
             amount=amount,
             location_label=user_address,
             notes=f'Claim {amount} vCOW from cowswap airdrop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=ZERO_ADDRESS,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
@@ -874,7 +874,7 @@ def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
             amount=FVal(gas),
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1,
@@ -886,7 +886,7 @@ def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
             amount=FVal(amount),
             location_label=user_address,
             notes=f'Exchange {amount} vested vCOW for COW',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0xD057B63f5E69CF1B929b356b579Cba08D7688048'),
         ), EvmEvent(
@@ -899,7 +899,7 @@ def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
             amount=FVal(amount),
             location_label=user_address,
             notes=f'Claim {amount} COW from vesting tokens',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB'),
         ),
@@ -925,7 +925,7 @@ def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts):
             amount=FVal(gas),
             location_label=user_address,
             notes=f'Burn {gas} XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1,
@@ -937,7 +937,7 @@ def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts):
             amount=FVal(amount),
             location_label=user_address,
             notes=f'Exchange {amount} vested vCOW for COW',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0xc20C9C13E853fc64d054b73fF21d3636B2d97eaB'),
         ), EvmEvent(
@@ -950,7 +950,7 @@ def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts):
             amount=FVal(amount),
             location_label=user_address,
             notes=f'Claim {amount} COW from vesting tokens',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x177127622c4A00F3d409B75571e12cB3c8973d3c'),
         ),
@@ -975,7 +975,7 @@ def test_gnosis_claim_airdrop_with_xdai_payment(gnosis_inquirer, gnosis_accounts
             amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
             sequence_index=1,
@@ -986,7 +986,7 @@ def test_gnosis_claim_airdrop_with_xdai_payment(gnosis_inquirer, gnosis_accounts
             amount=FVal(payment_amount),
             location_label=user_address,
             notes=f'Pay {payment_amount} XDAI to claim vCOW',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=(vcow_address := A_GNOSIS_VCOW.resolve_to_evm_token().evm_address),
         ), EvmSwapEvent(
@@ -998,7 +998,7 @@ def test_gnosis_claim_airdrop_with_xdai_payment(gnosis_inquirer, gnosis_accounts
             amount=FVal(claim_amount),
             location_label=user_address,
             notes=f'Claim {claim_amount} vCOW from cowswap airdrop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=vcow_address,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
@@ -1024,7 +1024,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} XDAI for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=10,
@@ -1036,7 +1036,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             amount=FVal(claim1_amount),
             location_label=user_address,
             notes=f'Claim {claim1_amount} vCOW from cowswap airdrop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=ZERO_ADDRESS,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
@@ -1049,7 +1049,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             amount=FVal(payment_amount),
             location_label=user_address,
             notes=f'Pay {payment_amount} GNO to claim vCOW',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=(address := string_to_evm_address('0xcA771eda0c70aA7d053aB1B25004559B918FE662')),  # noqa: E501
         ), EvmSwapEvent(
@@ -1061,7 +1061,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             amount=FVal(claim2_amount),
             location_label=user_address,
             notes=f'Claim {claim2_amount} vCOW from cowswap airdrop',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_COWSWAP,
             address=address,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
@@ -1081,7 +1081,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
     swapped_amount, received_amount, fee_amount, timestamp = '0.208028640823960926', '0.228831', '0.011665366552986548', TimestampMS(1717523107000)  # noqa: E501
     expected_events = [
         EvmEvent(  # approval
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=6,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -1093,7 +1093,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes='Set ARB spending approval of 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985008687907853269984665640564039457.584007913129639935',  # noqa: E501
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=7,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -1105,7 +1105,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=8,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -1117,7 +1117,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -1151,7 +1151,7 @@ def test_gnosis_eure_v2(
         amount=FVal(swap_amount),
         location_label=user_address,
         notes=f'Swap {swap_amount} wstETH in a cowswap market order',
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         counterparty=CPT_COWSWAP,
         address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
     ), EvmSwapEvent(
@@ -1163,11 +1163,11 @@ def test_gnosis_eure_v2(
         amount=FVal(received_amount),
         location_label=user_address,
         notes=f'Receive {received_amount} EURe as the result of a cowswap market order',
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         counterparty=CPT_COWSWAP,
         address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.GNOSIS,
@@ -1191,7 +1191,7 @@ def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_account
     )
     gpv2_vault_relayer_address = string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110')  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=36,
         timestamp=(timestamp := TimestampMS(1753698947000)),
         location=Location.ETHEREUM,
@@ -1203,7 +1203,7 @@ def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_account
         notes=f'Set CVX spending approval of {user_address} by {gpv2_vault_relayer_address} to {approval_amount}',  # noqa: E501
         address=gpv2_vault_relayer_address,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=37,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -1215,7 +1215,7 @@ def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_account
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=38,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -1227,7 +1227,7 @@ def test_swap_cvx_to_eth_indirect_settlement(ethereum_inquirer, ethereum_account
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=39,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -1252,7 +1252,7 @@ def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts):
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb26c5209cd2f2f68a8e35468099b3926037566c59dfafc399a94ec8525786f6c')),  # noqa: E501
     )
     assert events == [EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1759128085000)),
         location=Location.GNOSIS,
@@ -1265,7 +1265,7 @@ def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts):
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.GNOSIS,
@@ -1278,7 +1278,7 @@ def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts):
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.GNOSIS,

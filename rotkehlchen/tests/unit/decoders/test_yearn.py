@@ -83,7 +83,7 @@ def test_deposit_yearn_v3(
     timestamp, gas_amount, deposit_amount, receive_amount, approve_amount = TimestampMS(1722289343000), '0.000357122879546472', '7445', '7336.974656759870797081', '57896044618658097711785492504343953926634992332820282012283.792003956564819967'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -95,7 +95,7 @@ def test_deposit_yearn_v3(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=213,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -107,7 +107,7 @@ def test_deposit_yearn_v3(
             notes=f'Set crvUSD spending approval of {user_address} by {vault_address} to {approve_amount}',  # noqa: E501
             address=vault_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=214,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -120,7 +120,7 @@ def test_deposit_yearn_v3(
             counterparty=CPT_YEARN_V3,
             address=vault_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=215,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -164,7 +164,7 @@ def test_withdraw_yearn_v3(
     user_address, timestamp, gas_amount, spend_amount, withdraw_amount = ethereum_accounts[0], TimestampMS(1727442071000), '0.001061009713017075', '499.439625255006111083', '515.966865078770444084'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -176,7 +176,7 @@ def test_withdraw_yearn_v3(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -189,7 +189,7 @@ def test_withdraw_yearn_v3(
             counterparty=CPT_YEARN_V3,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -233,7 +233,7 @@ def test_deposit_yearn_v2(
     timestamp, user_address, gas_amount, deposit_amount, receive_amount, approve_amount = TimestampMS(1729145687000), ethereum_accounts[0], '0.001446241576196176', '38541.366598671832692528', '38514.207134567395983686', '57896044618658097711785492504343953926634992332820281981187.425405284732127439'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -245,7 +245,7 @@ def test_deposit_yearn_v2(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=365,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -257,7 +257,7 @@ def test_deposit_yearn_v2(
             notes=f'Set crvDOLA spending approval of {user_address} by {YEARN_PARTNER_TRACKER} to {approve_amount}',  # noqa: E501
             address=YEARN_PARTNER_TRACKER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=366,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -270,7 +270,7 @@ def test_deposit_yearn_v2(
             counterparty=CPT_YEARN_V2,
             address=YEARN_PARTNER_TRACKER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=367,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -314,7 +314,7 @@ def test_increase_deposit_yearn_v2(
     timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1729346255000), ethereum_accounts[0], '0.0020739662607066', '10000', '9035.10865'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -326,7 +326,7 @@ def test_increase_deposit_yearn_v2(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -339,7 +339,7 @@ def test_increase_deposit_yearn_v2(
             counterparty=CPT_YEARN_V2,
             address=YEARN_PARTNER_TRACKER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -383,7 +383,7 @@ def test_withdraw_yearn_v2(
     timestamp, user_address, gas_amount, spend_amount, withdraw_amount, = TimestampMS(1724060255000), ethereum_accounts[0], '0.001505082528630685', '45.146296079003811902', '48.170851555046499871'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -395,7 +395,7 @@ def test_withdraw_yearn_v2(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -408,7 +408,7 @@ def test_withdraw_yearn_v2(
             counterparty=CPT_YEARN_V2,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -435,7 +435,7 @@ def test_deposit_yearn_v2_without_logs(
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1667679923000),
             location=Location.ETHEREUM,
@@ -447,7 +447,7 @@ def test_deposit_yearn_v2_without_logs(
             notes='Burn 0.001003537266292329 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=157,
             timestamp=TimestampMS(1667679923000),
             location=Location.ETHEREUM,
@@ -459,7 +459,7 @@ def test_deposit_yearn_v2_without_logs(
             notes='Set YFI spending approval of 0xb524c787669185E11d01C645D1910631e04Fa5Eb by 0xdb25cA703181E7484a155DD612b06f57E12Be5F0 to 115792089237316195423570985008687907853269984665640564039457.562087073129639935',  # noqa: E501
             address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=158,
             timestamp=TimestampMS(1667679923000),
             location=Location.ETHEREUM,
@@ -472,7 +472,7 @@ def test_deposit_yearn_v2_without_logs(
             counterparty=CPT_YEARN_V2,
             address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=159,
             timestamp=TimestampMS(1667679923000),
             location=Location.ETHEREUM,
@@ -499,7 +499,7 @@ def test_withdraw_yearn_v2_without_logs(
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1667180495000),
             location=Location.ETHEREUM,
@@ -511,7 +511,7 @@ def test_withdraw_yearn_v2_without_logs(
             notes='Burn 0.000631154785993836 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1667180495000),
             location=Location.ETHEREUM,
@@ -524,7 +524,7 @@ def test_withdraw_yearn_v2_without_logs(
             counterparty=CPT_YEARN_V2,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1667180495000),
             location=Location.ETHEREUM,
@@ -551,7 +551,7 @@ def test_deposit_yearn_v1(
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1618272693000),
             location=Location.ETHEREUM,
@@ -563,7 +563,7 @@ def test_deposit_yearn_v1(
             notes='Burn 0.007502376 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1618272693000),
             location=Location.ETHEREUM,
@@ -576,7 +576,7 @@ def test_deposit_yearn_v1(
             counterparty=CPT_YEARN_V1,
             address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1618272693000),
             location=Location.ETHEREUM,
@@ -603,7 +603,7 @@ def test_withdraw_yearn_v1(
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1633988135000),
             location=Location.ETHEREUM,
@@ -615,7 +615,7 @@ def test_withdraw_yearn_v1(
             notes='Burn 0.008944164419689952 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1633988135000),
             location=Location.ETHEREUM,
@@ -628,7 +628,7 @@ def test_withdraw_yearn_v1(
             counterparty=CPT_YEARN_V1,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1633988135000),
             location=Location.ETHEREUM,
@@ -656,7 +656,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
@@ -668,7 +668,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.0108951 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=224,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
@@ -681,7 +681,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             counterparty=None,
             address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=225,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
@@ -694,7 +694,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_YEARN_V2,
             address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=226,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
@@ -741,7 +741,7 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
     user_address, timestamp, gas, vault_amount, underlying_amount = ethereum_accounts[0], TimestampMS(1691423519000), '0.028290459798220144', '507845.778194128464278875', '540236.846296294579041898'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -753,7 +753,7 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -766,7 +766,7 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
             counterparty=CPT_YEARN_V2,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -793,7 +793,7 @@ def test_yearn_v3_curve_savings_deposit(
     tx_hash = deserialize_evm_tx_hash('0x516d98ed5c091bb2f452742b1a4079f2084f525be3662b026159a1ed7a9bef66')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1741194983000)),
         location=Location.ETHEREUM,
@@ -805,7 +805,7 @@ def test_yearn_v3_curve_savings_deposit(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=285,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -817,7 +817,7 @@ def test_yearn_v3_curve_savings_deposit(
         notes=f'Set crvUSD spending approval of {user_address} by {curve_savings_vault.evm_address} to {approve_amount}',  # noqa: E501
         address=curve_savings_vault.evm_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=286,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -830,7 +830,7 @@ def test_yearn_v3_curve_savings_deposit(
         counterparty=CPT_CURVE,
         address=curve_savings_vault.evm_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=287,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -856,7 +856,7 @@ def test_yearn_v3_curve_savings_withdraw(
     tx_hash = deserialize_evm_tx_hash('0x1d5db358dfdec9f554e81dedf0395b857db30fdca838c36c05cceaae00768cad')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1741204907000)),
         location=Location.ETHEREUM,
@@ -868,7 +868,7 @@ def test_yearn_v3_curve_savings_withdraw(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -881,7 +881,7 @@ def test_yearn_v3_curve_savings_withdraw(
         counterparty=CPT_CURVE,
         address=curve_savings_vault.evm_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,

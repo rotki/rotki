@@ -828,7 +828,7 @@ class CreateHistoryEventSchema(Schema):
 
     class BaseEvmEventSchema(Schema):
         """Base schema for EVM events. Used for EvmEvents and EvmSwapEvents."""
-        tx_hash = EVMTransactionHashField(required=True)
+        tx_ref = EVMTransactionHashField(required=True)
         event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         counterparty = EmptyAsNoneStringField(load_default=None)
         address = EvmAddressField(load_default=None)
@@ -837,7 +837,7 @@ class CreateHistoryEventSchema(Schema):
 
     class BaseSolanaEventSchema(Schema):
         """Base schema for Solana events. Used for SolanaEvents and SolanaSwapEvents."""
-        signature = SolanaSignatureField(required=True)
+        tx_ref = SolanaSignatureField(required=True)
         event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         counterparty = EmptyAsNoneStringField(load_default=None)
         address = SolanaAddressField(load_default=None)
@@ -991,7 +991,7 @@ class CreateHistoryEventSchema(Schema):
             return {'events': [EthBlockEvent(**data)]}
 
     class CreateEthDepositEventEventSchema(BaseSchema):
-        tx_hash = EVMTransactionHashField(required=True)
+        tx_ref = EVMTransactionHashField(required=True)
         depositor = EvmAddressField(required=True)
         event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         sequence_index = fields.Integer(required=True)
@@ -1209,7 +1209,7 @@ class CreateHistoryEventSchema(Schema):
         def create_swap_event(self, data: dict[str, Any], **kwargs: Any) -> EvmSwapEvent:
             """Create an EvmSwapEvent with EVM-specific fields"""
             return EvmSwapEvent(
-                tx_hash=data['tx_hash'],
+                tx_ref=data['tx_ref'],
                 address=data['address'],
                 location=data['location'],
                 **kwargs,
@@ -1220,7 +1220,7 @@ class CreateHistoryEventSchema(Schema):
         def create_swap_event(self, data: dict[str, Any], **kwargs: Any) -> SolanaSwapEvent:
             """Create a SolanaSwapEvent with Solana-specific fields"""
             return SolanaSwapEvent(
-                signature=data['signature'],
+                tx_ref=data['tx_ref'],
                 address=data['address'],
                 **kwargs,
             )

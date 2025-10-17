@@ -36,7 +36,7 @@ def test_basenames_register(
     timestamp, user_address, gas_amount, token_id = TimestampMS(1726738619000), base_accounts[0], '0.000001963384627852', 26612040215479394739615825115912800930061094786769410446114278812336794170041  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -48,7 +48,7 @@ def test_basenames_register(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=182,
             timestamp=timestamp,
             location=Location.BASE,
@@ -61,7 +61,7 @@ def test_basenames_register(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRY,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=183,
             timestamp=timestamp,
             location=Location.BASE,
@@ -74,7 +74,7 @@ def test_basenames_register(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=186,
             timestamp=timestamp,
             location=Location.BASE,
@@ -87,7 +87,7 @@ def test_basenames_register(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_L2_RESOLVER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=189,
             timestamp=timestamp,
             location=Location.BASE,
@@ -100,7 +100,7 @@ def test_basenames_register(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRY,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=190,
             timestamp=timestamp,
             location=Location.BASE,
@@ -113,7 +113,7 @@ def test_basenames_register(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=191,
             timestamp=timestamp,
             location=Location.BASE,
@@ -126,7 +126,7 @@ def test_basenames_register(
             address=BASENAMES_REGISTRAR_CONTROLLER,
             extra_data={'name': 'yabir.base.eth', 'expires': 1758296219},
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=192,
             timestamp=timestamp,
             location=Location.BASE,
@@ -152,7 +152,7 @@ def test_basenames_register_with_discount(
     timestamp, user_address, gas_amount, token_id = TimestampMS(1730993703000), base_accounts[0], '0.000005269375874545', 7069226722341729763252382492637378743849472286311622838562285205711946962668  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -164,7 +164,7 @@ def test_basenames_register_with_discount(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=402,
             timestamp=timestamp,
             location=Location.BASE,
@@ -177,7 +177,7 @@ def test_basenames_register_with_discount(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRY,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=403,
             timestamp=timestamp,
             location=Location.BASE,
@@ -190,7 +190,7 @@ def test_basenames_register_with_discount(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=406,
             timestamp=timestamp,
             location=Location.BASE,
@@ -203,7 +203,7 @@ def test_basenames_register_with_discount(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_L2_RESOLVER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=409,
             timestamp=timestamp,
             location=Location.BASE,
@@ -216,7 +216,7 @@ def test_basenames_register_with_discount(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRY,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=410,
             timestamp=timestamp,
             location=Location.BASE,
@@ -229,7 +229,7 @@ def test_basenames_register_with_discount(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=411,
             timestamp=timestamp,
             location=Location.BASE,
@@ -242,7 +242,7 @@ def test_basenames_register_with_discount(
             address=BASENAMES_REGISTRAR_CONTROLLER,
             extra_data={'name': 'javxq.base.eth', 'expires': 1762551303},
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=412,
             timestamp=timestamp,
             location=Location.BASE,
@@ -268,7 +268,7 @@ def test_basenames_set_attribute(
     timestamp, user_address, gas_amount = TimestampMS(1730993863000), base_accounts[0], '0.000000860174471941'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -280,7 +280,7 @@ def test_basenames_set_attribute(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=444,
             timestamp=timestamp,
             location=Location.BASE,
@@ -307,7 +307,7 @@ def test_basenames_content_hash_changed(
     timestamp, user_address, gas_amount = TimestampMS(1725571165000), base_accounts[0], '0.000000178301347708'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -319,7 +319,7 @@ def test_basenames_content_hash_changed(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=341,
             timestamp=timestamp,
             location=Location.BASE,
@@ -372,7 +372,7 @@ def test_basenames_transfer_name(database, base_inquirer, action, base_accounts,
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, token_id = TimestampMS(1731055033000), 112426549028048856546593988202926666418642845280196262619695088491431122056723  # noqa: E501
     gas_event = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.BASE,
@@ -389,7 +389,7 @@ def test_basenames_transfer_name(database, base_inquirer, action, base_accounts,
     if action != 'Receive':
         expected_events.append(gas_event)
     expected_events.append(EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=sequence_index,
         timestamp=timestamp,
         location=Location.BASE,
@@ -416,7 +416,7 @@ def test_basenames_new_owner(
     timestamp, user_address, gas_amount = TimestampMS(1730924307000), base_accounts[0], '0.000001274267527917'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -428,7 +428,7 @@ def test_basenames_new_owner(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=294,
             timestamp=timestamp,
             location=Location.BASE,
@@ -441,7 +441,7 @@ def test_basenames_new_owner(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRY,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=295,
             timestamp=timestamp,
             location=Location.BASE,

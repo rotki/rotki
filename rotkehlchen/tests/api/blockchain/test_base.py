@@ -1860,7 +1860,7 @@ def test_remove_solana_address_with_transactions(rotkehlchen_api_server: 'APISer
             events_db.add_history_events(
                 write_cursor=write_cursor,
                 history=[SolanaEvent(
-                    signature=tx.signature,
+                    tx_ref=tx.signature,
                     sequence_index=0,
                     timestamp=ts_sec_to_ms(tx.block_time),
                     event_type=event_type,

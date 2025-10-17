@@ -294,7 +294,7 @@ def test_no_logs_and_zero_eth(
     )
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -376,7 +376,7 @@ def test_simple_erc20_transfer(
     )
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=Timestamp(0),
             location=Location.from_chain_id(chain),
@@ -390,7 +390,7 @@ def test_simple_erc20_transfer(
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=74,
             timestamp=Timestamp(0),
             location=Location.from_chain_id(chain),
@@ -460,7 +460,7 @@ def test_eth_transfer(
     )
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=Timestamp(0),
             location=Location.from_chain_id(chain),
@@ -475,7 +475,7 @@ def test_eth_transfer(
             extra_data=None,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=0,
             location=Location.from_chain_id(chain),
@@ -544,7 +544,7 @@ def test_eth_spend(
     )
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=Timestamp(0),
             location=Location.from_chain_id(chain),
@@ -559,7 +559,7 @@ def test_eth_spend(
             extra_data=None,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=0,
             location=Location.from_chain_id(chain),
@@ -620,7 +620,7 @@ def test_eth_deposit(
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=Timestamp(0),
             location=Location.ETHEREUM,
@@ -635,7 +635,7 @@ def test_eth_deposit(
             extra_data=None,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -879,7 +879,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
 
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1438269973000),
             location=Location.ETHEREUM,
@@ -891,7 +891,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Receive 200 ETH from {ZERO_ADDRESS}',
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1438269973000),
             location=Location.ETHEREUM,
@@ -975,7 +975,7 @@ def test_failed_transaction(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas = '0.00056954114283532'
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(1659633427000),
         location=Location.ETHEREUM,

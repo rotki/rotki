@@ -287,7 +287,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 borrow_token, amount = token1, asset_normalized_value(amount_1_borrowed, token1)
 
             borrow_event = self.base.make_event_next_index(
-                tx_hash=context.transaction.tx_hash,
+                tx_ref=context.transaction.tx_hash,
                 timestamp=context.transaction.timestamp,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -299,7 +299,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 counterparty=CPT_EXTRAFI,
             )
             deposit_event = self.base.make_event_next_index(
-                tx_hash=context.transaction.tx_hash,
+                tx_ref=context.transaction.tx_hash,
                 timestamp=context.transaction.timestamp,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,

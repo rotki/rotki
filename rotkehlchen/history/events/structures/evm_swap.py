@@ -23,7 +23,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
 
     def __init__(
             self,
-            tx_hash: EVMTxHash,
+            tx_ref: EVMTxHash,
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -51,7 +51,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
         The event_identifier is initialized from EvmEvent constructor
         """
         super().__init__(
-            tx_hash=tx_hash,
+            tx_ref=tx_ref,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
@@ -96,7 +96,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             event_type=HistoryEventType.deserialize(entry[9]),  # type: ignore  # event type and subtype should always be correct from the DB
             event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
-            tx_hash=deserialize_evm_tx_hash(entry[13]),
+            tx_ref=deserialize_evm_tx_hash(entry[13]),
             counterparty=entry[14],
             address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
         )
@@ -112,7 +112,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
                 **cls._deserialize_swap_data(
                     base_data=(base_data := cls._deserialize_base_history_data(data)),
                 ),
-                tx_hash=deserialize_evm_tx_hash(data['tx_hash']),
+                tx_ref=deserialize_evm_tx_hash(data['tx_ref']),
                 sequence_index=base_data['sequence_index'],
                 counterparty=deserialize_optional(data['counterparty'], str),
                 address=deserialize_optional(data['address'], string_to_evm_address),
@@ -122,7 +122,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
 
     def __repr__(self) -> str:
         fields = self._history_base_entry_repr_fields() + [
-            f'{self.tx_hash=}',
+            f'{self.tx_ref=}',
             f'{self.counterparty=}',
             f'{self.address=}',
         ]
@@ -131,7 +131,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
     def __str__(self) -> str:
         return (
             f'{self.event_subtype} EvmSwapEvent in {self.location} with '
-            f'tx_hash={self.tx_hash.hex()} and time '
+            f'tx_ref={self.tx_ref!s} and time '
             f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
         )
 

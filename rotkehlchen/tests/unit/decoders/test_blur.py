@@ -29,7 +29,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
     timestamp, stake_amount, gas_fees = TimestampMS(1702156943000), '6350.3577325406', '0.005302886935404245'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -41,7 +41,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=82,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -54,7 +54,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
             counterparty=CPT_BLUR,
             address=string_to_evm_address('0xeC2432a227440139DDF1044c3feA7Ae03203933E'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=83,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -79,7 +79,7 @@ def test_blur_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
     timestamp, stake_amount, gas_fees = TimestampMS(1715478947000), '903.93', '0.000533750631510369'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -91,7 +91,7 @@ def test_blur_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=154,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -125,7 +125,7 @@ def test_blur_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             amount=FVal(gas_fees),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=242,
@@ -137,7 +137,7 @@ def test_blur_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             amount=FVal(unstake_amount),
             location_label=ethereum_accounts[0],
             notes=f'Unstake {unstake_amount} BLUR',
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             address=BLUR_STAKING_CONTRACT,
             counterparty=CPT_BLUR,
         ),
