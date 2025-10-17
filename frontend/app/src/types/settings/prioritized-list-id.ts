@@ -1,6 +1,7 @@
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { PriceOracle } from '@/types/settings/price-oracle';
+import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/utils/file';
 
 export const EmptyListId = 'empty_list_id';
 
@@ -31,31 +32,31 @@ export const PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM: PrioritizedListItemData<Address
 };
 
 export const CRYPTOCOMPARE_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  icon: './assets/images/services/cryptocompare.svg',
+  icon: getPublicServiceImagePath('cryptocompare.svg'),
   identifier: PriceOracle.CRYPTOCOMPARE,
 };
 
 export const COINGECKO_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  icon: './assets/images/services/coingecko.svg',
+  icon: getPublicServiceImagePath('coingecko.svg'),
   identifier: PriceOracle.COINGECKO,
 };
 
 export const DEFILAMA_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  icon: './assets/images/services/defillama.svg',
+  icon: getPublicServiceImagePath('defillama.svg'),
   identifier: PriceOracle.DEFILLAMA,
 };
 
 export const ALCHEMY_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  icon: './assets/images/services/alchemy.svg',
+  icon: getPublicServiceImagePath('alchemy.svg'),
   identifier: PriceOracle.ALCHEMY,
 };
 
 export const UNISWAP2_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  icon: './assets/images/protocols/uniswap.svg',
+  icon: getPublicProtocolImagePath('uniswap.svg'),
   identifier: PriceOracle.UNISWAP2,
 };
 
 export const UNISWAP3_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  icon: './assets/images/protocols/uniswap.svg',
+  icon: getPublicProtocolImagePath('uniswap.svg'),
   identifier: PriceOracle.UNISWAP3,
 };

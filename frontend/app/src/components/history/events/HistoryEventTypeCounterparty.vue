@@ -2,6 +2,7 @@
 import AppImage from '@/components/common/AppImage.vue';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 const props = defineProps<{
   event: { counterparty: string | null; address?: string | null };
@@ -14,7 +15,6 @@ const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
 const { isDark } = useRotkiTheme();
 
 const counterparty = getEventCounterpartyData(event);
-const imagePath = '/assets/images/protocols/';
 
 const useDarkModeImage = computed(() => get(isDark) && get(counterparty)?.darkmodeImage);
 const counterpartyImageSrc = computed<string | undefined>(() => {
@@ -24,11 +24,11 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
     return undefined;
 
   if (get(useDarkModeImage)) {
-    return `${imagePath}/${counterpartyVal.darkmodeImage}`;
+    return getPublicProtocolImagePath(counterpartyVal.darkmodeImage!);
   }
 
   if (counterpartyVal.image) {
-    return `${imagePath}/${counterpartyVal.image}`;
+    return getPublicProtocolImagePath(counterpartyVal.image);
   }
 
   return undefined;

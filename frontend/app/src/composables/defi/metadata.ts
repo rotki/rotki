@@ -6,6 +6,7 @@ import { useDefiApi } from '@/composables/api/defi';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { useMainStore } from '@/store/main';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 export const useDefiMetadata = createSharedComposable(() => {
   const { fetchDefiMetadata } = useDefiApi();
@@ -39,7 +40,7 @@ export const useDefiMetadata = createSharedComposable(() => {
 
   const getDefiImageUrl = (identifier: string, icon: string | undefined): string => {
     const imageName = icon ?? `${get(identifier)}.svg`;
-    return `./assets/images/protocols/${imageName}`;
+    return getPublicProtocolImagePath(imageName);
   };
 
   const getDefiImage = (identifier: MaybeRef<string>): ComputedRef<string> =>

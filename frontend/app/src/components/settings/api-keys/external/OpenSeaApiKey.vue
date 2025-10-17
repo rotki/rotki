@@ -4,6 +4,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
+import { getPublicServiceImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -22,7 +23,7 @@ const status = actionStatus(name);
     :key-set="!!key"
     :title="t('external_services.opensea.title')"
     :subtitle="t('external_services.opensea.description')"
-    image-src="./assets/images/services/opensea.svg"
+    :image-src="getPublicServiceImagePath('opensea.svg')"
     :primary-action="key
       ? t('external_services.replace_key')
       : t('external_services.save_key')"

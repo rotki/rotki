@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
+import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -9,11 +10,11 @@ const { t } = useI18n({ useScope: 'global' });
   <div class="relative">
     <div class="grid lg:grid-cols-2 gap-4 dark:invert-[0.95] dark:hue-rotate-[180deg]">
       <AppImage
-        src="./assets/images/placeholder/theme_manager.png"
+        :src="getPublicPlaceholderImagePath('theme_manager.png')"
         class="-m-2"
       />
       <AppImage
-        src="./assets/images/placeholder/theme_manager.png"
+        :src="getPublicPlaceholderImagePath('theme_manager.png')"
         class="-m-2"
       />
     </div>

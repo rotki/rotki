@@ -4,6 +4,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
+import { getPublicServiceImagePath } from '@/utils/file';
 
 const name = 'defillama';
 
@@ -23,7 +24,7 @@ const link = externalLinks.defillamaApiKey;
     :key-set="!!key"
     :title="t('external_services.defillama.title')"
     :subtitle="t('external_services.defillama.description')"
-    image-src="./assets/images/services/defillama.svg"
+    :image-src="getPublicServiceImagePath('defillama.svg')"
     :primary-action="key
       ? t('external_services.replace_key')
       : t('external_services.save_key')"

@@ -6,6 +6,7 @@ import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balance
 import { Routes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 const name = 'loopring';
 
@@ -30,7 +31,7 @@ const navigateToModules = () => router.push(Routes.SETTINGS_MODULES);
     :key-set="!!key"
     :title="t('external_services.loopring.title')"
     :subtitle="t('external_services.loopring.description')"
-    image-src="./assets/images/protocols/loopring.svg"
+    :image-src="getPublicProtocolImagePath('loopring.svg')"
     :primary-action="key
       ? t('external_services.replace_key')
       : t('external_services.save_key')"

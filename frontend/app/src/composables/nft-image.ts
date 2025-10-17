@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import { useNfts } from '@/composables/assets/nft';
 import { api } from '@/services/rotkehlchen-api';
+import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 interface UseNftImageReturnType {
   shouldRender: ComputedRef<boolean>;
@@ -22,7 +23,7 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
     }
   };
 
-  const placeholder = './assets/images/placeholder/image.svg';
+  const placeholder = getPublicPlaceholderImagePath('image.svg');
 
   const shouldRender = computed<boolean>(() => {
     const media = get(mediaUrl);

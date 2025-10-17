@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { MaybeRef } from '@vueuse/core';
 import { toRem } from '@/utils/data';
+import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const props = withDefaults(
   defineProps<{
@@ -78,7 +79,7 @@ function onLoadStart() {
     />
     <img
       v-else-if="error"
-      src="/assets/images/placeholder/image.svg"
+      :src="getPublicPlaceholderImagePath('image.svg')"
       :class="{ 'object-contain': contain }"
       loading="lazy"
       :style="style"

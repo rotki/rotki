@@ -14,6 +14,7 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 const filters = ref<KrakenStakingDateFilter>({});
 
@@ -100,7 +101,7 @@ onUnmounted(() => {
         <AppImage
           width="64px"
           contain
-          src="/assets/images/protocols/kraken.svg"
+          :src="getPublicProtocolImagePath('kraken.svg')"
         />
       </InternalLink>
 

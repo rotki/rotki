@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 export enum Module {
   MAKERDAO_VAULTS = 'makerdao_vaults',
@@ -33,47 +34,47 @@ export interface SupportedModule {
 
 export const SUPPORTED_MODULES: SupportedModule[] = [
   {
-    icon: './assets/images/protocols/makerdao.svg',
+    icon: getPublicProtocolImagePath('makerdao.svg'),
     identifier: Module.MAKERDAO_VAULTS,
     name: 'MakerDAO Vaults',
   },
   {
-    icon: './assets/images/protocols/makerdao.svg',
+    icon: getPublicProtocolImagePath('makerdao.svg'),
     identifier: Module.MAKERDAO_DSR,
     name: 'MakerDAO DSR',
   },
   {
-    icon: './assets/images/protocols/uniswap.svg',
+    icon: getPublicProtocolImagePath('uniswap.svg'),
     identifier: Module.UNISWAP,
     name: 'Uniswap',
   },
   {
-    icon: './assets/images/protocols/loopring.svg',
+    icon: getPublicProtocolImagePath('loopring.svg'),
     identifier: Module.LOOPRING,
     name: 'Loopring',
   },
   {
-    icon: './assets/images/protocols/ethereum.svg',
+    icon: getPublicProtocolImagePath('ethereum.svg'),
     identifier: Module.ETH2,
     name: 'ETH Staking',
   },
   {
-    icon: './assets/images/protocols/sushiswap.svg',
+    icon: getPublicProtocolImagePath('sushiswap.svg'),
     identifier: Module.SUSHISWAP,
     name: 'SushiSwap',
   },
   {
-    icon: './assets/images/protocols/nfts.png',
+    icon: getPublicProtocolImagePath('nfts.png'),
     identifier: Module.NFTS,
     name: 'NFTs',
   },
   {
-    icon: './assets/images/protocols/pickle.svg',
+    icon: getPublicProtocolImagePath('pickle.svg'),
     identifier: Module.PICKLE,
     name: 'Pickle Finance',
   },
   {
-    icon: './assets/images/protocols/liquity.svg',
+    icon: getPublicProtocolImagePath('liquity.svg'),
     identifier: Module.LIQUITY,
     name: 'Liquity',
   },

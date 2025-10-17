@@ -5,6 +5,7 @@ import BlockscoutApiKey from '@/components/settings/api-keys/external/Blockscout
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { getPublicServiceImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 const { keys } = useExternalApiKeys(t);
@@ -45,7 +46,7 @@ watch([route, supportedChains], ([route, chains]) => {
     hide-action
     :title="t('external_services.blockscout.title')"
     :subtitle="t('external_services.blockscout.description')"
-    image-src="./assets/images/services/blockscout.svg"
+    :image-src="getPublicServiceImagePath('blockscout.svg')"
   >
     <RuiTabs
       v-model="tabIndex"

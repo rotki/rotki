@@ -6,6 +6,7 @@ import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import InternalLink from '@/components/helper/InternalLink.vue';
 import { NoteLocation } from '@/types/notes';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 type NavType = 'eth2' | 'liquity' | 'kraken';
 
@@ -52,17 +53,17 @@ const location = computed({
 const staking = computed<StakingInfo[]>(() => [
   {
     id: 'eth2',
-    image: './assets/images/protocols/ethereum.svg',
+    image: getPublicProtocolImagePath('ethereum.svg'),
     name: t('staking.eth2'),
   },
   {
     id: 'liquity',
-    image: './assets/images/protocols/liquity.png',
+    image: getPublicProtocolImagePath('liquity.png'),
     name: t('staking.liquity'),
   },
   {
     id: 'kraken',
-    image: './assets/images/protocols/kraken.svg',
+    image: getPublicProtocolImagePath('kraken.svg'),
     name: t('staking.kraken'),
   },
 ]);

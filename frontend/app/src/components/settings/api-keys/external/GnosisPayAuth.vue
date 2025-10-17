@@ -14,6 +14,7 @@ import { useWalletConnect } from '@/modules/onchain/wallet-connect/use-wallet-co
 import { isUserRejectedError, WALLET_MODES } from '@/modules/onchain/wallet-constants';
 import { useProviderSelection } from '@/modules/onchain/wallet-providers/use-provider-selection';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
+import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 
 enum GnosisPayError {
@@ -406,7 +407,7 @@ watch(connectedAddress, async (address) => {
       :key-set="!!key"
       :title="t('external_services.gnosispay.title')"
       :subtitle="t('external_services.gnosispay.description')"
-      image-src="./assets/images/services/gnosispay.png"
+      :image-src="getPublicServiceImagePath('gnosispay.png')"
       hide-action
     >
       <template

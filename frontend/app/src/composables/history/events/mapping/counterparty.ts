@@ -5,6 +5,7 @@ import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useScramble } from '@/composables/scramble';
 import { useNotificationsStore } from '@/store/notifications';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 interface Counterparty {
   image: string;
@@ -43,7 +44,6 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
   };
 
   function getBaseCounterpartyData(counterparty: string, isDark?: boolean): Counterparty | undefined {
-    const baseImagePath = '/assets/images/protocols/';
     const excludedCounterparty = ['gas'];
     if (excludedCounterparty.includes(counterparty))
       return undefined;
@@ -55,10 +55,12 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
       if (data) {
         const imageFile = data.darkmodeImage && isDark ? data.darkmodeImage : data.image;
-        return {
-          image: baseImagePath + imageFile,
-          label: data.label || toHumanReadable(counterparty, 'capitalize'),
-        };
+        if (imageFile) {
+          return {
+            image: getPublicProtocolImagePath(imageFile),
+            label: data.label || toHumanReadable(counterparty, 'capitalize'),
+          };
+        }
       }
     }
     return undefined;

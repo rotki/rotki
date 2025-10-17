@@ -2,6 +2,7 @@
 import { toHumanReadable } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 const props = defineProps<{
   counterparty: string;
@@ -14,7 +15,6 @@ const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
 const { isDark } = useRotkiTheme();
 
 const data = getCounterpartyData(counterparty);
-const imagePath = '/assets/images/protocols/';
 
 const useDarkModeImage = computed(() => get(isDark) && get(data).darkmodeImage);
 
@@ -25,11 +25,11 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
     return undefined;
 
   if (get(useDarkModeImage)) {
-    return `${imagePath}/${counterpartyVal.darkmodeImage}`;
+    return getPublicProtocolImagePath(counterpartyVal.darkmodeImage!);
   }
 
   if (counterpartyVal.image) {
-    return `${imagePath}/${counterpartyVal.image}`;
+    return getPublicProtocolImagePath(counterpartyVal.image);
   }
 
   return undefined;

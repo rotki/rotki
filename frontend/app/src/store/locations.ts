@@ -2,6 +2,7 @@ import type { TradeLocationData } from '@/types/history/trade/location';
 import type { AllLocation } from '@/types/location';
 import { toSentenceCase } from '@rotki/common';
 import { useHistoryApi } from '@/composables/api/history';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 export const useLocationStore = defineStore('locations', () => {
   const allLocations = ref<AllLocation>({});
@@ -31,7 +32,7 @@ export const useLocationStore = defineStore('locations', () => {
       };
 
       if (item.image)
-        mapped.image = `./assets/images/protocols/${item.image}`;
+        mapped.image = getPublicProtocolImagePath(item.image);
 
       return mapped;
     });

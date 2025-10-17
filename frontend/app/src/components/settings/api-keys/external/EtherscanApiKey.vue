@@ -6,6 +6,7 @@ import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import { useNotificationsStore } from '@/store/notifications';
+import { getPublicServiceImagePath } from '@/utils/file';
 
 const name = 'etherscan';
 const { t } = useI18n({ useScope: 'global' });
@@ -39,7 +40,7 @@ function removeEtherscanNotification() {
     data-cy="etherscan-api-keys"
     :title="t('external_services.etherscan.title')"
     :subtitle="t('external_services.etherscan.description')"
-    image-src="./assets/images/services/etherscan.svg"
+    :image-src="getPublicServiceImagePath('etherscan.svg')"
     :primary-action="key
       ? t('external_services.replace_key')
       : t('external_services.save_key')"

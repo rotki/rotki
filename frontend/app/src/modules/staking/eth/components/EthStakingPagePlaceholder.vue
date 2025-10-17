@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
+import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 const { isMdAndDown } = useBreakpoint();
 
-function getFullPath(fileName: string) {
-  return `./assets/images/placeholder/${fileName}`;
-}
+const getFullPath = getPublicPlaceholderImagePath;
 </script>
 
 <template>
