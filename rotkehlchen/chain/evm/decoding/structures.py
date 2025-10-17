@@ -23,7 +23,6 @@ class ActionItem:
     asset: Optional['Asset'] = None
     amount: Optional['FVal'] = None
     location_label: str | None = None
-    address: ChecksumEvmAddress | None = None
     to_event_type: Optional['HistoryEventType'] = None
     to_event_subtype: Optional['HistoryEventSubType'] = None
     to_notes: str | None = None

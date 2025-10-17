@@ -199,7 +199,6 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             from_event_subtype=HistoryEventSubType.NONE,
             location_label=user,
             asset=A_DAI,
-            address=self.drips_hub,
             to_event_subtype=HistoryEventSubType.DONATE,
             to_location_label=user,
             to_address=context.tx_log.address,

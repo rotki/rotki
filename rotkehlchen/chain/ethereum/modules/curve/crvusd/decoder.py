@@ -215,7 +215,6 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                     token_amount=reward_raw_amount,
                     token=reward_token,
                 )),
-                address=context.tx_log.address,
                 to_counterparty=CPT_CURVE,
                 to_notes=f'Receive {reward_amount} {reward_token.symbol} from Curve peg keeper update',  # noqa: E501
             ),

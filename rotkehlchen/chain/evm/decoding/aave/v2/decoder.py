@@ -104,7 +104,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
         if context.tx_log.topics[0] != b'K\xec\xcb\x90\xf9\x94\xc3\x1a\xce\xd7\xa2;V\x11\x02\x07(\xa2=\x8e\xc5\xcd\xdd\x1a>\x9d\x97\xb9o\xda\x86f':  # TokenTransferred # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        if self.v3_migration_helper and (to_address := bytes_to_address(context.tx_log.topics[2])) == self.v3_migration_helper and self.base.is_tracked(from_address := bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if self.v3_migration_helper and (bytes_to_address(context.tx_log.topics[2])) == self.v3_migration_helper and self.base.is_tracked(from_address := bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
             token = self.base.get_evm_token(address=context.tx_log.address)
             assert token, 'token should be in the DB. Decoding rule reads it from the DB'
             amount = token_normalized_value(token_amount=int.from_bytes(context.tx_log.data[:32]), token=token)  # noqa: E501
@@ -115,7 +115,6 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
                 asset=token,
                 amount=amount,
                 location_label=from_address,
-                address=to_address,
                 to_event_type=HistoryEventType.MIGRATE,
                 to_event_subtype=HistoryEventSubType.SPEND,
                 to_notes=f'Migrate {amount} {token.symbol} from AAVE v2',

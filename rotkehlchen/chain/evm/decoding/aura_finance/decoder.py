@@ -275,7 +275,6 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
                     amount=withdrawn_amount,
                     location_label=user_address,
                     to_event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-                    address=ZERO_ADDRESS,
                     to_counterparty=CPT_AURA_FINANCE,
                     to_notes=f'Return {withdrawn_amount} {aura_token.symbol_or_name()} to Aura',
                     paired_events_data=((event,), False),

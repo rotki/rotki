@@ -76,7 +76,6 @@ class EchoDecoder(EvmDecoderInterface):
                     amount=fee_amount,
                     location_label=user_address,
                     to_event_subtype=HistoryEventSubType.FEE,
-                    address=FUNDING_CONDUIT,
                     to_counterparty=CPT_ECHO,
                     to_notes=f'Paid {fee_amount} USDC as part of funding an Echo deal',
                 ))
@@ -123,7 +122,6 @@ class EchoDecoder(EvmDecoderInterface):
                     asset=token,
                     amount=amount,
                     location_label=user_address,
-                    address=tx_log.address,
                     to_counterparty=CPT_ECHO,
                     to_notes=f'Refund {amount} USDC from {tx_log.address} on Echo',
                 ))
