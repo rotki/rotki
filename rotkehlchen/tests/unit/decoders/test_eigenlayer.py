@@ -43,7 +43,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
     strategy_addr = string_to_evm_address('0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6')
     a_sweth = Asset('eip155:1/erc20:0xf951E335afb289353dc249e82926178EaC7DEd78')
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -55,7 +55,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=112,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -67,7 +67,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Revoke swETH spending approval of {ethereum_accounts[0]} by {EIGENLAYER_STRATEGY_MANAGER}',  # noqa: E501
         address=EIGENLAYER_STRATEGY_MANAGER,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=113,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -93,7 +93,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts):
     withdrawn_amount = '0.407049270448991651'
     strategy_addr = string_to_evm_address('0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6')
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -105,7 +105,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=152,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -128,7 +128,7 @@ def test_airdrop_claim_s1_phase1(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, claim_amount = TimestampMS(1715680739000), '0.00074757962836592', '110'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -140,7 +140,7 @@ def test_airdrop_claim_s1_phase1(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=253,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -164,7 +164,7 @@ def test_airdrop_claim_s1_phase2(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, claim_amount = TimestampMS(1720527731000), '0.000428532817567424', '110'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -176,7 +176,7 @@ def test_airdrop_claim_s1_phase2(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=752,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -201,7 +201,7 @@ def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_amount, staked_amount = TimestampMS(1715684387000), '0.00141296787957222', '110'
     a_eigen, strategy_addr = Asset(EIGEN_TOKEN_ID), '0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -213,7 +213,7 @@ def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=206,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -225,7 +225,7 @@ def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
         notes=f'Revoke EIGEN spending approval of {ethereum_accounts[0]} by {EIGENLAYER_STRATEGY_MANAGER}',  # noqa: E501
         address=EIGENLAYER_STRATEGY_MANAGER,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=207,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -258,7 +258,7 @@ def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
     )
     timestamp, gas_amount, eigenpod_address = TimestampMS(1715733143000), '0.00133529055565527', '0x664BFef14A62F316175d39D355809D04D2Cb7a23'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -270,7 +270,7 @@ def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=219,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -297,7 +297,7 @@ def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, eigenpod_address, user_address, safe_address = TimestampMS(1715601779000), '0.002212107522528736', '0x081aC22eb8582eF9f5ae596A5E8Df42b451b28b7', ethereum_accounts[0], ethereum_accounts[1]  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -309,7 +309,7 @@ def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=120,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -323,7 +323,7 @@ def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_EIGENLAYER,
         address=EIGENPOD_MANAGER,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=121,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -346,7 +346,7 @@ def test_create_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, withdrawal_amount = TimestampMS(1715768063000), '0.036853617070145433', '0.021045998'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -358,7 +358,7 @@ def test_create_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=243,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -384,7 +384,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
     )
     user_address, timestamp, gas_amount, amount = ethereum_accounts[0], TimestampMS(1718731823000), '0.001066996197578511', '0.514712311805302523'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -396,7 +396,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=264,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -410,7 +410,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         address=EIGENLAYER_DELEGATION,
         extra_data={'amount': amount},
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=265,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -456,7 +456,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
     user_address, timestamp, gas_amount, amount, cbeth_strategy = ethereum_accounts[0], TimestampMS(1718879927000), '0.000880395253730733', '0.108703837292797063', string_to_evm_address('0x54945180dB7943c0ed0FEE7EdaB2Bd24620256bc')  # noqa: E501
     cbeth = Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704')
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -468,7 +468,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=581,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -481,7 +481,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         counterparty=CPT_EIGENLAYER,
         address=cbeth_strategy,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=582,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -533,7 +533,7 @@ def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, withdrawal_amount, user_address, safe_address = TimestampMS(1716123995000), '0.000369830372847984', '0.004538247', ethereum_accounts[0], ethereum_accounts[1]  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -545,7 +545,7 @@ def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -558,7 +558,7 @@ def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_EIGENLAYER,
         address=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=160,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -582,7 +582,7 @@ def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
     timestamp, eth_restaked = TimestampMS(1715866679000), '160'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=373,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -596,7 +596,7 @@ def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
             address=EIGENLAYER_DELEGATION,
             extra_data={'amount': '160'},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=374,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -630,7 +630,7 @@ def test_eigenpod_start_checkpoint(ethereum_inquirer, ethereum_accounts):
     timestamp, gas, user_address = TimestampMS(1725469127000), '0.000975571949515495', ethereum_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -642,7 +642,7 @@ def test_eigenpod_start_checkpoint(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=248,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -673,7 +673,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
     timestamp, gas, user_address = TimestampMS(1725469151000), '0.001280636519396161', ethereum_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -685,7 +685,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=280,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -698,7 +698,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
             counterparty=CPT_EIGENLAYER,
             address=eigenpod_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=282,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -711,7 +711,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
             counterparty=CPT_EIGENLAYER,
             address=EIGENPOD_MANAGER,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=284,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -734,7 +734,7 @@ def test_avs_rewards_claim(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, rewards_amount, user_address = TimestampMS(1726209683000), '0.000290353368116672', '0.000010159378047479', ethereum_accounts[0]  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -746,7 +746,7 @@ def test_avs_rewards_claim(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=126,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -769,7 +769,7 @@ def test_airdrop_claim_s2(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, claim_amount = TimestampMS(1726667207000), '0.00109526054949798', '4.556109113437771'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -781,7 +781,7 @@ def test_airdrop_claim_s2(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=154,
         timestamp=timestamp,
         location=Location.ETHEREUM,

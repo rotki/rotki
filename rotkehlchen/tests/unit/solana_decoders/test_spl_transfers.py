@@ -28,7 +28,7 @@ def test_spl_token_transfer(
         signature=(signature := deserialize_tx_signature('28f8jFzCX3D1dJ5sZSABgVmrziAQu3hPeERjRoKMJwvQGrahxDfSRARpgX4rBeGcYvGSMu77QPoEqYdyYTzx9TY7')),  # noqa: E501
     )
     assert events == [SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1735930769000)),
         event_type=HistoryEventType.SPEND,
@@ -39,7 +39,7 @@ def test_spl_token_transfer(
         notes=f'Spend {fee_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=1,
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
@@ -68,7 +68,7 @@ def test_token2022_transfer(
         signature=(signature := deserialize_tx_signature('3oR9ryME5VTS2qWZ25AhAwKWYLsYMLigCcFKRh6DiyFGtC7m7e17mBihB84XzL1EptM6mCjjyRp6uovHfHgcZrMA')),  # noqa: E501
     )
     assert events == [SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=TimestampMS(1759754588000),
         event_type=HistoryEventType.RECEIVE,
@@ -92,7 +92,7 @@ def test_nft_transfer(
         signature=(signature := deserialize_tx_signature('5ChR6nE7SssBX6FrMJCXMb3Z93uQFWtET15RLhxCg1GCWbgaQMAXPH4C6SqrannjvsCeeR7Kq9qNPas3Ehsh76Pm')),  # noqa: E501
     )
     assert events == [SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1759756642000)),
         event_type=HistoryEventType.SPEND,
@@ -103,7 +103,7 @@ def test_nft_transfer(
         notes=f'Spend {fee_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=1,
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,

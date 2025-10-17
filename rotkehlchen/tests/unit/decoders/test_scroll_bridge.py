@@ -38,7 +38,7 @@ def test_deposit_eth_from_ethereum_to_scroll(ethereum_inquirer, ethereum_account
     gas, amount, bridging_fee = '0.006936488814808056', '0.1179', '0.0002604'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -50,7 +50,7 @@ def test_deposit_eth_from_ethereum_to_scroll(ethereum_inquirer, ethereum_account
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -63,7 +63,7 @@ def test_deposit_eth_from_ethereum_to_scroll(ethereum_inquirer, ethereum_account
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -89,7 +89,7 @@ def test_receive_eth_on_scroll(scroll_inquirer, scroll_accounts):
     amount = '0.1179'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -115,7 +115,7 @@ def test_withdraw_eth_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts):
     gas, amount = '0.00021234172322581', '0.6'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -127,7 +127,7 @@ def test_withdraw_eth_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -153,7 +153,7 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
     gas, amount = '0.003718494016624992', '0.6'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -165,7 +165,7 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -191,7 +191,7 @@ def test_deposit_erc20_from_ethereum_to_scroll(ethereum_inquirer, ethereum_accou
     gas, fee, amount = '0.005582179923194343', '0.000122880', '100'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -203,7 +203,7 @@ def test_deposit_erc20_from_ethereum_to_scroll(ethereum_inquirer, ethereum_accou
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -216,7 +216,7 @@ def test_deposit_erc20_from_ethereum_to_scroll(ethereum_inquirer, ethereum_accou
             counterparty=CPT_SCROLL,
             address=string_to_evm_address(L1_GATEWAY_ROUTER),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=269,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -242,7 +242,7 @@ def test_receive_erc20_on_scroll(scroll_inquirer, scroll_accounts):
     amount = '100'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -269,7 +269,7 @@ def test_withdraw_erc20_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts
     gas, amount = '0.000430578838556533', '1000.001993'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -281,7 +281,7 @@ def test_withdraw_erc20_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -314,7 +314,7 @@ def test_withdraw_usdc_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts)
     gas, amount = '0.000383984852231895', '450'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -326,7 +326,7 @@ def test_withdraw_usdc_from_scroll_to_ethereum(scroll_inquirer, scroll_accounts)
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=25,
             timestamp=timestamp,
             location=Location.SCROLL,
@@ -352,7 +352,7 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
     gas, amount = '0.002531473518821568', '1647'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -364,7 +364,7 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=549,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -390,7 +390,7 @@ def test_deposit_send_message_ethereum(ethereum_inquirer, ethereum_accounts):
     gas, fee, amount = '0.00353129959117221', '0.0000811440', '0.034'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -402,7 +402,7 @@ def test_deposit_send_message_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -415,7 +415,7 @@ def test_deposit_send_message_ethereum(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -441,7 +441,7 @@ def test_receive_deposit_message_scroll(scroll_inquirer, scroll_accounts):
     amount = '0.034'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.SCROLL,

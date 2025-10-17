@@ -36,7 +36,7 @@ def test_added_owner(ethereum_inquirer, ethereum_accounts):
     gas_amount_str = '0.004625442'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -48,7 +48,7 @@ def test_added_owner(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=153,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -82,7 +82,7 @@ def test_removed_owner(ethereum_inquirer, ethereum_accounts):
     gas_amount_str = '0.00130834'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -94,7 +94,7 @@ def test_removed_owner(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=101,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -127,7 +127,7 @@ def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
     gas_amount_str = '0.005093127'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -139,7 +139,7 @@ def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=59,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -170,7 +170,7 @@ def test_execution_success(ethereum_inquirer, ethereum_accounts):
     gas_amount_str = '0.006953999441541852'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -182,7 +182,7 @@ def test_execution_success(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=194,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -213,7 +213,7 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
     gas_amount_str = '0.020435096'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -225,7 +225,7 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=217,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -253,7 +253,7 @@ def test_safe_creation(ethereum_inquirer, ethereum_accounts):
     gas_amount_str = '0.004928138478008416'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -265,7 +265,7 @@ def test_safe_creation(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=171,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -297,7 +297,7 @@ def test_safe_spam(polygon_pos_inquirer, polygon_pos_accounts):
     spam_contract = '0xC63c477465a792537D291ADb32Ed15c0095E106B'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=431,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -324,7 +324,7 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1717404395000), '0.00123180896602807', '20549.221611721611721612'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -336,7 +336,7 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=270,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -349,7 +349,7 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_SAFE,
             address=SAFE_VESTING,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=271,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -377,7 +377,7 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1719926867000), '0.00072087801264352', '5115.763372'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -389,7 +389,7 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=157,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -401,7 +401,7 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             notes=f'Set SAFE spending approval of {multisig_address} by {SAFE_LOCKING} to {amount}',  # noqa: E501
             address=SAFE_LOCKING,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=158,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -413,8 +413,7 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             notes=f'Revoke SAFE spending approval of {multisig_address} by {SAFE_LOCKING}',
             address=SAFE_LOCKING,
         ), EvmEvent(
-
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=159,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -427,7 +426,7 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_SAFE,
             address=SAFE_LOCKING,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=161,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -455,7 +454,7 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721101211000), '0.0003433', '1026.126150242296748346'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -467,7 +466,7 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=560,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -480,7 +479,7 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_SAFE,
             address=SAFE_LOCKING,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=561,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -508,7 +507,7 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721130791000), '0.00095328952396285', '2404.451820314008697626'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -520,7 +519,7 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=146,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -533,7 +532,7 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_SAFE,
             address=SAFE_LOCKING,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=147,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -561,7 +560,7 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
     user_address, multisig_address, timestamp, gas = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1735818059000), '0.00149046414099075'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -573,7 +572,7 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=118,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -586,7 +585,7 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_SAFE,
             address=SAFEPASS_AIRDROP,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=119,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -614,7 +613,7 @@ def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
     user_address, multisig_address, timestamp, gas = gnosis_accounts[0], gnosis_accounts[1], TimestampMS(1747908200000), '0.000097393118048512'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -626,7 +625,7 @@ def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
             notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=60,
             timestamp=timestamp,
             location=Location.GNOSIS,

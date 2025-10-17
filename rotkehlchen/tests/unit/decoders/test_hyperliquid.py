@@ -25,7 +25,7 @@ def test_deposit(
     )
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1740826458000)),
             location=Location.ARBITRUM_ONE,
@@ -37,7 +37,7 @@ def test_deposit(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=7,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -66,7 +66,7 @@ def test_withdrawal(
     )
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1740828178000),
             location=Location.ARBITRUM_ONE,

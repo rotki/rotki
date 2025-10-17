@@ -21,7 +21,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
     timestamp = TimestampMS(1705844449000)
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -33,7 +33,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -62,7 +62,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
     timestamp = TimestampMS(1696328657000)
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -74,7 +74,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,

@@ -152,7 +152,7 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         log.debug(f'Executing gnosis pay post processing for {len(decoded_events)} events')
         self.gnosispay_api.update_events(
             tx_timestamps={
-                event.tx_hash: event.get_timestamp_in_sec()
+                event.tx_ref: event.get_timestamp_in_sec()
                 for event in decoded_events if event.event_subtype == HistoryEventSubType.PAYMENT
             },
         )

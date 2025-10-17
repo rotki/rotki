@@ -123,7 +123,7 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
         initiator = '' if context.transaction.from_address == user else f'{user} '
         for entry in log_data[0]:
             context.decoded_events.append(self.base.make_event_next_index(
-                tx_hash=context.transaction.tx_hash,
+                tx_ref=context.transaction.tx_hash,
                 timestamp=context.transaction.timestamp,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
@@ -172,7 +172,7 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
         )
         end_ts = Timestamp(int.from_bytes(context.tx_log.data[32:64]))
         new_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
+            tx_ref=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,

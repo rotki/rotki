@@ -37,7 +37,7 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
     timestamp = TimestampMS(1673337921000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -49,7 +49,7 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
             notes='Burn 0.0002038856162166 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -74,7 +74,7 @@ def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
     timestamp, gas_amount, claim_amount = TimestampMS(1712777987000), '0.000007620095114963', '6000'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -86,7 +86,7 @@ def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=80,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -111,7 +111,7 @@ def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
     timestamp, gas_amount, claim_amount = TimestampMS(1729405689000), '0.00000030058552275', '150'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -123,7 +123,7 @@ def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=47,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -148,7 +148,7 @@ def test_optimism_airdrop_3_distribution(optimism_accounts, optimism_inquirer):
     timestamp, claim_amount = TimestampMS(1695060701000), '1518.05545398906'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=913,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -174,7 +174,7 @@ def test_optimism_airdrop_2_distribution(optimism_accounts, optimism_inquirer):
     timestamp, claim_amount = TimestampMS(1675972022000), '4.036252419409362'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=308,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -200,7 +200,7 @@ def test_optimism_airdrop_1_distribution(optimism_accounts, optimism_inquirer):
     timestamp, claim_amount = TimestampMS(1694801257000), '409.426292836590288896'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=117,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -229,7 +229,7 @@ def test_optimism_delegate_change(optimism_inquirer):
     timestamp = TimestampMS(1673338011000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -241,7 +241,7 @@ def test_optimism_delegate_change(optimism_inquirer):
             notes='Burn 0.00005701303160652 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,

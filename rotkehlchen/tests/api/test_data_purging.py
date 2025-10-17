@@ -121,7 +121,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         dbevents.add_history_events(
             write_cursor=write_cursor,
             history=make_eth_withdrawal_and_block_events() + [EvmEvent(
-                tx_hash=(evm_tx_hash_1 := make_evm_tx_hash()),
+                tx_ref=(evm_tx_hash_1 := make_evm_tx_hash()),
                 sequence_index=0,
                 timestamp=TimestampMS(0),
                 location=Location.ETHEREUM,
@@ -130,7 +130,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                 asset=A_ETH,
                 amount=ONE,
             ), EvmEvent(
-                tx_hash=make_evm_tx_hash(),
+                tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(0),
                 location=Location.ETHEREUM,
@@ -335,7 +335,7 @@ def test_purge_solana_transaction_data(rotkehlchen_api_server: 'APIServer') -> N
             relevant_address=address1,
         )
         events = [SolanaEvent(
-            signature=tx.signature,
+            tx_ref=tx.signature,
             sequence_index=0,
             timestamp=TimestampMS(0),
             event_type=HistoryEventType.SPEND,

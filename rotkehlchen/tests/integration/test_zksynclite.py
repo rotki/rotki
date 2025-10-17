@@ -205,7 +205,7 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
     assert events == [EvmEvent(
         identifier=1,
         event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
         location=Location.ZKSYNC_LITE,
@@ -252,7 +252,7 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
     assert events == [EvmEvent(
         identifier=1,
         event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
         location=Location.ZKSYNC_LITE,
@@ -305,7 +305,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
     assert events == [EvmEvent(
         identifier=1,
         event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
         location=Location.ZKSYNC_LITE,
@@ -319,7 +319,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
     ), EvmEvent(
         identifier=2,
         event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=ts_sec_to_ms(timestamp),
         location=Location.ZKSYNC_LITE,
@@ -333,7 +333,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
     ), EvmEvent(
         identifier=3,
         event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=ts_sec_to_ms(timestamp),
         location=Location.ZKSYNC_LITE,

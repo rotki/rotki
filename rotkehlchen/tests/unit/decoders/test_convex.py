@@ -66,7 +66,7 @@ def test_booster_deposit(
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -80,7 +80,7 @@ def test_booster_deposit(
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=461,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -108,7 +108,7 @@ def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -122,7 +122,7 @@ def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=223,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -137,7 +137,7 @@ def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=229,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -241,7 +241,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
     timestamp = TimestampMS(1655675488000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -255,7 +255,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=450,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -270,7 +270,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=451,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -285,7 +285,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=453,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -313,7 +313,7 @@ def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -327,7 +327,7 @@ def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=424,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -355,7 +355,7 @@ def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -369,7 +369,7 @@ def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=426,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -384,7 +384,7 @@ def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
             identifier=None,
             extra_data={'gauge_address': '0x7091dbb7fcbA54569eF1387Ac89Eb2a5C9F6d2EA'},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=427,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -469,7 +469,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -483,7 +483,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=343,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -498,7 +498,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data={'gauge_address': '0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=344,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -610,7 +610,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -624,7 +624,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=220,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -701,7 +701,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -715,7 +715,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=423,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -784,7 +784,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -798,7 +798,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=593,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -876,7 +876,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -890,7 +890,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=307,
             timestamp=0,
             location=Location.ETHEREUM,
@@ -927,7 +927,7 @@ def test_convex_claim_pending_rewards(ethereum_inquirer, ethereum_accounts, load
     timestamp = TimestampMS(1683871727000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -940,7 +940,7 @@ def test_convex_claim_pending_rewards(ethereum_inquirer, ethereum_accounts, load
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=471,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -971,7 +971,7 @@ def test_convex_withdraw_expired_lock(ethereum_inquirer, ethereum_accounts):
     gas_str, amount_str = '0.008929295372796715', '26633.698252368450151266'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -984,7 +984,7 @@ def test_convex_withdraw_expired_lock(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=363,
             timestamp=timestamp,
             location=Location.ETHEREUM,

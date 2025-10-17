@@ -60,7 +60,7 @@ class RainbowDecoder(EvmDecoderInterface):
     ) -> None:
         """Create and append a fee event to the decoded events list."""
         fee_event = self.base.make_event(
-            tx_hash=transaction.tx_hash,
+            tx_ref=transaction.tx_hash,
             sequence_index=self.base.get_next_sequence_index(),
             timestamp=transaction.timestamp,
             event_type=HistoryEventType.TRADE,

@@ -30,7 +30,7 @@ def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
     amount_str = '1500'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=113,
             timestamp=TimestampMS(1701773255000),
             location=Location.ETHEREUM,
@@ -54,7 +54,7 @@ def test_burning_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
     amount_str = '1161210.84'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=171,
             timestamp=TimestampMS(1701765059000),
             location=Location.ETHEREUM,
@@ -81,7 +81,7 @@ def test_minting_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
     amount_str = '95'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=176,
             timestamp=TimestampMS(1701800519000),
             location=Location.POLYGON_POS,
@@ -108,7 +108,7 @@ def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
     amount_str = '208.93'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=418,
             timestamp=TimestampMS(1701794990000),
             location=Location.POLYGON_POS,
@@ -135,7 +135,7 @@ def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     amount_str = '66'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=371,
             timestamp=TimestampMS(1701802945000),
             location=Location.GNOSIS,
@@ -159,7 +159,7 @@ def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     amount_str = '1'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=500,
             timestamp=TimestampMS(1701801200000),
             location=Location.GNOSIS,
@@ -183,7 +183,7 @@ def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     amount_str = '501.04'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=497,
             timestamp=TimestampMS(1709969940000),
             location=Location.GNOSIS,
@@ -211,7 +211,7 @@ def test_mint_v2_eure(
         tx_hash=tx_hash,
     )
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(1725021845000),
         location=Location.GNOSIS,
@@ -239,7 +239,7 @@ def test_burn_v2_eure_gnosis(
     amount_str = '905.02'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=27,
             timestamp=TimestampMS(1725912575000),
             location=Location.GNOSIS,
@@ -267,7 +267,7 @@ def test_mint_eure_on_arbitrum(
         tx_hash=tx_hash,
     )
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=8,
         timestamp=TimestampMS(1744902081000),
         location=Location.ARBITRUM_ONE,
@@ -293,7 +293,7 @@ def test_burn_eure_on_arbitrum(
         tx_hash=tx_hash,
     )
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=46,
         timestamp=TimestampMS(1745310374000),
         location=Location.ARBITRUM_ONE,
@@ -337,7 +337,7 @@ def test_monerium_post_processing_handles_remote_error(
     decoder.monerium_api = FailingMoneriumAPI()
     decoded_events = [
         EvmEvent(
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=46,
             timestamp=TimestampMS(1745310374000),
             location=Location.ARBITRUM_ONE,

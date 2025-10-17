@@ -158,7 +158,7 @@ class EvmDecoderInterface(DecoderInterface['ChecksumEvmAddress', 'EvmNodeInquire
         self.msg_aggregator.add_error(
             f'Could not identify asset {event.asset} decoding ethereum event in {counterparty}. '
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
-            f'try to decode the event again {event.tx_hash.hex()}.',
+            f'try to decode the event again {event.tx_ref!s}.',
         )
 
 

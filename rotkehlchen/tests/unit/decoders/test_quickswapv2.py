@@ -29,7 +29,7 @@ def test_swap(
     tx_hash = deserialize_evm_tx_hash('0x458e77cd77833f48d314edcea1323dd123c3b1f5d4a4b375674cfc4292810548')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1747572751000)),
         location=Location.POLYGON_POS,
         sequence_index=0,
@@ -41,7 +41,7 @@ def test_swap(
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=1,
@@ -53,7 +53,7 @@ def test_swap(
         notes=f'Set DAI spending approval of {user_address} by 0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=2,
@@ -65,7 +65,7 @@ def test_swap(
         counterparty=CPT_QUICKSWAP_V2,
         address=string_to_evm_address('0x882df4B0fB50a229C3B4124EB18c759911485bFb'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=3,
@@ -89,7 +89,7 @@ def test_add_liquidity(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     pool_address = string_to_evm_address('0x5C72ECd763Be11E8E202490bAC14B12402E77716')
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756221523000)),
         location=Location.POLYGON_POS,
         sequence_index=0,
@@ -101,7 +101,7 @@ def test_add_liquidity(
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=1,
@@ -115,7 +115,7 @@ def test_add_liquidity(
         counterparty=CPT_QUICKSWAP_V2,
         address=pool_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=2,
@@ -129,7 +129,7 @@ def test_add_liquidity(
         counterparty=CPT_QUICKSWAP_V2,
         address=pool_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         sequence_index=3,
@@ -154,7 +154,7 @@ def test_remove_liquidity(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     pool_address = string_to_evm_address('0x3099A7C284610897baAa43cBDC06469E44A06ce1')
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1755330089000)),
         location=Location.BASE,
         sequence_index=0,
@@ -166,7 +166,7 @@ def test_remove_liquidity(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.BASE,
         sequence_index=1,
@@ -179,7 +179,7 @@ def test_remove_liquidity(
         counterparty=CPT_QUICKSWAP_V2,
         address=pool_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.BASE,
         sequence_index=2,
@@ -193,7 +193,7 @@ def test_remove_liquidity(
         counterparty=CPT_QUICKSWAP_V2,
         address=pool_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         location=Location.BASE,
         sequence_index=3,

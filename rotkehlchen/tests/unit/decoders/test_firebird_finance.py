@@ -27,7 +27,7 @@ def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
     user_address, timestamp, gas_amount, approval_amount, out_amount, in_amount = arbitrum_one_accounts[0], TimestampMS(1704018154000), '0.0001858737', '999999999999999999999174', '825', '1286.844424'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -39,7 +39,7 @@ def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=13,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -51,7 +51,7 @@ def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Set ARB spending approval of {user_address} by 0x0c6134Abc08A1EafC3E2Dc9A5AD023Bb08Da86C3 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x0c6134Abc08A1EafC3E2Dc9A5AD023Bb08Da86C3'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=14,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -63,7 +63,7 @@ def test_swap_erc20_tokens(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_FIREBIRD_FINANCE,
             address=string_to_evm_address('0x1f5A3c42F26b72c917B3625c7a964ca33600Fa25'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=15,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -87,7 +87,7 @@ def test_swap_eth_for_erc20_token(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1672529231000), '0.004636897380394857', '0.4', '1007.80191074694080899'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -99,7 +99,7 @@ def test_swap_eth_for_erc20_token(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -111,7 +111,7 @@ def test_swap_eth_for_erc20_token(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_FIREBIRD_FINANCE,
             address=string_to_evm_address('0xe0C38b2a8D09aAD53f1C67734B9A95E43d5981c0'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -135,7 +135,7 @@ def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
     user_address, timestamp, gas_amount, out_amount, in_amount = optimism_accounts[0], TimestampMS(1708454525000), '0.000261272046054672', '24.828647237813394885', '0.03345269400143805'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -147,7 +147,7 @@ def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -159,7 +159,7 @@ def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
             counterparty=CPT_FIREBIRD_FINANCE,
             address=string_to_evm_address('0xDda1aFE34928450FFf2af5C051E5E0c0853e21C9'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -186,7 +186,7 @@ def test_swap_erc20_token_for_bnb(
     user_address, timestamp, gas_amount, out_amount, in_amount, approve_amount = binance_sc_accounts[0], TimestampMS(1708623602000), '0.0003746295', '2.643598626182094592', '0.006965207273931161', '115792089237316195423570985008687907853269984665640564039454.940409286947545343'  # noqa: E501
     a_frax = Asset('eip155:56/erc20:0x90C97F71E18723b0Cf0dfa30ee176Ab653E89F40')
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -198,7 +198,7 @@ def test_swap_erc20_token_for_bnb(
         notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -210,7 +210,7 @@ def test_swap_erc20_token_for_bnb(
         notes=f'Set FRAX spending approval of {user_address} by 0x92e4F29Be975C1B1eB72E77De24Dccf11432a5bd to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0x92e4F29Be975C1B1eB72E77De24Dccf11432a5bd'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -222,7 +222,7 @@ def test_swap_erc20_token_for_bnb(
         counterparty=CPT_FIREBIRD_FINANCE,
         address=string_to_evm_address('0x0852Dba413446B2fd8Cc0e45c96b7F226b09e992'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
         location=Location.BINANCE_SC,

@@ -26,7 +26,7 @@ def test_deposit_eth_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum_a
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1690789463000),
             location=Location.ETHEREUM,
@@ -38,7 +38,7 @@ def test_deposit_eth_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum_a
             notes='Burn 0.001207084037700187 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1690789463000),
             location=Location.ETHEREUM,
@@ -65,7 +65,7 @@ def test_receive_eth_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_account
     user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1690789735000),
             location=Location.ARBITRUM_ONE,
@@ -92,7 +92,7 @@ def test_withdraw_eth_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
     user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1688139924000),
             location=Location.ARBITRUM_ONE,
@@ -104,7 +104,7 @@ def test_withdraw_eth_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
             notes='Burn 0.0000646535 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1688139924000),
             location=Location.ARBITRUM_ONE,
@@ -128,7 +128,7 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1688931083000),
             location=Location.ETHEREUM,
@@ -140,7 +140,7 @@ def test_receive_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.001688346842833805 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1688931083000),
             location=Location.ETHEREUM,
@@ -164,7 +164,7 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1690864931000),
             location=Location.ETHEREUM,
@@ -176,7 +176,7 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum
             notes='Burn 0.002442413931855385 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1690864931000),
             location=Location.ETHEREUM,
@@ -190,7 +190,7 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(ethereum_inquirer, ethereum
             address=string_to_evm_address(L1_GATEWAY_ROUTER),
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=208,
             timestamp=TimestampMS(1690864931000),
             location=Location.ETHEREUM,
@@ -217,7 +217,7 @@ def test_receive_erc20_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
     user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1691230958000),
             location=Location.ARBITRUM_ONE,
@@ -246,7 +246,7 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arb
     user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1689533783000),
             location=Location.ARBITRUM_ONE,
@@ -258,7 +258,7 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arb
             notes='Burn 0.0000597064 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1689533783000),
             location=Location.ARBITRUM_ONE,
@@ -270,7 +270,7 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arb
             notes=f'Set LPT spending approval of {user_address} by {gateway_address} to 115792089237316195423570985008687907853269984665640564015506.584007913129639935',  # noqa: E501
             address=gateway_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=TimestampMS(1689533783000),
             location=Location.ARBITRUM_ONE,
@@ -304,7 +304,7 @@ def test_withdraw_dai_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
     user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1654845413000),
             location=Location.ARBITRUM_ONE,
@@ -316,7 +316,7 @@ def test_withdraw_dai_from_arbitrum_one_to_ethereum(arbitrum_one_inquirer, arbit
             notes='Burn 0.00032141102469615 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=7,
             timestamp=TimestampMS(1654845413000),
             location=Location.ARBITRUM_ONE,
@@ -340,7 +340,7 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1690311851000),
             location=Location.ETHEREUM,
@@ -352,7 +352,7 @@ def test_receive_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.006476938263774547 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=206,
             timestamp=TimestampMS(1690311851000),
             location=Location.ETHEREUM,
@@ -376,7 +376,7 @@ def test_receive_erc20_on_ethereum_old_bridge(ethereum_inquirer, ethereum_accoun
     user_address, timestamp, gas, withdraw_amount = ethereum_accounts[0], TimestampMS(1655573929000), '0.003627235640125152', '39566.332611058195231384'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -388,7 +388,7 @@ def test_receive_erc20_on_ethereum_old_bridge(ethereum_inquirer, ethereum_accoun
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=278,
             timestamp=timestamp,
             location=Location.ETHEREUM,

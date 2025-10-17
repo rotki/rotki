@@ -24,7 +24,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1706095919000)
     donated_amount, gas_fees = '2', '0.00306450894012447'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -36,7 +36,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -49,7 +49,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         address=TERMINAL_3_1_2,
         counterparty=CPT_JUICEBOX,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=278,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -62,7 +62,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_JUICEBOX,
         address=ZERO_ADDRESS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=280,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -89,7 +89,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1706711399000)
     paid_amount, gas_fees = '0.4', '0.003792515741532086'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -101,7 +101,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,

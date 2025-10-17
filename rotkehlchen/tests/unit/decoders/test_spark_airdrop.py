@@ -30,7 +30,7 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas_amount, claimed_amount = ethereum_accounts[0], TimestampMS(1750283303000), '0.000095432422616478', '5400'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -42,7 +42,7 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=398,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -74,7 +74,7 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
     user_address, timestamp, gas_amount, staked_amount = ethereum_accounts[0], TimestampMS(1750212503000), '0.000263240428824864', '2169.948625059716493489'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -86,7 +86,7 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=255,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -99,7 +99,7 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_SPARK,
             address=string_to_evm_address('0xc6132FAF04627c8d05d6E759FAbB331Ef2D8F8fD'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=257,
             timestamp=timestamp,
             location=Location.ETHEREUM,

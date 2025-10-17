@@ -26,7 +26,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_str = TimestampMS(1713555527000), '0.000567969103578996'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -38,7 +38,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -51,7 +51,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_OMNI,
             address=OMNI_AIDROP_CONTRACT,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=217,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -77,7 +77,7 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_str, omni_str = TimestampMS(1713604307000), '0.00061736344563685', '5.06213676'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -89,7 +89,7 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=102,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -101,7 +101,7 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
             notes=f'Revoke OMNI spending approval of {ethereum_accounts[0]} by {OMNI_STAKING_CONTRACT}',  # noqa: E501
             address=OMNI_STAKING_CONTRACT,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=103,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -126,7 +126,7 @@ def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_str, omni_str = TimestampMS(1713602555000), '0.000645708531342875', '15.3275649'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -138,7 +138,7 @@ def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -151,7 +151,7 @@ def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_OMNI,
             address=OMNI_AIDROP_CONTRACT,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -165,7 +165,7 @@ def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
             address=OMNI_AIDROP_CONTRACT,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'omni'},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,

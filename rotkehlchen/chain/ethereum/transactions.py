@@ -115,7 +115,7 @@ class EthereumTransactions(EvmTransactions):
         with dbevents.db.conn.read_ctx() as cursor:
             earliest_from_block = DBEvmTx(self.database).get_transaction_block_by_hash(
                 cursor=cursor,
-                tx_hash=earliest_event.tx_hash,
+                tx_hash=earliest_event.tx_ref,
             ) or staking_contract.deployed_block
 
         target_block = self.evm_inquirer.get_latest_block_number()
@@ -134,7 +134,7 @@ class EthereumTransactions(EvmTransactions):
 
             log.debug(
                 f'Found thegraph delegation events for address {user_address} at '
-                f'{earliest_event.tx_hash.hex()}. Starting query from block {from_block}',
+                f'{earliest_event.tx_ref!s}. Starting query from block {from_block}',
             )
             for argname, argvalue, callback in (  # callback to save in the DB only for user addy
                     ('l2Delegator', user_address, self._graph_delegation_callback),

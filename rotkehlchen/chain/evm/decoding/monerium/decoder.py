@@ -141,7 +141,7 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             self.monerium_api.update_events(events=decoded_events)
         except RemoteError as e:
             log.error(
-                f'Failed to process monerium events in {decoded_events[0].tx_hash.hex()} on '
+                f'Failed to process monerium events in {decoded_events[0].tx_ref!s} on '
                 f'{decoded_events[0].location} due to {e}. Skipping monerium post processing.',
             )
 

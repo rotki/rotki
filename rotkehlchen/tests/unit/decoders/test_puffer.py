@@ -25,7 +25,7 @@ def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, claim_amount = TimestampMS(1726953011000), '0.001071196143585596', '9.61696139158485'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -37,7 +37,7 @@ def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=407,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -60,7 +60,7 @@ def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, claim_amount1, claim_amount2 = TimestampMS(1728945107000), '0.002975374594297972', '70', '210'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -72,7 +72,7 @@ def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=210,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -85,7 +85,7 @@ def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_PUFFER,
         address=HEDGEY_DELEGATEDCLAIMS_CAMPAIGN,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=212,
         timestamp=timestamp,
         location=Location.ETHEREUM,

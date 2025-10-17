@@ -514,7 +514,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 )) is not None:
                     bridge_calendar_entries.append(entry_id)
             except UnknownAsset:
-                log.exception(f'Unable to add reminder for bridge event with hash {bridge_event.tx_hash.hex()} on {bridge_event.location.name}')  # noqa: E501
+                log.exception(f'Unable to add reminder for bridge event with hash {bridge_event.tx_ref!s} on {bridge_event.location.name}')  # noqa: E501
                 continue
 
         self.maybe_create_reminders(

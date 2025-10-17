@@ -767,7 +767,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress]):
         for sequence_index, event_type, event_subtype, asset, amount, location_label, target, notes in event_data:  # noqa: E501
             events.append(EvmEvent(
                 event_identifier=event_identifier,
-                tx_hash=transaction.tx_hash,
+                tx_ref=transaction.tx_hash,
                 sequence_index=sequence_index,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.ZKSYNC_LITE,
@@ -790,7 +790,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress]):
 
             events.append(EvmEvent(
                 event_identifier=event_identifier,
-                tx_hash=transaction.tx_hash,
+                tx_ref=transaction.tx_hash,
                 sequence_index=events[-1].sequence_index + 1,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.ZKSYNC_LITE,

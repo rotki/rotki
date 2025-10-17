@@ -23,7 +23,7 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc1eb69ba80f10a7e45781f6da36f95c45300e7130db7988ac2e618659cb9a8a7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1750361627000)),
         sequence_index=0,
         location=Location.BASE,
@@ -35,7 +35,7 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=1,
         location=Location.BASE,
@@ -48,7 +48,7 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
         counterparty=CPT_RUNMONEY,
         address=RUNMONEY_CONTRACT_ADDRESS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=2,
         location=Location.BASE,
@@ -69,7 +69,7 @@ def test_stake(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1d6b85ce1128d5f7b9d49480f6ee516dae0af1e7da7ee6baef03844c9ca76502')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1750361935000)),
         sequence_index=0,
         location=Location.BASE,
@@ -81,7 +81,7 @@ def test_stake(base_inquirer, base_accounts) -> None:
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=245,
         location=Location.BASE,
@@ -102,7 +102,7 @@ def test_unstake(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x18353a471cc229f45b723e50d976187dd73f8fb9b39c5529e1a5cafc51f9b4ce')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1745189763000)),
         sequence_index=0,
         location=Location.BASE,
@@ -114,7 +114,7 @@ def test_unstake(base_inquirer, base_accounts) -> None:
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=640,
         location=Location.BASE,
@@ -135,7 +135,7 @@ def test_claim_bonuses(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xed5e059672f5b2d7483e9fabb9239adfa5c8ae93605494a7e09e638ee8f1b13f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1749456433000)),
         sequence_index=0,
         location=Location.BASE,
@@ -147,7 +147,7 @@ def test_claim_bonuses(base_inquirer, base_accounts) -> None:
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=83,
         location=Location.BASE,
@@ -160,7 +160,7 @@ def test_claim_bonuses(base_inquirer, base_accounts) -> None:
         counterparty=CPT_RUNMONEY,
         address=string_to_evm_address('0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=88,
         location=Location.BASE,

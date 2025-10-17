@@ -27,7 +27,7 @@ def test_swap_token_to_token(
     signature = deserialize_tx_signature('4G1gvudg2PyQV17v8agjHKYJQA9bxxJtMWEvKzk1Lb9k5yHTj3dnrvDGEiaDT7qSYePvswBrUq1bC5j4iPbk5gzQ')  # noqa: E501
     events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
     assert events == [SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1760110834000)),
         event_type=HistoryEventType.SPEND,
@@ -38,7 +38,7 @@ def test_swap_token_to_token(
         notes=f'Spend {gas_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=1,
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
@@ -49,7 +49,7 @@ def test_swap_token_to_token(
         notes=f'Send {jito_tip_amount} SOL to yTzJEkfUJCRDvktpvz1qiBZ1wcvgWXoXSX3tRZ33yZd',
         address=SolanaAddress('yTzJEkfUJCRDvktpvz1qiBZ1wcvgWXoXSX3tRZ33yZd'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=2,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.SPEND,
@@ -60,7 +60,7 @@ def test_swap_token_to_token(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('FeLULW5RCKDT2NuThu4vrAQ8BjH5YbU2Y7GbiZXYohm8'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=3,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -84,7 +84,7 @@ def test_swap_with_temp_token_account(
     signature = deserialize_tx_signature('53TUfpGbKBGjYNw2w84fXbEDpGGbdo3dLcnJs5sKiL3v3eKAuxTZWCcoXjgzgS3J14bEDEkHJ9qmWnDCLQRwUm5N')  # noqa: E501
     events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
     assert events == [SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1760110834000)),
         event_type=HistoryEventType.SPEND,
@@ -95,7 +95,7 @@ def test_swap_with_temp_token_account(
         notes=f'Spend {fee_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=1,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.SPEND,
@@ -106,7 +106,7 @@ def test_swap_with_temp_token_account(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=2,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -128,7 +128,7 @@ def test_rfq_swap(
     signature = deserialize_tx_signature('5vBFfTGrcdkE7ZdsUDSU2kRkhoFp4EgKtLLB6h2m1uQoG5wCddCkFGnNjXaHrV2r1kZ8CpJfh7UcWJ9tFXAyKc8Q')  # noqa: E501
     events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
     assert events == [SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1758217531000)),
         event_subtype=HistoryEventSubType.SPEND,
@@ -139,7 +139,7 @@ def test_rfq_swap(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('7rhxnLV8C77o6d8oz26AgK8x8m5ePsdeRawjqvojbjnQ'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=1,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -165,7 +165,7 @@ def test_arbitrage_swap(
     signature = deserialize_tx_signature('5acNq9XFxMxEzLWTR7hC2v6iNGbXxwChqR5mP2KkfkLvB6LAzTMpVDNSY7yaq4EbU7ypywKtpfLZgLQqDnwfeX8P')  # noqa: E501
     events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
     assert events == [SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1760010360000)),
         event_type=HistoryEventType.SPEND,
@@ -176,7 +176,7 @@ def test_arbitrage_swap(
         notes=f'Spend {gas_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
     ), SolanaEvent(  # TODO: decode this as a jito tip: https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=133200023
-        signature=signature,
+        tx_ref=signature,
         sequence_index=1,
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
@@ -187,7 +187,7 @@ def test_arbitrage_swap(
         notes=f'Send {jito_tip_amount} SOL to DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh',
         address=SolanaAddress('DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=8,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.SPEND,
@@ -198,7 +198,7 @@ def test_arbitrage_swap(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('9MkixYmjT2UbMgnNnPBTYkRjzdmi4zP1jkMdCkR89L67'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=9,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -209,7 +209,7 @@ def test_arbitrage_swap(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('9MkixYmjT2UbMgnNnPBTYkRjzdmi4zP1jkMdCkR89L67'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=10,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.SPEND,
@@ -220,7 +220,7 @@ def test_arbitrage_swap(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('GtpsrTHYnfFVm3qkPJtyKVwQLpXT7p2MRy9bp5hYeJnQ'),
     ), SolanaSwapEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=11,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,

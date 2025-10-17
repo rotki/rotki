@@ -180,7 +180,7 @@ def test_missing_accounting_rules_accounting_treatment(
     )
     tx_hash = make_evm_tx_hash()
     swap_event_spend = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
         location=Location.GNOSIS,
@@ -192,7 +192,7 @@ def test_missing_accounting_rules_accounting_treatment(
         notes='my notes',
     )
     swap_event_receive = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
         location=Location.GNOSIS,
@@ -204,7 +204,7 @@ def test_missing_accounting_rules_accounting_treatment(
         notes='my notes',
     )
     swap_event_fee = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TimestampMS(16433333000),
         location=Location.GNOSIS,
@@ -250,7 +250,7 @@ def test_events_affected_by_others_accounting_treatment(
     )
     tx_hash = make_evm_tx_hash()
     return_wrapped = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
@@ -262,7 +262,7 @@ def test_events_affected_by_others_accounting_treatment(
         notes='my notes',
     )
     remove_asset = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
@@ -312,7 +312,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
     )
     tx_hash = make_evm_tx_hash()
     return_wrapped = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
@@ -324,7 +324,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         notes='my notes',
     )
     remove_asset = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
@@ -336,7 +336,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         notes='my notes',
     )
     fee_event = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
@@ -400,7 +400,7 @@ def test_correct_accounting_treatment_is_selected(
 
     tx_hash = make_evm_tx_hash()
     return_wrapped = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
@@ -412,7 +412,7 @@ def test_correct_accounting_treatment_is_selected(
         notes='my notes',
     )
     remove_asset = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,

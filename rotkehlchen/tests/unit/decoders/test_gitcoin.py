@@ -23,7 +23,7 @@ def test_gitcoin_old_donation(ethereum_inquirer):
     timestamp, gas = TimestampMS(1569924574000), '0.000055118'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -35,7 +35,7 @@ def test_gitcoin_old_donation(ethereum_inquirer):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=164,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -48,7 +48,7 @@ def test_gitcoin_old_donation(ethereum_inquirer):
             counterparty=CPT_GITCOIN,
             address=string_to_evm_address('0xEbDb626C95a25f4e304336b1adcAd0521a1Bdca1'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=165,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -72,7 +72,7 @@ def test_bulkcheckout_receive_eth(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, amount, donor = TimestampMS(1670831003000), ethereum_accounts[0], '0.000799', '0xC8CA7F1C1a391CAfE43cf7348a2E54930648a0D4'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -96,7 +96,7 @@ def test_bulkcheckout_send_token(ethereum_inquirer, ethereum_accounts):
     timestamp, gas, user_address, amount1, amount2, dst1, dst2 = TimestampMS(1671869867000), '0.000883451092980928', ethereum_accounts[0], '25', '1.25', '0x3A5bd1E37b099aE3386D13947b6a90d97675e5e3', '0xde21F729137C5Af1b01d73aF1dC21eFfa2B8a0d6'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -108,7 +108,7 @@ def test_bulkcheckout_send_token(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=38,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -121,7 +121,7 @@ def test_bulkcheckout_send_token(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GITCOIN,
             address=dst1,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=40,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -148,7 +148,7 @@ def test_polygon_bulkcheckout_receive_matic(polygon_pos_inquirer, polygon_pos_ac
     )
     timestamp, user_address, amount, donor = TimestampMS(1667285686000), polygon_pos_accounts[0], '2', '0x6e08E6e2D0deeb294fd53e9708f53b0fBedc06d5'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -173,7 +173,7 @@ def test_gitcoin_vote_cast(ethereum_inquirer):
     timestamp, gas = TimestampMS(1659375478000), '0.001115205340736039'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -185,7 +185,7 @@ def test_gitcoin_vote_cast(ethereum_inquirer):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=159,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -210,7 +210,7 @@ def test_gitcoin_gr15_matching_claim(ethereum_inquirer, ethereum_accounts):
     timestamp, gas, user, amount = TimestampMS(1666139015000), '0.00118573107792279', ethereum_accounts[0], '1719.1187865411025'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -222,7 +222,7 @@ def test_gitcoin_gr15_matching_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=83,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -247,7 +247,7 @@ def test_gitcoin_payout_claimed_matching_gr12(ethereum_inquirer, ethereum_accoun
     timestamp, gas, user, amount = TimestampMS(1643262544000), '0.00327700462232052', ethereum_accounts[0], '793.606553162524960498'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -259,7 +259,7 @@ def test_gitcoin_payout_claimed_matching_gr12(ethereum_inquirer, ethereum_accoun
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=239,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -285,7 +285,7 @@ def test_gitcoin_payout_claimed_matching_gr11(ethereum_inquirer, ethereum_accoun
     timestamp, gas, user, amount = TimestampMS(1648056902000), '0.00206346594437105', ethereum_accounts[0], '2618.692525999999816121'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -297,7 +297,7 @@ def test_gitcoin_payout_claimed_matching_gr11(ethereum_inquirer, ethereum_accoun
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=60,
             timestamp=timestamp,
             location=Location.ETHEREUM,

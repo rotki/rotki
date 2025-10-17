@@ -452,7 +452,7 @@ def test_non_history_event_in_history_iterator(accountant):
         asset=A_WBTC,
         amount=ONE,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=event_timestamp_ms,
         location=Location.ETHEREUM,
@@ -465,7 +465,7 @@ def test_non_history_event_in_history_iterator(accountant):
         counterparty=CPT_COWSWAP,
         address=contract_address,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=event_timestamp_ms,
         location=Location.ETHEREUM,

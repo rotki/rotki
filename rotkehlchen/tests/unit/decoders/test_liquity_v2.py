@@ -19,7 +19,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
     timestamp = TimestampMS(1750380179000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -31,7 +31,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             notes='Burn 0.000106660179104193 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=279,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -44,7 +44,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             counterparty=None,
             address='0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=280,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -63,7 +63,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
                 },
             },
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=281,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -76,7 +76,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             counterparty=CPT_LIQUITY,
             address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=282,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -103,7 +103,7 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
 
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -115,7 +115,7 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
             notes='Burn 0.000105997036620882 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -128,7 +128,7 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
             counterparty=CPT_LIQUITY,
             address='0xBb4A9306f99ea6813187140fd0f26C7725e83c60',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,

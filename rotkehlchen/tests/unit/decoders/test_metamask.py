@@ -61,7 +61,7 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1696160411000)
     approval_amount, swap_amount, received_amount, gas_fees, metamask_fee = '115792089237316195423570985008687907853269984665640564032906.862642668551001919', '6550.721365244578638016', '0.017595546435556104', '0.001533786820220988', '0.000153961031311116'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -73,7 +73,7 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -85,7 +85,7 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         notes=f'Set LUX spending approval of {user_address} by {METAMASK_ROUTER_ETH} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -97,7 +97,7 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -109,7 +109,7 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=5,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -135,7 +135,7 @@ def test_metamask_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1702292675000)
     swap_amount, received_amount, gas_fees, fee_amount = '0.0495625', '2595.147664794130524115', '0.004927174848537517', '0.0004375'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -147,7 +147,7 @@ def test_metamask_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -159,7 +159,7 @@ def test_metamask_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -171,7 +171,7 @@ def test_metamask_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -197,7 +197,7 @@ def test_metamask_swap_usdt_to_token(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1702376699000)
     swap_amount, received_amount, gas_fees, fee_amount = '568.614655', '157279690809.103532500734254552', '0.007519637280969888', '5.019297'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -209,7 +209,7 @@ def test_metamask_swap_usdt_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -221,7 +221,7 @@ def test_metamask_swap_usdt_to_token(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -233,7 +233,7 @@ def test_metamask_swap_usdt_to_token(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -259,7 +259,7 @@ def test_metamask_swap_token_to_usdc(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1702376675000)
     swap_amount, received_amount, gas_fees, fee_amount = '52000000000', '2837.148343', '0.01015815871814444', '24.824308'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -271,7 +271,7 @@ def test_metamask_swap_token_to_usdc(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -283,7 +283,7 @@ def test_metamask_swap_token_to_usdc(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -295,7 +295,7 @@ def test_metamask_swap_token_to_usdc(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -321,7 +321,7 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1702399619000)
     swap_amount, received_amount, gas_fees, fee_amount, approval_amount = '89.301543595802992849', '323.028598123743886055', '0.036588478688486165', '0.788286009042397163', '90071443.400914235154609988'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -333,7 +333,7 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=289,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -345,7 +345,7 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Set AAVE spending approval of {user_address} by {METAMASK_ROUTER_ETH} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=290,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -357,7 +357,7 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=291,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -369,7 +369,7 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=292,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -398,7 +398,7 @@ def test_metamask_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
     timestamp = TimestampMS(1702461343000)
     swap_amount, received_amount, gas_fees, metamask_fee = '44.903625', '0.020630400240849773', '0.0003196843', '0.396375'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -410,7 +410,7 @@ def test_metamask_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -422,7 +422,7 @@ def test_metamask_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ARB,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -434,7 +434,7 @@ def test_metamask_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ARB,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -460,7 +460,7 @@ def test_metamask_swap_optimism(optimism_inquirer, optimism_accounts):
     timestamp = TimestampMS(1702469285000)
     swap_amount, received_amount, gas_fees, fee_amount = '148.6875', '148.608467', '0.000354333259086529', '1.3125'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.OPTIMISM,
@@ -472,7 +472,7 @@ def test_metamask_swap_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
@@ -484,7 +484,7 @@ def test_metamask_swap_optimism(optimism_inquirer, optimism_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_OPT,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
@@ -496,7 +496,7 @@ def test_metamask_swap_optimism(optimism_inquirer, optimism_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_OPT,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.OPTIMISM,
@@ -525,7 +525,7 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
     timestamp = TimestampMS(1702471426000)
     approval_amount, swap_amount, received_amount, gas_fees, fee_amount = '115792089237316195423570985008687907853269984665640564039457584007913105.669754', '18.804192', '22.278327092660803452', '0.079877964587736024', '0.165989'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -537,7 +537,7 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=244,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -549,7 +549,7 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         notes=f'Set USDC spending approval of {user_address} by {METAMASK_ROUTER_MATIC} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_MATIC,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=245,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -561,7 +561,7 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_MATIC,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=246,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -573,7 +573,7 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_MATIC,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=247,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -600,7 +600,7 @@ def test_metamask_swap_binance_sc(
     gas_amount, swap_amount, received_amount, fee_amount, approve_amount = '0.000596574', '10', '0.014389342482790536', '0.000125906746724417', '115792089237316195423570985008687907853269984665640564039447.584007913129639935'  # noqa: E501
     a_bsc_usd = Asset('eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955')
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -612,7 +612,7 @@ def test_metamask_swap_binance_sc(
         notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=71,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -624,7 +624,7 @@ def test_metamask_swap_binance_sc(
         notes=f'Set BSC-USD spending approval of {user_address} by {METAMASK_ROUTER_BSC} to {approve_amount}',  # noqa: E501
         address=METAMASK_ROUTER_BSC,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=72,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -636,7 +636,7 @@ def test_metamask_swap_binance_sc(
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_BSC,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=73,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -648,7 +648,7 @@ def test_metamask_swap_binance_sc(
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_BSC,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=74,
         timestamp=timestamp,
         location=Location.BINANCE_SC,

@@ -330,7 +330,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
     reward_lusd_event = make_evm_tx_hash()
     evm_events = [
         EvmEvent(  # deposit 1 for address 0
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
             location=Location.ETHEREUM,
@@ -341,7 +341,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[0],
         ), EvmEvent(  # deposit 2 for address 0
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
             location=Location.ETHEREUM,
@@ -352,7 +352,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[0],
         ), EvmEvent(  # deposit 1 for address 1
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
             location=Location.ETHEREUM,
@@ -363,7 +363,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(  # address 0 stability pool gains
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
             location=Location.ETHEREUM,
@@ -374,7 +374,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[0],
         ), EvmEvent(  # address 1 stability pool gains
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=default_ts,
             location=Location.ETHEREUM,
@@ -385,7 +385,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(  # stake lqty and get reward
-            tx_hash=reward_lusd_event,
+            tx_ref=reward_lusd_event,
             sequence_index=1,
             timestamp=default_ts,
             location=Location.ETHEREUM,
@@ -396,7 +396,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(
-            tx_hash=reward_lusd_event,
+            tx_ref=reward_lusd_event,
             sequence_index=2,
             timestamp=default_ts,
             location=Location.ETHEREUM,
@@ -407,7 +407,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(  # lqty reward for address 0
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=2,
             timestamp=default_ts,
             location=Location.ETHEREUM,

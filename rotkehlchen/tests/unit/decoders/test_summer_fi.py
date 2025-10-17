@@ -27,7 +27,7 @@ def test_create_account(
     tx_hash = deserialize_evm_tx_hash('0xaeb2f799a5a9beafb035ea664ba50ea525bf684b418467485912d3971c2a8780')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1756734407000)),
         location=Location.ETHEREUM,
@@ -39,7 +39,7 @@ def test_create_account(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=371,
         timestamp=timestamp,
         location=Location.ETHEREUM,

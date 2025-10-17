@@ -35,7 +35,7 @@ HASH1, HASH2, HASH3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
 def test_delegation_reward(accountant: 'Accountant'):
     pot = accountant.pots[0]
     events_iterator = peekable([EvmEvent(
-        tx_hash=HASH1,
+        tx_ref=HASH1,
         sequence_index=358,
         timestamp=TSMS1,
         location=Location.ETHEREUM,
@@ -48,7 +48,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         counterparty=None,
         address=None,
     ), EvmEvent(
-        tx_hash=HASH2,
+        tx_ref=HASH2,
         sequence_index=359,
         timestamp=TSMS2,
         location=Location.ETHEREUM,
@@ -61,7 +61,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         counterparty=CPT_THEGRAPH,
         address=None,
     ), EvmEvent(
-        tx_hash=HASH2,
+        tx_ref=HASH2,
         sequence_index=360,
         timestamp=TSMS2,
         location=Location.ETHEREUM,
@@ -74,7 +74,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         counterparty=CPT_THEGRAPH,
         address=None,
     ), EvmEvent(
-        tx_hash=HASH3,
+        tx_ref=HASH3,
         sequence_index=208,
         timestamp=TSMS3,
         location=Location.ETHEREUM,
@@ -109,7 +109,7 @@ def test_delegation_reward(accountant: 'Accountant'):
             pnl=PNL(taxable=FVal(1000), free=ZERO),
             cost_basis=None,
             index=0,
-            extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH1)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Delegate 995 GRT to indexer',
@@ -122,7 +122,7 @@ def test_delegation_reward(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),  # Deposits are not taxable
             cost_basis=None,
             index=1,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Burn 5 GRT as delegation tax',
@@ -141,7 +141,7 @@ def test_delegation_reward(accountant: 'Accountant'):
                 is_complete=True,
             ),
             index=2,
-            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH2)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Gained 10 GRT as delegation reward for {USER_ADDRESS}',
@@ -154,7 +154,7 @@ def test_delegation_reward(accountant: 'Accountant'):
             pnl=PNL(taxable=FVal('10'), free=ZERO),
             cost_basis=None,
             index=3,
-            extra_data={'tx_hash': HASH3.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH3)},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Withdraw 1005 GRT from indexer',
@@ -167,7 +167,7 @@ def test_delegation_reward(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=4,
-            extra_data={'tx_hash': HASH3.hex()},  # pylint: disable=no-member
+            extra_data={'tx_ref': str(HASH3)},
         ),
     ]
     expected_events[0].count_cost_basis_pnl = True  # can't be set by init()

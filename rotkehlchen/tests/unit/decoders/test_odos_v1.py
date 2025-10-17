@@ -37,7 +37,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, approval_amount, swap_amount, received_amount, odos_fees_eth, gas_fees = TimestampMS(1691645135000), '115792089237316195423570985008687907853269984665640564035457.584007913129639935', '4000', '2.15484532751231104', '0.000151599541198592', '0.00403543'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -49,7 +49,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=226,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -61,7 +61,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         notes=f'Set LUSD spending approval of {ethereum_accounts[0]} by {ETH_ROUTER} to {approval_amount}',  # noqa: E501
         address=ETH_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=227,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -73,7 +73,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_ODOS_V1,
         address=ETH_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=228,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -85,7 +85,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_ODOS_V1,
         address=ETH_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=229,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -110,7 +110,7 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
     )
     timestamp, approval_amount, swap_amount, received_amount, odos_fees_eth, gas_fees = TimestampMS(1693606715000), '115792089237316195423570985008687907853269984665640564039457.580725740003253015', '0.00328217312638692', '0.003282173126386919', '0.000000000000000001', '0.0000798467'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -122,7 +122,7 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -134,7 +134,7 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         notes=f'Set WETH spending approval of {arbitrum_one_accounts[0]} by {ARB_ROUTER} to {approval_amount}',  # noqa: E501
         address=ARB_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -146,7 +146,7 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         counterparty=CPT_ODOS_V1,
         address=ARB_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=5,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -158,7 +158,7 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         counterparty=CPT_ODOS_V1,
         address=ARB_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=6,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -180,7 +180,7 @@ def test_swap_eth_to_token_optimism(optimism_inquirer, optimism_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     timestamp, swap_amount, received_amount, gas_fees = TimestampMS(1691607223000), '1.347', '2494.738788', '0.000108989578875775'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.OPTIMISM,
@@ -192,7 +192,7 @@ def test_swap_eth_to_token_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
@@ -204,7 +204,7 @@ def test_swap_eth_to_token_optimism(optimism_inquirer, optimism_accounts):
         counterparty=CPT_ODOS_V1,
         address=OPT_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
@@ -229,7 +229,7 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
     )
     timestamp, swap_amount, received_amount, odos_fees_eth, gas_fees = TimestampMS(1700674099000), '5', '420.01909972952905', '66.153912047014979328', '0.022903685'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -241,7 +241,7 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -253,7 +253,7 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         counterparty=CPT_ODOS_V1,
         address=POL_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -265,7 +265,7 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         counterparty=CPT_ODOS_V1,
         address=POL_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
@@ -290,7 +290,7 @@ def test_swap_bnb_to_token_binance_sc(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_amount, swap_amount, receive_amount = binance_sc_accounts[0], TimestampMS(1693386073000), '0.000979203', '0.005', '362.301589519456297536'  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -302,7 +302,7 @@ def test_swap_bnb_to_token_binance_sc(
         notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -314,7 +314,7 @@ def test_swap_bnb_to_token_binance_sc(
         counterparty=CPT_ODOS_V1,
         address=BSC_ROUTER,
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,

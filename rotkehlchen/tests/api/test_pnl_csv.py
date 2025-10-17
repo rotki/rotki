@@ -235,7 +235,7 @@ def test_history_export_download_csv(
         start_ts=Timestamp(0),
         end_ts=Timestamp(1640493376),
         history_list=[EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
             sequence_index=0,
             timestamp=TimestampMS(1601040360000),
@@ -285,7 +285,7 @@ def test_encoding(
         rotki.history_querying_manager,
         'get_history',
         lambda start_ts, end_ts, has_premium: ('', [EvmEvent(
-            tx_hash=GENESIS_HASH,
+            tx_ref=GENESIS_HASH,
             sequence_index=0,
             timestamp=TimestampMS(1569924574000),
             location=Location.ETHEREUM,

@@ -1027,7 +1027,7 @@ def test_swaps_taxability(
     event_accountant._process_swap(
         timestamp=Timestamp(1469020840),
         out_event=EvmEvent(
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=TimestampMS(146902084000),
             location=Location.ETHEREUM,
@@ -1040,7 +1040,7 @@ def test_swaps_taxability(
             counterparty=CPT_UNISWAP_V2,
         ),
         in_event=EvmEvent(
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=2,
             timestamp=TimestampMS(1469020840),
             location=Location.ETHEREUM,
@@ -1100,7 +1100,7 @@ def test_event_specific_accounting_rules(accountant: Accountant) -> None:
     ], start=1):
         history.extend([EvmSwapEvent(
             identifier=idx,
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1112,7 +1112,7 @@ def test_event_specific_accounting_rules(accountant: Accountant) -> None:
             counterparty=CPT_UNISWAP_V2,
         ), EvmSwapEvent(
             identifier=idx + 1,
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,

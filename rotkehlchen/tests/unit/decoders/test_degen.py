@@ -37,7 +37,7 @@ def test_claim_airdrop_2(
     timestamp, gas_amount, claimed_amount = TimestampMS(1709555247000), '0.000443147649294366', '100'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -49,7 +49,7 @@ def test_claim_airdrop_2(
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=9,
             timestamp=timestamp,
             location=Location.BASE,
@@ -82,7 +82,7 @@ def test_claim_airdrop_3(
     timestamp, gas_amount, claimed_amount = TimestampMS(1715696797000), '0.000016768741928411', '1649'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -94,7 +94,7 @@ def test_claim_airdrop_3(
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=121,
             timestamp=timestamp,
             location=Location.BASE,

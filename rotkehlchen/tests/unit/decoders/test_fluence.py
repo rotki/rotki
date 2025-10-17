@@ -23,7 +23,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
     gas_amount_str, claimed_amount = '0.00203104493516988', '5000'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -35,7 +35,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=196,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -60,7 +60,7 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_amount_str, claimed_amount = TimestampMS(1718357447000), '0.00059501796565782', '5000'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -72,7 +72,7 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -85,7 +85,7 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_FLUENCE,
             address=DEV_REWARD_DISTRIBUTOR,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,

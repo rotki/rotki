@@ -134,7 +134,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                 except (UnknownAsset, WrongAssetType) as e:
                     log.error(
                         "Failed to resolve compound v3 borrow event's token and/or its "
-                        f'underlying token in {event.location} {event.tx_hash.hex()} due to {e!s}. Skipping.',  # noqa: E501
+                        f'underlying token in {event.location} {event.tx_ref!s} due to {e!s}. Skipping.',  # noqa: E501
                     )
                     continue
 

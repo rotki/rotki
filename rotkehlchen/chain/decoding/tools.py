@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 T = TypeVar('T')  # For transaction receipts/data
-H = TypeVar('H')  # For transaction hashes
+R = TypeVar('R')  # For transaction references
 E = TypeVar('E')  # For events
 A = TypeVar('A')  # For addresses
 
 
-class BaseDecoderTools(ABC, Generic[T, A, H, E]):
+class BaseDecoderTools(ABC, Generic[T, A, R, E]):
     """Base class for chain-agnostic decoder tools providing common state and functionality"""
 
     def __init__(
@@ -103,7 +103,7 @@ class BaseDecoderTools(ABC, Generic[T, A, H, E]):
     @abstractmethod
     def make_event(
             self,
-            tx_hash: H,
+            tx_ref: R,
             sequence_index: int,
             timestamp: Timestamp,
             event_type: HistoryEventType,
@@ -120,7 +120,7 @@ class BaseDecoderTools(ABC, Generic[T, A, H, E]):
 
     def make_event_next_index(
             self,
-            tx_hash: H,
+            tx_ref: R,
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
@@ -134,7 +134,7 @@ class BaseDecoderTools(ABC, Generic[T, A, H, E]):
     ) -> E:
         """Convenience function to use next sequence index"""
         return self.make_event(
-            tx_hash=tx_hash,
+            tx_ref=tx_ref,
             sequence_index=self.get_next_sequence_index(),
             timestamp=timestamp,
             event_type=event_type,

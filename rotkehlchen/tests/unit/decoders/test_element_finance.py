@@ -25,7 +25,7 @@ def test_claim_airdrop(ethereum_inquirer):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -37,7 +37,7 @@ def test_claim_airdrop(ethereum_inquirer):
             notes='Burn 0.0061843862 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=549,
             timestamp=timestamp,
             location=Location.ETHEREUM,

@@ -57,7 +57,7 @@ def test_create_loan(
     timestamp, user_address, gas_amount, deposit_amount, receive_amount, approve_amount = TimestampMS(1741679231000), ethereum_accounts[0], '0.000893214862428306', '16', '26000', '115792089237316195423570985008687907853269984665640564039441.584007913129639935'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -69,7 +69,7 @@ def test_create_loan(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=178,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -81,7 +81,7 @@ def test_create_loan(
             notes=f'Set wstETH spending approval of {user_address} by {crvusd_controller} to {approve_amount}',  # noqa: E501
             address=crvusd_controller,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=179,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -94,7 +94,7 @@ def test_create_loan(
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x37417B2238AA52D0DD2D6252d989E728e8f706e4'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=180,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -124,7 +124,7 @@ def test_borrow_more(
     timestamp, user_address, gas_amount, receive_amount = TimestampMS(1742385419000), ethereum_accounts[0], '0.001382156244932288', '500'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -136,7 +136,7 @@ def test_borrow_more(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=338,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -166,7 +166,7 @@ def test_repay(
     timestamp, user_address, gas_amount, repay_amount = TimestampMS(1742391011000), ethereum_accounts[0], '0.00256845168196309', '100931.806980654679668337'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -178,7 +178,7 @@ def test_repay(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=217,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -190,7 +190,7 @@ def test_repay(
             notes=f'Revoke crvUSD spending approval of {user_address} by {crvusd_controller}',
             address=crvusd_controller,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=218,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -219,7 +219,7 @@ def test_remove_collateral(
     timestamp, user_address, gas_amount, withdraw_amount = TimestampMS(1742411687000), ethereum_accounts[0], '0.0018137064', '0.3'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -231,7 +231,7 @@ def test_remove_collateral(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=206,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -259,7 +259,7 @@ def test_borrow_extended(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, deposit_amount = TimestampMS(1742167583000), ethereum_accounts[0], '0.00154011', '0.30677231'  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -271,7 +271,7 @@ def test_borrow_extended(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=11,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -297,7 +297,7 @@ def test_peg_keeper_update_provide(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, reward_amount = TimestampMS(1742991251000), ethereum_accounts[0], '0.00040529528116216', '0.263578930549885631'  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -309,7 +309,7 @@ def test_peg_keeper_update_provide(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=145,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -334,7 +334,7 @@ def test_peg_keeper_update_withdraw(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, reward_amount = TimestampMS(1742617019000), ethereum_accounts[0], '0.0002972191728', '0.801175881145139442'  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -346,7 +346,7 @@ def test_peg_keeper_update_withdraw(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=189,
         timestamp=timestamp,
         location=Location.ETHEREUM,

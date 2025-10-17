@@ -25,7 +25,7 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1690964039000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -38,7 +38,7 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=94,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -62,7 +62,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1688847971000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -75,7 +75,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=175,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -90,7 +90,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'diva'},
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=177,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -117,7 +117,7 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
     gas_str = '0.00074796777559248'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -130,7 +130,7 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=400,
             timestamp=timestamp,
             location=Location.ETHEREUM,

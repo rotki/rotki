@@ -21,7 +21,7 @@ def test_ygov_stake(ethereum_inquirer, ethereum_accounts):
     gas_amount, deposited_amount = '0.005269935', '1736.929114514645653598'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -34,7 +34,7 @@ def test_ygov_stake(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=172,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -61,7 +61,7 @@ def test_ygov_get_reward(ethereum_inquirer, ethereum_accounts):
     gas_amount, reward_amount = '0.0010707', '0.224594237566776997'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -74,7 +74,7 @@ def test_ygov_get_reward(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=182,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -101,7 +101,7 @@ def test_ygov_exit(ethereum_inquirer, ethereum_accounts):
     gas_amount, reward_amount, withdrawn_amount = '0.012938107', '2.281399151169433806', '665811.174187646507558478'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -114,7 +114,7 @@ def test_ygov_exit(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -128,7 +128,7 @@ def test_ygov_exit(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_YGOV,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=6,
             timestamp=timestamp,
             location=Location.ETHEREUM,

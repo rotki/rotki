@@ -59,7 +59,7 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
     period = 1684368000
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -72,7 +72,7 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=580,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -98,7 +98,7 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_str, amount_str, period = TimestampMS(1673676767000), '0.002265930693617121', '1.029361212967421451', 1673481600  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -111,7 +111,7 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=377,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -140,7 +140,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
     amount2_str = '41.966838515681574848'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -153,7 +153,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=328,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -166,7 +166,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER1,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=330,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -191,7 +191,7 @@ def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_amount, deposit_amount, timestamp = '0.000333982538036425', '29741.066052414178579757', TimestampMS(1742908919000)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -204,7 +204,7 @@ def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -217,7 +217,7 @@ def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0x3BC2512fAa5074fFdA24DCb4994e264Cb8C64BB8'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -240,7 +240,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_amount, cvr_reward, cvx_reward, received_amount, timestamp = '0.000731782766782389', '3.396353893656228423', '0.001648465329300485', '248892.018071224099683254', TimestampMS(1742912819000)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -253,7 +253,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -266,7 +266,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -279,7 +279,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0x464A190dc43aD8f706d7d90d2951F700226A47Ef'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -292,7 +292,7 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -315,7 +315,7 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     gas_amount, deposit_amount, timestamp = '0.00000485501', '0.000420669270502585', TimestampMS(1738238320000)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -327,7 +327,7 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -340,7 +340,7 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0xfc072ead21DdA7260008aa4165907Bc27cC59329'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -363,7 +363,7 @@ def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
     gas_amount, cake_reward, received_amount, timestamp = '0.000358695', '1.156230303623121164', '2000', TimestampMS(1743674447000)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -376,7 +376,7 @@ def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges)
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -389,7 +389,7 @@ def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges)
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0xE36c375AD28C0822ab476Bd62A8BEAd88d9a4e34'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -402,7 +402,7 @@ def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges)
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0x64F19930f0250E8313D0D8b47901F377B868Cf47'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -423,7 +423,7 @@ def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0x7ce0becce93ff093c51f33c2012fd3d2dfa5118cedb1c60d9cad339ceb3e4ae4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746073890000)),
         location=Location.ARBITRUM_ONE,
@@ -436,7 +436,7 @@ def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -449,7 +449,7 @@ def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0x115E05063B1F0a74b2233043694930bC703E2981'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -462,7 +462,7 @@ def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0xFC24Afa035010B4878F8ffBC94BC1ae21279cfA3'),
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
@@ -484,7 +484,7 @@ def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, gas_amount, claim_amount, timestamp, period = ethereum_accounts[0], '0.002079703956975652', '0.703793566500610594', TimestampMS(1679130407000), 1678924800  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -497,7 +497,7 @@ def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_GAS,
         address=None,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=221,
         timestamp=timestamp,
         location=Location.ETHEREUM,

@@ -123,7 +123,7 @@ def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, T
             db.add_history_event(
                 write_cursor=write_cursor,
                 event=EvmEvent(
-                    tx_hash=entry[0],
+                    tx_ref=entry[0],
                     sequence_index=1,
                     timestamp=entry[1],
                     location=Location.ETHEREUM,
@@ -146,7 +146,7 @@ def add_eth2_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, 
                 write_cursor=write_cursor,
                 event=EthDepositEvent(
                     identifier=1,
-                    tx_hash=entry[0],
+                    tx_ref=entry[0],
                     validator_index=42,
                     sequence_index=1,
                     timestamp=entry[1],
@@ -202,7 +202,7 @@ def test_read_write_events_from_db(database):
                     data_entry = evm_data[event.identifier]
                     expected_event = EvmEvent(
                         identifier=event.identifier,
-                        tx_hash=data_entry[0],
+                        tx_ref=data_entry[0],
                         sequence_index=1,
                         timestamp=data_entry[1],
                         location=Location.ETHEREUM,
@@ -270,7 +270,7 @@ def test_read_write_customized_events_from_db(database: DBHandler, entries_limit
                 group_by_event_ids=group_by_event_ids,
             )
             if group_by_event_ids is False:  # don't check the grouping case. Just make sure no exception is raised  # noqa: E501
-                filtered_ids = [x.tx_hash if isinstance(x, EvmEvent) else x.event_identifier for x in events]  # type: ignore  # events are not tuples when group_by_event_ids is False  # noqa: E501
+                filtered_ids = [x.tx_ref if isinstance(x, EvmEvent) else x.event_identifier for x in events]  # type: ignore  # events are not tuples when group_by_event_ids is False  # noqa: E501
                 assert filtered_ids == expected_ids
 
             db.get_history_events_count(  # don't check result, just check for exception
@@ -516,7 +516,7 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
             write_cursor=write_cursor,
             history=[
                 EvmEvent(
-                    tx_hash=(tx_hash := make_evm_tx_hash()),
+                    tx_ref=(tx_hash := make_evm_tx_hash()),
                     sequence_index=0,
                     timestamp=timestamp,
                     location=Location.BASE,
@@ -528,7 +528,7 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
                     notes=f'Burn {gas} ETH for gas',
                     counterparty=CPT_GAS,
                 ), EvmEvent(
-                    tx_hash=tx_hash,
+                    tx_ref=tx_hash,
                     sequence_index=2,
                     timestamp=timestamp,
                     location=Location.BASE,
@@ -539,7 +539,7 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
                     location_label=account,
                     notes=f'Revoke DAI spending approval of {account} by {CPT_ONEINCH_V6}',
                 ), EvmSwapEvent(
-                    tx_hash=tx_hash,
+                    tx_ref=tx_hash,
                     sequence_index=3,
                     timestamp=timestamp,
                     location=Location.BASE,
@@ -550,7 +550,7 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
                     notes=f'Swap {swap_amount} DAI in 1inch-v6',
                     counterparty=CPT_ONEINCH_V6,
                 ), EvmSwapEvent(
-                    tx_hash=tx_hash,
+                    tx_ref=tx_hash,
                     sequence_index=4,
                     timestamp=timestamp,
                     location=Location.BASE,

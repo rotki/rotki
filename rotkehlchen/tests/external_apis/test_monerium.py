@@ -52,7 +52,7 @@ def test_send_bank_transfer(database, monerium_credentials):  # pylint: disable=
     user_address = '0x99a0618B846D43E29C15ac468Eae06d03C9243C7'
     timestamp = TimestampMS(1701765059000)
     event = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=171,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -94,7 +94,7 @@ def test_receive_bank_transfer(database, monerium_credentials):  # pylint: disab
     user_address = '0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da'
     timestamp = TimestampMS(1701765059000)
     event = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=113,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -138,7 +138,7 @@ def test_bridge_via_monerium(database, monerium_credentials):  # pylint: disable
     gnosis_user_address = '0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da'
     timestamp = TimestampMS(1701765059000)
     eth_event = EvmEvent(
-        tx_hash=ethhash,
+        tx_ref=ethhash,
         sequence_index=171,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -151,7 +151,7 @@ def test_bridge_via_monerium(database, monerium_credentials):  # pylint: disable
         counterparty=CPT_MONERIUM,
     )
     gnosis_event = EvmEvent(
-        tx_hash=gnosishash,
+        tx_ref=gnosishash,
         sequence_index=113,
         timestamp=timestamp,
         location=Location.GNOSIS,
@@ -205,7 +205,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
     gnosishash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
     gnosis_user_address = '0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da'
     gnosis_event = EvmEvent(
-        tx_hash=gnosishash,
+        tx_ref=gnosishash,
         sequence_index=113,
         timestamp=TimestampMS(1701765059000),
         location=Location.GNOSIS,

@@ -93,7 +93,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
         DBHistoryEvents(rotki.data.db).add_history_event(
             write_cursor=write_cursor,
             event=EvmEvent(
-                tx_hash=make_evm_tx_hash(),
+                tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
                 location=Location.ETHEREUM,

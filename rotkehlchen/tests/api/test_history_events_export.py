@@ -78,7 +78,7 @@ def assert_csv_export_response(
 
     extra_headers = (
         # evm event
-        'tx_hash',
+        'tx_ref',
         'counterparty',
         'address',
 

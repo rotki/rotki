@@ -290,7 +290,7 @@ def test_check_airdrops(
     tolerance_for_amount_check = FVal('0.1')
     claim_events = [
         EvmEvent(
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1594500575000),
             location=Location.ETHEREUM,
@@ -301,7 +301,7 @@ def test_check_airdrops(
             location_label=string_to_evm_address(TEST_ADDR1),
             extra_data={AIRDROP_IDENTIFIER_KEY: 'uniswap'},
         ), EvmEvent(
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1594500575000),
             location=Location.ETHEREUM,
@@ -312,7 +312,7 @@ def test_check_airdrops(
             location_label=string_to_evm_address(TEST_ADDR1),
             extra_data={AIRDROP_IDENTIFIER_KEY: '1inch'},
         ), EvmEvent(
-            tx_hash=make_evm_tx_hash(),
+            tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1594500575000),
             location=Location.BASE,

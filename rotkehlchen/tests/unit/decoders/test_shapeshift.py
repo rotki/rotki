@@ -19,7 +19,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1634470709000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=243,
             timestamp=timestamp,
             location=Location.ETHEREUM,

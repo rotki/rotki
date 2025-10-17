@@ -31,9 +31,9 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.HISTORY_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'event_identifier'},  # noqa: E501
     HistoryBaseEntryType.ETH_BLOCK_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'block_number', 'event_subtype', 'fee_recipient', 'location_label', 'is_mev_reward'},  # noqa: E501
-    HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_hash', 'validator_index', 'sequence_index', 'event_identifier'},  # noqa: E501
+    HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_ref', 'validator_index', 'sequence_index', 'event_identifier'},  # noqa: E501
     HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'is_exit'},  # noqa: E501
-    HistoryBaseEntryType.EVM_EVENT: {'tx_hash', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'counterparty', 'product', 'address', 'extra_data', 'event_identifier'},  # noqa: E501
+    HistoryBaseEntryType.EVM_EVENT: {'tx_ref', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'counterparty', 'product', 'address', 'extra_data', 'event_identifier'},  # noqa: E501
     HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_type', 'asset', 'event_identifier', 'extra_data'},  # noqa: E501
     HistoryBaseEntryType.SWAP_EVENT: {'location', 'asset', 'event_identifier'},
 }
@@ -122,7 +122,7 @@ def entries_to_input_dict(
 def predefined_events_to_insert() -> list['HistoryBaseEntry']:
     """List of different objects used in tests that will be inserted in the database"""
     return [EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
+        tx_ref=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,
@@ -134,7 +134,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.APPROVE,
         address=GITCOIN_GRANTS_OLD1,
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
+        tx_ref=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=163,
         timestamp=TimestampMS(1569924575000),
         location=Location.ETHEREUM,
@@ -146,7 +146,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.APPROVE,
         address=GITCOIN_GRANTS_OLD1,
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
+        tx_ref=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=2,
         timestamp=TimestampMS(1619924576000),
         location=Location.ETHEREUM,
@@ -159,7 +159,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         counterparty=CPT_GAS,
         extra_data={'testing_data': 42},
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
+        tx_ref=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=3,
         timestamp=TimestampMS(1619924579000),
         location=Location.ETHEREUM,
@@ -171,7 +171,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         notes='Deposit something somewhere',
         counterparty='somewhere',
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),
+        tx_ref=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
         location=Location.ETHEREUM,
@@ -200,7 +200,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
         is_exit=False,
     ), EthDepositEvent(
-        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
+        tx_ref=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         validator_index=295601,
         sequence_index=1,
         timestamp=TimestampMS(1691379127000),

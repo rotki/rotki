@@ -35,7 +35,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1674558203000),
             location=Location.ETHEREUM,
@@ -47,7 +47,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             notes='Burn 0.000788637337054068 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             validator_index=validator.validator_index,
             sequence_index=178,
             timestamp=TimestampMS(1674558203000),
@@ -86,7 +86,7 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
         )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1608594280000),
             location=Location.ETHEREUM,
@@ -99,21 +99,21 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EthDepositEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             validator_index=55750,
             sequence_index=62,
             timestamp=TimestampMS(1608594280000),
             amount=FVal('32'),
             depositor=user_address,
         ), EthDepositEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             validator_index=55751,
             sequence_index=63,
             timestamp=TimestampMS(1608594280000),
             amount=FVal('32'),
             depositor=user_address,
         ), EthDepositEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             validator_index=55752,
             sequence_index=64,
             timestamp=TimestampMS(1608594280000),
@@ -147,7 +147,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
     timestamp = TimestampMS(1669806275000)
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -159,7 +159,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             notes='Burn 0.00071529566834925 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             validator_index=validator.validator_index,
             sequence_index=431,
             timestamp=timestamp,
@@ -175,7 +175,7 @@ def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xcc80041642ebd2f62a9d939321a1927f52d2bcb984355accefadcb20f9641d28')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746618551000)),
         location=Location.ETHEREUM,
@@ -187,7 +187,7 @@ def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -201,7 +201,7 @@ def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
         address=CONSOLIDATION_REQUEST_CONTRACT,
         extra_data={'validator_index': 187176},
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -222,7 +222,7 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x812eeeb8a786650afa1826d8e9d46aa2073e28f1ed261f0c3da4ea18b7d7cd82')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746620507000)),
         location=Location.ETHEREUM,
@@ -234,7 +234,7 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -248,7 +248,7 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
         address=CONSOLIDATION_REQUEST_CONTRACT,
         extra_data={'source_validator_index': 67953, 'target_validator_index': 1073521},
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -274,7 +274,7 @@ def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas_amount, multisig_address, fee_amount = FVal('0.00051391919229775'), ethereum_accounts[1], FVal('0.000000000000000001')  # noqa: E501
     assert events[0] == EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1748043071000)),
         location=Location.ETHEREUM,
@@ -290,7 +290,7 @@ def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
     for idx, ((upgrade_event, fee_event), validator_index) in enumerate(zip(event_pairs, [1405739, 1405731, 1405735, 1405733, 1405736], strict=False)):  # noqa: E501
         idx *= 2  # noqa: PLW2901
         assert upgrade_event == EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=6 + idx,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -305,7 +305,7 @@ def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
             extra_data={'validator_index': validator_index},
         )
         assert fee_event == EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=6 + idx + 1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -326,7 +326,7 @@ def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5f038d3775fc27e16d8d5770aa1ba6f962e67ff8db0a194551566418542d60dc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746614447000)),
         location=Location.ETHEREUM,
@@ -338,7 +338,7 @@ def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -352,7 +352,7 @@ def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
         address=WITHDRAWAL_REQUEST_CONTRACT,
         extra_data={'validator_index': 68209},
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -373,7 +373,7 @@ def test_exit_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6224c1cde536d2488e29be74da6ed907bbeb885ecd38edc99820f35d8c0e136c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746707471000)),
         location=Location.ETHEREUM,
@@ -385,7 +385,7 @@ def test_exit_request(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -399,7 +399,7 @@ def test_exit_request(ethereum_inquirer, ethereum_accounts):
         address=WITHDRAWAL_REQUEST_CONTRACT,
         extra_data={'validator_index': 1649633},
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,

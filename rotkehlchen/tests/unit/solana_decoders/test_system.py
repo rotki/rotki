@@ -35,7 +35,7 @@ def test_native_transfer(
     events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
     transfer_amount, spend_address, receive_address = '0.718759267', SolanaAddress('4DrfzUpTdNtfr7D1RBVw2WhPshasifw97mH3aj27Skp9'), SolanaAddress('3AmPaYAe6xWFxci4iCe8m2TkrQFZJPaj5AeBPTDoeFkR')  # noqa: E501
     fee_event = SolanaEvent(
-        signature=signature,
+        tx_ref=signature,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1759436023000)),
         event_type=HistoryEventType.SPEND,
@@ -48,7 +48,7 @@ def test_native_transfer(
     )
     if len(solana_accounts) == 2:
         assert events == [fee_event, SolanaEvent(
-            signature=signature,
+            tx_ref=signature,
             sequence_index=1,
             timestamp=timestamp,
             event_type=HistoryEventType.TRANSFER,
@@ -61,7 +61,7 @@ def test_native_transfer(
         )]
     elif solana_accounts == [spend_address]:
         assert events == [fee_event, SolanaEvent(
-            signature=signature,
+            tx_ref=signature,
             sequence_index=1,
             timestamp=timestamp,
             event_type=HistoryEventType.SPEND,
@@ -74,7 +74,7 @@ def test_native_transfer(
         )]
     elif solana_accounts == [receive_address]:
         assert events == [SolanaEvent(
-            signature=signature,
+            tx_ref=signature,
             sequence_index=0,
             timestamp=timestamp,
             event_type=HistoryEventType.RECEIVE,

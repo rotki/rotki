@@ -27,7 +27,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1726732211000)
     gas_amount, migrated_amount = '0.001933756075256005', '10086.448037727051859359'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -39,7 +39,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=115,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -52,7 +52,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_SKY,
         address=DAI_TO_USDS_CONTRACT,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=120,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -74,7 +74,7 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5d4d8d4c9480ad603c91cd7a7e90fdf6faa2327728602e10b55620b18e642a91')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746824531000)),
         location=Location.ETHEREUM,
@@ -86,7 +86,7 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=780,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -100,7 +100,7 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
         address=MIGRATION_ACTIONS_CONTRACT,
         extra_data={'underlying_amount': underlying_dai},
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=790,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -123,7 +123,7 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd29f7d1aa194dae5fa2dcccaeef0acf37390bc847f51a6eb2e8bdcf4df32dc45')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746775787000)),
         location=Location.ETHEREUM,
@@ -135,7 +135,7 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=378,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -148,7 +148,7 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_SKY,
         address=MIGRATION_ACTIONS_CONTRACT,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=392,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -173,7 +173,7 @@ def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
     timestamp = TimestampMS(1726760855000)
     gas_amount, migrated_amount, received_amount = '0.00127609766341068', '0.75001216', '18000.29184'  # noqa: E501
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -185,7 +185,7 @@ def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -198,7 +198,7 @@ def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_SKY,
         address=MKR_ADDRESS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -220,7 +220,7 @@ def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2cf64d3e95e39e77dd3e02c458ddb1e22b5aea38f8d93f64cf79174f601ddc20')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1746660575000)),
         location=Location.ETHEREUM,
@@ -232,7 +232,7 @@ def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=12,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -245,7 +245,7 @@ def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_SKY,
         address=MIGRATION_ACTIONS_CONTRACT,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=17,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -268,7 +268,7 @@ def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xeafdd9789b99498466d9afffdb2087adaaba419b62c0adbcda17ff4c2e239a85')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1747020191000)),
         location=Location.ETHEREUM,
@@ -280,7 +280,7 @@ def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=60,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -293,7 +293,7 @@ def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_SKY,
         address=MIGRATION_ACTIONS_CONTRACT,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=65,
         timestamp=timestamp,
         location=Location.ETHEREUM,

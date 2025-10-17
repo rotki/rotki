@@ -114,7 +114,7 @@ class Eth2Decoder(EvmDecoderInterface):
             ):
                 assert event.location_label is not None
                 eth_deposit_event = EthDepositEvent(
-                    tx_hash=context.transaction.tx_hash,
+                    tx_ref=context.transaction.tx_hash,
                     validator_index=validator_index,
                     sequence_index=self.base.get_next_sequence_index(),
                     timestamp=event.timestamp,
@@ -167,7 +167,7 @@ class Eth2Decoder(EvmDecoderInterface):
             log.error(f'Failed to find fee event in ETH2 request transaction {context.transaction}')  # noqa: E501
 
         info_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
+            tx_ref=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,

@@ -62,7 +62,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
     token_id = '88045077199635585930173998576189366882372899073811035545363728149974713265418'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -74,7 +74,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             notes='Burn 0.023654025517055036 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=41,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -87,7 +87,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=43,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -100,7 +100,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=45,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -113,7 +113,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             counterparty=CPT_ENS,
             address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=46,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -126,7 +126,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=47,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -139,7 +139,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             address=ENS_REGISTRAR_CONTROLLER_1,
             extra_data={'name': 'hania.eth', 'expires': expires_timestamp},
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=48,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -175,7 +175,7 @@ def test_text_changed_old_name(database, ethereum_inquirer, ethereum_accounts, a
     timestamp = TimestampMS(1664548859000)
     gas_str = '0.00655101156241161'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -192,7 +192,7 @@ def test_text_changed_old_name(database, ethereum_inquirer, ethereum_accounts, a
             (294, 'com.github'), (295, 'com.reddit'), (296, 'com.twitter'), (297, 'org.telegram'),
     ]:
         expected_events.append(EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=seqindex,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -216,7 +216,7 @@ def test_set_resolver(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key
     user_address, timestamp, gas_str, ens_old_reverse_registrar = ethereum_accounts[0], TimestampMS(1660047719000), '0.001069480808983134', '0x084b1c3C81545d370f3634392De611CaaBFf8148'  # noqa: E501
 
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -228,7 +228,7 @@ def test_set_resolver(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key
         notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=270,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -241,7 +241,7 @@ def test_set_resolver(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key
         counterparty=CPT_ENS,
         address=ENS_REGISTRY_WITH_FALLBACK,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=271,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -266,7 +266,7 @@ def test_set_attribute_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1681296527000),
             location=Location.ETHEREUM,
@@ -279,7 +279,7 @@ def test_set_attribute_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=192,
             timestamp=TimestampMS(1681296527000),
             location=Location.ETHEREUM,
@@ -310,7 +310,7 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
     expires_timestamp = Timestamp(1712756435)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -323,7 +323,7 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -337,7 +337,7 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
             address=ENS_REGISTRAR_CONTROLLER_2,
             extra_data={'name': 'ens2qr.eth', 'expires': expires_timestamp},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=285,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -350,7 +350,7 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=289,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -363,7 +363,7 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=291,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -393,7 +393,7 @@ def test_register_v2_with_refund(
     user_address, timestamp, expires_timestamp = ethereum_accounts[0], TimestampMS(1723826543000), Timestamp(1786898543)  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -405,7 +405,7 @@ def test_register_v2_with_refund(
             notes='Burn 0.001694738163794328 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -419,7 +419,7 @@ def test_register_v2_with_refund(
             address=ENS_REGISTRAR_CONTROLLER_2,
             extra_data={'name': 'javxq.eth', 'expires': expires_timestamp},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=289,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -432,7 +432,7 @@ def test_register_v2_with_refund(
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=293,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -445,7 +445,7 @@ def test_register_v2_with_refund(
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=294,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -458,7 +458,7 @@ def test_register_v2_with_refund(
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=296,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -471,7 +471,7 @@ def test_register_v2_with_refund(
             counterparty=CPT_ENS,
             address=ENS_PUBLIC_RESOLVER_3_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=298,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -484,7 +484,7 @@ def test_register_v2_with_refund(
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=299,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -517,7 +517,7 @@ def test_renewal_with_refund_old_controller(ethereum_inquirer, ethereum_accounts
     expires_timestamp = Timestamp(2310615949)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1663628627000),
             location=Location.ETHEREUM,
@@ -530,7 +530,7 @@ def test_renewal_with_refund_old_controller(ethereum_inquirer, ethereum_accounts
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1663628627000),
             location=Location.ETHEREUM,
@@ -565,7 +565,7 @@ def test_renewal_with_refund_new_controller(ethereum_inquirer, ethereum_accounts
     expires_timestamp = Timestamp(1849443293)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1688717987000),
             location=Location.ETHEREUM,
@@ -578,7 +578,7 @@ def test_renewal_with_refund_new_controller(ethereum_inquirer, ethereum_accounts
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1688717987000),
             location=Location.ETHEREUM,
@@ -606,7 +606,7 @@ def test_content_hash_changed(ethereum_inquirer, ethereum_accounts, add_subgraph
     timestamp = TimestampMS(1686304523000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -619,7 +619,7 @@ def test_content_hash_changed(ethereum_inquirer, ethereum_accounts, add_subgraph
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=257,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -674,7 +674,7 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
     timestamp = TimestampMS(1687771811000)
     token_id = 73552724610198397480670284492690114609730214421511097849210414928326607694469
     gas_event = EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -691,7 +691,7 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
     if action != 'Receive':
         expected_events.append(gas_event)
     expected_events.append(EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=sequence_index,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -726,7 +726,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
     token_id = 520289412805995815014030902380736904960994587318475958708983757899533811755
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -739,7 +739,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=201,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -752,7 +752,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=203,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -765,7 +765,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=205,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -778,7 +778,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             counterparty=CPT_ENS,
             address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=206,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -791,7 +791,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=207,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -804,7 +804,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             address=ENS_REGISTRAR_CONTROLLER_1,
             extra_data={'name': 'cantillon.eth', 'expires': expires_timestamp},
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=208,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -831,7 +831,7 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
     gas_str = '0.000916189648966683'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -844,7 +844,7 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=365,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -872,7 +872,7 @@ def test_vote_cast_abstain(ethereum_inquirer, ethereum_accounts):
     gas_str = '0.000255411223579504'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -885,7 +885,7 @@ def test_vote_cast_abstain(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=205,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -914,7 +914,7 @@ def test_set_attribute_for_non_primary_name(ethereum_inquirer, ethereum_accounts
     timestamp = TimestampMS(1694558075000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -926,7 +926,7 @@ def test_set_attribute_for_non_primary_name(ethereum_inquirer, ethereum_accounts
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=344,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -953,7 +953,7 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts, add_subgraph_api_ke
     timestamp = TimestampMS(1637313773000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -965,7 +965,7 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts, add_subgraph_api_ke
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=161,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1008,7 +1008,7 @@ def test_new_owner(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key): 
     timestamp, gas_str = TimestampMS(1669498319000), '0.0004635496'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1021,7 +1021,7 @@ def test_new_owner(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key): 
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=278,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1048,7 +1048,7 @@ def test_address_changed(ethereum_inquirer, ethereum_accounts, add_subgraph_api_
     timestamp, gas_str = TimestampMS(1669498439000), '0.000402353718699768'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1061,7 +1061,7 @@ def test_address_changed(ethereum_inquirer, ethereum_accounts, add_subgraph_api_
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=517,
             timestamp=timestamp,
             location=Location.ETHEREUM,

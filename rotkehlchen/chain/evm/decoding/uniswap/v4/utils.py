@@ -209,7 +209,7 @@ def decode_uniswap_v4_like_swaps(
                     amount=raw_fee_amount,
                 ))
                 fee_event = base_tools.make_event_next_index(
-                    tx_hash=event.tx_hash,
+                    tx_ref=event.tx_ref,
                     timestamp=transaction.timestamp,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.FEE,

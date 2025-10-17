@@ -21,7 +21,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
     amount = '10000.28'
     gas_str = '0.001792178291324676'
     expected_events = [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -33,7 +33,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=372,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -45,7 +45,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         notes=f'Revoke MATIC spending approval of {ethereum_accounts[0]} by {POLYGON_MIGRATION_ADDRESS}',  # noqa: E501
         address=POLYGON_MIGRATION_ADDRESS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=373,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -58,7 +58,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_POLYGON,
         address=POLYGON_MIGRATION_ADDRESS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=374,
         timestamp=timestamp,
         location=Location.ETHEREUM,

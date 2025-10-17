@@ -373,7 +373,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     asset=A_USDT,
                     amount=ONE,
                     location_label=accounts[0],
-                    tx_hash=make_evm_tx_hash(),
+                    tx_ref=make_evm_tx_hash(),
                 ), EvmEvent(  # USDT was received before last_balance_save
                     event_identifier='0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
@@ -384,7 +384,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     asset=A_USDT,
                     amount=ZERO,
                     location_label=accounts[0],
-                    tx_hash=make_evm_tx_hash(),
+                    tx_ref=make_evm_tx_hash(),
                 ), EvmEvent(  # is a new receive event of this token after last_balance_save
                     event_identifier='0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
@@ -395,7 +395,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     asset=A_DAI,
                     amount=ONE,
                     location_label=accounts[1],
-                    tx_hash=make_evm_tx_hash(),
+                    tx_ref=make_evm_tx_hash(),
                 ), EvmEvent(  # is a new receive event of this token after last_balance_save
                     event_identifier='0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
@@ -406,7 +406,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     asset=A_USDC,
                     amount=ONE,
                     location_label=accounts[2],
-                    tx_hash=make_evm_tx_hash(),
+                    tx_ref=make_evm_tx_hash(),
                 ),
             ],
         )
@@ -1327,7 +1327,7 @@ def test_graph_query_query_delegations(
             dbevents.add_history_event(
                 write_cursor=write_cursor,
                 event=EvmEvent(
-                    tx_hash=(tx_hash := make_evm_tx_hash()),
+                    tx_ref=(tx_hash := make_evm_tx_hash()),
                     sequence_index=1,
                     timestamp=TimestampMS(timestamp),
                     location=Location.ETHEREUM,

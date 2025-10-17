@@ -84,7 +84,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
     timestamp = TimestampMS(1646375440000)
     expected_events = [
         EvmEvent(
-            tx_hash=deserialize_evm_tx_hash(
+            tx_ref=deserialize_evm_tx_hash(
                 '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             ),
             sequence_index=0,
@@ -98,7 +98,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=deserialize_evm_tx_hash(
+            tx_ref=deserialize_evm_tx_hash(
                 '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             ),
             sequence_index=298,
@@ -178,7 +178,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -190,7 +190,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=474,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,

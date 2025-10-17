@@ -349,7 +349,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
         timestamp = ts_ms_to_sec(decoded_events[0].timestamp)  # all events have same timestamp
         display_name = get_versioned_counterparty_label(CPT_UNISWAP_V3)
         from_event = self.base.make_event(
-            tx_hash=transaction.tx_hash,
+            tx_ref=transaction.tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             event_type=HistoryEventType.TRADE,
@@ -363,7 +363,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
         )
 
         to_event = self.base.make_event(
-            tx_hash=transaction.tx_hash,
+            tx_ref=transaction.tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             event_type=HistoryEventType.TRADE,

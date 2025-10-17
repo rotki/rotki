@@ -21,7 +21,7 @@ def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
     amount_str = '5920'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -33,7 +33,7 @@ def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -46,7 +46,7 @@ def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GOLEM,
             address=GNT_MIGRATION_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,

@@ -51,7 +51,7 @@ def test_transfers(
         DBHistoryEvents(db).add_history_event(
             write_cursor=write_cursor,
             event=EvmEvent(
-                tx_hash=make_evm_tx_hash(),
+                tx_ref=make_evm_tx_hash(),
                 sequence_index=1,
                 timestamp=TimestampMS(0),
                 location=Location.ETHEREUM,

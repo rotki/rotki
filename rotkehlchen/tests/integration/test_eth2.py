@@ -576,7 +576,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
     expected_events += [EvmEvent(
         identifier=1 + counter,
         event_identifier=f'BP1_{block_number}',
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=2 + counter,
         timestamp=timestamp,
         location=Location.ETHEREUM,

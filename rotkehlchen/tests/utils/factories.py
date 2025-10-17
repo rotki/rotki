@@ -136,7 +136,7 @@ CUSTOM_USDT = EvmToken.initialize(
 
 def make_ethereum_event(
         index: int,
-        tx_hash: bytes | None = None,
+        tx_ref: bytes | None = None,
         location_label: str | None = None,
         asset: Asset = CUSTOM_USDT,
         counterparty: str | None = None,
@@ -145,10 +145,10 @@ def make_ethereum_event(
         timestamp: TimestampMS = ZERO_TIMESTAMP_MS,
         address: ChecksumEvmAddress | None = None,
 ) -> EvmEvent:
-    if tx_hash is None:
-        tx_hash = make_random_bytes(32)
+    if tx_ref is None:
+        tx_ref = make_random_bytes(32)
     return EvmEvent(
-        tx_hash=deserialize_evm_tx_hash(tx_hash),
+        tx_ref=deserialize_evm_tx_hash(tx_ref),
         sequence_index=index,
         location_label=location_label,
         identifier=index,

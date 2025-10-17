@@ -25,7 +25,7 @@ def test_ethstaker_matching_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
     timestamp, user, amount = TimestampMS(1654833348000), arbitrum_one_accounts[0], '39566.332611058195231384'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -53,7 +53,7 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
     gas, timestamp, user, amount = '0.00483736114768445', TimestampMS(1650384723000), arbitrum_one_accounts[0], '0.005'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -65,7 +65,7 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -93,7 +93,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
     gas, timestamp, user = '0.003010415219175718', TimestampMS(1653433014000), arbitrum_one_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -105,7 +105,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=17,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -133,7 +133,7 @@ def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
     gas, timestamp, amount, user = '0.000313841956638943', TimestampMS(1653433994000), '8', arbitrum_one_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -145,7 +145,7 @@ def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,

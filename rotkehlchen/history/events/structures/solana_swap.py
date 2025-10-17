@@ -23,7 +23,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
 
     def __init__(
             self,
-            signature: Signature,
+            tx_ref: Signature,
             sequence_index: int,
             timestamp: TimestampMS,
             event_subtype: Literal[
@@ -50,7 +50,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
         The event_identifier is initialized from SolanaEvent constructor
         """
         super().__init__(
-            signature=signature,
+            tx_ref=tx_ref,
             sequence_index=sequence_index,
             timestamp=timestamp,
             event_type=event_type,
@@ -93,7 +93,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
             event_type=HistoryEventType.deserialize(entry[9]),  # type: ignore  # event type and subtype should always be correct from the DB
             event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
-            signature=Signature.from_bytes(entry[13]),
+            tx_ref=Signature.from_bytes(entry[13]),
             counterparty=entry[14],
             address=SolanaAddress(entry[15]) if entry[15] is not None else None,
         )
@@ -109,7 +109,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
         try:
             return cls(  # type: ignore[misc]  # remove the location key.
                 **swap_data,
-                signature=Signature.from_string(data['signature']),
+                tx_ref=Signature.from_string(data['tx_ref']),
                 counterparty=deserialize_optional(data['counterparty'], str),
                 address=SolanaAddress(data['address']) if data.get('address') is not None else None,  # noqa: E501
             )
@@ -118,7 +118,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
 
     def __repr__(self) -> str:
         fields = self._history_base_entry_repr_fields() + [
-            f'self.signature={self.signature!s}',  # convert to string to avoid newlines from solders library  # noqa: E501
+            f'self.tx_ref={self.tx_ref!s}',  # convert to string to avoid newlines from solders library  # noqa: E501
             f'{self.counterparty=}',
             f'{self.address=}',
         ]
@@ -127,7 +127,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
     def __str__(self) -> str:
         return (
             f'{self.event_subtype} SolanaSwapEvent in {self.location} with '
-            f'signature={self.signature} and time '
+            f'tx_ref={self.tx_ref} and time '
             f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
         )
 

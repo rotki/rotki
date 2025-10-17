@@ -64,7 +64,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     def __init__(
             self,
-            tx_hash: EVMTxHash,
+            tx_ref: EVMTxHash,
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -81,7 +81,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
             event_identifier: str | None = None,
     ) -> None:
         if event_identifier is None:
-            calculated_event_identifier = f'{location.to_chain_id()}{tx_hash.hex()}'
+            calculated_event_identifier = f'{location.to_chain_id()}{tx_ref.hex()}'
         else:
             calculated_event_identifier = event_identifier
         HistoryEventWithCounterparty.__init__(  # explicitly calling constructor due to some events having  # noqa: E501
@@ -101,7 +101,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
             counterparty=counterparty,
         )
         self.address = address
-        self.tx_hash = tx_hash
+        self.tx_ref = tx_ref
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
@@ -116,7 +116,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
             (
                 'chain_events_info(identifier, tx_ref, counterparty, address) VALUES (?, ?, ?, ?)',
                 'UPDATE chain_events_info SET tx_ref=?, counterparty=?, address=?', (
-                    self.tx_hash,
+                    self.tx_ref,
                     self.counterparty,
                     self.address,
                 ),
@@ -131,7 +131,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
 
     def serialize(self) -> dict[str, Any]:
         return HistoryBaseEntry.serialize(self) | {  # not using super() since it has unexpected results due to diamond shaped inheritance.  # noqa: E501
-            'tx_hash': self.tx_hash.hex(),
+            'tx_ref': str(self.tx_ref),
             'counterparty': self.counterparty,
             'address': self.address,
         }
@@ -172,7 +172,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
             event_type=HistoryEventType.deserialize(entry[9]),
             event_subtype=HistoryEventSubType.deserialize(entry[10]),
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
-            tx_hash=deserialize_evm_tx_hash(entry[13]),
+            tx_ref=deserialize_evm_tx_hash(entry[13]),
             counterparty=entry[14],
             address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
         )
@@ -195,7 +195,7 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
         try:
             return cls(
                 **base_data,
-                tx_hash=deserialize_evm_tx_hash(data['tx_hash']),
+                tx_ref=deserialize_evm_tx_hash(data['tx_ref']),
                 address=deserialize_optional(data['address'], string_to_evm_address),
                 counterparty=deserialize_optional(data['counterparty'], str),
             )
@@ -206,13 +206,13 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
         return (  # ignores are due to object and type checks in super not recognized
             HistoryBaseEntry.__eq__(self, other) is True and
             self.counterparty == other.counterparty and  # type: ignore
-            self.tx_hash == other.tx_hash and  # type: ignore
+            self.tx_ref == other.tx_ref and  # type: ignore
             self.address == other.address  # type: ignore
         )
 
     def __repr__(self) -> str:
         fields = self._history_base_entry_repr_fields() + [
-            f'{self.tx_hash=}',
+            f'{self.tx_ref=}',
             f'{self.counterparty=}',
             f'{self.address=}',
         ]
@@ -221,6 +221,6 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
     def __str__(self) -> str:
         return (
             f'{self.event_type} / {self.event_subtype} EvmEvent in {self.location} with '
-            f'tx_hash={self.tx_hash.hex()} and time '
+            f'tx_ref={self.tx_ref!s} and time '
             f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
         )

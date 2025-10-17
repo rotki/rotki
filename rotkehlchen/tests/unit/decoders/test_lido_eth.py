@@ -19,7 +19,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
     timestamp, gas_str, amount_deposited, amount_minted = TimestampMS(1710486191000), '0.002846110430778206', '1.12137397', '1.121373969999999999'  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -31,7 +31,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -44,7 +44,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_LIDO,
             address=A_STETH.resolve_to_evm_token().evm_address,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,

@@ -148,7 +148,7 @@ class EigenlayerBalances(ProtocolWithBalance):
 
             # here we are with a completed withdrawal that has not been matched, so redecode to try and match  # noqa: E501
             self.tx_decoder.decode_transaction_hashes(
-                tx_hashes=[completed_withdrawal.tx_hash],
+                tx_hashes=[completed_withdrawal.tx_ref],
                 ignore_cache=True,
             )
 

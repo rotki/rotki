@@ -156,7 +156,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
 
     def make_event(
             self,
-            tx_hash: EVMTxHash,
+            tx_ref: EVMTxHash,
             sequence_index: int,
             timestamp: Timestamp,
             event_type: HistoryEventType,
@@ -172,7 +172,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
         """A convenience function to create an EvmEvent depending on the
         decoder's chain id"""
         return EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_ref,
             sequence_index=sequence_index,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.from_chain_id(self.evm_inquirer.chain_id),
@@ -205,7 +205,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
         Must only be used once for a specific tx_log to prevent duplicate sequence indexes.
         """
         return self.make_event(
-            tx_hash=transaction.tx_hash,
+            tx_ref=transaction.tx_hash,
             sequence_index=self.get_sequence_index(tx_log),
             timestamp=transaction.timestamp,
             event_type=event_type,
@@ -221,7 +221,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
 
     def make_event_next_index(
             self,
-            tx_hash: EVMTxHash,
+            tx_ref: EVMTxHash,
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
@@ -235,7 +235,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
     ) -> 'EvmEvent':
         """Convenience function on top of make_event to use next sequence index."""
         return self.make_event(
-            tx_hash=tx_hash,
+            tx_ref=tx_ref,
             sequence_index=self.get_next_sequence_index(),
             timestamp=timestamp,
             event_type=event_type,

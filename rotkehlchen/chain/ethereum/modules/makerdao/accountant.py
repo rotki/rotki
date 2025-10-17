@@ -54,7 +54,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 asset=A_DAI,
                 amount=loss,
                 taxable=True,
-                extra_data={'tx_hash': event.tx_hash.hex()},
+                extra_data={'tx_hash': str(event.tx_ref)},
             )
             self.vault_balances[cdp_id] = ZERO
         return 1
@@ -87,7 +87,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 asset=A_DAI,
                 amount=profit,
                 taxable=True,
-                extra_data={'tx_hash': event.tx_hash.hex()},
+                extra_data={'tx_hash': str(event.tx_ref)},
             )
             self.dsr_balances[address] = ZERO
         return 1

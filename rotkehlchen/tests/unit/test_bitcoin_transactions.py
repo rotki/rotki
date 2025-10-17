@@ -541,7 +541,7 @@ def test_p2pk(
         notes='Send 50.00000000 BTC to 15WvMGm9qG1wDb54TMcvgzZsfvz9KdxzoN',
     )]
 
-    assert expected_event.serialize()['tx_hash'] == tx_id
+    assert expected_event.serialize()['tx_ref'] == tx_id
 
 
 @pytest.mark.parametrize('btc_accounts', [['bc1pdju7vpgsk7rz5s8kc9hukqr3z5nfe6457q2ysdx9jgpgjhhcmx8qjte9tm']])  # noqa: E501

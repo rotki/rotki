@@ -49,7 +49,7 @@ def test_openocean_swap_token_to_token(
     pos_usdt = Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F')
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -61,7 +61,7 @@ def test_openocean_swap_token_to_token(
             notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=14,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -73,7 +73,7 @@ def test_openocean_swap_token_to_token(
             notes=f'Set USDT spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=15,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -85,7 +85,7 @@ def test_openocean_swap_token_to_token(
             counterparty=CPT_OPENOCEAN,
             address=string_to_evm_address('0x1E82AD8A12068A85fCb96368463B434e77b21201'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=16,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
@@ -111,7 +111,7 @@ def test_openocean_swap_eth_to_token(
     user_address, timestamp, gas_amount, spend_amount, receive_amount = base_accounts[0], TimestampMS(1735074071000), '0.000005051509746809', '0.0031', '1013.977585253488605008'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.BASE,
@@ -123,7 +123,7 @@ def test_openocean_swap_eth_to_token(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
@@ -135,7 +135,7 @@ def test_openocean_swap_eth_to_token(
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
@@ -162,7 +162,7 @@ def test_openocean_swap_token_to_eth(
     op_usdce = Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607')
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -174,7 +174,7 @@ def test_openocean_swap_token_to_eth(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -186,7 +186,7 @@ def test_openocean_swap_token_to_eth(
             notes=f'Set USDC.e spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -198,7 +198,7 @@ def test_openocean_swap_token_to_eth(
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -224,7 +224,7 @@ def test_openocean_swap_uniswap_with_swapped_log(
     user_address, timestamp, gas_amount, spend_amount, receive_amount, approve_amount = arbitrum_one_accounts[0], TimestampMS(1702485949000), '0.0005537799', '3000', '3412.773848', '99999999999999999999996999'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -236,7 +236,7 @@ def test_openocean_swap_uniswap_with_swapped_log(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -248,7 +248,7 @@ def test_openocean_swap_uniswap_with_swapped_log(
             notes=f'Set ARB spending approval of {user_address} by {OPENOCEAN_EXCHANGE_ADDRESS} to {approve_amount}',  # noqa: E501
             address=OPENOCEAN_EXCHANGE_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -260,7 +260,7 @@ def test_openocean_swap_uniswap_with_swapped_log(
             counterparty=CPT_OPENOCEAN,
             address=string_to_evm_address('0xE07f9293ADe766Bffdf5e8548aD50425D49D5b25'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -286,7 +286,7 @@ def test_openocean_swap_uniswapv2(
     user_address, timestamp, gas_amount, spend_amount, receive_amount = ethereum_accounts[0], TimestampMS(1735206827000), '0.00072231082663302', '7500', '0.02494511741519721'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -298,7 +298,7 @@ def test_openocean_swap_uniswapv2(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -310,7 +310,7 @@ def test_openocean_swap_uniswapv2(
             counterparty=CPT_OPENOCEAN,
             address=string_to_evm_address('0xAd4010bD5579f62fB40730cEf5cdE27d620c0383'),
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -336,7 +336,7 @@ def test_openocean_swap_uniswapv3(
     user_address, timestamp, gas_amount, spend_amount, receive_amount = ethereum_accounts[0], TimestampMS(1735071359000), '0.0006813857721462', '0.02515', '800.247565502385530038'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -348,7 +348,7 @@ def test_openocean_swap_uniswapv3(
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -360,7 +360,7 @@ def test_openocean_swap_uniswapv3(
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -386,7 +386,7 @@ def test_openocean_swap_on_binance_sc(
     user_address, timestamp, gas_amount, spend_amount, receive_amount, approve_amount = binance_sc_accounts[0], TimestampMS(1736523190000), '0.000261305', '0.006797769273691619', '0.031725949469604878', '115792089237316195423570985008687907853269984665640564039457.577210143855948316'  # noqa: E501
     a_bsc_eth = Asset('eip155:56/erc20:0x2170Ed0880ac9A755fd29B2688956BD959F933F8')
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -398,7 +398,7 @@ def test_openocean_swap_on_binance_sc(
         notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=338,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -410,7 +410,7 @@ def test_openocean_swap_on_binance_sc(
         notes=f'Set ETH spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=339,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -422,7 +422,7 @@ def test_openocean_swap_on_binance_sc(
         counterparty=CPT_OPENOCEAN,
         address=string_to_evm_address('0x55877bD7F2EE37BDe55cA4B271A3631f3A7ef121'),
     ), EvmSwapEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=340,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
@@ -447,7 +447,7 @@ def test_openocean_swap_xdai_to_token(
     user_address, timestamp, gas_amount, spend_amount, receive_amount = gnosis_accounts[0], TimestampMS(1741275975000), '0.000389004', '18.7', '18.651429'  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -459,7 +459,7 @@ def test_openocean_swap_xdai_to_token(
             notes=f'Burn {gas_amount} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -471,7 +471,7 @@ def test_openocean_swap_xdai_to_token(
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
         ), EvmSwapEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
@@ -496,7 +496,7 @@ def test_openocean_distribution(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1711763457000),
             location=Location.ARBITRUM_ONE,

@@ -22,7 +22,7 @@ def test_echo_fund(base_inquirer, base_accounts):
     timestamp, fund_amount, deal_address = TimestampMS(1736535363000), '5887', string_to_evm_address('0xeC14eD2470FaCe0a60a41c945Cc586aFbcc3273C')  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=262,
             timestamp=timestamp,
             location=Location.BASE,
@@ -35,7 +35,7 @@ def test_echo_fund(base_inquirer, base_accounts):
             address=FUNDING_CONDUIT,
         ),
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=265,
             timestamp=timestamp,
             location=Location.BASE,
@@ -59,7 +59,7 @@ def test_echo_refund(base_inquirer, base_accounts):
     timestamp, deal_address = TimestampMS(1730227259000), string_to_evm_address('0x241F8222D1c80a4FDc25f9FC00181Eec770131A2')  # noqa: E501
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=492,
             timestamp=timestamp,
             location=Location.BASE,

@@ -20,7 +20,7 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
     user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1683666539000),
             location=Location.OPTIMISM,
@@ -32,7 +32,7 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
             notes='Burn 0.000656986283649328 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1683666539000),
             location=Location.OPTIMISM,
@@ -59,7 +59,7 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
     user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1688979323000),
             location=Location.OPTIMISM,
@@ -71,7 +71,7 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
             notes='Burn 0.000033338918413158 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=20,
             timestamp=TimestampMS(1688979323000),
             location=Location.OPTIMISM,
@@ -97,7 +97,7 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
     gas_amount = '0.000022621225472652'
     assert events == [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.OPTIMISM,
@@ -109,7 +109,7 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=122,
             timestamp=timestamp,
             location=Location.OPTIMISM,

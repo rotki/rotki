@@ -1009,7 +1009,7 @@ class RestAPI:
             table = 'zksynclite_transactions' if blockchain.is_evmlike() else 'evm_transactions'
             if cursor.execute(
                 f'SELECT COUNT(*) FROM {table} WHERE tx_hash=?',
-                (event.tx_hash,),
+                (event.tx_ref,),
             ).fetchone()[0] != 0:
                 return None
 
@@ -1023,7 +1023,7 @@ class RestAPI:
 
         if blockchain.is_evmlike():
             if self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
-                tx_hash=event.tx_hash,
+                tx_hash=event.tx_ref,
                 concerning_address=associated_address,
             ) is not None:
                 return None
@@ -1032,7 +1032,7 @@ class RestAPI:
                 self.rotkehlchen.chains_aggregator.get_chain_manager(  # type: ignore[call-overload]  # Will only be EVM chains
                     blockchain=blockchain,
                 ).transactions.add_transaction_by_hash(
-                    tx_hash=event.tx_hash,
+                    tx_hash=event.tx_ref,
                     associated_address=associated_address,
                 )
                 return None

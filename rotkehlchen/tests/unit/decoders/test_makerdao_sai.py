@@ -101,7 +101,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=1513958719000,
             location=Location.ETHEREUM,
@@ -113,7 +113,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=23,
             timestamp=1513958719000,
             location=Location.ETHEREUM,
@@ -253,7 +253,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=1513957014000,
             location=Location.ETHEREUM,
@@ -265,7 +265,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
             notes='Burn 0.00508884 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=45,
             timestamp=1513957014000,
             location=Location.ETHEREUM,
@@ -386,7 +386,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
     timestamp = TimestampMS(1513954042000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -398,7 +398,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
             notes='Burn 0.0037108 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=33,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -411,7 +411,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -557,7 +557,7 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
     timestamp = TimestampMS(1513958625000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -569,7 +569,7 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
             notes='Burn 0.00515524 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=21,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -582,7 +582,7 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=29,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -667,7 +667,7 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
     timestamp = TimestampMS(1513955555000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -679,7 +679,7 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
             notes='Burn 0.0037036 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -692,7 +692,7 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -770,7 +770,7 @@ def test_makerdao_sai_deposit_peth(ethereum_transaction_decoder):
     timestamp = TimestampMS(1513955635000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -782,7 +782,7 @@ def test_makerdao_sai_deposit_peth(ethereum_transaction_decoder):
             notes='Burn 0.00138008 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=32,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -908,7 +908,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=1513952436000,
             location=Location.ETHEREUM,
@@ -920,7 +920,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
             notes='Burn 0.00478524 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=24,
             timestamp=1513952436000,
             location=Location.ETHEREUM,
@@ -1019,7 +1019,7 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
     timestamp = TimestampMS(1514047441000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1031,7 +1031,7 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
             notes='Burn 0.003528768 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=33,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1118,7 +1118,7 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
     timestamp = TimestampMS(1663338359000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1130,7 +1130,7 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
             notes='Burn 0.001070825480009344 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=359,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1392,7 +1392,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     timestamp = TimestampMS(1565146195000)
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1404,7 +1404,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             notes='Burn 0.002845233 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=59,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1416,7 +1416,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             notes='Create DSR proxy 0x3e4d3c5B1d1dE05157B5a46Eef2A9282aD22A60B with owner 0x6D1723Af1727d857964d12f19ed92E63736c8dA2',  # noqa: E501
             address=string_to_evm_address('0x3e4d3c5B1d1dE05157B5a46Eef2A9282aD22A60B'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=60,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1429,7 +1429,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=61,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1442,7 +1442,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=66,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1455,7 +1455,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=77,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1655,7 +1655,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=1588030530000,
             location=Location.ETHEREUM,
@@ -1667,7 +1667,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             notes='Burn 0.00043181 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=85,
             timestamp=1588030530000,
             location=Location.ETHEREUM,
@@ -1898,7 +1898,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     assert len(events) == 5
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=1588035170000,
             location=Location.ETHEREUM,
@@ -1910,7 +1910,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             notes='Burn 0.000937104 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=1588035170000,
             location=Location.ETHEREUM,
@@ -1923,7 +1923,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=2,
             timestamp=1588035170000,
             location=Location.ETHEREUM,
@@ -1936,7 +1936,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=106,
             timestamp=1588035170000,
             location=Location.ETHEREUM,
@@ -1949,7 +1949,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=117,
             timestamp=1588035170000,
             location=Location.ETHEREUM,
@@ -2137,7 +2137,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=1588030595000,
             location=Location.ETHEREUM,
@@ -2149,7 +2149,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             notes='Burn 0.000571796 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=1588030595000,
             location=Location.ETHEREUM,
@@ -2162,7 +2162,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x72Ee0f9AB3678148CC0700243CB38577Bd290869'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=90,
             timestamp=1588030595000,
             location=Location.ETHEREUM,
@@ -2191,7 +2191,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
     )
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2205,7 +2205,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
             extra_data={'vault_type': 'ETH-A'},
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=1,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2217,7 +2217,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             notes='Send 0.022255814 ETH to 0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2',
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=41,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2230,7 +2230,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=51,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2242,7 +2242,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             notes='Send 242.093537946269468696 SAI from 0xca482bCd75A6E0697aD6A1732aa187310b8372Df to 0xcb0C7C757C64e1583bA5673dE486BDe1b8329879',  # noqa: E501
             address=string_to_evm_address('0xcb0C7C757C64e1583bA5673dE486BDe1b8329879'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=52,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2254,7 +2254,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             notes='Receive 0.459550053455645351 MKR from 0x39755357759cE0d7f32dC8dC45414CCa409AE24e to 0xca482bCd75A6E0697aD6A1732aa187310b8372Df',  # noqa: E501
             address=string_to_evm_address('0x39755357759cE0d7f32dC8dC45414CCa409AE24e'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=58,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2266,7 +2266,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             notes=f'Send 0.45955005345564535 MKR from 0xca482bCd75A6E0697aD6A1732aa187310b8372Df to {MAKERDAO_MIGRATION_ADDRESS}',  # noqa: E501
             address=MAKERDAO_MIGRATION_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=65,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2279,7 +2279,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=102,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2291,7 +2291,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             notes='Receive 0.022255814 WETH from 0x2F0b23f53734252Bda2277357e97e1517d6B042A to 0xca482bCd75A6E0697aD6A1732aa187310b8372Df',  # noqa: E501
             address=string_to_evm_address('0x2F0b23f53734252Bda2277357e97e1517d6B042A'),
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=105,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2323,7 +2323,7 @@ def test_sai_dai_migration(ethereum_transaction_decoder, ethereum_accounts):
     amount_str = '12.559504275171697953'
     expected_events = [
         EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2336,7 +2336,7 @@ def test_sai_dai_migration(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=33,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -2349,7 +2349,7 @@ def test_sai_dai_migration(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_MAKERDAO_MIGRATION,
             address=MAKERDAO_MIGRATION_ADDRESS,
         ), EvmEvent(
-            tx_hash=tx_hash,
+            tx_ref=tx_hash,
             sequence_index=39,
             timestamp=timestamp,
             location=Location.ETHEREUM,

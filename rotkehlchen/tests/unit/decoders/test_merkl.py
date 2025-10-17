@@ -31,7 +31,7 @@ def test_merkl_morpho_reward(
     tx_hash = deserialize_evm_tx_hash('0xaad239c0266abf4cf17536c8023ad2ebbea638e2e93a88bdcca33931a6a2e12a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1752610171000)),
         location=Location.BASE,
@@ -43,7 +43,7 @@ def test_merkl_morpho_reward(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=163,
         timestamp=timestamp,
         location=Location.BASE,
@@ -67,7 +67,7 @@ def test_merkl_multi_reward(
     tx_hash = deserialize_evm_tx_hash('0xa95d10273815bf576e9873ed75c634fef9f220b2f00e8b45abf63c9478c148d7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1753427615000)),
         location=Location.ETHEREUM,
@@ -79,7 +79,7 @@ def test_merkl_multi_reward(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=246,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -92,7 +92,7 @@ def test_merkl_multi_reward(
         address=MERKL_DISTRIBUTOR_ADDRESS,
         counterparty=CPT_MERKL,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=249,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -116,7 +116,7 @@ def test_merkl_multi_reward_multiprotocol(
     tx_hash = deserialize_evm_tx_hash('0x1d9473e79cc211ab1d4b97a836cf8460eaea431863fb45dad87d27583d55ae94')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1751794103000)),
         location=Location.ETHEREUM,
@@ -128,7 +128,7 @@ def test_merkl_multi_reward_multiprotocol(
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=342,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -141,7 +141,7 @@ def test_merkl_multi_reward_multiprotocol(
         address=MERKL_DISTRIBUTOR_ADDRESS,
         counterparty=CPT_MERKL,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=345,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -154,7 +154,7 @@ def test_merkl_multi_reward_multiprotocol(
         address=MERKL_DISTRIBUTOR_ADDRESS,
         counterparty=CPT_MERKL,
     ), EvmEvent(
-        tx_hash=tx_hash,
+        tx_ref=tx_hash,
         sequence_index=347,
         timestamp=timestamp,
         location=Location.ETHEREUM,

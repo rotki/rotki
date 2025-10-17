@@ -106,7 +106,7 @@ def _gain_one_ether(
         kwargs = {'event_identifier': f'rotki_events_{EXAMPLE_EVM_HASH.hex()}'}  # pylint: disable=no-member
     else:  # can only be evm event
         event_class = EvmEvent
-        kwargs = {'tx_hash': EXAMPLE_EVM_HASH}
+        kwargs = {'tx_ref': EXAMPLE_EVM_HASH}
 
     eth_gain_event = event_class(
         **kwargs,
@@ -130,7 +130,7 @@ def _gain_one_ether(
 def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
     """Test that if there are no settings provided, the event is not taken into account"""
     event = EvmEvent(
-        tx_hash=EXAMPLE_EVM_HASH,
+        tx_ref=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TimestampMS(0),
         location=Location.ETHEREUM,
@@ -172,7 +172,7 @@ def test_accounting_receive_settings(
     )
     expected_extra_data = {}
     if entry_type == 'evm_event':
-        expected_extra_data = {'tx_hash': EXAMPLE_TX_HASH_HEX}
+        expected_extra_data = {'tx_ref': EXAMPLE_TX_HASH_HEX}
 
     expected_event = ProcessedAccountingEvent(
         event_type=AccountingEventType.TRANSACTION_EVENT,
@@ -218,7 +218,7 @@ def test_accounting_spend_settings(
 ):
     _gain_one_ether(events_accountant=accounting_pot.events_accountant)
     spend_event = EvmEvent(
-        tx_hash=EXAMPLE_EVM_HASH,
+        tx_ref=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_2_MS,
         location=Location.ETHEREUM,
@@ -275,7 +275,7 @@ def test_accounting_spend_settings(
         pnl=PNL(taxable=taxable_pnl, free=ZERO),
         cost_basis=cost_basis,
         index=1,
-        extra_data={'tx_hash': EXAMPLE_TX_HASH_HEX},
+        extra_data={'tx_ref': EXAMPLE_TX_HASH_HEX},
     )
     expected_event.count_entire_amount_spend = is_taxable
     expected_event.count_cost_basis_pnl = is_taxable and (counterparty != CPT_GAS or include_crypto2crypto)  # noqa: E501
@@ -293,7 +293,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     """
     _gain_one_ether(events_accountant=accounting_pot.events_accountant)
     swap_spend_event = EvmEvent(
-        tx_hash=EXAMPLE_EVM_HASH,
+        tx_ref=EXAMPLE_EVM_HASH,
         sequence_index=1,
         timestamp=TIMESTAMP_2_MS,
         location=Location.ETHEREUM,
@@ -306,7 +306,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         counterparty=counterparty,
     )
     swap_receive_event = EvmEvent(
-        tx_hash=EXAMPLE_EVM_HASH,
+        tx_ref=EXAMPLE_EVM_HASH,
         sequence_index=2,
         timestamp=TIMESTAMP_2_MS,
         location=Location.ETHEREUM,
@@ -354,7 +354,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         ),
         index=1,
         extra_data={
-            'tx_hash': EXAMPLE_TX_HASH_HEX,
+            'tx_ref': EXAMPLE_TX_HASH_HEX,
             'group_id': f'{swap_spend_event.event_identifier}12',
         },
     )
@@ -374,7 +374,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         cost_basis=None,
         index=2,
         extra_data={
-            'tx_hash': EXAMPLE_TX_HASH_HEX,
+            'tx_ref': EXAMPLE_TX_HASH_HEX,
             'group_id': f'{swap_receive_event.event_identifier}12',
         },
     )

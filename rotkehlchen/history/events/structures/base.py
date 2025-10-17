@@ -293,9 +293,9 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             elif self.event_subtype == HistoryEventSubType.FEE:
                 serialized_data['auto_notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
         elif self.location == Location.BITCOIN:
-            serialized_data['tx_hash'] = self.event_identifier.replace(BTC_EVENT_IDENTIFIER_PREFIX, '')  # noqa: E501
+            serialized_data['tx_ref'] = self.event_identifier.replace(BTC_EVENT_IDENTIFIER_PREFIX, '')  # noqa: E501
         elif self.location == Location.BITCOIN_CASH:
-            serialized_data['tx_hash'] = self.event_identifier.replace(BCH_EVENT_IDENTIFIER_PREFIX, '')  # noqa: E501
+            serialized_data['tx_ref'] = self.event_identifier.replace(BCH_EVENT_IDENTIFIER_PREFIX, '')  # noqa: E501
 
         return serialized_data
 
