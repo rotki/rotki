@@ -39,7 +39,7 @@ MAX_INDIVIDUAL_TX_QUERIES: Final = 4
 MONERIUM_API_BASE_URL: Final = 'https://api.monerium.app/'
 MONERIUM_ACCEPT_HEADER: Final = 'application/vnd.monerium.api-v2+json'
 TOKEN_REFRESH_MARGIN_SECONDS: Final = 60
-AUTHENTICATION_FLOW_CLIENT_ID: Final = '0cba773d-a369-11f0-b3a4-326caa0c532e'  # TODO: Change before going into production  # noqa: E501
+AUTHORIZATION_CODE_FLOW_CLIENT_ID: Final = '9f93c53a-aa6c-11f0-9078-069e351f134d'
 
 
 class Monerium:
@@ -305,7 +305,7 @@ class MoneriumOAuthClient:
         self._credentials: MoneriumOAuthCredentials | None = self._load_credentials()
         self._oauth_client: WebApplicationClient | None = None
         if self._credentials is not None:
-            self._oauth_client = WebApplicationClient(AUTHENTICATION_FLOW_CLIENT_ID)
+            self._oauth_client = WebApplicationClient(AUTHORIZATION_CODE_FLOW_CLIENT_ID)
 
     def _load_credentials(self) -> MoneriumOAuthCredentials | None:
         """Load cached OAuth credentials from the database, if any."""
@@ -385,7 +385,7 @@ class MoneriumOAuthClient:
         )
 
         self._credentials = credentials
-        self._oauth_client = WebApplicationClient(AUTHENTICATION_FLOW_CLIENT_ID)
+        self._oauth_client = WebApplicationClient(AUTHORIZATION_CODE_FLOW_CLIENT_ID)
         self._store_credentials(credentials)
 
         context = self._fetch_user_context()
@@ -493,14 +493,14 @@ class MoneriumOAuthClient:
 
         assert self._credentials is not None, 'checked in is_authenticated'
         if self._oauth_client is None:
-            self._oauth_client = WebApplicationClient(client_id=AUTHENTICATION_FLOW_CLIENT_ID)
+            self._oauth_client = WebApplicationClient(client_id=AUTHORIZATION_CODE_FLOW_CLIENT_ID)
 
         try:
             response = self.session.post(
                 url=urljoin(MONERIUM_API_BASE_URL, 'auth/token'),
                 params={
                     'grant_type': 'refresh_token',
-                    'client_id': AUTHENTICATION_FLOW_CLIENT_ID,
+                    'client_id': AUTHORIZATION_CODE_FLOW_CLIENT_ID,
                     'refresh_token': self._credentials.refresh_token,
                 },
                 headers={'Content-Type': 'application/x-www-form-urlencoded'},
