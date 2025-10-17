@@ -22,6 +22,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
+import { getPublicServiceImagePath } from '@/utils/file';
 
 definePage({
   meta: {
@@ -219,7 +220,7 @@ async function toggleWhitelistAsset() {
                 <template #prepend>
                   <AppImage
                     size="30px"
-                    src="./assets/images/services/coingecko.svg"
+                    :src="getPublicServiceImagePath('coingecko.svg')"
                   />
                 </template>
               </RuiButton>
@@ -236,7 +237,7 @@ async function toggleWhitelistAsset() {
                 <template #prepend>
                   <AppImage
                     size="30px"
-                    src="./assets/images/services/cryptocompare.svg"
+                    :src="getPublicServiceImagePath('cryptocompare.svg')"
                   />
                 </template>
               </RuiButton>

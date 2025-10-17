@@ -9,6 +9,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { useMoneriumOAuth } from '@/composables/settings/api-keys/external/monerium-oauth';
 import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useNotificationsStore } from '@/store/notifications';
+import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -183,7 +184,7 @@ onUnmounted(() => {
     :key-set="moneriumConnected"
     :title="t('external_services.monerium.title')"
     :subtitle="t('external_services.monerium.description')"
-    image-src="./assets/images/services/monerium.png"
+    :image-src="getPublicServiceImagePath('monerium.png')"
     :primary-action="primaryActionLabel"
     :action-disabled="isAuthorizing"
     @confirm="primaryActionHandler()"

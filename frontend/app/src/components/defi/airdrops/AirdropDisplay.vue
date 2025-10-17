@@ -2,6 +2,7 @@
 import AppImage from '@/components/common/AppImage.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useAirdropsMetadata } from '@/composables/defi/airdrops/metadata';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 const props = defineProps<{
   source: string;
@@ -20,7 +21,7 @@ const imageFromIconName = computed(() => {
   if (!iconVal)
     return undefined;
 
-  return `./assets/images/protocols/${iconVal}`;
+  return getPublicProtocolImagePath(iconVal);
 });
 </script>
 

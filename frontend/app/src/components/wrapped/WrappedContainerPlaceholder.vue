@@ -2,6 +2,7 @@
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -24,7 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
     <div class="relative">
       <AppImage
         class="dark:invert-[0.89] dark:hue-rotate-[180deg] -m-4"
-        src="./assets/images/placeholder/history_events_wrapped.png"
+        :src="getPublicPlaceholderImagePath('history_events_wrapped.png')"
       />
 
       <GetPremiumPlaceholder

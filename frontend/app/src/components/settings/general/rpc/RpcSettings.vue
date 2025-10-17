@@ -8,6 +8,7 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { isOfEnum } from '@/utils';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -59,7 +60,7 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
   {
     component: defineAsyncComponent(() => import('@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue')),
     id: 'eth_consensus_layer',
-    image: './assets/images/protocols/ethereum.svg',
+    image: getPublicProtocolImagePath('ethereum.svg'),
     name: 'ETH Beacon Node',
     setting: 'beaconRpcEndpoint',
   },

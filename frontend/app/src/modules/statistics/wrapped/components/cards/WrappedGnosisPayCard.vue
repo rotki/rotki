@@ -2,6 +2,7 @@
 import type { BigNumber } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { getPublicServiceImagePath } from '@/utils/file';
 import { useWrappedFormatters } from '../../composables/use-wrapped-formatters';
 import WrappedCard from '../WrappedCard.vue';
 
@@ -28,7 +29,7 @@ const { calculateFontSize } = useWrappedFormatters();
   >
     <template #header-icon>
       <AppImage
-        src="./assets/images/services/gnosispay.png"
+        :src="getPublicServiceImagePath('gnosispay.png')"
         width="24px"
         height="24px"
         contain

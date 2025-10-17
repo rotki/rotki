@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
+import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -15,7 +16,7 @@ const { t } = useI18n({ useScope: 'global' });
     <div class="relative">
       <AppImage
         class="dark:invert-[0.88] dark:hue-rotate-[180deg] -m-2"
-        src="./assets/images/placeholder/asset_amount_and_value_partial.png"
+        :src="getPublicPlaceholderImagePath('asset_amount_and_value_partial.png')"
       />
 
       <GetPremiumPlaceholder

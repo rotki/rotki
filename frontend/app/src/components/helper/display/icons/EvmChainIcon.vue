@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toCapitalCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 interface Props {
   size?: string;
@@ -16,7 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 const { chain } = toRefs(props);
 
 function getImageUrl(evmChain: string): string {
-  return `./assets/images/protocols/${evmChain}.svg`;
+  return getPublicProtocolImagePath(`${evmChain}.svg`);
 }
 
 const chainData = computed(() => {

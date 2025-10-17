@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { getPublicProtocolImagePath } from '@/utils/file';
 import { PoolType } from './types';
 
 const props = defineProps<{
@@ -9,10 +10,10 @@ const props = defineProps<{
 }>();
 
 const data = [{
-  icon: './assets/images/protocols/uniswap.svg',
+  icon: getPublicProtocolImagePath('uniswap.svg'),
   identifier: PoolType.UNISWAP_V2,
 }, {
-  icon: './assets/images/protocols/sushiswap.svg',
+  icon: getPublicProtocolImagePath('sushiswap.svg'),
   identifier: PoolType.SUSHISWAP,
 }] as const;
 

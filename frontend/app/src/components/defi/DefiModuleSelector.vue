@@ -6,6 +6,7 @@ import {
   SUPPORTED_MODULES,
   type SupportedModule,
 } from '@/types/modules';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 type PurgeableModuleEntry = Omit<SupportedModule, 'identifier'> & { identifier: PurgeableModule };
 
@@ -25,11 +26,11 @@ const modules = computed<PurgeableModuleEntry[]>(() => {
   const items = props.items;
 
   const modules: PurgeableModuleEntry[] = [...SUPPORTED_MODULES, {
-    icon: './assets/images/protocols/cowswap.jpg',
+    icon: getPublicProtocolImagePath('cowswap.jpg'),
     identifier: PurgeableOnlyModule.COWSWAP,
     name: 'Cowswap',
   }, {
-    icon: './assets/images/protocols/gnosis_pay.png',
+    icon: getPublicProtocolImagePath('gnosis_pay.png'),
     identifier: PurgeableOnlyModule.GNOSIS_PAY,
     name: 'Gnosis Pay',
   }];

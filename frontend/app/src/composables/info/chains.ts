@@ -13,6 +13,7 @@ import { useArrayInclude } from '@/composables/array';
 import { Routes } from '@/router/routes';
 import { useMainStore } from '@/store/main';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { getPublicProtocolImagePath } from '@/utils/file';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
   return info.type === 'evm';
@@ -198,7 +199,7 @@ export const useSupportedChains = createSharedComposable(() => {
     const chainVal = get(chain);
     const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
 
-    return `./assets/images/protocols/${image}`;
+    return getPublicProtocolImagePath(image);
   });
 
   const txChainsToLocation = useArrayMap(evmAndEvmLikeTxChainsInfo, (item) => {
