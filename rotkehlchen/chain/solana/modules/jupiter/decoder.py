@@ -1,26 +1,23 @@
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING, Any
-
-from construct import Bytes, Int64ul, Struct
-from construct.core import ConstructError
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.solana.decoding.constants import ANCHOR_EVENT_DISCRIMINATOR
 from rotkehlchen.chain.solana.decoding.interfaces import SolanaDecoderInterface
 from rotkehlchen.chain.solana.decoding.structures import (
     DEFAULT_SOLANA_DECODING_OUTPUT,
     SolanaDecoderContext,
     SolanaDecodingOutput,
 )
+from rotkehlchen.chain.solana.decoding.utils import get_data_for_discriminator, match_discriminator
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SolanaAddress
-from rotkehlchen.utils.misc import bytes_to_solana_address
 
 from .constants import (
     CPT_JUPITER,
@@ -30,118 +27,153 @@ from .constants import (
     ROUTE_DISCRIMINATOR,
     ROUTE_V2_DISCRIMINATOR,
     SWAP_EVENT_DISCRIMINATOR,
-    SWAP_EVENT_DISCRIMINATOR_LEN,
+    SWAPS_EVENT_DISCRIMINATOR,
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-# Solana binary layout for Jupiter swap event data
-SWAP_EVENT_LAYOUT = Struct(
-    'amm' / Bytes(32),          # AMM program that executed the swap
-    'inputMint' / Bytes(32),    # Token mint being swapped from
-    'inputAmount' / Int64ul,    # Amount of input tokens (raw units)
-    'outputMint' / Bytes(32),   # Token mint being swapped to
-    'outputAmount' / Int64ul,   # Amount of output tokens (raw units)
-)
 A_WSOL = Asset('solana/token:So11111111111111111111111111111111111111112')
 
 
 class JupiterDecoder(SolanaDecoderInterface):
 
-    def _decode_swap(self, context: SolanaDecoderContext) -> SolanaDecodingOutput:
-        """Decode swaps via the Jupiter aggregator program.
+    def decode_v6_swap(self, context: SolanaDecoderContext) -> SolanaDecodingOutput:
+        """Decode swaps via the Jupiter aggregator v6 program.
 
-        Parses the inner instructions of a route instruction to extract swap event data for all
-        the swaps in the route. Then updates and reshuffles the decoded transfers, removing any
-        events relating to intermediate swaps so the full route is decoded as one swap.
+        Matches the swap event instruction and the corresponding route instruction and combines
+        all swaps in the route into a single swap event group.
 
         IDL reference:
         https://github.com/jup-ag/instruction-parser/blob/e6f77951377847c579112e6a16d8c17c5c092485/src/idl/jupiter.ts
         """
-        if context.instruction.data[:8] not in (ROUTE_DISCRIMINATOR, ROUTE_V2_DISCRIMINATOR):
+        if not (
+            (event_data := get_data_for_discriminator(context.instruction.data, ANCHOR_EVENT_DISCRIMINATOR)) is not None and (  # noqa: E501
+                match_discriminator(event_data, SWAP_EVENT_DISCRIMINATOR) or
+                match_discriminator(event_data, SWAPS_EVENT_DISCRIMINATOR)
+            )
+        ):
             return DEFAULT_SOLANA_DECODING_OUTPUT
 
-        # Parse inner instructions to extract swap events data
-        in_token_amounts: defaultdict[Asset, set[FVal]] = defaultdict(set)
-        out_token_amounts: defaultdict[Asset, set[FVal]] = defaultdict(set)
+        # Find the route instruction corresponding to this swap event instruction
         for instruction in context.transaction.instructions:
-            if (
-                    instruction.parent_execution_index != context.instruction.execution_index or
-                    instruction.data[:SWAP_EVENT_DISCRIMINATOR_LEN] != SWAP_EVENT_DISCRIMINATOR
+            if instruction.execution_index == context.instruction.parent_execution_index and (
+                (is_v2 := match_discriminator(instruction.data, ROUTE_V2_DISCRIMINATOR)) or
+                match_discriminator(instruction.data, ROUTE_DISCRIMINATOR)
             ):
-                continue
+                destination_mint = instruction.accounts[4] if is_v2 else instruction.accounts[5]
+                route_instruction = instruction
+                break
+        else:
+            log.error(f'Failed to find Jupiter route instruction in transaction {context.transaction!s}')  # noqa: E501
+            return DEFAULT_SOLANA_DECODING_OUTPUT
 
-            try:
-                decoded_event = SWAP_EVENT_LAYOUT.parse(instruction.data[SWAP_EVENT_DISCRIMINATOR_LEN:])  # skip 16-byte discriminator  # noqa: E501
-            except ConstructError as e:
-                log.error(
-                    f'Failed to parse Jupiter swap event data in transaction '
-                    f'{context.transaction.signature} at execution_index {instruction.execution_index} '  # noqa: E501
-                    f'(parent: {instruction.parent_execution_index}): {e}',
-                )
-                continue
-
-            for token_amounts, mint_address_bytes, raw_amount in [
-                (out_token_amounts, decoded_event.inputMint, decoded_event.inputAmount),
-                (in_token_amounts, decoded_event.outputMint, decoded_event.outputAmount),
-            ]:
-                token_amounts[token := get_or_create_solana_token(
-                    userdb=self.node_inquirer.database,
-                    address=bytes_to_solana_address(mint_address_bytes),
-                    solana_inquirer=self.node_inquirer,
-                )].add(token_normalized_value(token=token, token_amount=raw_amount))
-
-        out_event, in_event, filtered_events = None, None, []
+        unrelated_events, other_events, platform_fee_event = [], [], None
+        out_events_by_asset: dict[Asset, SolanaEvent] = {}
+        in_events_by_asset: dict[Asset, SolanaEvent] = {}
         for event in context.decoded_events:
             if (
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.amount in out_token_amounts[event.asset]
+                (event_instruction := self.base.event_instructions.get(event)) is None or
+                event_instruction.parent_execution_index != route_instruction.execution_index
             ):
-                if event.amount in in_token_amounts[event.asset]:
-                    continue  # don't add these to filtered_events
+                unrelated_events.append(event)
+                continue
 
+            if (  # platform fee comes immediately after the swap events instruction
+                event_instruction.execution_index == context.instruction.execution_index + 1 and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
                 event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.SPEND
+                event.event_subtype = HistoryEventSubType.FEE
                 event.counterparty = CPT_JUPITER
-                event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in Jupiter'  # noqa: E501
-                out_event = event
-
+                event.notes = f'Spend {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as Jupiter platform fee'  # noqa: E501
+                platform_fee_event = event
+            elif (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                if (existing_event := out_events_by_asset.get(event.asset)) is not None:
+                    existing_event.amount += event.amount
+                else:
+                    out_events_by_asset[event.asset] = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.amount in in_token_amounts[event.asset]
+                event.event_subtype == HistoryEventSubType.NONE
             ):
-                if event.amount in out_token_amounts[event.asset]:
-                    continue  # don't add these to filtered_events
+                if (existing_event := in_events_by_asset.get(event.asset)) is not None:
+                    existing_event.amount += event.amount
+                else:
+                    in_events_by_asset[event.asset] = event
+            else:
+                other_events.append(event)
 
-                event.counterparty = CPT_JUPITER
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in Jupiter'  # noqa: E501
-                in_event = event
+        # Combine any opposite side events that have the same asset
+        events_to_skip = set()
+        for in_event in in_events_by_asset.values():
+            if (out_event := out_events_by_asset.get(in_event.asset)) is None:
+                continue
 
-            filtered_events.append(event)
+            if in_event.amount == out_event.amount:
+                events_to_skip.add(in_event)
+                events_to_skip.add(out_event)
+            elif out_event.amount > in_event.amount:
+                out_event.amount -= in_event.amount
+                events_to_skip.add(in_event)
+            else:  # out_event.amount < in_event.amount
+                in_event.amount -= out_event.amount
+                events_to_skip.add(out_event)
 
-        # replace decoded events with only the filtered events, removing any intermediate swaps
-        # so there is only a single swap for the full route.
-        context.decoded_events[:] = filtered_events
+        # Update the amount in the event notes and skip unneeded events
+        out_events: list[SolanaEvent] = []
+        in_events: list[SolanaEvent] = []
+        slippage_events: list[SolanaEvent] = []
+        for events_by_asset, final_list, sub_type, notes_template in (
+            (out_events_by_asset, out_events, HistoryEventSubType.SPEND, 'Swap {amount} {asset} in Jupiter'),  # noqa: E501
+            (in_events_by_asset, in_events, HistoryEventSubType.RECEIVE, 'Receive {amount} {asset} as the result of a swap in Jupiter'),  # noqa: E501
+        ):
+            for trade_event in events_by_asset.values():
+                if trade_event in events_to_skip:
+                    continue
 
-        if out_event is None or in_event is None:
+                trade_event.counterparty = CPT_JUPITER
+                if (
+                    sub_type == HistoryEventSubType.RECEIVE and
+                    destination_mint not in trade_event.asset.identifier
+                ):
+                    trade_event.event_type = HistoryEventType.RECEIVE
+                    trade_event.event_subtype = HistoryEventSubType.NONE
+                    trade_event.notes = f'Receive {trade_event.amount} {trade_event.asset.resolve_to_asset_with_symbol().symbol} due to positive slippage in a Jupiter swap'  # noqa: E501
+                    slippage_events.append(trade_event)
+                    continue
+
+                trade_event.event_type = HistoryEventType.TRADE
+                trade_event.event_subtype = sub_type
+                trade_event.notes = notes_template.format(
+                    amount=trade_event.amount,
+                    asset=trade_event.asset.resolve_to_asset_with_symbol().symbol,
+                )
+                final_list.append(trade_event)
+
+        if len(out_events) == 0 or len(in_events) == 0:
             log.error(
                 f'Failed to find both out and in events for '
                 f'Jupiter swap transaction {context.transaction.signature}',
             )
             return DEFAULT_SOLANA_DECODING_OUTPUT
 
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=context.decoded_events,
+        # replace decoded events with only the filtered events
+        filtered_events = (
+            out_events + in_events +
+            ([platform_fee_event] if platform_fee_event is not None else []) +
+            slippage_events + other_events
         )
+        context.decoded_events[:] = unrelated_events + filtered_events
+
+        maybe_reshuffle_events(ordered_events=filtered_events, events_list=context.decoded_events)
         return SolanaDecodingOutput(process_swaps=True)
 
     def decode_rfq_swap(self, context: SolanaDecoderContext) -> SolanaDecodingOutput:
@@ -151,10 +183,10 @@ class JupiterDecoder(SolanaDecoderInterface):
         if context.instruction.data[:8] != FILL_DISCRIMINATOR:
             return DEFAULT_SOLANA_DECODING_OUTPUT
 
-        if (accounts_len := len(context.instruction.accounts)) < 12:
+        if (accounts_len := len(context.instruction.accounts)) < 11:  # IDL specifies 11, but some txs have extra ones  # noqa: E501
             log.error(
                 f'Encountered Jupiter RFQ Fill instruction with insufficient number of accounts. '
-                f'Expected 12, got: {accounts_len}',
+                f'Expected at least 11, got: {accounts_len}',
             )
             return DEFAULT_SOLANA_DECODING_OUTPUT
 
@@ -214,7 +246,7 @@ class JupiterDecoder(SolanaDecoderInterface):
 
     def addresses_to_decoders(self) -> dict[SolanaAddress, tuple[Any, ...]]:
         return {
-            JUPITER_AGGREGATOR_PROGRAM_V6: (self._decode_swap,),
+            JUPITER_AGGREGATOR_PROGRAM_V6: (self.decode_v6_swap,),
             JUPITER_RFQ_ORDER_ENGINE_PROGRAM: (self.decode_rfq_swap,),
         }
 

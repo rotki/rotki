@@ -42,6 +42,9 @@ class SolanaTransaction:
 
         return self.db_id
 
+    def __str__(self) -> str:
+        return str(self.signature)
+
 
 def pubkey_to_solana_address(value: Pubkey) -> SolanaAddress:
     """Convert a public key to SolanaAddress. Only used for typing purposes."""

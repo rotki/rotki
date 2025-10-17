@@ -9,5 +9,5 @@ JUPITER_RFQ_ORDER_ENGINE_PROGRAM: Final = SolanaAddress('61DFfeTKM7trxYcPQCM78bJ
 ROUTE_DISCRIMINATOR: Final = b'\xe5\x17\xcb\x97z\xe3\xad*'  # v1 route instruction
 ROUTE_V2_DISCRIMINATOR: Final = b'\xbbd\xfa\xcc1\xc4\xaf\x14'  # v2 route instruction
 FILL_DISCRIMINATOR: Final = b'\xa8`\xb7\xa3\\\n(\xa0'  # RFQ fill instruction
-SWAP_EVENT_DISCRIMINATOR: Final = b'\xe4E\xa5.Q\xcb\x9a\x1d@\xc6\xcd\xe8&\x08q\xe2'
-SWAP_EVENT_DISCRIMINATOR_LEN: Final = len(SWAP_EVENT_DISCRIMINATOR)
+SWAP_EVENT_DISCRIMINATOR: Final = b'@\xc6\xcd\xe8&\x08q\xe2'
+SWAPS_EVENT_DISCRIMINATOR: Final = b'\x98/N\xeb\xc0`nj'
