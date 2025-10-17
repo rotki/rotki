@@ -11,7 +11,8 @@ from rotkehlchen.db.filtering import (
     SolanaTransactionsFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
 )
-from rotkehlchen.types import SolanaAddress, Timestamp
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.types import Location, SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -200,3 +201,31 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                 'SELECT COUNT(*) FROM solana_transactions WHERE block_time BETWEEN ? AND ?',
                 (from_ts, to_ts),
             ).fetchone()[0]
+
+    def delete_data_for_address(
+            self,
+            write_cursor: 'DBCursor',
+            address: SolanaAddress,
+    ) -> None:
+        """Deletes all solana transactions and their related data for a given address."""
+        # Get all transaction signatures that involve only this address
+        if len(results := write_cursor.execute(
+            'SELECT DISTINCT S.signature FROM solanatx_address_mappings AS M '
+            'INNER JOIN solana_transactions AS S ON S.identifier = M.tx_id '
+            'WHERE M.address = ? AND M.tx_id NOT IN ('
+            'SELECT tx_id FROM solanatx_address_mappings WHERE address != ?)',
+            (address, address),
+        ).fetchall()) == 0:
+            return  # No transactions for this address only
+
+        DBHistoryEvents(self.db).delete_events_by_tx_ref(
+            write_cursor=write_cursor,
+            tx_refs=[Signature(row[0]) for row in results],
+            location=Location.SOLANA,
+        )
+        write_cursor.execute(
+            'DELETE FROM solana_transactions WHERE identifier IN ('
+            'SELECT DISTINCT tx_id FROM solanatx_address_mappings WHERE address = ? '
+            'AND tx_id NOT IN (SELECT tx_id FROM solanatx_address_mappings WHERE address != ?))',
+            (address, address),
+        )
