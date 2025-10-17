@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from solders.solders import Signature
 
 from rotkehlchen.chain.decoding.tools import BaseDecoderTools
-from rotkehlchen.chain.solana.types import SolanaTransaction
+from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -36,6 +36,9 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
             address_is_exchange_fn=lambda x: None,
         )
         self.node_inquirer = node_inquirer
+        # Maps events to their corresponding instruction to allow filtering events by what
+        # execution index they originated from etc during decoding.
+        self.event_instructions: dict[SolanaEvent, SolanaInstruction] = {}
 
     def make_event(
             self,
@@ -67,3 +70,35 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
             address=address,
             extra_data=extra_data,
         )
+
+    def make_event_from_instruction(
+            self,
+            instruction: SolanaInstruction,
+            tx_ref: Signature,
+            timestamp: Timestamp,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            asset: 'Asset',
+            amount: FVal,
+            location_label: str | None = None,
+            notes: str | None = None,
+            counterparty: str | None = None,
+            address: SolanaAddress | None = None,
+            extra_data: dict[str, Any] | None = None,
+    ) -> 'SolanaEvent':
+        """A convenience function to create a SolanaEvent that is associated with a
+        specific instruction."""
+        self.event_instructions[event := self.make_event_next_index(
+            tx_ref=tx_ref,
+            timestamp=timestamp,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=asset,
+            amount=amount,
+            location_label=location_label,
+            notes=notes,
+            counterparty=counterparty,
+            address=address,
+            extra_data=extra_data,
+        )] = instruction
+        return event

@@ -349,6 +349,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             asset=spl_token,
             from_address=owners[0],
             to_address=owners[1],
+            instruction=instruction,
         )
 
     def _maybe_decode_native_transfer(
@@ -376,6 +377,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             asset=A_SOL,
             from_address=instruction.accounts[0],
             to_address=instruction.accounts[1],
+            instruction=instruction,
         )
 
     def _maybe_get_token_account_initialization(
@@ -412,6 +414,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             from_address: 'SolanaAddress',
             to_address: 'SolanaAddress',
             transaction: SolanaTransaction,
+            instruction: SolanaInstruction,
     ) -> SolanaEvent | None:
         if (direction_result := self.base.decode_direction(
                 from_address=from_address,
@@ -422,7 +425,8 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-        return self.base.make_event_next_index(
+        return self.base.make_event_from_instruction(
+            instruction=instruction,
             tx_ref=transaction.signature,
             timestamp=transaction.block_time,
             event_type=event_type,
@@ -525,6 +529,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             return [], False, None
 
         self.base.reset_sequence_counter(tx_data=transaction)
+        self.base.event_instructions.clear()
         events, undecoded_instructions = self._decode_basic_events(transaction=transaction)
         refresh_balances, reload_decoders, process_swaps = False, set(), False
         for instruction in undecoded_instructions:
