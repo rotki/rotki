@@ -15,7 +15,6 @@ import { z } from 'zod/v4';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -40,7 +39,6 @@ enum HistoryEventFilterKeys {
   EVENT_TYPE = 'event_type',
   EVENT_SUBTYPE = 'event_subtype',
   LOCATION = 'location',
-  PRODUCT = 'product',
   ENTRY_TYPE = 'type',
   TX_HASHES = 'tx_hash',
   VALIDATOR_INDICES = 'validator_index',
@@ -56,7 +54,6 @@ enum HistoryEventFilterValueKeys {
   EVENT_TYPE = 'eventTypes',
   EVENT_SUBTYPE = 'eventSubtypes',
   LOCATION = 'location',
-  PRODUCT = 'products',
   ENTRY_TYPE = 'entryTypes',
   TX_HASHES = 'txRefs',
   VALIDATOR_INDICES = 'validatorIndices',
@@ -71,7 +68,6 @@ export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 export function useHistoryEventFilter(
   disabled: {
     protocols?: boolean;
-    products?: boolean;
     locations?: boolean;
     period?: boolean;
     validators?: boolean;
@@ -84,7 +80,6 @@ export function useHistoryEventFilter(
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();
-  const { historyEventProducts } = useHistoryEventProductMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { assetInfo, assetSearch } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
@@ -179,18 +174,6 @@ export function useHistoryEventFilter(
         string: true,
         suggestions: () => get(associatedLocations),
         validate: location => !!location,
-      });
-    }
-
-    if (!disabled?.products && transactionEventsIncluded) {
-      const products = get(historyEventProducts);
-      data.push({
-        description: t('transactions.filter.product'),
-        key: HistoryEventFilterKeys.PRODUCT,
-        keyValue: HistoryEventFilterValueKeys.PRODUCT,
-        string: true,
-        suggestions: () => products,
-        validate: product => !!product,
       });
     }
 
@@ -324,7 +307,6 @@ export function useHistoryEventFilter(
     [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
     [HistoryEventFilterValueKeys.NOTES]: OptionalString,
-    [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.START]: OptionalString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,

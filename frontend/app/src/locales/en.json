@@ -4857,12 +4857,6 @@
         "notes": {
           "hint": "[Optional] Additional notes to store for the action"
         },
-        "product": {
-          "label": "Product",
-          "validation": {
-            "valid": "The product field is invalid, fill with available products"
-          }
-        },
         "resulting_combination": {
           "label": "Resulting combination",
           "unknown": "The resulting combination is unknown, this event won't be processed correctly."
@@ -4999,7 +4993,6 @@
       "match_exact_filter": "Should match exact filter",
       "match_exact_filter_hint": "If enabled, it will show only the events that match the filter, excluding the other events in the same group.",
       "notes": "filter by notes content",
-      "product": "filter by product",
       "protocol": "filter by the protocol of the events",
       "show_ignored_assets": "Show entries with ignored assets",
       "start_date": "filter by the start date of the transaction period",

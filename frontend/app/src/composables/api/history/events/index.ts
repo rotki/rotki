@@ -24,7 +24,7 @@ import {
   type RepullingTransactionPayload,
   type TransactionRequestPayload,
 } from '@/types/history/events';
-import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
+import { HistoryEventTypeData } from '@/types/history/events/event-type';
 import {
   type AddHistoryEventPayload,
   type HistoryEventCollectionRow,
@@ -63,7 +63,6 @@ interface UseHistoryEventsApiReturn {
   repullingExchangeEvents: (payload: RepullingExchangeEventsPayload) => Promise<PendingTask>;
   getTransactionTypeMappings: () => Promise<HistoryEventTypeData>;
   getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
-  getHistoryEventProductsData: () => Promise<HistoryEventProductData>;
   fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventCollectionRow>>;
   queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
   queryExchangeEvents: (payload: QueryExchangePayload) => Promise<PendingTask>;
@@ -245,14 +244,6 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
-  const getHistoryEventProductsData = async (): Promise<HistoryEventProductData> => {
-    const response = await api.instance.get<ActionResult<HistoryEventProductData>>('/history/events/products', {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
-
   const fetchHistoryEvents = async (
     payload: HistoryEventRequestPayload,
   ): Promise<CollectionResponse<HistoryEventCollectionRow>> => {
@@ -374,7 +365,6 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     fetchTransactionsTask,
     getEventDetails,
     getHistoryEventCounterpartiesData,
-    getHistoryEventProductsData,
     getTransactionStatusSummary,
     getTransactionTypeMappings,
     getUndecodedTransactionsBreakdown,
