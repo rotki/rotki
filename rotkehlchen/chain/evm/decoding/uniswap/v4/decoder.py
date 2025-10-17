@@ -136,7 +136,6 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
                 from_event_type=expected_type,
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=asset,
-                address=self.pool_manager,
                 to_event_type=event_type,
                 to_event_subtype=event_subtype,
                 to_notes=f'{verb} {{amount}} {asset.symbol} {from_to} {lp_str}',  # amount is set when the action item is processed  # noqa: E501
