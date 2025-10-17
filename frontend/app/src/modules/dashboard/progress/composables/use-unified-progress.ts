@@ -1,14 +1,14 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { EvmTransactionStatus } from '@/composables/api/history/events';
+import type { TransactionStatus } from '@/composables/api/history/events';
 import type { BlockchainAccount } from '@/types/blockchain/accounts';
 import { get, isDefined, set } from '@vueuse/shared';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useRefWithDebounce } from '@/composables/ref';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { type BalanceQueryProgress, useBalanceQueryProgress } from '@/modules/dashboard/progress/composables/use-balance-query-progress';
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
 import { type HistoryQueryProgress, useHistoryQueryProgress } from '@/modules/dashboard/progress/composables/use-history-query-progress';
+import { useTransactionStatusCheck } from '@/modules/dashboard/progress/composables/use-transaction-status-check';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
@@ -34,8 +34,10 @@ interface UseUnifiedProgressReturn {
   sectionLoading: ComputedRef<boolean>;
   shouldFetchEventsRegularly: ComputedRef<boolean>;
   showIdleMessage: ComputedRef<boolean>;
-  transactionStatus: Ref<EvmTransactionStatus | undefined>;
+  transactionStatusSummary: Ref<TransactionStatus | undefined>;
   queryStatus: Ref<QueryStatusDismissal>;
+  navigateToHistory: () => Promise<void>;
+  hasUndecodedTransactions: ComputedRef<boolean>;
 }
 
 interface QueryStatusDismissal {
@@ -62,17 +64,25 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
 
   // Use existing composables
   const { progress: historyProgress } = useHistoryQueryProgress();
+
+  const {
+    earliestQueriedTimestamp: lastQueriedTimestamp,
+    isAccountsExist,
+    isNeverQueried,
+    isOutOfSync: isOutOfSyncCheck,
+    navigateToHistory,
+    processing,
+  } = useTransactionStatusCheck();
+
   const { balanceProgress, isBalanceQuerying } = useBalanceQueryProgress();
-  const { processing: rawProcessing, refreshing, sectionLoading, shouldFetchEventsRegularly } = useHistoryEventsStatus();
+  const { refreshing, sectionLoading, shouldFetchEventsRegularly } = useHistoryEventsStatus();
   const { dismissalThresholdMs, minOutOfSyncPeriodMs } = useHistoryQueryIndicatorSettings();
 
   // Additional stores and composables
   const historyStore = useHistoryStore();
-  const { evmTransactionStatus: transactionStatus } = storeToRefs(historyStore);
+  const { transactionStatusSummary } = storeToRefs(historyStore);
   const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
   const { allTxChainsInfo } = useSupportedChains();
-
-  const processing = useRefWithDebounce(rawProcessing, 400);
 
   const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 
@@ -83,21 +93,12 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   );
 
   const hasTxAccounts = computed<boolean>(() => {
-    const { hasEvmAccounts = false } = get(transactionStatus) ?? {};
+    const { hasEvmAccounts = false } = get(transactionStatusSummary) ?? {};
     if (!hasEvmAccounts) {
       return false;
     }
     const filteredChains = get(txChainIds);
     return get(accounts).some(({ chain }) => filteredChains.includes(chain));
-  });
-
-  const lastQueriedTimestamp = computed<number>(() => {
-    const status = get(transactionStatus);
-    if (!status || status.lastQueriedTs === 0)
-      return 0;
-
-    // Convert seconds to milliseconds for useTimeAgo
-    return status.lastQueriedTs * 1000;
   });
 
   const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);
@@ -140,28 +141,28 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   });
 
   const showIdleMessage = computed<boolean>(() => {
-    const status = get(transactionStatus);
-    if (!isDefined(status)) {
+    if (!get(isAccountsExist)) {
       return false;
     }
 
-    const now = Date.now();
-    const lastQueriedTs = get(lastQueriedTimestamp);
-    const minOutOfSyncMs = get(minOutOfSyncPeriodMs);
-
-    // Don't show if not out of sync enough
-    return now - lastQueriedTs >= minOutOfSyncMs;
-  });
-
-  const isNeverQueried = computed<boolean>(() => {
-    const status = get(transactionStatus);
-    return isDefined(status) && status.lastQueriedTs === 0;
+    return get(isOutOfSyncCheck);
   });
 
   const longQuery = computed<boolean>(() => {
-    const status = get(transactionStatus);
+    if (!get(isAccountsExist)) {
+      return false;
+    }
+
+    const status = get(transactionStatusSummary);
     const now = Date.now();
-    return isDefined(status) && status.undecodedTxCount === 0 && now - status.lastQueriedTs > HUNDRED_EIGHTY_DAYS;
+    const lastQueried = get(lastQueriedTimestamp);
+    return isDefined(status) && status.undecodedTxCount === 0 && now - lastQueried > HUNDRED_EIGHTY_DAYS;
+  });
+
+  const hasUndecodedTransactions = computed<boolean>(() => {
+    const status = get(transactionStatusSummary);
+
+    return !!status && status.undecodedTxCount > 0;
   });
 
   const resetQueryStatus = (): void => {
@@ -176,12 +177,14 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
     balanceProgress,
     dismissalThresholdMs,
     hasTxAccounts,
+    hasUndecodedTransactions,
     historyProgress,
     isNeverQueried,
     lastQueriedDisplay,
     lastQueriedTimestamp,
     longQuery,
     minOutOfSyncPeriodMs,
+    navigateToHistory,
     processing,
     processingMessage,
     processingPercentage,
@@ -191,6 +194,6 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
     sectionLoading,
     shouldFetchEventsRegularly,
     showIdleMessage,
-    transactionStatus,
+    transactionStatusSummary,
   };
 }

@@ -2,7 +2,7 @@
 import type { ProfitLossReportPeriod } from '@/types/reports';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { useTransactionStatusCheck } from '@/modules/dashboard/history-events/composables/use-transaction-status-check';
+import { useTransactionStatusCheck } from '@/modules/dashboard/progress/composables/use-transaction-status-check';
 import { Routes } from '@/router/routes';
 
 const emit = defineEmits<{

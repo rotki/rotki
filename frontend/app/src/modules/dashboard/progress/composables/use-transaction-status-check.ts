@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import { useRefWithDebounce } from '@/composables/ref';
-import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/history-events/composables/use-history-query-indicator-settings';
+import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 
@@ -29,7 +29,12 @@ interface UseTransactionStatusCheckReturn {
   /**
    * Navigates to the history events page.
    */
-  navigateToHistory: () => void;
+  navigateToHistory: () => Promise<void>;
+
+  /**
+   * Check if any accounts exist
+   */
+  isAccountsExist: Ref<boolean>;
 }
 
 export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
@@ -40,11 +45,22 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   const { processing: rawProcessing } = useHistoryEventsStatus();
   const processing = useRefWithDebounce(rawProcessing, 400);
 
-  const earliestQueriedTimestamp = computed<number>(() => {
+  const isAccountsExist = computed<boolean>(() => {
     const status = get(transactionStatusSummary);
     if (!isDefined(status)) {
+      return false;
+    }
+
+    const { hasEvmAccounts = false, hasExchangesAccounts = false } = status;
+
+    return hasEvmAccounts || hasExchangesAccounts;
+  });
+
+  const earliestQueriedTimestamp = computed<number>(() => {
+    if (!get(isAccountsExist)) {
       return 0;
     }
+    const status = get(transactionStatusSummary)!;
 
     const { evmLastQueriedTs = 0, exchangesLastQueriedTs = 0, hasEvmAccounts = false, hasExchangesAccounts = false } = status;
 
@@ -66,13 +82,20 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
     return Math.min(...timestamps) * 1000;
   });
 
-  const isNeverQueried = computed<boolean>(() => get(earliestQueriedTimestamp) === 0);
-
-  const isOutOfSync = computed<boolean>(() => {
-    const status = get(transactionStatusSummary);
-    if (!isDefined(status)) {
+  const isNeverQueried = computed<boolean>(() => {
+    if (!get(isAccountsExist)) {
       return false;
     }
+
+    return get(earliestQueriedTimestamp) === 0;
+  });
+
+  const isOutOfSync = computed<boolean>(() => {
+    if (!get(isAccountsExist)) {
+      return false;
+    }
+
+    const status = get(transactionStatusSummary)!;
 
     const { evmLastQueriedTs = 0, exchangesLastQueriedTs = 0, hasEvmAccounts = false, hasExchangesAccounts = false } = status;
 
@@ -100,12 +123,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
       }
     }
 
-    // Also consider it out of sync if never queried
-    if ((hasEvmAccounts && evmLastQueriedTs === 0) || (hasExchangesAccounts && exchangesLastQueriedTs === 0)) {
-      return true;
-    }
-
-    return false;
+    return get(isNeverQueried);
   });
 
   async function navigateToHistory(): Promise<void> {
@@ -114,6 +132,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
 
   return {
     earliestQueriedTimestamp,
+    isAccountsExist,
     isNeverQueried,
     isOutOfSync,
     navigateToHistory,
