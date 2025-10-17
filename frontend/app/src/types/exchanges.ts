@@ -18,10 +18,16 @@ function isValidOkxLocation(val: unknown): val is OkxLocation {
   return typeof val === 'string' && OKX_LOCATIONS.includes(val);
 }
 
-export const Exchange = z.object({
-  krakenAccountType: KrakenAccountType.optional(),
+export const QueryExchangeEventsPayload = z.object({
   location: z.string(),
   name: z.string(),
+});
+
+export type QueryExchangeEventsPayload = z.infer<typeof QueryExchangeEventsPayload>;
+
+export const Exchange = z.object({
+  ...QueryExchangeEventsPayload.shape,
+  krakenAccountType: KrakenAccountType.optional(),
   okxLocation: z.preprocess(
     (val) => {
       if (val === undefined)

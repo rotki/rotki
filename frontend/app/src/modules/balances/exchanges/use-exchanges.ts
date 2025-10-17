@@ -1,5 +1,4 @@
 import type { ExchangeBalancePayload } from '@/types/blockchain/accounts';
-import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
 import type { ExchangeMeta } from '@/types/task';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
@@ -12,6 +11,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { AssetBalances } from '@/types/balances';
+import { type EditExchange, Exchange, type ExchangeFormData } from '@/types/exchanges';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -187,12 +187,15 @@ export function useExchanges(): UseExchangesReturn {
 
     const success = await callSetupExchange(filteredPayload);
 
+    // Only get the essential exchange data to store in memory, excluding the api key and secret
+    const essentialExchangeData = Exchange.parse(filteredPayload);
+
     if (mode !== 'edit') {
-      addExchange(filteredPayload);
+      addExchange(essentialExchangeData);
     }
     else {
       editExchange({
-        exchange: filteredPayload,
+        exchange: essentialExchangeData,
         newName,
       });
     }

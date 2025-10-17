@@ -3,6 +3,7 @@ import type { AxiosRequestConfig } from 'axios';
 import type { HistoryEventExportPayload, HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { ActionDataEntry, ActionStatus } from '@/types/action';
 import type { CollectionResponse } from '@/types/collection';
+import type { QueryExchangeEventsPayload } from '@/types/exchanges';
 import type { PendingTask } from '@/types/task';
 import { omit } from 'es-toolkit';
 import { z } from 'zod/v4';
@@ -36,8 +37,6 @@ import { nonEmptyProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
 import { getFilename } from '@/utils/file';
 
-interface QueryExchangePayload { name: string; location: string }
-
 const TransactionStatusSchema = z.object({
   evmLastQueriedTs: z.number(),
   exchangesLastQueriedTs: z.number(),
@@ -65,7 +64,7 @@ interface UseHistoryEventsApiReturn {
   getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
   fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventCollectionRow>>;
   queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
-  queryExchangeEvents: (payload: QueryExchangePayload) => Promise<PendingTask>;
+  queryExchangeEvents: (payload: QueryExchangeEventsPayload) => Promise<PendingTask>;
   exportHistoryEventsCSV: (filters: HistoryEventExportPayload, directoryPath?: string) => Promise<PendingTask>;
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
@@ -271,7 +270,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
-  const queryExchangeEvents = async (payload: QueryExchangePayload): Promise<PendingTask> => {
+  const queryExchangeEvents = async (payload: QueryExchangeEventsPayload): Promise<PendingTask> => {
     const response = await api.instance.post(
       '/history/events/query/exchange',
       snakeCaseTransformer({

@@ -1,4 +1,3 @@
-import type { Exchange } from '@/types/exchanges';
 import type { TaskMeta } from '@/types/task';
 import { groupBy, omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
@@ -7,6 +6,7 @@ import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
+import { type Exchange, QueryExchangeEventsPayload } from '@/types/exchanges';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
@@ -90,7 +90,8 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     };
 
     try {
-      const { taskId } = await queryExchangeEvents(exchange);
+      const payload = QueryExchangeEventsPayload.parse(exchange);
+      const { taskId } = await queryExchangeEvents(payload);
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     }
     catch (error: any) {
@@ -100,7 +101,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
           display: true,
           message: t('actions.exchange_events.error.description', {
             error,
-            ...exchange,
+            ...payload,
           }),
           title: t('actions.exchange_events.error.title'),
         });
