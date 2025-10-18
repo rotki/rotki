@@ -68,25 +68,28 @@ const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
 
 const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent));
 
-const eventWithTxHash = computed<{ location: string; txHash: string } | undefined>(() => {
+const eventWithTxHash = computed<{ location: string; txRef: string } | undefined>(() => {
   const currentEvent = get(event);
   const evm = get(evmEvent);
   const solana = get(solanaEvent);
   if (evm) {
-    return evm;
+    return {
+      location: evm.location,
+      txRef: evm.txRef,
+    };
   }
 
   if (solana) {
     return {
       location: solana.location,
-      txHash: solana.signature,
+      txRef: solana.txRef,
     };
   }
 
   if (isOnlineHistoryEvent(currentEvent) && 'txHash' in currentEvent && currentEvent.txHash) {
     return {
       location: currentEvent.location,
-      txHash: currentEvent.txHash,
+      txRef: currentEvent.txHash,
     };
   }
 

@@ -67,7 +67,7 @@ describe('forms/EvmEventForm.vue', () => {
     locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
     sequenceIndex: 2411,
     timestamp: 1686495083,
-    txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
+    txRef: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
     userNotes:
       'Receive 610 Visit https://rafts.cc to claim rewards. from 0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C to 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
   };
@@ -123,12 +123,12 @@ describe('forms/EvmEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const locationInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] input');
     const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
-    expect(txHashInput.element.value).toBe('');
+    expect(txRefInput.element.value).toBe('');
     expect(locationInput.element.value).toBe('');
     expect(addressInput.element.value).toBe('');
     expect(sequenceIndexInput.element.value).toBe('0');
@@ -139,14 +139,14 @@ describe('forms/EvmEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] input');
     const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] input');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    expect(txHashInput.element.value).toBe(group.txHash);
+    expect(txRefInput.element.value).toBe(group.txRef);
     expect(locationLabelInput.element.value).toBe(group.locationLabel);
     expect(addressInput.element.value).toBe(group.address);
     expect(amountInput.element.value).toBe('0');
@@ -159,14 +159,14 @@ describe('forms/EvmEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
 
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] input');
     const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] input');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    expect(txHashInput.element.value).toBe(group.txHash);
+    expect(txRefInput.element.value).toBe(group.txRef);
     expect(locationLabelInput.element.value).toBe(group.locationLabel);
     expect(addressInput.element.value).toBe(group.address);
     expect(amountInput.element.value).toBe(group.amount.toString());
@@ -231,7 +231,7 @@ describe('forms/EvmEventForm.vue', () => {
     await nextTick();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=tx-hash] input').setValue(group.txHash);
+    await wrapper.find('[data-cy=tx-ref] input').setValue(group.txRef);
     await wrapper.find('[data-cy=location] input').setValue(group.location);
     await wrapper.find('[data-cy=location-label] input').setValue(group.locationLabel);
     await wrapper.find('[data-cy=eventType] input').setValue(group.eventType);
@@ -273,7 +273,7 @@ describe('forms/EvmEventForm.vue', () => {
       locationLabel: group.locationLabel,
       sequenceIndex: group.sequenceIndex.toString(),
       timestamp: group.timestamp,
-      txHash: group.txHash,
+      txRef: group.txRef,
       userNotes: group.userNotes,
     });
   });
@@ -348,7 +348,7 @@ describe('forms/EvmEventForm.vue', () => {
       locationLabel: group.locationLabel,
       sequenceIndex: '2111',
       timestamp: group.timestamp,
-      txHash: group.txHash,
+      txRef: group.txRef,
       userNotes: 'user note',
     });
   });

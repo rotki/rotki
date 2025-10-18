@@ -99,11 +99,6 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
 
     const { evmLastQueriedTs = 0, exchangesLastQueriedTs = 0, hasEvmAccounts = false, hasExchangesAccounts = false } = status;
 
-    // Only check if user has accounts
-    if (!hasEvmAccounts && !hasExchangesAccounts) {
-      return false;
-    }
-
     const now = Date.now();
     const minOutOfSyncMs = get(minOutOfSyncPeriodMs);
 

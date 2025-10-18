@@ -50,7 +50,7 @@ async function save() {
     set(modelValue, undefined);
     emit('reload', {
       location: payload.blockchain,
-      txHash: payload.txRef,
+      txRef: payload.txRef,
     });
   }
   else if (result.message) {

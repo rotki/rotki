@@ -36,7 +36,7 @@ const { counterparties } = useHistoryEventCounterpartyMappings();
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
-const signature = ref<string>('');
+const txRef = ref<string>('');
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const timestamp = ref<number>(0);
@@ -70,8 +70,8 @@ const rules = {
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-  signature: commonRules.createValidSolanaSignatureRule(),
   timestamp: commonRules.createExternalValidationRule(),
+  txRef: commonRules.createValidSolanaSignatureRule(),
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
@@ -92,8 +92,8 @@ const states = {
   locationLabel,
   notes,
   sequenceIndex,
-  signature,
   timestamp,
+  txRef,
 };
 
 const v$ = useVuelidate(
@@ -108,7 +108,7 @@ useFormStateWatcher(states, stateUpdated);
 
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(signature, '');
+  set(txRef, '');
   set(eventIdentifier, null);
   set(timestamp, dayjs().valueOf());
   set(address, '');
@@ -127,7 +127,7 @@ function reset() {
 
 function applyEditableData(entry: SolanaEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  set(signature, entry.signature);
+  set(txRef, entry.txRef);
   set(eventIdentifier, entry.eventIdentifier);
   set(timestamp, entry.timestamp);
   set(eventType, entry.eventType);
@@ -149,7 +149,7 @@ function applyGroupHeaderData(entry: SolanaEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
-  set(signature, entry.signature);
+  set(txRef, entry.txRef);
   set(timestamp, entry.timestamp);
 }
 
@@ -179,8 +179,8 @@ async function save(): Promise<boolean> {
     extraData: get(extraData) || null,
     locationLabel: get(locationLabel) || null,
     sequenceIndex: get(sequenceIndex) || '0',
-    signature: get(signature),
     timestamp: get(timestamp),
+    txRef: get(txRef),
     userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
 
@@ -235,14 +235,14 @@ defineExpose({
     </div>
 
     <RuiTextField
-      v-model="signature"
+      v-model="txRef"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="signature"
+      data-cy="tx-ref"
       :label="t('common.signature')"
-      :error-messages="toMessages(v$.signature)"
-      @blur="v$.signature.$touch()"
+      :error-messages="toMessages(v$.txRef)"
+      @blur="v$.txRef.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />

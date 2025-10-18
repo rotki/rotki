@@ -51,12 +51,12 @@ export interface PullTransactionPayload extends ChainAndTxRefs {
 
 export interface LocationAndTxHash {
   readonly location: string;
-  readonly txHash: string;
+  readonly txRef: string;
 }
 
 export interface LocationAndSignature {
   readonly location: string;
-  readonly signature: string;
+  readonly txRef: string;
 }
 
 export interface AddTransactionHashPayload {

@@ -23,7 +23,7 @@ export const EvmHistoryEvent = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.EVM_EVENT),
   extraData: z.unknown().nullish(),
-  txHash: z.string(),
+  txRef: z.string(),
 });
 
 export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
@@ -86,7 +86,7 @@ export const EvmSwapEventSchema = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.EVM_SWAP_EVENT),
   extraData: z.unknown().nullable(),
-  txHash: z.string(),
+  txRef: z.string(),
 });
 
 export type EvmSwapEvent = z.infer<typeof EvmSwapEventSchema>;
@@ -96,7 +96,7 @@ export const SolanaEventSchema = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.SOLANA_EVENT),
   extraData: z.unknown().nullish(),
-  signature: z.string(),
+  txRef: z.string(),
 });
 
 export type SolanaEvent = z.infer<typeof SolanaEventSchema>;
@@ -106,7 +106,7 @@ export const SolanaSwapEventSchema = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.SOLANA_SWAP_EVENT),
   extraData: z.unknown().nullish(),
-  signature: z.string(),
+  txRef: z.string(),
 });
 
 export type SolanaSwapEvent = z.infer<typeof SolanaSwapEventSchema>;
@@ -167,7 +167,7 @@ export interface AddEvmSwapEventPayload {
   receive: SwapSubEventModel[];
   counterparty: string;
   sequenceIndex: string;
-  txHash: string;
+  txRef: string;
 }
 
 export interface EditEvmSwapEventPayload extends AddEvmSwapEventPayload {
@@ -267,7 +267,7 @@ export interface AddSolanaSwapEventPayload {
   receive: SwapSubEventModel[];
   counterparty: string;
   sequenceIndex: string;
-  signature: string;
+  txRef: string;
 }
 
 export interface EditSolanaSwapEventPayload extends AddSolanaSwapEventPayload {

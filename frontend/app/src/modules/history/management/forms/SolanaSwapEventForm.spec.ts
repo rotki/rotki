@@ -43,10 +43,10 @@ describe('forms/SolanaSwapEventForm', () => {
   let wrapper: VueWrapper<InstanceType<typeof SolanaSwapEventForm>>;
   let pinia: Pinia;
 
-  const signature = '5j7s6NiJS3JAkvgkoc18WpRHTZBBSz9GJPNvr1XmBEjGVaVe6RmQ6YkC6LyZNMfkZqCjhTMTDTTsF4g3XCk5jxZg';
+  const txRef = '5j7s6NiJS3JAkvgkoc18WpRHTZBBSz9GJPNvr1XmBEjGVaVe6RmQ6YkC6LyZNMfkZqCjhTMTDTTsF4g3XCk5jxZg';
   const address = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
   const locationLabel = 'DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG7EvgfK';
-  const eventIdentifier = `1${signature}`;
+  const eventIdentifier = `1${txRef}`;
 
   const data: GroupEventData<SolanaSwapEvent> = {
     eventsInGroup: [{
@@ -64,8 +64,8 @@ describe('forms/SolanaSwapEventForm', () => {
       location: 'solana',
       locationLabel,
       sequenceIndex: 0,
-      signature,
       timestamp: 1742901211000,
+      txRef,
       userNotes: 'spend note',
     }, {
       address: '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
@@ -82,8 +82,8 @@ describe('forms/SolanaSwapEventForm', () => {
       location: 'solana',
       locationLabel,
       sequenceIndex: 1,
-      signature,
       timestamp: 1742901211000,
+      txRef,
       userNotes: 'receive note',
     }, {
       address: '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
@@ -100,8 +100,8 @@ describe('forms/SolanaSwapEventForm', () => {
       location: 'solana',
       locationLabel,
       sequenceIndex: 2,
-      signature,
       timestamp: 1742901211000,
+      txRef,
       userNotes: 'fee note',
     }],
     type: 'edit-group',
@@ -175,7 +175,7 @@ describe('forms/SolanaSwapEventForm', () => {
     expect(wrapper.exists()).toBe(true);
     expect(wrapper.find('[data-cy=datetime]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=location]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=signature]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=tx-ref]').exists()).toBe(true);
 
     expect(wrapper.find('[data-cy=spend-amount]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=spend-asset]').exists()).toBe(true);
@@ -255,12 +255,12 @@ describe('forms/SolanaSwapEventForm', () => {
           asset: 'USDC',
         }],
         sequenceIndex: '3',
-        signature,
         spend: [{
           amount: '0.1',
           asset: 'SOL',
         }],
         timestamp: 1742901211000,
+        txRef,
       } satisfies AddSolanaSwapEventPayload),
     );
   });
@@ -272,7 +272,7 @@ describe('forms/SolanaSwapEventForm', () => {
     await saveMethod();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=signature] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=tx-ref] .details').exists()).toBe(true);
     expect(wrapper.find('[data-cy=spend-amount] .details').exists()).toBe(true);
     expect(wrapper.find('[data-cy=spend-asset] .details').exists()).toBe(true);
     expect(wrapper.find('[data-cy=receive-amount] .details').exists()).toBe(true);
@@ -335,7 +335,6 @@ describe('forms/SolanaSwapEventForm', () => {
           userNotes: 'updated receive note',
         }],
         sequenceIndex: '0',
-        signature,
         spend: [{
           amount: '0.1',
           asset: 'SOL',
@@ -344,6 +343,7 @@ describe('forms/SolanaSwapEventForm', () => {
           userNotes: 'spend note',
         }],
         timestamp: 1742901211000,
+        txRef,
       } satisfies EditSolanaSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
@@ -413,7 +413,6 @@ describe('forms/SolanaSwapEventForm', () => {
           asset: 'USDC',
         }],
         sequenceIndex: '0',
-        signature,
         spend: [{
           amount: '0.1',
           asset: 'SOL',
@@ -425,6 +424,7 @@ describe('forms/SolanaSwapEventForm', () => {
           asset: 'RAY',
         }],
         timestamp: 1742901211000,
+        txRef,
       } satisfies EditSolanaSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
@@ -462,7 +462,6 @@ describe('forms/SolanaSwapEventForm', () => {
           userNotes: 'receive note',
         }],
         sequenceIndex: '0',
-        signature,
         spend: [{
           amount: '0.1',
           asset: 'SOL',
@@ -471,6 +470,7 @@ describe('forms/SolanaSwapEventForm', () => {
           userNotes: 'spend note',
         }],
         timestamp: 1742901211000,
+        txRef,
       } satisfies EditSolanaSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
@@ -511,8 +511,8 @@ describe('forms/SolanaSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const signatureField = wrapper.find<HTMLInputElement>('[data-cy=signature] input');
-    expect(signatureField.element.value).toBe(signature);
+    const txRefField = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
+    expect(txRefField.element.value).toBe(txRef);
 
     const locationField = wrapper.find<HTMLInputElement>('[data-cy=location] input');
     expect(locationField.element.value).toBe(SOLANA_CHAIN);

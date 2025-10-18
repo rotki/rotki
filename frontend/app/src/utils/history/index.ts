@@ -33,6 +33,6 @@ export function getEthAddressesFromText(notes: string): string[] {
 export function toLocationAndTxHash(params: LocationAndTxHash | LocationAndSignature): LocationAndTxHash {
   return {
     location: snakeCase(params.location),
-    txHash: 'txHash' in params ? params.txHash : params.signature,
+    txRef: params.txRef,
   };
 }

@@ -43,7 +43,7 @@ function emptyEvent(): EvmSwapFormData {
     sequenceIndex: '0',
     spend: [emptySubEvent()],
     timestamp: dayjs().valueOf(),
-    txHash: '',
+    txRef: '',
   };
 }
 
@@ -73,7 +73,7 @@ const rules = computed(() => ({
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
   spend: commonRules.createRequiredAtLeastOne(),
   timestamp: commonRules.createExternalValidationRule(),
-  txHash: commonRules.createValidTxHashRule(),
+  txRef: commonRules.createValidTxHashRule(),
 }));
 
 const v$ = useVuelidate(
@@ -184,7 +184,7 @@ watchImmediate(() => props.data, (data) => {
       location: group.location ?? '',
       sequenceIndex: data.nextSequenceId.toString(),
       timestamp: group.timestamp,
-      txHash: group.txHash,
+      txRef: group.txRef,
     });
   }
   else if (data.type === 'edit-group') {
@@ -209,7 +209,7 @@ watchImmediate(() => props.data, (data) => {
       sequenceIndex: firstSpend.sequenceIndex.toString(),
       spend: spend.map(event => toSubEvent(event)),
       timestamp: firstSpend.timestamp,
-      txHash: firstSpend.txHash,
+      txRef: firstSpend.txRef,
     });
 
     captureEditModeState(get(states));
@@ -247,14 +247,14 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextField
-      v-model="states.txHash"
+      v-model="states.txRef"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="tx-hash"
+      data-cy="tx-ref"
       :label="t('common.tx_hash')"
-      :error-messages="toMessages(v$.txHash)"
-      @blur="v$.txHash.$touch()"
+      :error-messages="toMessages(v$.txRef)"
+      @blur="v$.txRef.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />

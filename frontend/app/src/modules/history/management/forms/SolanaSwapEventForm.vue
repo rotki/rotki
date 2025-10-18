@@ -40,9 +40,9 @@ function emptyEvent(): SolanaSwapFormData {
     fee: [],
     receive: [emptySubEvent()],
     sequenceIndex: '0',
-    signature: '',
     spend: [emptySubEvent()],
     timestamp: dayjs().valueOf(),
+    txRef: '',
   };
 }
 
@@ -69,9 +69,9 @@ const rules = computed(() => ({
   location: commonRules.createExternalValidationRule(),
   receive: commonRules.createRequiredAtLeastOne(),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-  signature: commonRules.createValidSolanaSignatureRule(),
   spend: commonRules.createRequiredAtLeastOne(),
   timestamp: commonRules.createExternalValidationRule(),
+  txRef: commonRules.createValidSolanaSignatureRule(),
 }));
 
 const v$ = useVuelidate(
@@ -180,8 +180,8 @@ watchImmediate(() => props.data, (data) => {
     set(states, {
       ...get(states),
       sequenceIndex: data.nextSequenceId.toString(),
-      signature: group.signature,
       timestamp: group.timestamp,
+      txRef: group.txRef,
     });
   }
   else if (data.type === 'edit-group') {
@@ -203,9 +203,9 @@ watchImmediate(() => props.data, (data) => {
       fee: fee.map(event => toSubEvent(event)),
       receive: receive.map(event => toSubEvent(event)),
       sequenceIndex: firstSpend.sequenceIndex.toString(),
-      signature: firstSpend.signature,
       spend: spend.map(event => toSubEvent(event)),
       timestamp: firstSpend.timestamp,
+      txRef: firstSpend.txRef,
     });
 
     captureEditModeState(get(states));
@@ -242,14 +242,14 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextField
-      v-model="states.signature"
+      v-model="states.txRef"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="signature"
+      data-cy="tx-ref"
       :label="t('common.signature')"
-      :error-messages="toMessages(v$.signature)"
-      @blur="v$.signature.$touch()"
+      :error-messages="toMessages(v$.txRef)"
+      @blur="v$.txRef.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />
