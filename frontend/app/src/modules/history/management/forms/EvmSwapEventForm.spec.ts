@@ -42,10 +42,10 @@ describe('forms/EvmSwapEventForm', () => {
   let wrapper: VueWrapper<InstanceType<typeof EvmSwapEventForm>>;
   let pinia: Pinia;
 
-  const txHash = '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f';
+  const txRef = '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f';
   const address = '0xA090e606E30bD747d4E6245a1517EbE430F0057e';
   const locationLabel = '0x6e15887E2CEC81434C16D587709f64603b39b541';
-  const eventIdentifier = `1${txHash}`;
+  const eventIdentifier = `1${txRef}`;
 
   const data: GroupEventData<EvmSwapEvent> = {
     eventsInGroup: [{
@@ -64,7 +64,7 @@ describe('forms/EvmSwapEventForm', () => {
       locationLabel,
       sequenceIndex: 0,
       timestamp: 1742901211000,
-      txHash,
+      txRef,
       userNotes: 'spend note',
     }, {
       address: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -82,7 +82,7 @@ describe('forms/EvmSwapEventForm', () => {
       locationLabel,
       sequenceIndex: 1,
       timestamp: 1742901211000,
-      txHash,
+      txRef,
       userNotes: 'receive note',
     }, {
       address: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
@@ -100,7 +100,7 @@ describe('forms/EvmSwapEventForm', () => {
       locationLabel,
       sequenceIndex: 2,
       timestamp: 1742901211000,
-      txHash,
+      txRef,
       userNotes: 'fee note',
     }],
     type: 'edit-group',
@@ -174,7 +174,7 @@ describe('forms/EvmSwapEventForm', () => {
     expect(wrapper.exists()).toBe(true);
     expect(wrapper.find('[data-cy=datetime]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=location]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=tx-hash]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=tx-ref]').exists()).toBe(true);
 
     expect(wrapper.find('[data-cy=spend-amount]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=spend-asset]').exists()).toBe(true);
@@ -264,7 +264,7 @@ describe('forms/EvmSwapEventForm', () => {
           locationLabel,
         }],
         timestamp: 1742901211000,
-        txHash,
+        txRef,
       } satisfies AddEvmSwapEventPayload),
     );
   });
@@ -348,7 +348,7 @@ describe('forms/EvmSwapEventForm', () => {
           userNotes: 'spend note',
         }],
         timestamp: 1742901211000,
-        txHash,
+        txRef,
       } satisfies EditEvmSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
@@ -430,7 +430,7 @@ describe('forms/EvmSwapEventForm', () => {
           asset: 'DAI',
         }],
         timestamp: 1742901211000,
-        txHash,
+        txRef,
       } satisfies EditEvmSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
@@ -477,7 +477,7 @@ describe('forms/EvmSwapEventForm', () => {
           userNotes: 'spend note',
         }],
         timestamp: 1742901211000,
-        txHash,
+        txRef,
       } satisfies EditEvmSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
@@ -518,8 +518,8 @@ describe('forms/EvmSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const txHashField = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
-    expect(txHashField.element.value).toBe(txHash);
+    const txRefField = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
+    expect(txRefField.element.value).toBe(txRef);
 
     const locationField = wrapper.find<HTMLInputElement>('[data-cy=location] input');
     expect(locationField.element.value).toBe('ethereum');

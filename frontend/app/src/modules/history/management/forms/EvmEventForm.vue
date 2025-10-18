@@ -40,7 +40,7 @@ const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCAT
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
-const txHash = ref<string>('');
+const txRef = ref<string>('');
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const timestamp = ref<number>(0);
@@ -75,7 +75,7 @@ const rules = {
   notes: commonRules.createExternalValidationRule(),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
   timestamp: commonRules.createExternalValidationRule(),
-  txHash: commonRules.createValidTxHashRule(),
+  txRef: commonRules.createValidTxHashRule(),
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
@@ -98,7 +98,7 @@ const states = {
   notes,
   sequenceIndex,
   timestamp,
-  txHash,
+  txRef,
 };
 
 const v$ = useVuelidate(
@@ -113,7 +113,7 @@ useFormStateWatcher(states, stateUpdated);
 
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(txHash, '');
+  set(txRef, '');
   set(eventIdentifier, null);
   set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
@@ -133,7 +133,7 @@ function reset() {
 
 function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  set(txHash, entry.txHash);
+  set(txRef, entry.txRef);
   set(eventIdentifier, entry.eventIdentifier);
   set(timestamp, entry.timestamp);
   set(location, entry.location);
@@ -157,7 +157,7 @@ function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(location, entry.location || get(lastLocation));
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
-  set(txHash, entry.txHash);
+  set(txRef, entry.txRef);
   set(timestamp, entry.timestamp);
 }
 
@@ -189,7 +189,7 @@ async function save(): Promise<boolean> {
     locationLabel: get(locationLabel) || null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp: get(timestamp),
-    txHash: get(txHash),
+    txRef: get(txRef),
     userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
 
@@ -250,14 +250,14 @@ defineExpose({
     </div>
 
     <RuiTextField
-      v-model="txHash"
+      v-model="txRef"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="tx-hash"
+      data-cy="tx-ref"
       :label="t('common.tx_hash')"
-      :error-messages="toMessages(v$.txHash)"
-      @blur="v$.txHash.$touch()"
+      :error-messages="toMessages(v$.txRef)"
+      @blur="v$.txRef.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />

@@ -44,14 +44,10 @@ const eventWithTxHash = computed<{ location: string; txHash: string } | undefine
       txHash: event.txHash,
     };
   }
-  return undefined;
-});
-const solanaEvent = computed<{ location: string; signature: string } | undefined>(() => {
-  const event = props.event;
-  if ('signature' in event && event.signature) {
+  if ('txRef' in event && event.txRef) {
     return {
       location: event.location,
-      signature: event.signature,
+      txHash: event.txRef,
     };
   }
   return undefined;
@@ -72,8 +68,6 @@ const key = computed(() => {
     return 'withdraw';
   else if (get(assetMovementEvent))
     return 'asset_movement';
-  else if (get(solanaEvent))
-    return 'signature';
   else
     return undefined;
 });
@@ -133,19 +127,6 @@ const key = computed(() => {
         :location="assetMovementEvent?.extraData?.blockchain || undefined"
         :truncate-length="is2xlAndUp ? 0 : 8"
         :display-mode="assetMovementEvent?.extraData?.blockchain ? 'default' : 'copy'"
-      />
-    </template>
-
-    <template
-      v-if="solanaEvent"
-      #signature
-    >
-      <HashLink
-        :class="$style.wrapper"
-        :text="solanaEvent.signature"
-        type="transaction"
-        :location="solanaEvent.location"
-        :truncate-length="is2xlAndUp ? 0 : 8"
       />
     </template>
 

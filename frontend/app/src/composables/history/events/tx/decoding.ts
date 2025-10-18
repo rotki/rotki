@@ -262,7 +262,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       if (!targetMap.has(chain))
         targetMap.set(chain, []);
 
-      targetMap.get(chain)!.push(item.txHash);
+      targetMap.get(chain)!.push(item.txRef);
     });
 
     // Process all chain types in parallel

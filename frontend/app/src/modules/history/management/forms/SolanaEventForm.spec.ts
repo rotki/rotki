@@ -70,8 +70,8 @@ describe('forms/SolanaEventForm.vue', () => {
     location: 'solana',
     locationLabel: '7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3',
     sequenceIndex: 2411,
-    signature: '3ASDnpwZ3cGYMQKjsSPZHbJrJ3w8CrPzbXiLEKYLVBk1QGM1mKgXYFjXcCFqfLLu8V1r5N7vP8QcEtYYvFJYDHhx',
     timestamp: 1686495083000,
+    txRef: '3ASDnpwZ3cGYMQKjsSPZHbJrJ3w8CrPzbXiLEKYLVBk1QGM1mKgXYFjXcCFqfLLu8V1r5N7vP8QcEtYYvFJYDHhx',
     userNotes: 'Receive 100 SOL from 7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3',
   };
 
@@ -132,11 +132,11 @@ describe('forms/SolanaEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const signatureInput = wrapper.find<HTMLInputElement>('[data-cy=signature] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const locationInput = wrapper.find<HTMLInputElement>('[data-cy=location] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
-    expect(signatureInput.element.value).toBe('');
+    expect(txRefInput.element.value).toBe('');
     expect(locationInput.element.value).toBe('solana');
     expect(sequenceIndexInput.element.value).toBe('0');
   });
@@ -146,12 +146,12 @@ describe('forms/SolanaEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
-    const signatureInput = wrapper.find<HTMLInputElement>('[data-cy=signature] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    expect(signatureInput.element.value).toBe(group.signature);
+    expect(txRefInput.element.value).toBe(group.txRef);
     expect(amountInput.element.value).toBe('0');
     expect(sequenceIndexInput.element.value).toBe('10');
     expect(noteTextArea.element.value).toBe('');
@@ -162,12 +162,12 @@ describe('forms/SolanaEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
 
-    const signatureInput = wrapper.find<HTMLInputElement>('[data-cy=signature] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    expect(signatureInput.element.value).toBe(group.signature);
+    expect(txRefInput.element.value).toBe(group.txRef);
     expect(amountInput.element.value).toBe(group.amount.toString());
     expect(sequenceIndexInput.element.value.replace(',', '')).toBe(group.sequenceIndex.toString());
     expect(notesTextArea.element.value).toBe(group.userNotes);
@@ -230,7 +230,7 @@ describe('forms/SolanaEventForm.vue', () => {
     await nextTick();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=signature] input').setValue(group.signature);
+    await wrapper.find('[data-cy=tx-ref] input').setValue(group.txRef);
     await wrapper.find('[data-cy=location] input').setValue(group.location);
     await wrapper.find('[data-cy=eventType] input').setValue(group.eventType);
     await wrapper.find('[data-cy=asset] input').setValue(group.asset);
@@ -268,8 +268,8 @@ describe('forms/SolanaEventForm.vue', () => {
       extraData: {},
       locationLabel: null,
       sequenceIndex: group.sequenceIndex.toString(),
-      signature: group.signature,
       timestamp: group.timestamp,
+      txRef: group.txRef,
       userNotes: group.userNotes,
     });
   });
@@ -342,8 +342,8 @@ describe('forms/SolanaEventForm.vue', () => {
       identifier: group.identifier,
       locationLabel: group.locationLabel || null,
       sequenceIndex: '2111',
-      signature: group.signature,
       timestamp: group.timestamp,
+      txRef: group.txRef,
       userNotes: 'user note',
     });
   });

@@ -111,10 +111,10 @@ export function useHistoryEventsOperations(
     return ((filtered[0] ?? Number(group.sequenceIndex)) + 1).toString();
   }
 
-  async function onConfirmTxAndEventDelete({ location, txHash }: LocationAndTxHash): Promise<void> {
+  async function onConfirmTxAndEventDelete({ location, txRef }: LocationAndTxHash): Promise<void> {
     try {
       const chain = get(getChain(location));
-      await deleteTransactions(chain, txHash);
+      await deleteTransactions(chain, txRef);
       emit('refresh');
     }
     catch (error: any) {

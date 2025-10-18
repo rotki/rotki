@@ -72,9 +72,9 @@ export function useHistoryEventsDeletion(
           const allSelected = eventIds.length > 0 && eventIds.every((id: number) => selectedSet.has(id));
 
           if (allSelected) {
-            // Use the actual txHash from the group if it's an EVM event
-            const txHash = 'txHash' in group && group.txHash ? group.txHash : group.eventIdentifier;
-            completeTransactions.set(txHash, {
+            // Use the actual txRef from the group if it's an EVM event
+            const txRef = 'txRef' in group && group.txRef ? group.txRef : group.eventIdentifier;
+            completeTransactions.set(txRef, {
               chain: group.location,
               eventIdentifier, // Store the eventIdentifier for lookup
               events: eventIds,
