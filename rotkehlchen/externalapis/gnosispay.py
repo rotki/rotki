@@ -98,7 +98,7 @@ class GnosisPay:
             endpoint: Literal['cards/transactions'],
             params: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        """Query a gnosis pay API endpoint with the hacky session token authentication
+        """Query a gnosis pay API endpoint.
 
         May raise:
         - RemoteError if there is a problem querying the API
@@ -339,54 +339,6 @@ class GnosisPay:
             )
 
         return self.create_notes_for_transaction(transaction, is_refund=True)
-
-    def get_data_for_transaction(
-            self,
-            tx_hash: EVMTxHash,
-            tx_timestamp: Timestamp,
-    ) -> str | None:
-        """Gets the Gnosis pay data for the given transaction and returns its notes if found.
-
-        Either from the DB or by querying the API
-        """
-        transaction, _ = self.find_db_data(
-            wherestatement='tx_hash=? OR reversal_tx_hash=?',
-            bindings=(tx_hash, tx_hash),
-        )
-        if transaction:
-            return self.create_notes_for_transaction(
-                transaction=transaction,
-                is_refund=False,
-            )
-
-        # else we need to query the API
-        try:
-            data = self._query(
-                endpoint='cards/transactions',
-                params={
-                    'after': timestamp_to_iso8601(Timestamp(tx_timestamp - 1)),
-                    'before': timestamp_to_iso8601(Timestamp(tx_timestamp + 1)),
-                },
-            )
-        except RemoteError as e:
-            log.error(f'Could not query Gnosis Pay API due to {e!s}')
-            return None
-
-        # since this probably contains more transactions than the one we need dont
-        # let the query go to waste and update data for all and return only the one we need
-        result_tx = None
-        for entry in data:
-            if (transaction := self.maybe_deserialize_transaction(entry)) is None:
-                continue
-
-            if tx_hash == transaction.tx_hash:
-                result_tx = transaction
-            else:
-                self.maybe_update_event_with_api_data(transaction)
-
-            self.write_txdata_to_db(transaction)
-
-        return self.create_notes_for_transaction(result_tx, is_refund=False) if result_tx else None
 
     def query_remote_for_tx_and_update_events(
             self,
