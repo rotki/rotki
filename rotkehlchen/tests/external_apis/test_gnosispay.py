@@ -75,7 +75,7 @@ def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
         attribute='get',
         side_effect=mock_unauthorized_requests_get,
     ):
-        gnosispay.get_data_for_transaction(tx_hash='', tx_timestamp=0)
+        gnosispay.query_remote_for_tx_and_update_events(start_ts=0, end_ts=1)
 
     assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(
         message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
