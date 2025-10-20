@@ -12,7 +12,6 @@ import gevent
 import requests
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -23,7 +22,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
 from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -85,7 +84,7 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
 ROTKI_PACKAGED_KEY: Final = 'W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR'
 
 
-class Etherscan(ExternalServiceWithApiKey, ABC):
+class Etherscan(ExternalServiceWithRecommendedApiKey, ABC):
     """Base class for all Etherscan implementations"""
     def __init__(
             self,
@@ -95,7 +94,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
         self.msg_aggregator = msg_aggregator
         self.session = create_session()
-        self.warning_given = False
         set_user_agent(self.session)
         self.api_url = 'https://api.etherscan.io/v2/api'
 
@@ -206,15 +204,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         an unexpected response is returned. Also in the case of exhausting the backoff time.
         """
         result = None
-        api_key = self._get_api_key()
-        if api_key is None:
-            if not self.warning_given:
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.MISSING_API_KEY,
-                    data={'service': ExternalService.ETHERSCAN.serialize()},
-                )
-                self.warning_given = True
-
+        if (api_key := self._get_api_key()) is None:
             api_key = ApiKey(ROTKI_PACKAGED_KEY)
             log.debug('Using default etherscan key')
 

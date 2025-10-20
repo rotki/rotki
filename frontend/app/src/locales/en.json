@@ -3659,16 +3659,16 @@
     "missing_api_key": {
       "action": "Enter key",
       "etherscan": {
-        "message": "Rotki queries for {location} chain are working slower because you dont have {location} {service} API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "message": "rotki queries for {location} chain are working slower because you don't have {location} {service} API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{location} {service} API key"
       },
       "get_key": "Get API key",
       "helius": {
-        "message": "Rotki queries for Solana chain are working slower because you dont have Helius API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "message": "Transaction queries for Solana will be slow because you don't have a Helius API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{service} API key for Solana"
       },
       "thegraph": {
-        "message": "Rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",
+        "message": "rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",
         "title": "{service} API key for {location}"
       }
     },
