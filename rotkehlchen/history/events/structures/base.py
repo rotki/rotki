@@ -553,64 +553,6 @@ class HistoryEvent(HistoryBaseEntry):
         return accounting.events_accountant.process(event=self, events_iterator=events_iterator)
 
 
-class HistoryEventWithCounterparty(HistoryBaseEntry, ABC):
-    def __init__(
-            self,
-            event_identifier: str,
-            sequence_index: int,
-            timestamp: TimestampMS,
-            location: Location,
-            event_type: HistoryEventType,
-            event_subtype: HistoryEventSubType,
-            asset: Asset,
-            amount: FVal,
-            location_label: str | None = None,
-            notes: str | None = None,
-            identifier: int | None = None,
-            extra_data: ExtraDataType | None = None,
-            counterparty: str | None = None,
-    ) -> None:
-        HistoryBaseEntry.__init__(
-            self=self,
-            event_identifier=event_identifier,
-            sequence_index=sequence_index,
-            timestamp=timestamp,
-            location=location,
-            event_type=event_type,
-            event_subtype=event_subtype,
-            asset=asset,
-            amount=amount,
-            location_label=location_label,
-            notes=notes,
-            identifier=identifier,
-            extra_data=extra_data,
-        )
-        self.counterparty = counterparty
-
-    def get_type_identifier(self, include_counterparty: bool = True, **kwargs: Any) -> int:
-        """
-        Computes the identifier from event type, event subtype and counterparty if
-        `include_counterparty` is True.
-        """
-        return get_event_type_identifier(
-            event_type=self.event_type,
-            event_subtype=self.event_subtype,
-            counterparty=self.counterparty if include_counterparty is True else None,
-        )
-
-    # -- Methods of AccountingEventMixin
-    @staticmethod
-    def get_accounting_event_type() -> AccountingEventType:
-        return AccountingEventType.TRANSACTION_EVENT
-
-    def process(
-            self,
-            accounting: 'AccountingPot',
-            events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
-    ) -> int:
-        return accounting.events_accountant.process(self, events_iterator)
-
-
 def get_event_type_identifier(
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,

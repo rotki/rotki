@@ -367,11 +367,14 @@ def deserialize_solana_address(value: str) -> SolanaAddress:
     return SolanaAddress(str(deserialize_solana_pubkey(value)))
 
 
-def deserialize_tx_signature(value: str) -> Signature:
-    """Deserialize a solana transaction signature from a string.
+def deserialize_tx_signature(value: str | bytes) -> Signature:
+    """Deserialize a solana transaction signature from a string or bytes.
     May raise DeserializationError if the data is invalid.
     """
     try:
+        if isinstance(value, bytes):
+            return Signature.from_bytes(value)
+
         return Signature.from_string(value)
     except ValueError as e:
         raise DeserializationError(f'Failed to deserialize solana tx signature due to {e!s}') from e  # noqa: E501

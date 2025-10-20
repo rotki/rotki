@@ -15,7 +15,7 @@ from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount, Location, TimestampMS
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE
-from .evm_event import CHAIN_EVENT_FIELDS_TYPE
+from .onchain_event import CHAIN_EVENT_FIELDS_TYPE
 
 if TYPE_CHECKING:
     from more_itertools import peekable
