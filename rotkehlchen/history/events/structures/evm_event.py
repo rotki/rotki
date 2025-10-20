@@ -1,37 +1,18 @@
 import logging
-from typing import TYPE_CHECKING, Any, Final, cast
+from typing import Any, Final
 
-from rotkehlchen.accounting.types import EventAccountingRuleStatus
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import (
-    HISTORY_EVENT_DB_TUPLE_WRITE,
-    HistoryBaseEntry,
     HistoryBaseEntryType,
-    HistoryEventWithCounterparty,
 )
-from rotkehlchen.history.events.structures.types import (
-    CHAIN_EVENT_FIELDS_TYPE,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_optional
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
-    FVal,
     Location,
-    TimestampMS,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
-
-if TYPE_CHECKING:
-
-    from rotkehlchen.history.events.structures.types import CHAIN_EVENT_DB_TUPLE_READ
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -46,136 +27,27 @@ ALL_DETAILS_KEYS = {
 }
 
 
-class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
-    """This is a class for storing evm events data and it extends HistoryBaseEntry.
+class EvmEvent(OnchainEvent[EVMTxHash, ChecksumEvmAddress]):  # hash in superclass
 
-    It adds the following fields:
+    @staticmethod
+    def _calculate_event_identifier(tx_ref: EVMTxHash, location: Location) -> str:
+        return f'{location.to_chain_id()}{tx_ref.hex()}'
 
-    1. counterparty: Optional[str] -- Used to mark the protocol name, for example curve or liquity.
+    @staticmethod
+    def _serialize_tx_ref_for_db(tx_ref: EVMTxHash) -> bytes:
+        return bytes(tx_ref)
 
-    2. Optional[address]: ChecksumEvmAddress -- If we are working with evm information this would
-    be the address of the contract. This would help to filter by older versions or limit searches
-    to certain subsets of contracts. For example this would help filtering interactions with
-    curve gauges.
-    """
+    @staticmethod
+    def _deserialize_tx_ref(tx_ref_data: bytes) -> EVMTxHash:
+        return deserialize_evm_tx_hash(tx_ref_data)
 
-    # need explicitly define due to also changing eq: https://stackoverflow.com/a/53519136/110395
-    __hash__ = HistoryBaseEntry.__hash__
-
-    def __init__(
-            self,
-            tx_ref: EVMTxHash,
-            sequence_index: int,
-            timestamp: TimestampMS,
-            location: Location,
-            event_type: HistoryEventType,
-            event_subtype: HistoryEventSubType,
-            asset: Asset,
-            amount: FVal,
-            location_label: str | None = None,
-            notes: str | None = None,
-            identifier: int | None = None,
-            counterparty: str | None = None,
-            address: ChecksumEvmAddress | None = None,
-            extra_data: dict[str, Any] | None = None,
-            event_identifier: str | None = None,
-    ) -> None:
-        if event_identifier is None:
-            calculated_event_identifier = f'{location.to_chain_id()}{tx_ref.hex()}'
-        else:
-            calculated_event_identifier = event_identifier
-        HistoryEventWithCounterparty.__init__(  # explicitly calling constructor due to some events having  # noqa: E501
-            self=self,  # diamond shaped inheritance. Which calls unexpected super()
-            event_identifier=calculated_event_identifier,
-            sequence_index=sequence_index,
-            timestamp=timestamp,
-            location=location,
-            event_type=event_type,
-            event_subtype=event_subtype,
-            asset=asset,
-            amount=amount,
-            location_label=location_label,
-            notes=notes,
-            identifier=identifier,
-            extra_data=extra_data,
-            counterparty=counterparty,
-        )
-        self.address = address
-        self.tx_ref = tx_ref
+    @staticmethod
+    def deserialize_address(address_data: Any) -> ChecksumEvmAddress:
+        return string_to_evm_address(address_data)
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.EVM_EVENT
-
-    def _serialize_evm_event_tuple_for_db(self) -> tuple[
-            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
-            tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
-    ]:
-        return (
-            self._serialize_base_tuple_for_db(),
-            (
-                'chain_events_info(identifier, tx_ref, counterparty, address) VALUES (?, ?, ?, ?)',
-                'UPDATE chain_events_info SET tx_ref=?, counterparty=?, address=?', (
-                    self.tx_ref,
-                    self.counterparty,
-                    self.address,
-                ),
-            ),
-        )
-
-    def serialize_for_db(self) -> tuple[
-            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
-            tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
-    ]:
-        return self._serialize_evm_event_tuple_for_db()
-
-    def serialize(self) -> dict[str, Any]:
-        return HistoryBaseEntry.serialize(self) | {  # not using super() since it has unexpected results due to diamond shaped inheritance.  # noqa: E501
-            'tx_ref': str(self.tx_ref),
-            'counterparty': self.counterparty,
-            'address': self.address,
-        }
-
-    def serialize_for_api(
-            self,
-            customized_event_ids: list[int],
-            ignored_ids: set[str],
-            hidden_event_ids: list[int],
-            event_accounting_rule_status: EventAccountingRuleStatus,
-            grouped_events_num: int | None = None,
-    ) -> dict[str, Any]:
-        result = super().serialize_for_api(
-            customized_event_ids=customized_event_ids,
-            ignored_ids=ignored_ids,
-            hidden_event_ids=hidden_event_ids,
-            event_accounting_rule_status=event_accounting_rule_status,
-            grouped_events_num=grouped_events_num,
-        )
-        if self.has_details():
-            result['has_details'] = True
-        return result
-
-    @classmethod
-    def deserialize_from_db(cls: type['EvmEvent'], entry: tuple) -> 'EvmEvent':
-        entry = cast('CHAIN_EVENT_DB_TUPLE_READ', entry)
-        amount = deserialize_fval(entry[7], 'amount', 'evm event')
-        return cls(
-            identifier=entry[0],
-            event_identifier=entry[1],
-            sequence_index=entry[2],
-            timestamp=TimestampMS(entry[3]),
-            location=Location.deserialize_from_db(entry[4]),
-            location_label=entry[5],
-            asset=Asset(entry[6]).check_existence(),
-            amount=amount,
-            notes=entry[8],
-            event_type=HistoryEventType.deserialize(entry[9]),
-            event_subtype=HistoryEventSubType.deserialize(entry[10]),
-            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
-            tx_ref=deserialize_evm_tx_hash(entry[13]),
-            counterparty=entry[14],
-            address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
-        )
 
     def has_details(self) -> bool:
         if self.extra_data is None:
@@ -188,39 +60,3 @@ class EvmEvent(HistoryEventWithCounterparty):  # hash in superclass
 
         details = {k: v for k, v in self.extra_data.items() if k in ALL_DETAILS_KEYS}
         return details if len(details) > 0 else None
-
-    @classmethod
-    def deserialize(cls: type['EvmEvent'], data: dict[str, Any]) -> 'EvmEvent':
-        base_data = cls._deserialize_base_history_data(data)
-        try:
-            return cls(
-                **base_data,
-                tx_ref=deserialize_evm_tx_hash(data['tx_ref']),
-                address=deserialize_optional(data['address'], string_to_evm_address),
-                counterparty=deserialize_optional(data['counterparty'], str),
-            )
-        except KeyError as e:
-            raise DeserializationError(f'Did not find key {e!s} in Evm Event data') from e
-
-    def __eq__(self, other: object) -> bool:
-        return (  # ignores are due to object and type checks in super not recognized
-            HistoryBaseEntry.__eq__(self, other) is True and
-            self.counterparty == other.counterparty and  # type: ignore
-            self.tx_ref == other.tx_ref and  # type: ignore
-            self.address == other.address  # type: ignore
-        )
-
-    def __repr__(self) -> str:
-        fields = self._history_base_entry_repr_fields() + [
-            f'{self.tx_ref=}',
-            f'{self.counterparty=}',
-            f'{self.address=}',
-        ]
-        return f'EvmEvent({", ".join(fields)})'
-
-    def __str__(self) -> str:
-        return (
-            f'{self.event_type} / {self.event_subtype} EvmEvent in {self.location} with '
-            f'tx_ref={self.tx_ref!s} and time '
-            f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
-        )

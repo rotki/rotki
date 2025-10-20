@@ -31,7 +31,8 @@ from rotkehlchen.types import (
 )
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE, HistoryBaseEntry, HistoryBaseEntryType
-from .evm_event import CHAIN_EVENT_FIELDS_TYPE, EvmEvent
+from .evm_event import EvmEvent
+from .onchain_event import CHAIN_EVENT_FIELDS_TYPE
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -507,7 +508,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             tuple[str, str, CHAIN_EVENT_FIELDS_TYPE],
             tuple[str, str, tuple[int, int]],
     ]:
-        base_tuple, chain_tuple = self._serialize_evm_event_tuple_for_db()
+        base_tuple, chain_tuple = self._serialize_onchain_event_tuple_for_db()
         return (
             base_tuple,
             chain_tuple,
