@@ -8,7 +8,6 @@ import requests
 from base58 import b58decode
 from solders.solders import Signature
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.constants.misc import ONE
@@ -16,7 +15,10 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.interface import ExternalService, ExternalServiceWithApiKey
+from rotkehlchen.externalapis.interface import (
+    ExternalService,
+    ExternalServiceWithRecommendedApiKey,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_int,
@@ -49,11 +51,10 @@ BACKOFF_SECONDS: Final = 1
 RETRY_LIMIT: Final = 1
 
 
-class Helius(ExternalServiceWithApiKey):
+class Helius(ExternalServiceWithRecommendedApiKey):
 
     def __init__(self, database: 'DBHandler') -> None:
         super().__init__(database=database, service_name=ExternalService.HELIUS)
-        self.warning_given = False
 
     def _query(
             self,
@@ -64,13 +65,6 @@ class Helius(ExternalServiceWithApiKey):
         May raise RemoteError if there was a problem with the remote query.
         """
         if (api_key := self._get_api_key()) is None:
-            if not self.warning_given:
-                self.db.msg_aggregator.add_message(
-                    message_type=WSMessageType.MISSING_API_KEY,
-                    data={'service': ExternalService.HELIUS.serialize()},
-                )
-                self.warning_given = True
-
             log.warning('Missing Helius api key. Skipping query.')
             raise MissingAPIKey('Helius API key is missing')
 
