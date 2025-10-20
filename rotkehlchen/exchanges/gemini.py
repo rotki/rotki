@@ -85,16 +85,19 @@ def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWit
         raise UnprocessableTradePair(symbol)
 
     special_cases = {
-        'xrprlusd': ('XRP', 'RLUSD'),
         'moodengusd': ('solana/token:ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY', 'USD'),  # moodeng solana identifier  # noqa: E501
     }
     if symbol in special_cases:
         base, quote = special_cases[symbol]
         return asset_from_gemini(base), asset_from_gemini(quote)
 
-    # from gemini api, quote assets are either 4 chars ('gusd', 'usdt')
-    # or 3 chars ('usd', 'btc', etc). Try 4-char quotes first.
-    if len(symbol) >= 4 and symbol[-4:] in {'gusd', 'usdt', 'paxg'}:
+    # from gemini api, quote assets are either:
+    # - 5 chars ('rlusd')
+    # - 4 chars ('gusd', 'usdt', 'lusd', 'usdc')
+    # - 3 chars ('usd', 'btc', etc)
+    if len(symbol) >= 5 and symbol[-5:] == 'rlusd':
+        split_at = -5
+    elif len(symbol) >= 4 and symbol[-4:] in {'gusd', 'usdt', 'paxg', 'usdc'}:
         split_at = -4
     else:
         split_at = -3
