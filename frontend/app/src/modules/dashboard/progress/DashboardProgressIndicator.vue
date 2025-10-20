@@ -113,8 +113,9 @@ onMounted(async () => {
     >
       <div class="flex items-center gap-2">
         <!-- Balance Query Section -->
+
         <BalanceQuerySection
-          v-if="showBalanceProgress && balanceProgress"
+          v-if="showBalanceProgress && balanceProgress && processingMessage"
           :progress="balanceProgress"
           :processing-message="processingMessage"
           :processing-percentage="processingPercentage"
@@ -122,7 +123,7 @@ onMounted(async () => {
 
         <!-- History Query Section -->
         <HistoryQuerySection
-          v-else-if="showHistoryProgress && historyProgress"
+          v-else-if="showHistoryProgress && historyProgress && processingMessage"
           :progress="historyProgress"
           :processing-message="processingMessage"
           :processing-percentage="processingPercentage"

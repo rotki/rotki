@@ -51,31 +51,29 @@ const [DefineTimeTooltip, ReuseTimeTooltip] = createReusableTemplate();
     <template v-else-if="isNeverQueried">
       {{ t('dashboard.history_query_indicator.never_queried') }}
     </template>
-    <template v-else>
-      <i18n-t
-        v-if="longQuery"
-        keypath="dashboard.history_query_indicator.last_queried_long"
-      >
-        <template #time>
-          <ReuseTimeTooltip />
-        </template>
-      </i18n-t>
-      <i18n-t
-        v-if="!hasUndecodedTxs"
-        keypath="dashboard.history_query_indicator.last_queried"
-      >
-        <template #time>
-          <ReuseTimeTooltip />
-        </template>
-      </i18n-t>
-      <i18n-t
-        v-else
-        keypath="dashboard.history_query_indicator.incomplete_decoding"
-      >
-        <template #time>
-          <ReuseTimeTooltip />
-        </template>
-      </i18n-t>
-    </template>
+    <i18n-t
+      v-else-if="longQuery"
+      keypath="dashboard.history_query_indicator.last_queried_long"
+    >
+      <template #time>
+        <ReuseTimeTooltip />
+      </template>
+    </i18n-t>
+    <i18n-t
+      v-else-if="hasUndecodedTxs"
+      keypath="dashboard.history_query_indicator.incomplete_decoding"
+    >
+      <template #time>
+        <ReuseTimeTooltip />
+      </template>
+    </i18n-t>
+    <i18n-t
+      v-else
+      keypath="dashboard.history_query_indicator.last_queried"
+    >
+      <template #time>
+        <ReuseTimeTooltip />
+      </template>
+    </i18n-t>
   </div>
 </template>
