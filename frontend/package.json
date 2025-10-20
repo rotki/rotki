@@ -15,7 +15,7 @@
     "build": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build",
     "build:app": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build:app",
     "build:preview": "pnpm run --filter rotki build:preview",
-    "docker:build": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build --mode docker",
+    "docker:build": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build:app --mode docker && pnpm run --filter rotki typecheck",
     "lint": "eslint .",
     "lint:all": "run-p lint \"lint:style {@}\" --",
     "lint:style": "pnpm run --filter rotki lint:style",
