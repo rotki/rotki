@@ -99,12 +99,13 @@ impl GlobalDB {
             })
     }
 
-    pub async fn is_uniswap_v3_position(&self, asset_id: &str) -> Result<bool> {
+    /// Checks if the given asset is a Uniswap V3 or V4 position NFT
+    pub async fn is_uniswap_position(&self, asset_id: &str) -> Result<bool> {
         let conn = self.conn.lock().await;
         let mut stmt = conn.prepare(
             "SELECT 1 FROM evm_tokens
              WHERE identifier = ?
-             AND protocol = 'UNI-V3'
+             AND protocol IN ('UNI-V3', 'UNI-V4')
              LIMIT 1",
         )?;
         let result = stmt.exists(rusqlite::params![asset_id])?;
