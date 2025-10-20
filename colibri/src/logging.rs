@@ -92,7 +92,6 @@ pub fn config_logging(args: Args) {
         AppendCount::new(args.max_logfiles_num),
         ContentLimit::BytesSurpassed(10usize.pow(6) * args.max_size_in_mb),
         Compression::None,
-        #[cfg(unix)]
         None,
     );
 
