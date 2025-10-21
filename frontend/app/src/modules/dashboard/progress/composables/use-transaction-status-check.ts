@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import { get } from '@vueuse/shared';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
@@ -34,7 +35,7 @@ interface UseTransactionStatusCheckReturn {
   /**
    * Check if any accounts exist
    */
-  isAccountsExist: Ref<boolean>;
+  hasTxAccounts: ComputedRef<boolean>;
 }
 
 export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
@@ -45,7 +46,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   const { processing: rawProcessing } = useHistoryEventsStatus();
   const processing = useRefWithDebounce(rawProcessing, 400);
 
-  const isAccountsExist = computed<boolean>(() => {
+  const hasTxAccounts = computed<boolean>(() => {
     const status = get(transactionStatusSummary);
     if (!isDefined(status)) {
       return false;
@@ -57,7 +58,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   });
 
   const earliestQueriedTimestamp = computed<number>(() => {
-    if (!get(isAccountsExist)) {
+    if (!get(hasTxAccounts)) {
       return 0;
     }
     const status = get(transactionStatusSummary)!;
@@ -83,7 +84,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   });
 
   const isNeverQueried = computed<boolean>(() => {
-    if (!get(isAccountsExist)) {
+    if (!get(hasTxAccounts)) {
       return false;
     }
 
@@ -91,7 +92,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   });
 
   const isOutOfSync = computed<boolean>(() => {
-    if (!get(isAccountsExist)) {
+    if (!get(hasTxAccounts)) {
       return false;
     }
 
@@ -127,7 +128,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
 
   return {
     earliestQueriedTimestamp,
-    isAccountsExist,
+    hasTxAccounts,
     isNeverQueried,
     isOutOfSync,
     navigateToHistory,

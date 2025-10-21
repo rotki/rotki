@@ -224,11 +224,6 @@ export function useBalanceQueue(): UseBalanceQueueReturn {
     { debounce: 500 },
   );
 
-  onUnmounted(() => {
-    // Note: We don't stop polling here since it's shared across all instances
-    // The polling will stop automatically when no items are processing
-  });
-
   return {
     clearQueue,
     completedItems,

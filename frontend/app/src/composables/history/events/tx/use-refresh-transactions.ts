@@ -1,16 +1,17 @@
 import type { RefreshTransactionsParams } from './types';
+import type { Exchange } from '@/types/exchanges';
+import type { ChainAddress } from '@/types/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useRefreshHandlers } from '@/composables/history/events/tx/refresh-handlers';
-import { useAccountCategorization } from '@/composables/history/events/tx/use-account-categorization';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useTransactionSync } from '@/composables/history/events/tx/use-transaction-sync';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useHistoryStore } from '@/store/history';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { type ChainAddress, TransactionChainType } from '@/types/history/events';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { Section, Status } from '@/types/status';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
@@ -25,39 +26,28 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   const { initializeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
   const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus } = useEventsQueryStatusStore();
-  const { getBitcoinAccounts, getEvmAccounts, getEvmLikeAccounts, getSolanaAccounts } = useHistoryTransactionAccounts();
-  const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
+  const { getAllAccounts } = useHistoryTransactionAccounts();
+  const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const { fetchUndecodedTransactionsBreakdown, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
   const { resetUndecodedTransactionsStatus } = useHistoryStore();
+  const { isEvm } = useSupportedChains();
 
   const { syncTransactionsByChains } = useTransactionSync();
-  const { categorizeAccountsByType } = useAccountCategorization();
   const { queryAllExchangeEvents, queryOnlineEvent } = useRefreshHandlers();
 
   const {
     addPendingAccounts,
+    addPendingExchanges,
     finishRefresh,
     getNewAccounts,
+    getNewExchanges,
     getPendingAccountsForRefresh,
+    getPendingExchangesForRefresh,
     hasPendingAccounts,
+    hasPendingExchanges,
     isRefreshing,
-    shouldRefreshAll,
     startRefresh,
   } = useHistoryRefreshStateStore();
-
-  const getAllAccountsByType = (chains: string[]): ReturnType<typeof categorizeAccountsByType> => ({
-    bitcoinAccounts: getBitcoinAccounts(chains),
-    evmAccounts: getEvmAccounts(chains),
-    evmLikeAccounts: getEvmLikeAccounts(chains),
-    solanaAccounts: getSolanaAccounts(chains),
-  });
-
-  const combineAccounts = (categorized: ReturnType<typeof categorizeAccountsByType>): ChainAddress[] => [
-    ...categorized.evmAccounts,
-    ...categorized.evmLikeAccounts,
-    ...categorized.bitcoinAccounts,
-    ...categorized.solanaAccounts,
-  ];
 
   const refreshTransactions = async (params: RefreshTransactionsParams = {}): Promise<void> => {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
@@ -67,43 +57,67 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
     // Determine initial accounts to check
-    let categorized = accounts?.length
-      ? categorizeAccountsByType(accounts)
+    const allCurrentAccounts = accounts?.length
+      ? accounts
       : fullRefresh
-        ? getAllAccountsByType(chains)
-        : { bitcoinAccounts: [], evmAccounts: [], evmLikeAccounts: [], solanaAccounts: [] };
+        ? getAllAccounts(chains)
+        : [];
 
-    const allCurrentAccounts = combineAccounts(categorized);
     const newAccountsList = getNewAccounts(allCurrentAccounts);
     const hasNewAccounts = newAccountsList.length > 0;
 
-    // Skip refresh only if fetchDisabled returns true AND there are no new accounts
-    if (fetchDisabled(userInitiated) && !hasNewAccounts)
+    // Check for new exchanges
+    const allCurrentExchanges = exchanges || get(connectedExchanges);
+    const newExchangesList = getNewExchanges(allCurrentExchanges);
+    const hasNewExchanges = newExchangesList.length > 0;
+
+    // Skip refresh only if fetchDisabled returns true AND there are no new accounts or exchanges
+    if (fetchDisabled(userInitiated) && !hasNewAccounts && !hasNewExchanges)
       return;
 
-    // If refresh is already running, add new accounts to pending
+    setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
+
+    // If refresh is already running, add new accounts/exchanges to pending
     if (get(isRefreshing)) {
       if (newAccountsList.length > 0)
         addPendingAccounts(newAccountsList);
+      if (newExchangesList.length > 0)
+        addPendingExchanges(newExchangesList);
       return;
     }
 
-    // Determine final accounts to refresh
-    if (fullRefresh && shouldRefreshAll(allCurrentAccounts)) {
-      categorized = getAllAccountsByType(chains);
+    // Determine final accounts and exchanges to refresh
+    let accountsToRefresh: ChainAddress[] = [];
+    let exchangesToRefresh: Exchange[] = [];
+
+    if (fullRefresh) {
+      // Only refresh all accounts if there are new accounts
+      // If only exchanges are new, don't refresh accounts
+      if (hasNewAccounts) {
+        accountsToRefresh = getAllAccounts(chains);
+      }
+      exchangesToRefresh = get(connectedExchanges);
     }
-    else if (hasNewAccounts) {
-      categorized = categorizeAccountsByType(newAccountsList);
+    else if (hasNewAccounts || hasNewExchanges) {
+      if (hasNewAccounts)
+        accountsToRefresh = newAccountsList;
+      if (hasNewExchanges)
+        exchangesToRefresh = newExchangesList;
+    }
+    else if (accounts?.length || exchanges) {
+      accountsToRefresh = accounts || [];
+      exchangesToRefresh = exchanges || [];
     }
 
-    const { bitcoinAccounts, evmAccounts, evmLikeAccounts, solanaAccounts } = categorized;
-    const accountsToRefresh = combineAccounts(categorized);
+    // Get EVM accounts for query status initialization
+    const evmAccounts = accountsToRefresh.filter(account => get(isEvm(account.chain)));
 
-    if (accountsToRefresh.length > 0) {
-      startRefresh(accountsToRefresh);
-      setStatus(Status.REFRESHING);
-      initializeQueryStatus(evmAccounts);
-      resetUndecodedTransactionsStatus();
+    if (accountsToRefresh.length > 0 || exchangesToRefresh.length > 0) {
+      startRefresh(accountsToRefresh, exchangesToRefresh);
+      if (accountsToRefresh.length > 0) {
+        initializeQueryStatus(evmAccounts);
+        resetUndecodedTransactionsStatus();
+      }
     }
     else {
       resetQueryStatus();
@@ -115,18 +129,11 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
       const asyncOperations: Promise<void>[] = [];
 
-      // Queue transaction syncing for each account type
-      [
-        { accounts: evmAccounts, type: TransactionChainType.EVM },
-        { accounts: bitcoinAccounts, type: TransactionChainType.BITCOIN },
-        { accounts: evmLikeAccounts, type: TransactionChainType.EVMLIKE },
-        { accounts: solanaAccounts, type: TransactionChainType.SOLANA },
-      ].forEach(({ accounts, type }) => {
-        if (accounts.length > 0)
-          asyncOperations.push(syncTransactionsByChains({ accounts, type }));
-      });
+      // Sync transactions for all accounts (type is derived from chain inside syncTransactionsByChains)
+      if (accountsToRefresh.length > 0)
+        asyncOperations.push(syncTransactionsByChains(accountsToRefresh));
 
-      if (fullRefresh || disableEvmEvents || exchanges) {
+      if (fullRefresh || exchanges) {
         initializeExchangeEventsQueryStatus(exchanges || get(connectedExchanges));
         asyncOperations.push(queryAllExchangeEvents(exchanges));
       }
@@ -160,22 +167,27 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     }
     finally {
       finishRefresh();
+      setStatus(Status.LOADED);
     }
 
-    // After refresh is complete, check if there are pending accounts to refresh
-    if (!get(hasPendingAccounts))
+    // After refresh is complete, check if there are pending accounts or exchanges to refresh
+    const hasPending = get(hasPendingAccounts) || get(hasPendingExchanges);
+    if (!hasPending)
       return;
 
     const pendingAccounts = getPendingAccountsForRefresh();
-    // Recursively call refreshTransactions to handle pending accounts
+    const pendingExchanges = getPendingExchangesForRefresh();
+
+    // Recursively call refreshTransactions to handle pending accounts/exchanges
     setTimeout(() => {
       refreshTransactions({
         ...params,
         payload: {
           ...params.payload,
-          accounts: pendingAccounts,
+          accounts: pendingAccounts.length > 0 ? pendingAccounts : undefined,
+          exchanges: pendingExchanges.length > 0 ? pendingExchanges : undefined,
         },
-      }).catch(error => logger.error('Failed to refresh pending accounts', error));
+      }).catch(error => logger.error('Failed to refresh pending accounts/exchanges', error));
     }, 100);
   };
 

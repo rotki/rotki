@@ -109,19 +109,12 @@ export const EvmChainLikeAddress = z.object({
 
 export type EvmChainLikeAddress = z.infer<typeof EvmChainLikeAddress>;
 
-export const BitcoinChainAddress = z.object({
-  address: z.string(),
-  chain: z.string(),
-});
-
-export type BitcoinChainAddress = z.infer<typeof BitcoinChainAddress>;
-
 export const ChainAddress = z.object({
   address: z.string(),
   chain: z.string(),
 });
 
-export type ChainAddress = z.infer<typeof BitcoinChainAddress>;
+export type ChainAddress = z.infer<typeof ChainAddress>;
 
 export const HistoryEventDetail = z
   .object({

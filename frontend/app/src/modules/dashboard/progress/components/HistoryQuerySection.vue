@@ -28,7 +28,6 @@ const currentOperationData = computed(() => get(progress).currentOperationData);
 
 <template>
   <RuiProgress
-    v-if="processingMessage"
     circular
     :value="processingPercentage"
     size="30"
@@ -37,10 +36,7 @@ const currentOperationData = computed(() => get(progress).currentOperationData);
     color="primary"
   />
 
-  <div
-    v-if="processingMessage"
-    class="inline gap-2"
-  >
+  <div class="inline gap-2">
     {{ processingMessage }}
     <template v-if="currentOperationData">
       <i18n-t
@@ -85,11 +81,8 @@ const currentOperationData = computed(() => get(progress).currentOperationData);
               size="1.25rem"
               class="-my-2"
             />
-            {{ currentOperationData.name }}
+            ({{ currentOperationData.name }})
           </span>
-        </template>
-        <template #location>
-          {{ currentOperationData.location }}
         </template>
       </i18n-t>
     </template>

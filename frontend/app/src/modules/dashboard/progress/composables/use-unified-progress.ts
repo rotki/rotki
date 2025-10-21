@@ -1,17 +1,13 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { TransactionStatus } from '@/composables/api/history/events';
-import type { BlockchainAccount } from '@/types/blockchain/accounts';
 import { get, isDefined, set } from '@vueuse/shared';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { type BalanceQueryProgress, useBalanceQueryProgress } from '@/modules/dashboard/progress/composables/use-balance-query-progress';
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
 import { type HistoryQueryProgress, useHistoryQueryProgress } from '@/modules/dashboard/progress/composables/use-history-query-progress';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/composables/use-transaction-status-check';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
 
 const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
 
@@ -67,7 +63,7 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
 
   const {
     earliestQueriedTimestamp: lastQueriedTimestamp,
-    isAccountsExist,
+    hasTxAccounts,
     isNeverQueried,
     isOutOfSync: isOutOfSyncCheck,
     navigateToHistory,
@@ -81,26 +77,6 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   // Additional stores and composables
   const historyStore = useHistoryStore();
   const { transactionStatusSummary } = storeToRefs(historyStore);
-  const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-  const { allTxChainsInfo } = useSupportedChains();
-
-  const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
-
-  const accounts = computed<BlockchainAccount[]>(() =>
-    Object.values(get(accountsPerChain))
-      .flatMap(x => x)
-      .filter(hasAccountAddress),
-  );
-
-  const hasTxAccounts = computed<boolean>(() => {
-    const { hasEvmAccounts = false } = get(transactionStatusSummary) ?? {};
-    if (!hasEvmAccounts) {
-      return false;
-    }
-    const filteredChains = get(txChainIds);
-    return get(accounts).some(({ chain }) => filteredChains.includes(chain));
-  });
-
   const lastQueriedDisplay = useTimeAgo(lastQueriedTimestamp);
 
   const processingMessage = computed<string>(() => {
@@ -141,7 +117,7 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   });
 
   const showIdleMessage = computed<boolean>(() => {
-    if (!get(isAccountsExist)) {
+    if (!get(hasTxAccounts)) {
       return false;
     }
 
@@ -149,7 +125,7 @@ export function useUnifiedProgress(): UseUnifiedProgressReturn {
   });
 
   const longQuery = computed<boolean>(() => {
-    if (!get(isAccountsExist)) {
+    if (!get(hasTxAccounts)) {
       return false;
     }
 

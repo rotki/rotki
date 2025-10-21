@@ -26,7 +26,6 @@ const currentOperationData = computed(() => get(progress).currentOperationData);
 
 <template>
   <RuiProgress
-    v-if="processingMessage"
     circular
     :value="processingPercentage"
     size="30"
@@ -35,10 +34,7 @@ const currentOperationData = computed(() => get(progress).currentOperationData);
     color="primary"
   />
 
-  <div
-    v-if="processingMessage"
-    class="inline gap-2"
-  >
+  <div class="inline gap-2">
     {{ processingMessage }}
     <template v-if="currentOperationData && currentOperationData.type === TaskType.FETCH_DETECTED_TOKENS">
       <span class="inline-flex items-center gap-1">

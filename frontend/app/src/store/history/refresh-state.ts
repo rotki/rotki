@@ -1,3 +1,4 @@
+import type { Exchange } from '@/types/exchanges';
 import type { ChainAddress } from '@/types/history/events';
 import { get, set } from '@vueuse/core';
 import { logger } from '@/utils/logging';
@@ -5,120 +6,166 @@ import { logger } from '@/utils/logging';
 export const useHistoryRefreshStateStore = defineStore('history/refresh-state', () => {
   const isRefreshing = ref<boolean>(false);
   const lastRefreshTime = ref<number | null>(null);
-  const accountsAtLastRefresh = ref<Set<string>>(new Set<string>());
-  const pendingAccounts = ref<Set<string>>(new Set<string>());
-  const accountsBeingRefreshed = ref<Set<string>>(new Set<string>());
+  const refreshedKeys = ref<Set<string>>(new Set<string>());
+  const pendingKeys = ref<Set<string>>(new Set<string>());
 
-  const createAccountKey = (account: ChainAddress): string => `${account.chain}:${account.address}`;
+  // Prefix keys to distinguish accounts from exchanges
+  const BLOCKCHAIN_PREFIX = 'blockchain:';
+  const EXCHANGE_PREFIX = 'exchange:';
 
-  const startRefresh = (accounts: Array<ChainAddress>): void => {
-    const accountKeys = new Set(accounts.map(createAccountKey));
+  const createAccountKey = (account: ChainAddress): string => `${BLOCKCHAIN_PREFIX}${account.chain}:${account.address}`;
+  const createExchangeKey = (exchange: Exchange): string => `${EXCHANGE_PREFIX}${exchange.location}:${exchange.name}`;
 
-    // Merge with existing accounts if we're refreshing pending accounts
-    const mergedAccountKeys = new Set([...get(accountsAtLastRefresh), ...accountKeys]);
+  const startRefresh = (accounts: Array<ChainAddress>, exchanges: Array<Exchange> = []): void => {
+    const newKeys = [
+      ...accounts.map(createAccountKey),
+      ...exchanges.map(createExchangeKey),
+    ];
 
-    // Mark these accounts as being refreshed
-    const newAccountsBeingRefreshed = new Set([...get(accountsBeingRefreshed), ...accountKeys]);
-
-    set(accountsAtLastRefresh, mergedAccountKeys);
-    set(accountsBeingRefreshed, newAccountsBeingRefreshed);
+    // Add new items to refreshed set
+    const updated = new Set([...get(refreshedKeys), ...newKeys]);
+    set(refreshedKeys, updated);
     set(isRefreshing, true);
     set(lastRefreshTime, Date.now());
-    set(pendingAccounts, new Set<string>());
+    set(pendingKeys, new Set<string>()); // Clear pending
   };
 
   const finishRefresh = (): void => {
-    // Clear the accounts being refreshed
-    set(accountsBeingRefreshed, new Set<string>());
     set(isRefreshing, false);
-
-    // If there are pending accounts, keep them for next refresh
-    // No need to update pendingAccounts as they're already set
   };
 
   const addPendingAccounts = (accounts: Array<ChainAddress>): void => {
-    const currentAccountsAtLastRefresh = get(accountsAtLastRefresh);
-    const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
-    const newPendingAccounts = new Set(get(pendingAccounts));
+    const currentRefreshed = get(refreshedKeys);
+    const newPending = new Set(get(pendingKeys));
 
     accounts.forEach((account) => {
       const key = createAccountKey(account);
-      // Only add to pending if not already refreshed AND not currently being refreshed
-      if (!currentAccountsAtLastRefresh.has(key) && !currentAccountsBeingRefreshed.has(key)) {
-        newPendingAccounts.add(key);
+      if (!currentRefreshed.has(key)) {
+        newPending.add(key);
       }
     });
 
-    set(pendingAccounts, newPendingAccounts);
+    set(pendingKeys, newPending);
   };
 
-  const getNewAccounts = (
-    currentAccounts: Array<ChainAddress>,
-  ): Array<ChainAddress> => {
-    const lastRefreshedAccounts = get(accountsAtLastRefresh);
-    const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
+  const addPendingExchanges = (exchanges: Array<Exchange>): void => {
+    const currentRefreshed = get(refreshedKeys);
+    const newPending = new Set(get(pendingKeys));
 
-    logger.debug(`Checking for new accounts. Current: ${currentAccounts.length}, Last refreshed: ${lastRefreshedAccounts.size}, Being refreshed: ${currentAccountsBeingRefreshed.size}`);
-
-    return currentAccounts.filter((account) => {
-      const key = createAccountKey(account);
-      // Exclude accounts that have been refreshed OR are currently being refreshed
-      return !lastRefreshedAccounts.has(key) && !currentAccountsBeingRefreshed.has(key);
+    exchanges.forEach((exchange) => {
+      const key = createExchangeKey(exchange);
+      if (!currentRefreshed.has(key)) {
+        newPending.add(key);
+      }
     });
+
+    set(pendingKeys, newPending);
+  };
+
+  const getNewAccounts = (currentAccounts: Array<ChainAddress>): Array<ChainAddress> => {
+    const currentRefreshed = get(refreshedKeys);
+
+    const newAccounts = currentAccounts.filter((account) => {
+      const key = createAccountKey(account);
+      return !currentRefreshed.has(key);
+    });
+
+    logger.debug(`Checking for new accounts. Current: ${currentAccounts.length}, Refreshed: ${currentRefreshed.size}, New: ${newAccounts.length}`);
+    return newAccounts;
+  };
+
+  const getNewExchanges = (currentExchanges: Array<Exchange>): Array<Exchange> => {
+    const currentRefreshed = get(refreshedKeys);
+
+    const newExchanges = currentExchanges.filter((exchange) => {
+      const key = createExchangeKey(exchange);
+      return !currentRefreshed.has(key);
+    });
+
+    logger.debug(`Checking for new exchanges. Current: ${currentExchanges.length}, Refreshed: ${currentRefreshed.size}, New: ${newExchanges.length}`);
+    return newExchanges;
   };
 
   const getPendingAccountsForRefresh = (): Array<ChainAddress> => {
-    const currentAccountsBeingRefreshed = get(accountsBeingRefreshed);
-    // Filter out accounts that are currently being refreshed
-    const pendingKeys = Array.from(get(pendingAccounts)).filter(key => !currentAccountsBeingRefreshed.has(key));
+    const pending = Array.from(get(pendingKeys)).filter(key => key.startsWith(BLOCKCHAIN_PREFIX));
     const result: Array<ChainAddress> = [];
 
-    pendingKeys.forEach((key) => {
-      const [chain, address] = key.split(':');
+    pending.forEach((key) => {
+      // Format: "blockchain:chain:address"
+      const parts = key.slice(BLOCKCHAIN_PREFIX.length);
+      const colonIndex = parts.indexOf(':');
+      const chain = parts.substring(0, colonIndex);
+      const address = parts.substring(colonIndex + 1);
+
       result.push({ address, chain });
     });
 
     return result;
   };
 
-  const hasPendingAccounts = computed<boolean>(() => get(pendingAccounts).size > 0);
+  const getPendingExchangesForRefresh = (): Array<Exchange> => {
+    const pending = Array.from(get(pendingKeys)).filter(key => key.startsWith(EXCHANGE_PREFIX));
+    const result: Array<Exchange> = [];
+
+    pending.forEach((key) => {
+      // Format: "exchange:location:name"
+      const parts = key.slice(EXCHANGE_PREFIX.length);
+      const colonIndex = parts.indexOf(':');
+      const location = parts.substring(0, colonIndex);
+      const name = parts.substring(colonIndex + 1);
+
+      result.push({ location, name });
+    });
+
+    return result;
+  };
+
+  const hasPendingAccounts = computed<boolean>(() =>
+    Array.from(get(pendingKeys)).some(key => key.startsWith(BLOCKCHAIN_PREFIX)),
+  );
+
+  const hasPendingExchanges = computed<boolean>(() =>
+    Array.from(get(pendingKeys)).some(key => key.startsWith(EXCHANGE_PREFIX)),
+  );
 
   const shouldRefreshAll = (
     currentAccounts: Array<ChainAddress>,
+    currentExchanges: Array<Exchange>,
   ): boolean => {
-    // If never refreshed, refresh all
     if (get(lastRefreshTime) === null) {
       return true;
     }
 
-    // If not currently refreshing and there are new accounts, refresh all
     if (!get(isRefreshing)) {
       const newAccounts = getNewAccounts(currentAccounts);
-      return newAccounts.length > 0;
+      const newExchanges = getNewExchanges(currentExchanges);
+      return newAccounts.length > 0 || newExchanges.length > 0;
     }
 
     return false;
   };
 
   const reset = (): void => {
-    set(accountsAtLastRefresh, new Set<string>());
-    set(accountsBeingRefreshed, new Set<string>());
+    set(refreshedKeys, new Set<string>());
+    set(pendingKeys, new Set<string>());
     set(isRefreshing, false);
     set(lastRefreshTime, null);
-    set(pendingAccounts, new Set<string>());
   };
 
   return {
-    accountsAtLastRefresh,
-    accountsBeingRefreshed,
     addPendingAccounts,
+    addPendingExchanges,
     finishRefresh,
     getNewAccounts,
+    getNewExchanges,
     getPendingAccountsForRefresh,
+    getPendingExchangesForRefresh,
     hasPendingAccounts,
+    hasPendingExchanges,
     isRefreshing,
     lastRefreshTime,
-    pendingAccounts,
+    pendingKeys,
+    refreshedKeys,
     reset,
     shouldRefreshAll,
     startRefresh,
