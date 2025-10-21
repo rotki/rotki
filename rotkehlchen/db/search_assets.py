@@ -1,5 +1,4 @@
-import operator
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from polyleven import levenshtein
 
@@ -7,11 +6,19 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.globaldb.handler import ALL_ASSETS_TABLES_QUERY, GlobalDBHandler
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.filtering import LevenshteinFilterQuery
+
+
+# Collect all native token identifiers for prioritization in search
+NATIVE_TOKEN_IDS: Final = {
+    blockchain.get_native_token_id()
+    for blockchain in SupportedBlockchain
+}
 
 
 def _search_only_nfts_levenstein(
@@ -119,5 +126,8 @@ def search_assets_levenshtein(
         if search_nfts is True:
             search_result += _search_only_nfts_levenstein(cursor=cursor, filter_query=filter_query)
 
-    sorted_search_result = [result for _, result in sorted(search_result, key=operator.itemgetter(0))]  # noqa: E501
+    sorted_search_result = [result for _, result in sorted(search_result, key=lambda item: (
+        int(item[1]['identifier'] not in NATIVE_TOKEN_IDS),  # prioritize native tokens
+        item[0],  # levenshtein distance
+    ))]
     return sorted_search_result[:limit] if limit is not None else sorted_search_result
