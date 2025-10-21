@@ -104,7 +104,6 @@ class ExternalService(SerializableEnumNameMixin):
     LOOPRING = auto()
     OPENSEA = auto()
     BLOCKSCOUT = auto()
-    MONERIUM = auto()
     THEGRAPH = auto()
     GNOSIS_PAY = auto()
     OPTIMISM_BLOCKSCOUT = auto()
@@ -123,7 +122,7 @@ class ExternalService(SerializableEnumNameMixin):
         return BLOCKSCOUT_TO_CHAINID.get(self)
 
     def premium_only(self) -> bool:
-        return self in {ExternalService.GNOSIS_PAY, ExternalService.MONERIUM}
+        return self == ExternalService.GNOSIS_PAY
 
 
 class ExternalServiceApiCredentials(NamedTuple):

@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_async_response,
@@ -36,7 +37,7 @@ def test_refresh_gnosis_pay_and_monerium(
     ), (
         'monerium',
         'rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders',
-        ExternalService.MONERIUM,
+        None,
         'Unable to refresh Monerium data due to missing credentials',
         call(),
     )):
@@ -63,7 +64,14 @@ def test_refresh_gnosis_pay_and_monerium(
         assert mock_query_service.call_args_list == [expected_call]
 
         # also check the error when there aren't credentials
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.delete_external_service_credentials(services=[service])
+        if service is not None:
+            rotkehlchen_api_server.rest_api.rotkehlchen.data.db.delete_external_service_credentials(services=[service])
+        else:
+            with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.write_ctx() as write_cursor:  # noqa: E501
+                write_cursor.execute(
+                    'DELETE FROM key_value_cache WHERE name=?',
+                    (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
+                )
         assert_error_response(
             response=requests.post(
                 api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
