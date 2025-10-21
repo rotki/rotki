@@ -2471,6 +2471,7 @@
       "token_required": "Please enter a valid access token"
     },
     "helius": {
+      "api_key_message": "Please add a Helius API key to be able to query historical Solana transactions.",
       "description": "Recommended for Solana to query transaction data without the heavy rate limits of public RPCs.",
       "hint": "Enter your Helius API key",
       "title": "Helius"

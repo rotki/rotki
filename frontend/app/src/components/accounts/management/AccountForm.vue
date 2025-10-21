@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import { assert, Blockchain } from '@rotki/common';
-import AccountFormEtherscanAlert from '@/components/accounts/management/AccountFormEtherscanAlert.vue';
+import AccountFormApiKeyAlert from '@/components/accounts/management/AccountFormApiKeyAlert.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
 import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
@@ -40,20 +40,24 @@ const form = ref<
 
 const chain = useRefPropVModel(modelValue, 'chain');
 
-const { isEvm } = useSupportedChains();
+const { isEvm, isSolanaChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
 
-const showEtherscanApiKeysAlert = computed(() => {
+const missingApiKeyService = computed<'etherscan' | 'helius' | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
-  return (
-    selectedChain
-    && (selectedChain === 'evm' || get(isEvm(selectedChain)))
-    && currentModelValue.mode === 'add'
-    && !get(apiKey('etherscan'))
-  );
+  if (currentModelValue.mode !== 'add' || !selectedChain)
+    return undefined;
+
+  if ((selectedChain === 'evm' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
+    return 'etherscan';
+
+  if (get(isSolanaChains(selectedChain)) && !get(apiKey('helius')))
+    return 'helius';
+
+  return undefined;
 });
 
 async function validate(): Promise<boolean> {
@@ -143,8 +147,9 @@ defineExpose({
 
 <template>
   <div data-cy="blockchain-balance-form">
-    <AccountFormEtherscanAlert
-      v-if="showEtherscanApiKeysAlert"
+    <AccountFormApiKeyAlert
+      v-if="missingApiKeyService"
+      :service="missingApiKeyService"
     />
 
     <AccountSelector

@@ -66,6 +66,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     return {
       action: actions,
       category,
+      display: true,
       i18nParam: {
         choice: 0,
         message: messageKey,
