@@ -121,6 +121,8 @@ describe('useHistoryTransactionAccounts', () => {
     it('should return accounts in ChainAddress format', () => {
       const accounts = composable.getEvmAccounts(['eth']);
 
+      expect(accounts).toHaveLength(2);
+
       accounts.forEach((account) => {
         expect(account).toHaveProperty('chain');
         expect(account).toHaveProperty('address');

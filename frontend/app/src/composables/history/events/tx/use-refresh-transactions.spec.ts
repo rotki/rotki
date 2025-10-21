@@ -32,10 +32,7 @@ const mockEventsQueryStatusStore = {
 };
 
 const mockHistoryTransactionAccounts = {
-  getBitcoinAccounts: vi.fn(() => mockBitcoinAccounts),
-  getEvmAccounts: vi.fn(() => mockEvmAccounts),
-  getEvmLikeAccounts: vi.fn(() => []),
-  getSolanaAccounts: vi.fn(() => []),
+  getAllAccounts: vi.fn(() => [...mockEvmAccounts, ...mockBitcoinAccounts]),
 };
 
 const mockStatusUpdater = {
@@ -58,13 +55,8 @@ const mockTransactionSync = {
   syncTransactionsByChains: vi.fn().mockResolvedValue(undefined),
 };
 
-const mockAccountCategorization = {
-  categorizeAccountsByType: vi.fn((accounts: ChainAddress[]) => ({
-    bitcoinAccounts: accounts.filter(a => a.chain === 'btc'),
-    evmAccounts: accounts.filter(a => ['eth', 'optimism', 'polygon_pos'].includes(a.chain)),
-    evmLikeAccounts: [],
-    solanaAccounts: [],
-  })),
+const mockSupportedChains = {
+  isEvm: vi.fn((chain: string) => ref(['eth', 'optimism', 'polygon_pos'].includes(chain))),
 };
 
 const mockRefreshHandlers = {
@@ -96,8 +88,8 @@ vi.mock('./use-transaction-sync', () => ({
   useTransactionSync: vi.fn(() => mockTransactionSync),
 }));
 
-vi.mock('./use-account-categorization', () => ({
-  useAccountCategorization: vi.fn(() => mockAccountCategorization),
+vi.mock('@/composables/info/chains', () => ({
+  useSupportedChains: vi.fn(() => mockSupportedChains),
 }));
 
 vi.mock('./refresh-handlers', () => ({
@@ -130,10 +122,7 @@ describe('useRefreshTransactions', () => {
     mockStatusUpdater.isFirstLoad.mockReturnValue(true);
 
     // Reset mock return values to defaults
-    mockHistoryTransactionAccounts.getBitcoinAccounts.mockReturnValue(mockBitcoinAccounts);
-    mockHistoryTransactionAccounts.getEvmAccounts.mockReturnValue(mockEvmAccounts);
-    mockHistoryTransactionAccounts.getEvmLikeAccounts.mockReturnValue([]);
-    mockHistoryTransactionAccounts.getSolanaAccounts.mockReturnValue([]);
+    mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts]);
   });
 
   describe('basic refresh flow', () => {
@@ -198,10 +187,9 @@ describe('useRefreshTransactions', () => {
         userInitiated: true, // Ensure it bypasses any "already refreshed" logic
       });
 
-      expect(mockAccountCategorization.categorizeAccountsByType).toHaveBeenCalledWith(
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         specificAccounts,
       );
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled();
     });
 
     it('should not query exchanges when only accounts are specified', async () => {
@@ -278,8 +266,8 @@ describe('useRefreshTransactions', () => {
 
       await vi.advanceTimersByTimeAsync(150);
 
-      // Should be called 3 times: first refresh (EVM + Bitcoin) + pending refresh (EVM)
-      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledTimes(3);
+      // Should be called 2 times: first refresh (all accounts) + pending refresh (single account)
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledTimes(2);
 
       vi.useRealTimers();
     });
@@ -293,9 +281,7 @@ describe('useRefreshTransactions', () => {
         chains: ['eth'],
       });
 
-      expect(mockHistoryTransactionAccounts.getEvmAccounts).toHaveBeenCalledWith(['eth']);
-      expect(mockHistoryTransactionAccounts.getBitcoinAccounts).toHaveBeenCalledWith(['eth']);
-      expect(mockHistoryTransactionAccounts.getSolanaAccounts).toHaveBeenCalledWith(['eth']);
+      expect(mockHistoryTransactionAccounts.getAllAccounts).toHaveBeenCalledWith(['eth']);
     });
   });
 
@@ -378,10 +364,10 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
-        expect.objectContaining({
-          accounts: mockEvmAccounts,
-          type: expect.any(String),
-        }),
+        expect.arrayContaining([
+          expect.objectContaining({ chain: 'eth' }),
+          expect.objectContaining({ chain: 'optimism' }),
+        ]),
       );
     });
 
@@ -391,18 +377,14 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
-        expect.objectContaining({
-          accounts: mockBitcoinAccounts,
-          type: expect.any(String),
-        }),
+        expect.arrayContaining([
+          expect.objectContaining({ chain: 'btc' }),
+        ]),
       );
     });
 
     it('should not sync transactions for empty account types', async () => {
-      mockHistoryTransactionAccounts.getBitcoinAccounts.mockReturnValue([]);
-      mockHistoryTransactionAccounts.getEvmAccounts.mockReturnValue([]);
-      mockHistoryTransactionAccounts.getSolanaAccounts.mockReturnValue([]);
-      mockHistoryTransactionAccounts.getEvmLikeAccounts.mockReturnValue([]);
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([]);
 
       const { refreshTransactions } = useRefreshTransactions();
 
@@ -422,10 +404,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should reset query status when no accounts to refresh', async () => {
-      mockHistoryTransactionAccounts.getBitcoinAccounts.mockReturnValue([]);
-      mockHistoryTransactionAccounts.getEvmAccounts.mockReturnValue([]);
-      mockHistoryTransactionAccounts.getSolanaAccounts.mockReturnValue([]);
-      mockHistoryTransactionAccounts.getEvmLikeAccounts.mockReturnValue([]);
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([]);
 
       const { refreshTransactions } = useRefreshTransactions();
 

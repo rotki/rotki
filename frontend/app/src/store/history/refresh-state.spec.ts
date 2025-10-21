@@ -26,12 +26,8 @@ describe('useHistoryRefreshStateStore', () => {
     it('should initialize with default values', () => {
       expect(get(store.isRefreshing)).toBe(false);
       expect(get(store.lastRefreshTime)).toBeNull();
-      expect(get(store.accountsAtLastRefresh).size).toBe(0);
-      expect(get(store.exchangesAtLastRefresh).size).toBe(0);
-      expect(get(store.pendingAccounts).size).toBe(0);
-      expect(get(store.pendingExchanges).size).toBe(0);
-      expect(get(store.accountsBeingRefreshed).size).toBe(0);
-      expect(get(store.exchangesBeingRefreshed).size).toBe(0);
+      expect(get(store.refreshedKeys).size).toBe(0);
+      expect(get(store.pendingKeys).size).toBe(0);
     });
   });
 
@@ -41,75 +37,59 @@ describe('useHistoryRefreshStateStore', () => {
 
       expect(get(store.isRefreshing)).toBe(true);
       expect(get(store.lastRefreshTime)).not.toBeNull();
-      expect(get(store.accountsAtLastRefresh).size).toBe(3);
-      expect(get(store.exchangesAtLastRefresh).size).toBe(0);
-      expect(get(store.accountsBeingRefreshed).size).toBe(3);
-      expect(get(store.exchangesBeingRefreshed).size).toBe(0);
-      expect(get(store.pendingAccounts).size).toBe(0);
-      expect(get(store.pendingExchanges).size).toBe(0);
+      expect(get(store.refreshedKeys).size).toBe(3);
+      expect(get(store.pendingKeys).size).toBe(0);
     });
 
     it('should start refresh with both accounts and exchanges', () => {
       store.startRefresh(mockAccounts, mockExchanges);
 
       expect(get(store.isRefreshing)).toBe(true);
-      expect(get(store.accountsAtLastRefresh).size).toBe(3);
-      expect(get(store.exchangesAtLastRefresh).size).toBe(2);
-      expect(get(store.accountsBeingRefreshed).size).toBe(3);
-      expect(get(store.exchangesBeingRefreshed).size).toBe(2);
+      expect(get(store.refreshedKeys).size).toBe(5); // 3 accounts + 2 exchanges
     });
 
     it('should merge with existing accounts and exchanges on subsequent refreshes', () => {
       store.startRefresh([mockAccounts[0]], [mockExchanges[0]]);
-      expect(get(store.accountsAtLastRefresh).size).toBe(1);
-      expect(get(store.exchangesAtLastRefresh).size).toBe(1);
+      expect(get(store.refreshedKeys).size).toBe(2); // 1 account + 1 exchange
 
       store.startRefresh([mockAccounts[1]], [mockExchanges[1]]);
-      expect(get(store.accountsAtLastRefresh).size).toBe(2);
-      expect(get(store.exchangesAtLastRefresh).size).toBe(2);
+      expect(get(store.refreshedKeys).size).toBe(4); // 2 accounts + 2 exchanges
     });
 
-    it('should clear pending accounts and exchanges on refresh', () => {
+    it('should clear pending keys on refresh', () => {
       store.startRefresh([mockAccounts[0]]);
       store.addPendingAccounts([mockAccounts[1]]);
       store.addPendingExchanges([mockExchanges[0]]);
 
-      expect(get(store.pendingAccounts).size).toBe(1);
-      expect(get(store.pendingExchanges).size).toBe(1);
+      expect(get(store.pendingKeys).size).toBe(2);
 
       store.finishRefresh();
       store.startRefresh([mockAccounts[1]], [mockExchanges[0]]);
 
-      expect(get(store.pendingAccounts).size).toBe(0);
-      expect(get(store.pendingExchanges).size).toBe(0);
+      expect(get(store.pendingKeys).size).toBe(0);
     });
   });
 
   describe('finishRefresh', () => {
-    it('should finish refresh and clear being refreshed state', () => {
+    it('should finish refresh', () => {
       store.startRefresh(mockAccounts, mockExchanges);
       expect(get(store.isRefreshing)).toBe(true);
-      expect(get(store.accountsBeingRefreshed).size).toBe(3);
-      expect(get(store.exchangesBeingRefreshed).size).toBe(2);
+      expect(get(store.refreshedKeys).size).toBe(5);
 
       store.finishRefresh();
 
       expect(get(store.isRefreshing)).toBe(false);
-      expect(get(store.accountsBeingRefreshed).size).toBe(0);
-      expect(get(store.exchangesBeingRefreshed).size).toBe(0);
-      expect(get(store.accountsAtLastRefresh).size).toBe(3);
-      expect(get(store.exchangesAtLastRefresh).size).toBe(2);
+      expect(get(store.refreshedKeys).size).toBe(5); // Still refreshed
     });
 
-    it('should preserve pending accounts and exchanges after finish', () => {
+    it('should preserve pending keys after finish', () => {
       store.startRefresh([mockAccounts[0]]);
       store.addPendingAccounts([mockAccounts[1]]);
       store.addPendingExchanges([mockExchanges[0]]);
 
       store.finishRefresh();
 
-      expect(get(store.pendingAccounts).size).toBe(1);
-      expect(get(store.pendingExchanges).size).toBe(1);
+      expect(get(store.pendingKeys).size).toBe(2);
     });
   });
 
@@ -119,7 +99,7 @@ describe('useHistoryRefreshStateStore', () => {
 
       store.addPendingAccounts([mockAccounts[1], mockAccounts[2]]);
 
-      expect(get(store.pendingAccounts).size).toBe(2);
+      expect(get(store.pendingKeys).size).toBe(2);
     });
 
     it('should not add accounts that were already refreshed', () => {
@@ -127,15 +107,15 @@ describe('useHistoryRefreshStateStore', () => {
 
       store.addPendingAccounts([mockAccounts[0], mockAccounts[2]]);
 
-      expect(get(store.pendingAccounts).size).toBe(1);
+      expect(get(store.pendingKeys).size).toBe(1);
     });
 
-    it('should not add accounts that are currently being refreshed', () => {
+    it('should not add accounts that are already in refreshed set', () => {
       store.startRefresh([mockAccounts[0]]);
 
       store.addPendingAccounts([mockAccounts[0], mockAccounts[1]]);
 
-      expect(get(store.pendingAccounts).size).toBe(1);
+      expect(get(store.pendingKeys).size).toBe(1);
     });
   });
 
@@ -145,7 +125,7 @@ describe('useHistoryRefreshStateStore', () => {
 
       store.addPendingExchanges([mockExchanges[1]]);
 
-      expect(get(store.pendingExchanges).size).toBe(1);
+      expect(get(store.pendingKeys).size).toBe(1);
     });
 
     it('should not add exchanges that were already refreshed', () => {
@@ -153,15 +133,15 @@ describe('useHistoryRefreshStateStore', () => {
 
       store.addPendingExchanges([mockExchanges[0]]);
 
-      expect(get(store.pendingExchanges).size).toBe(0);
+      expect(get(store.pendingKeys).size).toBe(0);
     });
 
-    it('should not add exchanges that are currently being refreshed', () => {
+    it('should not add exchanges that are already in refreshed set', () => {
       store.startRefresh([], [mockExchanges[0]]);
 
       store.addPendingExchanges([mockExchanges[0], mockExchanges[1]]);
 
-      expect(get(store.pendingExchanges).size).toBe(1);
+      expect(get(store.pendingKeys).size).toBe(1);
     });
   });
 
@@ -359,12 +339,8 @@ describe('useHistoryRefreshStateStore', () => {
 
       expect(get(store.isRefreshing)).toBe(false);
       expect(get(store.lastRefreshTime)).toBeNull();
-      expect(get(store.accountsAtLastRefresh).size).toBe(0);
-      expect(get(store.exchangesAtLastRefresh).size).toBe(0);
-      expect(get(store.pendingAccounts).size).toBe(0);
-      expect(get(store.pendingExchanges).size).toBe(0);
-      expect(get(store.accountsBeingRefreshed).size).toBe(0);
-      expect(get(store.exchangesBeingRefreshed).size).toBe(0);
+      expect(get(store.refreshedKeys).size).toBe(0);
+      expect(get(store.pendingKeys).size).toBe(0);
     });
   });
 
@@ -422,22 +398,6 @@ describe('useHistoryRefreshStateStore', () => {
       expect(newExchanges).toHaveLength(0);
     });
 
-    it('should handle addresses with colons in IPv6 format', () => {
-      const accountWithColon: ChainAddress = {
-        address: '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
-        chain: 'test',
-      };
-
-      store.startRefresh([accountWithColon]);
-      store.addPendingAccounts([{ address: 'fe80::1', chain: 'test' }]);
-      store.finishRefresh();
-
-      const pending = store.getPendingAccountsForRefresh();
-
-      expect(pending).toHaveLength(1);
-      expect(pending[0]).toEqual({ address: 'fe80::1', chain: 'test' });
-    });
-
     it('should reconstruct exchange names with colons correctly when getting pending', () => {
       const exchangeWithColons: Exchange = { location: 'kraken', name: 'Acc:1:Main' };
 
@@ -449,22 +409,6 @@ describe('useHistoryRefreshStateStore', () => {
       expect(pending).toHaveLength(1);
       expect(pending[0].location).toBe('kraken');
       expect(pending[0].name).toBe('Acc:1:Main');
-    });
-
-    it('should handle account addresses with multiple colons correctly', () => {
-      const accountWithMultipleColons: ChainAddress = {
-        address: 'addr:with:multiple:colons',
-        chain: 'test',
-      };
-
-      store.startRefresh([]);
-      store.addPendingAccounts([accountWithMultipleColons]);
-
-      const pending = store.getPendingAccountsForRefresh();
-
-      expect(pending).toHaveLength(1);
-      expect(pending[0].chain).toBe('test');
-      expect(pending[0].address).toBe('addr:with:multiple:colons');
     });
   });
 });

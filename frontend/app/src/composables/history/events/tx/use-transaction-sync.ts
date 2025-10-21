@@ -1,6 +1,7 @@
 import { groupBy } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
@@ -23,7 +24,7 @@ interface TransactionSyncParams {
 interface UseTransactionSyncReturn {
   syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams) => Promise<void>;
   syncTransactionTask: (account: ChainAddress, type: TransactionChainType) => Promise<void>;
-  syncTransactionsByChains: (params: TransactionSyncParams) => Promise<void>;
+  syncTransactionsByChains: (accounts: ChainAddress[]) => Promise<void>;
 }
 
 export function useTransactionSync(): UseTransactionSyncReturn {
@@ -37,6 +38,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const { getChainName } = useSupportedChains();
   const { setStatus } = useStatusUpdater(Section.HISTORY);
   const { decodeTransactionsTask } = useHistoryTransactionDecoding();
+  const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
 
   const syncTransactionTask = async (
     account: ChainAddress,
@@ -116,24 +118,20 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     }
   };
 
-  const syncTransactionsByChains = async (
-    params: TransactionSyncParams,
-  ): Promise<void> => {
-    const { accounts, type } = params;
-    logger.debug(`refreshing ${type} transactions for ${accounts.length} addresses`);
+  const syncTransactionsByChains = async (accounts: ChainAddress[]): Promise<void> => {
+    logger.debug(`refreshing transactions for ${accounts.length} addresses`);
 
     const groupedByChains = Object.entries(groupBy(accounts, item => item.chain));
 
     await awaitParallelExecution(
       groupedByChains,
       ([chain]) => chain,
-      async ([chain, data]) => syncAndReDecodeEvents(chain, { accounts: data, type }),
+      async ([chain, accounts]) => {
+        const type = getTransactionTypeFromChain(chain);
+        await syncAndReDecodeEvents(chain, { accounts, type });
+      },
       2,
     );
-
-    if (accounts.length > 0)
-      setStatus(isTaskRunning(TaskType.TX, { type }) ? Status.REFRESHING : Status.LOADED);
-    logger.debug(`finished refreshing ${type} transactions for ${accounts.length} addresses`);
   };
 
   return {
