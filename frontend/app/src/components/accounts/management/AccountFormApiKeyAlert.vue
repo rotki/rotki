@@ -2,7 +2,7 @@
 import { Routes } from '@/router/routes';
 
 const props = defineProps<{
-  service: 'etherscan' | 'helius';
+  service: 'etherscan' | 'helius' | 'beaconchain';
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -10,6 +10,9 @@ const { t } = useI18n({ useScope: 'global' });
 const message = computed<string>(() => {
   if (props.service === 'etherscan')
     return t('external_services.etherscan.api_key_message');
+
+  if (props.service === 'beaconchain')
+    return t('external_services.beaconchain.api_key_message');
 
   return t('external_services.helius.api_key_message');
 });

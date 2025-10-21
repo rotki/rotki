@@ -32,6 +32,7 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
+    add_beaconchain_test_api_key,
     add_blockchain_accounts_to_db,
     add_manually_tracked_balances_to_test_db,
     add_settings_to_test_db,
@@ -367,6 +368,7 @@ def initialize_mock_rotkehlchen_instance(
         )
         add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
+        add_beaconchain_test_api_key(rotki.data.db)
         maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
         if add_accounts_to_db is True:
             add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)

@@ -44,12 +44,15 @@ const { isEvm, isSolanaChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
 
-const missingApiKeyService = computed<'etherscan' | 'helius' | undefined>(() => {
+const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
   if (currentModelValue.mode !== 'add' || !selectedChain)
     return undefined;
+
+  if (currentModelValue.type === 'validator' && !get(apiKey('beaconchain')))
+    return 'beaconchain';
 
   if ((selectedChain === 'evm' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
     return 'etherscan';

@@ -24,6 +24,7 @@ export enum NotificationGroup {
 
 export const NotificationCategory = {
   ADDRESS_MIGRATION: 'address_migration',
+  BEACONCHAIN: 'beaconchain',
   CALENDAR_REMINDER: 'calendar_reminder',
   DEFAULT: 'default',
   ETHERSCAN: 'etherscan',

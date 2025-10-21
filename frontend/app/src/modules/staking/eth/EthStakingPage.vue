@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import AccountFormApiKeyAlert from '@/components/accounts/management/AccountFormApiKeyAlert.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { EthStaking } from '@/premium/premium';
 import EthStakingHeaderActions from './components/EthStakingHeaderActions.vue';
 import EthStakingPagePlaceholder from './components/EthStakingPagePlaceholder.vue';
@@ -14,6 +16,16 @@ const { t } = useI18n({ useScope: 'global' });
 
 // Access control
 const { allowed, enabled, module } = useEthStakingAccess();
+
+// API key check (only when module is allowed and enabled)
+const { apiKey } = useExternalApiKeys(t);
+const hasBeaconchainApiKey = computed<boolean>(() => {
+  if (!get(allowed) || !get(enabled)) {
+    return true;
+  }
+
+  return !!get(apiKey('beaconchain'));
+});
 
 // Validator management
 const {
@@ -67,6 +79,11 @@ onBeforeMount(async () => {
           @refresh="refresh(true)"
         />
       </template>
+
+      <AccountFormApiKeyAlert
+        v-if="!hasBeaconchainApiKey"
+        service="beaconchain"
+      />
 
       <EthStaking
         v-model:performance-pagination="performancePagination"

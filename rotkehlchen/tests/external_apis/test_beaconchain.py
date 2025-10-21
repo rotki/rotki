@@ -13,19 +13,14 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
-@pytest.fixture(scope='session', name='session_beaconchain')
-def fixture_session_beaconchain(messages_aggregator):
-    return BeaconChain(database=None, msg_aggregator=messages_aggregator)
-
-
 def test_query_chunks_empty_list():
     """Test that one of the endpoints works with empty list"""
     assert calculate_query_chunks([]) == []
 
 
-def test_get_eth1_validator_indices_single(session_beaconchain):
+def test_get_eth1_validator_indices_single(beaconchain):
     address = '0x2bCF6fE9F95Fe5eCec37f69dFE00Bfb4668ac35D'
-    validators = session_beaconchain.get_eth1_address_validators(address=address)
+    validators = beaconchain.get_eth1_address_validators(address=address)
     if len(validators) != 1:
         msg = (
             f'Eth1 address {address} has more than 1 validator. We have to amend the test '
@@ -37,9 +32,9 @@ def test_get_eth1_validator_indices_single(session_beaconchain):
     assert validators[0].public_key == '0xadefb3de3c892823aa8d389a4b9582f56f64463db2b72b4d77c515d268cf695f9047604371eb73d2a514c8f711ae7eba'  # noqa: E501
 
 
-def test_get_eth1_validator_indices_multiple(session_beaconchain):
+def test_get_eth1_validator_indices_multiple(beaconchain):
     address = '0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c'
-    validators = session_beaconchain.get_eth1_address_validators(address=address)
+    validators = beaconchain.get_eth1_address_validators(address=address)
 
     expected_results = [
         (993, '0x90b2f65cb43d9cdb2279af9f76010d667b9d8d72e908f2515497a7102820ce6bb15302fe2b8dc082fce9718569344ad8'),  # noqa: E501
@@ -64,7 +59,7 @@ def test_get_eth1_validator_indices_multiple(session_beaconchain):
 
 
 @pytest.mark.freeze_time('2025-03-03 17:00:00 GMT')
-def test_rate_limit(session_beaconchain: BeaconChain, freezer):
+def test_rate_limit(beaconchain: BeaconChain, freezer):
     """Tests the rate limit logic ensuring that we don't retry beaconchain calls
     if we are rate limited by them.
     """
@@ -80,22 +75,22 @@ def test_rate_limit(session_beaconchain: BeaconChain, freezer):
         )
 
     with (
-        patch.object(session_beaconchain.session, 'request', mock_session_get),
+        patch.object(beaconchain.session, 'request', mock_session_get),
         pytest.raises(RemoteError),
     ):
-        session_beaconchain._query(
+        beaconchain._query(
             method='GET',
             module='execution',
             endpoint='produced',
             encoded_args='130,131',
         )
 
-    assert session_beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
+    assert beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
     with (  # if we query again we won't try to make a request
-        patch.object(session_beaconchain.session, 'request', mock_session_get),
+        patch.object(beaconchain.session, 'request', mock_session_get),
         pytest.raises(RemoteError),
     ):
-        session_beaconchain._query(
+        beaconchain._query(
             method='GET',
             module='execution',
             endpoint='produced',
@@ -106,15 +101,15 @@ def test_rate_limit(session_beaconchain: BeaconChain, freezer):
 
     freezer.tick(1200)  # move the time. We should be able to query again
     with (
-        patch.object(session_beaconchain.session, 'request', mock_session_get),
+        patch.object(beaconchain.session, 'request', mock_session_get),
         pytest.raises(RemoteError),
     ):
-        session_beaconchain._query(
+        beaconchain._query(
             method='GET',
             module='execution',
             endpoint='produced',
             encoded_args='130,131',
         )
 
-    assert session_beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
+    assert beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
     assert requests_made == 2

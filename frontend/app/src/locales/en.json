@@ -2380,7 +2380,8 @@
     },
     "api_key": "API key",
     "beaconchain": {
-      "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
+      "api_key_message": "Please add a Beaconcha.in API key to be able to query ETH staking information.",
+      "description": "Required for ETH staking data. Beaconcha.in now requires API keys for all requests.",
       "hint": "Enter your Beaconcha.in API key",
       "title": "Beaconcha.in"
     },
@@ -3659,6 +3660,10 @@
     },
     "missing_api_key": {
       "action": "Enter key",
+      "beaconchain": {
+        "message": "rotki cannot query ETH staking data because you don't have a Beaconcha.in API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "title": "{service} API key"
+      },
       "etherscan": {
         "message": "rotki queries for {location} chain are working slower because you don't have {location} {service} API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{location} {service} API key"

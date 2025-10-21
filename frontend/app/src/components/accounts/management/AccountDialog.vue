@@ -5,6 +5,7 @@ import AccountForm from '@/components/accounts/management/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 
@@ -33,6 +34,16 @@ const subtitle = computed<string>(() =>
 
 const { errorMessages, pending, save } = useAccountManage();
 const { loading } = useAccountLoading();
+const { apiKey } = useExternalApiKeys(t);
+
+const isSaveDisabled = computed<boolean>(() => {
+  const state = get(model);
+  if (!state || state.mode === 'edit')
+    return false;
+
+  // Disable save button for validator addition without beaconchain API key
+  return state.type === 'validator' && !get(apiKey('beaconchain'));
+});
 
 function dismiss() {
   set(model, undefined);
@@ -79,6 +90,7 @@ watch(model, (model, oldModel) => {
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
     :loading="loading || pending"
+    :action-disabled="isSaveDisabled"
     :prompt-on-close="stateUpdated"
     @confirm="confirm()"
     @cancel="dismiss()"
