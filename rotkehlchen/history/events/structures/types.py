@@ -98,6 +98,7 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     DELEGATE = auto()
     LIQUIDITY_PROVISION_LOSS = auto()
     BURN = auto()
+    MESSAGE = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -186,6 +187,7 @@ class EventCategory(Enum):
     LOSS = 53, EventDirection.OUT
     LIQUIDITY_PROVISION_LOSS = 54, EventDirection.OUT
     RETURN = 55, EventDirection.OUT
+    MESSAGE = 56, EventDirection.NEUTRAL
 
     @property
     def direction(self) -> EventDirection:

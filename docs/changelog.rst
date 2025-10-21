@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9396` rotki will now properly decode onchain messages sent in EVM transactions.
 * :feature:`10544` rotki will now properly decode transactions for rotki sponsorship contract.
 * :feature:`10681` rotki will now provide an option in history events to persist filters when navigating between pages.
 * :feature:`-` rotki will now be able decode Jupiter swaps on Solana.

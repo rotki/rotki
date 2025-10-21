@@ -30,6 +30,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},
         HistoryEventSubType.CONSOLIDATE: {DEFAULT: EventCategory.COMBINE},
         HistoryEventSubType.DELEGATE: {DEFAULT: EventCategory.DELEGATE},
+        HistoryEventSubType.MESSAGE: {DEFAULT: EventCategory.MESSAGE},
     },
     HistoryEventType.RECEIVE: {
         HistoryEventSubType.REWARD: {DEFAULT: EventCategory.CLAIM_REWARD},
@@ -331,6 +332,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.RETURN: {DEFAULT: EventCategoryDetails(
         label='return',
         icon='lu-undo-2',
+    )}, EventCategory.MESSAGE: {DEFAULT: EventCategoryDetails(
+        label='message',
+        icon='lu-message-square-text',
     )},
 }
 
