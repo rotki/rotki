@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { Filters, Matcher } from '@/composables/filters/assets';
 import AssetStatusFilter from '@/components/asset-manager/AssetStatusFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 
 interface IgnoredFilter {
@@ -11,9 +13,11 @@ interface IgnoredFilter {
 
 const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: true });
 const selected = defineModel<string[]>('selected', { required: true });
+const filtersModel = defineModel<Filters>('matches', { required: true });
 
 defineProps<{
   ignoredAssets: string[];
+  matchers: Matcher[];
 }>();
 
 const emit = defineEmits<{
@@ -80,5 +84,12 @@ function handleRefreshIgnored() {
       :count="ignoredAssets.length"
       @refresh:ignored="handleRefreshIgnored()"
     />
+
+    <div class="w-full lg:w-[25rem]">
+      <TableFilter
+        v-model:matches="filtersModel"
+        :matchers="matchers"
+      />
+    </div>
   </div>
 </template>

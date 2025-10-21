@@ -10,7 +10,6 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useAssetDisplayHelpers } from '@/composables/asset-manager/use-asset-display-helpers';
 import { useManagedAssetOperations } from '@/composables/asset-manager/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/composables/asset-manager/use-managed-asset-table';
@@ -95,17 +94,12 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
     <ManagedAssetActions
       v-model:ignored-filter="ignoredFilter"
       v-model:selected="selected"
+      v-model:matches="filtersModel"
       :ignored-assets="ignoredAssets"
+      :matchers="matchers"
       @ignore="massIgnore($event)"
       @refresh:ignored="fetchIgnoredAssets()"
     />
-
-    <div class="w-full md:w-[25rem] mb-4">
-      <TableFilter
-        v-model:matches="filtersModel"
-        :matchers="matchers"
-      />
-    </div>
 
     <RuiDataTable
       v-model="selected"
