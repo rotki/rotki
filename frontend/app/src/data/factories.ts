@@ -15,6 +15,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     btcDerivationGapLimit: Defaults.BTC_DERIVATION_GAP_LIMIT,
     connectTimeout: Defaults.DEFAULT_CONNECT_TIMEOUT,
     csvExportDelimiter: Defaults.DEFAULT_CSV_EXPORT_DELIMITER,
+    autoLoginConfirmationThreshold: Defaults.DEFAULT_AUTO_LOGIN_CONFIRMATION_THRESHOLD,
     currentPriceOracles: [],
     dateDisplayFormat: Defaults.DEFAULT_DATE_DISPLAY_FORMAT,
     displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,

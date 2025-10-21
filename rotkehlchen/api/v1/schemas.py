@@ -1562,6 +1562,14 @@ class ModifiableSettingsSchema(Schema):
     ask_user_upon_size_discrepancy = fields.Boolean(load_default=None)
     auto_detect_tokens = fields.Boolean(load_default=None)
     csv_export_delimiter = EmptyAsNoneStringField(load_default=None)
+    auto_login_confirmation_threshold = fields.Integer(
+        load_default=None,
+        validate=webargs.validate.Range(
+            min=3,
+            max=10,
+            error='Auto-login confirmation threshold must be between 3 and 10',
+        ),
+    )
 
     @validates_schema
     def validate_settings_schema(
@@ -1624,6 +1632,7 @@ class ModifiableSettingsSchema(Schema):
             ask_user_upon_size_discrepancy=data['ask_user_upon_size_discrepancy'],
             auto_detect_tokens=data['auto_detect_tokens'],
             csv_export_delimiter=data['csv_export_delimiter'],
+            auto_login_confirmation_threshold=data['auto_login_confirmation_threshold'],
         )
 
 
@@ -1665,6 +1674,8 @@ class UserActionLoginSchema(AsyncQueryArgumentSchema):
         validate=webargs.validate.OneOf(choices=('unknown', 'yes', 'no')),
     )
     resume_from_backup = fields.Boolean(load_default=False)
+    auto_login = fields.Boolean(load_default=False)
+    is_confirmation = fields.Boolean(load_default=False)
 
 
 class UserPasswordChangeSchema(Schema):

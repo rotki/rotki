@@ -3321,6 +3321,10 @@
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
     "remember_username": "Remember Profile Name",
+    "confirm_title": "Password Confirmation Required",
+    "confirm_description": "For security reasons, please confirm your password. This is required after {threshold} automatic logins to ensure account security.",
+    "confirm_placeholder": "Enter your password",
+    "confirm_button": "Confirm and Login",
     "sync_error": {
       "local_modified": "Local last modified: {0}",
       "question": "Do you want to replace your local database?",
@@ -4385,9 +4389,15 @@
     "go_to_section": "Go to section",
     "not_saved": "Setting not saved",
     "saved": "Setting saved",
+    "saving": "Saving...",
     "security_settings": {
       "subtitle": "Manage your account security",
-      "title": "Security"
+      "title": "Security",
+      "auto_login_confirmation_threshold": {
+        "label": "Auto-login Confirmation Interval",
+        "description": "Password confirmation will be required after {threshold} automatic logins. This helps protect your account from unauthorized access.",
+        "error": "Failed to save auto-login confirmation threshold"
+      }
     }
   },
   "snapshot_action_button": {

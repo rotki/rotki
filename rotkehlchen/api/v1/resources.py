@@ -1354,6 +1354,8 @@ class UsersByNameResource(BaseMethodView):
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
             resume_from_backup: bool,
+            auto_login: bool = False,
+            is_confirmation: bool = False,
     ) -> Response:
         return self.rest_api.user_login(
             async_query=async_query,
@@ -1361,6 +1363,8 @@ class UsersByNameResource(BaseMethodView):
             password=password,
             sync_approval=sync_approval,
             resume_from_backup=resume_from_backup,
+            auto_login=auto_login,
+            is_confirmation=is_confirmation,
         )
 
 

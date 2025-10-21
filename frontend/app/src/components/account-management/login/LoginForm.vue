@@ -49,6 +49,10 @@ const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
 const backendChanged = (url: string | null) => emit('backend-changed', url);
 
+const requiresConfirmation = ref(false);
+const confirmPassword = ref('');
+const confirmationThreshold = ref(5); // Default value, will be updated from backend response
+
 const { logoutRemoteSession } = useLogout();
 
 const username = ref<string>('');
@@ -111,6 +115,30 @@ watch([username, password], ([username, password], [oldUsername, oldPassword]) =
 
   if (username !== oldUsername || password !== oldPassword)
     touched();
+});
+
+watch(errors, (newErrors) => {
+  const confirmationError = newErrors.find(error => error.startsWith('requires_confirmation'));
+  if (confirmationError) {
+    // Parse threshold from message format: "requires_confirmation:5"
+    const parts = confirmationError.split(':');
+    if (parts.length === 2) {
+      const threshold = Number.parseInt(parts[1], 10);
+      if (!Number.isNaN(threshold))
+        set(confirmationThreshold, threshold);
+    }
+    set(requiresConfirmation, true);
+    set(errors, []); // Clear the error
+  }
+});
+
+// Watch for successful login to hide confirmation dialog
+const { logged } = storeToRefs(useSessionAuthStore());
+watch(logged, (isLogged) => {
+  if (isLogged && get(requiresConfirmation)) {
+    set(requiresConfirmation, false);
+    set(confirmPassword, '');
+  }
 });
 
 const isLoggedInError = useArraySome(errors, error => error.includes('is already logged in'));
@@ -214,12 +242,17 @@ async function loadSettings() {
   if (get(errors).length > 0)
     return;
 
-  if (isPackaged && get(rememberPassword) && get(username)) {
-    const savedPassword = await getPassword(get(username));
+  if (get(rememberPassword) && get(username)) {
+    let savedPassword: string | null | undefined = null;
+    if (isPackaged) {
+      savedPassword = await getPassword(get(username));
+    } else {
+      savedPassword = localStorage.getItem('rotki.dev_password');
+    }
 
     if (savedPassword) {
       set(password, savedPassword);
-      await login();
+      await login({ auto_login: true });
     }
   }
 }
@@ -276,7 +309,7 @@ watch(rememberPassword, async (remember: boolean, previous: boolean) => {
   checkRememberUsername();
 });
 
-async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?: boolean }) {
+async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?: boolean; auto_login?: boolean; is_confirmation?: boolean }) {
   const credentials: LoginCredentials = {
     password: get(password),
     username: get(username),
@@ -286,13 +319,28 @@ async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?:
   if (get(rememberUsername))
     set(savedUsername, get(username));
 
-  if (get(rememberPassword) && isPackaged)
-    await storePassword(get(username), get(password));
+  if (get(rememberPassword)) {
+    if (isPackaged) {
+      await storePassword(get(username), get(password));
+    } else {
+      localStorage.setItem('rotki.dev_password', get(password));
+    }
+  }
 }
 
 function abortLogin() {
   resetSyncConflict();
   resetIncompleteUpgradeConflict();
+}
+
+async function confirm() {
+  if (!get(confirmPassword)) {
+    return; // Don't submit if password is empty
+  }
+  set(password, get(confirmPassword));
+  await login({ is_confirmation: true });
+  // Dialog will be hidden automatically on successful login
+  // On error, keep the dialog open so user can try again
 }
 </script>
 
@@ -308,9 +356,39 @@ function abortLogin() {
   >
     <div :class="$style.login">
       <div :class="$style.login__wrapper">
-        <h4 class="text-h4 mb-3">
-          {{ t('login.title') }}
-        </h4>
+        <div v-if="requiresConfirmation">
+          <h4 class="text-h4 mb-3">
+            {{ t('login.confirm_title') }}
+          </h4>
+          <div class="text-body-1 text-rui-text-secondary mb-6">
+            <p>{{ t('login.confirm_description', { threshold: confirmationThreshold }) }}</p>
+          </div>
+          <form novalidate @submit.stop.prevent="confirm">
+            <RuiTextField
+              v-model="confirmPassword"
+              variant="outlined"
+              color="primary"
+              type="password"
+              autocomplete="current-password"
+              :label="t('login.label_password')"
+              :placeholder="t('login.confirm_placeholder')"
+              class="mb-4"
+              autofocus
+            />
+            <RuiButton
+              color="primary"
+              size="lg"
+              type="submit"
+              class="w-full"
+            >
+              {{ t('login.confirm_button') }}
+            </RuiButton>
+          </form>
+        </div>
+        <div v-else>
+          <h4 class="text-h4 mb-3">
+            {{ t('login.title') }}
+          </h4>
 
         <div class="text-body-1 text-rui-text-secondary mb-8">
           <p class="mb-3">
@@ -692,6 +770,7 @@ function abortLogin() {
             </p>
           </template>
         </RuiAlert>
+      </div>
       </div>
     </div>
   </Transition>

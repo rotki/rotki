@@ -9,6 +9,8 @@ export interface LoginCredentials {
   readonly password: string;
   readonly syncApproval?: SyncApproval;
   readonly resumeFromBackup?: boolean;
+  readonly auto_login?: boolean;
+  readonly is_confirmation?: boolean;
 }
 
 export interface PremiumSetup {

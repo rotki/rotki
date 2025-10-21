@@ -1290,8 +1290,10 @@ class RestAPI:
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
             resume_from_backup: bool,
+            auto_login: bool = False,
+            is_confirmation: bool = False,
     ) -> dict[str, Any]:
-        if self.rotkehlchen.user_is_logged_in:
+        if self.rotkehlchen.user_is_logged_in and self.rotkehlchen.data.username not in ('no_user', name):
             return wrap_in_fail_result(
                 message=(
                     f'Can not login to user {name} because user '
@@ -1300,6 +1302,14 @@ class RestAPI:
                 ),
                 status_code=HTTPStatus.CONFLICT,
             )
+
+        # Check if DB connection is available only if already logged in
+        if self.rotkehlchen.user_is_logged_in:
+            if not hasattr(self.rotkehlchen.data, 'db') or not self.rotkehlchen.data.db or not hasattr(self.rotkehlchen.data.db, 'conn') or not self.rotkehlchen.data.db.conn:
+                return wrap_in_fail_result(
+                    message='Database connection not available. Please restart the application.',
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
 
         try:
             self.rotkehlchen.unlock_user(
@@ -1338,11 +1348,50 @@ class RestAPI:
                 status_code=HTTP_STATUS_INTERNAL_DB_ERROR,  # type: ignore  # Is a custom status code, not a member of HTTPStatus
             )
 
+        # Check DB connection after unlock
+        if not hasattr(self.rotkehlchen.data, 'db') or not self.rotkehlchen.data.db or not hasattr(self.rotkehlchen.data.db, 'conn') or not self.rotkehlchen.data.db.conn:
+            self.rotkehlchen.reset_after_failed_account_creation_or_login()
+            return wrap_in_fail_result(
+                message='Database connection not available. Please restart the application.',
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+
+        if auto_login and hasattr(self.rotkehlchen.data, 'db') and self.rotkehlchen.data.db and hasattr(self.rotkehlchen.data.db, 'conn') and self.rotkehlchen.data.db.conn:
+            try:
+                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                    count = self.rotkehlchen.data.db.get_setting(cursor, 'auto_login_count')
+                    threshold = self.rotkehlchen.data.db.get_setting(cursor, 'auto_login_confirmation_threshold')
+                if count >= threshold:
+                    self.rotkehlchen.logout()
+                    return wrap_in_fail_result(
+                        message=f'requires_confirmation:{threshold}',
+                        status_code=HTTPStatus.UNAUTHORIZED,
+                    )
+                else:
+                    with self.rotkehlchen.data.db.conn.write_ctx() as cursor:
+                        self.rotkehlchen.data.db.set_setting(cursor, 'auto_login_count', count + 1)
+            except Exception:
+                # If DB not available, skip the check
+                pass
+
+        # Reset counter on confirmation OR on any non-auto login (manual login)
+        if (is_confirmation or not auto_login) and hasattr(self.rotkehlchen.data, 'db') and self.rotkehlchen.data.db and hasattr(self.rotkehlchen.data.db, 'conn') and self.rotkehlchen.data.db.conn:
+            try:
+                with self.rotkehlchen.data.db.conn.write_ctx() as cursor:
+                    self.rotkehlchen.data.db.set_setting(cursor, 'auto_login_count', 0)
+            except Exception:
+                # If DB not available, skip
+                pass
+
         # Success!
         exchanges = self.rotkehlchen.exchange_manager.get_connected_exchanges_info()
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = process_result(self.rotkehlchen.get_settings(cursor))
-            settings |= self.rotkehlchen.data.db.get_cache_for_api(cursor)
+        try:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                settings = process_result(self.rotkehlchen.get_settings(cursor))
+                settings |= self.rotkehlchen.data.db.get_cache_for_api(cursor)
+        except Exception:
+            # If DB access fails, use empty settings
+            settings = {}
 
         return _wrap_in_ok_result({
             'exchanges': exchanges,
