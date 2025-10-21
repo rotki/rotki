@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import type { TableId } from '@/modules/table/use-remember-table-sorting';
 import type { LocationQuery } from '@/types/route';
 import { isEmpty } from 'es-toolkit/compat';
+import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 
 interface UseRememberTableFilterOptions {
   enabled: Ref<boolean>;
@@ -25,8 +26,10 @@ export function useRememberTableFilter(
     tableId,
   } = options;
 
+  const userId = useLoggedUserIdentifier();
+
   const router = useRouter();
-  const persistedFiltersRaw = useLocalStorage<Record<string, LocationQuery>>('rotki.table_filters', {});
+  const persistedFiltersRaw = useLocalStorage<Record<string, LocationQuery>>(`${get(userId)}.rotki.table_filters`, {});
 
   /**
    * Restores persisted filter from localStorage on mount
