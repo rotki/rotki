@@ -1709,7 +1709,7 @@ class ManualBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSche
 
 
 class ExternalServiceSchema(Schema):
-    name = SerializableEnumField(enum_class=ExternalService, required=True, exclude_types=(ExternalService.MONERIUM,))  # noqa: E501
+    name = SerializableEnumField(enum_class=ExternalService, required=True)
     api_key = EmptyAsNoneStringField(required=False)
     username = EmptyAsNoneStringField(required=False)
     password = EmptyAsNoneStringField(required=False)

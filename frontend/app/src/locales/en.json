@@ -1669,6 +1669,10 @@
     "details": "Details",
     "entry_type": "Entry Type",
     "events": "Events",
+    "external_link_confirmation": {
+      "message": "You are about to open an external link. Please verify the URL carefully and be cautious of phishing attempts.",
+      "title": "Open External Link?"
+    },
     "fee": "Fee",
     "filter": {
       "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
@@ -1707,6 +1711,7 @@
     "type": "Type",
     "unclaimed": "Unclaimed",
     "unknown": "Unknown",
+    "url": "URL",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
     "xpub": "XPUB"

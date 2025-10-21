@@ -114,6 +114,7 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
         :text="note.word"
         color="primary"
         custom
+        confirm
       />
       <template v-else>
         {{ ` ${note.word} ` }}
