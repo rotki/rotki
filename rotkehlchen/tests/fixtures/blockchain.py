@@ -62,12 +62,7 @@ from rotkehlchen.tests.utils.substrate import (
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.types import (
-    BTCAddress,
-    ChecksumEvmAddress,
-    SolanaAddress,
-    SupportedBlockchain,
-)
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, SupportedBlockchain
 
 
 def _initialize_and_yield_evm_inquirer_fixture(

@@ -35,6 +35,7 @@ function removeBeaconchainNotification() {
 <template>
   <ServiceKeyCard
     rounded-icon
+    :name="name"
     :key-set="!!key"
     :title="t('external_services.beaconchain.title')"
     :subtitle="t('external_services.beaconchain.description')"

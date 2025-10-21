@@ -1183,7 +1183,7 @@ def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server: 'A
     assert len(result['totals']['assets']) == 0  # no assets in balances
 
 
-@pytest.mark.vcr(match_on=['beaconchain_matcher'])
+@pytest.mark.vcr(match_on=['beaconchain_matcher'], filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

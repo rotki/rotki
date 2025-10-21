@@ -57,7 +57,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3e5fd0244e13d82fC230f3Fc610bcd76b3c8217C']])
 def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501

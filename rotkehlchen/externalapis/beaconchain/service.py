@@ -78,7 +78,6 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         """
         May raise:
         - RemoteError due to problems querying beaconcha.in API
-        - MissingAPIKey if api key is missing for beaconcha.in API
         """
         if self.is_rate_limited():
             log.error(
