@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { LocationAndTxHash } from '@/types/history/events';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
 import { isEventDecodable } from '@/modules/history/management/forms/form-guards';
 import { toLocationAndTxHash } from '@/utils/history';
 
@@ -10,7 +10,7 @@ const modelValue = defineModel<HistoryEventEditData | undefined>({ required: tru
 const emit = defineEmits<{
   'redecode': [data: LocationAndTxHash];
   'edit-event': [event: HistoryEventEditData];
-  'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>];
+  'add': [rule: AccountingRuleIdentifier];
   'dismiss': [];
 }>();
 
@@ -60,10 +60,11 @@ function onEdit(data: HistoryEventEditData) {
 
 function onAddRule(data: HistoryEventEditData) {
   const event = data.type === 'edit' ? data.event : data.eventsInGroup[0];
-  const { eventSubtype, eventType } = event;
+  const { eventSubtype, eventType, identifier } = event;
 
   emit('add', {
     counterparty: 'counterparty' in event ? event.counterparty : null,
+    eventIds: [identifier],
     eventSubtype,
     eventType,
   });

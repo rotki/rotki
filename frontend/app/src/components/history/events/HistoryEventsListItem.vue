@@ -23,6 +23,7 @@ const props = defineProps<{
   isLast: boolean;
   isHighlighted?: boolean;
   compact?: boolean;
+  hideActions?: boolean;
   selection?: UseHistoryEventsSelectionModeReturn;
 }>();
 
@@ -85,7 +86,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 }
 
 const showCheckbox = computed<boolean>(() => {
-  if (!props.selection || props.compact) {
+  if (!props.selection) {
     return false;
   }
   return get(props.selection.isSelectionMode);
@@ -168,7 +169,7 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
         />
 
         <HistoryEventsListItemAction
-          v-if="!compact"
+          v-if="!compact && !hideActions"
           class="col-span-10 @md:col-span-3"
           :item="item"
           :index="index"

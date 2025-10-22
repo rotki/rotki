@@ -161,6 +161,23 @@
   },
   "accounting_settings": {
     "rule": {
+      "action_dialog": {
+        "add_event_specific": "Add rule for this event only",
+        "add_general": "Add general accounting rule",
+        "add_new_event_specific": "Add new rule for this event only",
+        "affects_all_similar": "Affects all events with similar type, subtype, and counterparty",
+        "affects_events": "This rule affects {count} events",
+        "edit_event_specific": "Edit event-specific rule",
+        "edit_general": "Edit general accounting rule",
+        "event_specific_exists": "An event-specific rule already exists for this event.",
+        "for_all_similar": "For all events with this type, subtype, and counterparty",
+        "general_rule_exists": "A general accounting rule exists for this event type.",
+        "no_rule_exists": "No accounting rule exists for this event.",
+        "only_this_event": "Only applies to this specific event",
+        "override_general": "Override the general rule for this specific event",
+        "title": "Choose Accounting Rule Action",
+        "view_affected_events": "View affected events"
+      },
       "add": "Add accounting rule",
       "add_error": "Could not add accounting rule: {message}",
       "confirm_delete": "Are you sure you want to delete this custom accounting rule?",
@@ -179,10 +196,14 @@
         "title": "Resolve accounting rules conflicts"
       },
       "current_setting_value": "Current setting value:",
+      "custom_events_info": "Creating a custom accounting rule for {count} selected event(s)",
       "delete": "Delete accounting rule",
       "delete_error": "Could not delete accounting rule: {message}",
       "edit": "Edit accounting rule",
       "edit_error": "Could not edit accounting rule: {message}",
+      "events_dialog": {
+        "title": "Events affected by the accounting rule ({count})"
+      },
       "export": "Export accounting rules",
       "fetch_error": {
         "message": "Failed retrieving accounting rules: {message}",
@@ -200,6 +221,7 @@
         "count_cost_basis_pnl_subtitle": "Whether we have to count any profit/loss the asset may have had compared to when it was acquired.",
         "count_entire_amount_spend": "Count entire amount spend",
         "count_entire_amount_spend_subtitle": "Whether the entire amount is counted as a spend, which means an expense (negative pnl)",
+        "event_ids": "Event IDs",
         "event_subtype": "Event Sub Type",
         "event_type": "Event Type",
         "taxable": "Taxable",
@@ -208,6 +230,10 @@
       "overwrite_by_setting": "Overwrite by value from other accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
       "subtitle": "Manage and view your event accounting rules",
+      "tabs": {
+        "custom": "Special rules for certain events",
+        "regular": "Regular Rules"
+      },
       "title": "Accounting Rules",
       "value_overwritten": "The value is overwritten by this setting:"
     },
@@ -4719,6 +4745,12 @@
       }
     },
     "events": {
+      "accounting_rule": {
+        "different_types_error": "Cannot create an accounting rule for events with different types or subtypes. Please select events with the same event type and subtype combination.",
+        "error": "Accounting Rule Error",
+        "incompatible_selection": "Incompatible Event Selection",
+        "no_events_found": "No events found for the selected IDs."
+      },
       "actions": {
         "delete": "Delete event",
         "edit": "Edit event"
@@ -4732,6 +4764,8 @@
           "delete_transaction": "Delete Transaction",
           "message": "Are you sure you want to delete the event?",
           "message_multiple": "Are you sure you want to delete {count} selected events?",
+          "partial_swap_title": "Partial Swap Selection",
+          "partial_swap_warning": "You have selected {selectedCount} out of {totalCount} events from {groupCount} swap group(s). Deleting any event from a swap will delete the entire swap group. All {totalCount} events will be deleted. Do you want to continue?",
           "title": "Delete Event"
         },
         "ignore": {
@@ -4944,7 +4978,9 @@
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
       "selection_mode": {
+        "create_rule": "Set custom accounting rule",
         "delete_selected": "Delete selected events",
+        "no_events": "There is no event to select",
         "selected_count": "{count} selected",
         "tooltip": "Select multiple events"
       },

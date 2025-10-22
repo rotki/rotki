@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import { get } from '@vueuse/shared';
+import { get, set } from '@vueuse/shared';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { DIALOG_TYPES, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/components/history/events/HistoryEventsDialogContainer.vue';
@@ -16,6 +16,7 @@ import { useHistoryEventsActions } from '@/composables/history/events/use-histor
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
+import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
 import { useHistoryEventsSelectionMode } from '@/modules/history/events/composables/use-selection-mode';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 
@@ -133,40 +134,37 @@ const selectionMode = useHistoryEventsSelectionMode();
 
 // Store grouped events for checking complete EVM transactions
 const groupedEventsByTxHash = ref<Record<string, HistoryEventRow[]>>({});
+// Store original groups data to preserve swap groups
+const originalGroups = ref<HistoryEventRow[]>([]);
 
 const deletion = useHistoryEventsDeletion(
   selectionMode,
   groupedEventsByTxHash,
-  groups,
+  originalGroups,
   () => actions.fetch.dataAndLocations(),
 );
 
+const {
+  accountingRuleToEdit,
+  handleAccountingRuleRefresh,
+  handleSelectionAction,
+  selectedEventIds,
+} = useHistoryEventsSelectionActions({
+  deletion,
+  originalGroups,
+  selectionMode,
+});
+
 // Handle updating available event IDs from the table
-function handleUpdateEventIds({ eventIds, groupedEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]> }): void {
+function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
   // Create mock event entries with just the identifiers
   const events: HistoryEventEntry[] = eventIds.map(id => ({ identifier: id } as HistoryEventEntry));
   selectionMode.setAvailableIds(events);
 
   // Store the grouped events for checking complete transactions
   set(groupedEventsByTxHash, groupedEvents);
-}
-
-// Handle selection-related actions
-async function handleSelectionAction(action: string): Promise<void> {
-  switch (action) {
-    case 'delete':
-      await deletion.deleteSelected();
-      break;
-    case 'toggle-mode':
-      selectionMode.actions.toggle();
-      break;
-    case 'exit':
-      selectionMode.actions.exit();
-      break;
-    case 'toggle-all':
-      selectionMode.actions.toggleAll();
-      break;
-  }
+  // Store the original groups data - prefer rawEvents if available, otherwise use groups.data
+  set(originalGroups, rawEvents || get(groups).data);
 }
 
 watchImmediate(route, async (route) => {
@@ -268,10 +266,13 @@ onMounted(async () => {
 
       <HistoryEventsDialogContainer
         ref="dialogContainer"
+        v-model:accounting-rule-to-edit="accountingRuleToEdit"
         :loading="processing"
         :refreshing="refreshing"
         :section-loading="sectionLoading"
         :event-handlers="actions.dialogHandlers"
+        :selected-event-ids="selectedEventIds"
+        @accounting-rule-refresh="handleAccountingRuleRefresh()"
       />
     </div>
   </TablePageLayout>

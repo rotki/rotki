@@ -33,7 +33,8 @@ const props = defineProps<{
   groupLoading: boolean;
   identifiers?: string[];
   highlightedIdentifiers?: string[];
-  selection: UseHistoryEventsSelectionModeReturn;
+  hideActions?: boolean;
+  selection?: UseHistoryEventsSelectionModeReturn;
 }>();
 
 const emit = defineEmits<HistoryEventsTableEmits>();
@@ -56,6 +57,7 @@ const {
   hasIgnoredEvent,
   limit,
   loading,
+  rawEvents,
   sectionLoading,
   showUpgradeRow,
   total,
@@ -68,9 +70,9 @@ const {
 }, emit);
 
 // Emit all event IDs and grouped events when events change
-watch([events, allEventsMapped], ([newEvents, groupedEvents]) => {
+watch([events, allEventsMapped, rawEvents], ([newEvents, groupedEvents, rawEventsData]) => {
   const eventIds = newEvents.map(event => event.identifier);
-  emit('update-event-ids', { eventIds, groupedEvents });
+  emit('update-event-ids', { eventIds, groupedEvents, rawEvents: rawEventsData });
 }, { immediate: true });
 
 // Event operations (delete, redecode, etc.)
@@ -98,35 +100,46 @@ const {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [{
-  cellClass: '!p-0 w-px',
-  class: '!p-0 w-px',
-  key: 'ignoredInAccounting',
-  label: '',
-}, {
-  cellClass: '!py-2',
-  key: 'txHash',
-  label: t('transactions.events.headers.event_identifier'),
-}, {
-  align: 'end',
-  cellClass: 'text-no-wrap !py-2 w-[12rem]',
-  class: 'w-[12rem]',
-  key: 'timestamp',
-  label: t('common.datetime'),
-  sortable: true,
-}, {
-  align: 'end',
-  cellClass: 'w-[1.25rem] !py-2',
-  class: 'w-[1.25rem]',
-  key: 'action',
-  label: '',
-}, {
-  align: 'end',
-  cellClass: '!w-0 !p-0',
-  class: '!w-0 !p-0',
-  key: 'expand',
-  label: '',
-}]);
+const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => {
+  const cols: DataTableColumn<HistoryEventEntry>[] = [{
+    cellClass: '!p-0 w-px',
+    class: '!p-0 w-px',
+    key: 'ignoredInAccounting',
+    label: '',
+  }, {
+    cellClass: '!py-2',
+    key: 'txHash',
+    label: t('transactions.events.headers.event_identifier'),
+  }, {
+    align: 'end',
+    cellClass: 'text-no-wrap !py-2 w-[12rem]',
+    class: 'w-[12rem]',
+    key: 'timestamp',
+    label: t('common.datetime'),
+    sortable: true,
+  }];
+
+  if (!props.hideActions) {
+    cols.push(
+      {
+        align: 'end',
+        cellClass: 'w-[1.25rem] !py-2',
+        class: 'w-[1.25rem]',
+        key: 'action',
+        label: '',
+      },
+      {
+        align: 'end',
+        cellClass: '!w-0 !p-0',
+        class: '!w-0 !p-0',
+        key: 'expand',
+        label: '',
+      },
+    );
+  }
+
+  return cols;
+});
 
 useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
 </script>
@@ -197,6 +210,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
         :all-events="allEventsMapped[row.eventIdentifier] || []"
         :displayed-events="displayedEventsMapped[row.eventIdentifier] || []"
         :event-group="row"
+        :hide-actions="hideActions"
         :loading="sectionLoading || eventsLoading"
         :has-ignored-event="hasIgnoredEvent"
         :highlighted-identifiers="highlightedIdentifiers"

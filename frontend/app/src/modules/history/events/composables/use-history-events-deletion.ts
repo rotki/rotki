@@ -1,26 +1,15 @@
 import type { Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
-import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import { HistoryEventEntryType, Severity } from '@rotki/common';
-import { get } from '@vueuse/shared';
+import { Severity } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
-
-interface TransactionGroup {
-  chain: string;
-  eventIdentifier: string;
-  events: number[];
-}
-
-interface DeletionStrategy {
-  eventIds?: number[];
-  transactions?: Map<string, TransactionGroup>;
-  type: 'delete-transactions' | 'ignore-events' | 'delete-events';
-}
+import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
+import { analyzeSelectedEvents, type TransactionGroup } from './use-event-analysis';
 
 interface UseHistoryEventsDeletionReturn {
   deleteSelected: () => Promise<void>;
@@ -30,7 +19,7 @@ interface UseHistoryEventsDeletionReturn {
 export function useHistoryEventsDeletion(
   selectionMode: UseHistoryEventsSelectionModeReturn,
   groupedEventsByTxHash: Ref<Record<string, HistoryEventRow[]>>,
-  groups: Ref<Collection<HistoryEventRow>>,
+  originalGroups: Ref<HistoryEventRow[]>,
   refreshCallback: () => Promise<void>,
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n();
@@ -46,97 +35,6 @@ export function useHistoryEventsDeletion(
   );
 
   const isDeleting = ref<boolean>(false);
-
-  function analyzeSelectedEvents(selectedIds: number[]): {
-    completeTransactions: Map<string, TransactionGroup>;
-    partialEventIds: number[];
-  } {
-    const selectedSet = new Set(selectedIds);
-    const completeTransactions = new Map<string, TransactionGroup>();
-    const groupedEvents = get(groupedEventsByTxHash);
-    const allGroups = get(groups).data;
-
-    // Check each EVM transaction
-    allGroups.forEach((group) => {
-      if (!Array.isArray(group) && group.entryType === HistoryEventEntryType.EVM_EVENT) {
-        const eventIdentifier = group.eventIdentifier;
-        const txEvents = groupedEvents[eventIdentifier];
-
-        if (txEvents && txEvents.length > 0) {
-          // Get all event IDs for this transaction
-          const eventIds = txEvents.flatMap((event: HistoryEventRow) =>
-            Array.isArray(event) ? event.map(e => e.identifier) : event.identifier,
-          );
-
-          // Check if all events are selected
-          const allSelected = eventIds.length > 0 && eventIds.every((id: number) => selectedSet.has(id));
-
-          if (allSelected) {
-            // Use the actual txRef from the group if it's an EVM event
-            const txRef = 'txRef' in group && group.txRef ? group.txRef : group.eventIdentifier;
-            completeTransactions.set(txRef, {
-              chain: group.location,
-              eventIdentifier, // Store the eventIdentifier for lookup
-              events: eventIds,
-            });
-          }
-        }
-      }
-    });
-
-    // Get remaining event IDs after excluding complete transaction events
-    const completeEventIds = new Set(
-      Array.from(completeTransactions.values()).flatMap(({ events }) => events),
-    );
-    const partialEventIds = selectedIds.filter(id => !completeEventIds.has(id));
-
-    return { completeTransactions, partialEventIds };
-  }
-
-  function buildDeletionConfirmationMessage(
-    strategy: DeletionStrategy,
-  ): {
-    message: string;
-    primaryAction: string;
-    secondaryAction?: string;
-    title: string;
-  } {
-    switch (strategy.type) {
-      case 'delete-transactions': {
-        const count = strategy.transactions?.size ?? 0;
-        const message = count === 1
-          ? t('transactions.events.confirmation.delete.complete_transaction_single')
-          : t('transactions.events.confirmation.delete.complete_transaction_multiple', { count });
-        return {
-          message: `${message}\n\n${t('transactions.events.confirmation.delete.complete_transaction_options')}`,
-          primaryAction: t('transactions.events.confirmation.delete.delete_transaction'),
-          secondaryAction: t('transactions.events.confirmation.ignore.action_short'),
-          title: t('transactions.events.confirmation.delete.complete_transaction_title'),
-        };
-      }
-
-      case 'delete-events':
-        return {
-          message: t('transactions.events.confirmation.delete.message_multiple', {
-            count: strategy.eventIds?.length ?? 0,
-          }),
-          primaryAction: t('common.actions.confirm'),
-          title: t('transactions.events.confirmation.delete.title'),
-        };
-
-      case 'ignore-events': {
-        const count = strategy.transactions?.size ?? 0;
-        return {
-          message: t('transactions.events.confirmation.ignore.message_multiple', { count }),
-          primaryAction: t('transactions.events.confirmation.ignore.confirm'),
-          title: t('transactions.events.confirmation.ignore.title'),
-        };
-      }
-
-      default:
-        throw new Error('Unknown deletion strategy');
-    }
-  }
 
   async function deleteCompleteTransactions(
     transactions: Map<string, TransactionGroup>,
@@ -169,7 +67,7 @@ export function useHistoryEventsDeletion(
   ): Promise<{ message?: string; success: boolean }> {
     try {
       for (const [, { eventIdentifier, events: eventIds }] of transactions) {
-        // Use eventIdentifier to look up the events (groupedEventsByTxHash is keyed by eventIdentifier)
+        // Use eventIdentifier to look up the events
         const txEvents = eventIdentifier ? get(groupedEventsByTxHash)[eventIdentifier] || [] : [];
 
         // Flatten the events array
@@ -192,55 +90,34 @@ export function useHistoryEventsDeletion(
     }
   }
 
-  function notifyCaller(
-    title: string,
-    message: string,
-    success = false,
-  ): void {
-    notify({
-      display: true,
-      message,
-      severity: success ? Severity.INFO : Severity.ERROR,
-      title,
-    });
-  }
-
   function notifyDeletionResult(
     success: boolean,
     count: number,
     type: 'delete' | 'ignore',
     message?: string,
   ): void {
-    if (type === 'delete') {
-      if (success) {
-        notifyCaller(
-          t('transactions.events.delete.title'),
-          t('transactions.events.delete.success', { count }),
-          true,
-        );
-      }
-      else {
-        notifyCaller(
-          t('transactions.events.delete.error.title'),
-          message || t('transactions.events.delete.error.message'),
-        );
-      }
-    }
-    else if (type === 'ignore') {
-      if (success) {
-        notifyCaller(
-          t('transactions.events.ignore.title'),
-          t('transactions.events.ignore.success', { count }),
-          true,
-        );
-      }
-      else {
-        notifyCaller(
-          t('transactions.events.ignore.error.title'),
-          message || t('transactions.events.ignore.error.message'),
-        );
-      }
-    }
+    const title = type === 'delete'
+      ? t('transactions.events.delete.title')
+      : t('transactions.events.ignore.title');
+
+    const successMessage = type === 'delete'
+      ? t('transactions.events.delete.success', { count })
+      : t('transactions.events.ignore.success', { count });
+
+    const errorTitle = type === 'delete'
+      ? t('transactions.events.delete.error.title')
+      : t('transactions.events.ignore.error.title');
+
+    const errorMessage = type === 'delete'
+      ? message || t('transactions.events.delete.error.message')
+      : message || t('transactions.events.ignore.error.message');
+
+    notify({
+      display: true,
+      message: success ? successMessage : errorMessage,
+      severity: success ? Severity.INFO : Severity.ERROR,
+      title: success ? title : errorTitle,
+    });
   }
 
   async function deleteSelected(): Promise<void> {
@@ -251,12 +128,22 @@ export function useHistoryEventsDeletion(
     set(isDeleting, true);
 
     try {
-      const { completeTransactions, partialEventIds } = analyzeSelectedEvents(selectedIds);
+      const { completeTransactions, partialEventIds, partialSwapGroups } = analyzeSelectedEvents(
+        selectedIds,
+        get(originalGroups),
+        get(groupedEventsByTxHash),
+      );
 
-      if (completeTransactions.size > 0)
+      // Handle partial swap selection first
+      if (partialSwapGroups.length > 0) {
+        await handlePartialSwapDeletion(partialSwapGroups, partialEventIds, completeTransactions);
+      }
+      else if (completeTransactions.size > 0) {
         await handleCompleteTransactionDeletion(completeTransactions, partialEventIds, selectedIds.length);
-      else
-        await handlePartialEventDeletion(partialEventIds);
+      }
+      else {
+        await handlePartialEventDeletion(partialEventIds, selectedIds.length);
+      }
     }
     finally {
       set(isDeleting, false);
@@ -271,10 +158,10 @@ export function useHistoryEventsDeletion(
     const strategy: DeletionStrategy = {
       eventIds: remainingEventIds,
       transactions,
-      type: 'delete-transactions',
+      type: DELETION_STRATEGY_TYPE.DELETE_TRANSACTIONS,
     };
 
-    const confirmation = buildDeletionConfirmationMessage(strategy);
+    const confirmation = buildDeletionConfirmationMessage(strategy, t);
 
     await new Promise<void>((resolve) => {
       showConfirm(
@@ -305,20 +192,26 @@ export function useHistoryEventsDeletion(
 
   async function handlePartialEventDeletion(
     eventIds: number[],
+    totalSelectedCount?: number,
   ): Promise<void> {
+    const displayCount = totalSelectedCount ?? eventIds.length;
+
     const strategy: DeletionStrategy = {
       eventIds,
-      type: 'delete-events',
+      type: DELETION_STRATEGY_TYPE.DELETE_EVENTS,
     };
 
-    const confirmation = buildDeletionConfirmationMessage(strategy);
+    const confirmation = buildDeletionConfirmationMessage(strategy, t);
+    confirmation.message = t('transactions.events.confirmation.delete.message_multiple', {
+      count: displayCount,
+    });
 
     await new Promise<void>((resolve) => {
       showConfirm(
         confirmation,
         async () => {
           const result = await deletePartialEvents(eventIds);
-          notifyDeletionResult(result.success, eventIds.length, 'delete', result.message);
+          notifyDeletionResult(result.success, displayCount, 'delete', result.message);
 
           if (result.success) {
             selectionMode.actions.exit();
@@ -336,10 +229,10 @@ export function useHistoryEventsDeletion(
   ): Promise<void> {
     const ignoreStrategy: DeletionStrategy = {
       transactions,
-      type: 'ignore-events',
+      type: DELETION_STRATEGY_TYPE.IGNORE_EVENTS,
     };
 
-    const ignoreConfirmation = buildDeletionConfirmationMessage(ignoreStrategy);
+    const ignoreConfirmation = buildDeletionConfirmationMessage(ignoreStrategy, t);
 
     await new Promise<void>((resolve) => {
       showConfirm(
@@ -351,6 +244,52 @@ export function useHistoryEventsDeletion(
           const success = ignoreResult.success && deleteResult.success;
           const message = ignoreResult.message || deleteResult.message;
           notifyDeletionResult(success, transactions.size, 'ignore', message);
+
+          if (success) {
+            selectionMode.actions.exit();
+            await refreshCallback();
+          }
+          resolve();
+        },
+      );
+    });
+  }
+
+  async function handlePartialSwapDeletion(
+    partialSwapGroups: Array<{ groupIds: number[]; selectedIds: number[] }>,
+    remainingEventIds: number[],
+    transactions: Map<string, TransactionGroup>,
+  ): Promise<void> {
+    // Collect all event IDs that need to be deleted (including full swap groups)
+    const allEventIds = [
+      ...partialSwapGroups.flatMap(group => group.groupIds),
+      ...remainingEventIds,
+    ];
+
+    const strategy: DeletionStrategy = {
+      eventIds: allEventIds,
+      partialSwapGroups,
+      type: DELETION_STRATEGY_TYPE.DELETE_PARTIAL_SWAP,
+    };
+
+    const confirmation = buildDeletionConfirmationMessage(strategy, t);
+
+    await new Promise<void>((resolve) => {
+      showConfirm(
+        confirmation,
+        async () => {
+          // Delete complete transactions first if any
+          let txResult: { message?: string; success: boolean } = { success: true };
+          if (transactions.size > 0) {
+            txResult = await deleteCompleteTransactions(transactions);
+          }
+
+          // Then delete all the events (including full swap groups)
+          const eventsResult = await deletePartialEvents(allEventIds);
+
+          const success = txResult.success && eventsResult.success;
+          const message = txResult.message || eventsResult.message;
+          notifyDeletionResult(success, allEventIds.length, 'delete', message);
 
           if (success) {
             selectionMode.actions.exit();

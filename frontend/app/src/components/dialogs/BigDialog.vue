@@ -114,15 +114,15 @@ function promptClose() {
               {{ title }}
             </h5>
           </slot>
+          <div
+            v-if="subtitle || $slots.subtitle"
+            class="text-sm text-rui-text-secondary"
+          >
+            <slot name="subtitle">
+              {{ subtitle }}
+            </slot>
+          </div>
         </div>
-      </template>
-      <template
-        v-if="subtitle || $slots.subtitle"
-        #subheader
-      >
-        <slot name="subtitle">
-          {{ subtitle }}
-        </slot>
       </template>
       <div
         v-if="display"

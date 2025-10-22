@@ -1,20 +1,29 @@
 <script setup lang="ts">
 import type { AddTransactionHashPayload } from '@/types/history/events';
+import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { get } from '@vueuse/core';
 import { useHistoryEventsDialogManager } from '@/composables/history/events/dialog-manager/use-history-events-dialog-manager';
 import { DIALOG_TYPES, type DialogEventHandlers } from './dialog-types';
 
+const accountingRuleToEdit = defineModel<AccountingRuleEntry | undefined>('accountingRuleToEdit', { required: true });
+
 withDefaults(defineProps<{
+  eventHandlers?: DialogEventHandlers;
   loading?: boolean;
   refreshing?: boolean;
   sectionLoading?: boolean;
-  eventHandlers?: DialogEventHandlers;
+  selectedEventIds?: number[];
 }>(), {
   eventHandlers: () => ({}),
   loading: false,
   refreshing: false,
   sectionLoading: false,
+  selectedEventIds: () => [],
 });
+
+const emit = defineEmits<{
+  'accounting-rule-refresh': [];
+}>();
 
 // Shared loading component for lazy-loaded dialogs
 function DialogLoadingComponent() {
@@ -49,6 +58,12 @@ const RepullingTransactionFormDialog = defineAsyncComponent({
 const TransactionFormDialog = defineAsyncComponent({
   delay: 200,
   loader: () => import('@/components/history/events/tx/TransactionFormDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const AccountingRuleFormDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/components/settings/accounting/rule/AccountingRuleFormDialog.vue'),
   loadingComponent: DialogLoadingComponent,
 });
 
@@ -153,6 +168,12 @@ defineExpose({
       v-if="currentDialog.type === DIALOG_TYPES.PROTOCOL_CACHE"
       v-model="dialogIsOpen"
       :refreshing="refreshing"
+    />
+
+    <AccountingRuleFormDialog
+      v-model="accountingRuleToEdit"
+      :event-ids="selectedEventIds"
+      @refresh="emit('accounting-rule-refresh')"
     />
   </div>
 </template>
