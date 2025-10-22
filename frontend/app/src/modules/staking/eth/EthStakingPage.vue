@@ -4,6 +4,7 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { EthStaking } from '@/premium/premium';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import EthStakingHeaderActions from './components/EthStakingHeaderActions.vue';
 import EthStakingPagePlaceholder from './components/EthStakingPagePlaceholder.vue';
 import EthValidatorFilter from './components/EthValidatorFilter.vue';
@@ -19,12 +20,22 @@ const { allowed, enabled, module } = useEthStakingAccess();
 
 // API key check (only when module is allowed and enabled)
 const { apiKey } = useExternalApiKeys(t);
-const hasBeaconchainApiKey = computed<boolean>(() => {
+const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
+
+const missingApiKeyService = computed<'beaconchain' | 'consensusRpc' | undefined>(() => {
   if (!get(allowed) || !get(enabled)) {
-    return true;
+    return undefined;
   }
 
-  return !!get(apiKey('beaconchain'));
+  if (!get(apiKey('beaconchain'))) {
+    if (!get(beaconRpcEndpoint)) {
+      return 'consensusRpc';
+    }
+
+    return 'beaconchain';
+  }
+
+  return undefined;
 });
 
 // Validator management
@@ -81,8 +92,8 @@ onBeforeMount(async () => {
       </template>
 
       <AccountFormApiKeyAlert
-        v-if="!hasBeaconchainApiKey"
-        service="beaconchain"
+        v-if="missingApiKeyService"
+        :service="missingApiKeyService"
       />
 
       <EthStaking

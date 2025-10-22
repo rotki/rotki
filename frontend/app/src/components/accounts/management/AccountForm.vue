@@ -15,6 +15,7 @@ import {
 } from '@/composables/accounts/blockchain/use-account-manage';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { XpubKeyType } from '@/types/blockchain/accounts';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
@@ -44,15 +45,22 @@ const { isEvm, isSolanaChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
 
-const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | undefined>(() => {
+const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
+
+const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
   if (currentModelValue.mode !== 'add' || !selectedChain)
     return undefined;
 
-  if (currentModelValue.type === 'validator' && !get(apiKey('beaconchain')))
+  if (currentModelValue.type === 'validator' && !get(apiKey('beaconchain'))) {
+    if (!get(beaconRpcEndpoint)) {
+      return 'consensusRpc';
+    }
+
     return 'beaconchain';
+  }
 
   if ((selectedChain === 'evm' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
     return 'etherscan';

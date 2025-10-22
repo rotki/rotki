@@ -6,6 +6,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 
@@ -35,14 +36,15 @@ const subtitle = computed<string>(() =>
 const { errorMessages, pending, save } = useAccountManage();
 const { loading } = useAccountLoading();
 const { apiKey } = useExternalApiKeys(t);
+const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
 
 const isSaveDisabled = computed<boolean>(() => {
   const state = get(model);
   if (!state || state.mode === 'edit')
     return false;
 
-  // Disable save button for validator addition without beaconchain API key
-  return state.type === 'validator' && !get(apiKey('beaconchain'));
+  // Disable save button for validator addition without beaconchain API key and consensus client RPC
+  return state.type === 'validator' && !(get(apiKey('beaconchain')) || get(beaconRpcEndpoint));
 });
 
 function dismiss() {
