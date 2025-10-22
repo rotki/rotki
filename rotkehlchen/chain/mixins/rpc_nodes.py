@@ -354,6 +354,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
 
 class SolanaRPCMixin(RPCManagerMixin['Client']):
     blockchain: Literal[SupportedBlockchain.SOLANA]
+    chain_name = SupportedBlockchain.SOLANA.serialize()
 
     def attempt_connect(
             self,

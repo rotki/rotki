@@ -8,7 +8,7 @@ from eth_typing import HexAddress, HexStr
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    CHAINS_WITH_NODES,
+    CHAINS_WITH_NODES_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
@@ -34,7 +34,7 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
-    blockchain: CHAINS_WITH_NODES
+    blockchain: CHAINS_WITH_NODES_TYPE
 
     def serialize(self) -> dict[str, Any]:
         return {

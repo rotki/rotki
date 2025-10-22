@@ -40,13 +40,13 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges: APIServer) -> Non
     assert result[DBCacheStatic.LAST_BALANCE_SAVE.value] >= start_ts
     assert 'failed_to_connect' not in result
     connected_nodes = result['connected_nodes']
-    assert len(connected_nodes) == len(list(rotki.chains_aggregator.iterate_evm_chain_managers()))
-    for evm_manager in rotki.chains_aggregator.iterate_evm_chain_managers():
-        assert connected_nodes[evm_manager.node_inquirer.chain_name] == []
+    assert len(connected_nodes) == len(list(rotki.chains_aggregator.iterate_chain_managers_with_nodes()))  # noqa: E501
+    for chain_manager in rotki.chains_aggregator.iterate_chain_managers_with_nodes():
+        assert connected_nodes[chain_manager.node_inquirer.blockchain.serialize()] == []
     # Non -1 value tests for these exist in test_history.py::test_query_history_timerange
     assert result[DBCacheStatic.LAST_DATA_UPLOAD_TS.value] == 0
 
     rotki.chains_aggregator.ethereum.node_inquirer.failed_to_connect_nodes.add('custom node')
     response = requests.get(periodic_url)
     result = assert_proper_sync_response_with_result(response)
-    assert result['failed_to_connect'] == {'ethereum': ['custom node']}
+    assert result['failed_to_connect'] == {'eth': ['custom node']}
