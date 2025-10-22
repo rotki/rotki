@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { get, set } from '@vueuse/shared';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { DIALOG_TYPES, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
@@ -11,16 +10,15 @@ import HistoryEventsTableActions from '@/components/history/events/HistoryEvents
 import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
 import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
+import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
 import { useHistoryEventsSelectionMode } from '@/modules/history/events/composables/use-selection-mode';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useConfirmStore } from '@/store/confirm';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -55,7 +53,6 @@ const props = withDefaults(defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
-const { show: showConfirm } = useConfirmStore();
 
 const {
   entryTypes,
@@ -81,10 +78,6 @@ const toggles = ref<HistoryEventsToggles>({
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
 
 const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
-
-// Accounting rule dialog state
-const accountingRuleToEdit = ref<AccountingRuleEntry | undefined>();
-const selectedEventIds = ref<number[]>([]);
 
 const {
   anyEventsDecoding,
@@ -151,6 +144,17 @@ const deletion = useHistoryEventsDeletion(
   () => actions.fetch.dataAndLocations(),
 );
 
+const {
+  accountingRuleToEdit,
+  handleAccountingRuleRefresh,
+  handleSelectionAction,
+  selectedEventIds,
+} = useHistoryEventsSelectionActions({
+  deletion,
+  originalGroups,
+  selectionMode,
+});
+
 // Handle updating available event IDs from the table
 function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
   // Create mock event entries with just the identifiers
@@ -161,90 +165,6 @@ function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds
   set(groupedEventsByTxHash, groupedEvents);
   // Store the original groups data - prefer rawEvents if available, otherwise use groups.data
   set(originalGroups, rawEvents || get(groups).data);
-}
-
-// Handle accounting rule refresh
-function handleAccountingRuleRefresh(): void {
-  // Exit selection mode after successfully creating a rule
-  selectionMode.actions.exit();
-}
-
-// Handle selection-related actions
-async function handleSelectionAction(action: string): Promise<void> {
-  const selectedIds = Array.from(get(selectionMode.state).selectedIds);
-
-  switch (action) {
-    case 'delete':
-      await deletion.deleteSelected();
-      break;
-    case 'create-rule': {
-      // Get all selected events to validate they have the same type/subtype
-      const allEvents = get(originalGroups).flat();
-      const selectedEvents = allEvents.filter(event =>
-        !Array.isArray(event) && selectedIds.includes(event.identifier),
-      );
-
-      if (selectedEvents.length === 0) {
-        // Show confirmation dialog about no events found
-        showConfirm({
-          message: t('transactions.events.accounting_rule.no_events_found'),
-          primaryAction: t('common.actions.ok'),
-          singleAction: true,
-          title: t('transactions.events.accounting_rule.error'),
-        }, () => {
-          // User acknowledged the message
-        });
-        break;
-      }
-
-      // Check if all selected events have the same eventType and eventSubtype
-      const firstEvent = selectedEvents[0];
-      const firstEventType = firstEvent.eventType;
-      const firstEventSubtype = firstEvent.eventSubtype;
-
-      const allSameType = selectedEvents.every(event =>
-        event.eventType === firstEventType &&
-        event.eventSubtype === firstEventSubtype,
-      );
-
-      if (!allSameType) {
-        // Show confirmation dialog about incompatible selection
-        showConfirm({
-          message: t('transactions.events.accounting_rule.different_types_error'),
-          primaryAction: t('common.actions.ok'),
-          singleAction: true,
-          title: t('transactions.events.accounting_rule.incompatible_selection'),
-        }, () => {
-          // User acknowledged the message
-        });
-        break;
-      }
-
-      // All events have the same type/subtype, proceed with rule creation
-      set(selectedEventIds, selectedIds);
-      // Initialize with the common event type and subtype
-      set(accountingRuleToEdit, {
-        accountingTreatment: null,
-        countCostBasisPnl: { value: false },
-        countEntireAmountSpend: { value: false },
-        counterparty: null,
-        eventSubtype: firstEventSubtype || '',
-        eventType: firstEventType || '',
-        identifier: 0,
-        taxable: { value: false },
-      });
-      break;
-    }
-    case 'toggle-mode':
-      selectionMode.actions.toggle();
-      break;
-    case 'exit':
-      selectionMode.actions.exit();
-      break;
-    case 'toggle-all':
-      selectionMode.actions.toggleAll();
-      break;
-  }
 }
 
 watchImmediate(route, async (route) => {
@@ -346,16 +266,13 @@ onMounted(async () => {
 
       <HistoryEventsDialogContainer
         ref="dialogContainer"
+        v-model:accounting-rule-to-edit="accountingRuleToEdit"
         :loading="processing"
         :refreshing="refreshing"
         :section-loading="sectionLoading"
         :event-handlers="actions.dialogHandlers"
-      />
-
-      <AccountingRuleFormDialog
-        v-model="accountingRuleToEdit"
-        :event-ids="selectedEventIds"
-        @refresh="handleAccountingRuleRefresh()"
+        :selected-event-ids="selectedEventIds"
+        @accounting-rule-refresh="handleAccountingRuleRefresh()"
       />
     </div>
   </TablePageLayout>

@@ -14,7 +14,6 @@ import {
 } from '@/modules/history/management/forms/form-guards';
 import {
   isAssetMovementEvent,
-  isEventAccountingRuleProcessed,
   isEventMissingAccountingRule,
   isEvmEvent,
 } from '@/utils/history/events';
@@ -104,12 +103,8 @@ function deleteEvent(item: HistoryEventEntry) {
       {{ t('actions.history_events.missing_rule.title') }}
     </RuiTooltip>
     <HistoryEventAction
-      v-else-if="!isEventAccountingRuleProcessed(item)"
-      :event="item"
-    />
-    <div
       v-else
-      class="w-10 h-10"
+      :event="item"
     />
   </RowActions>
 </template>
