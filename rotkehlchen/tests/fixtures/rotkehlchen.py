@@ -36,6 +36,7 @@ from rotkehlchen.tests.utils.database import (
     add_manually_tracked_balances_to_test_db,
     add_settings_to_test_db,
     add_tags_to_test_db,
+    maybe_include_beaconchain_key,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
@@ -309,6 +310,7 @@ def initialize_mock_rotkehlchen_instance(
         username,
         blockchain_accounts,
         include_etherscan_key,
+        include_beaconchain_key,
         include_cryptocompare_key,
         should_mock_price_queries,
         mocked_price_queries,
@@ -367,6 +369,7 @@ def initialize_mock_rotkehlchen_instance(
         )
         add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
+        maybe_include_beaconchain_key(rotki.data.db, include_beaconchain_key)
         maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
         if add_accounts_to_db is True:
             add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
@@ -532,6 +535,7 @@ def fixture_rotkehlchen_api_server(
         username,
         blockchain_accounts,
         include_etherscan_key,
+        include_beaconchain_key,
         include_cryptocompare_key,
         should_mock_price_queries,
         mocked_price_queries,
@@ -586,6 +590,7 @@ def fixture_rotkehlchen_api_server(
         username=username,
         blockchain_accounts=blockchain_accounts,
         include_etherscan_key=include_etherscan_key,
+        include_beaconchain_key=include_beaconchain_key,
         include_cryptocompare_key=include_cryptocompare_key,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
@@ -673,6 +678,7 @@ def rotkehlchen_instance(
         username,
         blockchain_accounts,
         include_etherscan_key,
+        include_beaconchain_key,
         include_cryptocompare_key,
         should_mock_price_queries,
         mocked_price_queries,
@@ -717,6 +723,7 @@ def rotkehlchen_instance(
         username=username,
         blockchain_accounts=blockchain_accounts,
         include_etherscan_key=include_etherscan_key,
+        include_beaconchain_key=include_beaconchain_key,
         include_cryptocompare_key=include_cryptocompare_key,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,

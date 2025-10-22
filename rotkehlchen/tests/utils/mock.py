@@ -202,7 +202,7 @@ def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
     )
 
 
-BEACONCHAIN_ETH1_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/eth1/(.*)')
+BEACONCHAIN_ETH1_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/eth1/([^?]*)')
 BEACONCHAIN_VALIDATOR_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator')
 BEACONCHAIN_OTHER_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/(.*)/(.*)')
 

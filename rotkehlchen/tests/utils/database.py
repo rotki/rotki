@@ -48,6 +48,19 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
             )])
 
 
+def maybe_include_beaconchain_key(db: DBHandler, include_beaconchain_key: bool) -> None:
+    if not include_beaconchain_key:
+        return
+
+    with db.user_write() as write_cursor:
+        db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.BEACONCHAIN,
+                api_key=ApiKey('MTlZNWEvN2ZXN2hnVVNNZzhHaGxP'),  # added by isaac
+            )])
+
+
 def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bool) -> None:
     if not include_cryptocompare_key:
         return

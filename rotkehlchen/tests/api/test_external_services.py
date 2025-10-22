@@ -21,6 +21,7 @@ EMPTY_RESULT = {
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
+@pytest.mark.parametrize('include_beaconchain_key', [False])
 def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that adding and retrieving external service credentials works"""
     # With no data an empty response should be returned
@@ -74,6 +75,7 @@ def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
+@pytest.mark.parametrize('include_beaconchain_key', [False])
 def test_delete_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added

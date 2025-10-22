@@ -787,6 +787,6 @@ def _query_linea_airdrop_contract(
             output += chunk_output
 
         return zip(addresses, output, strict=True)
-    except (ValueError, Web3Exception) as e:
+    except (ValueError, Web3Exception, requests.exceptions.RequestException) as e:
         log.error(f'Failed to perform multicall on linea due to {e!s}')
         return None

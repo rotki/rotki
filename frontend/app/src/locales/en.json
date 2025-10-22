@@ -2385,7 +2385,8 @@
     },
     "api_key": "API key",
     "beaconchain": {
-      "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
+      "api_key_message": "Please add a Beaconcha.in API key to be able to query the ETH staking history of withdrawals and blocks data.",
+      "description": "Required for ETH staking data. Beaconcha.in now requires API keys for all requests.",
       "hint": "Enter your Beaconcha.in API key",
       "title": "Beaconcha.in"
     },
@@ -2822,6 +2823,18 @@
       }
     },
     "rpc_node_setting": {
+      "consensus_rpc": {
+        "api_key_message": "You need Beaconcha.in API Key or consensus layer client RPC to be set to see complete ETH staking information.",
+        "beaconchain_only": {
+          "description": "- You can see both current status (validator balances), and history of withdrawals and blocks.",
+          "title": "Beaconcha.in Api Key"
+        },
+        "consensus_rpc_only": {
+          "description": "You can only see current status (validator balances)",
+          "input_rpc": "Input RPC",
+          "title": "Consensus layer RPC"
+        }
+      },
       "subtitle": "Manage and view your RPC node.",
       "title": "RPC node setting"
     },
@@ -3668,6 +3681,10 @@
     },
     "missing_api_key": {
       "action": "Enter key",
+      "beaconchain": {
+        "message": "rotki cannot query ETH staking data because you don't have a Beaconcha.in API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "title": "{service} API key"
+      },
       "etherscan": {
         "message": "rotki queries for {location} chain are working slower because you don't have {location} {service} API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{location} {service} API key"

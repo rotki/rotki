@@ -42,6 +42,11 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       messageKey: string;
       titleKey: string;
     }> = {
+      beaconchain: {
+        category: NotificationCategory.BEACONCHAIN,
+        messageKey: 'notification_messages.missing_api_key.beaconchain.message',
+        titleKey: 'notification_messages.missing_api_key.beaconchain.title',
+      },
       etherscan: {
         category: NotificationCategory.ETHERSCAN,
         messageKey: 'notification_messages.missing_api_key.etherscan.message',

@@ -557,7 +557,7 @@ def test_eth_accumulating_validators_performance(
         }
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
 def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
@@ -732,7 +732,7 @@ def test_combine_block_with_tx_events(eth2, database):
         assert hidden_ids == [2]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-04-30 21:52:55 GMT')
 def test_refresh_activated_validators_deposits(eth2, database):
@@ -816,7 +816,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         assert set(dbeth2.get_validators(cursor)) == {validator3, validator1, validator2}
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2024-02-04 09:00:00 GMT')
 def test_query_chunked_endpoint_with_offset_pagination(eth2):

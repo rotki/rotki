@@ -299,7 +299,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-11-19 16:30:00 GMT')
 def test_withdrawals_detect_exit(eth2: 'Eth2', database):
