@@ -20,6 +20,7 @@ from rotkehlchen.tests.utils.database import (
     add_manually_tracked_balances_to_test_db,
     add_settings_to_test_db,
     add_tags_to_test_db,
+    maybe_include_beaconchain_key,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
@@ -60,6 +61,11 @@ def fixture_include_etherscan_key() -> bool:
     return True
 
 
+@pytest.fixture(name='include_beaconchain_key')
+def fixture_include_beaconchain_key() -> bool:
+    return True
+
+
 @pytest.fixture(name='tags')
 def fixture_tags() -> list[dict[str, Any]]:
     return []
@@ -83,6 +89,7 @@ def _init_database(
         ignored_assets: list[Asset] | None,
         blockchain_accounts: BlockchainAccounts,
         include_etherscan_key: bool,
+        include_beaconchain_key: bool,
         include_cryptocompare_key: bool,
         tags: list[dict[str, Any]],
         manually_tracked_balances: list[ManuallyTrackedBalance],
@@ -119,6 +126,7 @@ def _init_database(
     add_settings_to_test_db(db, db_settings, ignored_assets, data_migration_version)
     add_blockchain_accounts_to_db(db, blockchain_accounts)
     maybe_include_etherscan_key(db, include_etherscan_key)
+    maybe_include_beaconchain_key(db, include_beaconchain_key)
     maybe_include_cryptocompare_key(db, include_cryptocompare_key)
     add_tags_to_test_db(db, tags)
     add_manually_tracked_balances_to_test_db(db, manually_tracked_balances)
@@ -137,6 +145,7 @@ def database(
         ignored_assets,
         blockchain_accounts,
         include_etherscan_key,
+        include_beaconchain_key,
         include_cryptocompare_key,
         tags,
         manually_tracked_balances,
@@ -158,6 +167,7 @@ def database(
             ignored_assets=ignored_assets,
             blockchain_accounts=blockchain_accounts,
             include_etherscan_key=include_etherscan_key,
+            include_beaconchain_key=include_beaconchain_key,
             include_cryptocompare_key=include_cryptocompare_key,
             tags=tags,
             manually_tracked_balances=manually_tracked_balances,

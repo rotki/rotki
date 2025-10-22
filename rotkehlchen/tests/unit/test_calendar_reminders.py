@@ -306,7 +306,10 @@ def test_airdrop_claim_calendar_reminders_wrong_chain(
     """
     reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
 
-    with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(arbitrum_one_accounts[0])):  # noqa: E501
+    with (
+        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(arbitrum_one_accounts[0])),  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.airdrops._query_linea_airdrop_contract', return_value=None),  # noqa: E501
+    ):
         reminder_creator.maybe_create_airdrop_claim_reminder()
 
     new_calendar_entries = DBCalendar(database).query_calendar_entry(CalendarFilterQuery.make())

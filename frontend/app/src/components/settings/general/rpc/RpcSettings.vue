@@ -12,6 +12,8 @@ import { getPublicProtocolImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 
+const route = useRoute();
+
 interface ChainRpcSettingTab {
   chain: Blockchain;
   component: Component;
@@ -76,6 +78,23 @@ function addNodeClick() {
     refElement[0].addNewRpcNode();
   }
 }
+
+onMounted(() => {
+  const tabQuery = get(route).query.tab;
+  if (tabQuery) {
+    const tabs = get(rpcSettingTabs);
+    const tabIndex = tabs.findIndex((tab) => {
+      if ('id' in tab) {
+        return tab.id === tabQuery;
+      }
+      return false;
+    });
+
+    if (tabIndex !== -1) {
+      set(rpcSettingTab, tabIndex);
+    }
+  }
+});
 </script>
 
 <template>

@@ -68,6 +68,16 @@ export function getHeliusRegisterUrl(): ExternalUrl {
   };
 }
 
+export function getBeaconchainRegisterUrl(): ExternalUrl {
+  return {
+    external: externalLinks.beaconChainApiKey,
+    route: {
+      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      query: { service: 'beaconchain' },
+    },
+  };
+}
+
 /**
  * Returns the registration url of a specified service and a path to the local page
  * @param {string} service
@@ -81,6 +91,8 @@ export function getServiceRegisterUrl(service: string): ExternalUrl | undefined 
       return getTheGraphRegisterUrl();
     case 'helius':
       return getHeliusRegisterUrl();
+    case 'beaconchain':
+      return getBeaconchainRegisterUrl();
     default:
       logger.warn(`Unsupported service: '${service}'`);
       return undefined;
