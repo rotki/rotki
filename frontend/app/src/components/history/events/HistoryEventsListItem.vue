@@ -163,8 +163,6 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
           :amount="item.amount"
           :chain="getChain(item.location)"
           :no-tx-hash="isNoTxHash(item)"
-          :tx-hash="'txHash' in item ? item.txHash : undefined"
-          :signature="'signature' in item ? item.signature : undefined"
           class="break-words leading-6 col-span-10 @md:col-span-7 @5xl:!col-span-8"
         />
 
