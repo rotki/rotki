@@ -6,11 +6,13 @@ const modelValue = defineModel<string | undefined>({ required: true });
 const props = withDefaults(defineProps<{
   location: string | undefined;
   disabled?: boolean;
-}>(), { disabled: false });
+}>(), {
+  disabled: false,
+});
 
 const locationLimited = ref<boolean>(true);
 
-const { isEvm, isSolanaChains, matchChain } = useSupportedChains();
+const { getChainName, isEvm, isSolanaChains, matchChain } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 
 const isDisabled = computed<boolean>(() => {
@@ -27,8 +29,8 @@ const tooltipText = computed<string>(() => {
     return t('toggle_location_link.disabled');
   }
 
-  return get(locationLimited)
-    ? t('toggle_location_link.limited', { location: props.location })
+  return get(locationLimited) && props.location
+    ? t('toggle_location_link.limited', { location: get(getChainName(props.location)) })
     : t('toggle_location_link.unlimited');
 });
 
