@@ -1072,6 +1072,37 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> No
         assert current_levenshtein_distance >= previous_levenshtein_distance
 
 
+def test_native_tokens_in_asset_search(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that native tokens are also included when searching for evm/solana tokens and
+    that the native token is prioritized (appears at the beginning of the results).
+    """
+    for chain in (ChainID.ETHEREUM, ChainID.OPTIMISM):
+        # Search for 'E' - should include ETH as native token along with other tokens
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+            json={'value': 'E', 'limit': 50, 'evm_chain': chain.to_name(), 'asset_type': 'evm token'},  # noqa: E501
+        ))
+        # ETH should be included and prioritized since it's the native token
+        assert_asset_at_top_position('ETH', max_position_index=1, result=result)
+        # but all other assets should be tokens with the correct chain
+        assert all(x['evm_chain'] == chain.to_name() for x in result if x['identifier'] != 'ETH')
+
+    # Search for S with asset_type of solana token, and native SOL should be included.
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'S', 'limit': 50, 'asset_type': 'solana token'},
+    ))
+    assert_asset_at_top_position('SOL', max_position_index=1, result=result)
+    assert all(x['asset_type'] == 'solana token' for x in result if x['identifier'] != 'SOL')
+
+    # Check that native BTC is also prioritized
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'BTC', 'limit': 50},
+    ))
+    assert_asset_at_top_position('BTC', max_position_index=1, result=result)
+
+
 def test_only_ignored_assets(rotkehlchen_api_server: 'APIServer') -> None:
     """Test it's possible to ask to only see the ignored assets"""
     clean_ignored_assets(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)

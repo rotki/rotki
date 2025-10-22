@@ -2135,26 +2135,44 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             )
             filters.append((nfts_substring_filter, 'nfts'))
 
+        # Handle chain_id and asset_type filters with native token inclusion
+        chain_and_type_filters: list[DBFilter] = []
+        native_token_id: str | None = None
+
         if chain_id is not None:
-            nested_filter = DBNestedFilter(
-                and_op=False,
-                filters=[
-                    DBEqualsFilter(
+            chain_and_type_filters.append(DBEqualsFilter(
+                and_op=True,
+                column='chain',
+                value=chain_id.serialize_for_db(),
+            ))
+            native_token_id = chain_id.to_blockchain().get_native_token_id()
+
+        if asset_type is not None:
+            chain_and_type_filters.append(DBEqualsFilter(
+                and_op=True,
+                column='assets.type',
+                value=asset_type.serialize_for_db(),
+            ))
+            if asset_type == AssetType.SOLANA_TOKEN:
+                native_token_id = SupportedBlockchain.SOLANA.get_native_token_id()
+
+        # Combine chain and type filters with the native token identifier filter
+        if len(chain_and_type_filters) > 0:
+            chain_and_type_filter = DBNestedFilter(and_op=True, filters=chain_and_type_filters)
+            filters.append((
+                DBNestedFilter(
+                    and_op=False,
+                    filters=[chain_and_type_filter, DBEqualsFilter(
                         and_op=True,
-                        column='chain',
-                        value=chain_id.serialize_for_db(),
-                        include_null_values=True,
-                    ),
-                    DBNullFilter(and_op=True, columns=['chain'], verb='IS'),
-                ],
-            )
-            filters.append((nested_filter, 'assets'))
+                        column='assets.identifier',
+                        value=native_token_id,
+                    )],
+                ) if native_token_id is not None else chain_and_type_filter,
+                'assets',
+            ))
 
         if address is not None:
             filters.append((DBEqualsFilter(and_op=True, column='evm_tokens.address' if is_hex_address(address) else 'solana_tokens.address', value=address), 'assets'))  # noqa: E501
-
-        if asset_type is not None:
-            filters.append((DBEqualsFilter(and_op=True, column='assets.type', value=asset_type.serialize_for_db()), 'assets'))  # noqa: E501
 
         filter_query.filters = filters
         return filter_query
