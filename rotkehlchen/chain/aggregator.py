@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator, Sequence
 from functools import reduce
 from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, overload
 
 import requests
 from gevent.lock import Semaphore
@@ -90,6 +90,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
+    CHAINS_WITH_NODES,
     CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
@@ -139,7 +140,11 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.manager import GnosisManager
-    from rotkehlchen.chain.manager import ChainManager, ChainManagerWithTransactions
+    from rotkehlchen.chain.manager import (
+        ChainManager,
+        ChainManagerWithNodesMixin,
+        ChainManagerWithTransactions,
+    )
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.chain.scroll.manager import ScrollManager
@@ -1296,10 +1301,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return added_accounts
 
-    def iterate_evm_chain_managers(self) -> Iterator['EvmManager']:
+    def iterate_chain_managers_with_nodes(self) -> Iterator['ChainManagerWithNodesMixin']:
         """Iterate the supported evm chain managers"""
-        for chain_id in get_args(SUPPORTED_CHAIN_IDS):
-            yield self.get_evm_manager(chain_id)
+        for blockchain in CHAINS_WITH_NODES:
+            yield self.get_chain_manager(blockchain)  # type: ignore[misc]  # will be a chain manager with nodes
 
     def flush_eth2_cache(self) -> None:
         """Flush cache for logic related to validators. We do this after modifying the list of
