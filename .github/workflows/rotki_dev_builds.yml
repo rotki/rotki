@@ -84,11 +84,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - runner: macos-14
+          - runner: macos-15
             arch: 'arm64'
             target: 11
             platform: macosx-11.0-arm64
-          - runner: macos-13
+          - runner: macos-15-intel
             arch: 'x86_64'
             target: 10.9
             platform: macosx-10.9-x86_64
