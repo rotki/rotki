@@ -15,14 +15,20 @@ export const AccountingRuleWithLinkedProperty = z.object({
 
 export type AccountingRuleWithLinkedProperty = z.infer<typeof AccountingRuleWithLinkedProperty>;
 
-export const AccountingRule = z.object({
-  accountingTreatment: AccountingTreatmentEnum.nullable(),
-  countCostBasisPnl: AccountingRuleWithLinkedProperty,
-  countEntireAmountSpend: AccountingRuleWithLinkedProperty,
+export const AccountingRuleIdentifier = z.object({
   counterparty: z.string().nullable(),
   eventIds: z.array(z.number()).nullish(),
   eventSubtype: z.string(),
   eventType: z.string(),
+});
+
+export type AccountingRuleIdentifier = z.infer<typeof AccountingRuleIdentifier>;
+
+export const AccountingRule = z.object({
+  ...AccountingRuleIdentifier.shape,
+  accountingTreatment: AccountingTreatmentEnum.nullable(),
+  countCostBasisPnl: AccountingRuleWithLinkedProperty,
+  countEntireAmountSpend: AccountingRuleWithLinkedProperty,
   taxable: AccountingRuleWithLinkedProperty,
 });
 
@@ -81,3 +87,5 @@ export interface AccountingRuleConflictManualResolution {
 export type AccountingRuleConflictResolution =
   | AccountingRuleConflictAllResolution
   | { conflicts: AccountingRuleConflictManualResolution[] };
+
+export type AccountingRuleAction = 'add-general' | 'add-event-specific' | 'edit-general' | 'edit-event-specific';

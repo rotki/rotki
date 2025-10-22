@@ -3,7 +3,6 @@ import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { toSentenceCase } from '@rotki/common';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
@@ -19,47 +18,17 @@ interface AccountingRuleTableProps {
   isCustom: boolean;
 }
 
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+
 const props = defineProps<AccountingRuleTableProps>();
 
 const emit = defineEmits<{
-  (e: 'set-page', page: number): void;
-  (e: 'delete-click', item: AccountingRuleEntry): void;
-  (e: 'edit-click', item: AccountingRuleEntry): void;
-  (e: 'update:pagination', pagination: any): void;
+  'set-page': [page: number];
+  'delete-click': [item: AccountingRuleEntry];
+  'edit-click': [item: AccountingRuleEntry];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { getEventTypeData, historyEventSubTypesData, historyEventTypesData } = useHistoryEventMappings();
-
-function getHistoryEventTypeName(eventType: string): string {
-  return get(historyEventTypesData).find(item => item.identifier === eventType)?.label ?? toSentenceCase(eventType);
-}
-
-function getHistoryEventSubTypeName(eventSubtype: string): string {
-  return (
-    get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)?.label
-    ?? toSentenceCase(eventSubtype)
-  );
-}
-
-function getType(eventType: string, eventSubtype: string) {
-  return get(
-    getEventTypeData({
-      eventSubtype,
-      eventType,
-    }),
-  );
-}
-
-const paginationModel = computed({
-  get() {
-    return props.pagination;
-  },
-  set(value) {
-    emit('update:pagination', value);
-  },
-});
 
 const selectedEventIds = ref<number[]>([]);
 const eventsDialogOpen = ref<boolean>(false);
@@ -135,6 +104,28 @@ const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
   return baseColumns;
 });
 
+const { getEventTypeData, historyEventSubTypesData, historyEventTypesData } = useHistoryEventMappings();
+
+function getHistoryEventTypeName(eventType: string): string {
+  return get(historyEventTypesData).find(item => item.identifier === eventType)?.label ?? toSentenceCase(eventType);
+}
+
+function getHistoryEventSubTypeName(eventSubtype: string): string {
+  return (
+    get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)?.label
+    ?? toSentenceCase(eventSubtype)
+  );
+}
+
+function getType(eventType: string, eventSubtype: string) {
+  return get(
+    getEventTypeData({
+      eventSubtype,
+      eventType,
+    }),
+  );
+}
+
 function openEventsDialog(eventIds: number[]) {
   set(selectedEventIds, eventIds);
   set(eventsDialogOpen, true);
@@ -142,152 +133,145 @@ function openEventsDialog(eventIds: number[]) {
 </script>
 
 <template>
-  <CollectionHandler
-    :collection="state"
-    @set-page="emit('set-page', $event)"
+  <RuiDataTable
+    v-model:pagination.external="paginationModel"
+    outlined
+    :rows="state.data"
+    :cols="cols"
+    :loading="isLoading"
+    row-attr="identifier"
   >
-    <template #default="{ data }">
-      <RuiDataTable
-        v-model:pagination.external="paginationModel"
-        outlined
-        :rows="data"
-        :cols="cols"
-        :loading="isLoading"
-        row-attr="identifier"
+    <template #header.taxable>
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+        class="flex items-center h-full"
+        tooltip-class="max-w-[10rem]"
       >
-        <template #header.taxable>
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            class="flex items-center h-full"
-            tooltip-class="max-w-[10rem]"
-          >
-            <template #activator>
-              <div class="flex items-center text-left gap-2">
-                <RuiIcon
-                  class="shrink-0"
-                  size="18"
-                  name="lu-info"
-                />
-                {{ t('accounting_settings.rule.labels.taxable') }}
-              </div>
-            </template>
-            {{ t('accounting_settings.rule.labels.taxable_subtitle') }}
-          </RuiTooltip>
-        </template>
-        <template #header.countEntireAmountSpend>
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            class="flex items-center"
-            tooltip-class="max-w-[10rem]"
-          >
-            <template #activator>
-              <div class="flex items-center text-left gap-2">
-                <RuiIcon
-                  class="shrink-0"
-                  size="18"
-                  name="lu-info"
-                />
-                {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
-              </div>
-            </template>
-            {{ t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle') }}
-          </RuiTooltip>
-        </template>
-        <template #header.countCostBasisPnl>
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            class="flex items-center"
-            tooltip-class="max-w-[10rem]"
-          >
-            <template #activator>
-              <div class="flex items-center text-left gap-2">
-                <RuiIcon
-                  class="shrink-0"
-                  size="18"
-                  name="lu-info"
-                />
-                {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
-              </div>
-            </template>
-            {{ t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle') }}
-          </RuiTooltip>
-        </template>
-        <template #header.accountingTreatment>
-          <div class="max-w-[5rem] text-sm whitespace-normal font-medium">
-            {{ t('accounting_settings.rule.labels.accounting_treatment') }}
+        <template #activator>
+          <div class="flex items-center text-left gap-2">
+            <RuiIcon
+              class="shrink-0"
+              size="18"
+              name="lu-info"
+            />
+            {{ t('accounting_settings.rule.labels.taxable') }}
           </div>
         </template>
-        <template #item.eventTypeAndSubtype="{ row }">
-          <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
-          <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
-        </template>
-        <template #item.resultingCombination="{ row }">
-          <HistoryEventTypeCombination
-            :type="getType(row.eventType, row.eventSubtype)"
-            show-label
-          />
-        </template>
-        <template #item.counterparty="{ row }">
-          <CounterpartyDisplay
-            v-if="row.counterparty"
-            :counterparty="row.counterparty"
-          />
-          <span v-else>-</span>
-        </template>
-        <template #item.taxable="{ row }">
-          <AccountingRuleWithLinkedSettingDisplay
-            identifier="taxable"
-            :item="row.taxable"
-          />
-        </template>
-        <template #item.countEntireAmountSpend="{ row }">
-          <AccountingRuleWithLinkedSettingDisplay
-            identifier="countEntireAmountSpend"
-            :item="row.countEntireAmountSpend"
-          />
-        </template>
-        <template #item.countCostBasisPnl="{ row }">
-          <AccountingRuleWithLinkedSettingDisplay
-            identifier="countCostBasisPnl"
-            :item="row.countCostBasisPnl"
-          />
-        </template>
-        <template #item.accountingTreatment="{ row }">
-          <BadgeDisplay v-if="row.accountingTreatment">
-            {{ row.accountingTreatment }}
-          </BadgeDisplay>
-          <span v-else>-</span>
-        </template>
-        <template #item.eventIds="{ row }">
-          <div class="flex items-center gap-2">
-            <span>{{ row.eventIds?.length || 0 }} {{ t('common.events') }}</span>
-            <RuiButton
-              v-if="row.eventIds && row.eventIds.length > 0"
-              variant="text"
-              icon
-              @click="openEventsDialog(row.eventIds)"
-            >
-              <RuiIcon
-                name="lu-arrow-right"
-                size="16"
-              />
-            </RuiButton>
-          </div>
-        </template>
-        <template #item.actions="{ row }">
-          <RowActions
-            :delete-tooltip="t('accounting_settings.rule.delete')"
-            :edit-tooltip="t('accounting_settings.rule.edit')"
-            @delete-click="emit('delete-click', row)"
-            @edit-click="emit('edit-click', row)"
-          />
-        </template>
-      </RuiDataTable>
+        {{ t('accounting_settings.rule.labels.taxable_subtitle') }}
+      </RuiTooltip>
     </template>
-  </CollectionHandler>
+    <template #header.countEntireAmountSpend>
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+        class="flex items-center"
+        tooltip-class="max-w-[10rem]"
+      >
+        <template #activator>
+          <div class="flex items-center text-left gap-2">
+            <RuiIcon
+              class="shrink-0"
+              size="18"
+              name="lu-info"
+            />
+            {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
+          </div>
+        </template>
+        {{ t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle') }}
+      </RuiTooltip>
+    </template>
+    <template #header.countCostBasisPnl>
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+        class="flex items-center"
+        tooltip-class="max-w-[10rem]"
+      >
+        <template #activator>
+          <div class="flex items-center text-left gap-2">
+            <RuiIcon
+              class="shrink-0"
+              size="18"
+              name="lu-info"
+            />
+            {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
+          </div>
+        </template>
+        {{ t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle') }}
+      </RuiTooltip>
+    </template>
+    <template #header.accountingTreatment>
+      <div class="max-w-[5rem] text-sm whitespace-normal font-medium">
+        {{ t('accounting_settings.rule.labels.accounting_treatment') }}
+      </div>
+    </template>
+    <template #item.eventTypeAndSubtype="{ row }">
+      <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
+      <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
+    </template>
+    <template #item.resultingCombination="{ row }">
+      <HistoryEventTypeCombination
+        :type="getType(row.eventType, row.eventSubtype)"
+        show-label
+      />
+    </template>
+    <template #item.counterparty="{ row }">
+      <CounterpartyDisplay
+        v-if="row.counterparty"
+        :counterparty="row.counterparty"
+      />
+      <span v-else>-</span>
+    </template>
+    <template #item.taxable="{ row }">
+      <AccountingRuleWithLinkedSettingDisplay
+        identifier="taxable"
+        :item="row.taxable"
+      />
+    </template>
+    <template #item.countEntireAmountSpend="{ row }">
+      <AccountingRuleWithLinkedSettingDisplay
+        identifier="countEntireAmountSpend"
+        :item="row.countEntireAmountSpend"
+      />
+    </template>
+    <template #item.countCostBasisPnl="{ row }">
+      <AccountingRuleWithLinkedSettingDisplay
+        identifier="countCostBasisPnl"
+        :item="row.countCostBasisPnl"
+      />
+    </template>
+    <template #item.accountingTreatment="{ row }">
+      <BadgeDisplay v-if="row.accountingTreatment">
+        {{ row.accountingTreatment }}
+      </BadgeDisplay>
+      <span v-else>-</span>
+    </template>
+    <template #item.eventIds="{ row }">
+      <div class="flex items-center gap-2">
+        <span>{{ row.eventIds?.length || 0 }} {{ t('common.events') }}</span>
+        <RuiButton
+          v-if="row.eventIds && row.eventIds.length > 0"
+          variant="text"
+          icon
+          @click="openEventsDialog(row.eventIds)"
+        >
+          <RuiIcon
+            name="lu-arrow-right"
+            size="16"
+          />
+        </RuiButton>
+      </div>
+    </template>
+    <template #item.actions="{ row }">
+      <RowActions
+        :delete-tooltip="t('accounting_settings.rule.delete')"
+        :edit-tooltip="t('accounting_settings.rule.edit')"
+        @delete-click="emit('delete-click', row)"
+        @edit-click="emit('edit-click', row)"
+      />
+    </template>
+  </RuiDataTable>
 
   <AccountingRuleEventsDialog
     v-if="eventsDialogOpen"

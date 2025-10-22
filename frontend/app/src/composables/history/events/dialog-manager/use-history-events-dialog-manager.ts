@@ -60,10 +60,10 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
         });
         break;
       case DIALOG_TYPES.ADD_MISSING_RULE: {
-        const { identifier, ...restData } = options.data;
+        const { eventIds, ...restData } = options.data;
         await router.push({
           path: '/settings/accounting',
-          query: { 'add-rule': 'true', 'eventId': identifier.toString(), ...restData },
+          query: { 'add-rule': 'true', 'eventId': eventIds ? eventIds[0].toString() : undefined, ...restData },
         });
         break;
       }

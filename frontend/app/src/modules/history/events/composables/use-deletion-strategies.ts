@@ -1,9 +1,18 @@
 import type { SwapGroup, TransactionGroup } from './use-event-analysis';
 
+export const DELETION_STRATEGY_TYPE = {
+  DELETE_EVENTS: 'delete-events',
+  DELETE_PARTIAL_SWAP: 'delete-partial-swap',
+  DELETE_TRANSACTIONS: 'delete-transactions',
+  IGNORE_EVENTS: 'ignore-events',
+} as const;
+
+export type DeletionStrategyType = typeof DELETION_STRATEGY_TYPE[keyof typeof DELETION_STRATEGY_TYPE];
+
 export interface DeletionStrategy {
   eventIds?: number[];
   transactions?: Map<string, TransactionGroup>;
-  type: 'delete-transactions' | 'ignore-events' | 'delete-events' | 'delete-partial-swap';
+  type: DeletionStrategyType;
   partialSwapGroups?: SwapGroup[];
 }
 
@@ -19,7 +28,7 @@ export function buildDeletionConfirmationMessage(
   t: (key: string, params?: any) => string,
 ): ConfirmationMessage {
   switch (strategy.type) {
-    case 'delete-transactions': {
+    case DELETION_STRATEGY_TYPE.DELETE_TRANSACTIONS: {
       const count = strategy.transactions?.size ?? 0;
       const message = count === 1
         ? t('transactions.events.confirmation.delete.complete_transaction_single')
@@ -32,7 +41,7 @@ export function buildDeletionConfirmationMessage(
       };
     }
 
-    case 'delete-events':
+    case DELETION_STRATEGY_TYPE.DELETE_EVENTS:
       return {
         message: t('transactions.events.confirmation.delete.message_multiple', {
           count: strategy.eventIds?.length ?? 0,
@@ -41,7 +50,7 @@ export function buildDeletionConfirmationMessage(
         title: t('transactions.events.confirmation.delete.title'),
       };
 
-    case 'delete-partial-swap': {
+    case DELETION_STRATEGY_TYPE.DELETE_PARTIAL_SWAP: {
       const totalEvents = strategy.partialSwapGroups?.reduce((sum, group) => sum + group.groupIds.length, 0) ?? 0;
       const selectedEvents = strategy.partialSwapGroups?.reduce((sum, group) => sum + group.selectedIds.length, 0) ?? 0;
       return {
@@ -55,7 +64,7 @@ export function buildDeletionConfirmationMessage(
       };
     }
 
-    case 'ignore-events': {
+    case DELETION_STRATEGY_TYPE.IGNORE_EVENTS: {
       const count = strategy.transactions?.size ?? 0;
       return {
         message: t('transactions.events.confirmation.ignore.message_multiple', { count }),

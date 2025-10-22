@@ -8,7 +8,7 @@ import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
-import { buildDeletionConfirmationMessage, type DeletionStrategy } from './use-deletion-strategies';
+import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
 import { analyzeSelectedEvents, type TransactionGroup } from './use-event-analysis';
 
 interface UseHistoryEventsDeletionReturn {
@@ -158,7 +158,7 @@ export function useHistoryEventsDeletion(
     const strategy: DeletionStrategy = {
       eventIds: remainingEventIds,
       transactions,
-      type: 'delete-transactions',
+      type: DELETION_STRATEGY_TYPE.DELETE_TRANSACTIONS,
     };
 
     const confirmation = buildDeletionConfirmationMessage(strategy, t);
@@ -198,7 +198,7 @@ export function useHistoryEventsDeletion(
 
     const strategy: DeletionStrategy = {
       eventIds,
-      type: 'delete-events',
+      type: DELETION_STRATEGY_TYPE.DELETE_EVENTS,
     };
 
     const confirmation = buildDeletionConfirmationMessage(strategy, t);
@@ -229,7 +229,7 @@ export function useHistoryEventsDeletion(
   ): Promise<void> {
     const ignoreStrategy: DeletionStrategy = {
       transactions,
-      type: 'ignore-events',
+      type: DELETION_STRATEGY_TYPE.IGNORE_EVENTS,
     };
 
     const ignoreConfirmation = buildDeletionConfirmationMessage(ignoreStrategy, t);
@@ -269,7 +269,7 @@ export function useHistoryEventsDeletion(
     const strategy: DeletionStrategy = {
       eventIds: allEventIds,
       partialSwapGroups,
-      type: 'delete-partial-swap',
+      type: DELETION_STRATEGY_TYPE.DELETE_PARTIAL_SWAP,
     };
 
     const confirmation = buildDeletionConfirmationMessage(strategy, t);

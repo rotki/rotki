@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type { AccountingRuleAction, AccountingRuleEntry } from '@/types/settings/accounting';
 import AccountingRuleEventsDialog from '@/components/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 
-interface Props {
+export interface Props {
   hasEventSpecificRule: boolean;
   hasGeneralRule: boolean;
   eventId: number;
@@ -14,15 +14,18 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'select', action: 'add-general' | 'add-event-specific' | 'edit-general' | 'edit-event-specific'): void;
+  close: [];
+  select: [action: AccountingRuleAction];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const display = ref<boolean>(true);
+const showEventsList = ref<boolean>(false);
 
-function onSelect(action: 'add-general' | 'add-event-specific' | 'edit-general' | 'edit-event-specific') {
+const affectedEventsCount = computed<number>(() => props.eventIds?.length ?? 0);
+
+function onSelect(action: AccountingRuleAction) {
   emit('select', action);
   set(display, false);
 }
@@ -31,10 +34,6 @@ watch(display, (value) => {
   if (!value)
     emit('close');
 });
-
-const affectedEventsCount = computed<number>(() => props.eventIds?.length ?? 0);
-
-const showEventsList = ref<boolean>(false);
 </script>
 
 <template>

@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
-import AccountingRuleActionDialog from '@/components/settings/accounting/rule/AccountingRuleActionDialog.vue';
+import type {
+  AccountingRuleAction,
+  AccountingRuleEntry,
+  AccountingRuleRequestPayload,
+} from '@/types/settings/accounting';
+import { z } from 'zod/v4';
+import AccountingRuleActionDialog, { type Props as AccountingRuleActionDialogProps } from '@/components/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
 import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
@@ -24,6 +29,16 @@ const CUSTOM_RULE_HANDLING = {
   ONLY: 'only',
 } as const;
 
+type CustomRuleHandling = typeof CUSTOM_RULE_HANDLING[keyof typeof CUSTOM_RULE_HANDLING];
+
+const AccountingRuleQuerySchema = z.object({
+  counterparty: z.string().nullable().default(null),
+  eventSubtype: z.string().default(''),
+  eventType: z.string().default(''),
+});
+
+type AccountingRuleQuery = z.infer<typeof AccountingRuleQuerySchema>;
+
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
@@ -31,19 +46,12 @@ const route = useRoute();
 const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
 
 const editMode = ref<boolean>(false);
-const customRuleHandling = ref<string>(CUSTOM_RULE_HANDLING.EXCLUDE);
+const customRuleHandling = ref<CustomRuleHandling>(CUSTOM_RULE_HANDLING.EXCLUDE);
 
 const modelValue = ref<AccountingRuleEntry>();
 const eventIdsForRule = ref<number[]>();
 const actionDialog = ref<boolean>(false);
-const actionDialogProps = ref<{
-  hasEventSpecificRule: boolean;
-  hasGeneralRule: boolean;
-  eventId: number;
-  generalRule?: AccountingRuleEntry;
-  eventSpecificRule?: AccountingRuleEntry;
-  eventIds?: number[];
-}>();
+const actionDialogProps = ref<AccountingRuleActionDialogProps>();
 
 const {
   fetchData,
@@ -155,7 +163,92 @@ function showDeleteConfirmation(item: AccountingRuleEntry) {
   );
 }
 
-async function handleRuleAction(action: 'add-general' | 'add-event-specific' | 'edit-general' | 'edit-event-specific') {
+function parseRuleQuery(): AccountingRuleQuery {
+  const { query } = get(route);
+  return AccountingRuleQuerySchema.parse({
+    counterparty: query.counterparty,
+    eventSubtype: query.eventSubtype,
+    eventType: query.eventType,
+  });
+}
+
+function addRuleFromQuery(eventIds?: number[]): void {
+  const ruleQuery = parseRuleQuery();
+  add({
+    ...getPlaceholderRule(),
+    ...ruleQuery,
+  }, eventIds);
+}
+
+async function handleAddRule(eventIdNum?: number): Promise<void> {
+  if (eventIdNum) {
+    set(actionDialogProps, {
+      eventId: eventIdNum,
+      hasEventSpecificRule: false,
+      hasGeneralRule: false,
+    });
+    set(actionDialog, true);
+    return;
+  }
+
+  addRuleFromQuery();
+  await router.replace({ query: {} });
+}
+
+async function handleEditRuleWithEventId(eventIdNum: number, ruleQuery: AccountingRuleQuery): Promise<void> {
+  const [generalRule, eventSpecificRules] = await Promise.all([
+    getAccountingRule({
+      eventSubtypes: [ruleQuery.eventSubtype],
+      eventTypes: [ruleQuery.eventType],
+      limit: 2,
+      offset: 0,
+    }, ruleQuery.counterparty),
+    getAccountingRules({
+      eventIds: [eventIdNum],
+      limit: 10,
+      offset: 0,
+    }),
+  ]);
+
+  const eventSpecificRule = eventSpecificRules.data.length > 0 ? eventSpecificRules.data[0] : undefined;
+  const hasEventSpecificRule = !!eventSpecificRule;
+  const hasGeneralRule = !!generalRule;
+
+  set(actionDialogProps, {
+    eventId: eventIdNum,
+    eventIds: eventSpecificRule?.eventIds ?? undefined,
+    eventSpecificRule,
+    generalRule,
+    hasEventSpecificRule,
+    hasGeneralRule,
+  });
+  set(actionDialog, true);
+}
+
+async function handleEditRuleWithoutEventId(ruleQuery: AccountingRuleQuery): Promise<void> {
+  const rule = await getAccountingRule({
+    eventSubtypes: [ruleQuery.eventSubtype],
+    eventTypes: [ruleQuery.eventType],
+    limit: 2,
+    offset: 0,
+  }, ruleQuery.counterparty);
+
+  if (rule)
+    edit(rule);
+
+  await router.replace({ query: {} });
+}
+
+async function handleEditRule(eventIdNum: number | undefined, ruleQuery: AccountingRuleQuery): Promise<void> {
+  if (eventIdNum) {
+    await handleEditRuleWithEventId(eventIdNum, ruleQuery);
+    return;
+  }
+
+  await handleEditRuleWithoutEventId(ruleQuery);
+}
+
+async function handleRuleAction(action: AccountingRuleAction) {
   const props = get(actionDialogProps);
   if (!props)
     return;
@@ -163,28 +256,12 @@ async function handleRuleAction(action: 'add-general' | 'add-event-specific' | '
   const { eventId, eventSpecificRule, generalRule } = props;
 
   switch (action) {
-    case 'add-general': {
-      const { query } = get(route);
-      const { counterparty, eventSubtype, eventType } = query;
-      add({
-        ...getPlaceholderRule(),
-        counterparty: counterparty?.toString() ?? null,
-        eventSubtype: eventSubtype?.toString() ?? '',
-        eventType: eventType?.toString() ?? '',
-      });
+    case 'add-general':
+      addRuleFromQuery();
       break;
-    }
-    case 'add-event-specific': {
-      const { query } = get(route);
-      const { counterparty, eventSubtype, eventType } = query;
-      add({
-        ...getPlaceholderRule(),
-        counterparty: counterparty?.toString() ?? null,
-        eventSubtype: eventSubtype?.toString() ?? '',
-        eventType: eventType?.toString() ?? '',
-      }, [eventId]);
+    case 'add-event-specific':
+      addRuleFromQuery([eventId]);
       break;
-    }
     case 'edit-general':
       if (generalRule)
         edit(generalRule);
@@ -201,75 +278,18 @@ async function handleRuleAction(action: 'add-general' | 'add-event-specific' | '
 
 onMounted(async () => {
   const { query } = get(route);
-  const { 'add-rule': addRule, counterparty, 'edit-rule': editRule, eventId, eventSubtype, eventType } = query;
+  const { 'add-rule': addRule, 'edit-rule': editRule, eventId } = query;
 
-  const ruleData = {
-    counterparty: counterparty?.toString() ?? null,
-    eventSubtype: eventSubtype?.toString() ?? '',
-    eventType: eventType?.toString() ?? '',
-  };
-
+  const ruleQuery = parseRuleQuery();
   const eventIdNum = eventId ? Number(eventId) : undefined;
 
   if (addRule) {
-    if (eventIdNum) {
-      set(actionDialogProps, {
-        eventId: eventIdNum,
-        hasEventSpecificRule: false,
-        hasGeneralRule: false,
-      });
-      set(actionDialog, true);
-    }
-    else {
-      add({
-        ...getPlaceholderRule(),
-        ...ruleData,
-      });
-      await router.replace({ query: {} });
-    }
+    await handleAddRule(eventIdNum);
   }
   else if (editRule) {
-    if (eventIdNum) {
-      const [generalRule, eventSpecificRules] = await Promise.all([
-        getAccountingRule({
-          eventSubtypes: [ruleData.eventSubtype],
-          eventTypes: [ruleData.eventType],
-          limit: 2,
-          offset: 0,
-        }, ruleData.counterparty),
-        getAccountingRules({
-          eventIds: [eventIdNum],
-          limit: 10,
-          offset: 0,
-        }),
-      ]);
-
-      const eventSpecificRule = eventSpecificRules.data.length > 0 ? eventSpecificRules.data[0] : undefined;
-      const hasEventSpecificRule = !!eventSpecificRule;
-      const hasGeneralRule = !!generalRule;
-
-      set(actionDialogProps, {
-        eventId: eventIdNum,
-        eventIds: eventSpecificRule?.eventIds ?? undefined,
-        eventSpecificRule,
-        generalRule,
-        hasEventSpecificRule,
-        hasGeneralRule,
-      });
-      set(actionDialog, true);
-    }
-    else {
-      const rule = await getAccountingRule({
-        eventSubtypes: [ruleData.eventSubtype],
-        eventTypes: [ruleData.eventType],
-        limit: 2,
-        offset: 0,
-      }, ruleData.counterparty);
-      if (rule)
-        edit(rule);
-      await router.replace({ query: {} });
-    }
+    await handleEditRule(eventIdNum, ruleQuery);
   }
+
   await refresh();
 });
 

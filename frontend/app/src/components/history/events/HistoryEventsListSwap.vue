@@ -27,16 +27,16 @@ const emit = defineEmits<{
 }>();
 
 const isInitialRender = ref<boolean>(true);
-const rawExpanded = ref<boolean>(false);
+const expanded = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const { getChain } = useSupportedChains();
 const { getAssetSymbol } = useAssetInfoRetrieval();
 
-const expanded = computed(() => get(rawExpanded) || (props.selection && get(props.selection.isSelectionMode)));
+const shouldExpand = computed(() => get(expanded) || (props.selection && get(props.selection.isSelectionMode)));
 
 const usedEvents = computed(() => {
-  if (get(expanded)) {
+  if (get(shouldExpand)) {
     return props.events;
   }
 
@@ -119,7 +119,7 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
   return notes;
 }
 
-watch(expanded, () => {
+watch(shouldExpand, () => {
   if (!get(isInitialRender)) {
     return;
   }
@@ -134,14 +134,14 @@ watch(expanded, () => {
       name="list"
       class="relative group flex-1"
       :class="{
-        'grid grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start @5xl:min-h-[80px]': !expanded,
-        'flex flex-col': expanded,
+        'grid grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start @5xl:min-h-[80px]': !shouldExpand,
+        'flex flex-col': shouldExpand,
         'transition-wrapper': !isInitialRender,
-        'md:pl-3': !expanded,
+        'md:pl-3': !shouldExpand,
       }"
     >
       <LazyLoader
-        v-if="!expanded"
+        v-if="!shouldExpand"
         key="history-event-type"
         class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative"
       >
@@ -151,7 +151,7 @@ watch(expanded, () => {
           icon
           color="primary"
           class="absolute top-2.5 -left-1 size-5 z-[6]"
-          @click="rawExpanded = !rawExpanded"
+          @click="expanded = !expanded"
         >
           <RuiIcon
             class="hidden group-hover:block"
@@ -172,16 +172,16 @@ watch(expanded, () => {
         key="history-event-assets"
         class="flex flex-col col-span-10 md:col-span-6 @5xl:!col-span-8 relative"
         :class="{
-          'md:py-2 grid grid-cols-10': !expanded,
+          'md:py-2 grid grid-cols-10': !shouldExpand,
         }"
       >
         <RuiButton
-          v-if="expanded && !selection?.isSelectionMode.value"
+          v-if="shouldExpand && !selection?.isSelectionMode.value"
           size="sm"
           icon
           color="primary"
           class="absolute top-3 -left-2 md:left-1.5 size-5 z-[6]"
-          @click="rawExpanded = !rawExpanded"
+          @click="expanded = !expanded"
         >
           <RuiIcon
             class="hidden group-hover:block"
@@ -196,14 +196,14 @@ watch(expanded, () => {
         >
           <HistoryEventsListItem
             :class="{
-              'col-start-1 col-span-4': !expanded && event.eventSubtype === 'spend',
-              'col-start-6 col-span-5': !expanded && event.eventSubtype === 'receive',
+              'col-start-1 col-span-4': !shouldExpand && event.eventSubtype === 'spend',
+              'col-start-6 col-span-5': !shouldExpand && event.eventSubtype === 'receive',
             }"
             :item="event"
             :index="eventIndex"
             :data-subtype="event.eventSubtype"
             :events="usedEvents"
-            :compact="!expanded"
+            :compact="!shouldExpand"
             :event-group="events[0]"
             :hide-actions="hideActions"
             :is-last="eventIndex === events.length - 1"
@@ -216,7 +216,7 @@ watch(expanded, () => {
           />
 
           <LazyLoader
-            v-if="!expanded && eventIndex === 0 && usedEvents.length > 1"
+            v-if="!shouldExpand && eventIndex === 0 && usedEvents.length > 1"
             key="swap-arrow"
             class="flex items-center px-2 @md:pl-0 h-14 col-start-5"
           >
@@ -230,7 +230,7 @@ watch(expanded, () => {
       </div>
 
       <LazyLoader
-        v-if="!expanded"
+        v-if="!shouldExpand"
         key="history-event-notes"
         class="py-2 pt-4 md:pl-0 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4"
         min-height="80"
@@ -243,7 +243,7 @@ watch(expanded, () => {
       </LazyLoader>
 
       <LazyLoader
-        v-if="!expanded && !hideActions"
+        v-if="!shouldExpand && !hideActions"
         key="history-event-actions"
         class="py-2 @5xl:!py-4 col-span-10 @md:col-span-3"
         min-height="40"
