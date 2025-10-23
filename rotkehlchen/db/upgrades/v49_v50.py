@@ -18,6 +18,34 @@ log = RotkehlchenLogsAdapter(logger)
 def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v49 to v50. This happened in the v1.41 release."""
 
+    @progress_step(description='Resetting decoded events.')
+    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+        """Reset all decoded evm events except for the customized ones and those in zksync lite.
+        Notice that it happens first so changes in other tables don't affect this function.
+        Code taken from previous upgrade
+        """
+        if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+            customized_events = write_cursor.execute(
+                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+                (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+            ).fetchone()[0]
+            querystr = (
+                "DELETE FROM history_events WHERE identifier IN ("
+                "SELECT H.identifier from history_events H INNER JOIN evm_events_info E "
+                "ON H.identifier=E.identifier AND E.tx_hash IN "
+                "(SELECT tx_hash FROM evm_transactions) AND H.location != 'o')"  # location 'o' is zksync lite  # noqa: E501
+            )
+            bindings: tuple = ()
+            if customized_events != 0:
+                querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+                bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+            write_cursor.execute(querystr, bindings)
+            write_cursor.execute(
+                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+                (0,),  # decoded tx state
+            )
+
     @progress_step(description='Add Crypto.com App event location labels.')
     def _add_cryptocom_location_labels(write_cursor: 'DBCursor') -> None:
         """Adds location labels for events imported via CSV from a Crypto.com App account."""
