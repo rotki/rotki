@@ -1,18 +1,9 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { AssetSearchParams } from '@/composables/api/assets/info';
 import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
-import type { AssetInfoWithId, AssetsWithId } from '@/types/asset';
+import type { AssetsWithId } from '@/types/asset';
 import type { DateFormat } from '@/types/date-format';
-import {
-  assert,
-  type AssetBalance,
-  type AssetInfo,
-  getAddressFromEvmIdentifier,
-  getTextToken,
-  isEvmIdentifier,
-  isValidEthAddress,
-  type Nullable,
-} from '@rotki/common';
+import { assert, type AssetBalance, type AssetInfoWithId, getAddressFromEvmIdentifier, getTextToken, isEvmIdentifier, isValidEthAddress, type Nullable } from '@rotki/common';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 function levenshtein(a: string, b: string): number {
@@ -93,7 +84,7 @@ export function compareTextByKeyword(a: string, b: string, keyword: string): num
   return rankA - rankB;
 }
 
-export function getSortItems<T extends AssetBalance>(getInfo: (identifier: string) => AssetInfo | null) {
+export function getSortItems<T extends AssetBalance>(getInfo: (identifier: string) => AssetInfoWithId | null) {
   return (items: T[], sortBy: (keyof AssetBalance)[], sortDesc: boolean[]): T[] => {
     const sortByElement = sortBy[0];
     const sortByDesc = sortDesc[0];
@@ -165,17 +156,8 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
   }, 200);
 }
 
-export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>): (identifier: string) => AssetInfoWithId | null {
-  return (identifier: string): AssetInfoWithId | null => {
-    const asset = get(assetInfo(identifier));
-    if (!asset)
-      return null;
-
-    return {
-      ...asset,
-      identifier,
-    };
-  };
+export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfoWithId | null>): (identifier: string) => AssetInfoWithId | null {
+  return (identifier: string): AssetInfoWithId | null => get(assetInfo(identifier)) || null;
 }
 
 export function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {

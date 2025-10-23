@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetInfoWithId } from '@/types/asset';
+import type { AssetInfoWithId } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';

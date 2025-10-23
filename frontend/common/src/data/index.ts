@@ -86,6 +86,16 @@ export const AssetCollection = z.object({
 
 export type AssetCollection = z.infer<typeof AssetCollection>;
 
+export const AssetInfoWithId = z.object({
+  ...AssetInfo.shape,
+  identifier: z.string().min(1),
+}).transform((data: any) => ({
+  ...data,
+  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset',
+}));
+
+export type AssetInfoWithId = z.infer<typeof AssetInfoWithId>;
+
 // note: make sure that the identifier is checksummed
 const assetSymbolToIdentifierMap: Record<string, string> = {
   ADX: 'eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3',

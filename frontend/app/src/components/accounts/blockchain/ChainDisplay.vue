@@ -3,15 +3,18 @@ import { Blockchain } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 
 const props = withDefaults(
   defineProps<{
     chain: string;
+    evmChain?: boolean;
     dense?: boolean;
   }>(),
   {
     dense: false,
+    evmChain: false,
   },
 );
 
@@ -49,6 +52,13 @@ const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockc
             :chain="item"
           />
         </div>
+      </AdaptiveWrapper>
+
+      <AdaptiveWrapper v-if="evmChain">
+        <EvmChainIcon
+          :chain="chain"
+          :size="dense ? '20px' : '26px'"
+        />
       </AdaptiveWrapper>
 
       <ChainIcon

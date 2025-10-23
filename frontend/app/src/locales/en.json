@@ -592,10 +592,10 @@
       },
       "fetch_undecoded_transactions": {
         "error": {
-          "message": "Failed to query breakdown for EVM undecoded transactions: {message}"
+          "message": "Failed to query breakdown for undecoded transactions: {message}"
         },
         "task": {
-          "title": "Retrieving breakdown for EVM undecoded transactions."
+          "title": "Retrieving breakdown for undecoded transactions."
         }
       }
     },

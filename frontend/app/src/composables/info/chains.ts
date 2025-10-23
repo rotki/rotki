@@ -7,7 +7,7 @@ import type {
   SubstrateChainInfo,
   SupportedChains,
 } from '@/types/api/chains';
-import { Blockchain, getTextToken, toHumanReadable, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { Blockchain, getTextToken, toHumanReadable, toSnakeCase } from '@rotki/common';
 import { useSupportedChainsApi } from '@/composables/api/info/chains';
 import { useArrayInclude } from '@/composables/array';
 import { Routes } from '@/router/routes';
@@ -200,9 +200,9 @@ export const useSupportedChains = createSharedComposable(() => {
       const locationVal = get(location);
       const chain = matchChain(locationVal);
       if (!chain)
-        return toSentenceCase(locationVal);
+        return toHumanReadable(locationVal, 'capitalize');
 
-      return get(getChainInfoById(chain))?.name || toSentenceCase(locationVal);
+      return get(getChainInfoById(chain))?.name || toHumanReadable(locationVal, 'capitalize');
     });
 
   const getChainImageUrl = (chain: MaybeRef<string>): ComputedRef<string> => computed<string>(() => {

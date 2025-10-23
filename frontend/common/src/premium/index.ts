@@ -1,7 +1,7 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import type { AssetBalanceWithPrice } from '../balances';
-import type { AssetInfo } from '../data';
+import type { AssetInfoWithId } from '../data';
 import type { BigNumber } from '../numbers';
 import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
 import type { Theme, Themes } from '../settings/themes';
@@ -60,7 +60,7 @@ export interface BalancesApi {
 }
 
 export interface AssetsApi {
-  assetInfo: (identifier: MaybeRef<string>) => ComputedRef<AssetInfo | null>;
+  assetInfo: (identifier: MaybeRef<string>) => ComputedRef<AssetInfoWithId | null>;
   assetSymbol: (identifier: MaybeRef<string>) => ComputedRef<string>;
   tokenAddress: (identifier: MaybeRef<string>) => ComputedRef<string>;
 }
