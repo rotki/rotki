@@ -35,9 +35,8 @@ const exchange = ref<Exchange | undefined>(undefined);
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { evmAndEvmLikeTxChainsInfo, getChain, solanaChainsData } = useSupportedChains();
-const txChains = useArrayMap(evmAndEvmLikeTxChainsInfo, x => x.id);
-const solanaChains = useArrayMap(solanaChainsData, x => x.id);
+const { decodableTxChainsInfo, getChain } = useSupportedChains();
+const decodableChains = useArrayMap(decodableTxChainsInfo, x => x.id);
 
 const accountTypeOptions = computed<{ text: string; value: AccountType }[]>(() => [
   { text: t('transactions.repulling.account_type.blockchain'), value: 'blockchain' },
@@ -51,8 +50,7 @@ const chainOptions = computed(() => {
 
   return [
     'evm',
-    ...get(txChains).filter(chain => accountChains.includes(chain)),
-    ...get(solanaChains).filter(chain => accountChains.includes(chain)),
+    ...get(decodableChains).filter(chain => accountChains.includes(chain)),
   ];
 });
 

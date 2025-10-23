@@ -40,7 +40,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     updateUndecodedTransactionsStatus,
   } = useHistoryStore();
 
-  const { evmAndEvmLikeTxChainsInfo, getChain, getChainName, isEvmLikeChains, isSolanaChains } = useSupportedChains();
+  const { decodableTxChainsInfo, getChain, getChainName, isEvmLikeChains, isSolanaChains } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY);
 
@@ -172,7 +172,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   };
 
   const redecodeTransactions = async (chains: string[] = []): Promise<void> => {
-    const decodeChains = chains.length > 0 ? chains : get(evmAndEvmLikeTxChainsInfo).map(chain => chain.id);
+    const decodeChains = chains.length > 0 ? chains : get(decodableTxChainsInfo).map(chain => chain.id);
 
     await awaitParallelExecution(
       decodeChains,

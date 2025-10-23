@@ -1,7 +1,6 @@
 import type { SettingsUpdate } from '@/types/user';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { promiseTimeout } from '@vueuse/core';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
@@ -55,6 +54,7 @@ describe('settings/EvmChainsToIgnoreSettings.vue', () => {
   beforeEach(async () => {
     wrapper = createWrapper();
     await flushPromises();
+    vi.useFakeTimers();
   });
 
   it('displays no warning by default', () => {
@@ -72,7 +72,7 @@ describe('settings/EvmChainsToIgnoreSettings.vue', () => {
     await input.setValue(chains);
 
     await nextTick();
-    await promiseTimeout(2000); // TODO: figure a way that does not require hardcoding delay in the tests
+    await vi.advanceTimersByTimeAsync(2000);
     await flushPromises();
 
     expect(wrapper.find('.details').exists()).toBeTruthy();
@@ -85,7 +85,7 @@ describe('settings/EvmChainsToIgnoreSettings.vue', () => {
     const input = wrapper.find('.input-value');
     await input.setValue(['ethereum']);
     await nextTick();
-    await promiseTimeout(2000); // TODO: figure a way that does not require hardcoding delay in the tests
+    await vi.advanceTimersByTimeAsync(2000);
     await flushPromises();
     expect(wrapper.find('.details').text()).toContain('settings.not_saved');
   });

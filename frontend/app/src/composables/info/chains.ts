@@ -79,10 +79,14 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const evmAndEvmLikeTxChainsInfo = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
 
-  const allTxChainsInfo = computed<ChainInfo[]>(() => [
+  const decodableTxChainsInfo = computed<ChainInfo[]>(() => [
     ...get(evmAndEvmLikeTxChainsInfo),
-    ...get(bitcoinChainsData),
     ...get(solanaChainsData),
+  ]);
+
+  const allTxChainsInfo = computed<ChainInfo[]>(() => [
+    ...get(decodableTxChainsInfo),
+    ...get(bitcoinChainsData),
   ]);
 
   const evmChains: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.id);
@@ -111,6 +115,12 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const isSolanaChains = (chain: MaybeRef<string>): boolean => {
     const chains = get(solanaChainsData);
+    const selectedChain = get(chain);
+    return chains.some(x => x.id === selectedChain);
+  };
+
+  const isDecodableChains = (chain: MaybeRef<string>): boolean => {
+    const chains = get(decodableTxChainsInfo);
     const selectedChain = get(chain);
     return chains.some(x => x.id === selectedChain);
   };
@@ -231,6 +241,7 @@ export const useSupportedChains = createSharedComposable(() => {
     allEvmChains,
     allTxChainsInfo,
     bitcoinChainsData,
+    decodableTxChainsInfo,
     evmAndEvmLikeTxChainsInfo,
     evmChainNames,
     evmChains,
@@ -246,6 +257,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getEvmChainName,
     getNativeAsset,
     isBtcChains,
+    isDecodableChains,
     isEvm,
     isEvmLikeChains,
     isSolanaChains,
