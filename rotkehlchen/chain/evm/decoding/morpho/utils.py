@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final
 
@@ -39,7 +38,7 @@ VAULT_QUERY_PAGE_SIZE: Final = 200
 VAULT_QUERY: Final = 'items {address symbol name asset {address symbol name decimals} chain {id}}'
 
 
-def _query_morpho_vaults_api() -> list[dict[str, Any]] | None:
+def _query_morpho_vaults_api(chain_id: ChainID) -> list[dict[str, Any]] | None:
     """Query morpho vaults from the morpho blue api.
     Returns vault list or None if there was an error."""
     all_vaults, offset = [], 0
@@ -47,7 +46,7 @@ def _query_morpho_vaults_api() -> list[dict[str, Any]] | None:
         try:
             response_data = requests.post(
                 url=MORPHO_BLUE_API,
-                json={'query': f'query {{ vaults(first:{VAULT_QUERY_PAGE_SIZE} skip:{offset}) {{ {VAULT_QUERY} }} }}'},  # noqa: E501
+                json={'query': f'query {{ vaults(first:{VAULT_QUERY_PAGE_SIZE} skip:{offset} where:{{chainId_in:[{chain_id.value}]}}) {{ {VAULT_QUERY} }} }}'},  # noqa: E501
                 headers={'Content-Type': 'application/json'},
                 timeout=CachedSettings().get_timeout_tuple(),
             )
@@ -105,42 +104,39 @@ def query_morpho_vaults(database: 'DBHandler', chain_id: ChainID) -> None:
     """Query list of Morpho vaults and add the vault tokens to the global database."""
     update_cached_vaults(
         database=database,
-        cache_key=(CacheType.MORPHO_VAULTS,),
+        cache_key=(CacheType.MORPHO_VAULTS, str(chain_id)),
         display_name='Morpho',
         chain=chain_id,
-        query_vaults=_query_morpho_vaults_api,
+        query_vaults=lambda: _query_morpho_vaults_api(chain_id),
         process_vault=_process_morpho_vault,
     )
 
 
-def query_morpho_reward_distributors() -> None:
+def query_morpho_reward_distributors(chain_id: ChainID) -> None:
     """Query Morpho reward distributor addresses from the api and cache them."""
     try:
         response_data = requests.get(
-            url=MORPHO_REWARDS_API,
+            url=f'{MORPHO_REWARDS_API}?chains={chain_id.value}',
             timeout=CachedSettings().get_timeout_tuple(),
         ).json().get('data', [])
     except (requests.RequestException, AttributeError) as e:  # AttributeError to handle if the json is not a dict  # noqa: E501
         log.error(f'Failed to retrieve morpho reward distributors from api due to {e!s}')
         return
 
-    distributors: dict[ChainID, set] = defaultdict(set)
+    distributors = set()
     for item in response_data:
         try:
-            distributors[ChainID.deserialize(item['chain_id'])].add(
-                deserialize_evm_address(item['distributor']['address']),
-            )
+            distributors.add(deserialize_evm_address(item['distributor']['address']))
         except (DeserializationError, TypeError, KeyError) as e:
             error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
             log.error(f'Failed to deserialize morpho reward distributor entry from api due to {error}')  # noqa: E501
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        for chain_id, addresses in distributors.items():
-            globaldb_set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.MORPHO_REWARD_DISTRIBUTORS, str(chain_id)),
-                values=addresses,
-            )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.MORPHO_REWARD_DISTRIBUTORS, str(chain_id)),
+            values=distributors,
+        )
 
 
 def get_morpho_vault_token_price(
