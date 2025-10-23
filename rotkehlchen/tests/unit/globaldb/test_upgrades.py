@@ -1377,6 +1377,10 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute('SELECT counterparty, symbol, local_id FROM counterparty_asset_mappings WHERE local_id = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
             ('solana', 'SOL', old_solana_id),
         ]
+        assert globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(CacheType.MORPHO_VAULTS,),
+        ) == '123'
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 14)
@@ -1427,6 +1431,10 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute('SELECT counterparty, symbol, local_id FROM counterparty_asset_mappings WHERE local_id = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
             ('solana', 'SOL', new_solana_id),
         ]
+        assert globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(CacheType.MORPHO_VAULTS,),
+        ) is None
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

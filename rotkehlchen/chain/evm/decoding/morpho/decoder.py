@@ -67,7 +67,11 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         Returns a fresh addresses to decoders mapping.
         """
         updated = False
-        if should_update_protocol_cache(self.base.database, CacheType.MORPHO_VAULTS) is True:
+        if should_update_protocol_cache(
+                userdb=self.base.database,
+                cache_key=CacheType.MORPHO_VAULTS,
+                args=(str(self.node_inquirer.chain_id),),
+        ) is True:
             query_morpho_vaults(
                 database=self.node_inquirer.database,
                 chain_id=self.node_inquirer.chain_id,
@@ -78,7 +82,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
                 args=(str(self.node_inquirer.chain_id),),
         ) is True:
-            query_morpho_reward_distributors()
+            query_morpho_reward_distributors(chain_id=self.node_inquirer.chain_id)
             updated = True
         if updated is False and len(self.vaults) != 0 and len(self.rewards_distributors) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
