@@ -147,9 +147,9 @@ jobs:
             uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" rotkehlchen/tests/api
           elif [ "${{ matrix.test-group }}" == 'decoders' ]
           then
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" -n 6 rotkehlchen/tests/unit/decoders -v
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" -n 6 rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders -v
           else
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders rotkehlchen/tests/
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
           fi
 
           uv run pytestgeventwrapper.py --dead-fixtures
