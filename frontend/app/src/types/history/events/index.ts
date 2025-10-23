@@ -84,7 +84,10 @@ interface TimeRange {
   readonly toTimestamp: number;
 }
 
-export interface RepullingTransactionPayload extends Partial<ChainAddress>, TimeRange { }
+export interface RepullingTransactionPayload extends TimeRange {
+  readonly chain: string;
+  readonly address?: string;
+}
 
 export interface RepullingTransactionResponse {
   newTransactionsCount: number;

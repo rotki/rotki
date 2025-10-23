@@ -4,6 +4,7 @@ import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Collection } from '@/types/collection';
 import type { Exchange } from '@/types/exchanges';
 import type {
+  ChainAddress,
   LocationAndTxHash,
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,
@@ -108,7 +109,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
       payload,
       userInitiated,
     });
-    startPromise(fetchDataAndLocations());
   }
 
   async function forceRedecodeEvmEvents(data: PullLocationTransactionPayload): Promise<void> {
@@ -204,13 +204,25 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
         userInitiated: true,
       });
     },
-    onRepullTransactions: async (chains: string[]): Promise<void> => {
-      await refreshTransactions({
-        chains,
-        disableEvmEvents: false,
-        payload: undefined,
-        userInitiated: true,
-      });
+    onRepullTransactions: async (account: ChainAddress): Promise<void> => {
+      if (account.address) {
+        await refreshTransactions({
+          chains: [],
+          disableEvmEvents: false,
+          payload: {
+            accounts: [account],
+          },
+          userInitiated: true,
+        });
+      }
+      else {
+        await refreshTransactions({
+          chains: [account.chain],
+          disableEvmEvents: false,
+          payload: undefined,
+          userInitiated: true,
+        });
+      }
     },
     onResetUndecodedTransactions: (): void => {
       resetUndecodedTransactionsStatus();
