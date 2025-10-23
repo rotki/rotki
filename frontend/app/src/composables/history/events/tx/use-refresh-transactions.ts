@@ -30,7 +30,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const { fetchUndecodedTransactionsBreakdown, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
   const { resetUndecodedTransactionsStatus } = useHistoryStore();
-  const { isEvm } = useSupportedChains();
+  const { isDecodableChains } = useSupportedChains();
 
   const { syncTransactionsByChains } = useTransactionSync();
   const { queryAllExchangeEvents, queryOnlineEvent } = useRefreshHandlers();
@@ -93,7 +93,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     if (fullRefresh) {
       // Only refresh all accounts if there are new accounts
       // If only exchanges are new, don't refresh accounts
-      if (hasNewAccounts) {
+      if (hasNewAccounts || userInitiated) {
         accountsToRefresh = getAllAccounts(chains);
       }
       exchangesToRefresh = get(connectedExchanges);
@@ -109,13 +109,13 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       exchangesToRefresh = exchanges || [];
     }
 
-    // Get EVM accounts for query status initialization
-    const evmAccounts = accountsToRefresh.filter(account => get(isEvm(account.chain)));
+    // Get decodable accounts for query status initialization
+    const decodableAccounts = accountsToRefresh.filter(account => isDecodableChains(account.chain));
 
     if (accountsToRefresh.length > 0 || exchangesToRefresh.length > 0) {
       startRefresh(accountsToRefresh, exchangesToRefresh);
       if (accountsToRefresh.length > 0) {
-        initializeQueryStatus(evmAccounts);
+        initializeQueryStatus(decodableAccounts);
         resetUndecodedTransactionsStatus();
       }
     }
@@ -124,7 +124,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     }
 
     try {
-      if (!disableEvmEvents && (fullRefresh || evmAccounts.length > 0))
+      if (fullRefresh || decodableAccounts.length > 0)
         await fetchUndecodedTransactionsStatus();
 
       const asyncOperations: Promise<void>[] = [];
@@ -158,7 +158,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
       queue.queue('fetch-undecoded-transactions-breakdown', fetchUndecodedTransactionsBreakdown);
 
-      if (!disableEvmEvents && evmAccounts.length > 0)
+      if (decodableAccounts.length > 0)
         queue.queue('undecoded-transactions-status-final', fetchUndecodedTransactionsStatus);
     }
     catch (error) {

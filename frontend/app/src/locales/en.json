@@ -5127,8 +5127,12 @@
         "exchange": "Exchange"
       },
       "action": "Re-Pull Events",
+      "add_account_link": "add a blockchain account",
+      "add_exchange_link": "add an exchange",
       "address_hint": "Leave it empty to re-pull transactions from all addresses",
       "exchange": "Exchange",
+      "no_accounts": "You don't have any blockchain accounts registered. Please {link} first.",
+      "no_exchanges": "You don't have any exchanges connected. Please {link} first.",
       "title": "Re-Pulling Events"
     },
     "title": "History Events",

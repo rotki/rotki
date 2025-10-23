@@ -176,7 +176,7 @@ watchImmediate(route, async (route) => {
   await router.replace({ query: {} });
 });
 
-watch(anyEventsDecoding, async (isLoading, wasLoading) => {
+watch(processing, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await actions.fetch.dataAndLocations();
 });

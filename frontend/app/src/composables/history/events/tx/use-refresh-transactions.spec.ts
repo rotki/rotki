@@ -56,7 +56,7 @@ const mockTransactionSync = {
 };
 
 const mockSupportedChains = {
-  isEvm: vi.fn((chain: string) => ref(['eth', 'optimism', 'polygon_pos'].includes(chain))),
+  isDecodableChains: vi.fn((chain: string) => ['eth', 'optimism', 'polygon_pos', 'solana'].includes(chain)),
 };
 
 const mockRefreshHandlers = {
@@ -286,24 +286,40 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('disableEvmEvents parameter', () => {
-    it('should skip undecoded transactions when disableEvmEvents is true', async () => {
+    it('should execute only ETH_WITHDRAWALS and BLOCK_PRODUCTIONS queries when disableEvmEvents is true', async () => {
       const { refreshTransactions } = useRefreshTransactions();
 
       await refreshTransactions({
         disableEvmEvents: true,
+        payload: {
+          accounts: mockEvmAccounts,
+        },
       });
 
-      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus).not.toHaveBeenCalled();
+      expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
+        OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+      );
+      expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
+        OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
+      );
+      expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledTimes(2);
     });
 
-    it('should fetch undecoded transactions when disableEvmEvents is false', async () => {
+    it('should execute custom queries when disableEvmEvents is false', async () => {
       const { refreshTransactions } = useRefreshTransactions();
 
       await refreshTransactions({
         disableEvmEvents: false,
+        payload: {
+          accounts: mockEvmAccounts,
+          queries: [OnlineHistoryEventsQueryType.ETH_WITHDRAWALS],
+        },
       });
 
-      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus).toHaveBeenCalled();
+      expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledWith(
+        OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+      );
+      expect(mockRefreshHandlers.queryOnlineEvent).toHaveBeenCalledTimes(1);
     });
   });
 
