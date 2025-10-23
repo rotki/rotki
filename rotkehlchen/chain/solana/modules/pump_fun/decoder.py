@@ -6,7 +6,6 @@ from rotkehlchen.chain.solana.decoding.constants import ANCHOR_EVENT_DISCRIMINAT
 from rotkehlchen.chain.solana.decoding.interfaces import SolanaDecoderInterface
 from rotkehlchen.chain.solana.decoding.structures import DEFAULT_SOLANA_DECODING_OUTPUT
 from rotkehlchen.chain.solana.decoding.utils import get_data_for_discriminator, match_discriminator
-from rotkehlchen.chain.solana.modules.jupiter.decoder import A_WSOL
 from rotkehlchen.chain.solana.modules.pump_fun.constants import (
     BUY_EVENT_DISCRIMINATOR,
     CPT_PUMP_FUN,
@@ -15,6 +14,7 @@ from rotkehlchen.chain.solana.modules.pump_fun.constants import (
     PUMP_FUN_AMM,
 )
 from rotkehlchen.chain.solana.utils import lamports_to_sol
+from rotkehlchen.constants.assets import A_WSOL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SolanaAddress

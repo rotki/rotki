@@ -6,6 +6,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.solana.modules.jupiter.constants import CPT_JUPITER
 from rotkehlchen.chain.solana.modules.pump_fun.constants import CPT_PUMP_FUN
+from rotkehlchen.constants.assets import A_WSOL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
@@ -111,10 +112,10 @@ def test_swap_with_temp_token_account(
         sequence_index=2,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=FVal(receive_amount := '0.029137025'),
         location_label=solana_accounts[0],
-        notes=f'Receive {receive_amount} SOL as the result of a swap in Jupiter',
+        notes=f'Receive {receive_amount} WSOL as the result of a swap in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'),
     )]
@@ -282,10 +283,10 @@ def test_route_v2_with_multiple_underlying_swaps(
         timestamp=timestamp,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=FVal(wsol_receive_amount := '0.000128863'),
         location_label=user_address,
-        notes=f'Receive {wsol_receive_amount} SOL due to positive slippage in a Jupiter swap',
+        notes=f'Receive {wsol_receive_amount} WSOL due to positive slippage in a Jupiter swap',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('6n9VhCwQ7EwK6NqFDjnHPzEk6wZdRBTfh43RFgHQWHuQ'),
     ), SolanaEvent(
@@ -294,7 +295,7 @@ def test_route_v2_with_multiple_underlying_swaps(
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=FVal(pump_fee_amount1 := '0.000096195'),
         location_label=user_address,
         notes=f'Spend {pump_fee_amount1} WSOL as Pump.fun protocol fee',
@@ -306,7 +307,7 @@ def test_route_v2_with_multiple_underlying_swaps(
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=FVal(pump_fee_amount2 := '0.000031031'),
         location_label=user_address,
         notes=f'Spend {pump_fee_amount2} WSOL as Pump.fun coin creator fee',
@@ -365,10 +366,10 @@ def test_arbitrage_swap(
         sequence_index=9,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=(in_amount_2 := FVal('0.039404601')),
         location_label=user,
-        notes=f'Receive {in_amount_2} SOL as the result of a swap in Jupiter',
+        notes=f'Receive {in_amount_2} WSOL as the result of a swap in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('9MkixYmjT2UbMgnNnPBTYkRjzdmi4zP1jkMdCkR89L67'),
     ), SolanaSwapEvent(
@@ -376,10 +377,10 @@ def test_arbitrage_swap(
         sequence_index=10,
         timestamp=timestamp,
         event_subtype=HistoryEventSubType.SPEND,
-        asset=Asset('solana/token:So11111111111111111111111111111111111111112'),
+        asset=A_WSOL,
         amount=(out_amount_3 := FVal('0.039406767')),
         location_label=user,
-        notes=f'Swap {out_amount_3} SOL in Jupiter',
+        notes=f'Swap {out_amount_3} WSOL in Jupiter',
         counterparty=CPT_JUPITER,
         address=SolanaAddress('GtpsrTHYnfFVm3qkPJtyKVwQLpXT7p2MRy9bp5hYeJnQ'),
     ), SolanaSwapEvent(
