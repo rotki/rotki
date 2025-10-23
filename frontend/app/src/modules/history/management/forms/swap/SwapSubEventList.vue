@@ -116,6 +116,7 @@ defineExpose({
         :timestamp="timestamp"
         :location="location"
         :index="index"
+        :disabled="disabled"
         :single="modelValue.length === 1"
         :solana="solana"
         @remove="remove($event)"
