@@ -342,9 +342,19 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
                 'binance_sc',
                 'zksync_lite',
             ],
+            '0x9008D19f58AAbD9eD0D60971565AA8510560ab41': ['avax', 'zksync_lite'],
         },
         'evm_contracts': {
-            '0x9008D19f58AAbD9eD0D60971565AA8510560ab41': ['all'],
+            '0x9008D19f58AAbD9eD0D60971565AA8510560ab41': [
+                'eth',
+                'optimism',
+                'polygon_pos',
+                'arbitrum_one',
+                'base',
+                'gnosis',
+                'scroll',
+                'binance_sc',
+            ],
         },
     }
 

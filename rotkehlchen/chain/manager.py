@@ -4,7 +4,7 @@ from typing import Generic, TypeVar
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 T_Address = TypeVar('T_Address')
 T_NodeInquirer = TypeVar('T_NodeInquirer', bound=RPCManagerMixin)
@@ -41,3 +41,14 @@ class ChainManagerWithNodesMixin(ABC, Generic[T_NodeInquirer]):
 
     def __init__(self, node_inquirer: T_NodeInquirer) -> None:
         self.node_inquirer = node_inquirer
+
+
+class ChainWithEoA:
+    """Mixin for chain managers where we check if addresses are contracts or EoA"""
+
+    def is_safe_proxy_or_eoa(self, address: ChecksumEvmAddress) -> bool:
+        """Check if an address is a SAFE contract or an EoA
+        This is the base implementation that should be overwritten for chains that
+        implement a custom behaviour.
+        """
+        return True

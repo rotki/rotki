@@ -953,7 +953,12 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 ))
 
             # Maybe decode an onchain message in the input data
-            if len(tx_receipt.logs) == 0 and len(tx.input_data) != 0:
+            if (
+                len(tx_receipt.logs) == 0 and
+                len(tx.input_data) != 0 and
+                tx.to_address is not None and
+                self.evm_inquirer.is_safe_proxy_or_eoa(tx.to_address)
+            ):
                 with suppress(UnicodeDecodeError):
                     events.append(self.base.make_event(
                         tx_ref=tx.tx_hash,

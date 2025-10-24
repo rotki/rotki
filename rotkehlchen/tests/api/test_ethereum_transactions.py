@@ -349,17 +349,21 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     assert_txlists_equal(transactions[0:8], EXPECTED_AFB7_TXS + EXPECTED_4193_TXS)
 
     hashes = [EXPECTED_AFB7_TXS[0].tx_hash.hex(), EXPECTED_4193_TXS[0].tx_hash.hex()]
-    for tx_hash in hashes:
-        response = requests.put(
-            api_url_for(
-                rotkehlchen_api_server,
-                'transactionsdecodingresource',
-            ), json={
-                'async_query': True,
-                'chain': 'eth',
-                'tx_refs': [tx_hash],
-            },
-        )
+    with (patch_safe_check := patch(
+        'rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_safe_proxy_or_eoa',
+        return_value=False,
+    )):
+        for tx_hash in hashes:
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'transactionsdecodingresource',
+                ), json={
+                    'async_query': True,
+                    'chain': 'eth',
+                    'tx_refs': [tx_hash],
+                },
+            )
 
         task_id = assert_ok_async_response(response)
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
@@ -383,7 +387,8 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
             event_ids.add(events[0].identifier)
             assert len(events) == 1
 
-    assert_force_redecode_txns_works(rotkehlchen_api_server)
+    with patch_safe_check:
+        assert_force_redecode_txns_works(rotkehlchen_api_server)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -1016,3 +1016,29 @@ def test_onchain_message(
         notes='Message: https://www.tradingview.com/chart/?symbol=HYPEUSD%2FETHUSD ---------- https://x.com/HyperliquidX ---------- https://x.com/deBridgeFinance',  # noqa: E501
         address=string_to_evm_address('0x290ca4DA2c963deA5AE736469a5B8a53d64d4E6A'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_onchain_message_failed_call(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that a transaction that fails calling a contract (not a Safe)
+    doesn't decode as a message,
+    """
+    tx_hash = deserialize_evm_tx_hash('0xb99780c710aa50fa75ae8109cc11ff13da6c06bc496e0a446625ff67908b006c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1638838415000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.FAIL,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas := '0.006802987722724792'),
+        location_label=ethereum_accounts[0],
+        notes=f'Burn {gas} ETH for gas of a failed transaction',
+        counterparty=CPT_GAS,
+    )]
