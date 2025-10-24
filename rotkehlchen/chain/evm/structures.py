@@ -20,7 +20,7 @@ class EvmTxReceipt:
     tx_hash: EVMTxHash
     chain_id: ChainID
     contract_address: ChecksumEvmAddress | None
-    status: bool
+    status: bool  # False if the transaction failed
     tx_type: int
     logs: list[EvmTxReceiptLog] = dataclasses.field(default_factory=list)
 

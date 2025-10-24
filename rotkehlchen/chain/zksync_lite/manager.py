@@ -16,7 +16,7 @@ from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.manager import ChainManagerWithTransactions
+from rotkehlchen.chain.manager import ChainManagerWithTransactions, ChainWithEoA
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress]):
+class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainWithEoA):
 
     def __init__(
             self,
