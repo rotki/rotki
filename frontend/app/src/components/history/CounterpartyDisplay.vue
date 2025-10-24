@@ -37,7 +37,7 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-3">
+  <div class="flex items-center gap-2">
     <div
       :class="useDarkModeImage ? 'p-0.5 bg-black rounded-md' : 'icon-bg'"
     >

@@ -102,7 +102,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
 
     return {
       ...processedInfo,
-      id: key,
+      identifier: key,
       resolved: !!data,
     };
   });
@@ -150,7 +150,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     if (!asset)
       return undefined;
 
-    const { assetType, id: usedId } = asset;
+    const { assetType, identifier: usedId } = asset;
 
     if (isEvmIdentifier(usedId) && assetType === EVM_TOKEN) {
       return {
