@@ -3,7 +3,6 @@ import type { RouteLocationRaw } from 'vue-router';
 import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import InternalLink from '@/components/helper/InternalLink.vue';
 import { NoteLocation } from '@/types/notes';
 import { getPublicProtocolImagePath } from '@/utils/file';
@@ -106,17 +105,12 @@ onMounted(async () => {
   <div class="container">
     <RuiCard class="[&>div:first-child]:flex">
       <DefineIcon #default="{ image }">
-        <AdaptiveWrapper
-          width="1.5rem"
-          height="1.5rem"
-        >
-          <AppImage
-            contain
-            width="1.5rem"
-            max-height="1.5rem"
-            :src="image"
-          />
-        </AdaptiveWrapper>
+        <AppImage
+          class="icon-bg"
+          contain
+          size="1.5rem"
+          :src="image"
+        />
       </DefineIcon>
       <RuiMenuSelect
         v-model="location"
@@ -125,6 +119,7 @@ onMounted(async () => {
         key-attr="id"
         text-attr="name"
         hide-details
+        :item-height="52"
         variant="outlined"
       >
         <template #selection="{ item: { image, name } }">

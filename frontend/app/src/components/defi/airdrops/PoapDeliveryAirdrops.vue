@@ -3,7 +3,6 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { PoapDeliveryDetails } from '@/types/defi/airdrops';
 import AppImage from '@/components/common/AppImage.vue';
 import images from '@/components/defi/airdrops/poap.json';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 
 defineProps<{ items: PoapDeliveryDetails[] }>();
@@ -69,7 +68,7 @@ function getImage(event: string): string {
     >
       <template #item.name="{ row }">
         <div class="flex items-center gap-4">
-          <AdaptiveWrapper>
+          <div class="icon-bg">
             <AppImage
               class="rounded-full"
               width="36px"
@@ -77,7 +76,7 @@ function getImage(event: string): string {
               contain
               :src="getImage(row.event)"
             />
-          </AdaptiveWrapper>
+          </div>
 
           <div>{{ row.name }}</div>
         </div>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useAirdropsMetadata } from '@/composables/defi/airdrops/metadata';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
@@ -27,17 +26,13 @@ const imageFromIconName = computed(() => {
 
 <template>
   <div class="flex items-center gap-4">
-    <AdaptiveWrapper>
-      <AppImage
-        :src="iconUrl || imageFromIconName || image"
-        width="1.5rem"
-        height="1.5rem"
-        contain
-        :loading="loading"
-        max-height="2rem"
-        max-width="2rem"
-      />
-    </AdaptiveWrapper>
+    <AppImage
+      class="icon-bg"
+      size="1.5rem"
+      :src="iconUrl || imageFromIconName || image"
+      contain
+      :loading="loading"
+    />
     <div>{{ name }}</div>
   </div>
 </template>
