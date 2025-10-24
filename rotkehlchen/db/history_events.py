@@ -63,6 +63,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     BLOCKCHAIN_LOCATIONS_TYPE,
+    CHAINS_WITH_TRANSACTIONS,
     BTCTxId,
     ChainID,
     ChecksumEvmAddress,
@@ -1228,6 +1229,7 @@ class DBHistoryEvents:
             else:
                 eth_on_gas = '0'
 
+            skip_spam_assets = "history_events.asset NOT IN (SELECT value FROM multisettings WHERE name = 'ignored_asset')"  # noqa: E501
             cursor.execute(
                 'SELECT location_label, SUM(CAST(amount AS FLOAT)) FROM history_events JOIN chain_events_info '  # noqa: E501
                 'ON history_events.identifier=chain_events_info.identifier WHERE '
@@ -1240,11 +1242,40 @@ class DBHistoryEvents:
                 'SELECT chain_id, COUNT(DISTINCT event_identifier) as tx_count FROM chain_events_info '  # noqa: E501
                 'JOIN history_events ON chain_events_info.identifier = history_events.identifier '
                 'JOIN evm_transactions ON evm_transactions.tx_hash = chain_events_info.tx_ref '
-                'WHERE history_events.timestamp >= ? AND history_events.timestamp <= ? AND history_events.asset NOT IN '  # noqa: E501
-                "(SELECT value FROM multisettings WHERE name = 'ignored_asset') GROUP BY chain_id",
+                'WHERE history_events.timestamp >= ? AND history_events.timestamp <= ? AND '
+                f'{skip_spam_assets} GROUP BY chain_id',
                 (from_ts_ms, to_ts_ms),
             )
-            transactions_per_chain = {ChainID.deserialize_from_db(row[0]).name: row[1] for row in cursor}  # noqa: E501
+            transactions_per_chain: dict[str, int] = {}
+            for row in cursor:
+                chain = ChainID.deserialize_from_db(row[0]).to_blockchain()
+                transactions_per_chain[chain.name] = row[1]
+
+            cursor.execute(
+                'SELECT COUNT(DISTINCT history_events.event_identifier) FROM chain_events_info '
+                'JOIN history_events ON chain_events_info.identifier = history_events.identifier '
+                'WHERE history_events.location = ? AND history_events.timestamp >= ? AND history_events.timestamp <= ? '  # noqa: E501
+                f'AND {skip_spam_assets}',
+                (Location.SOLANA.serialize_for_db(), from_ts_ms, to_ts_ms),
+            )
+            if solana_count := cursor.fetchone()[0]:
+                transactions_per_chain[SupportedBlockchain.SOLANA.name] = solana_count
+
+            cursor.execute(
+                'SELECT location, COUNT(DISTINCT event_identifier) FROM history_events '
+                'WHERE location IN (?, ?) AND timestamp >= ? AND timestamp <= ? '
+                f'AND {skip_spam_assets} GROUP BY location',
+                (
+                    Location.BITCOIN.serialize_for_db(),
+                    Location.BITCOIN_CASH.serialize_for_db(),
+                    from_ts_ms,
+                    to_ts_ms,
+                ),
+            )
+            for row in cursor:
+                chain = SupportedBlockchain.from_location(Location.deserialize_from_db(row[0]))  # type: ignore  # Location here is only blockchain locations
+                transactions_per_chain[chain.name] = row[1]
+
             cursor.execute(
                 f'SELECT location, COUNT(DISTINCT event_identifier) AS unique_events FROM history_events '  # noqa: E501
                 f'WHERE location IN ({",".join("?" * len(possible_trades_locations := ALL_SUPPORTED_EXCHANGES + (Location.EXTERNAL,)))}) AND timestamp BETWEEN ? AND ? GROUP BY location',  # noqa: E501
@@ -1269,14 +1300,17 @@ class DBHistoryEvents:
                 {'symbol': symbol, 'amount': str(amount)}
                 for symbol, amount in cursor
             ]
+
+            placeholders = ','.join('?' * len(CHAINS_WITH_TRANSACTIONS))
+            bindings = tuple(Location.from_chain(blockchain).serialize_for_db() for blockchain in CHAINS_WITH_TRANSACTIONS)  # noqa: E501
             cursor.execute(
                 "SELECT unixepoch(date(datetime(timestamp/1000, 'unixepoch'), 'localtime'), 'utc'), COUNT(DISTINCT event_identifier) as tx_count "  # noqa: E501
-                'FROM chain_events_info JOIN history_events ON chain_events_info.identifier = history_events.identifier '  # noqa: E501
-                'WHERE timestamp >= ? AND timestamp <= ? AND history_events.asset NOT IN '
+                f'FROM history_events WHERE location IN ({placeholders}) '
+                'AND timestamp >= ? AND timestamp <= ? AND asset NOT IN '
                 "(SELECT value FROM multisettings WHERE name = 'ignored_asset') "
                 "GROUP BY date(datetime(timestamp/1000, 'unixepoch'), 'localtime') ORDER BY "
                 'tx_count DESC LIMIT 10',
-                (from_ts_ms, to_ts_ms),
+                (*bindings, from_ts_ms, to_ts_ms),
             )
             top_days_by_number_of_transactions = [{
                 'timestamp': row[0],

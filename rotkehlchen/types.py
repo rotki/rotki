@@ -563,7 +563,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     @classmethod
-    def from_location(cls, location: 'EVM_EVMLIKE_LOCATIONS_TYPE') -> 'SupportedBlockchain':
+    def from_location(cls, location: 'BLOCKCHAIN_LOCATIONS_TYPE') -> 'SupportedBlockchain':
         """
         Turns a location to a supported chain.
         Caller has to make sure Location is a blockchain, otherwise AttributeError is raised.

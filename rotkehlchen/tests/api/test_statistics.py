@@ -9,14 +9,17 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR, A_USDC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR, A_SOL, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
@@ -30,8 +33,11 @@ from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
+    make_btc_tx_id,
     make_evm_address,
     make_evm_tx_hash,
+    make_solana_address,
+    make_solana_signature,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -42,6 +48,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -707,3 +714,45 @@ def test_query_events_analysis(
     assert result['gnosis_max_payments_by_currency'] == [{'symbol': 'EUR', 'amount': '42.24'}]
     assert result['transactions_per_protocol'] == [{'protocol': 'ens', 'transactions': 1}]
     assert result['score'] == 1684
+
+
+def test_wrap_stats_counts_non_evm_chains(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Ensure wrap stats include Solana and Bitcoin transaction counts."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    events_db = DBHistoryEvents(db)
+    with db.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[SolanaEvent(
+                tx_ref=make_solana_signature(),
+                sequence_index=0,
+                timestamp=(ts_ms := TimestampMS(1609459200000)),
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_SOL,
+                amount=ONE,
+                location_label=str(make_solana_address()),
+            ), HistoryEvent(
+                event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{make_btc_tx_id()}',
+                sequence_index=0,
+                timestamp=ts_ms,
+                location=Location.BITCOIN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=ONE,
+                location_label=str(UNIT_BTC_ADDRESS1),
+            )],
+        )
+
+    response = requests.post(
+        url=api_url_for(rotkehlchen_api_server, 'eventsanalysisresource'),
+        json={'from_timestamp': 1609459200, 'to_timestamp': 1609459800},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    transactions_per_chain = result['transactions_per_chain']
+    assert transactions_per_chain.get(SupportedBlockchain.SOLANA.name) == 1
+    assert transactions_per_chain.get(SupportedBlockchain.BITCOIN.name) == 1
