@@ -35,9 +35,11 @@ const chainItems = computed<Array<[string, BigNumber]>>(() => {
     <template #header>
       {{ t('wrapped.transactions_by_chain') }}
     </template>
-    <template #label="{ item }">
+    <template #label="{ item, index }">
+      <span>{{ index + 1 }}.</span>
       <ChainDisplay
         dense
+        class="[&>div:first-child]:!w-auto"
         :chain="getChain(item[0].toLowerCase())"
       />
     </template>
