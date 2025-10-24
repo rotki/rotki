@@ -1,5 +1,5 @@
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
-import { AssetCollection, AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
+import { AssetCollection, AssetInfoWithId, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
 import { z } from 'zod/v4';
 import { CollectionCommonFields } from '@/types/collection';
 
@@ -31,16 +31,6 @@ export interface AssetMergePayload {
   readonly sourceIdentifier: string;
   readonly targetIdentifier: string;
 }
-
-export const AssetInfoWithId = z.object({
-  ...AssetInfo.shape,
-  identifier: z.string().min(1),
-}).transform((data: any) => ({
-  ...data,
-  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset',
-}));
-
-export type AssetInfoWithId = z.infer<typeof AssetInfoWithId>;
 
 export const AssetsWithId = z.array(AssetInfoWithId);
 

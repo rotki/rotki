@@ -592,10 +592,10 @@
       },
       "fetch_undecoded_transactions": {
         "error": {
-          "message": "Failed to query breakdown for EVM undecoded transactions: {message}"
+          "message": "Failed to query breakdown for undecoded transactions: {message}"
         },
         "task": {
-          "title": "Retrieving breakdown for EVM undecoded transactions."
+          "title": "Retrieving breakdown for undecoded transactions."
         }
       }
     },
@@ -4631,7 +4631,7 @@
     "visible_timeframes": "Visible Timeframes"
   },
   "toggle_location_link": {
-    "disabled": "This functionality is available only for evm chains or solana",
+    "disabled": "This functionality is available only for EVM chains or solana",
     "limited": "Only assets available in {location} will be displayed.",
     "unlimited": "All supported assets will be displayed."
   },
@@ -5022,7 +5022,7 @@
         "true": "All transactions have been processed."
       },
       "decoding": {
-        "all": "Redecoding EVM transactions",
+        "all": "Redecoding transactions",
         "all_done": "Redecoding finished",
         "done": "Decoded {count} transaction | Decoded {count} transactions",
         "eth_block_events": "Redecoding ETH block events",
