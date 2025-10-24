@@ -42,9 +42,6 @@ const link = externalLinks.applyTheGraphApiKey;
     :title="t('external_services.thegraph.title')"
     :subtitle="t('external_services.thegraph.description')"
     :image-src="getPublicServiceImagePath('thegraph.svg')"
-    :primary-action="key
-      ? t('external_services.replace_key')
-      : t('external_services.save_key')"
     :action-disabled="!serviceKeyRef?.currentValue"
     @confirm="saveHandler()"
   >
@@ -61,7 +58,7 @@ const link = externalLinks.applyTheGraphApiKey;
             size="16"
           />
         </template>
-        {{ t('external_services.delete_key') }}
+        {{ t('external_services.actions.delete_key') }}
       </RuiButton>
     </template>
     <ServiceKey

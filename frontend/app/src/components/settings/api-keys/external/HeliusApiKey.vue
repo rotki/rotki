@@ -41,9 +41,6 @@ function removeHeliusNotification() {
     :title="t('external_services.helius.title')"
     :subtitle="t('external_services.helius.description')"
     :image-src="getPublicServiceImagePath('helius.svg')"
-    :primary-action="key
-      ? t('external_services.replace_key')
-      : t('external_services.save_key')"
     :action-disabled="!serviceKeyRef?.currentValue"
     @confirm="saveHandler()"
   >
@@ -61,7 +58,7 @@ function removeHeliusNotification() {
             size="16"
           />
         </template>
-        {{ t('external_services.delete_key') }}
+        {{ t('external_services.actions.delete_key') }}
       </RuiButton>
     </template>
 

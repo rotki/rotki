@@ -32,9 +32,6 @@ const navigateToModules = () => router.push(Routes.SETTINGS_MODULES);
     :title="t('external_services.loopring.title')"
     :subtitle="t('external_services.loopring.description')"
     :image-src="getPublicProtocolImagePath('loopring.svg')"
-    :primary-action="key
-      ? t('external_services.replace_key')
-      : t('external_services.save_key')"
     :action-disabled="!serviceKeyRef?.currentValue"
     @confirm="saveHandler()"
   >
@@ -51,7 +48,7 @@ const navigateToModules = () => router.push(Routes.SETTINGS_MODULES);
             size="16"
           />
         </template>
-        {{ t('external_services.delete_key') }}
+        {{ t('external_services.actions.delete_key') }}
       </RuiButton>
     </template>
     <ServiceKey

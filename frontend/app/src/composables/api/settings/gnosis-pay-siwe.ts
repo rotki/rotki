@@ -16,6 +16,13 @@ export function useGnosisPaySiweApi(): GnosisPaySiweApiReturn {
       '/services/gnosispay/admins',
     );
 
+    return {
+      '0xf0EcFB84c93301B41E44140315c45Bf14E542Agg': [
+        '0xf0EcFB84c93301B41E44140315c45Bf14E542Acc',
+        '0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5dd',
+      ],
+    };
+
     return handleResponse(response);
   };
 

@@ -2404,6 +2404,15 @@
     "tx_url": "Transactions will open at {txUrl}"
   },
   "external_services": {
+    "actions": {
+      "authenticate": "Authenticate",
+      "delete_key": "Delete key",
+      "enter_api_key": "Enter API key",
+      "reauthenticate": "Re-Authenticate",
+      "remove_authentication": "Remove Authentication",
+      "replace_key": "Replace key",
+      "save_key": "Save key"
+    },
     "alchemy": {
       "description": "rotki uses alchemy to obtain price information about assets in your portfolio. An API key is needed if you want it included in your list of oracles.",
       "hint": "Enter your Alchemy API key",
@@ -2444,8 +2453,6 @@
     "delete_error": {
       "description": "Error while removing the external service api keys: {message}"
     },
-    "delete_key": "Delete key",
-    "enter_api_key": "Enter API key",
     "etherscan": {
       "api_key_message": "Please add an Etherscan API key to be able to query historical EVM transactions.",
       "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
@@ -2454,6 +2461,10 @@
     },
     "get_api_key": "You can apply for an API key {link}",
     "gnosispay": {
+      "delete_confirmation": {
+        "message": "Are you sure you want to remove authentication for Gnosis Pay?",
+        "title": "Remove Authentication"
+      },
       "description": "Authenticate with Gnosis Pay using your Ethereum wallet to access your transaction data.",
       "errors": {
         "allowed_admin_addresses": "Allowed admin addresses:",
@@ -2461,6 +2472,7 @@
         "invalid_address": "This address is not registered as an on-chain admin for any Gnosis Pay account. You can still proceed with sign-in as there may be other authorized addresses not visible on-chain. The registered admin addresses are listed below for reference.",
         "no_registered_accounts": "No Gnosis Pay safe accounts are registered in rotki. Please add a Gnosis Pay safe account first before attempting to authenticate.",
         "no_wallet_connected": "No wallet connected",
+        "safe_wallet": "Safe Wallet:",
         "signature_rejected": "Signature request was rejected by user",
         "unknown": "An unknown error occurred"
       },
@@ -2469,13 +2481,13 @@
         "connected_address": "Connected Address",
         "controlled_safe": "Controlled Gnosis Pay Safe account(s):",
         "disconnect": "Disconnect Wallet",
-        "explanation": "To authenticate with Gnosis Pay, you need to sign a message with your Ethereum wallet. Connect your wallet and sign the message to generate a session token.",
+        "explanation": "To authenticate with Gnosis Pay, you need to sign a message with an Ethereum wallet that is a controller of the Gnosis Pay Safe.",
         "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
         "sign_message": "Sign Message to Authenticate",
         "step1_title": "Select Wallet Mode & Connect",
         "step2_title": "Checking connected address eligibility",
         "step3_title": "Sign Authentication Message",
-        "success": "Successfully authenticated with Gnosis Pay! You can now close this dialog.",
+        "success_message": "Successfully authenticated with Gnosis Pay",
         "validating_address": "Validating address..."
       },
       "title": "Gnosis Pay"
@@ -2543,8 +2555,6 @@
       "hint": "Enter your OpenSea API key",
       "title": "Opensea"
     },
-    "replace_key": "Replace key",
-    "save_key": "Save key",
     "search": "Search for external services",
     "set": {
       "error": {
@@ -3697,7 +3707,6 @@
     },
     "deserialization_error": "We could not deserialize {count} assets for your accounts, please check the application logs for more information.",
     "gnosis_pay_session_key_expired": {
-      "replace_key": "Replace key",
       "title": "Gnosis Pay session key expired"
     },
     "missing_api_key": {

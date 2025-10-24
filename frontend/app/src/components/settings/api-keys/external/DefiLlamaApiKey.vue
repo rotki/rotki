@@ -25,9 +25,6 @@ const link = externalLinks.defillamaApiKey;
     :title="t('external_services.defillama.title')"
     :subtitle="t('external_services.defillama.description')"
     :image-src="getPublicServiceImagePath('defillama.svg')"
-    :primary-action="key
-      ? t('external_services.replace_key')
-      : t('external_services.save_key')"
     :action-disabled="!serviceKeyRef?.currentValue"
     @confirm="saveHandler()"
   >
@@ -44,7 +41,7 @@ const link = externalLinks.defillamaApiKey;
             size="16"
           />
         </template>
-        {{ t('external_services.delete_key') }}
+        {{ t('external_services.actions.delete_key') }}
       </RuiButton>
     </template>
     <ServiceKey

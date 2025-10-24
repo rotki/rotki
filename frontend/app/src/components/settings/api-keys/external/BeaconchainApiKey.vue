@@ -40,9 +40,6 @@ function removeBeaconchainNotification() {
     :title="t('external_services.beaconchain.title')"
     :subtitle="t('external_services.beaconchain.description')"
     :image-src="getPublicServiceImagePath('beaconchain.svg')"
-    :primary-action="key
-      ? t('external_services.replace_key')
-      : t('external_services.save_key')"
     :action-disabled="!serviceKeyRef?.currentValue"
     @confirm="saveHandler()"
   >
@@ -59,7 +56,7 @@ function removeBeaconchainNotification() {
             size="16"
           />
         </template>
-        {{ t('external_services.delete_key') }}
+        {{ t('external_services.actions.delete_key') }}
       </RuiButton>
     </template>
     <ServiceKey
