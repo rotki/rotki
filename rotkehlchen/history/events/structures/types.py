@@ -175,8 +175,8 @@ class EventCategory(Enum):
     RECEIVE_PAYMENT = 41, EventDirection.IN
     RECEIVE_GRANT = 42, EventDirection.IN
     INTEREST = 43, EventDirection.IN
-    CEX_DEPOSIT = 44, EventDirection.IN
-    CEX_WITHDRAWAL = 45, EventDirection.OUT
+    CEX_DEPOSIT = 44, EventDirection.NEUTRAL
+    CEX_WITHDRAWAL = 45, EventDirection.NEUTRAL
     CASHBACK = 46, EventDirection.IN
     HACK_LOSS = 47, EventDirection.OUT
     CLAWBACK = 48, EventDirection.OUT
@@ -188,6 +188,8 @@ class EventCategory(Enum):
     LIQUIDITY_PROVISION_LOSS = 54, EventDirection.OUT
     RETURN = 55, EventDirection.OUT
     MESSAGE = 56, EventDirection.NEUTRAL
+    ACCOUNT_DEPOSIT = 57, EventDirection.NEUTRAL
+    ACCOUNT_WITHDRAWAL = 58, EventDirection.NEUTRAL
 
     @property
     def direction(self) -> EventDirection:

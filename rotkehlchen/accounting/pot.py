@@ -287,11 +287,16 @@ class AccountingPot(CustomizableDateMixin):
                 rate=price,
                 taxable_spend=taxable,
             )
-        taxable_amount = taxable_amount_ratio * amount
-        free_amount = amount - taxable_amount
+
         if spend_cost:
             taxable_amount = spend_cost.taxable_amount
             free_amount = amount - spend_cost.taxable_amount
+        elif taxable:
+            taxable_amount = taxable_amount_ratio * amount
+            free_amount = amount - taxable_amount
+        else:
+            taxable_amount = ZERO
+            free_amount = amount
 
         spend_event = ProcessedAccountingEvent(
             event_type=event_type,

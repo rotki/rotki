@@ -1062,21 +1062,23 @@ def test_swaps_taxability(
         general_extra_data={},
     )
     if taxable and include_crypto2crypto:
-        expected_pnl_taxable = ONE
+        expected_taxable = ONE
+        expected_free = ZERO
         expected_pnl_totals = PnlTotals(
             totals={AccountingEventType.TRANSACTION_EVENT: PNL(taxable=ONE)},
         )
     else:
-        expected_pnl_taxable = ZERO
+        expected_taxable = ZERO
+        expected_free = ONE
         expected_pnl_totals = PnlTotals()
 
     assert pot.pnls == expected_pnl_totals
     assert len(pot.processed_events) == 2
 
     # Check the spend event
-    assert pot.processed_events[0].taxable_amount == ONE
-    assert pot.processed_events[0].free_amount == ZERO
-    assert pot.processed_events[0].pnl.taxable == expected_pnl_taxable
+    assert pot.processed_events[0].taxable_amount == expected_taxable
+    assert pot.processed_events[0].free_amount == expected_free
+    assert pot.processed_events[0].pnl.taxable == expected_taxable
     assert pot.processed_events[0].pnl.free == ZERO
 
     # Check the acquisition part - still never taxable regardless of settings

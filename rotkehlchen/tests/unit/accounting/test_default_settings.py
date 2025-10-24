@@ -199,21 +199,23 @@ def test_accounting_receive_settings(
     assert accounting_pot.pnls.free == ZERO
 
 
-@pytest.mark.parametrize(('event_type', 'event_subtype', 'is_taxable', 'counterparty', 'gas_taxable', 'include_crypto2crypto'), [  # noqa: E501
-    (HistoryEventType.SPEND, HistoryEventSubType.NONE, True, None, False, False),
-    (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, None, False, False),
-    (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, CPT_GAS, True, False),
-    (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, CPT_GAS, True, True),
-    (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, False),
-    (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, True),
+@pytest.mark.parametrize(('event_type', 'event_subtype', 'notes', 'is_taxable', 'counterparty', 'gas_taxable', 'include_crypto2crypto'), [  # noqa: E501
+    (HistoryEventType.SPEND, HistoryEventSubType.NONE, 'Send 0.5 ETH to 0xABC', True, None, False, False),  # noqa: E501
+    (HistoryEventType.SPEND, HistoryEventSubType.FEE, 'Pay fee of 0.5 ETH', True, None, False, False),  # noqa: E501
+    (HistoryEventType.SPEND, HistoryEventSubType.FEE, 'Burn 0.5 ETH for gas', True, CPT_GAS, True, False),  # noqa: E501
+    (HistoryEventType.SPEND, HistoryEventSubType.FEE, 'Burn 0.5 ETH for gas', True, CPT_GAS, True, True),  # noqa: E501
+    (HistoryEventType.SPEND, HistoryEventSubType.FEE, 'Burn 0.5 ETH for gas', False, CPT_GAS, False, False),  # noqa: E501
+    (HistoryEventType.SPEND, HistoryEventSubType.FEE, 'Burn 0.5 ETH for gas', False, CPT_GAS, False, True),  # noqa: E501
 ])
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
 def test_accounting_spend_settings(
         accounting_pot: 'AccountingPot',
         event_type: 'HistoryEventType',
         event_subtype: 'HistoryEventSubType',
+        notes: str,
         is_taxable: bool,
         counterparty: str | None,
+        gas_taxable: bool,
         include_crypto2crypto,
 ):
     _gain_one_ether(events_accountant=accounting_pot.events_accountant)
@@ -225,7 +227,7 @@ def test_accounting_spend_settings(
         location_label=EXAMPLE_ADDRESS,
         asset=A_ETH,
         amount=FVal(0.5),
-        notes='Send 0.5 ETH to 0xABC',
+        notes=notes,
         event_type=event_type,
         event_subtype=event_subtype,
         counterparty=counterparty,
@@ -263,14 +265,16 @@ def test_accounting_spend_settings(
         taxable_pnl = -FVal(1000)
     elif is_taxable and counterparty == CPT_GAS and include_crypto2crypto is False:
         taxable_pnl = -FVal(1500)
+
+    free_amount, taxable_amount = (FVal(0.5), ZERO) if counterparty == CPT_GAS and not gas_taxable else (ZERO, FVal(0.5))  # noqa: E501
     expected_event = ProcessedAccountingEvent(
         event_type=AccountingEventType.TRANSACTION_EVENT,
-        notes='Send 0.5 ETH to 0xABC',
+        notes=notes,
         location=Location.ETHEREUM,
         timestamp=TIMESTAMP_2_SECS,
         asset=A_ETH,
-        free_amount=ZERO,
-        taxable_amount=FVal(0.5),
+        free_amount=free_amount,
+        taxable_amount=taxable_amount,
         price=Price(ETH_PRICE_TS_2),
         pnl=PNL(taxable=taxable_pnl, free=ZERO),
         cost_basis=cost_basis,
