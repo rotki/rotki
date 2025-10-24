@@ -1,10 +1,12 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import type { ConfirmationMessage } from '@/modules/history/events/composables/use-deletion-strategies';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import { assert, toCapitalCase, transformCase } from '@rotki/common';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { useConfirmStore } from '@/store/confirm';
+import { DialogType } from '@/types/dialogs';
 import { logger } from '@/utils/logging';
 
 function getName(name: ExternalServiceName, chain?: string): string {
@@ -29,7 +31,7 @@ interface UseExternalApiKeysReturn {
   actionStatus: (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>) => ComputedRef<Status | undefined>;
   load: () => Promise<void>;
   save: (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => Promise<void>;
-  confirmDelete: (name: string, postConfirmAction?: () => Promise<void> | void) => void;
+  confirmDelete: (name: string, postConfirmAction?: () => Promise<void> | void, confirmation?: Partial<ConfirmationMessage>) => void;
   keys: Ref<ExternalServiceKeys | undefined>;
 }
 
@@ -156,13 +158,14 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     }
   };
 
-  const confirmDelete = (name: string, postConfirmAction?: () => Promise<void> | void): void => {
+  const confirmDelete = (name: string, postConfirmAction?: () => Promise<void> | void, confirmation: Partial<ConfirmationMessage> = {}): void => {
     resetStatus(name);
     show(
       {
         message: t('external_services.confirmation.message'),
         title: t('external_services.confirmation.title'),
-        type: 'info',
+        ...confirmation,
+        type: DialogType.WARNING,
       },
       async () => {
         await deleteService(name);

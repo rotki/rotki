@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ContextColorsType } from '@rotki/ui-library';
-import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 
 interface Props {
   size?: 'sm' | 'lg';
@@ -9,9 +8,10 @@ interface Props {
   fullWidth?: boolean;
   disabled?: boolean;
   loading?: boolean;
+  connected: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   color: 'primary',
   disabled: false,
   fullWidth: false,
@@ -26,12 +26,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { connected, connectedAddress } = storeToRefs(useWalletStore());
-
 function getButtonText(): string {
-  if (get(connected)) {
-    const address = get(connectedAddress);
-    return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : t('trade.actions.disconnect');
+  if (props.connected) {
+    return t('trade.actions.disconnect');
   }
   return t('trade.actions.connect_wallet');
 }
