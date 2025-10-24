@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_OMG
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -64,11 +64,6 @@ def independentreserve_asset(symbol: str) -> AssetWithOracles:
     - UnsupportedAsset
     - UnknownAsset
     """
-    if symbol == 'Xbt':  # TODO: @yabirgb In develop move those to assets mappings https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=128888662  # noqa: E501
-        return A_BTC.resolve_to_crypto_asset()
-    elif symbol == 'Omg':
-        return A_OMG.resolve_to_crypto_asset()
-
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
         exchange=Location.INDEPENDENTRESERVE,
         symbol=symbol,
