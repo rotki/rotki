@@ -8,9 +8,11 @@ from solders.solders import Pubkey, Signature
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
@@ -25,6 +27,7 @@ from rotkehlchen.types import (
     BTCTxId,
     ChainID,
     ChecksumEvmAddress,
+    Eth2PubKey,
     EvmTransaction,
     EVMTxHash,
     HexColorCode,
@@ -36,7 +39,7 @@ from rotkehlchen.types import (
     TokenKind,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -311,3 +314,20 @@ def make_solana_address() -> SolanaAddress:
 
 def make_solana_signature() -> Signature:
     return Signature.new_unique()
+
+
+def make_eth2_deposit_event(pubkey: Eth2PubKey, depositor: ChecksumEvmAddress) -> EvmEvent:
+    """Utility function to create a standard ETH2 deposit event."""
+    return EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=ts_sec_to_ms(make_random_timestamp()),
+        location=Location.ETHEREUM,
+        location_label=depositor,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=A_ETH,
+        amount=FVal(32),
+        notes=f'Deposit 32 ETH to validator with pubkey {pubkey}. Deposit index: 123.',
+        counterparty=CPT_ETH2,
+    )
