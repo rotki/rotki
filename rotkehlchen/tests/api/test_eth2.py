@@ -40,7 +40,11 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import (
+    make_eth2_deposit_event,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     ChainID,
@@ -112,17 +116,26 @@ def test_staking_performance(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
-    validator_index = 1187604
+    # Create deposit event to link depositor address with validator
+    with (db := rotkehlchen_api_server.rest_api.rotkehlchen.data.db).conn.write_ctx() as write_cursor:  # noqa: E501
+        DBHistoryEvents(db).add_history_event(
+            write_cursor=write_cursor,
+            event=make_eth2_deposit_event(
+                pubkey=(pubkey := Eth2PubKey('0xa2de832511231af4bf98083e68c67aa6429c8c2b08920302d1d6953298f3720c8d5ca22c08a54fffa2efab782e25dba8')),  # noqa: E501
+                depositor=(depositor := string_to_evm_address('0xf93eba7D7a8C5c5c663d776e8890CB37fF5525ef')),  # noqa: E501
+            ),
+        )
+
     response = requests.put(api_url_for(  # track the depositor address
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json={'accounts': [{'address': '0xf93eba7D7a8C5c5c663d776e8890CB37fF5525ef'}]})
+    ), json={'accounts': [{'address': depositor}]})
     assert_proper_sync_response_with_result(response)
     detected_validator = ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1707319895),
-        validator_index=validator_index,
-        public_key=Eth2PubKey('0xa2de832511231af4bf98083e68c67aa6429c8c2b08920302d1d6953298f3720c8d5ca22c08a54fffa2efab782e25dba8'),
+        validator_index=(validator_index := 1187604),
+        public_key=pubkey,
         withdrawal_address=ethereum_accounts[0],
         status=ValidatorStatus.ACTIVE,
         validator_type=ValidatorType.DISTRIBUTING,
@@ -220,6 +233,16 @@ def test_staking_performance_filtering_pagination(
         '0x53DeB4aF24c7c8D04832B43C2B21fa75e50A145d',  # depositor of normal validator
         '0x7aF51C7e6ebcbb4cCC39e4C5061cb5CBfBC1F74A',  # depositor of exited validator
     ]
+    # Create deposit events to link depositor addresses with validators
+    with (db := rotkehlchen_api_server.rest_api.rotkehlchen.data.db).conn.write_ctx() as write_cursor:  # noqa: E501
+        DBHistoryEvents(db).add_history_events(
+            write_cursor=write_cursor,
+            history=[make_eth2_deposit_event(
+                pubkey=Eth2PubKey(f'0xa2de832511231af4bf98083e68c67aa6429c8c2b08920302d1d6953298f3720c8d5ca22c08a54fffa2efab782e25dba{idx}'),
+                depositor=string_to_evm_address(address),
+            ) for idx, address in enumerate(addresses)],
+        )
+
     data = {'accounts': [{'address': x} for x in addresses], 'async_query': False}
     response = requests.put(api_url_for(  # track the depositor address
         rotkehlchen_api_server,
