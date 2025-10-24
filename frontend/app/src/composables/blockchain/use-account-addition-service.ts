@@ -52,7 +52,7 @@ interface ChainAccountAdditionParams {
   modulesToEnable?: Module[];
 }
 
-type RefreshAccountsCallback = (chain?: string) => Promise<void>;
+type RefreshAccountsCallback = (chain?: string, addresses?: string[]) => Promise<void>;
 
 type EvmCompletionCallback = (params: EvmAccountAdditionParams) => Promise<void>;
 
@@ -104,7 +104,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       modulesToEnable,
     } = params;
 
-    await onRefreshAccounts(chain);
+    await onRefreshAccounts(chain, addedAccounts.map(item => item.address));
     const chains = chain ? [chain] : get(supportedChains).map(chain => chain.id);
     // Sort accounts by chain, so they are called in order
     const sortedAccounts = addedAccounts.sort(CHAIN_ORDER_COMPARATOR(chains));

@@ -1,4 +1,5 @@
 import type { ActionResult, Nullable } from '@rotki/common';
+import type { FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
 import type { PurgeableModule } from '@/types/modules';
 import type { PendingTask } from '@/types/task';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
@@ -12,7 +13,7 @@ import {
 import { EvmTokensRecord } from '@/types/balances';
 
 interface UseBlockchainBalancesApiReturn {
-  queryBlockchainBalances: (ignoreCache?: boolean, blockchain?: string, usdValueThreshold?: string) => Promise<PendingTask>;
+  queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, usdValueThreshold?: string) => Promise<PendingTask>;
   queryLoopringBalances: () => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
   fetchDetectedTokensTask: (chain: string, addresses: string[]) => Promise<PendingTask>;
@@ -28,13 +29,14 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     return handleResponse(response);
   };
 
-  const queryBlockchainBalances = async (ignoreCache = false, blockchain?: string, usdValueThreshold?: string): Promise<PendingTask> => {
+  const queryBlockchainBalances = async ({ addresses, blockchain, ignoreCache }: FetchBlockchainBalancePayload, usdValueThreshold?: string): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
 
     const response = await api.instance.get<ActionResult<PendingTask>>(url, {
       params: snakeCaseTransformer({
+        addresses: addresses && addresses.length > 0 ? addresses.join(',') : undefined,
         asyncQuery: true,
         ignoreCache: ignoreCache ? true : undefined,
         usdValueThreshold,

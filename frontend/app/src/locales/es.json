@@ -48,7 +48,7 @@
     "labels": {
       "addresses": "Direcciones",
       "addresses_entries": "sin entradas | {count} entrada única | {count} entradas únicas",
-      "addresses_hint": "Inserte múltiples direcciones separadas por comas",
+      "addresses_hint": "Inserte múltiples direcciones separadas por comas o saltos de línea",
       "blockchain": "Elija cadena de bloques | Elija cadenas de bloques",
       "btc": {
         "derivation_path": "Ruta de Derivación",

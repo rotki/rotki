@@ -19,7 +19,7 @@ interface UseBlockchainsReturn {
   addEvmAccounts: (payload: AddAccountsPayload, options?: AddAccountsOption) => Promise<void>;
   detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
-  refreshAccounts: (blockchain?: MaybeRef<string>, periodic?: boolean) => Promise<void>;
+  refreshAccounts: (blockchain?: MaybeRef<string>, addresses?: string[], periodic?: boolean) => Promise<void>;
 }
 
 export function useBlockchains(): UseBlockchainsReturn {

@@ -134,7 +134,6 @@ describe('useBlockchainBalances', () => {
       await blockchainBalances.fetchBlockchainBalances();
 
       expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(0);
-      expect(api.queryBlockchainBalances).not.toHaveBeenCalledWith(false, 'eth');
 
       // call if there's account
       updateAccounts(Blockchain.ETH, [
@@ -147,7 +146,11 @@ describe('useBlockchainBalances', () => {
       await blockchainBalances.fetchBlockchainBalances();
 
       expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(api.queryBlockchainBalances).toHaveBeenCalledWith(false, 'eth', undefined);
+      expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+        addresses: undefined,
+        blockchain: 'eth',
+        ignoreCache: false,
+      }, undefined);
     });
 
     describe('particular blockchain', () => {
@@ -163,7 +166,11 @@ describe('useBlockchainBalances', () => {
 
       const assert = (times = 1): void => {
         expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.queryBlockchainBalances).toHaveBeenCalledWith(true, Blockchain.ETH, undefined);
+        expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+          addresses: undefined,
+          blockchain: Blockchain.ETH,
+          ignoreCache: true,
+        }, undefined);
       };
 
       const { isLoading } = useStatusStore();
