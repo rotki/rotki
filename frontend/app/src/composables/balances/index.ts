@@ -57,7 +57,7 @@ export const useBalances = createSharedComposable(() => {
   const autoRefresh = async (): Promise<void> => {
     await Promise.allSettled([
       fetchManualBalances(),
-      refreshAccounts(undefined, true),
+      refreshAccounts(undefined, undefined, true),
       fetchConnectedExchangeBalances(),
       fetchNetValue(),
     ]);

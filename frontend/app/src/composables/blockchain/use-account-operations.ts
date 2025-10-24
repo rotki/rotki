@@ -17,12 +17,13 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { arrayify } from '@/utils/array';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
 interface UseAccountOperationsReturn {
   detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
-  refreshAccounts: (blockchain?: MaybeRef<string>, periodic?: boolean) => Promise<void>;
+  refreshAccounts: (blockchain?: MaybeRef<string>, addresses?: string[], periodic?: boolean) => Promise<void>;
   resetStatuses: () => void;
 }
 
@@ -31,7 +32,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchEnsNames } = useAddressesNamesStore();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
-  const { isEvm, supportedChains } = useSupportedChains();
+  const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
 
   const { awaitTask } = useTaskStore();
@@ -62,14 +63,15 @@ export function useAccountOperations(): UseAccountOperationsReturn {
       startPromise(fetchEnsNames(namesPayload, refreshEns));
   };
 
-  const refreshAccounts = async (blockchain?: MaybeRef<string>, periodic = false): Promise<void> => {
+  const refreshAccounts = async (blockchain?: MaybeRef<string>, addresses?: string[], periodic = false): Promise<void> => {
     const chain = get(blockchain);
+    const uniqueAddresses = addresses && addresses.length > 0 && chain && !supportsTransactions(chain) ? addresses.filter(uniqueStrings) : undefined;
     await fetchAccounts(chain, true);
 
     const isEth = chain === Blockchain.ETH;
     const isEth2 = chain === Blockchain.ETH2;
 
-    const pending: Promise<any>[] = [fetchBlockchainBalances({ blockchain: chain, ignoreCache: isEth2 }, periodic)];
+    const pending: Promise<any>[] = [fetchBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, ignoreCache: !!(isEth2 || uniqueAddresses) }, periodic)];
 
     if (isEth || !chain) {
       pending.push(fetchLoopringBalances(false));

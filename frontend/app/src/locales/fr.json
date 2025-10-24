@@ -50,7 +50,7 @@
     "labels": {
       "addresses": "Adresses",
       "addresses_entries": "aucune entrée | {count} entrée unique | {count} entrées uniques",
-      "addresses_hint": "Insérer plusieurs adresses séparées par des virgules",
+      "addresses_hint": "Insérez plusieurs adresses séparées par des virgules ou des sauts de ligne",
       "blockchain": "Choisir blockchain | Choisir blockchains",
       "btc": {
         "derivation_path": "Chemin de dérivation",

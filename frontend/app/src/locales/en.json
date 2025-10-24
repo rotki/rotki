@@ -75,7 +75,7 @@
     "labels": {
       "addresses": "Addresses",
       "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
-      "addresses_hint": "Insert multiple comma separated addresses",
+      "addresses_hint": "Insert multiple addresses separated by commas or new lines",
       "all_supported_chains": "All Supported Chains",
       "blockchain": "Choose blockchain | Choose blockchains",
       "btc": {

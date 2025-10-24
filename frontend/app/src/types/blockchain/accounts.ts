@@ -180,11 +180,6 @@ export interface ExchangeBalancePayload {
   readonly ignoreCache: boolean;
 }
 
-export interface BlockchainBalancePayload {
-  readonly blockchain?: string | string[];
-  readonly ignoreCache: boolean;
-}
-
 export interface AllBalancePayload {
   readonly ignoreCache: boolean;
   readonly saveData: boolean;

@@ -43,7 +43,7 @@
     "labels": {
       "addresses": "Adressen",
       "addresses_entries": "keine Einträge | {count} einmaliger Eintrag | {count} einmalige Einträge",
-      "addresses_hint": "Füge mehrere Komma serpartierte Adressen hinzu",
+      "addresses_hint": "Fügen Sie mehrere Adressen ein, getrennt durch Kommas oder Zeilenumbrüche",
       "blockchain": "Wähle Blockchain",
       "btc": {
         "derivation_path": "Derivation Path",

@@ -9,6 +9,7 @@ import { useTaskStore } from '@/store/tasks';
 import {
   BlockchainBalances,
   type BtcBalances,
+  type FetchBlockchainBalancePayload,
 } from '@/types/blockchain/balances';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -21,7 +22,7 @@ function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
 }
 
 interface UseBalanceProcessingServiceReturn {
-  handleFetch: (blockchain: string, ignoreCache: boolean, threshold: string | undefined) => Promise<void>;
+  handleFetch: (payload: FetchBlockchainBalancePayload, threshold: string | undefined) => Promise<void>;
 }
 
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
@@ -34,14 +35,15 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { t } = useI18n({ useScope: 'global' });
   const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
 
-  const handleFetch = async (blockchain: string, ignoreCache: boolean, threshold: string | undefined): Promise<void> => {
+  const handleFetch = async (payload: FetchBlockchainBalancePayload, threshold: string | undefined): Promise<void> => {
+    const blockchain = payload.blockchain;
     try {
       setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
 
       const account = get(accounts)[blockchain];
 
       if (account && account.length > 0) {
-        const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain, threshold);
+        const { taskId } = await queryBlockchainBalances(payload, threshold);
         const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
         const { result } = await awaitTask<BlockchainBalances, BlockchainMetadata>(
           taskId,

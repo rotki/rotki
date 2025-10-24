@@ -1,4 +1,4 @@
-import type { BlockchainBalancePayload } from '@/types/blockchain/accounts';
+import type { BlockchainBalancePayload, FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
@@ -23,8 +23,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { handleFetch } = useBalanceProcessingService();
   const { fetchLoopringBalances } = useLoopringBalanceService();
 
-  const fetchSingleChain = async (blockchain: string, ignoreCache: boolean, periodic: boolean): Promise<void> => {
-    const loading = isLoading(Section.BLOCKCHAIN, blockchain);
+  const fetchSingleChain = async (payload: FetchBlockchainBalancePayload, periodic: boolean): Promise<void> => {
+    const loading = isLoading(Section.BLOCKCHAIN, payload.blockchain);
 
     // Skip if already loading and this is a periodic call
     if (get(loading) && periodic)
@@ -34,18 +34,18 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     if (get(loading))
       await until(loading).toBe(false);
 
-    await handleFetch(blockchain, ignoreCache, get(usdValueThreshold));
+    await handleFetch(payload, get(usdValueThreshold));
   };
 
   const fetchBlockchainBalances = async (
     payload: BlockchainBalancePayload = { ignoreCache: false },
     periodic = false,
   ): Promise<void> => {
-    const { blockchain, ignoreCache = false } = payload;
+    const { addresses, blockchain, ignoreCache = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
     const { queueBalanceQueries } = useBalanceQueue();
-    await queueBalanceQueries(chains, async chain => fetchSingleChain(chain, ignoreCache, periodic));
+    await queueBalanceQueries(chains, async blockchain => fetchSingleChain({ addresses, blockchain, ignoreCache }, periodic));
   };
 
   return {

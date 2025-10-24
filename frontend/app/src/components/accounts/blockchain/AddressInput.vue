@@ -29,7 +29,7 @@ const multiple = ref<boolean>(false);
 
 const entries = computed(() => {
   const allAddresses = get(userAddresses)
-    .split(',')
+    .split(/[\n,]+/)
     .map(value => value.trim())
     .filter(entry => entry.length > 0);
 
