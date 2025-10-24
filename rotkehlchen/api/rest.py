@@ -943,6 +943,7 @@ class RestAPI:
             blockchain: SupportedBlockchain | None,
             ignore_cache: bool,
             usd_value_threshold: FVal | None = None,
+            addresses: ListOfBlockchainAddresses | None = None,
     ) -> dict[str, Any]:
         msg = ''
         status_code = HTTPStatus.OK
@@ -951,6 +952,7 @@ class RestAPI:
             balances = self.rotkehlchen.chains_aggregator.query_balances(
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
+                addresses=addresses,
             )
 
             # Filter balances before serialization

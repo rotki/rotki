@@ -369,8 +369,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
 
     def process_new_modules_list(self, module_names: list[ModuleName]) -> None:
         """Processes a new list of active modules
@@ -541,6 +541,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             blockchain: SupportedBlockchain | None = None,
             ignore_cache: bool = False,
+            addresses: ListOfBlockchainAddresses | None = None,
     ) -> BlockchainBalancesUpdate:
         """Queries either all, or specific blockchain balances
 
@@ -562,7 +563,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if ignore_cache is True and chain.is_bitcoin():
                 xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore[arg-type] # mypy doesn't understand is_bitcoin()
 
-            self._query_chain_balances(blockchain=chain, ignore_cache=ignore_cache)
+            self._query_chain_balances(blockchain=chain, ignore_cache=ignore_cache, addresses=addresses)  # noqa: E501
 
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update(blockchain)
@@ -572,11 +573,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def _query_chain_balances(
             self,
             blockchain: CHAINS_WITH_CHAIN_MANAGER,
+            addresses: ListOfBlockchainAddresses | None = None,
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> None:
-        if len(accounts := self.accounts.get(blockchain)) == 0:
-            return
+        if addresses is None or len(addresses) == 0:
+            if len(accounts := self.accounts.get(blockchain)) == 0:
+                return
+        else:
+            accounts = addresses  # type: ignore  # they are both sequences.
 
         self.balances.set(
             chain=blockchain,
@@ -725,8 +730,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # we are adding/removing accounts, make sure query cache is flushed
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=blockchain)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
-        self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=False)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
+        self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=False, addresses=None)  # noqa: E501
         self.flush_cache(f'query_{chain_key}_balances')
 
         # recalculate totals
@@ -896,8 +901,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
 
     def add_eth2_validator(
             self,
@@ -1312,10 +1317,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('get_eth2_staking_details')
         self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=True)
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=True, addresses=None)
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True, addresses=None)  # noqa: E501
 
     def get_all_counterparties(self) -> set['CounterpartyDetails']:
         """
