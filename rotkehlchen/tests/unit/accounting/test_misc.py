@@ -12,7 +12,7 @@ from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
-from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import (
     accounting_create_and_process_history,
@@ -322,3 +322,75 @@ def test_fiat_income_taxable_pnl(
         end_ts=Timestamp(event_ts + 1),
     )
     assert events == [expected_event]
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_deposit_asset_is_neutral(rotkehlchen_api_server: 'APIServer') -> None:
+    """Regression test for an issue where DEPOSIT/DEPOSIT_ASSET events were not being handled
+    correctly. Checks that a history like `receive -> exchange withdrawal -> deposit asset -> swap`
+    doesn't have missing acquisitions and doesn't have an accounting event for the deposit asset.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                event_identifier='event1',
+                sequence_index=0,
+                timestamp=(acquisition_ts := TimestampMS(1539713238000)),
+                location=Location.EXTERNAL,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=(eth_amount := FVal('0.123')),
+            ), AssetMovement(
+                timestamp=TimestampMS(1539713238000),
+                location=Location.EXTERNAL,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=A_ETH,
+                amount=eth_amount,
+            ), HistoryEvent(
+                event_identifier='event2',
+                sequence_index=0,
+                timestamp=(event_ts_ms := TimestampMS(1569924574000)),
+                location=Location.BLOCKCHAIN,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                asset=A_ETH,
+                amount=eth_amount,
+            ), SwapEvent(
+                event_identifier='event3',
+                timestamp=(event_ts_ms := TimestampMS(1609537953000)),
+                location=Location.BLOCKCHAIN,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=eth_amount,
+            ), SwapEvent(
+                event_identifier='event3',
+                timestamp=(event_ts_ms := TimestampMS(1609537953000)),
+                location=Location.BLOCKCHAIN,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_USDT,
+                amount=FVal('300'),
+            )],
+        )
+
+    _, events = accounting_create_and_process_history(
+        rotki=rotki,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(ts_ms_to_sec(event_ts_ms) + 10),
+    )
+
+    assert len(events) == 3
+    assert events[0].event_type == AccountingEventType.TRANSACTION_EVENT
+    assert events[0].timestamp == ts_ms_to_sec(acquisition_ts)
+    assert events[1].event_type == AccountingEventType.TRADE
+    assert events[2].event_type == AccountingEventType.TRADE
+
+    assert len(rotki.accountant.pots[0].cost_basis.missing_acquisitions) == 0
+    assert len(used_acquisitions := rotki.accountant.pots[0].cost_basis.get_events(asset=A_ETH).used_acquisitions) == 1  # noqa: E501
+    assert used_acquisitions[0].amount == eth_amount
+    assert used_acquisitions[0].timestamp == ts_ms_to_sec(acquisition_ts)

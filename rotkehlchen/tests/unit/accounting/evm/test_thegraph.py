@@ -116,8 +116,8 @@ def test_delegation_reward(accountant: 'Accountant'):
             location=Location.ETHEREUM,
             timestamp=TS2,
             asset=A_GRT,
-            free_amount=ZERO,
-            taxable_amount=FVal('995'),
+            free_amount=FVal('995'),
+            taxable_amount=ZERO,
             price=Price(ONE),
             pnl=PNL(taxable=ZERO, free=ZERO),  # Deposits are not taxable
             cost_basis=None,
