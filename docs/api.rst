@@ -3155,13 +3155,15 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``ETH2``, ``KSM``, ``DOT`` and ``AVAX``. If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
+   Query on-chain balances for tracked accounts. Specify a blockchain to query only that chain. Available blockchains: ``BTC``, ``BCH``, ``ETH``, ``ETH2``, ``KSM``, ``DOT``, ``AVAX``, ``SOL``.
+
+   When addresses are provided and cache is ignored, those addresses are queried fresh and combined with existing balances for the blockchain. Results include balances above the ``usd_value_threshold`` if specified.
 
    .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
+      This endpoint can be queried asynchronously using ``"async_query": true``.
 
    .. note::
-      This endpoint uses a cache. If queried within the ``CACHE_TIME`` the cached value will be returned. If you want to skip the cache add the ``ignore_cache: true`` argument. Can also be passed as a query argument.
+      This endpoint uses caching. Results are cached for ``CACHE_TIME``. Use ``ignore_cache: true`` to force fresh queries.
 
    **Example Request**:
 
@@ -3172,8 +3174,10 @@ Querying onchain balances
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :reqjson list[str] addresses: Optional. List of blockchain addresses to query balances for. If not provided, all tracked addresses are queried.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :param list[str] addresses: Optional. List of blockchain addresses to query balances for. If not provided, all tracked addresses are queried.
    :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
 
 .. _blockchain_balances_result:

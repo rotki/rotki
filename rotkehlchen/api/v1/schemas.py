@@ -1835,6 +1835,21 @@ class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSc
 class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):
     blockchain = BlockchainField(load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
+    addresses = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
+
+    @validates_schema
+    def validate_addresses_for_blockchain(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """Validate that addresses are valid for the specified blockchain"""
+        if (blockchain := data['blockchain']) is not None and (addresses := data['addresses']) is not None:  # noqa: E501
+            for address in addresses:
+                _validate_address_with_blockchain(
+                    address=address,
+                    blockchain=blockchain,
+                )
 
 
 class StatisticsAssetBalanceSchema(TimestampRangeSchema):
