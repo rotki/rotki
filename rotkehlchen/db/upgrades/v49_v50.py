@@ -197,4 +197,32 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             ('monerium',),
         )
 
+    @progress_step(description='Remove gnosis pay reversaltx column.')
+    def _remove_gnosispay_reversal_tx(write_cursor: 'DBCursor') -> None:
+        """This is an unused, not returned by the API field."""
+        write_cursor.execute("""
+        CREATE TABLE gnosispay_data_new (
+        identifier INTEGER PRIMARY KEY NOT NULL,
+        tx_hash BLOB NOT NULL UNIQUE,
+        timestamp INTEGER NOT NULL,
+        merchant_name TEXT NOT NULL,
+        merchant_city TEXT,
+        country TEXT NOT NULL,
+        mcc INTEGER NOT NULL,
+        transaction_symbol TEXT NOT NULL,
+        transaction_amount TEXT NOT NULL,
+        billing_symbol TEXT,
+        billing_amount TEXT,
+        reversal_symbol TEXT,
+        reversal_amount TEXT
+        )""")
+        write_cursor.execute("""
+        INSERT INTO gnosispay_data_new
+        SELECT identifier, tx_hash, timestamp, merchant_name, merchant_city,
+        country, mcc, transaction_symbol, transaction_amount,
+        billing_symbol, billing_amount, reversal_symbol, reversal_amount
+        FROM gnosispay_data""")
+        write_cursor.execute('DROP TABLE gnosispay_data')
+        write_cursor.execute('ALTER TABLE gnosispay_data_new RENAME TO gnosispay_data')
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
