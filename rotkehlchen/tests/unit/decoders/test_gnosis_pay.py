@@ -246,7 +246,6 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
                 'EUR', '2.35',
             ),
         )
-        identifier = write_cursor.lastrowid
 
     # do not reload data since this overwrites the api object
     with patch.object(gnosis_txs_decoder, 'reload_data', lambda x: None):
@@ -254,10 +253,6 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
 
     expected_events[0].notes = 'Receive refund of 2.35 EUR from Acme Inc. in Sevilla :country:ES:'
     assert events == expected_events
-
-    with gnosis_inquirer.database.conn.read_ctx() as cursor:  # also check refund tx hash updated
-        cursor.execute('SELECT reversal_tx_hash FROM gnosispay_data WHERE identifier=?', (identifier,))  # noqa: E501
-        assert deserialize_evm_tx_hash(cursor.fetchone()[0]) == tx_hash
 
 
 @pytest.mark.parametrize('gnosis_accounts', [[

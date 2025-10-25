@@ -3706,6 +3706,8 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
         ]
         assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier = ?', ((new_solana_id := 'SOL'),)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT * FROM external_service_credentials WHERE name = ?', ('monerium',)).fetchall() == [('monerium', 'lefty@berlin.com', 'securepassword')]  # noqa: E501
+        gnosispay_data = (1, b'\x01\x89\x0b\\\r\\\tm\\\xa0\xe9i\xc6\xb1\x02\xba\xec%\xc5\x00\x17\xf6l[@N\xf8wV\x13\x99\x88', 1761405955, 'sex shop', 'Berlin', 'DE', 6969, 'EUR', '42.69', 'EUR', '42.69', None, None, None)  # noqa: E501
+        assert cursor.execute('SELECT * FROM gnosispay_data').fetchall() == [gnosispay_data]
 
     db_v49.logout()
     db = _init_db_with_target_version(
@@ -3751,5 +3753,6 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
             ('test_sol_event', new_solana_id),
         ]
         assert cursor.execute('SELECT * FROM external_service_credentials WHERE name = ?', ('monerium',)).fetchall() == []  # noqa: E501
+        assert cursor.execute('SELECT * FROM gnosispay_data').fetchall() == [gnosispay_data[:-1]]
 
     db.logout()

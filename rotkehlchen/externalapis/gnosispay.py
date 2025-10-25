@@ -57,7 +57,6 @@ class GnosisPayTransaction:
     billing_amount: FVal | None  # only if different to the transaction one
     reversal_symbol: str | None  # only if there is a refund
     reversal_amount: FVal | None  # only if there is a refund
-    reversal_tx_hash: EVMTxHash | None  # only if there is a refund
 
 
 class GnosisPay:
@@ -228,7 +227,6 @@ class GnosisPay:
                 billing_amount=billing_currency_amount,
                 reversal_symbol=reversal_currency_symbol,
                 reversal_amount=reversal_amount,
-                reversal_tx_hash=None,  # atm does not appear in the API
             )
 
         except (DeserializationError, KeyError, IndexError) as e:
@@ -287,31 +285,25 @@ class GnosisPay:
             billing_amount=billing_amount,
             reversal_symbol=reversal_symbol,
             reversal_amount=reversal_amount,
-            reversal_tx_hash=deserialize_evm_tx_hash(data[12]) if data[12] is not None else None,
         )
 
     def find_db_data(
             self,
             wherestatement: str,
             bindings: tuple,
-            with_identifier: bool = False,
-    ) -> tuple[GnosisPayTransaction | None, int | None]:
+    ) -> GnosisPayTransaction | None:
         """Return the gnosis pay data matching the given DB data"""
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
                 f'SELECT tx_hash, timestamp, merchant_name, merchant_city, country, mcc, '
                 f'transaction_symbol, transaction_amount, billing_symbol, billing_amount, '
-                f'reversal_symbol, reversal_amount, reversal_tx_hash '
-                f'{", identifier " if with_identifier else ""}'
+                f'reversal_symbol, reversal_amount '
                 f'FROM gnosispay_data WHERE {wherestatement}', bindings,
             )
             if (result := cursor.fetchone()) is None:
-                return None, None
+                return None
 
-        return (
-            self._deserialize_transaction_from_db(result),
-            result[13] if with_identifier else None,
-        )
+        return self._deserialize_transaction_from_db(result)
 
     def maybe_find_update_refund(
             self,
@@ -320,23 +312,16 @@ class GnosisPay:
             amount: FVal,
             asset: AssetWithSymbol,
     ) -> str | None:
-        transaction, identifier = self.find_db_data(
+        transaction = self.find_db_data(
             wherestatement='reversal_amount=? AND reversal_symbol=? AND timestamp<?',
             bindings=(
                 str(amount),
                 asset.resolve_to_asset_with_symbol().symbol[:-1],  # API shows normal EUR, GBP
                 tx_timestamp,
             ),
-            with_identifier=True,
         )
         if transaction is None:
             return None
-
-        with self.database.user_write() as write_cursor:
-            write_cursor.execute(
-                'UPDATE gnosispay_data SET reversal_tx_hash=? WHERE identifier=?',
-                (tx_hash, identifier),
-            )
 
         return self.create_notes_for_transaction(transaction, is_refund=True)
 
@@ -385,7 +370,7 @@ class GnosisPay:
                 for row in cursor.execute(
                     f'SELECT tx_hash, timestamp, merchant_name, merchant_city, country, mcc, '
                     f'transaction_symbol, transaction_amount, billing_symbol, billing_amount, '
-                    f'reversal_symbol, reversal_amount, reversal_tx_hash FROM gnosispay_data '
+                    f'reversal_symbol, reversal_amount FROM gnosispay_data '
                     f'WHERE tx_hash IN ({placeholders})',
                     bindings,
                 ):
