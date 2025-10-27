@@ -66,7 +66,7 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
 
   <RuiAlert
     type="warning"
-    class="mb-8 -mt-2"
+    class="mb-6 -mt-2"
   >
     {{ message }}
     <div
