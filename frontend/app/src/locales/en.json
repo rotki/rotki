@@ -4972,8 +4972,6 @@
         "event_identifier": "Event information",
         "evm_event": "Transaction {txHash}",
         "history_event": "{location} event",
-        "solana_event": "Transaction {signature}",
-        "solana_swap_event": "Transaction {signature}",
         "swap_event": "Swap on {location}"
       },
       "ignore": {
