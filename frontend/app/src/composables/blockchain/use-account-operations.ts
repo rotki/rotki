@@ -23,7 +23,7 @@ import { logger } from '@/utils/logging';
 interface UseAccountOperationsReturn {
   detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
-  refreshAccounts: (blockchain?: MaybeRef<string>, addresses?: string[], periodic?: boolean) => Promise<void>;
+  refreshAccounts: (blockchain?: MaybeRef<string>, addresses?: string[], isXpub?: boolean, periodic?: boolean) => Promise<void>;
   resetStatuses: () => void;
 }
 
@@ -63,7 +63,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
       startPromise(fetchEnsNames(namesPayload, refreshEns));
   };
 
-  const refreshAccounts = async (blockchain?: MaybeRef<string>, addresses?: string[], periodic = false): Promise<void> => {
+  const refreshAccounts = async (blockchain?: MaybeRef<string>, addresses?: string[], isXpub = false, periodic = false): Promise<void> => {
     const chain = get(blockchain);
     const uniqueAddresses = addresses && addresses.length > 0 && chain && !supportsTransactions(chain) ? addresses.filter(uniqueStrings) : undefined;
     await fetchAccounts(chain, true);
@@ -71,7 +71,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     const isEth = chain === Blockchain.ETH;
     const isEth2 = chain === Blockchain.ETH2;
 
-    const pending: Promise<any>[] = [fetchBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, ignoreCache: !!(isEth2 || uniqueAddresses) }, periodic)];
+    const pending: Promise<any>[] = [fetchBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, ignoreCache: !!(isEth2 || uniqueAddresses), isXpub }, periodic)];
 
     if (isEth || !chain) {
       pending.push(fetchLoopringBalances(false));

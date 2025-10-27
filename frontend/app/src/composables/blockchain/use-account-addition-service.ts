@@ -39,6 +39,7 @@ interface AccountAdditionParams {
   addedAccounts: Account[];
   modulesToEnable?: Module[];
   chain?: string;
+  isXpub?: boolean;
 }
 
 interface EvmAccountAdditionParams {
@@ -52,7 +53,7 @@ interface ChainAccountAdditionParams {
   modulesToEnable?: Module[];
 }
 
-type RefreshAccountsCallback = (chain?: string, addresses?: string[]) => Promise<void>;
+type RefreshAccountsCallback = (chain?: string, addresses?: string[], isXpub?: boolean) => Promise<void>;
 
 type EvmCompletionCallback = (params: EvmAccountAdditionParams) => Promise<void>;
 
@@ -101,10 +102,11 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     const {
       addedAccounts,
       chain,
+      isXpub,
       modulesToEnable,
     } = params;
 
-    await onRefreshAccounts(chain, addedAccounts.map(item => item.address));
+    await onRefreshAccounts(chain, addedAccounts.map(item => item.address), isXpub);
     const chains = chain ? [chain] : get(supportedChains).map(chain => chain.id);
     // Sort accounts by chain, so they are called in order
     const sortedAccounts = addedAccounts.sort(CHAIN_ORDER_COMPARATOR(chains));

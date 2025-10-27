@@ -41,11 +41,11 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     payload: BlockchainBalancePayload = { ignoreCache: false },
     periodic = false,
   ): Promise<void> => {
-    const { addresses, blockchain, ignoreCache = false } = payload;
+    const { addresses, blockchain, ignoreCache = false, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
     const { queueBalanceQueries } = useBalanceQueue();
-    await queueBalanceQueries(chains, async blockchain => fetchSingleChain({ addresses, blockchain, ignoreCache }, periodic));
+    await queueBalanceQueries(chains, async blockchain => fetchSingleChain({ addresses, blockchain, ignoreCache, isXpub }, periodic));
   };
 
   return {
