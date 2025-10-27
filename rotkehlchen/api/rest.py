@@ -999,6 +999,42 @@ class RestAPI:
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
+    @async_api_call()
+    def get_xpub_balances(
+            self,
+            xpub_data: 'XpubData',
+            ignore_cache: bool = False,
+    ) -> dict[str, Any]:
+        """Get balances for all addresses derived from an xpub
+
+        If ignore_cache is True, checks for new xpub addresses and includes them.
+        If ignore_cache is False, uses only existing derived addresses from database.
+        """
+        msg = ''
+        status_code = HTTPStatus.OK
+        result = None
+        try:
+            if ignore_cache:
+                XpubManager(chains_aggregator=self.rotkehlchen.chains_aggregator).check_for_new_xpub_addresses(
+                    blockchain=xpub_data.blockchain,
+                    xpub_data=xpub_data,
+                )
+
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                addresses = self.rotkehlchen.data.db.get_xpub_derived_addresses(cursor=cursor, xpub_data=xpub_data)  # noqa: E501
+
+            result = self.rotkehlchen.chains_aggregator.query_balances(
+                blockchain=xpub_data.blockchain,
+                ignore_cache=ignore_cache,
+                addresses=addresses,
+            ).serialize()
+
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
+
     def _ensure_event_tx_existence(self, event: 'HistoryBaseEntry') -> Response | None:
         """Check if an evm/evmlike event tx is present in the DB and if not, query it from onchain.
         Returns None if the tx was successfully found, or if the event is not an evm event,
