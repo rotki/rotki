@@ -2017,6 +2017,10 @@ class BaseXpubSchema(AsyncQueryArgumentSchema):
     derivation_path = DerivationPathField(load_default=None)
 
 
+class XpubBalancesSchema(BaseXpubSchema):
+    ignore_cache = fields.Boolean(load_default=False)
+
+
 class XpubAddSchema(AsyncQueryArgumentSchema, TagsSettingSchema):
     xpub = NonEmptyStringField(required=True)
     derivation_path = DerivationPathField(load_default=None)

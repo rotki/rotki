@@ -9195,6 +9195,71 @@ Deleting BTC/BCH xpubs
    :statuscode 502: Error occurred with some external service query such as blockstream/haskoin. Check message for details.
 
 
+Querying BTC/BCH xpub balances
+===============================
+
+.. http:get:: /api/(version)/blockchains/(blockchain)/xpub
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
+
+   Doing a GET on the xpub endpoint will query balances for all addresses derived from the specified extended public key.
+
+   When ``ignore_cache`` is true, the endpoint will first check for newly derived addresses from the xpub and include them in the balance query. When false, it uses only existing derived addresses stored in the database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/BTC/xpub?xpub=xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk&derivation_path=m/0/0&ignore_cache=true&async_query=false HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+   :query string xpub: The extended public key to query balances for
+   :query string derivation_path: [Optional] The derivation path used with the xpub
+   :query bool ignore_cache: [Optional] Whether to check for new derived addresses. Defaults to false
+   :query bool async_query: [Optional] Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "per_account": {
+                  "BTC": {
+                      "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                          "amount": "0.5", "usd_value": "3770.075"
+                      },
+                      "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkN": {
+                          "amount": "0.0005", "usd_value": "3.77"
+                      }
+                  }
+              },
+              "totals": {
+                  "assets": {
+                      "BTC": {"amount": "0.5005", "usd_value": "3773.845"}
+                  },
+                  "liabilities": {}
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object result: An object containing balance information for all addresses derived from the xpub. Uses the same format as blockchain balance queries with ``"per_account"`` and ``"totals"`` keys as defined `here <blockchain_balances_result_>`_.
+
+   :statuscode 200: Xpub balances successfully queried
+   :statuscode 400: Provided parameters are malformed or the xpub is invalid
+   :statuscode 401: User is not logged in
+   :statuscode 502: Error occurred with some external service query such as blockstream/haskoin. Check message for details.
+
+
 Editing blockchain account data
 =================================
 
