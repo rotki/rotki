@@ -3627,6 +3627,8 @@
   },
   "nft_gallery": {
     "allow_domain": "Click this button to trust images from domain: ",
+    "api_key_required_message": "To view your NFTs, please configure your {link}.",
+    "api_key_required_title": "OpenSea API Key Required",
     "empty_filter": "No NFTs matching the filter parameters",
     "empty_subtitle": "No NFTs have been detected",
     "empty_title": "No NFTs detected",
@@ -3634,6 +3636,7 @@
     "fill_api_key": "Your NFTs data are being rate limited. Use your own {link} to fix it.",
     "loading": "Loading NFTs",
     "open_sea": "OpenSea Api Key",
+    "opensea_settings_link": "OpenSea API Key",
     "refresh_tooltip": "Reload NFTs",
     "select_account": "Select account",
     "select_collection": "Select collection",
