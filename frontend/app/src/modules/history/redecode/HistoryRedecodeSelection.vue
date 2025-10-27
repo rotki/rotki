@@ -54,7 +54,7 @@ function toggleSelectAll() {
     set(selection, []);
   }
   else {
-    set(selection, get(txEvmChains).map(chain => chain.evmChainName));
+    set(selection, get(txEvmChains).map(chain => chain.id));
   }
 }
 
@@ -116,10 +116,10 @@ function redecode() {
       <HistoryRedecodeChainItem
         v-for="chain in filteredChains"
         :key="chain.id"
-        :model-value="selection.includes(chain.evmChainName)"
+        :model-value="selection.includes(chain.id)"
         :disabled="disabled"
-        :chain="chain.evmChainName"
-        @update:model-value="toggleSelection(chain.evmChainName, $event)"
+        :chain="chain.id"
+        @update:model-value="toggleSelection(chain.id, $event)"
       />
     </div>
 
