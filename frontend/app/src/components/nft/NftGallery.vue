@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Module } from '@/types/modules';
+import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import NftGalleryActions from '@/components/nft/NftGalleryActions.vue';
@@ -11,11 +12,14 @@ import { useNftGalleryData } from '@/composables/nft/use-nft-gallery-data';
 import { useNftGalleryFilters } from '@/composables/nft/use-nft-gallery-filters';
 import { useNftGalleryLayout } from '@/composables/nft/use-nft-gallery-layout';
 import { usePremium } from '@/composables/premium';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 
 const { modules } = defineProps<{ modules: Module[] }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
 const premium = usePremium();
+const { apiKey } = useExternalApiKeys(t);
 
 // Use composables
 const {
@@ -46,18 +50,54 @@ const noData = computed<boolean>(() =>
   get(visibleNfts).length === 0 && !(get(selectedCollection) || get(selectedAccounts).length > 0),
 );
 
+const openSeaKey = apiKey('opensea');
+const hasOpenSeaKey = computed<boolean>(() => !!get(openSeaKey));
+
+// Methods
+function navigateToApiKeys(): void {
+  router.push('/api-keys/external?service=opensea');
+}
+
 // Watchers
 watch([firstLimit, selectedAccounts, selectedCollection], () => {
   set(paginationData, { ...get(paginationData), page: 1 });
 });
 
 // Lifecycle
-onMounted(fetchPrices);
-onMounted(fetchNfts);
+onMounted(() => {
+  if (get(hasOpenSeaKey)) {
+    fetchPrices();
+    fetchNfts();
+  }
+});
 </script>
 
 <template>
-  <ProgressScreen v-if="loading && visibleNfts.length === 0">
+  <div v-if="!hasOpenSeaKey">
+    <NoDataScreen full>
+      <template #title>
+        {{ t('nft_gallery.api_key_required_title') }}
+      </template>
+      <div>
+        <i18n-t
+          scope="global"
+          keypath="nft_gallery.api_key_required_message"
+        >
+          <template #link>
+            <RuiButton
+              color="primary"
+              variant="text"
+              class="inline -my-2 [&>span]:underline"
+              @click="navigateToApiKeys()"
+            >
+              {{ t('nft_gallery.opensea_settings_link') }}
+            </RuiButton>
+          </template>
+        </i18n-t>
+      </div>
+    </NoDataScreen>
+  </div>
+  <ProgressScreen v-else-if="loading && visibleNfts.length === 0">
     {{ t('nft_gallery.loading') }}
   </ProgressScreen>
   <NftGalleryEmptyState
