@@ -28,7 +28,7 @@ interface UseBalanceProcessingServiceReturn {
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { queryBlockchainBalances } = useBlockchainBalancesApi();
+  const { queryBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { updateBalances } = useBalancesStore();
   const { getChainName } = useSupportedChains();
@@ -43,7 +43,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       const account = get(accounts)[blockchain];
 
       if (account && account.length > 0) {
-        const { taskId } = await queryBlockchainBalances(payload, threshold);
+        const { taskId } = !payload.isXpub ? await queryBlockchainBalances(payload, threshold) : await queryXpubBalances(payload);
         const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
         const { result } = await awaitTask<BlockchainBalances, BlockchainMetadata>(
           taskId,
