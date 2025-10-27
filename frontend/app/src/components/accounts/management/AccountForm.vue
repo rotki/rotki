@@ -71,6 +71,13 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
   return undefined;
 });
 
+const showSolanaInitialAlert = computed<boolean>(() => {
+  const selectedChain = get(chain);
+  const currentModelValue = get(modelValue);
+
+  return currentModelValue.mode === 'add' && !!selectedChain && isSolanaChains(selectedChain);
+});
+
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
   assert(selectedForm);
@@ -158,6 +165,14 @@ defineExpose({
 
 <template>
   <div data-cy="blockchain-balance-form">
+    <RuiAlert
+      v-if="showSolanaInitialAlert"
+      type="warning"
+      class="mb-6 -mt-2"
+    >
+      {{ t('blockchain_balances.solana_warning') }}
+    </RuiAlert>
+
     <AccountFormApiKeyAlert
       v-if="missingApiKeyService"
       :service="missingApiKeyService"
