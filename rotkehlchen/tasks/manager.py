@@ -457,6 +457,7 @@ class TaskManager:
                 exception_is_error=True,
                 method=evm_inquirer.transactions_decoder.get_and_decode_undecoded_transactions,
                 limit=TX_DECODING_LIMIT,
+                send_ws_notifications=True,
             )]
         return None
 
