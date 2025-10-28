@@ -109,7 +109,7 @@ def patch_for_globaldb_migrations(stack: ExitStack, new_list: list) -> ExitStack
     )
     stack.enter_context(
         patch(
-            'rotkehlchen.globaldb.migrations.manager.LAST_DATA_MIGRATION',
+            'rotkehlchen.globaldb.migrations.manager.LAST_GLOBALDB_DATA_MIGRATION',
             len(new_list),
         ),
     )

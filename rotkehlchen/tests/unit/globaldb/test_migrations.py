@@ -66,6 +66,7 @@ def test_migration2(globaldb: 'GlobalDBHandler'):
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v14_global.db'])
 def test_migration3_updates_address_book(globaldb: 'GlobalDBHandler') -> None:
     """Test that migration 3 replaces 'NONE' with ecosystem key in address_book"""
     evm_addr = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'

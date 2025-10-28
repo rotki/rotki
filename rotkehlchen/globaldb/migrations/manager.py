@@ -28,7 +28,7 @@ MIGRATIONS_LIST = [
     MigrationRecord(version=2, function=globaldb_data_migration_2),
     MigrationRecord(version=3, function=globaldb_data_migration_3),
 ]
-LAST_DATA_MIGRATION = len(MIGRATIONS_LIST)
+LAST_GLOBALDB_DATA_MIGRATION = len(MIGRATIONS_LIST)
 
 
 def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
@@ -62,5 +62,5 @@ def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
         with connection.write_ctx() as write_cursor:
             write_cursor.execute(  # even if no migration happens we need to remember last one
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('last_data_migration', str(LAST_DATA_MIGRATION)),
+                ('last_data_migration', str(LAST_GLOBALDB_DATA_MIGRATION)),
             )

@@ -1,3 +1,3 @@
 from typing import Final
 
-LAST_DATA_MIGRATION: Final = 21
+LAST_USERDB_DATA_MIGRATION: Final = 21

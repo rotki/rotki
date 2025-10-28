@@ -8,7 +8,7 @@ import rsqlite
 
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.migrations.manager import (
-    LAST_DATA_MIGRATION,
+    LAST_GLOBALDB_DATA_MIGRATION,
     maybe_apply_globaldb_migrations,
 )
 from rotkehlchen.globaldb.schema import DB_SCRIPT_CREATE_TABLES
@@ -251,7 +251,7 @@ def configure_globaldb(
             write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
+                [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_GLOBALDB_DATA_MIGRATION))],  # noqa: E501
             )
 
     if is_fresh_db is False:

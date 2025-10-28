@@ -20,6 +20,7 @@ from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
+from rotkehlchen.globaldb.migrations.manager import LAST_GLOBALDB_DATA_MIGRATION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
@@ -121,6 +122,8 @@ def test_asset_updates_consistency_with_packaged_db(
         # - At this point we are sure that assets updates up until 36 are applied
         assert old_globaldb_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '36'  # noqa: E501
         assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '38'  # noqa: E501
+
+        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='last_data_migration'").fetchone()[0] == str(LAST_GLOBALDB_DATA_MIGRATION)  # noqa: E501
 
     assets_updater = AssetsUpdater(
         globaldb=globaldb,
