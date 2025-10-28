@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type {
-  LocationAndTxHash,
+  LocationAndTxRef,
   PullEventPayload,
 } from '@/types/history/events';
 import type {
@@ -19,7 +19,7 @@ import {
   isEvmSwapEvent,
   isGroupEditableHistoryEvent,
 } from '@/modules/history/management/forms/form-guards';
-import { toLocationAndTxHash } from '@/utils/history';
+import { toLocationAndTxRef } from '@/utils/history';
 import {
   isEthBlockEvent,
   isEthBlockEventRef,
@@ -38,7 +38,7 @@ const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
   'toggle-ignore': [event: HistoryEventEntry];
   'redecode': [event: PullEventPayload];
-  'delete-tx': [data: LocationAndTxHash];
+  'delete-tx': [data: LocationAndTxRef];
 }>();
 
 const {
@@ -68,7 +68,7 @@ const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
 
 const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent));
 
-const eventWithTxHash = computed<{ location: string; txRef: string } | undefined>(() => {
+const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
   const currentEvent = get(event);
   const evm = get(evmEvent);
   const solana = get(solanaEvent);
@@ -86,10 +86,10 @@ const eventWithTxHash = computed<{ location: string; txRef: string } | undefined
     };
   }
 
-  if (isOnlineHistoryEvent(currentEvent) && 'txHash' in currentEvent && currentEvent.txHash) {
+  if (isOnlineHistoryEvent(currentEvent) && 'txRef' in currentEvent && currentEvent.txRef) {
     return {
       location: currentEvent.location,
-      txRef: currentEvent.txHash,
+      txRef: currentEvent.txRef,
     };
   }
 
@@ -118,12 +118,12 @@ function redecode(event: EthBlockEvent | DecodableEventType): void {
   }
 
   emit('redecode', {
-    data: toLocationAndTxHash(event),
+    data: toLocationAndTxRef(event),
     type: event.entryType,
   });
 }
 
-function deleteTxAndEvents(params: LocationAndTxHash) {
+function deleteTxAndEvents(params: LocationAndTxRef) {
   return emit('delete-tx', params);
 }
 
@@ -198,11 +198,11 @@ function hideAddAction(item: HistoryEvent): boolean {
           </RuiButton>
         </template>
         <RuiButton
-          v-if="eventWithTxHash"
+          v-if="eventWithTxRef"
           variant="list"
           color="error"
           :disabled="loading"
-          @click="deleteTxAndEvents(eventWithTxHash)"
+          @click="deleteTxAndEvents(eventWithTxRef)"
         >
           <template #prepend>
             <RuiIcon name="lu-trash-2" />

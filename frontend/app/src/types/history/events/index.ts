@@ -24,7 +24,7 @@ export interface TransactionRequestPayload {
 }
 
 export interface PullLocationTransactionPayload {
-  readonly transactions: LocationAndTxHash[];
+  readonly transactions: LocationAndTxRef[];
   readonly deleteCustom?: boolean;
 }
 
@@ -37,7 +37,7 @@ export type PullEventPayload = {
   data: number [];
 } | {
   type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT | typeof HistoryEventEntryType.SOLANA_EVENT | typeof HistoryEventEntryType.SOLANA_SWAP_EVENT;
-  data: LocationAndTxHash;
+  data: LocationAndTxRef;
 };
 
 export interface ChainAndTxRefs {
@@ -49,12 +49,7 @@ export interface PullTransactionPayload extends ChainAndTxRefs {
   readonly deleteCustom?: boolean;
 }
 
-export interface LocationAndTxHash {
-  readonly location: string;
-  readonly txRef: string;
-}
-
-export interface LocationAndSignature {
+export interface LocationAndTxRef {
   readonly location: string;
   readonly txRef: string;
 }

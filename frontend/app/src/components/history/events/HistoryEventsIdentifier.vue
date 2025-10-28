@@ -21,18 +21,12 @@ const { is2xlAndUp } = useBreakpoint();
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 const assetMovementEvent = isAssetMovementEventRef(event);
-const eventWithTxHash = computed<{ location: string; txHash: string } | undefined>(() => {
+const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
   const event = props.event;
-  if ('txHash' in event && event.txHash) {
-    return {
-      location: event.location,
-      txHash: event.txHash,
-    };
-  }
   if ('txRef' in event && event.txRef) {
     return {
       location: event.location,
-      txHash: event.txRef,
+      txRef: event.txRef,
     };
   }
   return undefined;
@@ -43,7 +37,12 @@ const translationKey = computed<string>(() => {
   // as they are both evm events and have the same header
   const eventVal = get(event);
   let entryType = eventVal.entryType;
-  if (get(eventWithTxHash)) {
+  const specialTypesWithTxRef: HistoryEventEntryType[] = [
+    HistoryEventEntryType.ETH_DEPOSIT_EVENT,
+    HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
+  ];
+
+  if (get(eventWithTxRef) && !specialTypesWithTxRef.includes(entryType)) {
     entryType = HistoryEventEntryType.EVM_EVENT;
   }
 
@@ -57,7 +56,7 @@ const assetMovementTransactionId = computed<string | undefined>(() => get(assetM
  * to display a hash event identifier resulting in a numerical display instead.
  */
 const key = computed(() => {
-  if (get(eventWithTxHash))
+  if (get(eventWithTxRef))
     return 'tx_hash';
   else if (get(blockEvent))
     return 'block';
@@ -105,15 +104,15 @@ const key = computed(() => {
     </template>
 
     <template
-      v-if="eventWithTxHash || assetMovementTransactionId"
-      #txHash
+      v-if="eventWithTxRef || assetMovementTransactionId"
+      #txRef
     >
       <HashLink
-        v-if="eventWithTxHash"
+        v-if="eventWithTxRef"
         :class="$style.wrapper"
-        :text="eventWithTxHash.txHash"
+        :text="eventWithTxRef.txRef"
         type="transaction"
-        :location="eventWithTxHash.location"
+        :location="eventWithTxRef.location"
         :truncate-length="is2xlAndUp ? 0 : 8"
       />
       <HashLink

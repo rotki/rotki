@@ -133,13 +133,13 @@ const actions = useHistoryEventsActions({
 const selectionMode = useHistoryEventsSelectionMode();
 
 // Store grouped events for checking complete EVM transactions
-const groupedEventsByTxHash = ref<Record<string, HistoryEventRow[]>>({});
+const groupedEventsByTxRef = ref<Record<string, HistoryEventRow[]>>({});
 // Store original groups data to preserve swap groups
 const originalGroups = ref<HistoryEventRow[]>([]);
 
 const deletion = useHistoryEventsDeletion(
   selectionMode,
-  groupedEventsByTxHash,
+  groupedEventsByTxRef,
   originalGroups,
   () => actions.fetch.dataAndLocations(),
 );
@@ -162,7 +162,7 @@ function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds
   selectionMode.setAvailableIds(events);
 
   // Store the grouped events for checking complete transactions
-  set(groupedEventsByTxHash, groupedEvents);
+  set(groupedEventsByTxRef, groupedEvents);
   // Store the original groups data - prefer rawEvents if available, otherwise use groups.data
   set(originalGroups, rawEvents || get(groups).data);
 }

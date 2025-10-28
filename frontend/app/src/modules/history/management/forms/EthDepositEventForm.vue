@@ -30,7 +30,7 @@ const { data } = toRefs(props);
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
-const txHash = ref<string>('');
+const txRef = ref<string>('');
 const eventIdentifier = ref<string>('');
 const timestamp = ref<number>(0);
 const amount = ref<string>('');
@@ -50,7 +50,7 @@ const rules = {
   eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
   timestamp: commonRules.createExternalValidationRule(),
-  txHash: commonRules.createValidTxHashRule(),
+  txRef: commonRules.createValidTxHashRule(),
   validatorIndex: commonRules.createRequiredValidatorIndexRule(),
 };
 
@@ -67,7 +67,7 @@ const states = {
   extraData,
   sequenceIndex,
   timestamp,
-  txHash,
+  txRef,
   validatorIndex,
 };
 
@@ -86,7 +86,7 @@ const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(txHash, '');
+  set(txRef, '');
   set(eventIdentifier, null);
   set(timestamp, dayjs().valueOf());
   set(amount, '0');
@@ -100,7 +100,7 @@ function reset() {
 
 function applyEditableData(entry: EthDepositEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  set(txHash, entry.txHash);
+  set(txRef, entry.txRef);
   set(eventIdentifier, entry.eventIdentifier);
   set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
@@ -115,7 +115,7 @@ function applyEditableData(entry: EthDepositEvent) {
 function applyGroupHeaderData(entry: EthDepositEvent) {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(eventIdentifier, entry.eventIdentifier);
-  set(txHash, entry.txHash);
+  set(txRef, entry.txRef);
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel ?? '');
   set(timestamp, entry.timestamp);
@@ -141,7 +141,7 @@ async function save(): Promise<boolean> {
     extraData: get(extraData) || null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp: get(timestamp),
-    txHash: get(txHash),
+    txRef: get(txRef),
     validatorIndex: parseInt(get(validatorIndex)),
   };
 
@@ -206,13 +206,13 @@ defineExpose({
     </div>
 
     <RuiTextField
-      v-model="txHash"
+      v-model="txRef"
       variant="outlined"
       color="primary"
-      data-cy="tx-hash"
+      data-cy="tx-ref"
       :label="t('common.tx_hash')"
-      :error-messages="toMessages(v$.txHash)"
-      @blur="v$.txHash.$touch()"
+      :error-messages="toMessages(v$.txRef)"
+      @blur="v$.txRef.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />

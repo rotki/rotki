@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { LocationAndTxHash } from '@/types/history/events';
+import type { LocationAndTxRef } from '@/types/history/events';
 import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
 import { isEventDecodable } from '@/modules/history/management/forms/form-guards';
-import { toLocationAndTxHash } from '@/utils/history';
+import { toLocationAndTxRef } from '@/utils/history';
 
 const modelValue = defineModel<HistoryEventEditData | undefined>({ required: true });
 
 const emit = defineEmits<{
-  'redecode': [data: LocationAndTxHash];
+  'redecode': [data: LocationAndTxRef];
   'edit-event': [event: HistoryEventEditData];
   'add': [rule: AccountingRuleIdentifier];
   'dismiss': [];
@@ -48,7 +48,7 @@ function onRedecode(data: HistoryEventEditData) {
   const event = data.type === 'edit' ? data.event : data.eventsInGroup[0];
   const decodableEvent = isEventDecodable(event);
   if (decodableEvent) {
-    emit('redecode', toLocationAndTxHash(decodableEvent));
+    emit('redecode', toLocationAndTxRef(decodableEvent));
   }
   close();
 }

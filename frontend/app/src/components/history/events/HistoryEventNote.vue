@@ -17,7 +17,7 @@ const props = withDefaults(
     amount?: BigNumber | BigNumber[];
     asset?: string;
     chain?: string;
-    noTxHash?: boolean;
+    noTxRef?: boolean;
     validatorIndex?: number;
     blockNumber?: number;
     counterparty?: string;
@@ -29,12 +29,12 @@ const props = withDefaults(
     blockNumber: undefined,
     chain: Blockchain.ETH,
     notes: '',
-    noTxHash: false,
+    noTxRef: false,
     validatorIndex: undefined,
   },
 );
 
-const { amount, asset, blockNumber, counterparty, extraData, notes, noTxHash, validatorIndex } = toRefs(props);
+const { amount, asset, blockNumber, counterparty, extraData, notes, noTxRef, validatorIndex } = toRefs(props);
 
 const { formatNotes } = useHistoryEventNote();
 
@@ -45,7 +45,7 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   counterparty,
   extraData,
   notes,
-  noTxHash,
+  noTxRef,
   validatorIndex,
 });
 

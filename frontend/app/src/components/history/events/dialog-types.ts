@@ -4,7 +4,7 @@ import type {
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import type { Exchange } from '@/types/exchanges';
-import type { AddTransactionHashPayload, ChainAddress, LocationAndTxHash } from '@/types/history/events';
+import type { AddTransactionHashPayload, ChainAddress, LocationAndTxRef } from '@/types/history/events';
 import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
 
 export const DIALOG_TYPES = {
@@ -40,10 +40,10 @@ export interface HistoryEventsToggles {
 
 export interface DialogEventHandlers {
   onHistoryEventSaved?: () => void | Promise<void>;
-  onTransactionAdded?: (txHash: LocationAndTxHash) => void | Promise<void>;
+  onTransactionAdded?: (payload: LocationAndTxRef) => void | Promise<void>;
   onRepullTransactions?: (account: ChainAddress) => void | Promise<void>;
   onRepullExchangeEvents?: (exchanges: Exchange[]) => Promise<void>;
-  onRedecodeTransaction?: (txHash: LocationAndTxHash) => void | Promise<void>;
+  onRedecodeTransaction?: (payload: LocationAndTxRef) => void | Promise<void>;
   onRedecodeAllEvents?: () => void | Promise<void>;
   onResetUndecodedTransactions?: () => void | Promise<void>;
 }

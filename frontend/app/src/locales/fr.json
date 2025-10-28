@@ -3607,10 +3607,10 @@
       },
       "headers": {
         "eth_block_event": "Bloc {blockNumber} produit",
-        "eth_deposit_event": "Événements de dépôt {txHash}",
+        "eth_deposit_event": "Événements de dépôt {txRef}",
         "eth_withdrawal_event": "Retrait pour le validateur {validatorIndex}",
         "event_identifier": "Information événement",
-        "evm_event": "Transaction {txHash}",
+        "evm_event": "Transaction {txRef}",
         "history_event": "Événement {location}"
       },
       "loading": "Chargement des événements...",
