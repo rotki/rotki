@@ -2,6 +2,7 @@ import type { ComputedRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { Eth2Validator } from '@/types/balances';
 import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
+import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';
 import { type BigNumber, bigNumberify, Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
@@ -174,7 +175,7 @@ export function useEthStaking(): UseEthStakingReturn {
 
     const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
 
-    const { amount, usdValue } = eth2[publicKey].assets.address[ETH2_ASSET];
+    const { amount, usdValue } = eth2[publicKey].assets[ETH2_ASSET].address;
 
     // we should not need to update anything if amount and value are zero
     if (amount.isZero() && usdValue.isZero())
@@ -187,12 +188,14 @@ export function useEthStaking(): UseEthStakingReturn {
 
     const newValue = calc(usdValue, oldOwnershipPercentage, newOwnershipPercentage);
 
-    const updatedBalance = {
+    const updatedBalance: BlockchainAssetBalances = {
       [publicKey]: {
         assets: {
           [ETH2_ASSET]: {
-            amount: newAmount,
-            usdValue: newValue,
+            address: {
+              amount: newAmount,
+              usdValue: newValue,
+            },
           },
         },
         liabilities: {},
