@@ -66,6 +66,7 @@ from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
+    DEFAULT_AUTO_LOGIN_CONFIRMATION_THRESHOLD,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
@@ -211,6 +212,8 @@ class DBHandler:
             'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
             'beacon_rpc_endpoint': (str, None),
             'ask_user_upon_size_discrepancy': (str_to_bool, DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY),  # noqa: E501
+            'auto_login_count': (int, 0),
+            'auto_login_confirmation_threshold': (int, DEFAULT_AUTO_LOGIN_CONFIRMATION_THRESHOLD),
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -318,6 +321,47 @@ class DBHandler:
                     ),
                 )
 
+    def _fix_gnosispay_schema_if_needed(self) -> None:
+        """Fix gnosispay_data table if it has the old schema with reversal_tx_hash.
+        This is a temporary fix for databases that were at v49 when the codebase updated.
+        Should be safe to remove after a few releases.
+        """
+        try:
+            with self.conn.read_ctx() as cursor:
+                table_info = cursor.execute(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='gnosispay_data'"
+                ).fetchone()
+                
+                if table_info and 'reversal_tx_hash' in table_info[0].lower():
+                    # Table has the old schema, need to fix it
+                    with self.conn.write_ctx() as write_cursor:
+                        write_cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS gnosispay_data_new (
+                            identifier INTEGER PRIMARY KEY NOT NULL,
+                            tx_hash BLOB NOT NULL UNIQUE,
+                            timestamp INTEGER NOT NULL,
+                            merchant_name TEXT NOT NULL,
+                            merchant_city TEXT,
+                            country TEXT NOT NULL,
+                            mcc INTEGER NOT NULL,
+                            transaction_symbol TEXT NOT NULL,
+                            transaction_amount TEXT NOT NULL,
+                            billing_symbol TEXT,
+                            billing_amount TEXT,
+                            reversal_symbol TEXT,
+                            reversal_amount TEXT
+                        )""")
+                        write_cursor.execute("""
+                        INSERT INTO gnosispay_data_new
+                        SELECT identifier, tx_hash, timestamp, merchant_name, merchant_city,
+                            country, mcc, transaction_symbol, transaction_amount,
+                            billing_symbol, billing_amount, reversal_symbol, reversal_amount
+                        FROM gnosispay_data""")
+                        write_cursor.execute('DROP TABLE gnosispay_data')
+                        write_cursor.execute('ALTER TABLE gnosispay_data_new RENAME TO gnosispay_data')
+        except Exception:  # If anything goes wrong, let the normal schema check handle it
+            pass
+
     def _run_actions_after_first_connection(self) -> None:
         """Perform the actions that are needed after the first DB connection
 
@@ -341,6 +385,9 @@ class DBHandler:
                     'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                     ('version', str(ROTKEHLCHEN_DB_VERSION)),
                 )
+
+        # Fix gnosispay schema if needed (temporary fix for v49->v50 transition issues)
+        self._fix_gnosispay_schema_if_needed()
 
         # run checks on the database
         self.conn.schema_sanity_check()
@@ -414,6 +461,10 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['ask_user_upon_size_discrepancy']) -> bool:  # noqa: E501
         ...
 
+    @overload
+    def get_setting(self, cursor: 'DBCursor', name: Literal['auto_login_count']) -> int:
+        ...
+
     def get_setting(
             self,
             cursor: 'DBCursor',
@@ -427,6 +478,7 @@ class DBHandler:
                 'non_syncing_exchanges',
                 'beacon_rpc_endpoint',
                 'ask_user_upon_size_discrepancy',
+                'auto_login_count',
             ],
     ) -> int | Timestamp | bool | Asset | list['ExchangeLocationID'] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
@@ -446,6 +498,7 @@ class DBHandler:
                 'main_currency',
                 'non_syncing_exchanges',
                 'ask_user_upon_size_discrepancy',
+                'auto_login_count',
             ],
             value: int | (Timestamp | Asset) | str | bool,
     ) -> None:
@@ -616,6 +669,8 @@ class DBHandler:
         """Get a write context for the user db and after write is finished
         also update the last write timestamp
         """
+        if self.conn is None:
+            raise SystemPermissionError('Database connection not available. Please restart the application.')
         # TODO: Rethink this
         with self.conn.write_ctx(commit_ts=True) as cursor:
             yield cursor
@@ -625,6 +680,8 @@ class DBHandler:
         """Get a write context for the transient user db and after write is finished
         also commit
         """
+        if self.conn_transient is None:
+            raise SystemPermissionError('Database connection not available. Please restart the application.')
         with self.conn_transient.write_ctx() as cursor:
             yield cursor
 

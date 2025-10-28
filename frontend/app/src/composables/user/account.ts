@@ -18,7 +18,7 @@ interface UseAccountManagementReturn {
   error: Ref<string>;
   errors: Ref<string[]>;
   createNewAccount: (payload: CreateAccountPayload) => Promise<void>;
-  userLogin: ({ password, resumeFromBackup, syncApproval, username }: LoginCredentials) => Promise<void>;
+  userLogin: (credentials: LoginCredentials) => Promise<void>;
 }
 
 export function useAccountManagement(): UseAccountManagementReturn {
@@ -70,8 +70,9 @@ export function useAccountManagement(): UseAccountManagementReturn {
     set(loading, false);
   };
 
-  const userLogin = async ({ password, resumeFromBackup, syncApproval, username }: LoginCredentials): Promise<void> => {
+  const userLogin = async (credentials: LoginCredentials): Promise<void> => {
     set(loading, true);
+    const { username, password, resumeFromBackup, syncApproval, auto_login, is_confirmation } = credentials;
     const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
     set(loggedUserIdentifier, userIdentifier);
     await connect();
@@ -81,10 +82,17 @@ export function useAccountManagement(): UseAccountManagementReturn {
       resumeFromBackup: resumeFromBackup || false,
       syncApproval: syncApproval || 'unknown',
       username,
+      auto_login: auto_login || false,
+      is_confirmation: is_confirmation || false,
     });
 
-    if (!result.success && result.message)
-      set(errors, [result.message]);
+    // Handle requires_confirmation separately - it's not an error, just a state
+    if (!result.success && result.message) {
+      if (result.message.startsWith('requires_confirmation'))
+        set(errors, [result.message]); // This will be handled silently by LoginForm watcher
+      else
+        set(errors, [result.message]); // Display other errors normally
+    }
 
     set(loading, false);
     if (get(logged)) {

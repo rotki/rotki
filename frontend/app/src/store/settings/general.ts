@@ -36,13 +36,14 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const askUserUponSizeDiscrepancy = useComputedRef(settings, 'askUserUponSizeDiscrepancy');
   const autoDetectTokens = useComputedRef(settings, 'autoDetectTokens');
   const csvExportDelimiter = useComputedRef(settings, 'csvExportDelimiter');
+  const autoLoginConfirmationThreshold = useComputedRef(settings, 'autoLoginConfirmationThreshold');
 
   const currencySymbol = computed<SupportedCurrency>(() => {
     const currency = get(mainCurrency);
     return currency.tickerSymbol;
   });
 
-  const update = (generalSettings: GeneralSettings): void => {
+  const update = (generalSettings: Partial<GeneralSettings>): void => {
     set(settings, {
       ...get(settings),
       ...generalSettings,
@@ -56,6 +57,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     autoCreateCalendarReminders,
     autoDeleteCalendarEntries,
     autoDetectTokens,
+    autoLoginConfirmationThreshold,
     balanceSaveFrequency,
     beaconRpcEndpoint,
     btcDerivationGapLimit,
