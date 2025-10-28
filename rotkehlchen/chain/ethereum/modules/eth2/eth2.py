@@ -13,7 +13,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
-from rotkehlchen.db.eth2 import DBEth2
+from rotkehlchen.db.eth2 import DBEth2, IncludeExcludeFilterData
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumPermissionError
@@ -81,7 +81,7 @@ class Eth2(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.last_stats_query_ts = 0
         self.validator_stats_queried = 0
-        self.deposits_pubkey_re = re.compile(r'.*validator with pubkey (.*)\. Deposit.*')
+        self.deposits_re = re.compile(r'.*validator with pubkey (?P<pubkey>.*)\. Deposit.*|.*Deposit.*ETH to validator (?P<index>\d+)$')  # noqa: E501
         self.withdrawals_query_lock = Semaphore()
         # This is a cache that is kept only for the last performance cache address, indices args
         self.performance_cache: LRUCacheWithRemove[tuple[Timestamp, Timestamp], dict[str, dict]] = LRUCacheWithRemove(maxsize=3)  # noqa: E501
@@ -429,11 +429,12 @@ class Eth2(EthereumModule):
             'entries_found': len(result['validators']),
         }
 
-    def _get_saved_pubkey_to_deposit_address(self) -> dict[Eth2PubKey, ChecksumEvmAddress]:
-        """Read the decoded DB history events to find out public keys -> deposit addresses
+    def _get_saved_deposit_addresses(self) -> set[ChecksumEvmAddress]:
+        """Read the decoded DB history events to find all deposit addresses
 
-        This will just return the data for the currently decoded history events.
-        And also has a really ugly hack since it takes the public key from the notes.
+        Handles both entry types:
+        1. 'Deposit X ETH to validator with pubkey {pubkey}...'
+        2. 'Deposit X ETH to validator {validator_index}'
         """
         dbevents = DBHistoryEvents(self.database)
         with self.database.conn.read_ctx() as cursor:
@@ -444,31 +445,23 @@ class Eth2(EthereumModule):
                         (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
                     ],
                     counterparties=[CPT_ETH2],
+                    entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]),  # noqa: E501
                 ),
             )
 
-        result = {}
+        addresses: set[ChecksumEvmAddress] = set()
         for event in deposit_events:
             if event.notes is None:
-                log.error(  # should not really happen
-                    f'Could not match the pubkey extraction regex for {event} '
-                    f'due to absence of notes',
-                )
+                log.error(f'Could not match extraction regex for {event} due to absence of notes')  # should not really happen  # noqa: E501
                 continue
 
-            match = self.deposits_pubkey_re.match(event.notes)
-            if match is None:
-                log.error(f'Could not match the pubkey extraction regex for "{event.notes}"')
-                continue  # should not really happen though
+            # Check if it matches either type 1 (with pubkey) or type 2 (with validator index)
+            if self.deposits_re.match(event.notes):
+                addresses.add(event.location_label)  # type: ignore  # will be present.
+            else:
+                log.error(f'Could not match extraction regex for "{event.notes}"')
 
-            groups = match.groups()
-            if len(groups) != 1:
-                log.error(f'Could not match group for pubkey extraction regex for "{event.notes}"')
-                continue  # should not really happen though
-
-            result[Eth2PubKey(groups[0])] = event.location_label
-
-        return result  # type: ignore  # location_label is set for this event
+        return addresses
 
     def query_services_for_validator_withdrawals(
             self,
@@ -547,8 +540,6 @@ class Eth2(EthereumModule):
         with them via deposit along with their details.
 
         May raise RemoteError due to beaconcha.in or beacon node connection"""
-        pubkey_to_deposit: dict[Eth2PubKey, ChecksumEvmAddress] = {}
-        pubkey_to_index: dict[Eth2PubKey, int] = {}
         with self.database.conn.read_ctx() as cursor:  # get non finalized saved validator
             cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE withdrawable_timestamp IS NULL')  # noqa: E501
             validators_to_refresh = {ValidatorID(index=x[0], public_key=x[1]) for x in cursor}
@@ -556,25 +547,11 @@ class Eth2(EthereumModule):
             finalized_validator_pubkeys = {x[0] for x in cursor}
 
         # Get addresses that have ETH deposit events and filter input addresses
-        pubkey_to_depositor = self._get_saved_pubkey_to_deposit_address()
-        for address in [addr for addr in addresses if addr in pubkey_to_depositor.values()]:
+        for address in [addr for addr in addresses if addr in self._get_saved_deposit_addresses()]:
             validators = self.beacon_inquirer.get_eth1_address_validators(address)
             for validator in validators:
-                if validator.index is not None:
-                    pubkey_to_index[validator.public_key] = validator.index
-
-                pubkey_to_deposit[validator.public_key] = address
                 if validator.public_key not in finalized_validator_pubkeys:
                     validators_to_refresh.add(validator)
-
-        # Check all our currently decoded deposits for known public keys and map to depositors
-        for public_key, depositor in pubkey_to_depositor.items():
-            if public_key in finalized_validator_pubkeys:
-                continue
-
-            index = pubkey_to_index.get(public_key)
-            validators_to_refresh.add(ValidatorID(index=index, public_key=public_key))
-            pubkey_to_deposit[public_key] = depositor
 
         # refresh validator data. Use index if existing otherwise public key
         details = self.beacon_inquirer.get_validator_data(
