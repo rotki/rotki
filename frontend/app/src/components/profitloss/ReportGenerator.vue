@@ -2,8 +2,10 @@
 import type { ProfitLossReportPeriod } from '@/types/reports';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/composables/use-transaction-status-check';
 import { Routes } from '@/router/routes';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 const emit = defineEmits<{
   (e: 'generate', data: ProfitLossReportPeriod): void;
@@ -14,11 +16,39 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { isOutOfSync, navigateToHistory, processing } = useTransactionStatusCheck();
+const { queryBinanceUserMarkets } = useExchangeApi();
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
 const range = ref<ProfitLossReportPeriod>({ end: 0, start: 0 });
 const valid = ref<boolean>(false);
+const binanceExchangesWithoutMarkets = ref<string[]>([]);
 
-const canGenerate = computed<boolean>(() => get(valid) && !get(processing) && !get(isOutOfSync));
+const hasBinanceWithoutMarkets = computed<boolean>(() => get(binanceExchangesWithoutMarkets).length > 0);
+
+const canGenerate = computed<boolean>(() => get(valid) && !get(processing) && !get(isOutOfSync) && !get(hasBinanceWithoutMarkets));
+
+async function checkBinanceMarketPairs(): Promise<void> {
+  const exchanges = get(connectedExchanges);
+  const binanceExchanges = exchanges.filter(
+    exchange => exchange.location === 'binance' || exchange.location === 'binanceus',
+  );
+
+  const exchangesWithoutMarkets: string[] = [];
+
+  for (const exchange of binanceExchanges) {
+    try {
+      const markets = await queryBinanceUserMarkets(exchange.name, exchange.location);
+      if (!markets || markets.length === 0)
+        exchangesWithoutMarkets.push(exchange.name);
+    }
+    catch {
+      // If we can't fetch markets, assume they're not set
+      exchangesWithoutMarkets.push(exchange.name);
+    }
+  }
+
+  set(binanceExchangesWithoutMarkets, exchangesWithoutMarkets);
+}
 
 function generate(): void {
   emit('generate', get(range));
@@ -33,6 +63,11 @@ function importReportData(): void {
 }
 
 const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
+const exchangeSettingsRoute = Routes.API_KEYS_EXCHANGES;
+
+onMounted(async () => {
+  await checkBinanceMarketPairs();
+});
 </script>
 
 <template>
@@ -86,6 +121,26 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
           </RuiButton>
         </div>
       </template>
+    </RuiAlert>
+    <RuiAlert
+      v-if="hasBinanceWithoutMarkets"
+      type="warning"
+      class="mt-6"
+    >
+      <div class="flex flex-col items-start gap-2">
+        <div class="whitespace-break-spaces">
+          {{ t('profit_loss_report.binance_markets_alert', { exchanges: binanceExchangesWithoutMarkets.map(item => `- ${item}`).join('\n') }) }}
+        </div>
+        <RouterLink :to="exchangeSettingsRoute">
+          <RuiButton
+            size="sm"
+            color="primary"
+            variant="outlined"
+          >
+            {{ t('profit_loss_report.go_to_exchanges') }}
+          </RuiButton>
+        </RouterLink>
+      </div>
     </RuiAlert>
     <template #footer>
       <div class="flex gap-4 w-full">

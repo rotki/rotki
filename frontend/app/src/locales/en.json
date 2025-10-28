@@ -4318,10 +4318,12 @@
       },
       "show_issues": "Show Issues"
     },
+    "binance_markets_alert": "The following Binance exchange(s) do not have market pairs configured: \n{exchanges}.\n\n Please configure market pairs before generating a report.",
     "error": {
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
+    "go_to_exchanges": "Go to Exchange Settings",
     "go_to_history": "Go to History Events",
     "loading": "Please wait while your PnL report is loading",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
