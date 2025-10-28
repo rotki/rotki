@@ -429,7 +429,7 @@ defineExpose({
             v-model="transactionId"
             variant="outlined"
             color="primary"
-            data-cy="tx-hash"
+            data-cy="tx-ref"
             :label="t('common.tx_hash')"
             :error-messages="toMessages(v$.transactionId)"
             @blur="v$.transactionId.$touch()"

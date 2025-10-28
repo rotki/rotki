@@ -203,7 +203,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
     return handleResponse(response);
   };
 
-  const getEth2Validators = async (payload: EthValidatorFilter = {}): Promise<Eth2Validators> => {
+  const getEth2Validators = async (payload: EthValidatorFilter = { }): Promise<Eth2Validators> => {
     const response = await api.instance.get<ActionResult<Eth2Validators>>('/blockchains/eth2/validators', {
       params: snakeCaseTransformer(nonEmptyProperties(payload)),
       paramsSerializer,

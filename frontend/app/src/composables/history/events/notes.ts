@@ -44,7 +44,7 @@ interface FormatNoteParams {
   notes: MaybeRef<string>;
   amount?: MaybeRef<BigNumber | BigNumber[] | undefined>;
   assetId?: MaybeRef<string>;
-  noTxHash?: MaybeRef<boolean>;
+  noTxRef?: MaybeRef<boolean>;
   validatorIndex?: MaybeRef<number | undefined>;
   blockNumber?: MaybeRef<number | undefined>;
   counterparty?: MaybeRef<string | undefined>;
@@ -167,7 +167,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     counterparty,
     extraData,
     notes,
-    noTxHash,
+    noTxRef,
     validatorIndex,
   }: FormatNoteParams): ComputedRef<NoteFormat[]> => computed<NoteFormat[]>(() => {
     const asset = get(assetSymbol(assetId, {
@@ -247,7 +247,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       }
 
       // Check if the word is Tx Hash
-      if (isValidEvmTxHash(word) && !get(noTxHash)) {
+      if (isValidEvmTxHash(word) && !get(noTxRef)) {
         addLeadingPunctuation();
         formats.push({
           address: word,

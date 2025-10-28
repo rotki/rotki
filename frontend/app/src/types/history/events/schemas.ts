@@ -30,7 +30,7 @@ export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
 
 export const OnlineHistoryEvent = CommonHistoryEvent.extend({
   entryType: z.literal(HistoryEventEntryType.HISTORY_EVENT),
-  txHash: z.string().optional(),
+  txRef: z.string().optional(),
 });
 
 export type OnlineHistoryEvent = z.infer<typeof OnlineHistoryEvent>;
@@ -56,7 +56,7 @@ export const EthDepositEvent = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.ETH_DEPOSIT_EVENT),
   extraData: z.unknown().nullable().nullish(),
-  txHash: z.string(),
+  txRef: z.string(),
   validatorIndex: z.number(),
 });
 
@@ -216,7 +216,7 @@ export interface EditEthDepositEventPayload {
   timestamp: number;
   amount: BigNumber;
   validatorIndex: number;
-  txHash: string;
+  txRef: string;
   eventIdentifier: string | null;
   sequenceIndex: number | string;
   depositor: string;

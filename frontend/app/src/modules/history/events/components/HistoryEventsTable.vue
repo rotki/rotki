@@ -108,7 +108,7 @@ const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => {
     label: '',
   }, {
     cellClass: '!py-2',
-    key: 'txHash',
+    key: 'identifier',
     label: t('transactions.events.headers.event_identifier'),
   }, {
     align: 'end',
@@ -172,7 +172,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
         class="min-h-[3.25rem]"
       />
     </template>
-    <template #item.txHash="{ row }">
+    <template #item.identifier="{ row }">
       <LazyLoader class="flex items-center gap-2.5">
         <LocationIcon
           icon

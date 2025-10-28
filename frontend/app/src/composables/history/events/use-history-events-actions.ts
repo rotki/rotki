@@ -5,7 +5,7 @@ import type { Collection } from '@/types/collection';
 import type { Exchange } from '@/types/exchanges';
 import type {
   ChainAddress,
-  LocationAndTxHash,
+  LocationAndTxRef,
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,
 } from '@/types/history/events';
@@ -21,7 +21,7 @@ import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-
 import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
-import { toLocationAndTxHash } from '@/utils/history';
+import { toLocationAndTxRef } from '@/utils/history';
 import {
   isEthBlockEvent,
   isEvmEvent,
@@ -136,7 +136,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
 
     if (txEvents.length > 0 || ethBlockEvents.length > 0) {
       if (txEvents.length > 0) {
-        const redecodePayload: LocationAndTxHash[] = txEvents.map(toLocationAndTxHash);
+        const redecodePayload: LocationAndTxRef[] = txEvents.map(toLocationAndTxRef);
         await pullAndRedecodeTransactions({ transactions: redecodePayload });
         await fetchUndecodedTransactionsStatus();
       }
@@ -187,8 +187,8 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   // Dialog handlers
-  const handleTransactionRedecode = async (txHash: LocationAndTxHash): Promise<void> => {
-    await forceRedecodeEvmEvents({ transactions: [txHash] });
+  const handleTransactionRedecode = async (txRef: LocationAndTxRef): Promise<void> => {
+    await forceRedecodeEvmEvents({ transactions: [txRef] });
   };
 
   const dialogHandlers: DialogEventHandlers = {

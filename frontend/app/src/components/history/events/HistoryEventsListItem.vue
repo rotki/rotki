@@ -38,7 +38,7 @@ const { item } = toRefs(props);
 
 const { getChain } = useSupportedChains();
 
-function isNoTxHash(item: HistoryEventEntry) {
+function isNoTxRef(item: HistoryEventEntry) {
   return (
     item.entryType === HistoryEventEntryType.EVM_EVENT
     && ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset')
@@ -162,7 +162,7 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
           v-bind="getEventNoteAttrs(item)"
           :amount="item.amount"
           :chain="getChain(item.location)"
-          :no-tx-hash="isNoTxHash(item)"
+          :no-tx-ref="isNoTxRef(item)"
           class="break-words leading-6 col-span-10 @md:col-span-7 @5xl:!col-span-8"
         />
 

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { AddTransactionHashPayload, LocationAndTxHash } from '@/types/history/events';
+import type { AddTransactionHashPayload, LocationAndTxRef } from '@/types/history/events';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import TransactionForm from '@/components/history/events/tx/TransactionForm.vue';
@@ -18,7 +18,7 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'reload', event: LocationAndTxHash): void;
+  (e: 'reload', event: LocationAndTxRef): void;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

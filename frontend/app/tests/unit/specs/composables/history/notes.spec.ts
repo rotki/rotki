@@ -227,11 +227,11 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
-  describe('with TX Hash', () => {
+  describe('with Tx Ref', () => {
     const txHash = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
     const notes = `TxHash ${txHash}`;
 
-    it('noTxHash = false', () => {
+    it('noTxRef = false', () => {
       const formatted = get(formatNotes({ notes }));
 
       const expected: NoteFormat[] = [
@@ -277,8 +277,8 @@ describe('composables::history/notes', () => {
       expect(formatted).toMatchObject(expected);
     });
 
-    it('noTxHash = true', () => {
-      const formatted = get(formatNotes({ notes, noTxHash: true }));
+    it('noTxRef = true', () => {
+      const formatted = get(formatNotes({ notes, noTxRef: true }));
 
       const expected: NoteFormat[] = [
         {

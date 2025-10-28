@@ -1,5 +1,5 @@
 import type { Collection } from '@/types/collection';
-import type { LocationAndSignature, LocationAndTxHash } from '@/types/history/events';
+import type { LocationAndTxRef } from '@/types/history/events';
 import type { EntryMeta, EntryWithMeta } from '@/types/history/meta';
 import { isValidEthAddress } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
@@ -30,7 +30,7 @@ export function getEthAddressesFromText(notes: string): string[] {
   return filterAddressesFromWords(notes.split(/\s|\\n/));
 }
 
-export function toLocationAndTxHash(params: LocationAndTxHash | LocationAndSignature): LocationAndTxHash {
+export function toLocationAndTxRef(params: LocationAndTxRef): LocationAndTxRef {
   return {
     location: snakeCase(params.location),
     txRef: params.txRef,

@@ -59,7 +59,7 @@ describe('form/EthDepositEventForm.vue', () => {
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
     sequenceIndex: 12,
     timestamp: 1697522243000,
-    txHash: '0x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
+    txRef: '0x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
     userNotes: 'Deposit 3.2 ETH to validator 223',
     validatorIndex: 223,
   };
@@ -111,13 +111,13 @@ describe('form/EthDepositEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-cy=depositor] .input-value');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(validatorIndexInput.element.value).toBe('');
-    expect(txHashInput.element.value).toBe('');
+    expect(txRefInput.element.value).toBe('');
     expect(eventIdentifierInput.element.value).toBe('');
     expect(depositorInput.element.value).toBe('');
     expect(sequenceIndexInput.element.value).toBe('0');
@@ -132,14 +132,14 @@ describe('form/EthDepositEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-cy=depositor] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
-    expect(txHashInput.element.value).toBe(event.txHash);
+    expect(txRefInput.element.value).toBe(event.txRef);
     expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
     expect(depositorInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe('0');
@@ -155,14 +155,14 @@ describe('form/EthDepositEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
     const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-cy=depositor] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
-    expect(txHashInput.element.value).toBe(event.txHash);
+    expect(txRefInput.element.value).toBe(event.txRef);
     expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
     expect(depositorInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
@@ -178,7 +178,7 @@ describe('form/EthDepositEventForm.vue', () => {
     const nowInMs = now.valueOf();
 
     await wrapper.find('[data-cy=amount] input').setValue('2.5');
-    await wrapper.find('[data-cy=tx-hash] input').setValue('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
+    await wrapper.find('[data-cy=tx-ref] input').setValue('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
     await wrapper.find('[data-cy=validatorIndex] input').setValue('123');
     await wrapper.find('[data-cy=depositor] .input-value').setValue('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12');
     await wrapper.find('[data-cy=sequence-index] input').setValue('5');
@@ -201,7 +201,7 @@ describe('form/EthDepositEventForm.vue', () => {
       extraData: {},
       sequenceIndex: '5',
       timestamp: nowInMs,
-      txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      txRef: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
       validatorIndex: 123,
     });
   });
@@ -269,7 +269,7 @@ describe('form/EthDepositEventForm.vue', () => {
       identifier: event.identifier,
       sequenceIndex: event.sequenceIndex.toString(),
       timestamp: event.timestamp,
-      txHash: event.txHash,
+      txRef: event.txRef,
       validatorIndex: 224,
     });
   });
@@ -286,7 +286,7 @@ describe('form/EthDepositEventForm.vue', () => {
     });
 
     editHistoryEventMock.mockResolvedValueOnce({
-      message: { txHash: ['transaction hash is required'] },
+      message: { txRef: ['transaction hash is required'] },
       success: false,
     });
 
@@ -301,7 +301,7 @@ describe('form/EthDepositEventForm.vue', () => {
 
     expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
-    expect(wrapper.find('[data-cy=tx-hash] .details').text()).toBe('transaction hash is required');
+    expect(wrapper.find('[data-cy=tx-ref] .details').text()).toBe('transaction hash is required');
   });
 
   it('should display validation errors when the form is invalid', async () => {
@@ -313,6 +313,6 @@ describe('form/EthDepositEventForm.vue', () => {
 
     expect(wrapper.find('[data-cy=depositor] .details').exists()).toBe(true);
     expect(wrapper.find('[data-cy=validatorIndex] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=tx-hash] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=tx-ref] .details').exists()).toBe(true);
   });
 });

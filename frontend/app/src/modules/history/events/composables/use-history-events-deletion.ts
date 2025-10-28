@@ -18,7 +18,7 @@ interface UseHistoryEventsDeletionReturn {
 
 export function useHistoryEventsDeletion(
   selectionMode: UseHistoryEventsSelectionModeReturn,
-  groupedEventsByTxHash: Ref<Record<string, HistoryEventRow[]>>,
+  groupedEventsByTxRef: Ref<Record<string, HistoryEventRow[]>>,
   originalGroups: Ref<HistoryEventRow[]>,
   refreshCallback: () => Promise<void>,
 ): UseHistoryEventsDeletionReturn {
@@ -40,8 +40,8 @@ export function useHistoryEventsDeletion(
     transactions: Map<string, TransactionGroup>,
   ): Promise<{ message?: string; success: boolean }> {
     try {
-      for (const [txHash, { chain }] of transactions)
-        await deleteTransactions(chain, txHash);
+      for (const [txRef, { chain }] of transactions)
+        await deleteTransactions(chain, txRef);
 
       return { success: true };
     }
@@ -68,7 +68,7 @@ export function useHistoryEventsDeletion(
     try {
       for (const [, { eventIdentifier, events: eventIds }] of transactions) {
         // Use eventIdentifier to look up the events
-        const txEvents = eventIdentifier ? get(groupedEventsByTxHash)[eventIdentifier] || [] : [];
+        const txEvents = eventIdentifier ? get(groupedEventsByTxRef)[eventIdentifier] || [] : [];
 
         // Flatten the events array
         const allEvents = txEvents.flat().filter((e: any) => !Array.isArray(e));
@@ -131,7 +131,7 @@ export function useHistoryEventsDeletion(
       const { completeTransactions, partialEventIds, partialSwapGroups } = analyzeSelectedEvents(
         selectedIds,
         get(originalGroups),
-        get(groupedEventsByTxHash),
+        get(groupedEventsByTxRef),
       );
 
       // Handle partial swap selection first
