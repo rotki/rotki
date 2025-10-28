@@ -11,6 +11,7 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { Routes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -35,9 +36,8 @@ const exchange = ref<Exchange | undefined>(undefined);
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { evmAndEvmLikeTxChainsInfo, getChain, solanaChainsData } = useSupportedChains();
-const txChains = useArrayMap(evmAndEvmLikeTxChainsInfo, x => x.id);
-const solanaChains = useArrayMap(solanaChainsData, x => x.id);
+const { decodableTxChainsInfo, getChain } = useSupportedChains();
+const decodableTxChains = useArrayMap(decodableTxChainsInfo, x => x.id);
 
 const accountTypeOptions = computed<{ text: string; value: AccountType }[]>(() => [
   { text: t('transactions.repulling.account_type.blockchain'), value: 'blockchain' },
@@ -49,16 +49,12 @@ const chainOptions = computed(() => {
     .filter(([_, accounts]) => accounts.length > 0)
     .map(([chain]) => chain);
 
-  return [
-    'evm',
-    ...get(txChains).filter(chain => accountChains.includes(chain)),
-    ...get(solanaChains).filter(chain => accountChains.includes(chain)),
-  ];
+  return get(decodableTxChains).filter(chain => accountChains.includes(chain));
 });
 
 const usableChains = computed<string[]>(() => {
   const chainVal = get(chain);
-  if (!chainVal || chainVal === 'evm') {
+  if (!chainVal) {
     return get(chainOptions);
   }
 
@@ -74,7 +70,7 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
       .find(
         item =>
           getAccountAddress(item) === model.address
-          && (!model.chain || model.chain === 'evm' || model.chain === item.chain),
+          && (!model.chain || model.chain === item.chain),
       );
 
     if (accountFound) {
@@ -97,7 +93,10 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
 });
 
 const isBlockchainType = computed<boolean>(() => get(accountType) === 'blockchain');
-const isExchangeType = computed<boolean>(() => get(accountType) === 'exchange');
+
+const hasNoBlockchainAccounts = computed<boolean>(() => get(isBlockchainType) && get(chainOptions).length === 0);
+
+const hasNoExchanges = computed<boolean>(() => !get(isBlockchainType) && get(connectedExchanges).length === 0);
 
 const rules = computed(() => {
   if (get(isBlockchainType)) {
@@ -141,12 +140,6 @@ onBeforeUnmount(() => {
   set(errors, {});
 });
 
-watchImmediate(chain, (chainVal) => {
-  if (chainVal === '') {
-    set(chain, 'evm');
-  }
-});
-
 watchImmediate(accountType, (type) => {
   if (!type) {
     set(accountType, 'blockchain');
@@ -175,36 +168,81 @@ defineExpose({
       </RuiTab>
     </RuiTabs>
 
-    <div
-      v-if="isBlockchainType"
-      class="flex gap-2"
+    <RuiAlert
+      v-if="hasNoBlockchainAccounts"
+      type="warning"
     >
-      <ChainSelect
-        v-model="chain"
-        class="max-w-[20rem]"
-        :items="chainOptions"
-        :error-messages="toMessages(v$.chain)"
-      />
-      <BlockchainAccountSelector
-        v-model="accounts"
-        class="flex-1"
-        :chains="usableChains"
-        hide-chain-icon
-        outlined
-        show-details
-        multichain
-        unique
-        :custom-hint="t('transactions.repulling.address_hint')"
-        :label="t('common.address')"
-        :error-messages="toMessages(v$.address)"
-        :no-data-text="t('transactions.form.account.no_address_found')"
-      />
-    </div>
+      <i18n-t
+        keypath="transactions.repulling.no_accounts"
+        tag="span"
+      >
+        <template #link>
+          <RouterLink :to="Routes.ACCOUNTS_EVM">
+            <RuiButton
+              color="primary"
+              variant="text"
+              size="sm"
+              class="inline -my-1 [&>span]:underline"
+            >
+              {{ t('transactions.repulling.add_account_link') }}
+            </RuiButton>
+          </RouterLink>
+        </template>
+      </i18n-t>
+    </RuiAlert>
 
-    <div
-      v-if="isExchangeType"
+    <RuiAlert
+      v-else-if="hasNoExchanges"
+      type="warning"
     >
+      <i18n-t
+        keypath="transactions.repulling.no_exchanges"
+        tag="span"
+      >
+        <template #link>
+          <RouterLink :to="Routes.API_KEYS_EXCHANGES">
+            <RuiButton
+              color="primary"
+              variant="text"
+              size="sm"
+              class="inline -my-1 [&>span]:underline"
+            >
+              {{ t('transactions.repulling.add_exchange_link') }}
+            </RuiButton>
+          </RouterLink>
+        </template>
+      </i18n-t>
+    </RuiAlert>
+
+    <template v-else>
+      <div
+        v-if="isBlockchainType"
+        class="flex gap-2"
+      >
+        <ChainSelect
+          v-model="chain"
+          class="max-w-[20rem]"
+          :items="chainOptions"
+          :error-messages="toMessages(v$.chain)"
+        />
+        <BlockchainAccountSelector
+          v-model="accounts"
+          class="flex-1"
+          :chains="usableChains"
+          hide-chain-icon
+          outlined
+          show-details
+          multichain
+          unique
+          :custom-hint="t('transactions.repulling.address_hint')"
+          :label="t('common.address')"
+          :error-messages="toMessages(v$.address)"
+          :no-data-text="t('transactions.form.account.no_address_found')"
+        />
+      </div>
+
       <RuiAutoComplete
+        v-else
         v-model="exchange"
         :options="connectedExchanges"
         :label="t('transactions.repulling.exchange')"
@@ -236,33 +274,33 @@ defineExpose({
           </div>
         </template>
       </RuiAutoComplete>
-    </div>
 
-    <div class="w-full flex gap-2">
-      <div class="flex-1">
-        <RuiDateTimePicker
-          v-model="fromTimestamp"
-          :label="t('generate.labels.start_date')"
-          :max-date="toTimestamp"
-          type="epoch"
-          allow-empty
-          color="primary"
-          variant="outlined"
-          :error-messages="toMessages(v$.fromTimestamp)"
-        />
+      <div class="w-full flex gap-2">
+        <div class="flex-1">
+          <RuiDateTimePicker
+            v-model="fromTimestamp"
+            :label="t('generate.labels.start_date')"
+            :max-date="toTimestamp"
+            type="epoch"
+            allow-empty
+            color="primary"
+            variant="outlined"
+            :error-messages="toMessages(v$.fromTimestamp)"
+          />
+        </div>
+        <div class="flex-1">
+          <RuiDateTimePicker
+            v-model="toTimestamp"
+            :label="t('generate.labels.end_date')"
+            :min-date="fromTimestamp"
+            type="epoch"
+            max-date="now"
+            color="primary"
+            variant="outlined"
+            :error-messages="toMessages(v$.toTimestamp)"
+          />
+        </div>
       </div>
-      <div class="flex-1">
-        <RuiDateTimePicker
-          v-model="toTimestamp"
-          :label="t('generate.labels.end_date')"
-          :min-date="fromTimestamp"
-          type="epoch"
-          max-date="now"
-          color="primary"
-          variant="outlined"
-          :error-messages="toMessages(v$.toTimestamp)"
-        />
-      </div>
-    </div>
+    </template>
   </form>
 </template>

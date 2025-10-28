@@ -35,10 +35,10 @@ const { setMessage } = useMessageStore();
 
 const { connectedNodes, failedToConnect } = storeToRefs(usePeriodicStore());
 const { show } = useConfirmStore();
-const { getChainName, getEvmChainName } = useSupportedChains();
+const { getChainName } = useSupportedChains();
 const api = useEvmNodesApi(chain);
 
-const chainName = computed(() => get(getChainName(chain)));
+const chainName = getChainName(chain);
 const anyDisconnected = computed(() => get(nodes).some(node => !isNodeConnected(node) && node.active));
 
 async function loadNodes(): Promise<void> {
@@ -108,26 +108,34 @@ function isEtherscan(item: BlockchainRpcNode) {
 }
 
 function isNodeInDataset(dataset: Record<string, string[]>, item: BlockchainRpcNode): boolean {
-  const blockchain = get(chain);
-  const evmChain = camelCase(getEvmChainName(blockchain) ?? '');
-  const nodes = evmChain && dataset?.[evmChain] ? dataset[evmChain] : [];
+  const chainVal = get(chain);
+  const blockchain = camelCase(chainVal);
+  const nodes = dataset?.[blockchain] || [];
   return nodes.includes(item.name);
 }
 
+const NODE_STATUS = {
+  CONNECTED: 'connected',
+  FAILED: 'failed',
+  READY: 'ready',
+} as const;
+
+type NodeStatus = typeof NODE_STATUS[keyof typeof NODE_STATUS];
+
 function isNodeConnected(item: BlockchainRpcNode): boolean {
-  return isNodeInDataset(get(connectedNodes), item) || isEtherscan(item);
+  return isEtherscan(item) || isNodeInDataset(get(connectedNodes), item);
 }
 
-function getNodeStatus(item: BlockchainRpcNode): 'connected' | 'ready' | 'failed' {
+function getNodeStatus(item: BlockchainRpcNode): NodeStatus {
   if (isNodeConnected(item)) {
-    return 'connected';
+    return NODE_STATUS.CONNECTED;
   }
-  else if (isNodeInDataset(get(failedToConnect), item)) {
-    return 'failed';
+
+  if (isNodeInDataset(get(failedToConnect), item)) {
+    return NODE_STATUS.FAILED;
   }
-  else {
-    return 'ready';
-  }
+
+  return NODE_STATUS.READY;
 }
 
 function showDeleteConfirmation(item: BlockchainRpcNode) {
@@ -259,7 +267,7 @@ defineExpose({
           <div class="flex items-center gap-2">
             <div class="w-6">
               <RuiTooltip
-                v-if="getNodeStatus(item) === 'failed' && item.active"
+                v-if="getNodeStatus(item) === NODE_STATUS.FAILED && item.active"
                 :open-delay="400"
               >
                 <template #activator>
@@ -281,7 +289,7 @@ defineExpose({
               </RuiTooltip>
             </div>
             <BadgeDisplay
-              v-if="getNodeStatus(item) === 'connected'"
+              v-if="getNodeStatus(item) === NODE_STATUS.CONNECTED"
               color="green"
               class="items-center gap-2 !leading-6"
             >
@@ -295,7 +303,7 @@ defineExpose({
               </span>
             </BadgeDisplay>
             <BadgeDisplay
-              v-else-if="getNodeStatus(item) === 'failed'"
+              v-else-if="getNodeStatus(item) === NODE_STATUS.FAILED"
               color="red"
               class="items-center gap-2 !leading-6"
             >

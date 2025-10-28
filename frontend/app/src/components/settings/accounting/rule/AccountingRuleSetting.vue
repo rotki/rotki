@@ -1,23 +1,19 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
-import { toSentenceCase } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
-import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
+import type {
+  AccountingRuleAction,
+  AccountingRuleEntry,
+  AccountingRuleRequestPayload,
+} from '@/types/settings/accounting';
+import { z } from 'zod/v4';
+import AccountingRuleActionDialog, { type Props as AccountingRuleActionDialogProps } from '@/components/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
 import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
-import AccountingRuleWithLinkedSettingDisplay
-  from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSettingDisplay.vue';
+import AccountingRuleTable from '@/components/settings/accounting/rule/AccountingRuleTable.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { type Filters, type Matcher, useAccountingRuleFilter } from '@/composables/filters/accounting-rule';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useAccountingSettings } from '@/composables/settings/accounting';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useConfirmStore } from '@/store/confirm';
@@ -26,6 +22,23 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getPlaceholderRule } from '@/utils/settings';
 
+const CUSTOM_RULE_HANDLING = {
+  /** Show regular rules (exclude event-specific rules) */
+  EXCLUDE: 'exclude',
+  /** Show only event-specific rules */
+  ONLY: 'only',
+} as const;
+
+type CustomRuleHandling = typeof CUSTOM_RULE_HANDLING[keyof typeof CUSTOM_RULE_HANDLING];
+
+const AccountingRuleQuerySchema = z.object({
+  counterparty: z.string().nullable().default(null),
+  eventSubtype: z.string().default(''),
+  eventType: z.string().default(''),
+});
+
+type AccountingRuleQuery = z.infer<typeof AccountingRuleQuerySchema>;
+
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
@@ -33,8 +46,12 @@ const route = useRoute();
 const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
 
 const editMode = ref<boolean>(false);
+const customRuleHandling = ref<CustomRuleHandling>(CUSTOM_RULE_HANDLING.EXCLUDE);
 
 const modelValue = ref<AccountingRuleEntry>();
+const eventIdsForRule = ref<number[]>();
+const actionDialog = ref<boolean>(false);
+const actionDialogProps = ref<AccountingRuleActionDialogProps>();
 
 const {
   fetchData,
@@ -51,6 +68,9 @@ const {
   Filters,
   Matcher
 >(getAccountingRules, {
+  extraParams: computed(() => ({
+    customRuleHandling: get(customRuleHandling),
+  })),
   filterSchema: useAccountingRuleFilter,
   history: 'router',
 });
@@ -77,69 +97,6 @@ async function checkConflicts() {
   }
 }
 
-const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => [
-  {
-    cellClass: 'py-4',
-    class: 'whitespace-pre-line',
-    key: 'eventTypeAndSubtype',
-    label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
-      'accounting_settings.rule.labels.event_subtype',
-    )}`,
-  },
-  {
-    key: 'resultingCombination',
-    label: t('transactions.events.form.resulting_combination.label'),
-  },
-  {
-    cellClass: 'border-r border-default',
-    class: 'border-r border-default',
-    key: 'counterparty',
-    label: t('common.counterparty'),
-  },
-  {
-    align: 'center',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
-    key: 'taxable',
-    label: t('accounting_settings.rule.labels.taxable'),
-  },
-  {
-    align: 'center',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
-    key: 'countEntireAmountSpend',
-    label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
-  },
-  {
-    align: 'center',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
-    key: 'countCostBasisPnl',
-    label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
-  },
-  {
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
-    key: 'accountingTreatment',
-    label: t('accounting_settings.rule.labels.accounting_treatment'),
-  },
-  {
-    align: 'center',
-    key: 'actions',
-    label: t('common.actions_text'),
-    width: '1px',
-  },
-]);
-
-const { getEventTypeData, historyEventSubTypesData, historyEventTypesData } = useHistoryEventMappings();
-
-function getHistoryEventTypeName(eventType: string): string {
-  return get(historyEventTypesData).find(item => item.identifier === eventType)?.label ?? toSentenceCase(eventType);
-}
-
-function getHistoryEventSubTypeName(eventSubtype: string): string {
-  return (
-    get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)?.label
-    ?? toSentenceCase(eventSubtype)
-  );
-}
-
 function createNewEntry() {
   return (
     {
@@ -161,14 +118,16 @@ function createNewEntry() {
   );
 }
 
-function add(rule?: AccountingRuleEntry) {
+function add(rule?: AccountingRuleEntry, eventIds?: number[]) {
   set(modelValue, rule || createNewEntry());
   set(editMode, false);
+  set(eventIdsForRule, eventIds);
 }
 
-function edit(rule: AccountingRuleEntry) {
+function edit(rule: AccountingRuleEntry, eventIds?: number[]) {
   set(modelValue, rule);
   set(editMode, true);
+  set(eventIdsForRule, eventIds);
 }
 
 const { show } = useConfirmStore();
@@ -204,46 +163,133 @@ function showDeleteConfirmation(item: AccountingRuleEntry) {
   );
 }
 
-function getType(eventType: string, eventSubtype: string) {
-  return get(
-    getEventTypeData({
-      eventSubtype,
-      eventType,
+function parseRuleQuery(): AccountingRuleQuery {
+  const { query } = get(route);
+  return AccountingRuleQuerySchema.parse({
+    counterparty: query.counterparty,
+    eventSubtype: query.eventSubtype,
+    eventType: query.eventType,
+  });
+}
+
+function addRuleFromQuery(eventIds?: number[]): void {
+  const ruleQuery = parseRuleQuery();
+  add({
+    ...getPlaceholderRule(),
+    ...ruleQuery,
+  }, eventIds);
+}
+
+async function handleAddRule(eventIdNum?: number): Promise<void> {
+  if (eventIdNum) {
+    set(actionDialogProps, {
+      eventId: eventIdNum,
+      hasEventSpecificRule: false,
+      hasGeneralRule: false,
+    });
+    set(actionDialog, true);
+    return;
+  }
+
+  addRuleFromQuery();
+  await router.replace({ query: {} });
+}
+
+async function handleEditRuleWithEventId(eventIdNum: number, ruleQuery: AccountingRuleQuery): Promise<void> {
+  const [generalRule, eventSpecificRules] = await Promise.all([
+    getAccountingRule({
+      eventSubtypes: [ruleQuery.eventSubtype],
+      eventTypes: [ruleQuery.eventType],
+      limit: 2,
+      offset: 0,
+    }, ruleQuery.counterparty),
+    getAccountingRules({
+      eventIds: [eventIdNum],
+      limit: 10,
+      offset: 0,
     }),
-  );
+  ]);
+
+  const eventSpecificRule = eventSpecificRules.data.length > 0 ? eventSpecificRules.data[0] : undefined;
+  const hasEventSpecificRule = !!eventSpecificRule;
+  const hasGeneralRule = !!generalRule;
+
+  set(actionDialogProps, {
+    eventId: eventIdNum,
+    eventIds: eventSpecificRule?.eventIds ?? undefined,
+    eventSpecificRule,
+    generalRule,
+    hasEventSpecificRule,
+    hasGeneralRule,
+  });
+  set(actionDialog, true);
+}
+
+async function handleEditRuleWithoutEventId(ruleQuery: AccountingRuleQuery): Promise<void> {
+  const rule = await getAccountingRule({
+    eventSubtypes: [ruleQuery.eventSubtype],
+    eventTypes: [ruleQuery.eventType],
+    limit: 2,
+    offset: 0,
+  }, ruleQuery.counterparty);
+
+  if (rule)
+    edit(rule);
+
+  await router.replace({ query: {} });
+}
+
+async function handleEditRule(eventIdNum: number | undefined, ruleQuery: AccountingRuleQuery): Promise<void> {
+  if (eventIdNum) {
+    await handleEditRuleWithEventId(eventIdNum, ruleQuery);
+    return;
+  }
+
+  await handleEditRuleWithoutEventId(ruleQuery);
+}
+
+async function handleRuleAction(action: AccountingRuleAction) {
+  const props = get(actionDialogProps);
+  if (!props)
+    return;
+
+  const { eventId, eventSpecificRule, generalRule } = props;
+
+  switch (action) {
+    case 'add-general':
+      addRuleFromQuery();
+      break;
+    case 'add-event-specific':
+      addRuleFromQuery([eventId]);
+      break;
+    case 'edit-general':
+      if (generalRule)
+        edit(generalRule);
+      break;
+    case 'edit-event-specific':
+      if (eventSpecificRule)
+        edit(eventSpecificRule, eventSpecificRule.eventIds ?? undefined);
+      break;
+  }
+
+  set(actionDialog, false);
+  await router.replace({ query: {} });
 }
 
 onMounted(async () => {
   const { query } = get(route);
-  const { 'add-rule': addRule, counterparty, 'edit-rule': editRule, eventSubtype, eventType } = query;
+  const { 'add-rule': addRule, 'edit-rule': editRule, eventId } = query;
 
-  const ruleData = {
-    counterparty: counterparty?.toString() ?? null,
-    eventSubtype: eventSubtype?.toString() ?? '',
-    eventType: eventType?.toString() ?? '',
-  };
-
-  async function openDialog(rule?: AccountingRuleEntry, forceAdd = false) {
-    if (rule) {
-      startPromise(nextTick(() => forceAdd ? add(rule) : edit(rule)));
-    }
-    await router.replace({ query: {} });
-  }
+  const ruleQuery = parseRuleQuery();
+  const eventIdNum = eventId ? Number(eventId) : undefined;
 
   if (addRule) {
-    await openDialog({
-      ...getPlaceholderRule(),
-      ...ruleData,
-    }, true);
+    await handleAddRule(eventIdNum);
   }
   else if (editRule) {
-    await openDialog(await getAccountingRule({
-      eventSubtypes: [ruleData.eventSubtype],
-      eventTypes: [ruleData.eventType],
-      limit: 2,
-      offset: 0,
-    }, ruleData.counterparty));
+    await handleEditRule(eventIdNum, ruleQuery);
   }
+
   await refresh();
 });
 
@@ -338,10 +384,11 @@ const importFileDialog = ref<boolean>(false);
 
     <RuiCard class="mt-5">
       <template #custom-header>
-        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-between p-4 pb-0">
+        <div class="p-4 pb-0">
           <template v-if="conflictsNumber > 0">
             <RuiButton
               color="warning"
+              class="mb-4"
               @click="conflictsDialogOpen = true"
             >
               <template #prepend>
@@ -360,157 +407,58 @@ const importFileDialog = ref<boolean>(false);
             </RuiButton>
             <AccountingRuleConflictsDialog
               v-if="conflictsDialogOpen"
-              :table-headers="cols"
               @close="conflictsDialogOpen = false"
               @refresh="refresh()"
             />
           </template>
+          <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-between">
+            <RuiTabs
+              v-model="customRuleHandling"
+              color="primary"
+              class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+            >
+              <RuiTab :value="CUSTOM_RULE_HANDLING.EXCLUDE">
+                {{ t('accounting_settings.rule.tabs.regular') }}
+              </RuiTab>
+              <RuiTab :value="CUSTOM_RULE_HANDLING.ONLY">
+                {{ t('accounting_settings.rule.tabs.custom') }}
+              </RuiTab>
+            </RuiTabs>
 
-          <div class="w-full md:w-[25rem] ml-auto">
-            <TableFilter
-              :matches="filters"
-              :matchers="matchers"
-              @update:matches="updateFilter($event)"
-            />
+            <div class="w-full md:w-[25rem] ml-auto">
+              <TableFilter
+                :matches="filters"
+                :matchers="matchers"
+                @update:matches="updateFilter($event)"
+              />
+            </div>
           </div>
         </div>
       </template>
 
-      <CollectionHandler
-        :collection="state"
+      <AccountingRuleTable
+        :key="customRuleHandling"
+        v-model:pagination="pagination"
+        :state="state"
+        :is-loading="isLoading"
+        :is-custom="customRuleHandling === CUSTOM_RULE_HANDLING.ONLY"
         @set-page="setPage($event)"
-      >
-        <template #default="{ data }">
-          <RuiDataTable
-            v-model:pagination.external="pagination"
-            outlined
-            :rows="data"
-            :cols="cols"
-            :loading="isLoading"
-            row-attr="identifier"
-          >
-            <template #header.taxable>
-              <RuiTooltip
-                :popper="{ placement: 'top' }"
-                :open-delay="400"
-                class="flex items-center h-full"
-                tooltip-class="max-w-[10rem]"
-              >
-                <template #activator>
-                  <div class="flex items-center text-left gap-2">
-                    <RuiIcon
-                      class="shrink-0"
-                      size="18"
-                      name="lu-info"
-                    />
-                    {{ t('accounting_settings.rule.labels.taxable') }}
-                  </div>
-                </template>
-                {{ t('accounting_settings.rule.labels.taxable_subtitle') }}
-              </RuiTooltip>
-            </template>
-            <template #header.countEntireAmountSpend>
-              <RuiTooltip
-                :popper="{ placement: 'top' }"
-                :open-delay="400"
-                class="flex items-center"
-                tooltip-class="max-w-[10rem]"
-              >
-                <template #activator>
-                  <div class="flex items-center text-left gap-2">
-                    <RuiIcon
-                      class="shrink-0"
-                      size="18"
-                      name="lu-info"
-                    />
-                    {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
-                  </div>
-                </template>
-                {{ t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle') }}
-              </RuiTooltip>
-            </template>
-            <template #header.countCostBasisPnl>
-              <RuiTooltip
-                :popper="{ placement: 'top' }"
-                :open-delay="400"
-                class="flex items-center"
-                tooltip-class="max-w-[10rem]"
-              >
-                <template #activator>
-                  <div class="flex items-center text-left gap-2">
-                    <RuiIcon
-                      class="shrink-0"
-                      size="18"
-                      name="lu-info"
-                    />
-                    {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
-                  </div>
-                </template>
-                {{ t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle') }}
-              </RuiTooltip>
-            </template>
-            <template #header.accountingTreatment>
-              <div class="max-w-[5rem] text-sm whitespace-normal font-medium">
-                {{ t('accounting_settings.rule.labels.accounting_treatment') }}
-              </div>
-            </template>
-            <template #item.eventTypeAndSubtype="{ row }">
-              <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
-              <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
-            </template>
-            <template #item.resultingCombination="{ row }">
-              <HistoryEventTypeCombination
-                :type="getType(row.eventType, row.eventSubtype)"
-                show-label
-              />
-            </template>
-            <template #item.counterparty="{ row }">
-              <CounterpartyDisplay
-                v-if="row.counterparty"
-                :counterparty="row.counterparty"
-              />
-              <span v-else>-</span>
-            </template>
-            <template #item.taxable="{ row }">
-              <AccountingRuleWithLinkedSettingDisplay
-                identifier="taxable"
-                :item="row.taxable"
-              />
-            </template>
-            <template #item.countEntireAmountSpend="{ row }">
-              <AccountingRuleWithLinkedSettingDisplay
-                identifier="countEntireAmountSpend"
-                :item="row.countEntireAmountSpend"
-              />
-            </template>
-            <template #item.countCostBasisPnl="{ row }">
-              <AccountingRuleWithLinkedSettingDisplay
-                identifier="countCostBasisPnl"
-                :item="row.countCostBasisPnl"
-              />
-            </template>
-            <template #item.accountingTreatment="{ row }">
-              <BadgeDisplay v-if="row.accountingTreatment">
-                {{ row.accountingTreatment }}
-              </BadgeDisplay>
-              <span v-else>-</span>
-            </template>
-            <template #item.actions="{ row }">
-              <RowActions
-                :delete-tooltip="t('accounting_settings.rule.delete')"
-                :edit-tooltip="t('accounting_settings.rule.edit')"
-                @delete-click="showDeleteConfirmation(row)"
-                @edit-click="edit(row)"
-              />
-            </template>
-          </RuiDataTable>
-        </template>
-      </CollectionHandler>
+        @delete-click="showDeleteConfirmation($event)"
+        @edit-click="edit($event)"
+      />
 
       <AccountingRuleFormDialog
         v-model="modelValue"
         :edit-mode="editMode"
+        :event-ids="eventIdsForRule"
         @refresh="fetchData()"
+      />
+
+      <AccountingRuleActionDialog
+        v-if="actionDialog && actionDialogProps"
+        v-bind="actionDialogProps"
+        @close="actionDialog = false"
+        @select="handleRuleAction($event)"
       />
 
       <AccountingRuleImportDialog

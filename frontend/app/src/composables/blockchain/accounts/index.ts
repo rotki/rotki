@@ -62,7 +62,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     const { taskId } = await addBlockchainAccount(chain, payload);
 
     const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub.xpub;
-    const { result } = await awaitTask<string[], BlockchainMetadata>(
+    const { result } = await awaitTask<string[] | true, BlockchainMetadata>(
       taskId,
       taskType,
       {
@@ -72,6 +72,10 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       },
       true,
     );
+
+    if (result === true) {
+      return address;
+    }
 
     return result.length > 0 ? result[0] : '';
   };

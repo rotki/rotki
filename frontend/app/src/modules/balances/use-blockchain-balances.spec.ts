@@ -47,6 +47,7 @@ vi.mock('@/composables/api/balances/blockchain', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({
     queryBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 1 }),
     queryLoopringBalances: vi.fn().mockResolvedValue({ taskId: 2 }),
+    queryXpubBalances: vi.fn().mockResolvedValue({ taskId: 3 }),
   }),
 }));
 
@@ -86,10 +87,10 @@ vi.mock('@/composables/info/chains', async () => {
   const { Blockchain } = await import('@rotki/common');
   return ({
     useSupportedChains: vi.fn().mockReturnValue({
-      getChain: () => Blockchain.ETH,
-      getChainAccountType: () => 'evm',
+      getChain: (chain: string) => chain,
+      getChainAccountType: (chain: Blockchain) => chain === Blockchain.BTC ? 'bitcoin' : 'evm',
       getChainImageUrl: (chain: Blockchain) => `${chain}.png`,
-      getChainName: () => 'Ethereum',
+      getChainName: (chain: Blockchain) => chain === Blockchain.BTC ? 'Bitcoin' : 'Ethereum',
       getNativeAsset: (chain: Blockchain) => chain,
       supportedChains: computed<SupportedChains>(() => [
         {
@@ -100,6 +101,12 @@ vi.mock('@/composables/info/chains', async () => {
           nativeToken: 'ETH',
           type: 'evm',
         } satisfies EvmChainInfo,
+        {
+          id: Blockchain.BTC,
+          image: '',
+          name: 'Bitcoin',
+          type: 'bitcoin',
+        },
       ]),
     }),
   });
@@ -134,7 +141,6 @@ describe('useBlockchainBalances', () => {
       await blockchainBalances.fetchBlockchainBalances();
 
       expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(0);
-      expect(api.queryBlockchainBalances).not.toHaveBeenCalledWith(false, 'eth');
 
       // call if there's account
       updateAccounts(Blockchain.ETH, [
@@ -147,7 +153,12 @@ describe('useBlockchainBalances', () => {
       await blockchainBalances.fetchBlockchainBalances();
 
       expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(api.queryBlockchainBalances).toHaveBeenCalledWith(false, 'eth', undefined);
+      expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+        addresses: undefined,
+        blockchain: 'eth',
+        ignoreCache: false,
+        isXpub: false,
+      }, undefined);
     });
 
     describe('particular blockchain', () => {
@@ -163,7 +174,12 @@ describe('useBlockchainBalances', () => {
 
       const assert = (times = 1): void => {
         expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.queryBlockchainBalances).toHaveBeenCalledWith(true, Blockchain.ETH, undefined);
+        expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+          addresses: undefined,
+          blockchain: Blockchain.ETH,
+          ignoreCache: true,
+          isXpub: false,
+        }, undefined);
       };
 
       const { isLoading } = useStatusStore();
@@ -194,6 +210,33 @@ describe('useBlockchainBalances', () => {
 
         await until(loading).toBe(false);
         assert(2);
+      });
+    });
+
+    describe('xpub accounts', () => {
+      it('should fetch balances with isXpub flag set to true', async () => {
+        const { updateAccounts } = useBlockchainAccountsStore();
+
+        // Add a BTC account first
+        updateAccounts(Blockchain.BTC, [
+          createAccount(
+            { address: 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz', label: null, tags: null },
+            { chain: Blockchain.BTC, nativeAsset: 'BTC' },
+          ),
+        ]);
+
+        await blockchainBalances.fetchBlockchainBalances({
+          blockchain: Blockchain.BTC,
+          ignoreCache: true,
+          isXpub: true,
+        });
+
+        expect(api.queryXpubBalances).toHaveBeenCalledWith({
+          addresses: undefined,
+          blockchain: Blockchain.BTC,
+          ignoreCache: true,
+          isXpub: true,
+        });
       });
     });
   });

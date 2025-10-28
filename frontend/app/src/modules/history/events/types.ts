@@ -22,7 +22,7 @@ export interface HistoryEventsTableEmits {
   'set-page': [page: number];
   'refresh': [payload?: PullLocationTransactionPayload];
   'refresh:block-event': [payload: PullEthBlockEventPayload];
-  'update-event-ids': [payload: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]> }];
+  'update-event-ids': [payload: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }];
 }
 
 export type HistoryEventsTableEmitFn = <K extends keyof HistoryEventsTableEmits>(

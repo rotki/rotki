@@ -23,9 +23,6 @@ const status = actionStatus(name);
     :title="t('external_services.alchemy.title')"
     :subtitle="t('external_services.alchemy.description')"
     :image-src="getPublicServiceImagePath('alchemy.svg')"
-    :primary-action="key
-      ? t('external_services.replace_key')
-      : t('external_services.save_key')"
     :action-disabled="!serviceKeyRef?.currentValue"
     @confirm="saveHandler()"
   >
@@ -42,7 +39,7 @@ const status = actionStatus(name);
             size="16"
           />
         </template>
-        {{ t('external_services.delete_key') }}
+        {{ t('external_services.actions.delete_key') }}
       </RuiButton>
     </template>
     <ServiceKey

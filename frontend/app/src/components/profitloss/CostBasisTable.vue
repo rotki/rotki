@@ -171,7 +171,7 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
 
 <style module lang="scss">
 .group {
-  @apply absolute w-0.5 -top-[1px] -bottom-4 left-[0.8125rem];
+  @apply absolute w-0.5 -top-4 -bottom-4 left-[0.8125rem];
 
   &__line {
     @apply border-l-2 border-dashed border-rui-primary h-full transform -translate-x-1/2;

@@ -8,7 +8,7 @@ from web3.exceptions import Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
-from rotkehlchen.chain.manager import ChainManager
+from rotkehlchen.chain.manager import ChainManager, ChainWithEoA
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_AVAX
 from rotkehlchen.errors.misc import BlockchainQueryError
@@ -25,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 
 
-class AvalancheManager(ChainManager[ChecksumEvmAddress]):
+class AvalancheManager(ChainManager[ChecksumEvmAddress], ChainWithEoA):
     def __init__(
             self,
             avaxrpc_endpoint: str,

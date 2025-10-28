@@ -108,7 +108,8 @@ class BlockchainBalances:
 
     def set(self, chain: SupportedBlockchain, balances: ALL_BALANCE_TYPES) -> None:
         """Set the balances dict for the given chain"""
-        return setattr(self, chain.get_key(), balances)
+        existing_balances = getattr(self, chain.get_key())
+        existing_balances.update(balances)
 
     def __iter__(self) -> Iterator[tuple[str, dict]]:
         """Easy way to iterate through all chains

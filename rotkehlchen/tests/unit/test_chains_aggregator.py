@@ -151,7 +151,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
 
     assert set(blockchain.accounts.eth) == {addy_eoa_1, addy_eoa_2, addy_eoa_3, addy_eoa_4, eth_addy_contract, everywhere_addy}  # noqa: E501
     assert set(blockchain.accounts.optimism) == {addy_eoa_1, addy_eoa_2, everywhere_addy}
-    assert set(blockchain.accounts.avax) == {addy_eoa_1, everywhere_addy}
+    assert set(blockchain.accounts.avax) == {addy_eoa_1, everywhere_addy, eth_addy_contract}
     assert set(blockchain.accounts.polygon_pos) == {addy_eoa_2, addy_eoa_3, addy_eoa_4, everywhere_addy}  # noqa: E501
     assert set(blockchain.accounts.arbitrum_one) == {addy_eoa_3, addy_eoa_4, everywhere_addy}
     assert set(blockchain.accounts.base) == {addy_eoa_3, everywhere_addy}
@@ -165,6 +165,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         for chain, address, label in (
             (SupportedBlockchain.ETHEREUM, addy_eoa_1, None),
             (SupportedBlockchain.AVALANCHE, addy_eoa_1, None),
+            (SupportedBlockchain.AVALANCHE, eth_addy_contract, None),
             (SupportedBlockchain.OPTIMISM, addy_eoa_2, label1),
             (SupportedBlockchain.POLYGON_POS, addy_eoa_4, None),
             (SupportedBlockchain.POLYGON_POS, addy_eoa_3, label2),

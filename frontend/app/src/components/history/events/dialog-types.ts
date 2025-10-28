@@ -4,8 +4,8 @@ import type {
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import type { Exchange } from '@/types/exchanges';
-import type { AddTransactionHashPayload, LocationAndTxHash } from '@/types/history/events';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type { AddTransactionHashPayload, ChainAddress, LocationAndTxHash } from '@/types/history/events';
+import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
 
 export const DIALOG_TYPES = {
   ADD_MISSING_RULE: 'addMissingRule',
@@ -21,7 +21,7 @@ export const DIALOG_TYPES = {
 export type DialogType = typeof DIALOG_TYPES[keyof typeof DIALOG_TYPES];
 
 export type DialogShowOptions =
-  | { type: typeof DIALOG_TYPES.ADD_MISSING_RULE; data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'> }
+  | { type: typeof DIALOG_TYPES.ADD_MISSING_RULE; data: AccountingRuleIdentifier }
   | { type: typeof DIALOG_TYPES.EVENT_FORM; data: GroupEventData | StandaloneEventData }
   | { type: typeof DIALOG_TYPES.TRANSACTION_FORM; data?: AddTransactionHashPayload }
   | { type: typeof DIALOG_TYPES.REPULLING_TRANSACTION }
@@ -41,7 +41,7 @@ export interface HistoryEventsToggles {
 export interface DialogEventHandlers {
   onHistoryEventSaved?: () => void | Promise<void>;
   onTransactionAdded?: (txHash: LocationAndTxHash) => void | Promise<void>;
-  onRepullTransactions?: (chains: string[]) => void | Promise<void>;
+  onRepullTransactions?: (account: ChainAddress) => void | Promise<void>;
   onRepullExchangeEvents?: (exchanges: Exchange[]) => Promise<void>;
   onRedecodeTransaction?: (txHash: LocationAndTxHash) => void | Promise<void>;
   onRedecodeAllEvents?: () => void | Promise<void>;

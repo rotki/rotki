@@ -44,7 +44,7 @@
     "labels": {
       "addresses": "Addresses",
       "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
-      "addresses_hint": "Insert multiple comma separated addresses",
+      "addresses_hint": "Εισαγάγετε πολλές διευθύνσεις διαχωρισμένες με κόμματα ή νέες γραμμές",
       "blockchain": "Επιλέξτε blockchain | Επιλέξτε blockchains",
       "btc": {
         "derivation_path": "Derivation Path",
@@ -2316,7 +2316,6 @@
       "non_fungible_balances": "Υπόλοιπα NFT"
     },
     "dashboard": "Ταμπλό",
-    "defi": "DeFi",
     "defi_sub": {
       "airdrops": "Airdrops"
     },

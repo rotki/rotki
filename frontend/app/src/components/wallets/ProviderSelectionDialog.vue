@@ -119,7 +119,7 @@ function handleCancel(): void {
         v-if="providers.length > 0 && !loading"
         #footer
       >
-        <div class="flex justify-end gap-2">
+        <div class="w-full flex justify-end gap-2">
           <RuiButton
             variant="outlined"
             @click="handleCancel()"

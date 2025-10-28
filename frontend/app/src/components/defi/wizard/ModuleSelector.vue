@@ -4,7 +4,6 @@ import type { CamelCase } from '@/types/common';
 import { transformCase, Zero } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -179,20 +178,14 @@ onMounted(async () => {
       dense
     >
       <template #item.name="{ row }">
-        <div class="flex flex-row items-center">
-          <AdaptiveWrapper
-            class="flex items-center mr-4"
-            width="26px"
-            height="26px"
-          >
-            <AppImage
-              width="26px"
-              contain
-              max-height="24px"
-              :src="row.icon"
-            />
-          </AdaptiveWrapper>
-          <span> {{ row.name }}</span>
+        <div class="flex flex-row items-center gap-2">
+          <AppImage
+            class="icon-bg"
+            size="1.5rem"
+            contain
+            :src="row.icon"
+          />
+          <span>{{ row.name }}</span>
         </div>
       </template>
 
@@ -202,7 +195,7 @@ onMounted(async () => {
           placement="center"
           size="sm"
           variant="outlined"
-          class="!h-5 !bg-rui-primary-lighter/[0.2] font-medium"
+          class="!h-5 !bg-rui-primary-lighter/[0.1] font-medium"
         >
           {{ selected(row.identifier) }}
         </RuiChip>

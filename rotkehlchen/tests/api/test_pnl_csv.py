@@ -365,6 +365,11 @@ def test_history_export_csv_errors(
     with ExitStack() as stack:
         for manager in setup:
             stack.enter_context(manager)
+            stack.enter_context(patch(
+                'rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_safe_proxy_or_eoa',
+                return_value=False,
+            ))
+
         response = requests.get(
             api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
         )

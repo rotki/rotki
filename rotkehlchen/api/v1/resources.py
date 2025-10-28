@@ -187,6 +187,7 @@ from rotkehlchen.api.v1.schemas import (
     WatchersDeleteSchema,
     WatchersEditSchema,
     XpubAddSchema,
+    XpubBalancesSchema,
     XpubPatchSchema,
     create_counterparty_asset_mappings_schema,
 )
@@ -1088,12 +1089,14 @@ class BlockchainBalancesResource(BaseMethodView):
             async_query: bool,
             ignore_cache: bool,
             usd_value_threshold: FVal | None,
+            addresses: ListOfBlockchainAddresses | None,
     ) -> Response:
         return self.rest_api.query_blockchain_balances(
             blockchain=blockchain,
             async_query=async_query,
             ignore_cache=ignore_cache,
             usd_value_threshold=usd_value_threshold,
+            addresses=addresses,
         )
 
 
@@ -1772,9 +1775,32 @@ class ChainTypeAccountResource(BaseMethodView):
 
 class BTCXpubResource(BaseMethodView):
 
+    get_schema = XpubBalancesSchema()
     put_schema = XpubAddSchema()
     delete_schema = BaseXpubSchema()
     patch_schema = XpubPatchSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            xpub: 'HDKey',
+            derivation_path: str | None,
+            async_query: bool,
+            ignore_cache: bool,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> Response:
+        return self.rest_api.get_xpub_balances(
+            xpub_data=XpubData(
+                xpub=xpub,
+                blockchain=blockchain,
+                derivation_path=derivation_path,
+                label=None,
+                tags=None,
+            ),
+            async_query=async_query,
+            ignore_cache=ignore_cache,
+        )
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_view_args')

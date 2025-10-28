@@ -3,6 +3,7 @@ import operator
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Protocol
 
@@ -928,7 +929,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
-            event_type, _, location_label, _, _, _ = direction_result
+            event_type, _, location_label, address, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
                 eth_burned_as_gas = self._calculate_fees(tx)
                 notes = f'Burn {eth_burned_as_gas} {self.value_asset.symbol} for gas'
@@ -950,6 +951,27 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                     notes=notes,
                     counterparty=CPT_GAS,
                 ))
+
+            # Maybe decode an onchain message in the input data
+            if (
+                len(tx_receipt.logs) == 0 and
+                len(tx.input_data) != 0 and
+                tx.to_address is not None and
+                self.evm_inquirer.is_safe_proxy_or_eoa(tx.to_address)
+            ):
+                with suppress(UnicodeDecodeError):
+                    events.append(self.base.make_event(
+                        tx_ref=tx.tx_hash,
+                        sequence_index=self.base.get_next_sequence_index_pre_decoding(),
+                        timestamp=tx.timestamp,
+                        event_type=HistoryEventType.INFORMATIONAL,
+                        event_subtype=HistoryEventSubType.MESSAGE,
+                        asset=self.value_asset,
+                        amount=ZERO,
+                        location_label=location_label,
+                        notes=f'Message: {tx.input_data.decode()}',
+                        address=address,
+                    ))
 
         # Decode internal transactions after gas so gas is always 0 indexed
         self._maybe_decode_internal_transactions(

@@ -30,6 +30,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},
         HistoryEventSubType.CONSOLIDATE: {DEFAULT: EventCategory.COMBINE},
         HistoryEventSubType.DELEGATE: {DEFAULT: EventCategory.DELEGATE},
+        HistoryEventSubType.MESSAGE: {DEFAULT: EventCategory.MESSAGE},
     },
     HistoryEventType.RECEIVE: {
         HistoryEventSubType.REWARD: {DEFAULT: EventCategory.CLAIM_REWARD},
@@ -48,7 +49,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: {
-            DEFAULT: EventCategory.DEPOSIT,
+            DEFAULT: EventCategory.ACCOUNT_DEPOSIT,
             EXCHANGE: EventCategory.CEX_DEPOSIT,
         },
         HistoryEventSubType.DEPOSIT_FOR_WRAPPED: {DEFAULT: EventCategory.DEPOSIT},
@@ -74,7 +75,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.WITHDRAWAL: {
         HistoryEventSubType.REMOVE_ASSET: {
-            DEFAULT: EventCategory.WITHDRAW,
+            DEFAULT: EventCategory.ACCOUNT_WITHDRAWAL,
             EXCHANGE: EventCategory.CEX_WITHDRAWAL,
         },
         HistoryEventSubType.REDEEM_WRAPPED: {DEFAULT: EventCategory.WITHDRAW},
@@ -331,6 +332,16 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.RETURN: {DEFAULT: EventCategoryDetails(
         label='return',
         icon='lu-undo-2',
+    )}, EventCategory.MESSAGE: {DEFAULT: EventCategoryDetails(
+        label='message',
+        icon='lu-message-square-text',
+    )}, EventCategory.ACCOUNT_DEPOSIT: {DEFAULT: EventCategoryDetails(
+        label='account deposit',
+        icon='lu-upload',
+        color='success',
+    )}, EventCategory.ACCOUNT_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
+        label='account withdraw',
+        icon='lu-download',
     )},
 }
 

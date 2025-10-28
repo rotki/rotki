@@ -40,17 +40,20 @@ export function useManagedAssetOperations(
 
   const isSpamAsset = (asset: SupportedAsset): boolean => asset.protocol === 'spam';
 
+  function refreshAssetsConditionally(): void {
+    if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
+      onRefresh();
+  }
+
   const toggleIgnoreAsset = async (asset: SupportedAsset): Promise<void> => {
     const { identifier, name, symbol } = asset;
     if (get(useIsAssetIgnored(identifier))) {
       await unignoreAsset(identifier);
+      refreshAssetsConditionally();
     }
     else {
-      await ignoreAssetWithConfirmation(identifier, symbol || name);
+      await ignoreAssetWithConfirmation(identifier, symbol || name, refreshAssetsConditionally);
     }
-
-    if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
-      onRefresh();
   };
 
   const toggleSpam = async (item: SupportedAsset): Promise<void> => {

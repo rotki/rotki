@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import TransactionQueryStatusLine from '@/components/history/events/tx/query-status/TransactionQueryStatusLine.vue';
@@ -10,12 +9,10 @@ defineProps<{ item: TxQueryStatusData }>();
 
 <template>
   <div class="flex items-center">
-    <AdaptiveWrapper>
-      <ChainIcon
-        :chain="item.chain"
-        size="1.25rem"
-      />
-    </AdaptiveWrapper>
+    <ChainIcon
+      :chain="item.chain"
+      size="1.5rem"
+    />
     <TransactionQueryStatusLine
       :item="item"
       class="ms-2"

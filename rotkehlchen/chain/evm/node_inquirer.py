@@ -18,7 +18,7 @@ from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
+from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT, SAFE_BASIC_ABI
 from rotkehlchen.chain.ethereum.constants import (
     ETHEREUM_ETHERSCAN_NODE_NAME,
 )
@@ -234,7 +234,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
-
+        # cache used by is_safe_proxy_or_eoa
+        self._known_accounts_cache: LRUCacheWithRemove[ChecksumEvmAddress, bool] = LRUCacheWithRemove(maxsize=50)  # noqa: E501
         LockableQueryMixIn.__init__(self)
         EVMRPCMixin.__init__(self)
         # Log the available nodes so we have extra information when debugging connection errors.
@@ -1289,6 +1290,36 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             RemoteDataQueryStatus.NEW_DATA if new_data is not None
             else RemoteDataQueryStatus.NO_UPDATE
         )
+
+    def is_safe_proxy_or_eoa(self, address: ChecksumEvmAddress) -> bool:
+        """
+        Check if an address is a SAFE contract or an EoA. We do this by checking the getThreshold,
+        VERSION and getChainId methods. We assume that if a contract has the same methods as a
+        safe then it is a safe. Also EoAs return (true, b'') for any method so this function
+        will also return True.
+        """
+        if (tracked_value := self._known_accounts_cache.get(address)) is not None:
+            # use a cache to avoid repeating the same query several times
+            return tracked_value
+
+        contract = EvmContract(address=address, abi=SAFE_BASIC_ABI)  # avoid creating the contract 3 times in the calls list  # noqa: E501
+        calls = [
+            (address, contract.encode(method_name=method_name, arguments=[]))
+            for method_name in ('getThreshold', 'VERSION', 'getChainId')
+        ]
+        try:
+            outputs = self.multicall_2(
+                calls=calls,
+                require_success=False,
+            )
+        except RemoteError as e:
+            log.error(
+                f'Failed to check SAFE properties for {address} in {self.chain_name} due to {e}. '
+                'Skipping',
+            )
+            return False
+
+        return all(result_tuple[0] for result_tuple in outputs)
 
 
 class EvmNodeInquirerWithProxies(EvmNodeInquirer):

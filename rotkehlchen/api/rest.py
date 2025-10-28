@@ -246,6 +246,7 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
+    CHAINS_WITH_NODES,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
     CHAINS_WITH_TRANSACTIONS,
     CHAINS_WITH_TRANSACTIONS_TYPE,
@@ -259,7 +260,6 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS_TYPE,
@@ -307,6 +307,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder import GnosisPayDecoder
+    from rotkehlchen.chain.manager import ChainManagerWithNodesMixin
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -942,6 +943,7 @@ class RestAPI:
             blockchain: SupportedBlockchain | None,
             ignore_cache: bool,
             usd_value_threshold: FVal | None = None,
+            addresses: ListOfBlockchainAddresses | None = None,
     ) -> dict[str, Any]:
         msg = ''
         status_code = HTTPStatus.OK
@@ -950,6 +952,7 @@ class RestAPI:
             balances = self.rotkehlchen.chains_aggregator.query_balances(
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
+                addresses=addresses,
             )
 
             # Filter balances before serialization
@@ -990,6 +993,42 @@ class RestAPI:
         except EthSyncError as e:
             msg = str(e)
             status_code = HTTPStatus.CONFLICT
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
+
+    @async_api_call()
+    def get_xpub_balances(
+            self,
+            xpub_data: 'XpubData',
+            ignore_cache: bool = False,
+    ) -> dict[str, Any]:
+        """Get balances for all addresses derived from an xpub
+
+        If ignore_cache is True, checks for new xpub addresses and includes them.
+        If ignore_cache is False, uses only existing derived addresses from database.
+        """
+        msg = ''
+        status_code = HTTPStatus.OK
+        result = None
+        try:
+            if ignore_cache:
+                XpubManager(chains_aggregator=self.rotkehlchen.chains_aggregator).check_for_new_xpub_addresses(
+                    blockchain=xpub_data.blockchain,
+                    xpub_data=xpub_data,
+                )
+
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                addresses = self.rotkehlchen.data.db.get_xpub_derived_addresses(cursor=cursor, xpub_data=xpub_data)  # noqa: E501
+
+            result = self.rotkehlchen.chains_aggregator.query_balances(
+                blockchain=xpub_data.blockchain,
+                ignore_cache=ignore_cache,
+                addresses=addresses,
+            ).serialize()
+
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
@@ -2586,16 +2625,12 @@ class RestAPI:
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        if node.node_info.blockchain == SupportedBlockchain.SOLANA:
-            # TODO: @solana. Implement once we have the manager
-            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
-
         nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
 
-        manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(
+        manager: ChainManagerWithNodesMixin = self.rotkehlchen.chains_aggregator.get_chain_manager(  # type: ignore  # will be manager with nodes
             blockchain=node.node_info.blockchain,
         )
         for entry in list(manager.node_inquirer.rpc_mapping):  # remove old node from memory
@@ -2632,7 +2667,7 @@ class RestAPI:
             blockchain: SupportedBlockchain,
     ) -> dict[str, Any]:
         """Attempt a connection to a node and return status"""
-        if blockchain not in SUPPORTED_EVM_CHAINS:
+        if blockchain not in CHAINS_WITH_NODES:
             return {
                 'result': None,
                 'message': f'{blockchain} nodes are connected at login',
@@ -2653,7 +2688,7 @@ class RestAPI:
                     'status_code': HTTPStatus.BAD_REQUEST,
                 }
 
-        manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
+        manager: ChainManagerWithNodesMixin = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore  # will be manager with nodes  # noqa: E501
         errors = []
         for row in db_entries:
             success, msg = manager.node_inquirer.attempt_connect(node=(node := NodeName(

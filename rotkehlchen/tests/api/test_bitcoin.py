@@ -686,3 +686,39 @@ def test_delete_btc_account(
                 name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
                 address=address,
             ) == expected_value
+
+
+@pytest.mark.vcr
+def test_get_xpub_balances_ignore_cache_behavior(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that ignore_cache parameter controls whether xpub derivation is called"""
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'btcxpubresource', blockchain='BTC'),
+        json={
+            'xpub': (xpub := 'xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8'),  # noqa: E501
+            'derivation_path': (derivation_path := 'm/0/0'),
+        },
+    ))
+
+    # Test with ignore_cache=False - should NOT call check_for_new_xpub_addresses
+    with patch('rotkehlchen.chain.bitcoin.xpub.XpubManager.check_for_new_xpub_addresses') as mock_check:  # noqa: E501
+        assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'btcxpubresource', blockchain='BTC'),
+            json={
+                'xpub': xpub,
+                'derivation_path': derivation_path,
+                'ignore_cache': False,
+            },
+        ))
+        mock_check.assert_not_called()
+
+    # Test with ignore_cache=True - should call check_for_new_xpub_addresses
+    with patch('rotkehlchen.chain.bitcoin.xpub.XpubManager.check_for_new_xpub_addresses') as mock_check:  # noqa: E501
+        assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'btcxpubresource', blockchain='BTC'),
+            json={
+                'xpub': xpub,
+                'derivation_path': derivation_path,
+                'ignore_cache': True,
+            },
+        ))
+        mock_check.assert_called()

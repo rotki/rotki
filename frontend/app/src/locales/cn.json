@@ -50,7 +50,7 @@
     "labels": {
       "addresses": "地址",
       "addresses_entries": "无条目 | {count} 个唯一条目 | {count} 个唯一条目",
-      "addresses_hint": "插入多个逗号分隔的地址",
+      "addresses_hint": "插入多个地址，用逗号或换行符分隔",
       "blockchain": "选择区块链 | 选择区块链",
       "btc": {
         "derivation_path": "推导路径",
@@ -2388,7 +2388,6 @@
       "non_fungible_balances": "NFT 余额"
     },
     "dashboard": "仪表板",
-    "defi": "DeFi",
     "defi_sub": {
       "airdrops": "空投"
     },

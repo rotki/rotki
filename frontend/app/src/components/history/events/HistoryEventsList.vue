@@ -16,8 +16,9 @@ const props = withDefaults(defineProps<{
   displayedEvents: HistoryEventRow[];
   hasIgnoredEvent?: boolean;
   loading?: boolean;
+  hideActions?: boolean;
   highlightedIdentifiers?: string[];
-  selection: UseHistoryEventsSelectionModeReturn;
+  selection?: UseHistoryEventsSelectionModeReturn;
 }>(), {
   loading: false,
 });
@@ -139,6 +140,7 @@ watch(() => get(eventGroup), () => {
       :all-events="combinedAllEvents"
       :total="totalBlocks"
       :loading="loading"
+      :hide-actions="hideActions"
       :highlighted-identifiers="highlightedIdentifiers"
       :selection="selection"
       @delete-event="emit('delete-event', $event)"

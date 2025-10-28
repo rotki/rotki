@@ -191,7 +191,7 @@ defineExpose({
         <ToggleLocationLink
           v-model="chain"
           class="ml-3"
-          :disabled="disableAsset"
+          :disabled="disableAsset || disabled"
           :location="location"
         />
         <div

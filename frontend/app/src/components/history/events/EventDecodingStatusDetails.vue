@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { EvmUnDecodedTransactionsData } from '@/modules/messaging/types';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -22,12 +21,10 @@ const decoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING, taskMeta);
 
 <template>
   <div class="flex items-center gap-2">
-    <AdaptiveWrapper>
-      <EvmChainIcon
-        :chain="item.chain"
-        size="1.25rem"
-      />
-    </AdaptiveWrapper>
+    <ChainIcon
+      :chain="item.chain"
+      size="1.5rem"
+    />
     <div class="flex flex-wrap text-body-2">
       <template v-if="isComplete">
         {{ t('transactions.events_decoding.decoding.done', { count: item.total }) }}

@@ -306,27 +306,34 @@ class XpubManager:
     def check_for_new_xpub_addresses(
             self,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            xpub_data: XpubData | None = None,
     ) -> None:
-        """Checks all xpub addresses and sees if new addresses got used.
+        """Checks xpub addresses and sees if new addresses got used.
         If they did it adds them for tracking.
         """
         log.debug(f'Starting task for derivation of new {blockchain!s} xpub addresses')
-        with self.db.conn.read_ctx() as cursor:
-            xpubs = self.db.get_bitcoin_xpub_data(cursor, blockchain)
+
+        if xpub_data is not None:
+            xpubs = [xpub_data]
+        else:
+            with self.db.conn.read_ctx() as cursor:
+                xpubs = self.db.get_bitcoin_xpub_data(cursor, blockchain)
+
         with self.lock:
-            for xpub_data in xpubs:
+            for xpub_data_item in xpubs:
                 try:
-                    self._derive_xpub_addresses(xpub_data, new_xpub=False)
+                    self._derive_xpub_addresses(xpub_data_item, new_xpub=False)
                 except RemoteError as e:
                     log.warning(
-                        f'Failed to derive new xpub addresses from xpub: {xpub_data.xpub.xpub} '
-                        f'and derivation_path: {xpub_data.derivation_path} due to: {e!s}',
+                        f'Failed to derive new xpub addresses from xpub: '
+                        f'{xpub_data_item.xpub.xpub} and derivation_path: '
+                        f'{xpub_data_item.derivation_path} due to: {e!s}',
                     )
                     continue
 
                 log.debug(
-                    f'Attempt to derive new addresses from xpub: {xpub_data.xpub.xpub} '
-                    f'and derivation_path: {xpub_data.derivation_path} finished',
+                    f'Attempt to derive new addresses from xpub: {xpub_data_item.xpub.xpub} '
+                    f'and derivation_path: {xpub_data_item.derivation_path} finished',
                 )
 
     def edit_bitcoin_xpub(

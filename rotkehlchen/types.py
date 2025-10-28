@@ -563,7 +563,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     @classmethod
-    def from_location(cls, location: 'EVM_EVMLIKE_LOCATIONS_TYPE') -> 'SupportedBlockchain':
+    def from_location(cls, location: 'BLOCKCHAIN_LOCATIONS_TYPE') -> 'SupportedBlockchain':
         """
         Turns a location to a supported chain.
         Caller has to make sure Location is a blockchain, otherwise AttributeError is raised.
@@ -732,7 +732,11 @@ CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
 }
 NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
 
-CHAINS_WITH_NODES = SUPPORTED_EVM_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA]
+# Define these from the existing constants to avoid defining duplicate copies.
+# Will need changed if these grow in different ways.
+CHAINS_WITH_NODES_TYPE = CHAINS_WITH_TRANSACTION_DECODERS_TYPE
+CHAINS_WITH_NODES: tuple[CHAINS_WITH_NODES_TYPE, ...] = CHAINS_WITH_TRANSACTION_DECODERS
+
 CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA]  # noqa: E501
 
 

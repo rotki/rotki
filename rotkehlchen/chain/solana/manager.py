@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.manager import ChainManagerWithTransactions
+from rotkehlchen.chain.manager import ChainManagerWithNodesMixin, ChainManagerWithTransactions
 from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_to_sol
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_SOL
@@ -37,14 +37,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class SolanaManager(ChainManagerWithTransactions[SolanaAddress]):
+class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWithNodesMixin[SolanaInquirer]):  # noqa: E501
 
     def __init__(
             self,
             node_inquirer: SolanaInquirer,
             premium: 'Premium | None' = None,
     ) -> None:
-        self.node_inquirer = node_inquirer
+        super().__init__(node_inquirer=node_inquirer)
         self.database = node_inquirer.database
         self.transactions = SolanaTransactions(
             node_inquirer=self.node_inquirer,

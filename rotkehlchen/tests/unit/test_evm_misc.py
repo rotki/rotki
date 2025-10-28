@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
 )
 from rotkehlchen.chain.evm.types import asset_id_is_evm_token, string_to_evm_address
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, SupportedBlockchain
+from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID
 
 
 def test_asset_id_is_evm_token():
@@ -64,19 +64,15 @@ def test_weth_is_supported():
 @pytest.mark.parametrize('base_accounts', [[make_evm_address()]])
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_is_safe_proxy(blockchain: ChainsAggregator):
-    assert blockchain.is_safe_proxy_or_eoa(  # EOA
+    assert blockchain.ethereum.node_inquirer.is_safe_proxy_or_eoa(  # EOA
         address=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
-        chain=SupportedBlockchain.ETHEREUM,
     ) is True
-    assert blockchain.is_safe_proxy_or_eoa(  # safe
+    assert blockchain.base.node_inquirer.is_safe_proxy_or_eoa(  # safe
         address=string_to_evm_address('0x9d25AdBcffE28923E619f4Af88ECDe732c985b63'),
-        chain=SupportedBlockchain.BASE,
     ) is True
-    assert blockchain.is_safe_proxy_or_eoa(  # balanceScanner contract
+    assert blockchain.ethereum.node_inquirer.is_safe_proxy_or_eoa(  # balanceScanner contract
         address=string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92'),
-        chain=SupportedBlockchain.ETHEREUM,
     ) is False
-    assert blockchain.is_safe_proxy_or_eoa(  # old safe
+    assert blockchain.ethereum.node_inquirer.is_safe_proxy_or_eoa(  # old safe
         address=string_to_evm_address('0xd12745b5CA546A408a35e8C77d81Aa0a7526DE7b'),
-        chain=SupportedBlockchain.ETHEREUM,
     ) is True

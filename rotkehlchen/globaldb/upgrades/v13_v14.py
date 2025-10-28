@@ -33,4 +33,11 @@ def migrate_to_v14(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
                 ('SOL', 'SOL-2'),
             )
 
+    @progress_step('Remove old Morpho cache key')
+    def _remove_old_morpho_cache_key(write_cursor: 'DBCursor') -> None:
+        """Remove the old Morpho cache key. The Morpho vault count is now stored by chain
+        instead of one count for all chains.
+        """
+        write_cursor.execute('DELETE FROM unique_cache WHERE key=?', ('MORPHO_VAULTS',))
+
     perform_globaldb_upgrade_steps(connection, progress_handler)

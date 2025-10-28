@@ -3,9 +3,11 @@ from collections.abc import Sequence
 from typing import Generic, TypeVar
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.types import Timestamp
+from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 T_Address = TypeVar('T_Address')
+T_NodeInquirer = TypeVar('T_NodeInquirer', bound=RPCManagerMixin)
 
 
 class ChainManager(ABC, Generic[T_Address]):
@@ -32,3 +34,21 @@ class ChainManagerWithTransactions(ChainManager[T_Address]):
         particular blockchain require querying other transactions as well to reach the given
         range, then those should also be saved to avoid requerying them later.
         """
+
+
+class ChainManagerWithNodesMixin(ABC, Generic[T_NodeInquirer]):
+    """Mixin for chain managers that use a node inquirer that inherits from RPCManagerMixin."""
+
+    def __init__(self, node_inquirer: T_NodeInquirer) -> None:
+        self.node_inquirer = node_inquirer
+
+
+class ChainWithEoA:
+    """Mixin for chain managers where we check if addresses are contracts or EoA"""
+
+    def is_safe_proxy_or_eoa(self, address: ChecksumEvmAddress) -> bool:
+        """Check if an address is a SAFE contract or an EoA
+        This is the base implementation that should be overwritten for chains that
+        implement a custom behaviour.
+        """
+        return True

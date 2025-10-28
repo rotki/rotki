@@ -7,7 +7,7 @@ import type {
   SubstrateChainInfo,
   SupportedChains,
 } from '@/types/api/chains';
-import { Blockchain, getTextToken, toHumanReadable, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { Blockchain, getTextToken, toHumanReadable, toSnakeCase } from '@rotki/common';
 import { useSupportedChainsApi } from '@/composables/api/info/chains';
 import { useArrayInclude } from '@/composables/array';
 import { Routes } from '@/router/routes';
@@ -79,10 +79,14 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const evmAndEvmLikeTxChainsInfo = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
 
-  const allTxChainsInfo = computed<ChainInfo[]>(() => [
+  const decodableTxChainsInfo = computed<ChainInfo[]>(() => [
     ...get(evmAndEvmLikeTxChainsInfo),
-    ...get(bitcoinChainsData),
     ...get(solanaChainsData),
+  ]);
+
+  const allTxChainsInfo = computed<ChainInfo[]>(() => [
+    ...get(decodableTxChainsInfo),
+    ...get(bitcoinChainsData),
   ]);
 
   const evmChains: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.id);
@@ -111,6 +115,12 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const isSolanaChains = (chain: MaybeRef<string>): boolean => {
     const chains = get(solanaChainsData);
+    const selectedChain = get(chain);
+    return chains.some(x => x.id === selectedChain);
+  };
+
+  const isDecodableChains = (chain: MaybeRef<string>): boolean => {
+    const chains = get(decodableTxChainsInfo);
     const selectedChain = get(chain);
     return chains.some(x => x.id === selectedChain);
   };
@@ -190,9 +200,9 @@ export const useSupportedChains = createSharedComposable(() => {
       const locationVal = get(location);
       const chain = matchChain(locationVal);
       if (!chain)
-        return toSentenceCase(locationVal);
+        return toHumanReadable(locationVal, 'capitalize');
 
-      return get(getChainInfoById(chain))?.name || toSentenceCase(locationVal);
+      return get(getChainInfoById(chain))?.name || toHumanReadable(locationVal, 'capitalize');
     });
 
   const getChainImageUrl = (chain: MaybeRef<string>): ComputedRef<string> => computed<string>(() => {
@@ -231,6 +241,7 @@ export const useSupportedChains = createSharedComposable(() => {
     allEvmChains,
     allTxChainsInfo,
     bitcoinChainsData,
+    decodableTxChainsInfo,
     evmAndEvmLikeTxChainsInfo,
     evmChainNames,
     evmChains,
@@ -246,6 +257,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getEvmChainName,
     getNativeAsset,
     isBtcChains,
+    isDecodableChains,
     isEvm,
     isEvmLikeChains,
     isSolanaChains,

@@ -87,6 +87,8 @@ const isNativeAsset = computed(() => {
 
 const assetDetail = getAssetDetail(asset, assetChain);
 
+const isWalletConnected = computed(() => get(connected) && !!get(connectedAddress));
+
 const wrongNetwork = computed(() => {
   const chainId = get(connectedChainId);
   if (!get(connected) || !chainId) {
@@ -383,7 +385,7 @@ watch([estimatedGasFee, assetBalance], () => {
 
       <div class="flex items-end">
         <div class="grow">
-          <template v-if="!connected">
+          <template v-if="!isWalletConnected">
             <div class="text-rui-text-secondary text-caption uppercase mb-1">
               {{ t('trade.wallet_mode.label') }}
             </div>
@@ -440,9 +442,10 @@ watch([estimatedGasFee, assetBalance], () => {
     </div>
     <div class="p-6 border-t border-default">
       <WalletConnectionButton
-        v-if="!connected || isDisconnecting"
+        v-if="!isWalletConnected || isDisconnecting"
         size="lg"
         full-width
+        :connected="isWalletConnected"
         :loading="isConnecting || isDisconnecting"
         @click="onConnectClicked()"
       />

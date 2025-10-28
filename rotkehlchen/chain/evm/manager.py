@@ -13,7 +13,11 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
 )
 from rotkehlchen.chain.evm.types import RemoteDataQueryStatus
-from rotkehlchen.chain.manager import ChainManagerWithTransactions
+from rotkehlchen.chain.manager import (
+    ChainManagerWithNodesMixin,
+    ChainManagerWithTransactions,
+    ChainWithEoA,
+)
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
 from rotkehlchen.fval import FVal
@@ -34,7 +38,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EvmManager(ChainManagerWithTransactions[ChecksumEvmAddress]):
+class EvmManager(
+        ChainManagerWithTransactions[ChecksumEvmAddress],
+        ChainManagerWithNodesMixin['EvmNodeInquirer'],
+        ChainWithEoA,
+):
     """EvmManager defines a basic implementation for EVM chains."""
 
     def __init__(
@@ -45,8 +53,7 @@ class EvmManager(ChainManagerWithTransactions[ChecksumEvmAddress]):
             transactions_decoder: 'EVMTransactionDecoder',
             accounting_aggregator: 'EVMAccountingAggregator',
     ) -> None:
-        super().__init__()
-        self.node_inquirer = node_inquirer
+        super().__init__(node_inquirer=node_inquirer)
         self.transactions = transactions
         self.tokens = tokens
         self.transactions_decoder = transactions_decoder
@@ -209,6 +216,10 @@ class EvmManager(ChainManagerWithTransactions[ChecksumEvmAddress]):
                 balances[address] += asset_balances
 
         return balances
+
+    def is_safe_proxy_or_eoa(self, address: 'ChecksumEvmAddress') -> bool:
+        """Check if an address is a SAFE contract or an EoA"""
+        return self.node_inquirer.is_safe_proxy_or_eoa(address)
 
 
 class CurveManagerMixin:

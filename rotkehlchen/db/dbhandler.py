@@ -3376,6 +3376,23 @@ class DBHandler:
 
         return data
 
+    def get_xpub_derived_addresses(
+            self,
+            cursor: 'DBCursor',
+            xpub_data: XpubData,
+    ) -> list[BTCAddress]:
+        """Get all derived addresses for a specific xpub"""
+        cursor.execute(
+            'SELECT address FROM xpub_mappings WHERE xpub=? AND derivation_path IS ? AND '
+            'blockchain=?',
+            (
+                xpub_data.xpub.xpub,
+                xpub_data.serialize_derivation_path_for_db(),
+                xpub_data.blockchain.value,
+            ),
+        )
+        return [BTCAddress(row[0]) for row in cursor.fetchall()]
+
     def ensure_xpub_mappings_exist(
             self,
             write_cursor: 'DBCursor',

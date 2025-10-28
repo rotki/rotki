@@ -465,7 +465,7 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 "rotkehlchen/tests/conftest.py" = [
     "S602",  # test setup. No problem with shell=True
     "S605",  # test setup, can't inject in process
-    "S607",  # test setup, partial path does not mater
+    "S607",  # test setup, partial path does not matter
 ]
 "rotkehlchen/tests/integration/test_backend.py" = [
     "S603",  # test called by us. No variable input

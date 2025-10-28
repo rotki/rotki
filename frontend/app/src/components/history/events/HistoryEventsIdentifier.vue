@@ -18,21 +18,6 @@ const { event } = toRefs(props);
 
 const { is2xlAndUp } = useBreakpoint();
 
-const translationKey = computed<string>(() => {
-  // consider an evm swap event as a case of evm event
-  // as they are both evm events and have the same header
-  const eventVal = get(event);
-  let entryType = eventVal.entryType;
-  if (entryType === HistoryEventEntryType.EVM_SWAP_EVENT)
-    entryType = HistoryEventEntryType.EVM_EVENT;
-
-  if (entryType === HistoryEventEntryType.HISTORY_EVENT && 'txHash' in eventVal) {
-    entryType = HistoryEventEntryType.EVM_EVENT;
-  }
-
-  return `transactions.events.headers.${toSnakeCase(entryType)}`;
-});
-
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 const assetMovementEvent = isAssetMovementEventRef(event);
@@ -51,6 +36,18 @@ const eventWithTxHash = computed<{ location: string; txHash: string } | undefine
     };
   }
   return undefined;
+});
+
+const translationKey = computed<string>(() => {
+  // consider an evm swap event as a case of evm event
+  // as they are both evm events and have the same header
+  const eventVal = get(event);
+  let entryType = eventVal.entryType;
+  if (get(eventWithTxHash)) {
+    entryType = HistoryEventEntryType.EVM_EVENT;
+  }
+
+  return `transactions.events.headers.${toSnakeCase(entryType)}`;
 });
 
 const assetMovementTransactionId = computed<string | undefined>(() => get(assetMovementEvent)?.extraData?.transactionId ?? undefined);

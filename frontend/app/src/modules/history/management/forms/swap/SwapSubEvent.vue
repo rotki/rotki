@@ -92,6 +92,18 @@ function updateModel() {
   set(modelValue, updatedModel);
 }
 
+const userNotesLabel = computed(() => {
+  if (props.type === 'fee') {
+    return t('swap_event_form.fee_notes');
+  }
+
+  if (props.type === 'receive') {
+    return t('swap_event_form.receive_notes');
+  }
+
+  return t('swap_event_form.spend_notes');
+});
+
 watch(modelValue, (model, oldModel) => {
   if (isEqual(model, oldModel))
     return;
@@ -172,6 +184,7 @@ defineExpose({
           v-model:asset="asset"
           hide-price-fields
           :timestamp="timestamp"
+          :disabled="disabled"
           :v$="v$"
           :location="location"
           :type="type"
@@ -211,7 +224,7 @@ defineExpose({
             max-rows="5"
             min-rows="3"
             auto-grow
-            :label="t('swap_event_form.spend_notes')"
+            :label="userNotesLabel"
             :error-messages="toMessages(v$.userNotes)"
             @blur="v$.userNotes.touch()"
           />

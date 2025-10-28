@@ -52,3 +52,17 @@ export const BlockchainBalances = z.object({
 });
 
 export type BlockchainBalances = z.infer<typeof BlockchainBalances>;
+
+export interface BlockchainBalancePayload {
+  readonly addresses?: string[];
+  readonly blockchain?: string | string[];
+  readonly ignoreCache: boolean;
+  readonly isXpub?: boolean;
+}
+
+export interface FetchBlockchainBalancePayload {
+  readonly addresses?: string[];
+  readonly isXpub?: boolean;
+  readonly blockchain: string;
+  readonly ignoreCache: boolean;
+}

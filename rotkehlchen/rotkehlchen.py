@@ -1408,10 +1408,12 @@ class Rotkehlchen:
             with self.data.db.conn.read_ctx() as cursor:
                 result[DBCacheStatic.LAST_BALANCE_SAVE.value] = self.data.db.get_last_balance_save_time(cursor)  # noqa: E501
                 connected_nodes, failed_to_connect = {}, {}
-                for evm_manager in self.chains_aggregator.iterate_evm_chain_managers():
-                    connected_nodes[evm_manager.node_inquirer.chain_name] = [node.name for node in evm_manager.node_inquirer.get_connected_nodes()]  # noqa: E501
-                    if len(evm_manager.node_inquirer.failed_to_connect_nodes) != 0:
-                        failed_to_connect[evm_manager.node_inquirer.chain_name] = list(evm_manager.node_inquirer.failed_to_connect_nodes)  # noqa: E501
+                for chain_manager in self.chains_aggregator.iterate_chain_managers_with_nodes():
+                    connected_nodes[serialized_chain := chain_manager.node_inquirer.blockchain.serialize()] = [  # noqa: E501
+                        node.name for node in chain_manager.node_inquirer.get_connected_nodes()
+                    ]
+                    if len(chain_manager.node_inquirer.failed_to_connect_nodes) != 0:
+                        failed_to_connect[serialized_chain] = list(chain_manager.node_inquirer.failed_to_connect_nodes)  # noqa: E501
 
                 result['connected_nodes'] = connected_nodes
                 if len(failed_to_connect) != 0:

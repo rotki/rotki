@@ -194,7 +194,7 @@ watch([status, selectedAccounts], () => {
 </script>
 
 <template>
-  <TablePageLayout :title="[t('navigation_menu.defi'), t('navigation_menu.defi_sub.airdrops')]">
+  <TablePageLayout :title="[t('navigation_menu.defi_sub.airdrops')]">
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>

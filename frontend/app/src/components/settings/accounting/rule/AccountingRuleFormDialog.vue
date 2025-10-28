@@ -14,9 +14,11 @@ const props = withDefaults(
   defineProps<{
     editMode?: boolean;
     loading?: boolean;
+    eventIds?: number[];
   }>(),
   {
     editMode: false,
+    eventIds: undefined,
     loading: false,
   },
 );
@@ -53,9 +55,17 @@ async function save() {
   const editMode = props.editMode;
   set(submitting, true);
   try {
-    if (editMode)
+    if (editMode) {
       success = await editAccountingRule(data);
-    else success = await addAccountingRule(omit(data, ['identifier']));
+    }
+    else {
+      const ruleData = omit(data, ['identifier']);
+      // Include eventIds if provided (for custom accounting rules)
+      if (props.eventIds) {
+        ruleData.eventIds = props.eventIds;
+      }
+      success = await addAccountingRule(ruleData);
+    }
   }
   catch (error: any) {
     success = false;
@@ -98,12 +108,19 @@ async function save() {
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
+    <template
+      v-if="eventIds && eventIds.length > 0 "
+      #subtitle
+    >
+      {{ t('accounting_settings.rule.custom_events_info', { count: eventIds.length }) }}
+    </template>
     <AccountingRuleForm
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
+      :event-ids="eventIds"
     />
   </BigDialog>
 </template>

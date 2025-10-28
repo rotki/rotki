@@ -136,7 +136,3 @@ export function isEventMissingAccountingRule(event: HistoryEventEntry): boolean 
 export function isAccountingRuleProcessed(type: HistoryEventAccountingRuleStatus): boolean {
   return type === HistoryEventAccountingRuleStatus.PROCESSED;
 }
-
-export function isEventAccountingRuleProcessed(event: HistoryEventEntry): boolean {
-  return isAccountingRuleProcessed(event.eventAccountingRuleStatus);
-}

@@ -1,5 +1,6 @@
 import random
 from contextlib import ExitStack
+from unittest.mock import patch
 
 import requests
 
@@ -37,6 +38,10 @@ def query_api_create_and_get_report(
         if setup is not None:
             for manager in setup:
                 stack.enter_context(manager)
+        stack.enter_context(patch(
+            'rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_safe_proxy_or_eoa',
+            return_value=False,
+        ))
         response = requests.get(
             api_url_for(server, 'historyprocessingresource'),
             json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},

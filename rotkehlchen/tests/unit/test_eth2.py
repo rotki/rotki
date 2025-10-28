@@ -36,7 +36,11 @@ from rotkehlchen.history.events.structures.eth2 import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import (
+    make_eth2_deposit_event,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.types import (
     ChainID,
     Eth2PubKey,
@@ -141,12 +145,12 @@ def test_ownership_proportion(eth2: 'Eth2', database):
     validators = [
         ValidatorDetails(
             validator_index=9,
-            public_key=Eth2PubKey('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'),
+            public_key=(pubkey_1 := Eth2PubKey('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b')),  # noqa: E501
             ownership_proportion=FVal(0.5),
             validator_type=ValidatorType.BLS,
         ), ValidatorDetails(
             validator_index=1647,
-            public_key=Eth2PubKey('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475'),
+            public_key=(pubkey_2 := Eth2PubKey('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475')),  # noqa: E501
             ownership_proportion=FVal(0.7),
             validator_type=ValidatorType.DISTRIBUTING,
         ), ValidatorDetails(  # This validator is tracked but not owned by any of the addresses
@@ -158,6 +162,14 @@ def test_ownership_proportion(eth2: 'Eth2', database):
     ]
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, validators)
+        # Create deposit events to link depositor addresses with validators
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                make_eth2_deposit_event(pubkey=pubkey_1, depositor=ADDR1),
+                make_eth2_deposit_event(pubkey=pubkey_2, depositor=ADDR2),
+            ],
+        )
 
     result = eth2.get_validators(ignore_cache=True, addresses=[ADDR1, ADDR2], validator_indices=None)  # noqa: E501
     assert result[0].validator_index == 9 and result[0].ownership_proportion == FVal(0.5), 'Proportion from the DB should be used'  # noqa: E501
@@ -1019,3 +1031,29 @@ def test_consolidated_validator_pending_withdrawal_outstanding_rewards(
         )
         assert result['validators'][validator_index]['outstanding_consensus_pnl'] == small_balance
         assert result['sums']['outstanding_consensus_pnl'] == small_balance
+
+
+def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(eth2: 'Eth2'):
+    """Test that detect_and_refresh_validators only processes addresses that have deposit events"""
+    with eth2.database.user_write() as cursor:
+        DBHistoryEvents(eth2.database).add_history_event(
+            write_cursor=cursor,
+            event=make_eth2_deposit_event(
+                pubkey=Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'),
+                depositor=(addr_with_deposit := make_evm_address()),
+            ),
+        )
+
+    addresses_queried = []
+
+    def mock_get_eth1_address_validators(address):
+        addresses_queried.append(address)
+        return []
+
+    with (
+        patch.object(eth2.beacon_inquirer, 'get_eth1_address_validators', side_effect=mock_get_eth1_address_validators),  # noqa: E501
+        patch.object(eth2.beacon_inquirer, 'get_validator_data', return_value=[]),
+    ):
+        eth2.detect_and_refresh_validators([addr_with_deposit, make_evm_address()])
+
+    assert addresses_queried == [addr_with_deposit]

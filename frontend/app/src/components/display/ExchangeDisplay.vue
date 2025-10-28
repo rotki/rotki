@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useLocations } from '@/composables/locations';
 import { useRefMap } from '@/composables/utils/useRefMap';
 
@@ -22,14 +21,13 @@ const image = useRefMap(location, location => location?.image ?? undefined);
 
 <template>
   <div class="flex flex-row gap-2 items-center shrink">
-    <AdaptiveWrapper>
-      <AppImage
-        :width="size"
-        :height="size"
-        contain
-        :src="image"
-      />
-    </AdaptiveWrapper>
+    <AppImage
+      class="icon-bg"
+      :width="size"
+      :height="size"
+      contain
+      :src="image"
+    />
     <div v-text="name" />
   </div>
 </template>

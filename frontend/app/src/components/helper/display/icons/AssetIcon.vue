@@ -16,7 +16,6 @@ interface AssetIconProps {
   noTooltip?: boolean;
   circle?: boolean;
   padding?: string;
-  chainIconPadding?: string;
   enableAssociation?: boolean;
   showChain?: boolean;
   flat?: boolean;
@@ -26,7 +25,6 @@ interface AssetIconProps {
 }
 
 const props = withDefaults(defineProps<AssetIconProps>(), {
-  chainIconPadding: '0.5px',
   circle: false,
   enableAssociation: true,
   flat: false,
@@ -271,12 +269,10 @@ const { copied, copy } = useCopy(identifier);
 }
 
 .chain {
-  @apply bg-white absolute z-[1] flex items-center justify-center rounded-lg shadow-sm;
-  @apply border border-rui-grey-200;
+  @apply bg-white absolute z-[1] flex items-center justify-center rounded-full shadow-sm -bottom-1 -right-1;
+  @apply border border-rui-grey-300;
   margin-top: v-bind(chainIconMargin);
   margin-left: v-bind(chainIconMargin);
-  bottom: -4px;
-  right: -4px;
 }
 
 :global(.dark) {

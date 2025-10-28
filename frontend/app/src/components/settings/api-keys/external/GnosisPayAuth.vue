@@ -14,6 +14,7 @@ import { useWalletConnect } from '@/modules/onchain/wallet-connect/use-wallet-co
 import { isUserRejectedError, WALLET_MODES } from '@/modules/onchain/wallet-constants';
 import { useProviderSelection } from '@/modules/onchain/wallet-providers/use-provider-selection';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
+import { useMessageStore } from '@/store/message';
 import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 
@@ -47,24 +48,15 @@ const checkingRegisteredAccounts = ref<boolean>(false);
 const hasRegisteredAccounts = ref<boolean>(false);
 const signInSuccess = ref<boolean>(false);
 
-const errorCloseable = computed<boolean>(() => {
-  const type = get(errorType);
-  if (!type)
-    return true;
-
-  // Non-closeable errors:
-  // 1. No registered accounts
-  // 2. Connected wallet address is not valid
-  return type !== GnosisPayError.NO_REGISTERED_ACCOUNTS
-    && type !== GnosisPayError.INVALID_ADDRESS;
-});
-
 const name = 'gnosis_pay';
 const { apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
 
 const key = apiKey(name);
 
 const serviceKeyCard = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serviceKeyCard');
+
+// Message store for showing success notifications
+const { setMessage } = useMessageStore();
 
 // Gnosis Pay SIWE API
 const { fetchGnosisPayAdmins, fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
@@ -80,13 +72,28 @@ const {
   waitingForWalletConfirmation,
   walletMode,
 } = storeToRefs(walletStore);
+
 const { connect: connectWallet, disconnect: disconnectWallet } = walletStore;
+
+const isWalletConnected = computed<boolean>(() => get(connected) && !!get(connectedAddress));
+
+const errorCloseable = computed<boolean>(() => {
+  const type = get(errorType);
+  if (!type)
+    return true;
+
+  // Non-closeable errors:
+  // 1. No registered accounts
+  // 2. Connected wallet address is not valid
+  return type !== GnosisPayError.NO_REGISTERED_ACCOUNTS
+    && type !== GnosisPayError.INVALID_ADDRESS;
+});
 
 const currentStep = computed<number>(() => {
   // Skip showing the account verification step - it happens in background
   if (!get(hasRegisteredAccounts))
     return AuthStep.NOT_READY;
-  if (!get(connected))
+  if (!get(isWalletConnected))
     return AuthStep.CONNECT_WALLET;
   if (get(validatingAddress))
     return AuthStep.VALIDATE_ADDRESS;
@@ -96,8 +103,6 @@ const currentStep = computed<number>(() => {
 });
 
 const showNoRegisteredAccountsError = computed<boolean>(() => get(errorType) === GnosisPayError.NO_REGISTERED_ACCOUNTS);
-
-const isWalletConnected = computed<boolean>(() => get(connected) && !!get(connectedAddress));
 
 // Step state helpers
 function isStepComplete(step: number): boolean {
@@ -114,6 +119,11 @@ const isStep2Complete = computed<boolean>(() => isStepComplete(AuthStep.VALIDATE
 const isStep2Current = computed<boolean>(() => isStepCurrent(AuthStep.VALIDATE_ADDRESS));
 const isStep3Complete = computed<boolean>(() => isStepComplete(AuthStep.SIGN_MESSAGE));
 const isStep3Current = computed<boolean>(() => isStepCurrent(AuthStep.SIGN_MESSAGE));
+
+const deleteMessageConfirmation = computed(() => ({
+  message: t('external_services.gnosispay.delete_confirmation.message'),
+  title: t('external_services.gnosispay.delete_confirmation.title'),
+}));
 
 // Separate error messages for different steps
 const connectionErrorMessage = computed<string>(() => {
@@ -277,7 +287,7 @@ async function disconnect(): Promise<void> {
 }
 
 async function onConnectClicked(): Promise<void> {
-  if (get(connected)) {
+  if (get(isWalletConnected)) {
     await disconnect();
   }
   else {
@@ -295,7 +305,7 @@ async function goToStep(step: number): Promise<void> {
   // Navigate to the requested step by clearing state
   if (step === AuthStep.CONNECT_WALLET) {
     // Go back to Step 1: disconnect wallet
-    if (get(connected)) {
+    if (get(isWalletConnected)) {
       await disconnect();
     }
   }
@@ -395,6 +405,17 @@ watch(connectedAddress, async (address) => {
     clearValidation();
   }
 });
+
+// When authentication is complete, close dialog and show success message
+watch(isStep3Complete, (complete) => {
+  if (complete) {
+    get(serviceKeyCard)?.setOpen(false);
+    setMessage({
+      description: t('external_services.gnosispay.siwe.success_message'),
+      success: true,
+    });
+  }
+});
 </script>
 
 <template>
@@ -404,6 +425,8 @@ watch(connectedAddress, async (address) => {
       need-premium
       rounded-icon
       :name="name"
+      :add-button-text="t('external_services.actions.authenticate')"
+      :edit-button-text="t('external_services.actions.reauthenticate')"
       :key-set="!!key"
       :title="t('external_services.gnosispay.title')"
       :subtitle="t('external_services.gnosispay.description')"
@@ -418,7 +441,7 @@ watch(connectedAddress, async (address) => {
           :disabled="loading || !key"
           color="error"
           variant="text"
-          @click="confirmDelete(name)"
+          @click="confirmDelete(name, undefined, deleteMessageConfirmation)"
         >
           <template #prepend>
             <RuiIcon
@@ -426,7 +449,7 @@ watch(connectedAddress, async (address) => {
               size="16"
             />
           </template>
-          {{ t('external_services.delete_key') }}
+          {{ t('external_services.actions.remove_authentication') }}
         </RuiButton>
       </template>
 
@@ -500,6 +523,7 @@ watch(connectedAddress, async (address) => {
           <!-- Connect button -->
           <WalletConnectionButton
             v-if="!isWalletConnected || isDisconnecting"
+            :connected="isWalletConnected"
             :loading="isConnecting || isDisconnecting || validatingAddress"
             @click="onConnectClicked()"
           />
@@ -519,7 +543,7 @@ watch(connectedAddress, async (address) => {
 
           <!-- Connected address display -->
           <div
-            v-if="connected && connectedAddress"
+            v-if="isWalletConnected"
             class="flex flex-col items-start"
           >
             <div class="text-caption text-rui-text-secondary mb-2">
@@ -533,7 +557,7 @@ watch(connectedAddress, async (address) => {
               </div>
               <HashLink
                 :truncate-length="0"
-                :text="connectedAddress"
+                :text="connectedAddress!"
                 location="gnosis"
               />
             </div>
@@ -614,27 +638,30 @@ watch(connectedAddress, async (address) => {
                 :key="safeAddress"
                 class="mb-3"
               >
-                <div class="mb-1 text-rui-text-secondary">
+                <div class="mb-1 text-rui-text-secondary flex gap-2 items-center">
+                  <div class="text-[10px] uppercase">
+                    {{ t('external_services.gnosispay.errors.safe_wallet') }}
+                  </div>
                   <HashLink
                     :truncate-length="0"
                     :text="safeAddress"
                     location="gnosis"
                   />
                 </div>
-                <div
-                  v-for="adminAddress in adminAddresses"
-                  :key="adminAddress"
-                  class="ml-6 font-medium flex items-center gap-2"
-                >
-                  <RuiIcon
-                    name="lu-arrow-right"
-                    size="10"
-                  />
-                  <HashLink
-                    :truncate-length="0"
-                    :text="adminAddress"
-                    location="gnosis"
-                  />
+                <div class="relative ml-[5.25rem]">
+                  <div class="absolute border-l border-default flex h-[calc(100%-0.75rem)]" />
+                  <div
+                    v-for="adminAddress in adminAddresses"
+                    :key="adminAddress"
+                    class="font-medium flex items-center gap-2"
+                  >
+                    <div class="border-t w-2 border-default" />
+                    <HashLink
+                      :truncate-length="0"
+                      :text="adminAddress"
+                      location="gnosis"
+                    />
+                  </div>
                 </div>
               </div>
             </template>
@@ -667,14 +694,6 @@ watch(connectedAddress, async (address) => {
             </template>
             {{ t('external_services.gnosispay.siwe.sign_message') }}
           </RuiButton>
-
-          <!-- Success message when complete -->
-          <RuiAlert
-            v-if="isStep3Complete"
-            type="success"
-          >
-            {{ t('external_services.gnosispay.siwe.success') }}
-          </RuiAlert>
         </GnosisPayAuthStep>
       </template>
     </ServiceKeyCard>

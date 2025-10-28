@@ -2,7 +2,6 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ImportSource } from '@/types/upload-types';
 import AppImage from '@/components/common/AppImage.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -113,24 +112,19 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
   <RuiCard content-class="p-1 pt-2">
     <DefineDisplay #default="{ logo, icon, label }">
       <div class="flex items-center gap-3">
-        <AdaptiveWrapper
-          padding="0"
-          width="1.5rem"
-          height="1.5rem"
-        >
-          <AppImage
-            v-if="logo"
-            :src="logo"
-            size="1.5rem"
-            contain
-          />
-          <RuiIcon
-            v-else-if="icon"
-            size="24"
-            class="text-rui-light-text-secondary"
-            :name="icon"
-          />
-        </AdaptiveWrapper>
+        <AppImage
+          v-if="logo"
+          :src="logo"
+          size="1.5rem"
+          contain
+          class="icon-bg"
+        />
+        <RuiIcon
+          v-else-if="icon"
+          size="28"
+          class="text-rui-light-text-secondary icon-bg !p-1"
+          :name="icon"
+        />
         {{ label }}
       </div>
     </DefineDisplay>

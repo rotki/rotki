@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
-import {
-  getAddressFromEvmIdentifier,
-  getAddressFromSolanaIdentifier,
-  isEvmIdentifier,
-  isSolanaTokenIdentifier,
-} from '@rotki/common';
+
 import { getNftAssetIdDetail, isEvmIdentifierWithNftId } from '@rotki/common/lib';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -13,7 +8,7 @@ import { useSpamAsset } from '@/composables/assets/spam';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
+import { EVM_TOKEN } from '@/types/asset';
 
 const props = defineProps<{
   asset: NftAsset;
@@ -49,29 +44,9 @@ const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 const isSpamAsset = computed<boolean>(() => get(asset).isSpam);
 const isIgnoredAsset = useIsAssetIgnored(identifier);
 const { markAssetsAsSpam } = useSpamAsset();
-const { refetchAssetInfo } = useAssetInfoRetrieval();
+const { assetContractInfo, refetchAssetInfo } = useAssetInfoRetrieval();
 
-const contractInfo = computed<{ address: string; location: string } | undefined>(() => {
-  const id = get(identifier);
-  const assetVal = get(asset);
-  const type = assetVal.assetType;
-
-  if (isEvmIdentifier(id) && type === EVM_TOKEN) {
-    return {
-      address: getAddressFromEvmIdentifier(id),
-      location: assetVal?.evmChain ?? undefined,
-    };
-  }
-
-  if (isSolanaTokenIdentifier(id) && type === SOLANA_TOKEN) {
-    return {
-      address: getAddressFromSolanaIdentifier(id),
-      location: SOLANA_CHAIN,
-    };
-  }
-
-  return undefined;
-});
+const contractInfo = assetContractInfo(identifier);
 
 function actionClick(action: ConfirmType) {
   set(confirm, true);

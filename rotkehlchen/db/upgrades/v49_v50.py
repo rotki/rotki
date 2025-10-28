@@ -18,6 +18,34 @@ log = RotkehlchenLogsAdapter(logger)
 def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v49 to v50. This happened in the v1.41 release."""
 
+    @progress_step(description='Resetting decoded events.')
+    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+        """Reset all decoded evm events except for the customized ones and those in zksync lite.
+        Notice that it happens first so changes in other tables don't affect this function.
+        Code taken from previous upgrade
+        """
+        if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+            customized_events = write_cursor.execute(
+                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+                (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+            ).fetchone()[0]
+            querystr = (
+                "DELETE FROM history_events WHERE identifier IN ("
+                "SELECT H.identifier from history_events H INNER JOIN evm_events_info E "
+                "ON H.identifier=E.identifier AND E.tx_hash IN "
+                "(SELECT tx_hash FROM evm_transactions) AND H.location != 'o')"  # location 'o' is zksync lite  # noqa: E501
+            )
+            bindings: tuple = ()
+            if customized_events != 0:
+                querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+                bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+            write_cursor.execute(querystr, bindings)
+            write_cursor.execute(
+                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+                (0,),  # decoded tx state
+            )
+
     @progress_step(description='Add Crypto.com App event location labels.')
     def _add_cryptocom_location_labels(write_cursor: 'DBCursor') -> None:
         """Adds location labels for events imported via CSV from a Crypto.com App account."""
@@ -168,5 +196,33 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'DELETE FROM external_service_credentials WHERE name = ?',
             ('monerium',),
         )
+
+    @progress_step(description='Remove gnosis pay reversaltx column.')
+    def _remove_gnosispay_reversal_tx(write_cursor: 'DBCursor') -> None:
+        """This is an unused, not returned by the API field."""
+        write_cursor.execute("""
+        CREATE TABLE gnosispay_data_new (
+        identifier INTEGER PRIMARY KEY NOT NULL,
+        tx_hash BLOB NOT NULL UNIQUE,
+        timestamp INTEGER NOT NULL,
+        merchant_name TEXT NOT NULL,
+        merchant_city TEXT,
+        country TEXT NOT NULL,
+        mcc INTEGER NOT NULL,
+        transaction_symbol TEXT NOT NULL,
+        transaction_amount TEXT NOT NULL,
+        billing_symbol TEXT,
+        billing_amount TEXT,
+        reversal_symbol TEXT,
+        reversal_amount TEXT
+        )""")
+        write_cursor.execute("""
+        INSERT INTO gnosispay_data_new
+        SELECT identifier, tx_hash, timestamp, merchant_name, merchant_city,
+        country, mcc, transaction_symbol, transaction_amount,
+        billing_symbol, billing_amount, reversal_symbol, reversal_amount
+        FROM gnosispay_data""")
+        write_cursor.execute('DROP TABLE gnosispay_data')
+        write_cursor.execute('ALTER TABLE gnosispay_data_new RENAME TO gnosispay_data')
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

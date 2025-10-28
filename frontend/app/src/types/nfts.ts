@@ -1,5 +1,4 @@
-import type { AssetInfoWithId } from '@/types/asset';
-import { NumericString } from '@rotki/common';
+import { type AssetInfoWithId, NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
 
 /**

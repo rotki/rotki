@@ -555,7 +555,9 @@ class Eth2(EthereumModule):
             cursor.execute('SELECT public_key FROM eth2_validators WHERE withdrawable_timestamp IS NOT NULL')  # noqa: E501
             finalized_validator_pubkeys = {x[0] for x in cursor}
 
-        for address in addresses:
+        # Get addresses that have ETH deposit events and filter input addresses
+        pubkey_to_depositor = self._get_saved_pubkey_to_deposit_address()
+        for address in [addr for addr in addresses if addr in pubkey_to_depositor.values()]:
             validators = self.beacon_inquirer.get_eth1_address_validators(address)
             for validator in validators:
                 if validator.index is not None:
@@ -566,7 +568,6 @@ class Eth2(EthereumModule):
                     validators_to_refresh.add(validator)
 
         # Check all our currently decoded deposits for known public keys and map to depositors
-        pubkey_to_depositor = self._get_saved_pubkey_to_deposit_address()
         for public_key, depositor in pubkey_to_depositor.items():
             if public_key in finalized_validator_pubkeys:
                 continue

@@ -7,7 +7,7 @@ import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
@@ -77,7 +77,7 @@ describe('/settings/api-keys/external-services', () => {
           Teleport: {
             template: '<span><slot /></span>',
           },
-          EvmChainIcon,
+          ChainIcon,
           ServiceKeyCard,
           ServiceKey,
         },

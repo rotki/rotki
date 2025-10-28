@@ -3155,13 +3155,15 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``ETH2``, ``KSM``, ``DOT`` and ``AVAX``. If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
+   Query on-chain balances for tracked accounts. Specify a blockchain to query only that chain. Available blockchains: ``BTC``, ``BCH``, ``ETH``, ``ETH2``, ``KSM``, ``DOT``, ``AVAX``, ``SOL``.
+
+   When addresses are provided and cache is ignored, those addresses are queried fresh and combined with existing balances for the blockchain. Results include balances above the ``usd_value_threshold`` if specified.
 
    .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
+      This endpoint can be queried asynchronously using ``"async_query": true``.
 
    .. note::
-      This endpoint uses a cache. If queried within the ``CACHE_TIME`` the cached value will be returned. If you want to skip the cache add the ``ignore_cache: true`` argument. Can also be passed as a query argument.
+      This endpoint uses caching. Results are cached for ``CACHE_TIME``. Use ``ignore_cache: true`` to force fresh queries.
 
    **Example Request**:
 
@@ -3172,8 +3174,10 @@ Querying onchain balances
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :reqjson list[str] addresses: Optional. List of blockchain addresses to query balances for. If not provided, all tracked addresses are queried.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :param list[str] addresses: Optional. List of blockchain addresses to query balances for. If not provided, all tracked addresses are queried.
    :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
 
 .. _blockchain_balances_result:
@@ -6937,12 +6941,12 @@ Querying periodic data
           "result": {
               "last_balance_save": 1572345881,
               "connected_nodes": {
-                  "ethereum": ["nodeX", "nodeY"],
+                  "eth": ["nodeX", "nodeY"],
                   "optimism": ["nodeW", "nodeZ"],
                   "polygon_pos": ["nodeA", "nodeB"],
               },
               "failed_to_connect": {
-                  "ethereum": ["nodeZ"]
+                  "eth": ["nodeZ"]
               },
               "last_data_upload_ts": 0
           }
@@ -6951,8 +6955,8 @@ Querying periodic data
 
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
    :resjson int last_data_upload_ts: The last time (unix timestamp) at which a new DB was pushed to the remote as backup.
-   :resjson object connected_nodes: A dictionary containing the evm chain name and a list of connected nodes.
-   :resjson object failed_to_connect [Optional]: A dictionary containing the evm chain name and the nodes that rotki couldn't connect with. If nothing failed for a chain we don't include it in the mapping.
+   :resjson object connected_nodes: A dictionary containing the chain and a list of connected nodes.
+   :resjson object failed_to_connect [Optional]: A dictionary containing the chain and the nodes that rotki couldn't connect with. If nothing failed for a chain we don't include it in the mapping.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
@@ -9188,6 +9192,71 @@ Deleting BTC/BCH xpubs
    :statuscode 401: User is not logged in.
    :statuscode 409: Some error occurred when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal rotki error
+   :statuscode 502: Error occurred with some external service query such as blockstream/haskoin. Check message for details.
+
+
+Querying BTC/BCH xpub balances
+===============================
+
+.. http:get:: /api/(version)/blockchains/(blockchain)/xpub
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
+
+   Doing a GET on the xpub endpoint will query balances for all addresses derived from the specified extended public key.
+
+   When ``ignore_cache`` is true, the endpoint will first check for newly derived addresses from the xpub and include them in the balance query. When false, it uses only existing derived addresses stored in the database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/BTC/xpub?xpub=xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk&derivation_path=m/0/0&ignore_cache=true&async_query=false HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+   :query string xpub: The extended public key to query balances for
+   :query string derivation_path: [Optional] The derivation path used with the xpub
+   :query bool ignore_cache: [Optional] Whether to check for new derived addresses. Defaults to false
+   :query bool async_query: [Optional] Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "per_account": {
+                  "BTC": {
+                      "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                          "amount": "0.5", "usd_value": "3770.075"
+                      },
+                      "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkN": {
+                          "amount": "0.0005", "usd_value": "3.77"
+                      }
+                  }
+              },
+              "totals": {
+                  "assets": {
+                      "BTC": {"amount": "0.5005", "usd_value": "3773.845"}
+                  },
+                  "liabilities": {}
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object result: An object containing balance information for all addresses derived from the xpub. Uses the same format as blockchain balance queries with ``"per_account"`` and ``"totals"`` keys as defined `here <blockchain_balances_result_>`_.
+
+   :statuscode 200: Xpub balances successfully queried
+   :statuscode 400: Provided parameters are malformed or the xpub is invalid
+   :statuscode 401: User is not logged in
    :statuscode 502: Error occurred with some external service query such as blockstream/haskoin. Check message for details.
 
 

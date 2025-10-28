@@ -1,5 +1,6 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
+import type { ChainAddress } from '@/types/history/events';
 import { Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useAccountAdditionService } from '@/composables/blockchain/use-account-addition-service';
@@ -19,7 +20,7 @@ interface UseBlockchainsReturn {
   addEvmAccounts: (payload: AddAccountsPayload, options?: AddAccountsOption) => Promise<void>;
   detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
-  refreshAccounts: (blockchain?: MaybeRef<string>, periodic?: boolean) => Promise<void>;
+  refreshAccounts: (blockchain?: MaybeRef<string>, addresses?: string[], isXpub?: boolean, periodic?: boolean) => Promise<void>;
 }
 
 export function useBlockchains(): UseBlockchainsReturn {
@@ -77,7 +78,7 @@ export function useBlockchains(): UseBlockchainsReturn {
       return;
     }
 
-    const onComplete = async (params: { addedAccounts: any[]; chain: string; modulesToEnable?: any[] }): Promise<void> =>
+    const onComplete = async (params: { addedAccounts: ChainAddress[]; chain: string; isXpub?: boolean; modulesToEnable?: any[] }): Promise<void> =>
       accountAdditionService.completeAccountAddition(params, accountOperations.refreshAccounts);
 
     if (filteredPayload.length === 1 || isXpub) {
@@ -91,6 +92,7 @@ export function useBlockchains(): UseBlockchainsReturn {
           chain,
         }],
         chain,
+        isXpub,
         modulesToEnable: modules,
       }));
     }

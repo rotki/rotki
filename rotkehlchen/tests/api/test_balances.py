@@ -1287,3 +1287,43 @@ def test_solana_balances_multiple_accounts(
     assert result['assets']['solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v']['amount'] == '160556.002808'  # USDC  # noqa: E501
     assert result['assets']['solana/token:2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv']['amount'] == '370905.247021'  # PENGU  # noqa: E501
     assert result['assets']['solana/token:WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g']['amount'] == '100122.11'  # WLFI  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306']])  # noqa: E501
+def test_blockchain_balances_specific_addresses(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that querying blockchain balances for specific addresses works correctly"""
+
+    # Query only the first address
+    partial_result = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+        json={
+            'blockchain': 'ETH',
+            'async_query': False,
+            'addresses': [ethereum_accounts[0]],
+        },
+    ))
+
+    # Verify that only the specified address is in the result
+    eth_balances = partial_result['per_account']['eth']
+    assert len(eth_balances) == 1
+    assert ethereum_accounts[0] in eth_balances
+
+    # Test with another address - this returns the existing balances dict with
+    # the new balances of the recently added address merged in
+    result = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+        json={
+            'blockchain': 'ETH',
+            'async_query': False,
+            'addresses': [ethereum_accounts[1]],
+        },
+    ))
+
+    # Verify that both addresses are in the result
+    eth_balances = result['per_account']['eth']
+    for address in ethereum_accounts:
+        assert address in eth_balances

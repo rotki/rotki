@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 
 const props = withDefaults(
   defineProps<{
     chain: string;
+    evmChain?: boolean;
     dense?: boolean;
   }>(),
   {
     dense: false,
+    evmChain: false,
   },
 );
 
@@ -39,17 +41,25 @@ const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockc
     class="!py-0"
   >
     <template #avatar>
-      <AdaptiveWrapper v-if="chain === 'evm'">
-        <div class="grid grid-cols-2 gap-0.5">
-          <ChainIcon
-            v-for="item in evmChainsRepresentative"
-            :key="item"
-            :size="dense ? '9px' : '13px'"
-            class="!p-0"
-            :chain="item"
-          />
-        </div>
-      </AdaptiveWrapper>
+      <div
+        v-if="chain === 'evm'"
+        class="grid grid-cols-2 gap-0.5 icon-bg"
+      >
+        <ChainIcon
+          v-for="item in evmChainsRepresentative"
+          :key="item"
+          :size="dense ? '9px' : '13px'"
+          class="!p-0"
+          :chain="item"
+        />
+      </div>
+
+      <EvmChainIcon
+        v-else-if="evmChain"
+        class="icon-bg"
+        :chain="chain"
+        :size="dense ? '20px' : '26px'"
+      />
 
       <ChainIcon
         v-else

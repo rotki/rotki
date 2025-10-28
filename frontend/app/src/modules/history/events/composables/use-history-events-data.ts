@@ -39,6 +39,7 @@ interface UseHistoryEventsDataReturn {
   hasIgnoredEvent: ComputedRef<boolean>;
   groups: ComputedRef<HistoryEventEntry[]>;
   events: ComputedRef<HistoryEventEntry[]>;
+  rawEvents: Ref<HistoryEventRow[]>;
 }
 
 export function useHistoryEventsData(
@@ -160,6 +161,7 @@ export function useHistoryEventsData(
     hasIgnoredEvent,
     limit,
     loading,
+    rawEvents: events,
     sectionLoading,
     showUpgradeRow,
     total,

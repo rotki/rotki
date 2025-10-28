@@ -8,6 +8,7 @@ export interface SelectionState {
   isPartiallySelected: boolean;
   selectedCount: number;
   selectedIds: Set<number>;
+  hasAvailableEvents: boolean;
 }
 
 interface SelectionActions {
@@ -36,6 +37,7 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
 
   // Unified state object
   const state = computed<SelectionState>(() => ({
+    hasAvailableEvents: get(availableIds).length > 0,
     isActive: get(isActive),
     isAllSelected: get(availableIds).length > 0
       && get(availableIds).every(id => get(selectedIds).has(id)),

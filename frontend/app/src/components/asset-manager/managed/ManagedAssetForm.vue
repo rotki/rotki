@@ -302,14 +302,13 @@ defineExpose({
           >
             <template #selection="{ item }">
               <ChainDisplay
-                :data-value="item.name"
-                dense
+                evm-chain
                 :chain="item.name"
               />
             </template>
             <template #item="{ item }">
               <ChainDisplay
-                dense
+                evm-chain
                 :chain="item.name"
               />
             </template>

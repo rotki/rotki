@@ -187,6 +187,8 @@ onUnmounted(() => {
     :image-src="getPublicServiceImagePath('monerium.png')"
     :primary-action="primaryActionLabel"
     :action-disabled="isAuthorizing"
+    :add-button-text="t('external_services.actions.authenticate')"
+    :edit-button-text="t('external_services.actions.reauthenticate')"
     @confirm="primaryActionHandler()"
   >
     <RuiAlert

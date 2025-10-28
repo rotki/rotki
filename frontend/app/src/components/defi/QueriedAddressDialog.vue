@@ -3,7 +3,6 @@ import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts
 import type { CamelCase } from '@/types/common';
 import { assert, Blockchain, transformCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
@@ -96,13 +95,12 @@ function close() {
     <RuiCard>
       <template #custom-header>
         <div class="flex items-center justify-between p-4 gap-4">
-          <AdaptiveWrapper>
-            <AppImage
-              size="24px"
-              contain
-              :src="moduleIcon"
-            />
-          </AdaptiveWrapper>
+          <AppImage
+            class="icon-bg"
+            size="1.5rem"
+            contain
+            :src="moduleIcon"
+          />
           <RuiCardHeader class="p-0">
             <template #header>
               {{ t('queried_address_dialog.title') }}
@@ -128,7 +126,6 @@ function close() {
           outlined
           dense
           hide-on-empty-usable
-          max-width="340px"
           :usable-addresses="usableAddresses"
           class="queried-address-dialog__selector flex-1"
           :chains="[ETH]"

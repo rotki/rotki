@@ -16,6 +16,8 @@ const props = withDefaults(
     hideAction?: boolean;
     primaryAction?: string;
     actionDisabled?: boolean;
+    addButtonText?: string;
+    editButtonText?: string;
   }>(),
   {
     actionDisabled: false,
@@ -62,6 +64,14 @@ watch(route, async (route) => {
     await router.replace({ query: {} });
   }
 }, { immediate: true });
+
+const addButtonTextComputed = computed<string>(() => props.addButtonText || t('external_services.actions.enter_api_key'));
+
+const editButtonTextComputed = computed<string>(() => props.editButtonText || t('external_services.actions.replace_key'));
+
+const primaryActionTextComputed = computed<string>(() => props.primaryAction || (props.keySet
+  ? t('external_services.actions.replace_key')
+  : t('external_services.actions.save_key')));
 
 defineExpose({
   openDialog,
@@ -110,8 +120,8 @@ defineExpose({
       >
         {{
           keySet
-            ? t('external_services.replace_key')
-            : t('external_services.enter_api_key')
+            ? editButtonTextComputed
+            : addButtonTextComputed
         }}
         <template #append>
           <RuiIcon
@@ -126,7 +136,7 @@ defineExpose({
       :title="title"
       :subtitle="subtitle"
       :action-hidden="hideAction"
-      :primary-action="primaryAction"
+      :primary-action="primaryActionTextComputed"
       :action-disabled="actionDisabled"
       :secondary-action="t('common.actions.close')"
       @cancel="setOpen(false)"

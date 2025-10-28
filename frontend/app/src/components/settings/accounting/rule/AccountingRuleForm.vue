@@ -15,7 +15,13 @@ const modelValue = defineModel<AccountingRuleEntry>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
+const props = defineProps<{
+  eventIds?: number[];
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
+
+const isEventSpecificRule = computed<boolean>(() => !!props.eventIds && props.eventIds.length > 0);
 
 const counterparty = refOptional(useRefPropVModel(modelValue, 'counterparty'), '');
 const accountingTreatment = useRefPropVModel(modelValue, 'accountingTreatment');
@@ -69,6 +75,7 @@ defineExpose({
       v-model:event-subtype="eventSubtype"
       :counterparty="counterparty"
       :v$="v$"
+      :disabled="isEventSpecificRule"
       disable-warning
     />
 
@@ -76,6 +83,7 @@ defineExpose({
       v-model="counterparty"
       class="md:w-1/2"
       :label="t('common.counterparty')"
+      :disabled="isEventSpecificRule"
       :error-messages="toMessages(v$.counterparty)"
       @blur="v$.counterparty.$touch()"
     />
