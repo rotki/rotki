@@ -1,7 +1,7 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import { assert, type Balance, Blockchain, Zero } from '@rotki/common';
+import { assert, type Balance, Blockchain, type EthValidatorFilter, Zero } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
@@ -65,12 +65,12 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     },
   );
 
-  const fetchEthStakingValidators = async (): Promise<void> => {
+  const fetchEthStakingValidators = async (payload?: EthValidatorFilter): Promise<void> => {
     if (!isEth2Enabled())
       return;
 
     try {
-      const validators = await getEth2Validators();
+      const validators = await getEth2Validators(payload);
       updateAccounts(
         Blockchain.ETH2,
         validators.entries.map(validator =>
@@ -99,7 +99,9 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
 
   watch(premium, async () => {
     if (isEth2Enabled()) {
-      await fetchEthStakingValidators();
+      await fetchEthStakingValidators({
+        ignoreCache: true,
+      });
       await fetchBlockchainBalances({
         blockchain: Blockchain.ETH2,
         ignoreCache: true,

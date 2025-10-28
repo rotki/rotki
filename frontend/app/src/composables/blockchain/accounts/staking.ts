@@ -4,7 +4,7 @@ import type { Eth2Validator } from '@/types/balances';
 import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';
-import { type BigNumber, bigNumberify, Blockchain } from '@rotki/common';
+import { type BigNumber, bigNumberify, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
@@ -23,7 +23,7 @@ import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: ComputedRef<{ showWarning: boolean; limit: number; total: number }>;
-  fetchEthStakingValidators: () => Promise<void>;
+  fetchEthStakingValidators: (payload?: EthValidatorFilter) => Promise<void>;
   addEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;
   editEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;
   deleteEth2Validators: (validators: string[]) => Promise<boolean>;

@@ -49,7 +49,7 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
   }
 
   async function refresh(): Promise<void> {
-    await fetchEthStakingValidators();
+    await fetchEthStakingValidators({ ignoreCache: true });
     await fetchBlockchainBalances({
       blockchain: Blockchain.ETH2,
       ignoreCache: true,
