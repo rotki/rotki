@@ -69,6 +69,7 @@ DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
 DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
 DEFAULT_AUTO_DETECT_TOKENS = True
 DEFAULT_CSV_EXPORT_DELIMITER = ','
+DEFAULT_AUTO_LOGIN_COUNT = 0  # Start with 0 auto-logins
 DEFAULT_AUTO_LOGIN_CONFIRMATION_THRESHOLD = 5  # Require password confirmation after this many auto-logins
 MIN_AUTO_LOGIN_CONFIRMATION_THRESHOLD = 3
 MAX_AUTO_LOGIN_CONFIRMATION_THRESHOLD = 10
@@ -110,6 +111,7 @@ INTEGER_KEYS = (
     'read_timeout',
     'oracle_penalty_threshold_count',
     'oracle_penalty_duration',
+    'auto_login_count',
     'auto_login_confirmation_threshold',
 )
 STRING_KEYS = (
@@ -227,6 +229,7 @@ class DBSettings:
     ask_user_upon_size_discrepancy: bool = DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY
     auto_detect_tokens: bool = DEFAULT_AUTO_DETECT_TOKENS
     csv_export_delimiter: str = DEFAULT_CSV_EXPORT_DELIMITER
+    auto_login_count: int = DEFAULT_AUTO_LOGIN_COUNT
     auto_login_confirmation_threshold: int = DEFAULT_AUTO_LOGIN_CONFIRMATION_THRESHOLD
 
     def serialize(self) -> dict[str, Any]:
@@ -288,6 +291,7 @@ class ModifiableDBSettings(NamedTuple):
     ask_user_upon_size_discrepancy: bool | None = None
     auto_detect_tokens: bool | None = None
     csv_export_delimiter: str | None = None
+    auto_login_count: int | None = None
     auto_login_confirmation_threshold: int | None = None
 
     def serialize(self) -> dict[str, Any]:

@@ -321,6 +321,47 @@ class DBHandler:
                     ),
                 )
 
+    def _fix_gnosispay_schema_if_needed(self) -> None:
+        """Fix gnosispay_data table if it has the old schema with reversal_tx_hash.
+        This is a temporary fix for databases that were at v49 when the codebase updated.
+        Should be safe to remove after a few releases.
+        """
+        try:
+            with self.conn.read_ctx() as cursor:
+                table_info = cursor.execute(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='gnosispay_data'"
+                ).fetchone()
+                
+                if table_info and 'reversal_tx_hash' in table_info[0].lower():
+                    # Table has the old schema, need to fix it
+                    with self.conn.write_ctx() as write_cursor:
+                        write_cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS gnosispay_data_new (
+                            identifier INTEGER PRIMARY KEY NOT NULL,
+                            tx_hash BLOB NOT NULL UNIQUE,
+                            timestamp INTEGER NOT NULL,
+                            merchant_name TEXT NOT NULL,
+                            merchant_city TEXT,
+                            country TEXT NOT NULL,
+                            mcc INTEGER NOT NULL,
+                            transaction_symbol TEXT NOT NULL,
+                            transaction_amount TEXT NOT NULL,
+                            billing_symbol TEXT,
+                            billing_amount TEXT,
+                            reversal_symbol TEXT,
+                            reversal_amount TEXT
+                        )""")
+                        write_cursor.execute("""
+                        INSERT INTO gnosispay_data_new
+                        SELECT identifier, tx_hash, timestamp, merchant_name, merchant_city,
+                            country, mcc, transaction_symbol, transaction_amount,
+                            billing_symbol, billing_amount, reversal_symbol, reversal_amount
+                        FROM gnosispay_data""")
+                        write_cursor.execute('DROP TABLE gnosispay_data')
+                        write_cursor.execute('ALTER TABLE gnosispay_data_new RENAME TO gnosispay_data')
+        except Exception:  # If anything goes wrong, let the normal schema check handle it
+            pass
+
     def _run_actions_after_first_connection(self) -> None:
         """Perform the actions that are needed after the first DB connection
 
@@ -344,6 +385,9 @@ class DBHandler:
                     'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                     ('version', str(ROTKEHLCHEN_DB_VERSION)),
                 )
+
+        # Fix gnosispay schema if needed (temporary fix for v49->v50 transition issues)
+        self._fix_gnosispay_schema_if_needed()
 
         # run checks on the database
         self.conn.schema_sanity_check()
