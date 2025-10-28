@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
+from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors.serialization import DeserializationError
@@ -53,7 +53,7 @@ DEFAULT_HISTORICAL_PRICE_ORACLES = DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 DEFAULT_PNL_CSV_WITH_FORMULAS = True
 DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 DEFAULT_SSF_GRAPH_MULTIPLIER = 0
-DEFAULT_LAST_DATA_MIGRATION = LAST_DATA_MIGRATION
+DEFAULT_LAST_DATA_MIGRATION = LAST_USERDB_DATA_MIGRATION
 DEFAULT_COST_BASIS_METHOD = CostBasisMethod.FIFO
 DEFAULT_TREAT_ETH2_AS_ETH = True
 DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED = True

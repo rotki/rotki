@@ -17,7 +17,7 @@ from rotkehlchen.data_migrations.migrations.migrations_18 import data_migration_
 from rotkehlchen.data_migrations.migrations.migrations_19 import data_migration_19
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-from .constants import LAST_DATA_MIGRATION
+from .constants import LAST_USERDB_DATA_MIGRATION
 from .progress import MigrationProgressHandler
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ class MigrationRecord(NamedTuple):
     function: Callable[['Rotkehlchen', MigrationProgressHandler], None]
 
 
-MIGRATION_LIST = [  # remember to bump LAST_DATA_MIGRATION if editing this
+MIGRATION_LIST = [  # remember to bump LAST_USERDB_DATA_MIGRATION if editing this
     MigrationRecord(version=1, function=data_migration_1),
     MigrationRecord(version=2, function=data_migration_2),
     MigrationRecord(version=3, function=data_migration_3),
@@ -59,7 +59,7 @@ class DataMigrationManager:
 
         self.progress_handler = MigrationProgressHandler(
             messages_aggregator=self.rotki.msg_aggregator,
-            target_version=LAST_DATA_MIGRATION,
+            target_version=LAST_USERDB_DATA_MIGRATION,
         )
         for migration in MIGRATION_LIST:
             if last_migration_version is not None and last_migration_version < migration.version:
@@ -77,7 +77,7 @@ class DataMigrationManager:
             with self.rotki.data.db.user_write() as write_cursor:
                 write_cursor.execute(  # even if no migration happens we need to remember last one
                     'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                    ('last_data_migration', LAST_DATA_MIGRATION),
+                    ('last_data_migration', LAST_USERDB_DATA_MIGRATION),
                 )
 
     def _perform_migration(self, migration: MigrationRecord) -> bool:

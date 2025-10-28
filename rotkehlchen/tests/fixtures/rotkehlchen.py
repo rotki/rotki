@@ -11,7 +11,7 @@ import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
-from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
+from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, EXCHANGES_WITHOUT_API_SECRET
@@ -127,7 +127,7 @@ def fixture_rotki_premium_object(
 
 @pytest.fixture(name='data_migration_version', scope='session')
 def fixture_data_migration_version() -> int:
-    return LAST_DATA_MIGRATION
+    return LAST_USERDB_DATA_MIGRATION
 
 
 @pytest.fixture(name='max_size_in_mb_all_logs')
