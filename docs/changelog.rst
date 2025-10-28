@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.41.0 <2025-10-29>`
 * :feature:`10604` Add support for Philippine Peso (PHP) as a fiat currency.
 * :feature:`9396` rotki will now properly decode onchain messages sent in EVM transactions.
 * :feature:`10544` rotki will now properly decode transactions for rotki sponsorship contract.
