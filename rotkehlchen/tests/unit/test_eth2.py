@@ -188,6 +188,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
     pubkey2 = Eth2PubKey('0x96dab7564980306b3052649e523747fb613ebf91308a788350bbd16435f55f8d3a7090a2ec73fe636eed66ada6e52ad5')  # noqa: E501
     tx_hash1 = make_evm_tx_hash()
     tx_hash2 = make_evm_tx_hash()
+    tx_hash3 = make_evm_tx_hash()
     with database.user_write() as cursor:
         dbevents.add_history_events(
             write_cursor=cursor,
@@ -226,13 +227,17 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 amount=FVal(32),
                 notes=f'Deposit 32 ETH to validator with pubkey {pubkey2}. Deposit index: 529464. Withdrawal credentials: 0x00a5a0074f28011e2f559e1214131da5f11b12845921b0d8e436f0cd37d683a8',  # noqa: E501
                 counterparty=CPT_ETH2,
+            ), EthDepositEvent(
+                tx_ref=tx_hash3,
+                validator_index=100,
+                sequence_index=178,
+                timestamp=TimestampMS(1674558203000),
+                amount=FVal('32'),
+                depositor=(depositer_3 := make_evm_address()),
             )],
         )
 
-    result = eth2._get_saved_pubkey_to_deposit_address()
-    assert len(result) == 2
-    assert result[pubkey1] == ADDR1
-    assert result[pubkey2] == ADDR2
+    assert eth2._get_saved_deposit_addresses() == {ADDR1, ADDR2, depositer_3}
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
