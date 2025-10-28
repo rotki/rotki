@@ -150,6 +150,7 @@ async function saveAsset() {
     coingecko: get(coingecko),
     cryptocompare: get(cryptocompare),
     evmChain: get(evmChain) || null,
+    forked: get(forked) || undefined,
     protocol: onlyIfTruthy(get(protocol)),
     swappedFor: onlyIfTruthy(get(swappedFor)),
     tokenKind: get(tokenKind) || null,
