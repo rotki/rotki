@@ -1535,6 +1535,7 @@
     "title": "Blockchain Balances per asset",
     "validator_index_label": "Ethereum validator No. {index}",
     "validators": {
+      "auto_detection_info": "rotki will automatically detect validators if you add the depositor address as an Ethereum account. First, ensure the events for that depositor address are fetched and decoded in history events, where any ETH deposit events will be detected. After the events are found, manually hit the refresh button to update the validator list.",
       "consolidated": "Consolidated into:",
       "selected": "{count} validator(s) selected",
       "title": "Ethereum Validators"

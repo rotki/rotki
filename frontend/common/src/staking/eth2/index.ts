@@ -90,4 +90,5 @@ export interface EthValidatorFilter {
   readonly validatorIndices?: number[];
   readonly addresses?: string[];
   readonly status?: EthValidatorStatus;
+  readonly ignoreCache?: boolean;
 }

@@ -62,7 +62,9 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
         blockchain: Blockchain.ETH2,
         ignoreCache: userInitiated || isFirstLoad(),
       });
-      await fetchEthStakingValidators();
+      await fetchEthStakingValidators({
+        ignoreCache: userInitiated || isFirstLoad(),
+      });
     };
 
     const updatePerformance = async (userInitiated = false): Promise<void> => {
