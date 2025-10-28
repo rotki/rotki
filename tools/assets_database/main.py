@@ -88,6 +88,7 @@ def populate_location_mappings():
             UpdateType.LOCATION_ASSET_MAPPINGS,
             UpdateType.LOCATION_UNSUPPORTED_ASSETS,
             UpdateType.COUNTERPARTY_ASSET_MAPPINGS,
+            UpdateType.RPC_NODES,
         ])
 
 

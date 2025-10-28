@@ -170,7 +170,7 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result) == 4
+    assert len(result) == 7
     for node in result:
         if node['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
             assert node['endpoint'] != ''
@@ -488,7 +488,7 @@ def test_connecting_to_node(rotkehlchen_api_server: 'APIServer') -> None:
 
     with patched_connection:
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 19})
+        response = requests.post(url=rpc_url, json={'identifier': 28})
         assert_proper_sync_response_with_result(response)
 
         # check case of a bad identifier
@@ -533,8 +533,8 @@ def test_connecting_to_node(rotkehlchen_api_server: 'APIServer') -> None:
     ):
         # check error during connection
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 19})
+        response = requests.post(url=rpc_url, json={'identifier': 28})
         assert response.json()['result'] == {
-            'errors': [{'name': 'base BlockPi', 'error': 'Custom error'}],
+            'errors': [{'name': 'dRPC', 'error': 'Custom error'}],
         }
         assert response.status_code == HTTPStatus.OK
