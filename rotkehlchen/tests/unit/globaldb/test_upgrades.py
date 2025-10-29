@@ -1573,3 +1573,45 @@ def test_foreign_keys_enabled_without_assets_update(tmp_path, messages_aggregato
             assert cursor.fetchone()[0] == str(GLOBAL_DB_VERSION)
     finally:
         connection.close()
+
+
+def test_asset_upgrade_only_run_on_breaking_version(tmp_path, messages_aggregator):
+    """Ensure that the asset upgrade is only run when the actual globaldb version is a
+    breaking version. Regression test for a bug where it was always run.
+    """
+    (data_dir := tmp_path / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
+    shutil.copy(
+        src=Path(__file__).resolve().parent.parent.parent.parent / 'data' / GLOBALDB_NAME,
+        dst=(db_path := data_dir / GLOBALDB_NAME),
+    )
+    connection = DBConnection(
+        path=db_path,
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    try:
+        for version, expected_calls in (('12', 1), ('13', 0)):  # 12 is a breaking version, 13 is not  # noqa: E501
+            with connection.write_ctx() as cursor:
+                cursor.execute(
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',
+                    ('version', version),
+                )
+
+            with ExitStack() as stack:
+                mocked_assets_updater = stack.enter_context(patch(
+                    'rotkehlchen.globaldb.upgrades.manager.AssetsUpdater',
+                ))
+                stack.enter_context(patch(
+                    'rotkehlchen.globaldb.upgrades.manager._perform_single_upgrade',
+                ))
+                maybe_upgrade_globaldb(
+                    globaldb=object(),
+                    connection=connection,
+                    global_dir=data_dir,
+                    db_filename=GLOBALDB_NAME,
+                    msg_aggregator=messages_aggregator,
+                )
+
+            assert mocked_assets_updater.call_count == expected_calls
+    finally:
+        connection.close()
