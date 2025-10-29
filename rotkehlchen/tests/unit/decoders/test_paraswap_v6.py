@@ -1012,7 +1012,7 @@ def test_safe_swap(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             amount=ZERO,
             location_label='0x9531C059098e3d194fF87FebB587aB07B30B1306',
-            notes='Successfully executed safe transaction 0x0000000000000000000000000000000000000000000000000000000000000000 for multisig 0x0BeBD2FcA9854F657329324aA7dc90F656395189',  # noqa: E501
+            notes='Successfully executed safe transaction 0x970e13a1db01573b8abf378a291154614256e351838d4bd8fc52fe337fdb108e for multisig 0x0BeBD2FcA9854F657329324aA7dc90F656395189',  # noqa: E501
             counterparty=CPT_SAFE_MULTISIG,
             address='0x0BeBD2FcA9854F657329324aA7dc90F656395189',
         ), EvmSwapEvent(

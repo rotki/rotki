@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX_NO_PREFIX
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -112,6 +113,9 @@ class SafemultisigDecoder(EvmDecoderInterface):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         safe_tx_hash = context.tx_log.data[:32].hex()
+        if safe_tx_hash == ZERO_32_BYTES_HEX_NO_PREFIX and len(context.tx_log.topics) > 1:
+            safe_tx_hash = context.tx_log.topics[1].hex()  # safe tx hash can be in topics in some cases  # noqa: E501
+
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
