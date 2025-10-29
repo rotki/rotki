@@ -26,7 +26,6 @@ const { notify } = useNotificationsStore();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessagesStore();
 const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
 
-const moneriumConnected = computed<boolean>(() => get(authenticated));
 const connectedEmail = computed<string>(() => get(status)?.userEmail ?? '');
 
 function notifyOAuthError(error: any): void {
@@ -158,17 +157,6 @@ function cancelTokenInput(): void {
   set(manualRefreshToken, '');
 }
 
-const primaryActionLabel = computed<string>(() => get(moneriumConnected)
-  ? t('external_services.monerium.disconnect')
-  : t('external_services.monerium.connect'));
-
-async function primaryActionHandler(): Promise<void> {
-  if (get(moneriumConnected))
-    await disconnect();
-  else
-    await connect();
-}
-
 onMounted(() => {
   registerOAuthCallbackHandler(handleOAuthCallback);
 });
@@ -181,16 +169,36 @@ onUnmounted(() => {
 <template>
   <ServiceKeyCard
     need-premium
-    :key-set="moneriumConnected"
+    :key-set="authenticated"
     :title="t('external_services.monerium.title')"
     :subtitle="t('external_services.monerium.description')"
     :image-src="getPublicServiceImagePath('monerium.png')"
-    :primary-action="primaryActionLabel"
+    :primary-action="t('external_services.monerium.connect')"
     :action-disabled="isAuthorizing"
+    :hide-action="authenticated"
     :add-button-text="t('external_services.actions.authenticate')"
     :edit-button-text="t('external_services.actions.reauthenticate')"
-    @confirm="primaryActionHandler()"
+    @confirm="connect()"
   >
+    <template
+      v-if="authenticated"
+      #left-buttons
+    >
+      <RuiButton
+        :disabled="isAuthorizing"
+        color="error"
+        variant="text"
+        @click="disconnect()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-unplug"
+            size="16"
+          />
+        </template>
+        {{ t('external_services.monerium.disconnect') }}
+      </RuiButton>
+    </template>
     <RuiAlert
       type="info"
       class="mb-4"
@@ -199,7 +207,7 @@ onUnmounted(() => {
     </RuiAlert>
 
     <div class="flex flex-col gap-4">
-      <div v-if="moneriumConnected">
+      <div v-if="authenticated">
         <RuiAlert type="success">
           {{ t('external_services.monerium.connected_as', { email: connectedEmail || t('external_services.monerium.unknown_email') }) }}
         </RuiAlert>

@@ -269,7 +269,7 @@ const { copied, copy } = useCopy(identifier);
 }
 
 .chain {
-  @apply bg-white absolute z-[1] flex items-center justify-center rounded-full shadow-sm -bottom-1 -right-1;
+  @apply bg-white absolute flex items-center justify-center rounded-full shadow-sm -bottom-1 -right-1;
   @apply border border-rui-grey-300;
   margin-top: v-bind(chainIconMargin);
   margin-left: v-bind(chainIconMargin);
