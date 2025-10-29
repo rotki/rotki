@@ -9,6 +9,7 @@ import requests
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -21,6 +22,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import EVMTxHash, Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import (
+    get_system_spec,
     iso8601ts_to_timestamp,
     set_user_agent,
     timestamp_to_iso8601,
@@ -40,6 +42,9 @@ log = RotkehlchenLogsAdapter(logger)
 # the seconds around a transaction to search for when querying the API
 GNOSIS_PAY_TX_TIMESTAMP_RANGE: Final = 30
 GNOSIS_PAY_PAGE_SIZE: Final = 100
+GNOSIS_PAY_API_BASE_URL: Final = 'https://api.gnosispay.com/api/v1'
+GNOSIS_PAY_AUTH_NONCE_ENDPOINT: Final = 'auth/nonce'
+GNOSIS_PAY_AUTH_CHALLENGE_ENDPOINT: Final = 'auth/challenge'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -102,7 +107,7 @@ class GnosisPay:
         May raise:
         - RemoteError if there is a problem querying the API
         """
-        querystr = 'https://api.gnosispay.com/api/v1/' + endpoint
+        querystr = f'{GNOSIS_PAY_API_BASE_URL}/{endpoint}'
         log.debug(f'Querying Gnosis Pay API {querystr} with {params=}')
         timeout = CachedSettings().get_timeout_tuple()
         try:
@@ -510,3 +515,81 @@ def init_gnosis_pay(database: 'DBHandler') -> GnosisPay | None:
             return None
 
     return GnosisPay(database=database, session_token=result[0])
+
+
+def fetch_gnosis_pay_siwe_nonce() -> str:
+    """Fetch a SIWE nonce from the public Gnosis Pay API.
+
+    May raise:
+    - RemoteError if the request fails or returns an unexpected payload.
+    """
+    timeout = CachedSettings().get_timeout_tuple()
+    url = f'{GNOSIS_PAY_API_BASE_URL}/{GNOSIS_PAY_AUTH_NONCE_ENDPOINT}'
+    user_agent = f'rotki/{get_system_spec()["rotkehlchen"]}'
+    try:
+        response = requests.get(
+            url=url,
+            timeout=timeout,
+            headers={'User-Agent': user_agent},
+        )
+    except requests.RequestException as e:
+        raise RemoteError(f'Failed to fetch Gnosis Pay nonce: {e!s}') from e
+
+    if response.status_code != HTTPStatus.OK:
+        raise RemoteError(
+            f'Gnosis Pay nonce request failed with HTTP status code '
+            f'{response.status_code} and text {response.text}',
+        )
+
+    nonce = response.text.strip()
+    if nonce == '':
+        raise RemoteError('Gnosis Pay nonce response was empty')
+
+    return nonce
+
+
+def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
+    """Verify a SIWE signature and retrieve the auth token from Gnosis Pay.
+
+    May raise:
+    - RemoteError if the request fails or the response is invalid.
+    """
+    timeout = CachedSettings().get_timeout_tuple()
+    url = f'{GNOSIS_PAY_API_BASE_URL}/{GNOSIS_PAY_AUTH_CHALLENGE_ENDPOINT}'
+    user_agent = f'rotki/{get_system_spec()["rotkehlchen"]}'
+    payload = {
+        'message': message,
+        'signature': signature,
+        'ttlInSeconds': DAY_IN_SECONDS,
+    }
+
+    try:
+        response = requests.post(
+            url=url,
+            json=payload,
+            timeout=timeout,
+            headers={'User-Agent': user_agent},
+        )
+    except requests.RequestException as e:
+        raise RemoteError(f'Failed to verify Gnosis Pay SIWE signature: {e!s}') from e
+
+    if response.status_code != HTTPStatus.OK:
+        raise RemoteError(
+            f'Gnosis Pay challenge request failed with HTTP status code '
+            f'{response.status_code} and text {response.text}',
+        )
+
+    try:
+        data = jsonloads_dict(response.text)
+    except JSONDecodeError as e:
+        raise RemoteError(
+            f'Gnosis Pay challenge returned invalid JSON response: {response.text}',
+        ) from e
+
+    token = data.get('token')
+    if not isinstance(token, str) or token == '':
+        raise RemoteError(
+            f'Unexpected payload while verifying Gnosis Pay SIWE signature: {response.text}',
+        )
+
+    return token

@@ -103,6 +103,7 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
+    GnosisPaySiweChallengeSchema,
     HistoricalAssetsPriceSchema,
     HistoricalPerAssetBalanceSchema,
     HistoricalPricesPerAssetSchema,
@@ -1719,6 +1720,30 @@ class BlockchainsAccountsResource(BaseMethodView):
         return self.rest_api.remove_single_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
+        )
+
+
+class GnosisPayNonceResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.fetch_gnosis_pay_nonce(async_query=async_query)
+
+
+class GnosisPayTokenResource(BaseMethodView):
+
+    post_schema = GnosisPaySiweChallengeSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(self, message: str, signature: str, async_query: bool) -> Response:
+        return self.rest_api.verify_gnosis_pay_siwe_signature(
+            message=message,
+            signature=signature,
+            async_query=async_query,
         )
 
 

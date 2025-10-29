@@ -1744,6 +1744,11 @@ class MoneriumOAuthCredentialsSchema(Schema):
     expires_in = fields.Integer(required=True, validate=validate.Range(min=1))  # number of seconds since the token creation left before the access token expires  # noqa: E501
 
 
+class GnosisPaySiweChallengeSchema(AsyncQueryArgumentSchema):
+    message = NonEmptyStringField(required=True)
+    signature = NonEmptyStringField(required=True)
+
+
 class BinanceMarketsSchemaMixin(Schema):
     """Additional logic for adding/editing Binance exchanges credentials"""
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
