@@ -249,6 +249,7 @@ defineExpose({
         variant="outlined"
         auto-select-first
         :item-height="48"
+        text-attr="name"
         :error-messages="toMessages(v$.exchange)"
       >
         <template #selection="{ item }">
