@@ -586,8 +586,7 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
             f'Gnosis Pay challenge returned invalid JSON response: {response.text}',
         ) from e
 
-    token = data.get('token')
-    if not isinstance(token, str) or token == '':
+    if not isinstance(token := data.get('token'), str) or token == '':
         raise RemoteError(
             f'Unexpected payload while verifying Gnosis Pay SIWE signature: {response.text}',
         )
