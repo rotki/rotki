@@ -11,7 +11,7 @@ from contextlib import suppress
 from functools import partial
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, get_args, overload
 from zipfile import BadZipFile, ZipFile
 
 import gevent
@@ -310,7 +310,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder import GnosisPayDecoder
     from rotkehlchen.chain.manager import ChainManagerWithNodesMixin
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -5997,15 +5996,12 @@ class RestAPI:
             )
 
         chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
-        gnosispay_decoder = cast(
-            'GnosisPayDecoder',
-            chain_manager.transactions_decoder.decoders.get('GnosisPay'),
-        )
+        gnosispay_decoder = chain_manager.transactions_decoder.decoders.get('GnosisPay')
         if gnosispay_decoder is not None:
-            gnosispay_decoder.reload_data()
-            if gnosispay_decoder.gnosispay_api is not None:
+            gnosispay_decoder.reload_data()  # type: ignore
+            if gnosispay_decoder.gnosispay_api is not None:  # type: ignore
                 gevent.spawn(
-                    gnosispay_decoder.gnosispay_api.backfill_missing_events,
+                    gnosispay_decoder.gnosispay_api.backfill_missing_events,  # type: ignore
                 )
 
         return OK_RESULT

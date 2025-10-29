@@ -114,7 +114,7 @@ def maybe_upgrade_globaldb(
     The globaldb parameter is needed to handle schema-breaking changes that require
     updating assets data before the DB schema is modified.
     """
-    with connection.write_ctx() as write_cursor:  # ensure that foreign keys are always turn on both for new databases and existing databases  # noqa: E501
+    with connection.write_ctx() as write_cursor:  # ensure that foreign keys are always turned on both for new and existing databases  # noqa: E501
         write_cursor.executescript('PRAGMA foreign_keys=on;')
         write_cursor.execute('PRAGMA journal_mode=WAL;')
 

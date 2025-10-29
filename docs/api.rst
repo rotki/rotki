@@ -14708,7 +14708,7 @@ GnosisPay SIWE token
 
 .. http:post:: /api/(version)/services/gnosispay/token
 
-   Exchange a signed SIWE message for a Gnosis Pay session token and store it in rotki.
+   Use the signed SIWE message to retrieve a Gnosis Pay session token and store it in rotki.
 
    **Example Request**
 
