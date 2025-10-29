@@ -194,7 +194,11 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
-from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
+from rotkehlchen.externalapis.gnosispay import (
+    fetch_gnosis_pay_siwe_nonce,
+    init_gnosis_pay,
+    verify_gnosis_pay_siwe_signature as external_verify_gnosis_pay_siwe_signature,
+)
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.externalapis.monerium import Monerium, init_monerium
 from rotkehlchen.fval import FVal
@@ -659,34 +663,23 @@ class RestAPI:
         return self._return_external_services_response()
 
     def add_external_services(self, services: list[ExternalServiceApiCredentials]) -> Response:
-        updates_gnosispay = False
         for x in services:
             if x.service.premium_only() and not has_premium_check(self.rotkehlchen.premium):
                 return api_response(
                     wrap_in_fail_result(f'You can only use {x.service} with rotki premium'),
                     status_code=HTTPStatus.FORBIDDEN,
-            )
+                )
             if x.service == ExternalService.GNOSIS_PAY:
-                updates_gnosispay = True
+                return api_response(
+                    wrap_in_fail_result('GnosisPay credentials are set using /services/gnosispay/token'),  # noqa: E501
+                    status_code=HTTPStatus.FORBIDDEN,
+                )
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             self.rotkehlchen.data.db.add_external_service_credentials(
                 write_cursor=write_cursor,
                 credentials=services,
             )
-
-        if updates_gnosispay:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
-            gnosispay_decoder = cast(
-                'GnosisPayDecoder',
-                chain_manager.transactions_decoder.decoders.get('GnosisPay'),
-            )
-            if gnosispay_decoder is not None:
-                gnosispay_decoder.reload_data()
-                if gnosispay_decoder.gnosispay_api is not None:
-                    gevent.spawn(
-                        gnosispay_decoder.gnosispay_api.backfill_missing_events,
-                    )
 
         return self._return_external_services_response()
 
@@ -5972,6 +5965,50 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
 
         return _wrap_in_ok_result(addresses_with_admins)
+
+    @async_api_call()
+    def fetch_gnosis_pay_nonce(self) -> dict[str, Any]:
+        try:
+            nonce = fetch_gnosis_pay_siwe_nonce()
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return _wrap_in_ok_result(nonce)
+
+    @async_api_call()
+    def verify_gnosis_pay_siwe_signature(self, message: str, signature: str) -> dict[str, Any]:
+        try:
+            token = external_verify_gnosis_pay_siwe_signature(
+                message=message,
+                signature=signature,
+            )
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        # save the queried token in the db
+        log.debug('Got a valid token from gnosis pay. Saving it in credentials')
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            self.rotkehlchen.data.db.add_external_service_credentials(
+                write_cursor=write_cursor,
+                credentials=[ExternalServiceApiCredentials(
+                    service=ExternalService.GNOSIS_PAY,
+                    api_key=ApiKey(token),
+                )],
+            )
+
+        chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
+        gnosispay_decoder = cast(
+            'GnosisPayDecoder',
+            chain_manager.transactions_decoder.decoders.get('GnosisPay'),
+        )
+        if gnosispay_decoder is not None:
+            gnosispay_decoder.reload_data()
+            if gnosispay_decoder.gnosispay_api is not None:
+                gevent.spawn(
+                    gnosispay_decoder.gnosispay_api.backfill_missing_events,
+                )
+
+        return OK_RESULT
 
     @async_api_call()
     def prepare_native_transfer(

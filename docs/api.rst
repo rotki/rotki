@@ -14675,3 +14675,68 @@ GnosisPay admins
    :statuscode 401: No user is currently logged in.
    :statuscode 409: Error querying the on chain information.
    :statuscode 502: Failed to query the external contract.
+
+GnosisPay nonce
+================
+
+.. http:get:: /api/(version)/services/gnosispay/nonce
+
+   Retrieve a SIWE nonce from the Gnosis Pay public API. The nonce is returned as plain text.
+
+   .. note::
+      This endpoint can be queried asynchronously via ``"async_query": true``.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": "e9d4b01d-8f3b-43d3-8d52-4d7e1c6fa4b1",
+          "message": ""
+      }
+
+   :resjson string result: SIWE nonce obtained from the Gnosis Pay API.
+   :statuscode 200: The request was successful.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Failed to query the Gnosis Pay API.
+
+GnosisPay SIWE token
+=====================
+
+.. http:post:: /api/(version)/services/gnosispay/token
+
+   Exchange a signed SIWE message for a Gnosis Pay session token and store it in rotki.
+
+   **Example Request**
+
+   .. sourcecode:: http
+
+      POST /api/1/services/gnosispay/token HTTP/1.1
+      Content-Type: application/json
+
+      {
+          "message": "rotki wants you to sign in with your Ethereum account...",
+          "signature": "0x4f4c1df6..."
+      }
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :reqjson string message: SIWE message that was signed.
+   :reqjson string signature: Signature produced by the user's wallet.
+   :resjson string result: true if it was saved successfully.
+   :statuscode 200: The request was successful.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Failed to verify the SIWE signature with Gnosis Pay.
