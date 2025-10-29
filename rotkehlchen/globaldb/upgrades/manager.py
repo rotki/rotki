@@ -104,7 +104,8 @@ def maybe_upgrade_globaldb(
         msg_aggregator: 'MessagesAggregator',
         globaldb: 'GlobalDBHandler | None' = None,
 ) -> bool:
-    """Maybe upgrade the global DB.
+    """Maybe upgrade the global DB and ensure that the foreign keys
+    are on along the journal mode.
 
     Returns True if this is a fresh DB. In that
     case the caller should make sure to input the latest version
@@ -113,6 +114,10 @@ def maybe_upgrade_globaldb(
     The globaldb parameter is needed to handle schema-breaking changes that require
     updating assets data before the DB schema is modified.
     """
+    with connection.write_ctx() as write_cursor:  # ensure that foreign keys are always turn on both for new databases and existing databases  # noqa: E501
+        write_cursor.executescript('PRAGMA foreign_keys=on;')
+        write_cursor.execute('PRAGMA journal_mode=WAL;')
+
     try:
         with connection.read_ctx() as cursor:
             db_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
@@ -139,10 +144,19 @@ def maybe_upgrade_globaldb(
         )
         for upgrade in UPGRADES_LIST:
             if globaldb is not None and upgrade.from_version in GLOBAL_DB_ASSETS_BREAKING_VERSIONS:
+                # make sure that if we need to do assets updates the foreign keys
+                # are off and back to on after finishing. This is done to be explicit
+                # about the state we expect.
+                with connection.write_ctx() as write_cursor:
+                    write_cursor.executescript('PRAGMA foreign_keys=off;')
+
                 AssetsUpdater(
                     globaldb=globaldb,
                     msg_aggregator=msg_aggregator,
                 ).apply_pending_compatible_updates()
+
+                with connection.write_ctx() as write_cursor:
+                    write_cursor.executescript('PRAGMA foreign_keys=on;')
 
             _perform_single_upgrade(
                 upgrade=upgrade,
@@ -234,7 +248,7 @@ def configure_globaldb(
     May raise:
         - DBSchemaError if the database schema is invalid.
     """
-    is_fresh_db = maybe_upgrade_globaldb(
+    is_fresh_db = maybe_upgrade_globaldb(  # foreign keys and WAL mode are turned on before upgrading  # noqa: E501
         globaldb=globaldb,
         connection=connection,
         global_dir=global_dir,
@@ -242,19 +256,14 @@ def configure_globaldb(
         msg_aggregator=msg_aggregator,
     )
 
-    # its not a fresh database and foreign keys are not turned on by default.
-    with connection.write_ctx() as write_cursor:
-        write_cursor.executescript('PRAGMA foreign_keys=on;')
-        write_cursor.execute('PRAGMA journal_mode=WAL;')
-
-        if is_fresh_db is True:
+    if is_fresh_db is True:
+        with connection.write_ctx() as write_cursor:
             write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_GLOBALDB_DATA_MIGRATION))],  # noqa: E501
             )
-
-    if is_fresh_db is False:
+    else:
         maybe_apply_globaldb_migrations(connection)
 
     connection.schema_sanity_check()
