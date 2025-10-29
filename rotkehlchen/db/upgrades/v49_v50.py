@@ -186,15 +186,15 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
         write_cursor.execute('DROP TABLE evm_events_info')
 
-    @progress_step(description='Remove monerium credentials.')
-    def _remove_monerium(write_cursor: 'DBCursor') -> None:
+    @progress_step(description='Remove monerium and gnosis pay credentials.')
+    def _remove_monerium_and_gnosis_pay_credentials(write_cursor: 'DBCursor') -> None:
         """
-        Since monerium authentication, switches to oauth we should delete user's
-        monerium credentials from the DB
+        Since monerium authentication switches to oauth and gnosis pay switches to SIWE,
+        we should delete user's monerium and gnosis pay credentials from the DB
         """
         write_cursor.execute(
-            'DELETE FROM external_service_credentials WHERE name = ?',
-            ('monerium',),
+            'DELETE FROM external_service_credentials WHERE name IN (?, ?)',
+            ('monerium', 'gnosis_pay'),
         )
 
     @progress_step(description='Remove gnosis pay reversaltx column.')
