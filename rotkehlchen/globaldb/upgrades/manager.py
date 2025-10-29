@@ -143,7 +143,11 @@ def maybe_upgrade_globaldb(
             target_version=GLOBAL_DB_VERSION,
         )
         for upgrade in UPGRADES_LIST:
-            if globaldb is not None and upgrade.from_version in GLOBAL_DB_ASSETS_BREAKING_VERSIONS:
+            if (
+                globaldb is not None and
+                upgrade.from_version in GLOBAL_DB_ASSETS_BREAKING_VERSIONS and
+                upgrade.from_version >= db_version
+            ):
                 # make sure that if we need to do assets updates the foreign keys
                 # are off and back to on after finishing. This is done to be explicit
                 # about the state we expect.
