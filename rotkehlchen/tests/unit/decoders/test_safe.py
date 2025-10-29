@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -17,6 +19,10 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.vcr
@@ -640,3 +646,40 @@ def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
+def test_safe_execute_tx_with_hash_in_topics(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xf53c056368eaf1498ce9af5d1121b54e64d50dc22810690bb676bc29efaeb908')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    multisig_address = string_to_evm_address('0x0BeBD2FcA9854F657329324aA7dc90F656395189')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1761739487000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000100222361747948'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=481,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Successfully executed safe transaction 0x9b0dd4dd2297320f153b19521311de7b9cd4e3fa40d40fe34e47dbea755ad2e4 for multisig {multisig_address}',  # noqa: E501
+        counterparty=CPT_SAFE_MULTISIG,
+        address=multisig_address,
+    )]
