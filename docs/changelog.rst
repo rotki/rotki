@@ -12,6 +12,7 @@ Changelog
 * :feature:`10630` Users will now be able to re-pull missed history events from exchanges.
 * :feature:`10637` rotki will now properly handle Runmoney.app transactions and balances in Base.
 * :feature:`9972` rotki will now properly handle Quickswap transactions and LP balances in all supported chains.
+* :feature:`-` Users will now be able to apply custom accounting rules to a specific event or group of related events without affecting existing rules.
 * :feature:`10321` Users can now delete multiple events in the history events section.
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
