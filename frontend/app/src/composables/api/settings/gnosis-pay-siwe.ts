@@ -1,13 +1,13 @@
 import type { ActionResult } from '@rotki/common';
+import type { PendingTask } from '@/types/task';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
-import { handleResponse } from '@/services/utils';
-
-const GNOSIS_PAY_API_URL = 'https://api.gnosispay.com/api/v1';
+import { handleResponse, validStatus } from '@/services/utils';
 
 interface GnosisPaySiweApiReturn {
   fetchGnosisPayAdmins: () => Promise<Record<string, string[]>>;
-  fetchNonce: () => Promise<string>;
-  verifySiweSignature: (message: string, signature: string, ttlInSeconds: number) => Promise<string>;
+  fetchNonce: () => Promise<PendingTask>;
+  verifySiweSignature: (message: string, signature: string) => Promise<PendingTask>;
 }
 
 export function useGnosisPaySiweApi(): GnosisPaySiweApiReturn {
@@ -19,31 +19,34 @@ export function useGnosisPaySiweApi(): GnosisPaySiweApiReturn {
     return handleResponse(response);
   };
 
-  const fetchNonce = async (): Promise<string> => {
-    const response = await api.instance.get<string>(`/auth/nonce`, {
-      baseURL: GNOSIS_PAY_API_URL,
-    });
+  const fetchNonce = async (): Promise<PendingTask> => {
+    const response = await api.instance.get<ActionResult<PendingTask>>(
+      '/services/gnosispay/nonce',
+      {
+        params: snakeCaseTransformer({ asyncQuery: true }),
+        validateStatus: validStatus,
+      },
+    );
 
-    return response.data;
+    return handleResponse(response);
   };
 
   const verifySiweSignature = async (
     message: string,
     signature: string,
-    ttlInSeconds: number,
-  ): Promise<string> => {
-    const response = await api.instance.post<{ token: string }>(
-      `/auth/challenge`,
-      {
+  ): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
+      '/services/gnosispay/token',
+      snakeCaseTransformer({
+        asyncQuery: true,
         message,
         signature,
-        ttlInSeconds,
-      },
+      }),
       {
-        baseURL: GNOSIS_PAY_API_URL,
+        validateStatus: validStatus,
       },
     );
-    return response.data.token;
+    return handleResponse(response);
   };
 
   return {

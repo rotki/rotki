@@ -2485,13 +2485,15 @@
         "controlled_safe": "Controlled Gnosis Pay Safe account(s):",
         "disconnect": "Disconnect Wallet",
         "explanation": "To authenticate with Gnosis Pay, you need to sign a message with an Ethereum wallet that is a controller of the Gnosis Pay Safe.",
+        "fetching_nonce": "Fetching authentication nonce",
         "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
         "sign_message": "Sign Message to Authenticate",
         "step1_title": "Select Wallet Mode & Connect",
         "step2_title": "Checking connected address eligibility",
         "step3_title": "Sign Authentication Message",
         "success_message": "Successfully authenticated with Gnosis Pay",
-        "validating_address": "Validating address..."
+        "validating_address": "Validating address...",
+        "verifying_signature": "Verifying signature and generating token"
       },
       "title": "Gnosis Pay"
     },
