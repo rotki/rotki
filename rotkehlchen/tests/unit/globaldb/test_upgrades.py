@@ -2,7 +2,8 @@ import json
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
+from unittest.mock import patch
 
 import pytest
 from eth_utils.address import to_checksum_address
@@ -50,6 +51,7 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.upgrades import UpgradeRecord
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
 ASSETS_IN_V2_GLOBALDB: Final = 3095
@@ -1358,10 +1360,10 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
             (']', 'Sol', old_solana_id),
         ]
         assert cursor.execute('SELECT collection_id, asset FROM multiasset_mappings WHERE asset = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
-            (999, old_solana_id),
+            (512, old_solana_id),
         ]
         assert cursor.execute('SELECT id, name, symbol, main_asset FROM asset_collections WHERE main_asset = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
-            (888, 'Test Solana Collection', 'TSOL', old_solana_id),
+            (512, 'Test Solana Collection', 'TSOL', old_solana_id),
         ]
         assert cursor.execute('SELECT asset_id FROM user_owned_assets WHERE asset_id = ?', (old_solana_id,)).fetchall() == [  # noqa: E501
             (old_solana_id,),
@@ -1409,11 +1411,11 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
         ]
         assert cursor.execute('SELECT COUNT(*) FROM multiasset_mappings WHERE asset = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT collection_id, asset FROM multiasset_mappings WHERE asset = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
-            (999, new_solana_id),
+            (512, new_solana_id),
         ]
         assert cursor.execute('SELECT COUNT(*) FROM asset_collections WHERE main_asset = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT id, name, symbol, main_asset FROM asset_collections WHERE main_asset = ?', (new_solana_id,)).fetchall() == [  # noqa: E501
-            (888, 'Test Solana Collection', 'TSOL', new_solana_id),
+            (512, 'Solana', 'SOL', new_solana_id),
         ]
         assert cursor.execute('SELECT COUNT(*) FROM user_owned_assets WHERE asset_id = ?', (old_solana_id,)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM user_owned_assets WHERE asset_id = ?', (new_solana_id,)).fetchone()[0] == 1  # noqa: E501
@@ -1495,3 +1497,79 @@ def test_assets_updates_applied_before_v10_change(globaldb, messages_aggregator)
         )
         # see that said assets are now present in the db
         assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?, ?)', (rocket_pool_asset, compound_usdt_asset, morpho_asset)).fetchone()[0] == 3  # noqa: E501
+
+
+def test_foreign_keys_enabled_without_assets_update(tmp_path, messages_aggregator):
+    """Ensure DB upgrades enable PRAGMAs even when asset updates are skipped."""
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent
+    data_dir = tmp_path / GLOBALDIR_NAME
+    data_dir.mkdir(parents=True, exist_ok=True)
+    db_path = data_dir / GLOBALDB_NAME
+    shutil.copy(root_dir / 'data' / GLOBALDB_NAME, db_path)
+
+    connection = DBConnection(
+        path=db_path,
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=0,
+    )
+    try:
+        with connection.write_ctx() as cursor:
+            cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',
+                ('version', '13'),
+            )
+            cursor.executescript('PRAGMA foreign_keys=OFF;')
+            cursor.executescript('PRAGMA journal_mode=DELETE;')
+
+        with connection.read_ctx() as cursor:
+            cursor.execute('PRAGMA foreign_keys;')
+            assert cursor.fetchone()[0] == 0
+            cursor.execute('PRAGMA journal_mode;')
+            assert cursor.fetchone()[0].lower() == 'delete'
+
+        observed: dict[str, object] = {}
+
+        def fake_upgrade_step(connection: DBConnection, progress_handler: Any) -> None:
+            with connection.read_ctx() as upgrade_cursor:
+                upgrade_cursor.execute('PRAGMA foreign_keys;')
+                observed['foreign_keys'] = upgrade_cursor.fetchone()[0]
+                upgrade_cursor.execute('PRAGMA journal_mode;')
+                observed['journal_mode'] = upgrade_cursor.fetchone()[0]
+
+        upgrade_record = UpgradeRecord(
+            from_version=13,
+            function=fake_upgrade_step,
+        )
+
+        with ExitStack() as stack:
+            stack.enter_context(patch(
+                'rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST',
+                [upgrade_record],
+            ))
+            stack.enter_context(patch(
+                'rotkehlchen.globaldb.upgrades.manager.GLOBAL_DB_ASSETS_BREAKING_VERSIONS',
+                set(),
+            ))
+            stack.enter_context(patch(
+                'rotkehlchen.globaldb.utils.GLOBAL_DB_ASSETS_BREAKING_VERSIONS',
+                set(),
+            ))
+            mocked_assets_updater = stack.enter_context(patch(
+                'rotkehlchen.globaldb.upgrades.manager.AssetsUpdater',
+            ))
+            maybe_upgrade_globaldb(
+                globaldb=object(),
+                connection=connection,
+                global_dir=data_dir,
+                db_filename=GLOBALDB_NAME,
+                msg_aggregator=messages_aggregator,
+            )
+
+        mocked_assets_updater.assert_not_called()
+        with connection.read_ctx() as cursor:
+            assert cursor.execute('PRAGMA foreign_keys;').fetchone()[0] == 1
+            assert cursor.execute('PRAGMA journal_mode;').fetchone()[0].lower() == 'wal'
+            cursor.execute("SELECT value FROM settings WHERE name='version';")
+            assert cursor.fetchone()[0] == str(GLOBAL_DB_VERSION)
+    finally:
+        connection.close()
