@@ -20,7 +20,7 @@ const location = computed<AddressBookLocation>(() => {
   return source === AddressNamePriority.GLOBAL_ADDRESSBOOK ? 'global' : 'private';
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { showDeleteConfirmation } = useAddressBookDeletion(location);
 

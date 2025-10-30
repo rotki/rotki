@@ -26,25 +26,24 @@ const [DefineTimeTooltip, ReuseTimeTooltip] = createReusableTemplate();
 </script>
 
 <template>
-  <DefineTimeTooltip>
-    <RuiTooltip
-      :open-delay="400"
-      persist-on-tooltip-hover
-    >
-      <template #activator>
-        <span class="underline decoration-dotted cursor-help">
-          {{ lastQueriedDisplay }}
-        </span>
-      </template>
-      <DateDisplay
-        :timestamp="lastQueriedTimestamp"
-        hide-tooltip
-        milliseconds
-      />
-    </RuiTooltip>
-  </DefineTimeTooltip>
-
   <div>
+    <DefineTimeTooltip>
+      <RuiTooltip
+        :open-delay="400"
+        persist-on-tooltip-hover
+      >
+        <template #activator>
+          <span class="underline decoration-dotted cursor-help">
+            {{ lastQueriedDisplay }}
+          </span>
+        </template>
+        <DateDisplay
+          :timestamp="lastQueriedTimestamp"
+          hide-tooltip
+          milliseconds
+        />
+      </RuiTooltip>
+    </DefineTimeTooltip>
     <template v-if="justUpdated">
       {{ t('dashboard.history_query_indicator.just_updated') }}
     </template>

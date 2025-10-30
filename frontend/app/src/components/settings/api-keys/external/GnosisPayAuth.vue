@@ -395,7 +395,7 @@ async function signInWithEthereum(): Promise<void> {
       set(signInSuccess, true);
     }
     else {
-      throw new Error('Signature can\'t be verified');
+      throw new Error(t('external_services.gnosispay.siwe.failed'));
     }
   }
   catch (error: any) {
@@ -404,8 +404,11 @@ async function signInWithEthereum(): Promise<void> {
         set(errorType, GnosisPayError.SIGNATURE_REJECTED);
       }
       else {
-        set(errorType, GnosisPayError.OTHER);
-        set(errorContext, { message: error.toString() });
+        setMessage({
+          description: error.toString(),
+          success: false,
+          title: t('external_services.gnosispay.siwe.failed'),
+        });
       }
       logger.error('Sign-in with Ethereum failed:', error);
     }

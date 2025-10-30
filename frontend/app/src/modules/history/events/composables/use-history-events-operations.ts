@@ -48,7 +48,7 @@ export function useHistoryEventsOperations(
   const showRedecodeConfirmation = ref<boolean>(false);
   const redecodePayload = ref<PullEventPayload>();
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const { notify } = useNotificationsStore();
   const { show } = useConfirmStore();

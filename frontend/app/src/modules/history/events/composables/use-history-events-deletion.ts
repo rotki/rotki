@@ -22,7 +22,7 @@ export function useHistoryEventsDeletion(
   originalGroups: Ref<HistoryEventRow[]>,
   refreshCallback: () => Promise<void>,
 ): UseHistoryEventsDeletionReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { show: showConfirm } = useConfirmStore();
   const { notify } = useNotificationsStore();
   const { deleteTransactions } = useHistoryEventsApi();
