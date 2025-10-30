@@ -14,7 +14,7 @@ const emit = defineEmits<{
   'redetect:all': [];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function onRedetectAll(): void {
   emit('redetect:all');

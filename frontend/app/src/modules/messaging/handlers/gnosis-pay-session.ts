@@ -15,7 +15,7 @@ export function createGnosisPaySessionHandler(
         query: { service: 'gnosis_pay' },
       }),
       icon: 'lu-arrow-right',
-      label: t('external_services.actions.replace_key'),
+      label: t('external_services.actions.reauthenticate'),
       persist: true,
     },
     category: NotificationCategory.DEFAULT,

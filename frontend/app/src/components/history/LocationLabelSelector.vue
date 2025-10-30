@@ -18,7 +18,7 @@ defineOptions({
 
 const modelValue = defineModel<string[]>({ required: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { locationLabels: locationLabelOptions } = storeToRefs(useHistoryStore());
 const { allTxChainsInfo, matchChain } = useSupportedChains();
 const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);

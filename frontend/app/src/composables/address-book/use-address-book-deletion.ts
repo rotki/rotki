@@ -14,7 +14,7 @@ export function useAddressBookDeletion(
   location: MaybeRef<AddressBookLocation>,
   onSuccess?: () => void,
 ): UseAddressBookDeletionReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
   const { notify } = useNotificationsStore();
   const { deleteAddressBook: deleteAddressBookCaller } = useAddressesNamesStore();

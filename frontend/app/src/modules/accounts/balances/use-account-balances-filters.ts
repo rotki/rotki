@@ -30,7 +30,7 @@ interface AccountBalancesFiltersReturn {
 }
 
 export function useAccountBalancesFilters(category: MaybeRef<string>): AccountBalancesFiltersReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { fetchAccounts: fetchAccountsPage } = useBlockchainAccountData();
 
   const visibleTags = ref<string[]>([]);

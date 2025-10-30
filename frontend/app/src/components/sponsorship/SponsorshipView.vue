@@ -41,7 +41,7 @@ const data = [
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-1 gap-x-4 max-w-[480px] mx-auto">
+  <div class="flex flex-wrap gap-1 gap-x-4 max-w-[400px] mx-auto">
     <div
       v-for="(item, index) in data"
       :key="index"

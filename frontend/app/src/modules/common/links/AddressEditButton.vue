@@ -10,7 +10,7 @@ const emit = defineEmits<{
   open: [];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { showGlobalDialog } = useAddressBookForm();
 
 function openAddressBookForm() {

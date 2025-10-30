@@ -13,7 +13,7 @@ const emit = defineEmits<{
 
 const deleteCustom = ref(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function confirmRedecode(): void {
   const payload = props.payload;

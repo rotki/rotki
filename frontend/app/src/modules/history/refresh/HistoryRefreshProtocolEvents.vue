@@ -20,7 +20,7 @@ const queries: OnlineHistoryEventsQueryType[] = [
   OnlineHistoryEventsQueryType.MONERIUM,
 ];
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { apiKey, load } = useExternalApiKeys(t);
 const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();

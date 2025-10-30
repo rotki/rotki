@@ -6,7 +6,7 @@ interface AccountBalancesTokenDetectionReturn {
 }
 
 export function useAccountBalancesTokenDetection(): AccountBalancesTokenDetectionReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
   const { handleBlockchainRefresh } = useRefresh();
 
