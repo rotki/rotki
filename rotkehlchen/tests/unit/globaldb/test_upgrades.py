@@ -1383,6 +1383,16 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
             cursor=cursor,
             key_parts=(CacheType.MORPHO_VAULTS,),
         ) == '123'
+        assert cursor.execute("SELECT address, protocol FROM evm_tokens WHERE protocol LIKE 'balancer-%' ORDER BY address").fetchall() == [  # noqa: E501
+            ('0x3C4D5E6F7890ABCDEF1234567890ABCDEF123456', 'balancer-v1'),  # should become balancer-v2  # noqa: E501
+            ('0x42d9e44eeD903A0ee477C9C04D1D1730c5e87272', 'balancer-v1'),  # should remain balancer-v1  # noqa: E501
+            ('0x46804462f147fF96e9CAFB20cA35A3B2600656DF', 'balancer-v1'),  # should become balancer-v2  # noqa: E501
+            ('0x477a8982515e3A3D3aa6447b019b7c647e4162f8', 'balancer-v1'),  # should remain balancer-v1  # noqa: E501
+            ('0x4E4e08bccC9C3b9852383f868d0240D4D338b46d', 'balancer-v1'),  # should become balancer-v2  # noqa: E501
+            ('0x63E3951212cCCAFE3eDC7588FD4D20Ee5e7Ad73f', 'balancer-v1'),  # should become balancer-v2  # noqa: E501
+            ('0x67A78f23f3eF0eA2b63d6Fb9d75B493930e5A5Fb', 'balancer-v1'),  # should remain balancer-v1  # noqa: E501
+            ('0xa2ccad543FBE9332B87910BEABd941b86dD5F762', 'balancer-v1'),  # should become balancer-v2  # noqa: E501
+        ]
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 14)
@@ -1437,6 +1447,16 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
             cursor=cursor,
             key_parts=(CacheType.MORPHO_VAULTS,),
         ) is None
+        assert cursor.execute("SELECT address, protocol FROM evm_tokens WHERE protocol LIKE 'balancer-%' ORDER BY address").fetchall() == [  # noqa: E501
+            ('0x3C4D5E6F7890ABCDEF1234567890ABCDEF123456', 'balancer-v2'),
+            ('0x42d9e44eeD903A0ee477C9C04D1D1730c5e87272', 'balancer-v1'),
+            ('0x46804462f147fF96e9CAFB20cA35A3B2600656DF', 'balancer-v2'),
+            ('0x477a8982515e3A3D3aa6447b019b7c647e4162f8', 'balancer-v1'),
+            ('0x4E4e08bccC9C3b9852383f868d0240D4D338b46d', 'balancer-v2'),
+            ('0x63E3951212cCCAFE3eDC7588FD4D20Ee5e7Ad73f', 'balancer-v2'),
+            ('0x67A78f23f3eF0eA2b63d6Fb9d75B493930e5A5Fb', 'balancer-v1'),
+            ('0xa2ccad543FBE9332B87910BEABd941b86dD5F762', 'balancer-v2'),
+        ]
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

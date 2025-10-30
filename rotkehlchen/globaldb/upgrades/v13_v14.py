@@ -57,4 +57,24 @@ def migrate_to_v14(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         """
         write_cursor.execute('DELETE FROM unique_cache WHERE key=?', ('MORPHO_VAULTS',))
 
+    @progress_step('Update Balancer token protocols')
+    def _update_balancer_token_protocols(write_cursor: 'DBCursor') -> None:
+        """Update protocol field for Balancer tokens based on cache entries and chain IDs."""
+        for pattern, protocol, prefix_len in [
+            ('BALANCER_V1_POOLS%', 'balancer-v1', 18),
+            ('BALANCER_V2_POOLS%', 'balancer-v2', 18),
+            ('BALANCER_V1_GAUGES%', 'balancer-v1', 19),
+            ('BALANCER_V2_GAUGES%', 'balancer-v2', 19),
+        ]:
+            write_cursor.execute("""
+                UPDATE evm_tokens
+                SET protocol = ?
+                WHERE (address, chain) IN (
+                    SELECT value, CAST(SUBSTR(key, ?) AS INTEGER)
+                    FROM general_cache
+                    WHERE key LIKE ?
+                    AND CAST(SUBSTR(key, ?) AS INTEGER) > 0
+                )
+            """, (protocol, prefix_len, pattern, prefix_len))
+
     perform_globaldb_upgrade_steps(connection, progress_handler)
