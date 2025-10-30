@@ -1,5 +1,4 @@
 import logging
-import re
 from dataclasses import dataclass
 from http import HTTPStatus
 from json import JSONDecodeError
@@ -9,8 +8,9 @@ import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -40,8 +40,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-# the seconds around a transaction to search for when querying the API
-GNOSIS_PAY_TX_TIMESTAMP_RANGE: Final = 30
+# the seconds around a transaction to search for when querying the API.
+# We use 8 hours because it seems that they don't respect timezones and in order to be
+# safe we use a wide query range
+GNOSIS_PAY_TX_TIMESTAMP_RANGE: Final = HOUR_IN_SECONDS * 8
 GNOSIS_PAY_PAGE_SIZE: Final = 100
 GNOSIS_PAY_API_BASE_URL: Final = 'https://api.gnosispay.com/api/v1'
 GNOSIS_PAY_AUTH_NONCE_ENDPOINT: Final = 'auth/nonce'
@@ -345,12 +347,9 @@ class GnosisPay:
         and the history event entry for that transaction is updated.
         """
         try:
-            data = self._query(
-                endpoint='cards/transactions',
-                params={
-                    'after': timestamp_to_iso8601(Timestamp(start_ts - GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
-                    'before': timestamp_to_iso8601(Timestamp(end_ts + GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
-                },
+            data = self._query_paginated(
+                before=Timestamp(end_ts + GNOSIS_PAY_TX_TIMESTAMP_RANGE),
+                after=Timestamp(start_ts - GNOSIS_PAY_TX_TIMESTAMP_RANGE),
             )
         except RemoteError as e:
             log.error(f'Could not query Gnosis Pay API due to {e!s}')
@@ -594,7 +593,7 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
         raise RemoteError(f'Failed to verify Gnosis Pay token against account balances: {e!s}') from e  # noqa: E501
 
     if balances_response.status_code != HTTPStatus.OK:
-        signer_address_match = re.search(r'0x[a-fA-F0-9]{40}', message)
+        signer_address_match = EVM_ADDRESS_REGEX.search(message)
         signer_address = signer_address_match.group(0) if signer_address_match else 'unknown address'  # unknown address should never appear  # noqa: E501
         raise RemoteError(
             f'Failed to authenticate with "{signer_address}". '
