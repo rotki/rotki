@@ -12,6 +12,7 @@ interface UseMoneriumOAuthReturn {
   ) => Promise<{ message: string; userEmail?: string; defaultProfileId?: string; profiles?: any[] }>;
   disconnect: () => Promise<void>;
   loading: Ref<boolean>;
+  refreshStatus: () => Promise<void>;
   setStatus: (newStatus: MoneriumStatus) => void;
   status: Ref<MoneriumStatus | undefined>;
 }
@@ -84,15 +85,12 @@ export function useMoneriumOAuth(): UseMoneriumOAuthReturn {
     }
   }
 
-  onBeforeMount(async () => {
-    await refreshStatus();
-  });
-
   return {
     authenticated,
     completeOAuth,
     disconnect,
     loading,
+    refreshStatus,
     setStatus,
     status,
   };
