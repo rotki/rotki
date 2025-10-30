@@ -582,3 +582,22 @@ def test_balancer_cache(ethereum_inquirer):
     )
     assert pools >= BALANCER_SOME_EXPECTED_POOLS
     assert gauges >= BALANCER_SOME_EXPECTED_GAUGES
+
+
+@pytest.mark.vcr
+def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer):
+    """Test that query_balancer_data correctly sets the protocol version for tokens."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM evm_tokens WHERE address=?', (pool_address := string_to_evm_address('0xBc2acf5E821c5c9f8667A36bB1131dAd26Ed64F9'),)).fetchone()[0] == 0  # noqa: E501
+
+    query_balancer_data(
+        version=2,
+        inquirer=gnosis_inquirer,
+        msg_aggregator=gnosis_inquirer.database.msg_aggregator,
+        protocol=CPT_BALANCER_V2,
+        cache_type=CacheType.BALANCER_V2_POOLS,
+        reload_all=True,
+    )
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT protocol FROM evm_tokens WHERE address=?', (pool_address,)).fetchone()[0] == 'balancer-v2'  # noqa: E501
