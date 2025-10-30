@@ -41,7 +41,7 @@ const data = [
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-1 gap-x-4 max-w-[400px] mx-auto">
+  <div class="flex flex-wrap gap-1 gap-x-4 w-[400px] max-w-full mx-auto">
     <div
       v-for="(item, index) in data"
       :key="index"
@@ -54,7 +54,7 @@ const data = [
         :src="item.image"
       />
       <div
-        class="flex flex-col justify-between flex-1 pb-2 gap-2"
+        class="flex flex-col justify-between flex-1 gap-2"
         :class="{ 'px-4': !drawer }"
       >
         <div class="flex flex-col">
@@ -87,16 +87,16 @@ const data = [
             {{ item.name }}
           </div>
         </div>
+        <div class="w-full flex justify-center">
+          <ExternalLink
+            color="primary"
+            class="!text-xs text-center"
+            :url="externalLinks.sponsor"
+          >
+            {{ t('sponsorship.sponsor') }}
+          </ExternalLink>
+        </div>
       </div>
-    </div>
-    <div class="w-full flex justify-center">
-      <ExternalLink
-        color="primary"
-        class="!text-xs text-center"
-        :url="externalLinks.sponsor"
-      >
-        {{ t('sponsorship.sponsor') }}
-      </ExternalLink>
     </div>
   </div>
 </template>
