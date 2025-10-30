@@ -1,4 +1,5 @@
 import logging
+import re
 from dataclasses import dataclass
 from http import HTTPStatus
 from json import JSONDecodeError
@@ -555,20 +556,12 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
     - RemoteError if the request fails or the response is invalid.
     """
     timeout = CachedSettings().get_timeout_tuple()
-    url = f'{GNOSIS_PAY_API_BASE_URL}/{GNOSIS_PAY_AUTH_CHALLENGE_ENDPOINT}'
-    user_agent = f'rotki/{get_system_spec()["rotkehlchen"]}'
-    payload = {
-        'message': message,
-        'signature': signature,
-        'ttlInSeconds': DAY_IN_SECONDS,
-    }
-
     try:
         response = requests.post(
-            url=url,
-            json=payload,
+            url=f'{GNOSIS_PAY_API_BASE_URL}/{GNOSIS_PAY_AUTH_CHALLENGE_ENDPOINT}',
+            json={'message': message, 'signature': signature, 'ttlInSeconds': DAY_IN_SECONDS},
             timeout=timeout,
-            headers={'User-Agent': user_agent},
+            headers={'User-Agent': (user_agent := f'rotki/{get_system_spec()["rotkehlchen"]}')},
         )
     except requests.RequestException as e:
         raise RemoteError(f'Failed to verify Gnosis Pay SIWE signature: {e!s}') from e
@@ -589,6 +582,23 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
     if not isinstance(token := data.get('token'), str) or token == '':
         raise RemoteError(
             f'Unexpected payload while verifying Gnosis Pay SIWE signature: {response.text}',
+        )
+
+    try:
+        balances_response = requests.get(
+            url=f'{GNOSIS_PAY_API_BASE_URL}/account-balances',
+            timeout=timeout,
+            headers={'User-Agent': user_agent, 'Authorization': f'Bearer {token}'},
+        )
+    except requests.RequestException as e:
+        raise RemoteError(f'Failed to verify Gnosis Pay token against account balances: {e!s}') from e  # noqa: E501
+
+    if balances_response.status_code != HTTPStatus.OK:
+        signer_address_match = re.search(r'0x[a-fA-F0-9]{40}', message)
+        signer_address = signer_address_match.group(0) if signer_address_match else 'unknown address'  # unknown address should never appear  # noqa: E501
+        raise RemoteError(
+            f'Failed to authenticate with "{signer_address}". '
+            'Make sure it is is an owner/signer of the Gnosis Pay safe',
         )
 
     return token
