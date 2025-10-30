@@ -138,7 +138,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
     with database.user_write() as write_cursor:
         database.add_to_ignored_action_ids(
             write_cursor=write_cursor,
-            identifiers=['10' + tx_hash.hex()],  # pylint: disable=no-member
+            identifiers=[f'10{tx_hash!s}'],
         )
     events = accounting_history_process(
         accountant,

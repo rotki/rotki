@@ -121,7 +121,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                 break
 
         else:  # not found
-            log.error(f'Failed to find clrfund donation event for {self.node_inquirer.chain_name} {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Failed to find clrfund donation event for {self.node_inquirer.chain_name} {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -135,7 +135,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         try:  # using decode_event_data_abi_str since data contains a string
             _, decoded_data = decode_event_data_abi_str(context.tx_log, REQUEST_SUBMITTED_ABI)
         except DeserializationError as e:
-            log.error(f'Failed to decode clrfund request submitted event due to {e!s} for {self.node_inquirer.chain_name} {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Failed to decode clrfund request submitted event due to {e!s} for {self.node_inquirer.chain_name} {context.transaction.tx_hash!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         jsondata, new_event = {}, None

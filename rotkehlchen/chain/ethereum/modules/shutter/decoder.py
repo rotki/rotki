@@ -71,7 +71,7 @@ class ShutterDecoder(EvmDecoderInterface):
                 amount = token_normalized_value(token_amount=int.from_bytes(tx_log.data), token=self.shu)  # noqa: E501
                 break
         else:
-            log.error(f'Could not find the SHU transfer in {context.transaction.tx_hash.hex()}')
+            log.error(f'Could not find the SHU transfer in {context.transaction.tx_hash!s}')
             return DEFAULT_EVM_DECODING_OUTPUT
 
         return EvmDecodingOutput(events=[self.base.make_event_from_transaction(

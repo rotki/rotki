@@ -738,7 +738,7 @@ def test_combine_block_with_tx_events(eth2, database):
         asset=A_ETH,
         amount=mev_reward,
         location_label=vindex1_address,
-        notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash.hex()}',  # pylint: disable=no-member  # noqa: E501
+        notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
         event_identifier=EthBlockEvent.form_event_identifier(block_number),
         extra_data={'validator_index': vindex1},
     )

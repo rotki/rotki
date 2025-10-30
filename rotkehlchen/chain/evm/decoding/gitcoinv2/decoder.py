@@ -212,7 +212,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
         except DeserializationError as e:
             log.error(
                 f'Failed to deserialize gitcoin registered event at '
-                f'{context.transaction.tx_hash.hex()} due to {e}',
+                f'{context.transaction.tx_hash!s} due to {e}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -374,7 +374,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
         else:
             log.error(
                 f'Could not find a corresponding event for donation to {receiver}'
-                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}',
             )
 
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -421,7 +421,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
         except DeserializationError as e:
             log.error(
                 f'Failed to deserialize gitcoin profile created event at '
-                f'{context.transaction.tx_hash.hex()} due to {e}',
+                f'{context.transaction.tx_hash!s} due to {e}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -509,7 +509,7 @@ class GitcoinV2CommonDecoder(EvmDecoderInterface, ABC):
         else:
             log.error(
                 f'Could not find a corresponding event for round payout to {grantee}'
-                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}',
             )
 
         return DEFAULT_EVM_DECODING_OUTPUT

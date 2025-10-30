@@ -47,7 +47,7 @@ class PaladinDecoder(EvmDecoderInterface):
                 event.notes = f'Claim {normalized_amount} {claimed_token.symbol} from Paladin veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}'  # noqa: E501
                 break
         else:  # not found
-            log.error(f'Paladin bribe transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Paladin bribe transfer was not found for {context.transaction.tx_hash!s}')
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods

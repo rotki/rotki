@@ -145,7 +145,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             notes = 'Send {amount} {symbol} from EigenLayer to {withdrawer} via unstaking'
             event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.NONE
         else:
-            log.error(f'Unexpected eigenlayer withdrawal in {context.transaction.tx_hash.hex()}. Skipping')  # noqa: E501
+            log.error(f'Unexpected eigenlayer withdrawal in {context.transaction.tx_hash!s}. Skipping')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         for event in context.decoded_events:
@@ -156,7 +156,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.notes = notes.format(amount=event.amount, symbol=event.asset.resolve_to_crypto_asset().symbol)  # noqa: E501
                 break
         else:
-            log.error(f'Could not match eigenlayer withdrawal event in {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not match eigenlayer withdrawal event in {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -188,7 +188,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.extra_data = {AIRDROP_IDENTIFIER_KEY: airdrop_identifier}
                 break
         else:
-            log.error(f'Could not match eigenlayer airdrop receive event in {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not match eigenlayer airdrop receive event in {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -302,7 +302,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.notes = f'Withdraw {event.amount} ETH from Eigenlayer delayed withdrawals'
                 event.counterparty = CPT_EIGENLAYER
 
-        log.error(f'Did not find matching eigenlayer ETH transfer for delayed withdrawal claim in {context.transaction.tx_hash.hex()}. Skipping')  # noqa: E501
+        log.error(f'Did not find matching eigenlayer ETH transfer for delayed withdrawal claim in {context.transaction.tx_hash!s}. Skipping')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -376,7 +376,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 break  # completed the finding event logic
 
         else:  # not found. Perhaps transaction and event not pulled or timing issue. Is rechecked from time to time when doing balance queries.  # noqa: E501
-            log.debug(f'When decoding eigenlayer WithdrawalCompleted could not find corresponding Withdrawal queued: {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.debug(f'When decoding eigenlayer WithdrawalCompleted could not find corresponding Withdrawal queued: {context.transaction.tx_hash!s}')  # noqa: E501
 
             new_event = self.base.make_event_from_transaction(  # so let's just keep minimal info
                 transaction=context.transaction,
@@ -405,7 +405,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         strategies = log_data[1][5]
         shares_entries = log_data[1][6]
         if len(strategies) != len(shares_entries):  # should not happen according to contracts
-            log.error(f'When decoding eigenlayer WithdrawalQueued len(strategies) != len(shares) for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'When decoding eigenlayer WithdrawalQueued len(strategies) != len(shares) for {context.transaction.tx_hash!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         suffix = f' for {withdrawer}' if withdrawer != context.transaction.from_address else ''

@@ -238,7 +238,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
                 if spend_event is None:
                     log.error(
                         f'Could not find a spend event of {swap_data.from_amount} '
-                        f'{swap_data.from_asset} in a {self.node_inquirer.chain_name} cowswap transaction {transaction.tx_hash.hex()}')  # noqa: E501
+                        f'{swap_data.from_asset} in a {self.node_inquirer.chain_name} cowswap transaction {transaction.tx_hash!s}')  # noqa: E501
                     continue
             else:
                 # If native asset is spent, then there will not be a decoded transfer. Thus we create it.  # noqa: E501
@@ -449,7 +449,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
                 break
 
         else:
-            log.error(f'Could not find the normal COW token claim for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find the normal COW token claim for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}')  # noqa: E501
 
         if claim_has_payment:
             if in_event is not None:
@@ -458,7 +458,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
                     events_list=context.decoded_events,
                 )
             else:
-                log.error(f'Could not find the COW token claim corresponding to detected payment for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
+                log.error(f'Could not find the COW token claim corresponding to detected payment for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}')  # noqa: E501
 
         return EvmDecodingOutput(process_swaps=True)
 

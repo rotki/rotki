@@ -406,7 +406,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, ABC):
                     options=options,
                 )
             else:  # has to be parent transaction hash and internal transaction
-                options['txHash'] = period_or_hash.hex()
+                options['txHash'] = str(period_or_hash)
                 parent_tx_hash = period_or_hash
 
         transactions: list[EvmTransaction] | list[EvmInternalTransaction] = []
@@ -620,7 +620,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, ABC):
         May raise:
         - RemoteError due to self._query().
         """
-        options = {'txhash': tx_hash.hex()}
+        options = {'txhash': str(tx_hash)}
         return self._query(
             chain_id=chain_id,
             module='proxy',
@@ -656,7 +656,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, ABC):
             chain_id=chain_id,
             module='proxy',
             action='eth_getTransactionReceipt',
-            options={'txhash': tx_hash.hex()},
+            options={'txhash': str(tx_hash)},
         )
 
     def eth_call(
@@ -893,7 +893,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, ABC):
             block_number: int,
     ) -> int | None:
         """Attempt to retrieve L1 fees from etherscan for the given tx via the txlist endpoint."""
-        tx_hash_str = tx_hash.hex()
+        tx_hash_str = str(tx_hash)
         for raw_tx in self._query(
             chain_id=chain_id,
             module='account',

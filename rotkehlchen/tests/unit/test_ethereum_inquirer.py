@@ -28,7 +28,6 @@ from rotkehlchen.tests.utils.ethereum import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, EvmTransaction, SupportedBlockchain, deserialize_evm_tx_hash
-from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -140,7 +139,7 @@ def test_get_transaction_by_hash(ethereum_inquirer, call_order, ethereum_manager
         evm_inquirer=ethereum_inquirer,
     )
     result, _ = ethereum_inquirer.get_transaction_by_hash(
-        hexstring_to_bytes('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c'),
+        deserialize_evm_tx_hash('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c'),
         call_order=call_order,
     )
     expected_tx = EvmTransaction(
@@ -335,7 +334,7 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
     # Test getting the transaction receipt (also containing the log entries) does not raise
     # They seem to all be 0
     result = ethereum_inquirer.get_transaction_receipt(
-        hexstring_to_bytes('0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829'),
+        deserialize_evm_tx_hash('0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829'),
         call_order=call_order,
     )
     assert all(x['transactionIndex'] == 0 for x in result['logs'])

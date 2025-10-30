@@ -46,7 +46,7 @@ class VotiumDecoder(EvmDecoderInterface):
                 break
 
         else:  # not found
-            log.error(f'Votium bribe transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Votium bribe transfer was not found for {context.transaction.tx_hash!s}')
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

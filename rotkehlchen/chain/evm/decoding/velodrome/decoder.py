@@ -207,7 +207,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             log.error(
                 f'A swap in {self.counterparty} pool must have both a spend and a receive event '
                 'but one or both of them are missing for transaction hash: '
-                f'{context.transaction.tx_hash.hex()}. '
+                f'{context.transaction.tx_hash!s}. '
                 f'Spend event: {spend_event}, receive event: {receive_event}.',
             )
             return DEFAULT_EVM_DECODING_OUTPUT

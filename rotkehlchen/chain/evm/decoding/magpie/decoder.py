@@ -43,7 +43,7 @@ class MagpieCommonDecoder(EvmDecoderInterface):
 
         if len(context.tx_log.topics) != 3:
             log.warning(
-                f'Magpie swap event at {context.transaction.tx_hash.hex()} has '
+                f'Magpie swap event at {context.transaction.tx_hash!s} has '
                 f'{len(context.tx_log.topics)} topics instead of 3',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -56,7 +56,7 @@ class MagpieCommonDecoder(EvmDecoderInterface):
         # Parse data field - 4 fields of 32 bytes each
         if len(context.tx_log.data) < 128:  # 4 * 32 bytes
             log.warning(
-                f'Magpie swap event at {context.transaction.tx_hash.hex()} has '
+                f'Magpie swap event at {context.transaction.tx_hash!s} has '
                 f'insufficient data length: {len(context.tx_log.data)}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT

@@ -156,7 +156,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 location = Location.deserialize_from_db(entry[4])
                 db_event_identifier = entry[1]
                 if location in EVM_LOCATIONS:
-                    event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(db_event_identifier).hex()}'  # noqa: E501 # pylint: disable=no-member
+                    event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(db_event_identifier)!s}'  # noqa: E501
                 elif location == Location.KRAKEN or db_event_identifier.startswith(b'rotki_events'):  # noqa: E501
                     # kraken is the only location with basic history event entry type that doesn't
                     # start with 'rotki_events'

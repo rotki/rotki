@@ -79,7 +79,7 @@ class CctpCommonDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_CCTP
                 break
         else:
-            log.error(f'Could not find matching spend event for {self.node_inquirer.chain_name} CCTP bridge deposit {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find matching spend event for {self.node_inquirer.chain_name} CCTP bridge deposit {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -105,7 +105,7 @@ class CctpCommonDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_CCTP
                 break
         else:
-            log.error(f'Could not find matching receive event for {self.node_inquirer.chain_name} CCTP bridge withdrawal {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find matching receive event for {self.node_inquirer.chain_name} CCTP bridge withdrawal {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -128,7 +128,7 @@ class CctpCommonDecoder(EvmDecoderInterface):
                     log.error(f'Could not find chain ID {from_chain} for CCTP transfer to {self.node_inquirer.chain_name}')  # noqa: E501
                 break
         else:
-            log.error(f'Could not find matching withdrawal event for {self.node_inquirer.chain_name} CCTP bridge chain information {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find matching withdrawal event for {self.node_inquirer.chain_name} CCTP bridge chain information {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

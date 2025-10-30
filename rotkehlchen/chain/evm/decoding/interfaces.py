@@ -202,7 +202,7 @@ class MerkleClaimDecoderInterface(EvmDecoderInterface, ABC):
                 event.extra_data = {AIRDROP_IDENTIFIER_KEY: airdrop_identifiers}
                 break
         else:
-            log.error(f'Could not find transfer event for {counterparty} airdrop claim {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find transfer event for {counterparty} airdrop claim {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -323,7 +323,7 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
         except DeserializationError as e:
             log.error(
                 f'Failed to decode vote_cast event ABI at '
-                f'{context.transaction.tx_hash.hex()} due to {e}',
+                f'{context.transaction.tx_hash!s} due to {e}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -354,7 +354,7 @@ class GovernableDecoderInterface(EvmDecoderInterface, ABC):
         try:  # using decode_event_data_abi_str for same reason as in vote cast
             _, decoded_data = decode_event_data_abi_str(context.tx_log, abi)
         except DeserializationError as e:
-            log.error(f'Failed to decode governor alpha event due to {e!s} for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Failed to decode governor alpha event due to {e!s} for {context.transaction.tx_hash!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         proposal_id = decoded_data[0]
@@ -576,7 +576,7 @@ class CommonGrantsDecoderMixin(EvmDecoderInterface, ABC):
 
         else:
             log.error(
-                f'Failed to find the {counterparty} matching receive transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+                f'Failed to find the {counterparty} matching receive transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}.',  # noqa: E501
             )
 
         return DEFAULT_EVM_DECODING_OUTPUT

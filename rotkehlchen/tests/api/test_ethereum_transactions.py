@@ -348,7 +348,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
 
     assert_txlists_equal(transactions[0:8], EXPECTED_AFB7_TXS + EXPECTED_4193_TXS)
 
-    hashes = [EXPECTED_AFB7_TXS[0].tx_hash.hex(), EXPECTED_4193_TXS[0].tx_hash.hex()]
+    hashes = [str(EXPECTED_AFB7_TXS[0].tx_hash), str(EXPECTED_4193_TXS[0].tx_hash)]
     with (patch_safe_check := patch(
         'rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_safe_proxy_or_eoa',
         return_value=False,
@@ -1255,7 +1255,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
         transactions = dbevmtx.get_transactions(cursor, EvmTransactionsFilterQuery.make())
 
     assert len(transactions) == 1
-    assert transactions[0].tx_hash.hex() == tx_str
+    assert str(transactions[0].tx_hash) == tx_str
     # retrieve the event
     response = requests.post(
         api_url_for(

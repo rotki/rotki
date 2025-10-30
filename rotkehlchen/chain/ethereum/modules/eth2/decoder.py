@@ -130,7 +130,7 @@ class Eth2Decoder(EvmDecoderInterface):
                     return EvmDecodingOutput(events=[eth_deposit_event])
 
         log.error(
-            f'While decoding ETH deposit event {context.transaction.tx_hash.hex()} for public key '
+            f'While decoding ETH deposit event {context.transaction.tx_hash!s} for public key '
             f'{public_key} could not find the send event',
         )
         return DEFAULT_EVM_DECODING_OUTPUT

@@ -73,7 +73,7 @@ class JuiceboxDecoder(EvmDecoderInterface):
         except DeserializationError as e:
             log.error(
                 f'Failed to deserialize Juicebox event at '
-                f'{context.transaction.tx_hash.hex()} due to {e}',
+                f'{context.transaction.tx_hash!s} due to {e}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 

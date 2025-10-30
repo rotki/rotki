@@ -69,7 +69,7 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _decode_mint_and_burn(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode mint and burn events for monerium"""
-        if context.transaction.tx_hash.hex() in self._v1_to_v2_migration_hashes():
+        if str(context.transaction.tx_hash) in self._v1_to_v2_migration_hashes():
             # stop processing the transaction if it is a migration from v1 to v2
             return EvmDecodingOutput(stop_processing=True)
 

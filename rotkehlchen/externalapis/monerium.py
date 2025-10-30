@@ -114,7 +114,7 @@ class Monerium:
         try:
             response = self._query(
                 endpoint='orders',
-                params={'txHash': tx_hash.hex()} if tx_hash is not None else None,
+                params={'txHash': str(tx_hash)} if tx_hash is not None else None,
             )
         except AuthenticationError as e:
             log.error(f'Failed to authenticate monerium request due to {e}')
@@ -214,7 +214,7 @@ class Monerium:
                 )
 
             if len(events) != 1:
-                log.error(f'Could not find monerium event corresponding to {location!s} {tx_hash.hex()} in the DB. Skipping.')  # pylint: disable=no-member # noqa: E501
+                log.error(f'Could not find monerium event corresponding to {location!s} {tx_hash!s} in the DB. Skipping.')  # noqa: E501
                 continue
 
             if self.is_monerium_event_edited(event_notes=(event := events[0]).notes):

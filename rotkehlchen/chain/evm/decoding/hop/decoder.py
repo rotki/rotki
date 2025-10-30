@@ -423,7 +423,7 @@ class HopCommonDecoder(EvmDecoderInterface):
         if (swap_asset_id := self.swaps_to_asset.get(context.tx_log.address)) is None:
             log.error(
                 f'Could not find asset for the saddle swap address while decoding '
-                f'{self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',
+                f'{self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}',
             )
             return None
 

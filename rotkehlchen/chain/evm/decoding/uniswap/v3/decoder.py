@@ -329,7 +329,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             swap_data = self._decode_token_to_token_swap(decoded_events)
 
         if swap_data is None or swap_data.from_asset is None or swap_data.to_asset is None:
-            log.error(f'Failed to decode a {self.node_inquirer.chain_name} uniswap swap for transaction {transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Failed to decode a {self.node_inquirer.chain_name} uniswap swap for transaction {transaction.tx_hash!s}')  # noqa: E501
             return decoded_events
 
         # These should never raise any errors since `from_asset` and `to_asset` are either native

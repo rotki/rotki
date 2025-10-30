@@ -94,7 +94,7 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
             notes += f' and forward {split_amount} DAI to dependencies for splitting'
             split_events = [x for x in context.decoded_events if x.event_type == HistoryEventType.INFORMATIONAL and x.counterparty == CPT_DRIPS]  # noqa: E501
             if len(split_events) == 0:
-                log.error(f'Could not find split events for {self.node_inquirer.chain_name} {context.transaction.tx_hash.hex()}')  # noqa: E501
+                log.error(f'Could not find split events for {self.node_inquirer.chain_name} {context.transaction.tx_hash!s}')  # noqa: E501
             else:  # count them as an in event pairing so they come after the action item transfer
                 paired_events_data = (split_events, False)
 

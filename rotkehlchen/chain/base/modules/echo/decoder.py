@@ -148,7 +148,7 @@ class EchoDecoder(EvmDecoderInterface):
                 deal_address = tx_log.address
                 break
         else:
-            log.error(f'Could not find deal funded event for {self.node_inquirer.chain_name} for Echo fund {transaction.tx_hash.hex()}')  # noqa:E501
+            log.error(f'Could not find deal funded event for {self.node_inquirer.chain_name} for Echo fund {transaction.tx_hash!s}')  # noqa:E501
             return decoded_events
 
         for event in decoded_events:
@@ -168,7 +168,7 @@ class EchoDecoder(EvmDecoderInterface):
                 event.notes = f'Fund {event.amount} {event.asset.symbol_or_name()} to {deal_address} on Echo'  # noqa:E501
                 break
         else:
-            log.error(f'Could not find funding event for {self.node_inquirer.chain_name} for Echo funding {transaction.tx_hash.hex()}')  # noqa:E501
+            log.error(f'Could not find funding event for {self.node_inquirer.chain_name} for Echo funding {transaction.tx_hash!s}')  # noqa:E501
 
         return decoded_events
 

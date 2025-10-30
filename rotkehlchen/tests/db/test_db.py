@@ -373,7 +373,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             blockchain=SupportedBlockchain.POLYGON_POS,
             tokens=[A_POLYGON_POS_MATIC],
         )
-        random_tx_hash_in_cache = make_evm_tx_hash().hex()  # pylint: disable=no-member
+        random_tx_hash_in_cache = str(make_evm_tx_hash())
 
         cache_data = (
             (DBCacheDynamic.EXTRA_INTERNAL_TX, {'chain_id': 1, 'tx_hash': random_tx_hash_in_cache, 'receiver': existing_address}, existing_address),  # noqa: E501

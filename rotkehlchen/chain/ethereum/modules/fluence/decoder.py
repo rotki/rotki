@@ -59,7 +59,7 @@ class FluenceDecoder(EvmDecoderInterface):
                 break
 
         else:
-            log.error(f'Could not find the FLT-drop transfer in {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find the FLT-drop transfer in {context.transaction.tx_hash!s}')
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -94,7 +94,7 @@ class FluenceDecoder(EvmDecoderInterface):
                 break
 
         else:
-            log.error(f'Could not find the FLT transfer in {context.transaction.tx_hash.hex()}')
+            log.error(f'Could not find the FLT transfer in {context.transaction.tx_hash!s}')
 
         maybe_reshuffle_events(  # Make sure that the out event comes first
             ordered_events=[out_event, in_event],

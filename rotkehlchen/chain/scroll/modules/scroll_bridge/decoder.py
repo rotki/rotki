@@ -98,7 +98,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                 )
                 break
         else:
-            log.error(f'Could not find ETH {expected_event_type} event for scroll during {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find ETH {expected_event_type} event for scroll during {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -156,7 +156,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
 
         log.error(
             f'Token receiving event was not found in Scroll for '
-            f'{context.transaction.tx_hash.hex()} and L1 token {ethereum_token_address}',
+            f'{context.transaction.tx_hash!s} and L1 token {ethereum_token_address}',
         )
 
         return DEFAULT_EVM_DECODING_OUTPUT

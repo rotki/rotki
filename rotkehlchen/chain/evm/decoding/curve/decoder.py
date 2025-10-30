@@ -285,7 +285,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             log.error(
                 f'Expected to see a return pool token event and '
                 f'withdrawal events for a curve pool, but have not found them. '
-                f'Tx_hash: {transaction.tx_hash.hex()} '
+                f'Tx_hash: {transaction.tx_hash!s} '
                 f'User address: {user_or_contract_address}',
             )
 
@@ -459,7 +459,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             log.warning(  # can happen as part of complicated swaps
                 f'Expected to see a receive pool token event and deposit '
                 f'events for a curve pool, but have not found them. '
-                f'Tx_hash: {transaction.tx_hash.hex()} '
+                f'Tx_hash: {transaction.tx_hash!s} '
                 f'User address: {user_or_contract_address}',
             )
 
@@ -552,7 +552,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         if spender_address is None or receiver_address is None or raw_bought_amount is None:
             log.error(
                 f'Did not find spend or receive addresses or raw bought amount for a curve swap. '
-                f'{context.transaction.tx_hash.hex()}.',
+                f'{context.transaction.tx_hash!s}.',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -602,7 +602,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         else:
             log.debug(
                 f'Did not find spend and receive events for a curve swap. '
-                f'{context.transaction.tx_hash.hex()}. Probably some aggregator was used and '
+                f'{context.transaction.tx_hash!s}. Probably some aggregator was used and '
                 f'decoding needs to happen in the aggregator-specific decoder.',
             )
 
@@ -617,7 +617,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         if (pool_addresses := self.pools.get(context.tx_log.address)) is None:
             log.error(
                 f'Curve pool for {self.node_inquirer.chain_name} {context.tx_log.address} '
-                f'not present in cache at {context.transaction.tx_hash.hex()}. Skipping',
+                f'not present in cache at {context.transaction.tx_hash!s}. Skipping',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 

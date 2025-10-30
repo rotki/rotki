@@ -68,7 +68,7 @@ class PufferDecoder(EvmDecoderInterface):
                 event.notes = f'Claim {claimed_amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {campaign_name}'  # noqa: E501
                 break
         else:
-            log.error(f'Could not find transfer event for a Puffer claim event at {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find transfer event for a Puffer claim event at {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

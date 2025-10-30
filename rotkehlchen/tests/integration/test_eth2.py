@@ -586,7 +586,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         amount=FVal(amount),
         location_label=user_address,
         address=mevbot_address,
-        notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}',  # noqa: E501
+        notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
         extra_data={'validator_index': vindex},
     ) for counter, (tx_hash, amount) in enumerate(tx_hashes_and_amounts)]
     assert events == expected_events

@@ -683,7 +683,7 @@ def deserialize_evm_transaction(
             if l1_fee is None:
                 log.error(
                     f'Failed to retrieve L1 fee while deserializing {chain_id.to_name()} '
-                    f'transaction {tx_hash.hex()}. Using 0 L1 fee.',
+                    f'transaction {tx_hash!s}. Using 0 L1 fee.',
                 )
                 l1_fee = 0
 

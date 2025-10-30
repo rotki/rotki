@@ -91,7 +91,7 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
                     partial_refund_event = event
 
         if in_event is None or out_event is None:
-            log.error(f'Could not find the corresponding events when decoding {self.node_inquirer.chain_name} paraswap swap {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find the corresponding events when decoding {self.node_inquirer.chain_name} paraswap swap {context.transaction.tx_hash!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if partial_refund_event is not None:  # if some in_asset is returned back.
@@ -131,7 +131,7 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
                     user_address=sender,
                 )
             except RemoteError as e:
-                log.error(f'Failed to get internal transactions for paraswap {self.node_inquirer.chain_name} swap {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
+                log.error(f'Failed to get internal transactions for paraswap {self.node_inquirer.chain_name} swap {context.transaction.tx_hash!s} due to {e!s}')  # noqa: E501
             else:
                 if len(internal_fee_txs) > 0:
                     fee_raw = internal_fee_txs[0].value  # assuming only one tx from router to fee claimer  # noqa: E501

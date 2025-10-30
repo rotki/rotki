@@ -181,7 +181,7 @@ class CurveDecoder(CurveCommonDecoder):
                 event.extra_data = {'locktime': locktime}
                 break
         else:  # not found
-            log.error(f'CRV vote escrow locking transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'CRV vote escrow locking transfer was not found for {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -194,7 +194,7 @@ class CurveDecoder(CurveCommonDecoder):
                 event.notes = f'Withdraw {amount} CRV from vote escrow{suffix}'
                 break
         else:  # not found
-            log.error(f'CRV vote escrow withdrawal transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'CRV vote escrow withdrawal transfer was not found for {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

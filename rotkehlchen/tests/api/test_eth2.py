@@ -996,8 +996,8 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'evm event'
             assert entry['amount'] == mev_reward
-            assert entry['tx_ref'] == tx_hash.hex()  # pylint: disable=no-member
-            assert entry['user_notes'] == f'Receive {mev_reward} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}'  # pylint: disable=no-member  # noqa: E501
+            assert entry['tx_ref'] == str(tx_hash)
+            assert entry['user_notes'] == f'Receive {mev_reward} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash!s}'  # noqa: E501
         else:
             raise AssertionError('Should not get to this sequence index')
 

@@ -104,7 +104,7 @@ class ArbitrumOneBridgeDecoder(EvmDecoderInterface):
                 break
 
         else:
-            log.error(f'Could not find ETH {expected_event_type} for arbitrum one during {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find ETH {expected_event_type} for arbitrum one during {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

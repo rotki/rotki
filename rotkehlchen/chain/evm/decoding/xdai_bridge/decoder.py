@@ -143,7 +143,7 @@ class XdaiBridgeCommonDecoder(EvmDecoderInterface, abc.ABC):
         else:
             log.error(
                 f'Could not find the transfer event for bridging to {to_address}'
-                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+                f' in {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}',
             )
         return DEFAULT_EVM_DECODING_OUTPUT
 
