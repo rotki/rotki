@@ -173,7 +173,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             address=mevbot_address,
             asset=A_ETH2,
             amount=FVal(mev_amount),
-            notes=(mev_notes := f'Receive {mev_amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}'),  # pylint: disable=no-member  # noqa: E501
+            notes=(mev_notes := f'Receive {mev_amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash!s}'),  # noqa: E501
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.MEV_REWARD,
         ), HistoryEvent(

@@ -91,7 +91,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         if len(amounts) != 2:
             log.warning(
                 f'Found invalid number of payback and liquidation amounts '
-                f'in {self.label} liquidation: {context.transaction.tx_hash.hex()}',
+                f'in {self.label} liquidation: {context.transaction.tx_hash!s}',
             )
             return
 

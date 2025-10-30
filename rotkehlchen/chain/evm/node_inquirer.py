@@ -569,7 +569,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
             if tx_receipt is None:
                 if must_exist:  # fail, so other nodes can be tried
-                    raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None')  # noqa: E501
+                    raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash!s} returned None')  # noqa: E501
 
                 return None  # else it does not exist
 
@@ -605,7 +605,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 ) from e
 
             if must_exist and tx_receipt is None:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None')  # noqa: E501
+                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash!s} returned None')  # noqa: E501
 
             return tx_receipt
 
@@ -614,7 +614,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         except TransactionNotFound as e:
             if must_exist:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None') from e  # noqa: E501
+                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash!s} returned None') from e  # noqa: E501
 
             raise  # else re-raise e
 
@@ -649,7 +649,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             must_exist=True,
         )
         if tx_receipt is None:
-            raise RemoteError(f'{self.chain_name} tx_receipt should exist for {tx_hash.hex()}')
+            raise RemoteError(f'{self.chain_name} tx_receipt should exist for {tx_hash!s}')
         return tx_receipt
 
     def _get_transaction_by_hash(
@@ -667,7 +667,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
         if tx_data is None:
             if must_exist:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for {self.chain_name} transaction {tx_hash.hex()} returned None')  # noqa: E501
+                raise RemoteError(f'Querying for {self.chain_name} transaction {tx_hash!s} returned None')  # noqa: E501
 
             return None  # else it does not exist
 
@@ -684,7 +684,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             ) from e
 
         if receipt_data is None:
-            raise RemoteError(f'{self.chain_name} transaction {tx_hash.hex()} receipt_data is expected to exist')  # noqa: E501  # as etherscan getTransactionByHash does not contains gasUsed'
+            raise RemoteError(f'{self.chain_name} transaction {tx_hash!s} receipt_data is expected to exist')  # noqa: E501  # as etherscan getTransactionByHash does not contains gasUsed'
         return transaction, receipt_data
 
     def maybe_get_transaction_by_hash(
@@ -717,7 +717,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             must_exist=True,
         )
         if result is None:
-            raise RemoteError(f'{self.chain_name} transaction {tx_hash.hex()} is expected to exist')  # noqa: E501
+            raise RemoteError(f'{self.chain_name} transaction {tx_hash!s} is expected to exist')
 
         return result
 

@@ -104,7 +104,7 @@ class SafeDecoder(EvmDecoderInterface):
                 break
 
         else:  # transfer not found
-            log.error(f'Could not find the transfer of SAFE to the locker for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find the transfer of SAFE to the locker for {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

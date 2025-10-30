@@ -468,11 +468,11 @@ class GnosisPay:
             )
 
         if len(events) != 1:
-            log.error(f'Could not find gnosis pay event corresponding to {transaction.tx_hash.hex()} in the DB. Skipping.')  # pylint: disable=no-member # noqa: E501
+            log.error(f'Could not find gnosis pay event corresponding to {transaction.tx_hash!s} in the DB. Skipping.')  # noqa: E501
             return
 
         notes = self.create_notes_for_transaction(transaction, is_refund=False)
-        log.debug(f'Updating notes for gnosis pay event with tx_hash={transaction.tx_hash.hex()}')  # pylint: disable=no-member
+        log.debug(f'Updating notes for gnosis pay event with tx_hash={transaction.tx_hash!s}')
         with self.database.user_write() as write_cursor:
             write_cursor.execute(
                 'UPDATE history_events SET notes=? WHERE identifier=?',

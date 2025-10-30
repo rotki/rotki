@@ -54,7 +54,7 @@ def test_booster_deposit(
         data={
             'token_kind': 'evm',
             'token_identifier': 'eip155:1/erc20:0x9518c9063eB0262D791f38d8d6Eb0aca33c63ed0',  # cvxsteCRV  # noqa: E501
-            'seen_tx_reference': tx_hash.hex(),  # pylint: disable=no-member
+            'seen_tx_reference': str(tx_hash),
         },
     )
     assert mocked_notifier.pop_message() == MockedWsMessage(

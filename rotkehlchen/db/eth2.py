@@ -827,7 +827,7 @@ class DBEth2:
                 (
                     (event_identifier := EthBlockEvent.form_event_identifier(entry[1])),
                     event_identifier,
-                    f'{entry[2]} as mev reward for block {entry[1]} in {(tx_hash := deserialize_evm_tx_hash(entry[3])).hex()}',  # pylint: disable=no-member  # noqa: E501
+                    f'{entry[2]} as mev reward for block {entry[1]} in {(tx_hash := deserialize_evm_tx_hash(entry[3]))!s}',  # noqa: E501
                     HistoryEventType.STAKING.serialize(),
                     HistoryEventSubType.MEV_REWARD.serialize(),
                     json.dumps({'validator_index': entry[4]}),  # extra data

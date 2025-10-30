@@ -83,7 +83,7 @@ class OctantDecoder(EvmDecoderInterface):
                 event.sequence_index = context.tx_log.log_index + 1  # push it after approval if any  # noqa: E501
                 break
         else:
-            log.error(f'Could not find corresponding GLM transfer for Octant {verb} at: {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find corresponding GLM transfer for Octant {verb} at: {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -110,7 +110,7 @@ class OctantDecoder(EvmDecoderInterface):
                 event.notes = f'Claim {event.amount} ETH as Octant epoch {epoch} reward'
                 break
         else:
-            log.error(f'Could not find corresponding ETH receive transaction for Octant rewards withdrawal at: {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find corresponding ETH receive transaction for Octant rewards withdrawal at: {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

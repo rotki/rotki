@@ -86,7 +86,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                     )
                     break
             else:
-                log.error(f'Could not find stake event for an OMNI stake and claim action {context.transaction.tx_hash.hex()}')  # noqa: E501
+                log.error(f'Could not find stake event for an OMNI stake and claim action {context.transaction.tx_hash!s}')  # noqa: E501
 
             return EvmDecodingOutput(events=[claim_event])
 

@@ -141,7 +141,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
             log.error(
                 f'At compound v3 supply/withdraw decoding of tx '
-                f'{context.transaction.tx_hash.hex()} the underlying token was not found.',
+                f'{context.transaction.tx_hash!s} the underlying token was not found.',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -196,7 +196,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         else:  # did not break/find anything
             log.error(
                 'At compound v3 supply/withdraw decoding of tx '
-                f'{context.transaction.tx_hash.hex()} the action item data was not found.',
+                f'{context.transaction.tx_hash!s} the action item data was not found.',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -227,7 +227,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
             log.error(
                 f'At compound v3 supply/withdraw decoding of tx '
-                f'{context.transaction.tx_hash.hex()} the underlying token was not found.',
+                f'{context.transaction.tx_hash!s} the underlying token was not found.',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -277,7 +277,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         else:
             log.error(
                 f'Could not find any compound v3 withdraw or borrow event in tx '
-                f'{context.transaction.tx_hash.hex()}.',
+                f'{context.transaction.tx_hash!s}.',
             )
 
         action_items = []  # also create an action item for the spend of the cTokens
@@ -348,7 +348,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         else:
             log.error(
                 f'Could not find any compound v3 supply/withdraw collateral event in tx '
-                f'{context.transaction.tx_hash.hex()}.',
+                f'{context.transaction.tx_hash!s}.',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 

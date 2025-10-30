@@ -181,7 +181,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             if (
                 from_hash != 'latest' and
                 len(new_transactions) != 0 and
-                new_transactions[0].tx_hash.hex() == from_hash
+                str(new_transactions[0].tx_hash) == from_hash
             ):
                 # When there are already transactions in the database, and new ones are queried
                 # using from_hash, the API includes the from_hash transaction in its response,
@@ -446,17 +446,17 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         In case of error returns None and logs the error.
         """
         try:
-            response = self._query_api(url=f'transactions/{tx_hash.hex()}/data')
+            response = self._query_api(url=f'transactions/{tx_hash!s}/data')
         except RemoteError as e:
-            log.error(f'Could not find {tx_hash.hex()} transaction from zksync lite api due to {e!s}')  # noqa: E501
+            log.error(f'Could not find {tx_hash!s} transaction from zksync lite api due to {e!s}')
             return None
 
         if (tx_entry := response.get('tx', None)) is None:
-            log.error(f'Could not find {tx_hash.hex()} transaction from zksync lite api. Response: {response}')  # noqa: E501
+            log.error(f'Could not find {tx_hash!s} transaction from zksync lite api. Response: {response}')  # noqa: E501
             return None
 
         if (tx := self._deserialize_zksync_transaction(entry=tx_entry, concerning_address=concerning_address)) is None:  # noqa: E501
-            log.error(f'Could not deserialize {tx_hash.hex()} transaction. Got None')
+            log.error(f'Could not deserialize {tx_hash!s} transaction. Got None')
             return None
 
         with self.database.user_write() as write_cursor:
@@ -628,7 +628,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         target = None
         tracked_from = transaction.from_address in tracked_addresses
         tracked_to = transaction.to_address in tracked_addresses
-        event_identifier = ZKL_IDENTIFIER.format(tx_hash=transaction.tx_hash.hex())
+        event_identifier = ZKL_IDENTIFIER.format(tx_hash=str(transaction.tx_hash))
         events = []
         event_data: list[tuple[int, HistoryEventType, HistoryEventSubType, Asset, FVal, ChecksumEvmAddress, ChecksumEvmAddress | None, str]] = []  # noqa: E501
         match transaction.tx_type:
@@ -839,7 +839,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             with self.database.user_write() as write_cursor:  # delete old tx events
                 write_cursor.execute(
                     'DELETE FROM history_events WHERE event_identifier=?',
-                    (ZKL_IDENTIFIER.format(tx_hash=transaction.tx_hash.hex()),),
+                    (ZKL_IDENTIFIER.format(tx_hash=str(transaction.tx_hash)),),
                 )
 
             self.decode_transaction(transaction, tracked_addresses)

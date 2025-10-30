@@ -319,7 +319,7 @@ def test_delete_last_event(database):
 def test_get_history_events_free_filter(database: 'DBHandler'):
     """Test that the history events filter works consistently with has_premium=True/False"""
     history_events = DBHistoryEvents(database=database)
-    event_identifiers = [make_evm_tx_hash().hex() for _ in range(6)]  # pylint: disable=no-member
+    event_identifiers = [str(make_evm_tx_hash()) for _ in range(6)]
     dummy_events = (
         AssetMovement(
             event_identifier=event_identifiers[5],

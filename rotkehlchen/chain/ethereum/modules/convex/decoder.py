@@ -228,7 +228,7 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 if len(amounts_withdrawn) == 0:
                     break  # stop as soon as we have processed all the unlock events
         else:
-            log.error(f'Did not process all the expected CVX unlock withdrawals for {transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Did not process all the expected CVX unlock withdrawals for {transaction.tx_hash!s}')  # noqa: E501
 
         return decoded_events
 

@@ -31,7 +31,7 @@ class EvmEvent(OnchainEvent[EVMTxHash, ChecksumEvmAddress]):  # hash in supercla
 
     @staticmethod
     def _calculate_event_identifier(tx_ref: EVMTxHash, location: Location) -> str:
-        return f'{location.to_chain_id()}{tx_ref.hex()}'
+        return f'{location.to_chain_id()}{tx_ref!s}'
 
     @staticmethod
     def _serialize_tx_ref_for_db(tx_ref: EVMTxHash) -> bytes:

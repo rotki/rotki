@@ -109,7 +109,7 @@ def assert_tx_hash_is_bytes(
                 raw_event_identifier=l_new[1],
             )
         else:
-            l_new[tx_hash_index] = deserialize_evm_tx_hash(l_new[tx_hash_index]).hex()  # pylint: disable=no-member
+            l_new[tx_hash_index] = str(deserialize_evm_tx_hash(l_new[tx_hash_index]))
         assert list(z_old) == l_new
 
 
@@ -804,7 +804,7 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument
         cursor.execute('SELECT * FROM combined_trades_view ORDER BY time ASC')
         result = cursor.fetchall()
         assert isinstance(result[-1][10], bytes)
-        assert HexBytes(result[-1][10]).hex() == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'  # noqa: E501
+        assert str(HexBytes(result[-1][10])) == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'  # noqa: E501
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2819,7 +2819,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             value=address,
             chain_id=10,
             receiver=address,
-            tx_hash=tx_hash.hex(),  # pylint: disable=no-member
+            tx_hash=str(tx_hash),
         )
         # Add entries with an old erc721 asset to ensure they are handled correctly during upgrade.
         write_cursor.execute(
@@ -2966,7 +2966,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
             chain_id=10,
             receiver=address,
-            tx_hash=tx_hash.hex(),  # pylint: disable=no-member
+            tx_hash=str(tx_hash),
         ) == address
         cursor.execute("SELECT COUNT(*) FROM location WHERE location='v'")
         assert cursor.fetchone()[0] == 0
@@ -2986,7 +2986,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
             chain_id=10,
             receiver=address,
-            tx_hash=tx_hash.hex(),  # pylint: disable=no-member
+            tx_hash=str(tx_hash),
         ) is None
         cursor.execute("SELECT seq FROM location WHERE location='v'")
         assert cursor.fetchone() == (54,)

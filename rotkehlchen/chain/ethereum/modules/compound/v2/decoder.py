@@ -101,7 +101,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
                 break
 
         if out_event is None:
-            log.debug(f'At compound mint decoding of tx {transaction.tx_hash.hex()} the out event was not found')  # noqa: E501
+            log.debug(f'At compound mint decoding of tx {transaction.tx_hash!s} the out event was not found')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         # also create an action item for the receive of the cTokens
@@ -269,7 +269,7 @@ class Compoundv2Decoder(EvmDecoderInterface):
                     break
 
         if repaying_asset is None:
-            log.error(f'Failed to decode compound liquidation at {transaction.tx_hash.hex()}')
+            log.error(f'Failed to decode compound liquidation at {transaction.tx_hash!s}')
             return DEFAULT_EVM_DECODING_OUTPUT
 
         repaid_amount = asset_normalized_value(

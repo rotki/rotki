@@ -255,7 +255,7 @@ def test_history_export_csv_free_limit(
     """Test that the free history events limit is respected."""
     database = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db
     history_events = DBHistoryEvents(database=database)
-    event_identifiers = [make_evm_tx_hash().hex() for _ in range(3)]  # pylint: disable=no-member
+    event_identifiers = [str(make_evm_tx_hash()) for _ in range(3)]
     dummy_events = (
         HistoryEvent(
             event_identifier=event_identifiers[0],

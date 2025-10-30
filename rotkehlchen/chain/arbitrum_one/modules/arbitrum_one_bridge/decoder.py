@@ -127,7 +127,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                 )
 
         # else we got a problem
-        log.error(f'Could not find a WithdrawalInitiated event after a transfer routed for arbitrum {context.transaction.tx_hash.hex()}')  # noqa: E501
+        log.error(f'Could not find a WithdrawalInitiated event after a transfer routed for arbitrum {context.transaction.tx_hash!s}')  # noqa: E501
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_erc20_withdraw_event(
@@ -205,7 +205,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                 break
 
         else:  # event was not found
-            log.error(f'ETH withdraw transaction was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'ETH withdraw transaction was not found for {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -244,7 +244,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
 
         else:  # event was not found
             log.error(
-                f'ETH receiving transaction was not found in Arbitrum for {transaction.tx_hash.hex()}',  # noqa: E501
+                f'ETH receiving transaction was not found in Arbitrum for {transaction.tx_hash!s}',
             )
 
         return decoded_events
@@ -286,7 +286,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         else:  # event was not found
             log.error(
                 f'Token receiving event was not found in Arbitrum for '
-                f'{context.transaction.tx_hash.hex()} and L1 token {l1_token_address}',
+                f'{context.transaction.tx_hash!s} and L1 token {l1_token_address}',
             )
 
         return DEFAULT_EVM_DECODING_OUTPUT

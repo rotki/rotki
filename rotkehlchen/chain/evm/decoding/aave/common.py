@@ -386,7 +386,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
         if None in paired_events:
             log.warning(  # can happen in cases where one of the events comes later such as in test_aave_v3_withdraw_with_bigger_interest  # noqa: E501
-                f'Could not find all paired events in {self.counterparty} tx {context.transaction.tx_hash.hex()}'  # noqa: E501
+                f'Could not find all paired events in {self.counterparty} tx {context.transaction.tx_hash!s}'  # noqa: E501
                 f' on {self.node_inquirer.chain_name}.',
             )
 
@@ -443,7 +443,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
 
         else:
             log.error(
-                f'Failed to find the {self.label} incentive reward transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+                f'Failed to find the {self.label} incentive reward transfer for {self.node_inquirer.chain_name} transaction {context.transaction.tx_hash!s}.',  # noqa: E501
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 

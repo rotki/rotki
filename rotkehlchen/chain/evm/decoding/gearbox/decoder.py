@@ -254,7 +254,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.notes = f'Stake {amount} GEAR'
                 break
         else:
-            log.error(f'Could not find matching spend event for {self.node_inquirer.chain_name} gearbox staking deposit {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find matching spend event for {self.node_inquirer.chain_name} gearbox staking deposit {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -277,7 +277,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.notes = f'Unstake {amount} GEAR'
                 break
         else:
-            log.error(f'Could not find matching receive event for {self.node_inquirer.chain_name} gearbox unstaking withdrawal {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find matching receive event for {self.node_inquirer.chain_name} gearbox unstaking withdrawal {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

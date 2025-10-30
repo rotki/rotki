@@ -87,7 +87,7 @@ class WethDecoder(EthBaseWethDecoder):
                 out_event = event
 
         if in_event is None or out_event is None:
-            log.error(f'Could not find the corresponding events when decoding weth scroll withdrawal {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find the corresponding events when decoding weth scroll withdrawal {context.transaction.tx_hash!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(

@@ -82,7 +82,7 @@ def _save_hash_mappings_get_fullname(name: str, tx_hash: EVMTxHash) -> str:
             )
         except ens.exceptions.InvalidName as e:
             log.error(
-                f'Got an invalid ENS name {name} during decoding {tx_hash.hex()}.'
+                f'Got an invalid ENS name {name} during decoding {tx_hash!s}.'
                 f'namehash and labelhash not stored in the globaldb cache. {e=}',
             )
     return full_name
@@ -146,12 +146,12 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 msg = f'Missing key {msg}'
             log.error(
                 f'Failed to query graph for token ID to ENS name '
-                f'in {context.transaction.tx_hash.hex()} due to {msg} '
+                f'in {context.transaction.tx_hash!s} due to {msg} '
                 f'during decoding events. Not adding name to event',
             )
         except APIKeyNotConfigured as e:
             log.warning(
-                f'Not adding name to ENS event in {context.transaction.tx_hash.hex()} since '
+                f'Not adding name to ENS event in {context.transaction.tx_hash!s} since '
                 f'The Graph cannot be queried. {e}',
             )
         else:  # successfully queried the graph. Save in the cache
@@ -255,7 +255,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         try:
             _, decoded_data = decode_event_data_abi_str(context.tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
-            log.error(f'Failed to decode ENS name renewed event in {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
+            log.error(f'Failed to decode ENS name renewed event in {context.transaction.tx_hash!s} due to {e!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         fullname = _save_hash_mappings_get_fullname(name=decoded_data[0], tx_hash=context.transaction.tx_hash)  # noqa: E501

@@ -406,7 +406,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             decoding_output, err = decode_safely(
                 handled_exceptions=self.possible_decoding_exceptions,
                 msg_aggregator=self.msg_aggregator,
-                tx_reference=transaction.tx_hash.hex(),
+                tx_reference=str(transaction.tx_hash),
                 blockchain=self.evm_inquirer.blockchain,
                 func=rule,
                 token=token,
@@ -447,7 +447,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self.msg_aggregator,
             self.evm_inquirer.blockchain,
             method,
-            context.transaction.tx_hash.hex(),
+            str(context.transaction.tx_hash),
             *(context, *args),
         )
         if err:
@@ -501,7 +501,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             result_events, is_err = decode_safely(
                 handled_exceptions=self.possible_decoding_exceptions,
                 msg_aggregator=self.msg_aggregator,
-                tx_reference=transaction.tx_hash.hex(),
+                tx_reference=str(transaction.tx_hash),
                 blockchain=self.evm_inquirer.blockchain,
                 func=rule,
                 transaction=transaction,
@@ -529,7 +529,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         - a flag which is True if balances refresh is needed
         - A list of decoders to reload or None if no need
         """
-        log.debug(f'Starting decoding of transaction {transaction.tx_hash.hex()} logs at {self.evm_inquirer.chain_name}')  # noqa: E501
+        log.debug(f'Starting decoding of transaction {transaction.tx_hash!s} logs at {self.evm_inquirer.chain_name}')  # noqa: E501
         with self.database.conn.read_ctx() as read_cursor:
             tx_id = transaction.get_or_query_db_id(read_cursor)
 
@@ -575,7 +575,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 result, is_err = decode_safely(
                     handled_exceptions=self.possible_decoding_exceptions,
                     msg_aggregator=self.msg_aggregator,
-                    tx_reference=context.transaction.tx_hash.hex(),
+                    tx_reference=str(context.transaction.tx_hash),
                     blockchain=self.evm_inquirer.blockchain,
                     func=input_rule,
                     context=context,
@@ -880,7 +880,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         else:
             log.debug(
                 f'Got an ERC20 approve event with unknown structure '
-                f'in transaction {transaction.tx_hash.hex()}',
+                f'in transaction {transaction.tx_hash!s}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -1202,7 +1202,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 relevant_address=None,
             )
         except RemoteError as e:
-            raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction. {e}') from e  # noqa: E501
+            raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash!s} does not correspond to a transaction. {e}') from e  # noqa: E501
 
         return EvmTransactionContext(transaction=tx, receipt=receipt)
 
@@ -1253,7 +1253,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             transfer_enrich, err = decode_safely(
                 handled_exceptions=self.possible_decoding_exceptions,
                 msg_aggregator=self.msg_aggregator,
-                tx_reference=context.transaction.tx_hash.hex(),
+                tx_reference=str(context.transaction.tx_hash),
                 blockchain=self.evm_inquirer.blockchain,
                 func=enrich_call,
                 context=context,

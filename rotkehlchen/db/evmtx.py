@@ -425,7 +425,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                         WITHDRAWAL_REQUEST_CONTRACT,
                     )
                 ):  # skip anonymous logs unless they are from specific addresses whose decoders properly handle it.  # noqa: E501
-                    log.debug(f'Ignoring anonymous tx log in {tx_hash.hex()} at {chain_id}')
+                    log.debug(f'Ignoring anonymous tx log in {tx_hash!s} at {chain_id}')
                     continue
 
                 tx_receipt.logs.append(tx_receipt_log)
@@ -518,7 +518,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         # Delete any key_value_cache entries
         write_cursor.executemany(
             'DELETE FROM key_value_cache WHERE name LIKE ?',
-            [(f'{EXTRAINTERNALTXPREFIX}_{chain_id.value}_%_{tx_hash.hex()}',) for tx_hash in tx_hashes],  # noqa: E501
+            [(f'{EXTRAINTERNALTXPREFIX}_{chain_id.value}_%_{tx_hash!s}',) for tx_hash in tx_hashes],  # noqa: E501
         )
 
     def get_queried_range(

@@ -145,7 +145,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
         except DeserializationError as e:
             log.error(
                 f'Failed to deserialize GMX event {verb_text=} at '
-                f'{context.transaction.tx_hash.hex()} due to {e}',
+                f'{context.transaction.tx_hash!s} due to {e}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 

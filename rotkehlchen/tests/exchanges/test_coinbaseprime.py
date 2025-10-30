@@ -241,7 +241,7 @@ def test_process_trade():
 def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     """Test that the logic to process asset movements works as expected"""
     address = make_evm_address()
-    tx_hash = make_evm_tx_hash().hex()  # pylint: disable=no-member
+    tx_hash = str(make_evm_tx_hash())
     deposit = {
         'amount': '100',
         'blockchain_ids': [tx_hash],
@@ -333,7 +333,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
     """
     first_id, second_id, third_id, fourth_id, fifth_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())  # noqa: E501
     movement_address = make_evm_address()
-    movement_tx_hash = make_evm_tx_hash().hex()  # pylint: disable=no-member
+    movement_tx_hash = str(make_evm_tx_hash())
     raw_data = [{
         'amount': '50',
         'blockchain_ids': [],

@@ -64,7 +64,7 @@ class GolemDecoder(EvmDecoderInterface):
                 in_event = event
                 break
         else:
-            log.error(f'During Golem GNT->GLM migration did not find the receiving event in tx: {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'During Golem GNT->GLM migration did not find the receiving event in tx: {context.transaction.tx_hash!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(

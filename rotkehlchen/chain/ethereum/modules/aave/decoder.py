@@ -81,7 +81,7 @@ class AaveDecoder(EvmDecoderInterface):
                 break
 
         else:
-            log.error(f'Aave stake receive was not found for {context.transaction.tx_hash.hex()}')
+            log.error(f'Aave stake receive was not found for {context.transaction.tx_hash!s}')
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

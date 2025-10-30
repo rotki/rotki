@@ -261,7 +261,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                 return event
         log.error(
             f'Could not find ETH {expected_event_type} for scroll '
-            f'during {context.transaction.tx_hash.hex()}',
+            f'during {context.transaction.tx_hash!s}',
         )
         return None
 

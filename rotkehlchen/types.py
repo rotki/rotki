@@ -375,10 +375,10 @@ class EvmTransaction:
 
     @property
     def identifier(self) -> str:
-        return str(self.chain_id.value) + self.tx_hash.hex()
+        return str(self.chain_id.value) + str(self.tx_hash)
 
     def __str__(self) -> str:
-        return f'{self.tx_hash.hex()} at {self.chain_id}'
+        return f'{self.tx_hash!s} at {self.chain_id}'
 
 
 class EvmInternalTransaction(NamedTuple):
@@ -394,7 +394,7 @@ class EvmInternalTransaction(NamedTuple):
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['tx_hash'] = result['tx_hash'].hex()
+        result['tx_hash'] = str(result['tx_hash'])
         result['chain_id'] = result['chain_id'].serialize()
         result['value'] = str(result['value'])
         result['gas'] = str(result['gas'])
@@ -412,7 +412,7 @@ class EvmInternalTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return str(self.chain_id.serialize()) + self.parent_tx_hash.hex() + str(self.trace_id)
+        return str(self.chain_id.serialize()) + str(self.parent_tx_hash) + str(self.trace_id)
 
 
 class ChainType(SerializableEnumNameMixin):

@@ -75,7 +75,7 @@ class LidoDecoder(EvmDecoderInterface):
                 break
         else:  # did not find anything
             log.error(
-                f'At lido steth submit decoding of tx {context.transaction.tx_hash.hex()}'
+                f'At lido steth submit decoding of tx {context.transaction.tx_hash!s}'
                 f' did not find the related ETH transfer',
             )
             return DEFAULT_EVM_DECODING_OUTPUT

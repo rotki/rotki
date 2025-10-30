@@ -188,7 +188,7 @@ def txreceipt_to_data(receipt: EvmTxReceipt) -> dict[str, Any]:
     serialization snake case would be used.
     """
     data: dict[str, Any] = {
-        'transactionHash': receipt.tx_hash.hex(),
+        'transactionHash': str(receipt.tx_hash),
         'type': hex(receipt.tx_type),
         'contractAddress': receipt.contract_address,
         'status': int(receipt.status),

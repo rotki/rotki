@@ -688,7 +688,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 name=DBCacheDynamic.EXTRA_INTERNAL_TX,
                 chain_id=chain_id.value,
                 receiver=to_address,
-                tx_hash=tx_hash.hex(),
+                tx_hash=str(tx_hash),
             )
         if affected_address == user_address:  # if we have queried them before
             return self.dbevmtx.get_evm_internal_transactions(
@@ -709,7 +709,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 value=user_address,
                 chain_id=chain_id.value,
                 receiver=to_address,
-                tx_hash=tx_hash.hex(),
+                tx_hash=str(tx_hash),
             )
         return self.dbevmtx.get_evm_internal_transactions(
             parent_tx_hash=tx_hash,
@@ -859,7 +859,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 try:
                     tx_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash=entry)
                 except RemoteError as e:
-                    log.warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry.hex()} due to {e!s}. Skipping...')  # noqa: E501
+                    log.warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry!s} due to {e!s}. Skipping...')  # noqa: E501
                     continue
 
                 with self.database.user_write() as write_cursor:
@@ -887,17 +887,17 @@ class EvmTransactions(ABC):  # noqa: B024
         with self.database.conn.read_ctx() as cursor:
             tracked_accounts = self.database.get_blockchain_accounts(cursor).get(self.evm_inquirer.blockchain)  # noqa: E501
             if associated_address not in tracked_accounts:
-                raise InputError(f'Address {associated_address} to associate with tx {tx_hash.hex()} is not tracked')  # noqa: E501
+                raise InputError(f'Address {associated_address} to associate with tx {tx_hash!s} is not tracked')  # noqa: E501
 
             if len(self.dbevmtx.get_transactions(
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
             )) == 1 and self.dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id) is not None:  # noqa: E501
-                raise AlreadyExists(f'Transaction {tx_hash.hex()} is already in the DB')
+                raise AlreadyExists(f'Transaction {tx_hash!s} is already in the DB')
 
         tx_result = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash=tx_hash, must_exist=must_exist)  # noqa: E501
         if tx_result is None:
-            raise InputError(f'Transaction data for {tx_hash.hex()} not found on chain.')
+            raise InputError(f'Transaction data for {tx_hash!s} not found on chain.')
         transaction, receipt_data = tx_result
         with self.database.user_write() as write_cursor:
             self.dbevmtx.add_transactions(
