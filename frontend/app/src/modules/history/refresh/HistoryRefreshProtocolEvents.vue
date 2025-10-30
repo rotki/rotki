@@ -23,7 +23,7 @@ const queries: OnlineHistoryEventsQueryType[] = [
 const { t } = useI18n({ useScope: 'global' });
 
 const { apiKey, load } = useExternalApiKeys(t);
-const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
+const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
 
 interface QueryConfig {
   enabled: boolean;
@@ -32,7 +32,7 @@ interface QueryConfig {
 
 const queryConfigs = computed<Record<OnlineHistoryEventsQueryType, QueryConfig>>(() => {
   const gnosisPayEnabled = !!get(apiKey('gnosis_pay'));
-  const moneriumEnabled = !!get(moneriumAuthenticated);
+  const moneriumEnabled = get(moneriumAuthenticated);
 
   return {
     [OnlineHistoryEventsQueryType.GNOSIS_PAY]: {
@@ -75,7 +75,10 @@ function updateSelection(selection: OnlineHistoryEventsQueryType[]): void {
 }
 
 onBeforeMount(async () => {
-  await load();
+  await Promise.all([
+    load(),
+    refreshStatus(),
+  ]);
 });
 
 defineExpose({

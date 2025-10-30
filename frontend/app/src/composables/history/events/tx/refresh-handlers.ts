@@ -3,6 +3,7 @@ import { groupBy, omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useModules } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useMoneriumOAuth } from '@/composables/settings/api-keys/external/monerium-oauth';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
@@ -27,6 +28,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { isModuleEnabled } = useModules();
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
   const { apiKey } = useExternalApiKeys(t);
+  const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
 
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
     const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
@@ -41,8 +43,11 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
       return;
     }
 
-    if (!get(apiKey('monerium')) && queryType === OnlineHistoryEventsQueryType.MONERIUM) {
-      return;
+    if (queryType === OnlineHistoryEventsQueryType.MONERIUM) {
+      await refreshStatus();
+      if (!get(moneriumAuthenticated)) {
+        return;
+      }
     }
 
     logger.debug(`querying for ${queryType} events`);
