@@ -1413,14 +1413,13 @@ def test_morpho_reward_task_repetition(task_manager: TaskManager) -> None:
     task_manager.should_schedule = True
     task_manager.potential_tasks = [task_manager._maybe_update_morpho_cache]
 
-    def update_cache():
+    def update_cache(chain_id):
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            for chain_id in {ChainID.ETHEREUM, ChainID.BASE}:
-                globaldb_set_general_cache_values(
-                    write_cursor=write_cursor,
-                    key_parts=(CacheType.MORPHO_REWARD_DISTRIBUTORS, str(chain_id)),
-                    values=['test'],
-                )
+            globaldb_set_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.MORPHO_REWARD_DISTRIBUTORS, str(chain_id)),
+                values=['test'],
+            )
 
     with (
         gevent.Timeout(5),  # this should not take long. Otherwise a long running task ran
@@ -1431,11 +1430,11 @@ def test_morpho_reward_task_repetition(task_manager: TaskManager) -> None:
             side_effect=update_cache,
         ) as mocked_query_distributors,
     ):
-        for _ in range(2):
-            task_manager.schedule()
-            if len(task_manager.running_greenlets) != 0:
-                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
-            assert mocked_query_distributors.call_count == 1  # will only get called once
+        task_manager.schedule()
+        if len(task_manager.running_greenlets) != 0:
+            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
+
+            assert mocked_query_distributors.call_count == 2
 
 
 @pytest.mark.parametrize('max_tasks_num', [1])
@@ -1448,3 +1447,23 @@ def test_query_pendle_yield_tokens_task(task_manager: TaskManager) -> None:
             gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_pendle_cache])
 
         assert mocked_query_pendle_yield_tokens.call_count == len(PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM) + 1  # noqa: E501
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_update_morpho_cache_with_chain_ids(task_manager: TaskManager) -> None:
+    """Regression test that _maybe_update_morpho_cache correctly calls vault and
+    reward distributor queries for both supported chains with chain_id parameters."""
+    task_manager.should_schedule = True
+    task_manager.potential_tasks = [task_manager._maybe_update_morpho_cache]
+
+    with (
+        patch.object(target=task_manager, attribute='query_morpho_vaults') as mock_vaults,
+        patch.object(target=task_manager, attribute='query_morpho_reward_distributors') as mock_distributors,  # noqa: E501
+    ):
+        task_manager.schedule()
+        if len(task_manager.running_greenlets) != 0:
+            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
+
+        for mock_fn in (mock_vaults, mock_distributors):
+            assert mock_fn.call_count == 2
+            assert mock_fn.call_args[1]['chain_id'] in {ChainID.ETHEREUM, ChainID.BASE}

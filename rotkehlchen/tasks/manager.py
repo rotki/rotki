@@ -678,29 +678,29 @@ class TaskManager:
                 return None
 
         greenlets = []
-        if should_update_protocol_cache(self.database, CacheType.MORPHO_VAULTS) is True:
-            greenlets.append(self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name='Update Morpho vaults',
-                exception_is_error=False,
-                method=self.query_morpho_vaults,
-                database=self.database,
-            ))
+        for chain_id in {ChainID.ETHEREUM, ChainID.BASE}:
+            if should_update_protocol_cache(self.database, CacheType.MORPHO_VAULTS, (str(chain_id),)) is True:  # noqa: E501
+                greenlets.append(self.greenlet_manager.spawn_and_track(
+                    after_seconds=None,
+                    task_name=f'Update Morpho vaults for {chain_id.to_name()}',
+                    exception_is_error=False,
+                    method=self.query_morpho_vaults,
+                    database=self.database,
+                    chain_id=chain_id,
+                ))
 
-        if any(
-            should_update_protocol_cache(
+            if should_update_protocol_cache(
                 userdb=self.database,
                 cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
                 args=(str(chain_id),),
-            )
-            for chain_id in {ChainID.ETHEREUM, ChainID.BASE}
-        ):
-            greenlets.append(self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name='Update Morpho reward distributors',
-                exception_is_error=False,
-                method=self.query_morpho_reward_distributors,
-            ))
+            ) is True:
+                greenlets.append(self.greenlet_manager.spawn_and_track(
+                    after_seconds=None,
+                    task_name=f'Update Morpho reward distributors for {chain_id.to_name()}',
+                    exception_is_error=False,
+                    method=self.query_morpho_reward_distributors,
+                    chain_id=chain_id,
+                ))
 
         return greenlets if len(greenlets) > 0 else None
 
