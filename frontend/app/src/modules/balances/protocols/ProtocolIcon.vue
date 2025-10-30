@@ -26,7 +26,7 @@ const { protocolData } = useProtocolData(protocol);
     />
     <AppImage
       v-else-if="protocolData?.type === 'image'"
-      class="icon-bg rounded-full overflow-hidden"
+      class="rounded-full overflow-hidden"
       :src="protocolData.image"
       size="24px"
       contain
