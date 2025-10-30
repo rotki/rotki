@@ -60,7 +60,10 @@ defineExpose({
 
 <template>
   <div>
-    <RuiAlert type="info" class="mb-4">
+    <RuiAlert
+      type="info"
+      class="mb-4"
+    >
       {{ t('blockchain_balances.validators.auto_detection_info') }}
     </RuiAlert>
     <RuiCard>
