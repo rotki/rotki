@@ -17,6 +17,7 @@ Changelog
 * :feature:`-` Giveth donation transactions on Polygon PoS will now be properly decoded.
 * :feature:`-`: Uniswap V2 transactions will now be decoded correctly on all supported chains rather than just on mainnet.
 * :feature:`-`: Users will now be able to search for a chain when adding a new evm chain asset.
+* :feature:`10006` rotki will now be able to decode Balancer v3 transactions and LP balances in all supported chains.
 * :feature:`-` Cowswap in BNB smart chain is now supported.
 * :feature:`-` Monerium users will be able to authenticate just by signing in with monerium via oauth.
 * :feature:`-` OKX users of EEA or US will be able to choose their location and use the OKX api properly again.
