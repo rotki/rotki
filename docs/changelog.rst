@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10853` Compound V3 native token deposit/withdrawals will be properly decoded with associated balances properly detected.
 * :bug:`10849` Monerium bridge transactions that involve Arbitrum or Scroll will be decoded properly.
 
 * :release:`1.41.0 <2025-10-30>`
