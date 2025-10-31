@@ -19,6 +19,7 @@ interface UseManagedAssetOperationsReturn {
   isAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
   isSpamAsset: (asset: SupportedAsset) => boolean;
   massIgnore: (ignored: boolean) => Promise<void>;
+  massSpam: () => Promise<void>;
   toggleIgnoreAsset: (asset: SupportedAsset) => Promise<void>;
   toggleSpam: (item: SupportedAsset) => Promise<void>;
   toggleWhitelistAsset: (identifier: string) => Promise<void>;
@@ -108,10 +109,32 @@ export function useManagedAssetOperations(
     }
   };
 
+  const massSpam = async (): Promise<void> => {
+    const ids = get(selected).filter(uniqueStrings);
+
+    if (ids.length === 0) {
+      setMessage({
+        description: t('ignore.spam.no_items.description'),
+        success: false,
+        title: t('ignore.spam.no_items.title'),
+      });
+      return;
+    }
+
+    const status: ActionStatus = await markAssetsAsSpam(ids);
+
+    if (status.success) {
+      set(selected, []);
+      if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
+        onRefresh();
+    }
+  };
+
   return {
     isAssetWhitelisted,
     isSpamAsset,
     massIgnore,
+    massSpam,
     toggleIgnoreAsset,
     toggleSpam,
     toggleWhitelistAsset,

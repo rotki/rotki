@@ -13,12 +13,14 @@ import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
+const selected = defineModel<string[] | undefined>('selected', { required: true });
 
 const props = defineProps<{
   groupId: string;
   chains: string[];
   tags?: string[];
   category: string;
+  selectionMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -81,8 +83,10 @@ defineExpose({
   >
     <template #details="{ row }">
       <AccountBalanceDetails
+        v-model:selected="selected"
         :address="getAccountAddress(row)"
         :chain="row.chain"
+        :selection-mode="selectionMode"
       />
     </template>
   </AccountBalancesTable>

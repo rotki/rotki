@@ -58,6 +58,7 @@ const {
   isAssetWhitelisted,
   isSpamAsset,
   massIgnore,
+  massSpam,
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
@@ -98,6 +99,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       :ignored-assets="ignoredAssets"
       :matchers="matchers"
       @ignore="massIgnore($event)"
+      @mark-spam="massSpam()"
       @refresh:ignored="fetchIgnoredAssets()"
     />
 
