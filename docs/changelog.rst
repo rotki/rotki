@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`10849` Monerium bridge transactions that involve Arbitrum or Scroll will be decoded properly.
+
 * :release:`1.41.0 <2025-10-30>`
 * :feature:`10604` Add support for Philippine Peso (PHP) as a fiat currency.
 * :feature:`9396` rotki will now properly decode onchain messages sent in EVM transactions.
