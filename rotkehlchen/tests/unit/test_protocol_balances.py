@@ -92,6 +92,7 @@ from rotkehlchen.constants.assets import (
     A_STETH,
     A_USDC,
     A_WBTC,
+    A_WETH,
     A_WETH_ARB,
 )
 from rotkehlchen.constants.misc import ONE
@@ -678,7 +679,9 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[
-    '0x1107F797c1af4982b038Eb91260b3f9A90eecee9', '0x887380Bb5F5fF5C87BEcc46F0867Fec460F7c5a6',
+    '0x1107F797c1af4982b038Eb91260b3f9A90eecee9',
+    '0x887380Bb5F5fF5C87BEcc46F0867Fec460F7c5a6',
+    '0xD413dCf1b80E10a8Ba7Cab329DA7545cCc827319',
 ]])
 def test_compound_v3_token_balances_liabilities(
         blockchain: 'ChainsAggregator', ethereum_accounts: list['ChecksumEvmAddress'],
@@ -720,6 +723,7 @@ def test_compound_v3_token_balances_liabilities(
                 deserialize_evm_tx_hash('0x0c9276ed2a202b039d5fa6e9749fd19f631c62e8e4beccc2f4dc0358a4882bb1'),  # Borrow 3,500 USDC from cUSDCv3  # noqa: E501
                 deserialize_evm_tx_hash('0x13965c2a1ba75dafa060d0bdadd332c9330b9c5819a8fee7d557a937728fa22f'),  # Borrow 42.5043 USDC from USDCv3  # noqa: E501
                 deserialize_evm_tx_hash('0xd53dbca004a5f4a178d881e0194c4464ac5fd52db017329be01413514cb4796e'),  # Borrow 594,629.451218 USDC from USDCv3  # noqa: E501
+                deserialize_evm_tx_hash('0x542abb3dd8c187158b612de5409642a0e0624d13ab4146a0b62f4d8d28b9149b'),  # Deposit 0.01 ETH  # noqa: E501
             ],
         )
     compound_v3_balances = Compoundv3Balances(
@@ -754,8 +758,9 @@ def test_compound_v3_token_balances_liabilities(
         return Balance(
             amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK,
         )
-    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC][CPT_COMPOUND_V3] == get_balance('48076.773054')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC][CPT_COMPOUND_V3] == get_balance('15042.136803')  # noqa: E501
     assert blockchain.balances.eth[ethereum_accounts[1]].assets[c_usdc_v3][CPT_COMPOUND_V3] == get_balance('0.32795')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[2]].assets[A_WETH][CPT_COMPOUND_V3] == get_balance('0.075')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

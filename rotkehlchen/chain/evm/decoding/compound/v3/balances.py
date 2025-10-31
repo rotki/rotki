@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -64,25 +65,29 @@ class Compoundv3Balances(ProtocolWithBalance):
             counterparty=CPT_COMPOUND_V3,
             deposit_event_types=set(),
         )
+        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[self.evm_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
 
     def _extract_unique_collateral_tokens(self) -> dict[ChecksumEvmAddress, set[CompoundArguments]]:  # noqa: E501
         """Fetch the unique collateral tokens we need to query the comet contracts for"""
         unique_collaterals: dict[ChecksumEvmAddress, set[CompoundArguments]] = defaultdict(set)
         for user_address, events in self.addresses_with_activity(
-            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},
+            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
         ).items():
             for event in events:
                 if event.address is None:
                     continue
 
-                try:
-                    compound_token = event.asset.resolve_to_evm_token()
-                except (UnknownAsset, WrongAssetType):
-                    log.warning(
-                        'Skipping compound v3 supply event during balance query since the asset '
-                        'is not an EVM token so not needed in COMET query',
-                    )
-                    continue
+                if event.asset == self.evm_inquirer.native_token:
+                    compound_token = self.wrapped_native_token
+                else:
+                    try:
+                        compound_token = event.asset.resolve_to_evm_token()
+                    except (UnknownAsset, WrongAssetType):
+                        log.warning(
+                            'Skipping compound v3 supply event during balance query since '
+                            'the asset is not an EVM token so not needed in COMET query',
+                        )
+                        continue
 
                 unique_collaterals[event.address].add(
                     CompoundArguments(
