@@ -20,11 +20,17 @@ const { t } = useI18n({ useScope: 'global' });
     >
       <template #activator>
         <RuiButton
-          class="min-w-[5.625rem]"
           variant="outlined"
+          color="error"
           :disabled="disabled || disabledActions?.ignore"
           @click="emit('ignore', true)"
         >
+          <template #prepend>
+            <RuiIcon
+              name="lu-eye-off"
+              size="16"
+            />
+          </template>
           {{ t('ignore_buttons.ignore') }}
         </RuiButton>
       </template>
@@ -36,11 +42,16 @@ const { t } = useI18n({ useScope: 'global' });
     >
       <template #activator>
         <RuiButton
-          class="min-w-[5.625rem]"
           variant="outlined"
           :disabled="disabled || disabledActions?.unIgnore"
           @click="emit('ignore', false)"
         >
+          <template #prepend>
+            <RuiIcon
+              name="lu-eye"
+              size="16"
+            />
+          </template>
           {{ t('ignore_buttons.unignore') }}
         </RuiButton>
       </template>

@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+
 * :release:`1.41.0 <2025-10-30>`
 * :feature:`10604` Add support for Philippine Peso (PHP) as a fiat currency.
 * :feature:`9396` rotki will now properly decode onchain messages sent in EVM transactions.

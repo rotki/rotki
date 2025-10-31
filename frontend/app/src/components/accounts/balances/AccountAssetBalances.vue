@@ -14,10 +14,14 @@ interface AccountAssetBalancesProps {
   assets: AssetBalanceWithPrice[];
   title: string;
   flat?: boolean;
+  selectionMode?: boolean;
 }
+
+const selected = defineModel<string[]>('selected', { default: () => [], required: false });
 
 const props = withDefaults(defineProps<AccountAssetBalancesProps>(), {
   flat: false,
+  selectionMode: false,
 });
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
@@ -91,8 +95,10 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
       :rows="assets"
       :cols="cols"
       :empty="{ description: t('data_table.no_data') }"
+      :model-value="selectionMode ? selected : undefined"
       row-attr="asset"
       outlined
+      @update:model-value="$event && (selected = $event)"
     >
       <template #item.asset="{ row }">
         <AssetDetails
