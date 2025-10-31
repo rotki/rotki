@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import (
     should_update_protocol_cache,
     token_normalized_value,
@@ -27,7 +28,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_value

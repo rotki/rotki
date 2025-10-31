@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, cast
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V1,
     CPT_YEARN_V2,
@@ -31,7 +32,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType

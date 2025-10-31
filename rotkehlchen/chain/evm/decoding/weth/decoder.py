@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -12,7 +13,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.weth.constants import CHAIN_ID_TO_WETH_MAPPING, CPT_WETH
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType

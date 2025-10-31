@@ -1,6 +1,7 @@
 from typing import Any, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.digixdao.constants import (
     A_DGD,
     CPT_DIGIXDAO,
@@ -13,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress

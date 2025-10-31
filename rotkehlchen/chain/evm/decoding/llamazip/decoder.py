@@ -4,9 +4,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.llamazip.constants import CPT_LLAMAZIP, LLAMAZIP_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction

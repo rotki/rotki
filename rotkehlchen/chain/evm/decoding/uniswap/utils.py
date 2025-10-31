@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Final, Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, get_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -13,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v4.constants import V4_SWAP_TOPIC
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id

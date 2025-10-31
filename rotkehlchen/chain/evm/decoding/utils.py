@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable, Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional, overload
+from typing import TYPE_CHECKING, Any, Literal
 
 from eth_typing import ABI
 
@@ -34,60 +34,10 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.history.events.structures.solana_event import SolanaEvent
     from rotkehlchen.inquirer import Inquirer
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-@overload
-def maybe_reshuffle_events(
-        ordered_events: Sequence[Optional['EvmEvent']],
-        events_list: list['EvmEvent'],
-) -> None:
-    ...
-
-
-@overload
-def maybe_reshuffle_events(
-        ordered_events: Sequence[Optional['SolanaEvent']],
-        events_list: list['SolanaEvent'],
-) -> None:
-    ...
-
-
-def maybe_reshuffle_events(
-        ordered_events: Sequence[Optional['EvmEvent']] | Sequence[Optional['SolanaEvent']],
-        events_list: list['EvmEvent'] | list['SolanaEvent'],
-) -> None:
-    """Takes a list of events to order and makes sure that the sequence index of each
-    of them is in ascending order and that the events are consecutive in the
-    decoded events list.
-
-    This is for two reasons.
-    1. So that it appears uniformly in the UI
-    2. So that during accounting we know which type of event comes first in a swap-like event.
-
-    For example for swaps we expect two consecutive events with the first
-    being the out event and the second the in event,
-
-    The events are optional since it's also possible they may not be found.
-
-    TODO: Move this to chain/decoding/utils.py
-    https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=133031544
-    """
-    actual_events = [x for x in ordered_events if x is not None]
-    if len(actual_events) <= 1:
-        return  # nothing to do
-
-    max_seq_index = -1
-    for event in events_list:
-        if event not in actual_events:
-            max_seq_index = max(event.sequence_index, max_seq_index)
-
-    for idx, event in enumerate(actual_events):
-        event.sequence_index = max_seq_index + idx + 1
 
 
 def bridge_prepare_data(

@@ -3,6 +3,7 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
@@ -26,7 +27,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import (
     UNISWAP_V2_SWAP_SIGNATURE as SWAP_V1,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.velodrome.constants import (
     CLAIM_REWARDS_V2,
     GAUGE_DEPOSIT_V2,

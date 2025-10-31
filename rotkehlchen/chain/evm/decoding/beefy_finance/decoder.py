@@ -3,6 +3,7 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     should_update_protocol_cache,
@@ -13,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx

@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -11,7 +12,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.constants import UNISWAP_SIGNATURES
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType

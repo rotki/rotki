@@ -6,6 +6,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value,
@@ -41,7 +42,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import (
     EventDirection,

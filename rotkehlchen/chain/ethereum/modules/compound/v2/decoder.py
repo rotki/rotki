@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.compound.constants import (
     COMPTROLLER_PROXY_ADDRESS,
     CPT_COMPOUND,
@@ -18,7 +19,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_ETH

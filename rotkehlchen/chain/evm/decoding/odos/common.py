@@ -3,11 +3,11 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier

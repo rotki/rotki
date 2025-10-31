@@ -1,13 +1,15 @@
 import logging
 import traceback
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, overload
 
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import AnyBlockchainAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.history.events.structures.solana_event import SolanaEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -105,3 +107,48 @@ def decode_safely(
         msg_aggregator.add_error(f'{error_prefix} failed. Check logs for more details')
 
     return None, True
+
+
+@overload
+def maybe_reshuffle_events(
+        ordered_events: Sequence[Optional['EvmEvent']],
+        events_list: list['EvmEvent'],
+) -> None:
+    ...
+
+
+@overload
+def maybe_reshuffle_events(
+        ordered_events: Sequence[Optional['SolanaEvent']],
+        events_list: list['SolanaEvent'],
+) -> None:
+    ...
+
+
+def maybe_reshuffle_events(
+        ordered_events: Sequence[Optional['EvmEvent']] | Sequence[Optional['SolanaEvent']],
+        events_list: list['EvmEvent'] | list['SolanaEvent'],
+) -> None:
+    """Updates the sequence indexes of the events in `events_list` to be in ascending order as
+    specified by the order of `ordered_events`. The actual order of the events in the list
+    is updated via `sort` later in the decoding process, so is not changed here.
+
+    Reshuffling is for two reasons.
+    1. So that it appears uniformly in the UI
+    2. So that during accounting we know which type of event comes first in a swap-like event.
+
+    For example, for swaps we expect two consecutive events with the first
+    being the out event and the second the in event.
+
+    The events are optional since it's also possible they may not be found.
+    """
+    if len(actual_events := [x for x in ordered_events if x is not None]) <= 1:
+        return  # nothing to do
+
+    max_seq_index = -1
+    for event in events_list:
+        if event not in actual_events:
+            max_seq_index = max(event.sequence_index, max_seq_index)
+
+    for idx, event in enumerate(actual_events):
+        event.sequence_index = max_seq_index + idx + 1

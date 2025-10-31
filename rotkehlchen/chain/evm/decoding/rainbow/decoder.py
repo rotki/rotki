@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -12,7 +13,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal

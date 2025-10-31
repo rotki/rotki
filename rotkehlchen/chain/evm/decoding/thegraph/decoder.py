@@ -5,6 +5,7 @@ from eth_typing.abi import ABI
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -13,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import RemoteError
