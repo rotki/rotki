@@ -49,8 +49,10 @@ const isInformational = computed(() => get(event).eventType === 'informational')
 <template>
   <div class="flex items-center text-left">
     <HistoryEventTypeCounterparty
-      v-if="('counterparty' in event && event.counterparty) || 'address' in event"
-      :event="event"
+      v-if="('counterparty' in event && event.counterparty) || ('address' in event && event.address)"
+      :counterparty="event.counterparty || undefined"
+      :address="event.address || undefined"
+      :location="event.location"
     >
       <HistoryEventTypeCombination
         :highlight="highlight"
