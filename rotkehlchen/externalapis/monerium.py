@@ -40,6 +40,13 @@ MONERIUM_API_BASE_URL: Final = 'https://api.monerium.app/'
 MONERIUM_ACCEPT_HEADER: Final = 'application/vnd.monerium.api-v2+json'
 TOKEN_REFRESH_MARGIN_SECONDS: Final = 60
 AUTHORIZATION_CODE_FLOW_CLIENT_ID: Final = '9f93c53a-aa6c-11f0-9078-069e351f134d'
+SUPPORTED_MONERIUM_CHAINS: Final = {  # keys are the values used in the monerium's orders endpoint
+    'ethereum': Location.ETHEREUM,
+    'gnosis': Location.GNOSIS,
+    'polygon': Location.POLYGON_POS,
+    'arbitrum': Location.ARBITRUM_ONE,
+    'scroll': Location.SCROLL,
+}
 
 
 class Monerium:
@@ -191,16 +198,9 @@ class Monerium:
                 log.error(f'Monerium API returned an invalid tx hash {tx_hash_raw}. Skipping entry {e}')  # noqa: E501
                 continue
 
-            match chain:
-                case 'ethereum':
-                    location = Location.ETHEREUM
-                case 'gnosis':
-                    location = Location.GNOSIS
-                case 'polygon':
-                    location = Location.POLYGON_POS
-                case _:
-                    log.warning(f'Found order with unexpected chain {order["chain"]}')
-                    continue
+            if (location := SUPPORTED_MONERIUM_CHAINS.get(chain)) is None:
+                log.warning(f'Found order with unexpected chain {chain}')
+                continue
 
             # now get the corresponding event
             with self.database.conn.read_ctx() as cursor:
