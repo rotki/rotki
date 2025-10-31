@@ -2,8 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -54,10 +52,6 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.native_currency = Asset(
-            identifier=evm_inquirer.blockchain.get_native_token_id(),
-        ).resolve_to_crypto_asset()
-        self.wrapped_native_currency = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
         self.pool_manager = pool_manager
         self.position_manager = position_manager
         self.universal_router = universal_router
@@ -78,7 +72,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
         lp_assets, has_native = [], False
         for raw_address in pool_info[:2]:
             if (asset_address := deserialize_evm_address(raw_address)) == ZERO_ADDRESS:
-                lp_assets.append(self.native_currency)
+                lp_assets.append(self.node_inquirer.native_token)
                 has_native = True
             else:
                 lp_assets.append(self.base.get_or_create_evm_token(asset_address))
@@ -103,14 +97,14 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
             for event in context.decoded_events:
                 if (
                         event.event_subtype == HistoryEventSubType.NONE and
-                        event.asset == self.native_currency and
+                        event.asset == self.node_inquirer.native_token and
                         event.address in (self.pool_manager, self.position_manager)
                 ):
                     if event.event_type == expected_type:
                         event.counterparty = CPT_UNISWAP_V4
                         event.event_type = event_type
                         event.event_subtype = event_subtype
-                        event.notes = f'{verb} {{amount}} {self.native_currency.symbol} {from_to} {lp_str}'  # noqa: E501
+                        event.notes = f'{verb} {{amount}} {self.node_inquirer.native_token.symbol} {from_to} {lp_str}'  # noqa: E501
                         deposit_withdraw_event = event
                     elif (
                         expected_type == HistoryEventType.SPEND and
@@ -140,7 +134,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
                 to_event_subtype=event_subtype,
                 to_notes=f'{verb} {{amount}} {asset.symbol} {from_to} {lp_str}',  # amount is set when the action item is processed  # noqa: E501
                 to_counterparty=CPT_UNISWAP_V4,
-            ) for asset in (x for x in lp_assets if x != self.native_currency)],
+            ) for asset in (x for x in lp_assets if x != self.node_inquirer.native_token)],
         )
 
     def _router_post_decoding(
@@ -158,7 +152,6 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
             swap_topics=(V4_SWAP_TOPIC, V3_SWAP_TOPIC),
             counterparty=CPT_UNISWAP_V4,
             router_address=self.universal_router,
-            wrapped_native_currency=self.wrapped_native_currency,
         )
 
     def _lp_post_decoding(

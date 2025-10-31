@@ -18,6 +18,7 @@ from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT, SAFE_BASIC_ABI
 from rotkehlchen.chain.ethereum.constants import (
     ETHEREUM_ETHERSCAN_NODE_NAME,
@@ -221,6 +222,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()
         self.chain_name = self.chain_id.to_name()
         self.native_token = native_token
+        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[self.blockchain].resolve_to_evm_token()
         # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
         self.contract_scan = contract_scan
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/

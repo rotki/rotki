@@ -124,7 +124,6 @@ def decode_uniswap_v4_like_swaps(
         swap_topics: tuple[bytes, ...],
         counterparty: str,
         router_address: ChecksumEvmAddress,
-        wrapped_native_currency: 'Asset',
 ) -> list['EvmEvent']:
     """Decode Uniswap V4 like swaps."""
     amounts_received, amounts_sent, pools_used, possible_fees = set(), set(), set(), defaultdict(set)  # noqa: E501
@@ -187,10 +186,11 @@ def decode_uniswap_v4_like_swaps(
                 # the user. Check if this receive event actually has the right amount to match
                 # this swap after adding the fee back on.
                 try:  # First, get the received token's address
-                    fee_token_address = (  # Fee will be in the wrapped version of the native currency.  # noqa: E501
-                        event.asset if event.asset != base_tools.evm_inquirer.native_token
-                        else wrapped_native_currency
-                    ).resolve_to_evm_token().evm_address
+                    fee_token = (  # Fee will be in the wrapped version of the native currency.
+                        event.asset.resolve_to_evm_token()
+                        if event.asset != base_tools.evm_inquirer.native_token
+                        else base_tools.evm_inquirer.wrapped_native_token
+                    )
                 except WrongAssetType:
                     log.error(
                         f'{display_name} swap receive asset {event.asset} is not the native '
@@ -199,7 +199,7 @@ def decode_uniswap_v4_like_swaps(
 
                 # Match against the amounts for possible fee transfers of this token
                 if (raw_fee_amount := next((
-                    amount for amount in possible_fees[fee_token_address]
+                    amount for amount in possible_fees[fee_token.evm_address]
                     if event_raw_amount + amount in amounts_received
                 ), None)) is None:
                     continue  # this receive is not related to this swap

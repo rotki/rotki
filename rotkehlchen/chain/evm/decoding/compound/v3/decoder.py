@@ -3,7 +3,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, get_or_create_evm_token
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC, ZERO_ADDRESS
@@ -63,7 +63,6 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         self.rewards_address = rewards_address
         self.bulker_address = bulker_address
         self.underlying_tokens: dict[EvmToken, EvmToken | None] = {}
-        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[self.node_inquirer.blockchain]
 
     def _get_compound_underlying_token(self, compound_token: EvmToken) -> EvmToken | None:
         """Get the underlying token for a compound token."""
@@ -319,7 +318,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 event.amount == collateral_amount and
                 (event.asset == collateral_asset or (
                     event.asset == self.node_inquirer.native_token and
-                    collateral_asset == self.wrapped_native_token
+                    collateral_asset == self.node_inquirer.wrapped_native_token
                 )) and
                 event.address in (compound_token.evm_address, self.bulker_address)
             ):
