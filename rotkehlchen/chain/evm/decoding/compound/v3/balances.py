@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -65,7 +64,6 @@ class Compoundv3Balances(ProtocolWithBalance):
             counterparty=CPT_COMPOUND_V3,
             deposit_event_types=set(),
         )
-        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[self.evm_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
 
     def _extract_unique_collateral_tokens(self) -> dict[ChecksumEvmAddress, set[CompoundArguments]]:  # noqa: E501
         """Fetch the unique collateral tokens we need to query the comet contracts for"""
@@ -78,7 +76,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                     continue
 
                 if event.asset == self.evm_inquirer.native_token:
-                    compound_token = self.wrapped_native_token
+                    compound_token = self.evm_inquirer.wrapped_native_token
                 else:
                     try:
                         compound_token = event.asset.resolve_to_evm_token()

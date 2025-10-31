@@ -3,8 +3,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import (
     CounterpartyDetails,
@@ -43,7 +41,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    CHAINID_TO_SUPPORTED_BLOCKCHAIN,
     ChecksumEvmAddress,
     EvmTransaction,
 )
@@ -99,9 +96,6 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        chain = CHAINID_TO_SUPPORTED_BLOCKCHAIN[evm_inquirer.chain_id]
-        self.native_currency = AssetResolver.resolve_asset(chain.get_native_token_id()).resolve_to_crypto_asset()  # noqa: E501
-        self.wrapped_native_currency = CHAIN_TO_WRAPPED_TOKEN[chain]
         self.routers_addresses = routers_addresses
         self.nft_manager = nft_manager
 
@@ -127,7 +121,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
                 elif to_asset != event.asset:  # We currently support only single `to_asset`.
                     return None  # unexpected event
                 to_amount += event.amount
-            elif event.event_type == HistoryEventType.RECEIVE and event.asset != self.native_currency and to_asset is None:  # noqa: E501
+            elif event.event_type == HistoryEventType.RECEIVE and event.asset != self.node_inquirer.native_token and to_asset is None:  # noqa: E501
                 # Some other swaps have only a single receive event. The structure is:
                 # spend1, spend2, ..., spendN, receive
                 # In this case the receive event won't be decoded as a trade and we check it here.
@@ -185,7 +179,6 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             amount1_raw=int.from_bytes(context.tx_log.data[64:96]),
             position_id=position_id,
             evm_inquirer=self.node_inquirer,
-            wrapped_native_currency=self.wrapped_native_currency,
         )
 
     def _maybe_decode_v3_swap(
@@ -217,7 +210,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             decoded_events=decoded_events,
             counterparty=CPT_UNISWAP_V3,
             notify_user=self.notify_user,
-            native_currency=self.native_currency,
+            native_currency=self.node_inquirer.native_token,
         )
 
     # --- Routers methods ---
@@ -243,7 +236,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
             return None
 
         return SwapData(
-            from_asset=self.native_currency,
+            from_asset=self.node_inquirer.native_token,
             from_amount=from_amount,
             to_asset=to_data[0],
             to_amount=to_data[1],
@@ -261,7 +254,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
         return SwapData(
             from_asset=from_data[0],
             from_amount=from_data[1],
-            to_asset=self.native_currency,
+            to_asset=self.node_inquirer.native_token,
             to_amount=receive_native_event.amount,
         )
 
@@ -309,7 +302,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
 
         send_native_event, receive_native_event = None, None
         for event in decoded_events:
-            if event.asset == self.native_currency and event.counterparty != CPT_GAS:
+            if event.asset == self.node_inquirer.native_token and event.counterparty != CPT_GAS:
                 if event.event_type == HistoryEventType.SPEND:
                     send_native_event = event
                 else:  # Receive
