@@ -3,7 +3,7 @@ import type { AssetSearchParams } from '@/composables/api/assets/info';
 import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
 import type { AssetsWithId } from '@/types/asset';
 import type { DateFormat } from '@/types/date-format';
-import { assert, type AssetBalance, type AssetInfoWithId, getAddressFromEvmIdentifier, getTextToken, isEvmIdentifier, isValidEthAddress, type Nullable } from '@rotki/common';
+import { type AssetBalance, type AssetInfoWithId, getAddressFromEvmIdentifier, getTextToken, isEvmIdentifier, isValidEthAddress, type Nullable } from '@rotki/common';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 function levenshtein(a: string, b: string): number {
@@ -92,9 +92,8 @@ export function getSortItems<T extends AssetBalance>(getInfo: (identifier: strin
       if (sortByElement === 'asset') {
         const aAsset = getInfo(a.asset);
         const bAsset = getInfo(b.asset);
-        assert(aAsset && bAsset);
-        const bSymbol = bAsset.symbol || '';
-        const aSymbol = aAsset.symbol || '';
+        const bSymbol = bAsset?.symbol || b.asset;
+        const aSymbol = aAsset?.symbol || a.asset;
         return sortByDesc ? bSymbol.toLowerCase().localeCompare(aSymbol) : aSymbol.toLowerCase().localeCompare(bSymbol);
       }
 
