@@ -2,6 +2,7 @@ from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
 
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import query_balancer_data
@@ -21,7 +22,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction

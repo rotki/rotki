@@ -15,7 +15,7 @@ from rotkehlchen.assets.utils import TokenEncounterInfo, get_evm_token, get_or_c
 from rotkehlchen.chain.decoding.constants import CPT_GAS, MIN_LOGS_PROCESSED_TO_SLEEP
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.decoding.utils import decode_safely
+from rotkehlchen.chain.decoding.utils import decode_safely, maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
@@ -88,7 +88,6 @@ from .structures import (
     EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
-from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
