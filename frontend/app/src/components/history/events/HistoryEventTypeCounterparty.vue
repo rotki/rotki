@@ -2,23 +2,32 @@
 import AppImage from '@/components/common/AppImage.vue';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useScramble } from '@/composables/scramble';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 const props = defineProps<{
-  event: { counterparty: string | null; address?: string | null };
+  counterparty?: string;
+  location: string;
+  address?: string;
 }>();
 
-const { event } = toRefs(props);
+const { address, counterparty, location } = toRefs(props);
 
 const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
+const { addressNameSelector } = useAddressesNamesStore();
+const { getChain } = useSupportedChains();
+const { scrambleAddress, scrambleData } = useScramble();
 
 const { isDark } = useRotkiTheme();
 
-const counterparty = getEventCounterpartyData(event);
+const counterpartyData = getEventCounterpartyData(counterparty);
 
-const useDarkModeImage = computed(() => get(isDark) && get(counterparty)?.darkmodeImage);
+const useDarkModeImage = computed(() => get(isDark) && get(counterpartyData)?.darkmodeImage);
+
 const counterpartyImageSrc = computed<string | undefined>(() => {
-  const counterpartyVal = get(counterparty);
+  const counterpartyVal = get(counterpartyData);
 
   if (!counterpartyVal)
     return undefined;
@@ -33,11 +42,30 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
 
   return undefined;
 });
+
+const addressAliasName = computed<string | undefined>(() => {
+  const addressVal = get(address);
+  if (!addressVal || get(scrambleData)) {
+    return undefined;
+  }
+
+  return get(addressNameSelector(addressVal, getChain(get(location))));
+});
+
+const displayAddress = computed<string | undefined>(() => {
+  const addressVal = get(address);
+
+  if (!addressVal) {
+    return undefined;
+  }
+
+  return scrambleAddress(addressVal);
+});
 </script>
 
 <template>
   <RuiBadge
-    v-if="counterparty || event.address"
+    v-if="counterpartyData || displayAddress"
     class="[&_span]:!px-0"
     color="default"
     offset-x="-6"
@@ -53,35 +81,40 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
             class="rounded-full overflow-hidden bg-rui-grey-100 border-2 border-white dark:border-black size-6 flex items-center justify-center"
             :class="{ '!bg-black': useDarkModeImage }"
           >
-            <template v-if="counterparty">
+            <template v-if="counterpartyData">
               <RuiIcon
-                v-if="counterparty.icon"
-                :name="counterparty.icon"
-                :color="counterparty.color"
+                v-if="counterpartyData.icon"
+                :name="counterpartyData.icon"
+                :color="counterpartyData.color"
               />
 
               <AppImage
-                v-else-if="counterpartyImageSrc"
+                v-if="counterpartyImageSrc"
                 :src="counterpartyImageSrc"
                 contain
                 size="20px"
               />
-
-              <EnsAvatar
-                v-else
-                size="20px"
-                :address="counterparty.label"
-              />
             </template>
             <EnsAvatar
-              v-else-if="event.address"
+              v-else-if="displayAddress"
               size="20px"
-              :address="event.address"
+              :address="displayAddress"
               avatar
             />
           </div>
         </template>
-        <div>{{ counterparty?.label || event?.address }}</div>
+        <div v-if="counterpartyData">
+          {{ counterpartyData.label }}
+        </div>
+        <div
+          v-else-if="displayAddress"
+          class="text-center"
+        >
+          <div v-if="addressAliasName">
+            {{ addressAliasName }}
+          </div>
+          {{ displayAddress }}
+        </div>
       </RuiTooltip>
     </template>
     <slot />

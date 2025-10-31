@@ -3,7 +3,6 @@ import type { ActionDataEntry } from '@/types/action';
 import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useScramble } from '@/composables/scramble';
 import { useNotificationsStore } from '@/store/notifications';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
@@ -17,7 +16,6 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
   const dataEntries = ref<ActionDataEntry[]>([]);
 
-  const { scrambleAddress, scrambleData } = useScramble();
   const { notify } = useNotificationsStore();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -67,26 +65,26 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
   }
 
   const getEventCounterpartyData = (
-    event: MaybeRef<{ counterparty: string | null; address?: string | null }>,
-  ): ComputedRef<ActionDataEntry | null> => computed(() => {
-    const { address, counterparty } = get(event);
+    counterparty: MaybeRef<string | undefined>,
+  ): ComputedRef<ActionDataEntry | undefined> => computed(() => {
+    const counterpartyVal = get(counterparty);
     const excludedCounterparty = ['gas'];
 
-    if (counterparty && excludedCounterparty.includes(counterparty))
-      return null;
+    if (counterpartyVal && excludedCounterparty.includes(counterpartyVal))
+      return undefined;
 
-    if (counterparty && !isValidEthAddress(counterparty)) {
+    if (counterpartyVal && !isValidEthAddress(counterpartyVal)) {
       const data = get(dataEntries).find(({ identifier, matcher }: ActionDataEntry) => {
         if (matcher)
-          return matcher(counterparty);
+          return matcher(counterpartyVal);
 
-        return identifier.toLowerCase() === counterparty.toLowerCase();
+        return identifier.toLowerCase() === counterpartyVal.toLowerCase();
       });
 
       if (data) {
         return {
           ...data,
-          label: data.label || toHumanReadable(counterparty, 'capitalize'),
+          label: data.label || toHumanReadable(counterpartyVal, 'capitalize'),
         };
       }
 
@@ -94,23 +92,11 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
         color: 'error',
         icon: 'lu-circle-question-mark',
         identifier: '',
-        label: counterparty,
+        label: counterpartyVal,
       };
     }
 
-    const usedLabel = counterparty || address;
-
-    if (!usedLabel)
-      return null;
-
-    const counterpartyAddress = get(scrambleData)
-      ? scrambleAddress(usedLabel)
-      : usedLabel;
-
-    return {
-      identifier: '',
-      label: counterpartyAddress || '',
-    };
+    return undefined;
   });
 
   const counterparties = useArrayMap(
