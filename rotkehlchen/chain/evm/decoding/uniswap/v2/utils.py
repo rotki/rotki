@@ -12,6 +12,7 @@ from rotkehlchen.assets.utils import (
     get_or_create_evm_token,
 )
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.constants import (
     AMM_ASSETS_SYMBOLS,
     SUSHISWAP_LP_SYMBOL,
@@ -25,7 +26,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH

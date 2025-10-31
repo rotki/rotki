@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
     MAKER_BURN_TOPIC,
     MAKERDAO_ICON,
@@ -22,7 +23,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO

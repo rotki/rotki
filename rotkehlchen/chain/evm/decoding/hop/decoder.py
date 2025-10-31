@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
@@ -23,7 +24,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO

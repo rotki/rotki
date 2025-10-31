@@ -7,6 +7,7 @@ from eth_abi import encode as encode_abi
 from web3 import Web3
 
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -19,7 +20,6 @@ from rotkehlchen.chain.evm.decoding.uniswap.v4.constants import (
     STATE_VIEW_ABI,
     UNISWAP_V4_STATE_VIEW_CONTRACTS,
 )
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.asset import WrongAssetType
