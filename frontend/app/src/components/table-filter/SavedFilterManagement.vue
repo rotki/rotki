@@ -101,6 +101,7 @@ async function addToSavedFilter() {
         <RuiButton
           color="secondary"
           variant="text"
+          class="!p-2.5"
           icon
           :disabled="disabled || selection.length === 0"
           @click="addToSavedFilter()"
@@ -145,6 +146,7 @@ async function addToSavedFilter() {
               :disabled="disabled"
               color="primary"
               variant="text"
+              class="!p-2.5"
               icon
               v-bind="attrs"
             >

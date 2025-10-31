@@ -60,6 +60,8 @@
       }
     },
     "edit_tooltip": "Edit account",
+    "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
+    "exit_selection_mode": "Exit selection mode",
     "headers": {
       "usd_value": "{symbol} value"
     },
@@ -1192,6 +1194,8 @@
     "headers": {
       "started": "Started"
     },
+    "mark_spam": "Mark as spam",
+    "mark_spam_tooltip": "Mark the selected assets as spam",
     "newly_detected": {
       "accept": "Accept token",
       "accept_selected": "Accept selected tokens",
@@ -3105,6 +3109,10 @@
         "unmark_title": "Failed to remove token from spam assets list"
       },
       "hint": "The asset is marked as a spam asset. To be able to unignore this asset, you need to remove it from the spam assets list.",
+      "no_items": {
+        "description": "No assets selected to mark as spam",
+        "title": "No assets to mark as spam"
+      },
       "warning": {
         "manual_balances_message": "Cannot mark this asset(s) as spam because they are added as manual balances: {assets}",
         "manual_balances_title": "Some assets can't be marked as spam"

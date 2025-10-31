@@ -22,6 +22,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'ignore': [ignored: boolean];
+  'mark-spam': [];
   'refresh:ignored': [];
 }>();
 
@@ -39,11 +40,15 @@ function clearSelection() {
   set(selected, []);
 }
 
-function handleIgnore(ignored: boolean) {
+function handleIgnore(ignored: boolean): void {
   emit('ignore', ignored);
 }
 
-function handleRefreshIgnored() {
+function handleMarkSpam(): void {
+  emit('mark-spam');
+}
+
+function handleRefreshIgnored(): void {
   emit('refresh:ignored');
 }
 </script>
@@ -56,6 +61,31 @@ function handleRefreshIgnored() {
         :disabled-actions="disabledIgnoreActions"
         @ignore="handleIgnore($event)"
       />
+      <div class="border-l border-default pl-3">
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              class="min-w-[5.625rem]"
+              variant="outlined"
+              color="error"
+              :disabled="selected.length === 0"
+              @click="handleMarkSpam()"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-trash-2"
+                  size="16"
+                />
+              </template>
+              {{ t('asset_table.mark_spam') }}
+            </RuiButton>
+          </template>
+          <span>{{ t('asset_table.mark_spam_tooltip') }}</span>
+        </RuiTooltip>
+      </div>
       <div
         v-if="selected.length > 0"
         class="flex gap-2 items-center text-sm"

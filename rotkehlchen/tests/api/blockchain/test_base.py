@@ -359,7 +359,7 @@ def _add_blockchain_accounts_test_start(
         token_balances=token_balances,
     )
 
-    with rotki.data.db.user_write() as write_cursor:  # add block production with new account as recpient  # noqa: E501
+    with rotki.data.db.user_write() as write_cursor:  # add block production with new account as recipient  # noqa: E501
         write_cursor.execute(
             'INSERT INTO history_events(identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype) '  # noqa: E501
             "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'f', ?, 'ETH', '0.1', ?, ?, 'block production')",  # noqa: E501
@@ -1378,7 +1378,7 @@ def _remove_blockchain_accounts_test_start(
         liabilities=starting_liabilities,
     )
 
-    with rotki.data.db.user_write() as write_cursor:  # add block production with removed account as recpient  # noqa: E501
+    with rotki.data.db.user_write() as write_cursor:  # add block production with removed account as recipient  # noqa: E501
         write_cursor.execute(
             'INSERT INTO history_events(identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype) '  # noqa: E501
             "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'f', ?, 'ETH', '0.1', ?, ?, 'block production')",  # noqa: E501
