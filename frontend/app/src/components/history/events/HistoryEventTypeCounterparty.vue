@@ -2,21 +2,28 @@
 import AppImage from '@/components/common/AppImage.vue';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useScramble } from '@/composables/scramble';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 const props = defineProps<{
-  event: { counterparty: string | null; address?: string | null };
+  event: { counterparty: string | null; address?: string; location: string };
 }>();
 
 const { event } = toRefs(props);
 
 const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
+const { addressNameSelector } = useAddressesNamesStore();
+const { getChain } = useSupportedChains();
+const { scrambleAddress, scrambleData } = useScramble();
 
 const { isDark } = useRotkiTheme();
 
 const counterparty = getEventCounterpartyData(event);
 
 const useDarkModeImage = computed(() => get(isDark) && get(counterparty)?.darkmodeImage);
+
 const counterpartyImageSrc = computed<string | undefined>(() => {
   const counterpartyVal = get(counterparty);
 
@@ -33,11 +40,31 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
 
   return undefined;
 });
+
+const addressAliasName = computed(() => {
+  const eventVal = get(event);
+  const address = eventVal.address;
+  if (!address || get(scrambleData)) {
+    return undefined;
+  }
+
+  return get(addressNameSelector(address, getChain(eventVal.location)));
+});
+
+const displayAddress = computed(() => {
+  const address = get(event).address;
+
+  if (!address) {
+    return undefined;
+  }
+
+  return scrambleAddress(address);
+});
 </script>
 
 <template>
   <RuiBadge
-    v-if="counterparty || event.address"
+    v-if="counterparty || displayAddress"
     class="[&_span]:!px-0"
     color="default"
     offset-x="-6"
@@ -61,27 +88,32 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
               />
 
               <AppImage
-                v-else-if="counterpartyImageSrc"
+                v-if="counterpartyImageSrc"
                 :src="counterpartyImageSrc"
                 contain
                 size="20px"
               />
-
-              <EnsAvatar
-                v-else
-                size="20px"
-                :address="counterparty.label"
-              />
             </template>
             <EnsAvatar
-              v-else-if="event.address"
+              v-else-if="displayAddress"
               size="20px"
-              :address="event.address"
+              :address="displayAddress"
               avatar
             />
           </div>
         </template>
-        <div>{{ counterparty?.label || event?.address }}</div>
+        <div v-if="counterparty">
+          {{ counterparty.label }}
+        </div>
+        <div
+          v-else-if="displayAddress"
+          class="text-center"
+        >
+          <div v-if="addressAliasName">
+            {{ addressAliasName }}
+          </div>
+          {{ displayAddress }}
+        </div>
       </RuiTooltip>
     </template>
     <slot />
