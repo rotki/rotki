@@ -117,6 +117,7 @@ from rotkehlchen.api.v1.schemas import (
     LocationAssetMappingsDeleteSchema,
     LocationAssetMappingsPostSchema,
     LocationAssetMappingsUpdateSchema,
+    LidoCsmNodeOperatorSchema,
     ManualBalanceQuerySchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
@@ -1888,6 +1889,31 @@ class QueriedAddressesResource(BaseMethodView):
     @use_kwargs(modify_schema, location='json')
     def delete(self, module: ModuleName, address: ChecksumEvmAddress) -> Response:
         return self.rest_api.remove_queried_address_per_module(module=module, address=address)
+
+
+class LidoCsmNodeOperatorResource(BaseMethodView):
+
+    modify_schema = LidoCsmNodeOperatorSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_lido_csm_node_operators()
+
+    @require_loggedin_user()
+    @use_kwargs(modify_schema, location='json')
+    def put(self, address: ChecksumEvmAddress, node_operator_id: int) -> Response:
+        return self.rest_api.add_lido_csm_node_operator(
+            address=address,
+            node_operator_id=node_operator_id,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(modify_schema, location='json')
+    def delete(self, address: ChecksumEvmAddress, node_operator_id: int) -> Response:
+        return self.rest_api.remove_lido_csm_node_operator(
+            address=address,
+            node_operator_id=node_operator_id,
+        )
 
 
 class InfoResource(BaseMethodView):

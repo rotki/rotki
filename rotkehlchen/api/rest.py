@@ -73,6 +73,7 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
@@ -157,6 +158,7 @@ from rotkehlchen.db.filtering import (
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.search_assets import search_assets_levenshtein
@@ -2290,6 +2292,61 @@ class RestAPI:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         return self.get_queried_addresses_per_module()
+
+    def get_lido_csm_node_operators(self) -> Response:
+        entries = DBLidoCsm(self.rotkehlchen.data.db).get_node_operators()
+        ethereum_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
+        metrics_fetcher = LidoCsmMetricsFetcher(evm_inquirer=ethereum_inquirer)
+
+        result = []
+        for entry in entries:
+            metrics_payload = None
+            try:
+                metrics = metrics_fetcher.get_operator_stats(entry.node_operator_id)
+                metrics_payload = metrics.serialize()
+            except RemoteError as e:
+                log.error(
+                    'Failed to fetch Lido CSM metrics for %s: %s',
+                    entry,
+                    e,
+                )
+
+            result.append({
+                'address': entry.address,
+                'node_operator_id': entry.node_operator_id,
+                'metrics': metrics_payload,
+            })
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def add_lido_csm_node_operator(
+            self,
+            address: ChecksumEvmAddress,
+            node_operator_id: int,
+    ) -> Response:
+        try:
+            DBLidoCsm(self.rotkehlchen.data.db).add_node_operator(
+                address=address,
+                node_operator_id=node_operator_id,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return self.get_lido_csm_node_operators()
+
+    def remove_lido_csm_node_operator(
+            self,
+            address: ChecksumEvmAddress,
+            node_operator_id: int,
+    ) -> Response:
+        try:
+            DBLidoCsm(self.rotkehlchen.data.db).remove_node_operator(
+                address=address,
+                node_operator_id=node_operator_id,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return self.get_lido_csm_node_operators()
 
     def get_info(self, check_for_updates: bool) -> Response:
         github = None

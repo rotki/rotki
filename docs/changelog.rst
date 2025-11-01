@@ -17,6 +17,7 @@ Changelog
 * :feature:`-` Cowswap in BNB smart chain is now supported.
 * :feature:`-` Monerium users will be able to authenticate just by signing in with monerium via oauth.
 * :feature:`-` OKX users of EEA or US will be able to choose their location and use the OKX api properly again.
+* :feature:`-` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`-` Filtering of events by accounts will now only include tracked accounts and exchange labels.
 * :bug:`10652` Cowswap swaps with a missing `fullAppData` field will now be properly decoded.
 * :bug:`-` Monerium aave v3 events will now always have the earn event at the end.

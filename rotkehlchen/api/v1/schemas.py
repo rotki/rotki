@@ -2616,6 +2616,11 @@ class QueriedAddressesSchema(Schema):
     address = EvmAddressField(required=True)
 
 
+class LidoCsmNodeOperatorSchema(Schema):
+    address = EvmAddressField(required=True)
+    node_operator_id = fields.Integer(required=True, validate=validate.Range(min=0))
+
+
 class DataImportSchema(AsyncQueryArgumentSchema):
     source = SerializableEnumField(enum_class=DataImportSource, required=True)
     file = FileField(required=True, allowed_extensions=('.csv',))

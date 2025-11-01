@@ -3047,7 +3047,8 @@
   "staking": {
     "eth2": "ETH",
     "kraken": "Kraken",
-    "liquity": "Liquity"
+    "liquity": "Liquity",
+    "lido_csm": "Lido CSM"
   },
   "staking_page": {
     "dropdown_hint": "选择一个位置以查看更多详细信息",

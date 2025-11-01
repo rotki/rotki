@@ -45,6 +45,7 @@ from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusd
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
+from rotkehlchen.chain.ethereum.modules.lido_csm.balances import LidoCsmBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_DSR, CPT_VAULT
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
@@ -184,6 +185,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         ConvexBalances,
         ThegraphBalances,
         OctantBalances,
+        LidoCsmBalances,
         EigenlayerBalances,
         HedgeyBalances,
         BlurBalances,

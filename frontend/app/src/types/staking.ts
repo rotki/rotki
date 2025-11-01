@@ -51,3 +51,30 @@ export function emptyPagination(): KrakenStakingPagination {
     orderByAttributes: ['timestamp'],
   };
 }
+
+export interface LidoCsmNodeOperatorPayload {
+  address: string;
+  nodeOperatorId: number;
+}
+
+export interface LidoCsmNodeOperatorMetrics {
+  operatorType: {
+    id: number;
+    label: string;
+  } | null;
+  bond: {
+    current: string;
+    required: string;
+    claimable: string;
+  } | null;
+  keys: {
+    totalDeposited: number;
+  } | null;
+  rewards?: {
+    pending: string;
+  } | null;
+}
+
+export interface LidoCsmNodeOperator extends LidoCsmNodeOperatorPayload {
+  metrics?: LidoCsmNodeOperatorMetrics | null;
+}
