@@ -2,6 +2,7 @@
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import { Blockchain } from '@rotki/common';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { useLidoCsmStore } from '@/store/staking/lido-csm';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
@@ -177,6 +178,11 @@ async function handleRefresh(): Promise<void> {
 
   await fetchNodeOperators();
 }
+
+// Expose refresh to parent (staking menu page)
+defineExpose({
+  refresh: handleRefresh,
+});
 </script>
 
 <template>
@@ -199,18 +205,11 @@ async function handleRefresh(): Promise<void> {
           {{ t('staking_page.lido_csm.table.description') }}
         </p>
         <div class="flex items-center gap-2 self-start sm:self-auto">
-          <RuiButton
-            variant="text"
+          <RefreshButton
             :loading="loading"
-            :disabled="loading"
-            @click="handleRefresh()"
-          >
-            <RuiIcon
-              name="lu-refresh-ccw"
-              class="mr-1"
-            />
-            {{ t('common.actions.refresh') }}
-          </RuiButton>
+            :tooltip="t('staking_page.lido_csm.table.refresh_tooltip')"
+            @refresh="handleRefresh()"
+          />
           <RuiButton
             color="primary"
             :disabled="loading"
@@ -282,14 +281,6 @@ async function handleRefresh(): Promise<void> {
               <td class="py-3 pr-4 text-sm">
                 <div class="font-medium">
                   {{ row.operatorTypeLabel }}
-                </div>
-                <div class="text-xs text-rui-text-secondary">
-                  <template v-if="row.operatorTypeId !== null">
-                    #{{ row.operatorTypeId }}
-                  </template>
-                  <template v-else>
-                    {{ t('staking_page.lido_csm.table.not_available') }}
-                  </template>
                 </div>
               </td>
               <td class="py-3 pr-4 text-sm">

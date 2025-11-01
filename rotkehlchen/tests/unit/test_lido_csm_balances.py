@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.lido.constants import CPT_LIDO
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import CPT_LIDO_CSM
 from rotkehlchen.chain.ethereum.modules.lido_csm.balances import LidoCsmBalances
 from rotkehlchen.db.lido_csm import LidoCsmNodeOperator
 from rotkehlchen.errors.misc import RemoteError
@@ -51,7 +51,7 @@ def test_lido_csm_balances_accumulates(monkeypatch):
 
     result = balances.query_balances()
     steth_token = A_STETH.resolve_to_evm_token()
-    assert result[entry.address].assets[steth_token][CPT_LIDO] == Balance(
+    assert result[entry.address].assets[steth_token][CPT_LIDO_CSM] == Balance(
         amount=FVal('1.5'),
         usd_value=FVal('3000'),
     )

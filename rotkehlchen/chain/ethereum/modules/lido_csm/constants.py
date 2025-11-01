@@ -96,3 +96,6 @@ FEE_DISTRIBUTOR_ABI: Final = [
 
 # Public IPFS gateway used to fetch treeCid documents
 LIDO_CSM_IPFS_GATEWAY: Final = 'https://ipfs.io/ipfs/'
+
+# Counterparty identifier for Lido CSM
+CPT_LIDO_CSM: Final = 'lido-csm'

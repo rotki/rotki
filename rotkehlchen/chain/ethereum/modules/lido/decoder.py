@@ -17,6 +17,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 from .constants import CPT_LIDO, LIDO_STETH_SUBMITTED, STETH_MAX_ROUND_ERROR_WEI
+from ..lido_csm.constants import CPT_LIDO_CSM
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
@@ -117,4 +118,7 @@ class LidoDecoder(EvmDecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_LIDO, label='Lido eth', image='lido.svg'),)
+        return (
+            CounterpartyDetails(identifier=CPT_LIDO, label='Lido eth', image='lido.svg'),
+            CounterpartyDetails(identifier=CPT_LIDO_CSM, label='Lido CSM', image='lido_csm.svg'),
+        )

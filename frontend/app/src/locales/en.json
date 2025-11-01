@@ -4516,17 +4516,18 @@
       "table": {
         "actions": "Actions",
         "address": "Address",
-        "bond_claimable": "Claimable bond (stETH)",
-        "bond_current": "Current bond (stETH)",
-        "bond_required": "Required bond (stETH)",
+        "bond_claimable": "Claimable bond",
+        "bond_current": "Current bond",
+        "bond_required": "Required bond",
         "description": "Rotki will use the following pairs to read the stETH staking bond from the accounting contract.",
         "empty": "No node operators are tracked yet.",
         "keys_total": "Deposited validators",
-        "rewards_pending": "Rewards (stETH)",
         "node_operator": "Node operator ID",
         "not_available": "N/A",
         "operator_type": "Operator type",
+        "refresh_tooltip": "Refresh Lido CSM metrics",
         "remove": "Remove",
+        "rewards_pending": "Rewards",
         "title": "Tracked node operators"
       },
       "title": "Lido CSM node operators"

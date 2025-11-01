@@ -94,6 +94,9 @@ const page = computed(() => {
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
+// Allow parent to control child page refresh when applicable (currently not used)
+const stakingPage = ref<any>();
+
 onMounted(async () => {
   if (props.location) {
     set(location, props.location);
@@ -144,7 +147,7 @@ onMounted(async () => {
       v-if="page"
       class="pt-8"
     >
-      <Component :is="page" />
+      <Component :is="page" ref="stakingPage" />
     </div>
     <div v-else>
       <div class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2">

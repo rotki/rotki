@@ -17,8 +17,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
-from ..lido.constants import CPT_LIDO
-from .constants import ACCOUNTING_ABI, LIDO_CSM_ACCOUNTING_CONTRACT, STETH_ABI
+from .constants import ACCOUNTING_ABI, LIDO_CSM_ACCOUNTING_CONTRACT, STETH_ABI, CPT_LIDO_CSM
 from .metrics import LidoCsmMetricsFetcher
 
 if TYPE_CHECKING:
@@ -43,7 +42,7 @@ class LidoCsmBalances(ProtocolWithBalance):
         super().__init__(
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
-            counterparty=CPT_LIDO,
+            counterparty=CPT_LIDO_CSM,
             deposit_event_types=set(),
         )
         self._node_operator_db = node_operator_db or DBLidoCsm(self.event_db.db)
