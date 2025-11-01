@@ -1225,6 +1225,7 @@ dependencies = [
  "serde",
  "serde_json",
  "simplelog",
+ "thiserror",
  "tokio",
  "tower-http",
  "tracing",

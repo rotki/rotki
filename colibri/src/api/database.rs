@@ -63,3 +63,26 @@ pub async fn get_ignored_assets(State(state): State<Arc<AppState>>) -> impl Into
             .into_response(),
     }
 }
+
+// Logout the authenticated user by closing the user's DB connection
+pub async fn logout_user(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    let mut db = state.userdb.write().await;
+    if db.client.is_none() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::<String> {
+                result: None,
+                message: "DB not unlocked".to_string(),
+            }),
+        )
+            .into_response();
+    }
+
+    // Explicitly close the SQLite connection if available, then drop the handle
+    if let Some(client) = &db.client {
+        // If the client exposes a close method (rusqlite-backed), call it
+        let _ = client.close();
+    }
+    db.client = None;
+    (StatusCode::OK, "Ok").into_response()
+}
