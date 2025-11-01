@@ -3,7 +3,6 @@ import type { ActionDataEntry } from '@/types/action';
 import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useScramble } from '@/composables/scramble';
 import { useNotificationsStore } from '@/store/notifications';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
@@ -17,7 +16,6 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
   const dataEntries = ref<ActionDataEntry[]>([]);
 
-  const { scrambleAddress, scrambleData } = useScramble();
   const { notify } = useNotificationsStore();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -67,13 +65,13 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
   }
 
   const getEventCounterpartyData = (
-    event: MaybeRef<{ counterparty: string | null; address?: string | null }>,
-  ): ComputedRef<ActionDataEntry | null> => computed(() => {
-    const { address, counterparty } = get(event);
+    event: MaybeRef<{ counterparty: string | null }>,
+  ): ComputedRef<ActionDataEntry | undefined> => computed(() => {
+    const { counterparty } = get(event);
     const excludedCounterparty = ['gas'];
 
     if (counterparty && excludedCounterparty.includes(counterparty))
-      return null;
+      return undefined;
 
     if (counterparty && !isValidEthAddress(counterparty)) {
       const data = get(dataEntries).find(({ identifier, matcher }: ActionDataEntry) => {
@@ -98,19 +96,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
       };
     }
 
-    const usedLabel = counterparty || address;
-
-    if (!usedLabel)
-      return null;
-
-    const counterpartyAddress = get(scrambleData)
-      ? scrambleAddress(usedLabel)
-      : usedLabel;
-
-    return {
-      identifier: '',
-      label: counterpartyAddress || '',
-    };
+    return undefined;
   });
 
   const counterparties = useArrayMap(

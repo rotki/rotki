@@ -69,6 +69,10 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
         const { autoNotes, location, userNotes } = event.entry;
         extractAddresses(userNotes, addressesNamesPayload, location);
         extractAddresses(autoNotes, addressesNamesPayload, location);
+
+        if ('address' in event.entry && event.entry.address) {
+          extractAddresses(event.entry.address, addressesNamesPayload, location);
+        }
       }
     }
 
