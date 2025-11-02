@@ -817,6 +817,30 @@ CREATE TABLE IF NOT EXISTS solana_tx_mappings (
 );
 """  # noqa: E501
 
+# Lido CSM tracking tables
+DB_CREATE_LIDO_CSM_NODE_OPERATORS = """
+CREATE TABLE IF NOT EXISTS lido_csm_node_operators (
+    node_operator_id INTEGER NOT NULL PRIMARY KEY,
+    address TEXT NOT NULL
+);
+"""
+
+DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS = """
+CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
+    node_operator_id INTEGER NOT NULL PRIMARY KEY,
+    operator_type_id INTEGER,
+    bond_current TEXT,
+    bond_required TEXT,
+    bond_claimable TEXT,
+    total_deposited_keys INTEGER,
+    rewards_pending TEXT,
+    updated_ts INTEGER,
+    FOREIGN KEY(node_operator_id)
+        REFERENCES lido_csm_node_operators(node_operator_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""
+
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
 # Shown below are before/after query speeds we observed for each index:
 # idx_history_events_entry_type: Before: 12951ms, After: 0ms
@@ -901,6 +925,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_SOLANA_TX_INSTRUCTION_ACCOUNTS}
 {DB_CREATE_SOLANA_ADDRESS_MAPPINGS}
 {DB_CREATE_SOLANA_TX_MAPPINGS}
+{DB_CREATE_LIDO_CSM_NODE_OPERATORS}
+{DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

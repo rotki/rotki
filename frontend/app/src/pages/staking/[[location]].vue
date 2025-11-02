@@ -7,7 +7,7 @@ import InternalLink from '@/components/helper/InternalLink.vue';
 import { NoteLocation } from '@/types/notes';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
-type NavType = 'eth2' | 'liquity' | 'kraken';
+type NavType = 'eth2' | 'liquity' | 'kraken' | 'lido-csm';
 
 interface StakingInfo {
   id: NavType;
@@ -29,9 +29,10 @@ const props = defineProps<{
 const imageSize = '64px';
 
 const pages = {
-  eth2: defineAsyncComponent(() => import('@/modules/staking/eth/EthStakingPage.vue')),
-  kraken: defineAsyncComponent(() => import('@/components/staking/kraken/KrakenPage.vue')),
-  liquity: defineAsyncComponent(() => import('@/components/staking/liquity/LiquityPage.vue')),
+  'eth2': defineAsyncComponent(() => import('@/modules/staking/eth/EthStakingPage.vue')),
+  'kraken': defineAsyncComponent(() => import('@/components/staking/kraken/KrakenPage.vue')),
+  'lido-csm': defineAsyncComponent(() => import('@/modules/staking/lido-csm/LidoCsmPage.vue')),
+  'liquity': defineAsyncComponent(() => import('@/components/staking/liquity/LiquityPage.vue')),
 };
 
 const { t } = useI18n({ useScope: 'global' });
@@ -64,6 +65,11 @@ const staking = computed<StakingInfo[]>(() => [
     id: 'kraken',
     image: getPublicProtocolImagePath('kraken.svg'),
     name: t('staking.kraken'),
+  },
+  {
+    id: 'lido-csm',
+    image: getPublicProtocolImagePath('lido_csm.svg'),
+    name: t('staking.lido_csm'),
   },
 ]);
 
