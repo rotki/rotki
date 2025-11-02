@@ -6,6 +6,7 @@ Changelog
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+* :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 
 * :release:`1.41.1 <2025-11-14>`
 * :bug: `-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.

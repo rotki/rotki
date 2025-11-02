@@ -56,6 +56,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'hyperliquid',
     'pendle',
     'runmoney',
+    'lido-csm',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
 

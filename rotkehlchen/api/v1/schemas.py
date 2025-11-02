@@ -2625,6 +2625,33 @@ class QueriedAddressesSchema(Schema):
     address = EvmAddressField(required=True)
 
 
+class LidoCsmNodeOperatorSchema(Schema):
+    address = EvmAddressField(required=True)
+    node_operator_id = fields.Integer(required=True, validate=validate.Range(min=0))
+
+    def __init__(self, database: 'DBHandler') -> None:
+        super().__init__()
+        self.database = database
+
+    @validates_schema
+    def validate_existing_address(self, data: dict[str, Any], **kwargs: Any) -> None:  # pylint: disable=unused-argument
+        """Ensure the provided address is already tracked as an Ethereum account."""
+        address = data['address']
+        with self.database.conn.read_ctx() as cursor:
+            exists = cursor.execute(
+                """
+                SELECT 1 FROM blockchain_accounts
+                WHERE blockchain=? AND account=?
+                """,
+                (SupportedBlockchain.ETHEREUM.value, address),
+            ).fetchone()
+        if exists is None:
+            raise ValidationError(
+                f'Address {address} is not registered as an Ethereum EVM account',
+                field_name='address',
+            )
+
+
 class DataImportSchema(AsyncQueryArgumentSchema):
     source = SerializableEnumField(enum_class=DataImportSource, required=True)
     file = FileField(required=True, allowed_extensions=('.csv',))
