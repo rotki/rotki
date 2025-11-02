@@ -74,6 +74,7 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
@@ -158,6 +159,7 @@ from rotkehlchen.db.filtering import (
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.search_assets import search_assets_levenshtein
@@ -2319,6 +2321,115 @@ class RestAPI:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         return self.get_queried_addresses_per_module()
+
+    def get_lido_csm_node_operators(self) -> Response:
+        return api_response(
+            _wrap_in_ok_result(self._serialize_lido_csm_node_operators()),
+            status_code=HTTPStatus.OK,
+        )
+
+    def _serialize_lido_csm_node_operators(self) -> list[dict[str, Any]]:
+        """Serialize the tracked Lido node operators as returned by the API."""
+        entries = DBLidoCsm(self.rotkehlchen.data.db).get_node_operators()
+        return [
+            {
+                'address': entry.address,
+                'node_operator_id': entry.node_operator_id,
+                'metrics': entry.metrics.serialize() if entry.metrics else None,
+            }
+            for entry in entries
+        ]
+
+    def add_lido_csm_node_operator(
+            self,
+            address: ChecksumEvmAddress,
+            node_operator_id: int,
+    ) -> Response:
+        try:
+            DBLidoCsm(self.rotkehlchen.data.db).add_node_operator(
+                address=address,
+                node_operator_id=node_operator_id,
+            )
+        except (InputError, NotFoundError) as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        # Compute and persist metrics for the newly added operator. If it fails
+        # we still return the list but metrics will be empty until refreshed.
+        status_code = HTTPStatus.OK
+        message = ''
+        try:
+            metrics = LidoCsmMetricsFetcher(
+                evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            ).get_operator_stats(node_operator_id)
+            DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
+                node_operator_id=node_operator_id,
+                metrics=metrics,
+            )
+        except RemoteError as e:
+            log.error(
+                f'Failed to fetch Lido CSM metrics for new operator {node_operator_id}: {e}',
+            )
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = f'Failed to fetch metrics for node operator {node_operator_id}'
+
+        payload = _wrap_in_ok_result(self._serialize_lido_csm_node_operators())
+        if message:
+            payload['message'] = message
+        return api_response(payload, status_code=status_code)
+
+    def remove_lido_csm_node_operator(
+            self,
+            address: ChecksumEvmAddress,
+            node_operator_id: int,
+    ) -> Response:
+        try:
+            DBLidoCsm(self.rotkehlchen.data.db).remove_node_operator(
+                address=address,
+                node_operator_id=node_operator_id,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(
+            _wrap_in_ok_result(self._serialize_lido_csm_node_operators()),
+            status_code=HTTPStatus.OK,
+        )
+
+    def refresh_lido_csm_metrics(self) -> Response:
+        """Recompute metrics for a given node operator id,
+        or for all tracked operators if omitted."""
+        metrics_fetcher = LidoCsmMetricsFetcher(
+            evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+        )
+
+        result = []
+        failed_ids: list[int] = []
+        for entry in DBLidoCsm(self.rotkehlchen.data.db).get_node_operators():
+            try:
+                metrics = metrics_fetcher.get_operator_stats(entry.node_operator_id)
+                metrics_payload = metrics.serialize()
+                DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
+                    node_operator_id=entry.node_operator_id,
+                    metrics=metrics,
+                )
+            except RemoteError as e:
+                log.error(f'Failed to refresh Lido CSM metrics for {entry}: {e}')
+                metrics_payload = None
+                failed_ids.append(entry.node_operator_id)
+
+            result.append({
+                'address': entry.address,
+                'node_operator_id': entry.node_operator_id,
+                'metrics': metrics_payload,
+            })
+        payload = _wrap_in_ok_result(result)
+        if failed_ids:
+            payload['message'] = (
+                'Failed to refresh metrics for node operators: '
+                f"{', '.join(str(node_id) for node_id in failed_ids)}"
+            )
+            return api_response(payload, status_code=HTTPStatus.BAD_GATEWAY)
+        return api_response(payload, status_code=HTTPStatus.OK)
 
     def get_info(self, check_for_updates: bool) -> Response:
         github = None

@@ -11214,6 +11214,140 @@ Get location labels
    :statuscode 500: Internal Rotki error
 
 
+ Lido CSM staking
+ =================
+
+.. http:get:: /api/(version)/lido-csm/node-operators
+
+   Return the list of tracked Lido Community Staking Module (CSM) node operators.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/lido-csm/node-operators HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json, text/javascript
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "address": "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4",
+                  "node_operator_id": 7,
+                  "metrics": {
+                      "operatorType": {"id": 1, "label": "Permissionless"},
+                      "bond": {"current": "1.5", "required": "2.0", "claimable": "0.2"},
+                      "keys": {"totalDeposited": 64},
+                      "rewards": {"pending": "0.15"}
+                  }
+              }
+          ],
+          "message": ""
+      }
+
+   :resjson list result: Tracked node operator entries.
+   :resjson string result[].address: Checksummed Ethereum address.
+   :resjson int result[].node_operator_id: Node operator identifier.
+   :resjson object result[].metrics: Cached metrics for the node operator (may be ``null``).
+   :statuscode 200: Query succeeded.
+
+.. http:put:: /api/(version)/lido-csm/node-operators
+
+   Add a new tracked Lido CSM node operator. The backend persists the association and attempts to compute metrics immediately. The provided address must already be registered as an Ethereum blockchain account in ``/api/(version)/blockchains/accounts``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/lido-csm/node-operators HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json, text/javascript
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "address": "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4",
+          "node_operator_id": 7
+      }
+
+   :reqjson string address: Checksummed Ethereum address that owns the node operator. It must be registered as an Ethereum EVM account.
+   :reqjson int node_operator_id: Non-negative node operator identifier.
+   :statuscode 200: Node operator stored and metrics computed when possible.
+   :statuscode 400: Malformed payload.
+   :statuscode 409: Address is not registered as an Ethereum EVM account or node operator already tracked.
+   :statuscode 502: Operator stored but metrics could not be fetched from the blockchain.
+
+.. http:delete:: /api/(version)/lido-csm/node-operators
+
+   Remove a tracked node operator.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/lido-csm/node-operators HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json, text/javascript
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "address": "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4",
+          "node_operator_id": 7
+      }
+
+   :reqjson string address: Address that owns the node operator.
+   :reqjson int node_operator_id: Identifier to remove.
+   :statuscode 200: Node operator removed.
+   :statuscode 400: Malformed payload.
+   :statuscode 409: Node operator not found.
+
+.. http:post:: /api/(version)/lido-csm/metrics
+
+   Recompute metrics for all tracked node operators and return the refreshed entries.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/lido-csm/metrics HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json, text/javascript
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "address": "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4",
+                  "node_operator_id": 7,
+                  "metrics": {
+                      "operatorType": {"id": 1, "label": "Permissionless"},
+                      "bond": {"current": "1.6", "required": "2.0", "claimable": "0.2"},
+                      "keys": {"totalDeposited": 64},
+                      "rewards": {"pending": "0.05"}
+                  }
+              }
+          ],
+          "message": ""
+      }
+
+   :resjson list result: Updated node operator entries.
+   :statuscode 200: Metrics refreshed successfully.
+   :statuscode 500: Refresh failed; see message for details.
+   :statuscode 502: Refresh partially succeeded but at least one operator's metrics failed to update.
+
+
 Staking events
 ==============
 

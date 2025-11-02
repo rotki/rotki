@@ -116,6 +116,7 @@ from rotkehlchen.api.v1.schemas import (
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierSchema,
+    LidoCsmNodeOperatorSchema,
     LocationAssetMappingsDeleteSchema,
     LocationAssetMappingsPostSchema,
     LocationAssetMappingsUpdateSchema,
@@ -1938,6 +1939,44 @@ class QueriedAddressesResource(BaseMethodView):
     @use_kwargs(modify_schema, location='json')
     def delete(self, module: ModuleName, address: ChecksumEvmAddress) -> Response:
         return self.rest_api.remove_queried_address_per_module(module=module, address=address)
+
+
+class LidoCsmNodeOperatorResource(BaseMethodView):
+
+    def get_schema(self) -> LidoCsmNodeOperatorSchema:
+        return LidoCsmNodeOperatorSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_lido_csm_node_operators()
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(get_schema, location='json')
+    def put(self, address: ChecksumEvmAddress, node_operator_id: int) -> Response:
+        return self.rest_api.add_lido_csm_node_operator(
+            address=address,
+            node_operator_id=node_operator_id,
+        )
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(get_schema, location='json')
+    def delete(self, address: ChecksumEvmAddress, node_operator_id: int) -> Response:
+        return self.rest_api.remove_lido_csm_node_operator(
+            address=address,
+            node_operator_id=node_operator_id,
+        )
+
+
+class LidoCsmMetricsResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def post(self) -> Response:
+        """Refresh metrics for all tracked node operators.
+
+        This endpoint ignores the request body and triggers a refresh for all
+        node operators. Returns the refreshed operator objects.
+        """
+        return self.rest_api.refresh_lido_csm_metrics()
 
 
 class InfoResource(BaseMethodView):

@@ -4554,11 +4554,49 @@
   "staking": {
     "eth2": "ETH",
     "kraken": "Kraken",
+    "lido_csm": "Lido CSM",
     "liquity": "Liquity"
   },
   "staking_page": {
     "dropdown_hint": "Select a location to see more details",
     "dropdown_label": "Select location",
+    "lido_csm": {
+      "description": "Track the node operators you registered in the Lido CSM program so rotki can pull their bond balances directly from the accounting contract.",
+      "form": {
+        "address_hint": "Select the ETH address that collects rewards or posts collateral for the node operator.",
+        "address_label": "Tracked address",
+        "description": "Pair an ETH address with the numeric node operator identifier from Lido.",
+        "node_operator_hint": "Use the numeric ID assigned by Lido.",
+        "node_operator_label": "Node operator ID",
+        "submit": "Add node operator",
+        "title": "Track a node operator",
+        "validation": {
+          "invalid_id": "Use a non-negative whole number"
+        }
+      },
+      "messages": {
+        "add_failed": "Failed to add the node operator: {message}",
+        "delete_failed": "Failed to remove the node operator: {message}",
+        "fetch_failed": "Failed to query the Lido CSM node operators: {message}"
+      },
+      "table": {
+        "actions": "Actions",
+        "address": "Address",
+        "bond_claimable": "Claimable bond",
+        "bond_current": "Current bond",
+        "bond_required": "Required bond",
+        "description": "rotki will use the following pairs to read the stETH staking bond from the accounting contract.",
+        "empty": "No node operators are tracked yet.",
+        "keys_total": "Deposited validators",
+        "node_operator": "Node operator ID",
+        "not_available": "N/A",
+        "operator_type": "Operator type",
+        "refresh_tooltip": "Refresh Lido CSM metrics",
+        "remove": "Remove",
+        "rewards_pending": "Rewards"
+      },
+      "title": "Lido CSM node operators"
+    },
     "page": {
       "description": "Select one of the supported locations to see more information about your staked assets.",
       "title": "Staking Locations"

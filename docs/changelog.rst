@@ -8,6 +8,7 @@ Changelog
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
 * :feature:`9230` rotki will now provide quick options for the date time picker.
+* :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`10979` Binance CSV import will now properly handle multiple trades with identical amounts at the same timestamp.
 * :bug:`10984` Fix Binance CSV import crash when multiple trades with different pairs occur at the same time.
 * :bug:`10960` rotki will now support swaps with fees in multiple different assets.
