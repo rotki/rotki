@@ -3043,6 +3043,7 @@
   "staking": {
     "eth2": "ETH",
     "kraken": "Kraken",
+    "lido_csm": "Lido CSM",
     "liquity": "Liquity"
   },
   "staking_page": {

@@ -43,6 +43,7 @@ from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusd
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
+from rotkehlchen.chain.ethereum.modules.lido_csm.balances import LidoCsmBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_DSR, CPT_VAULT
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
@@ -181,6 +182,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         ConvexBalances,
         ThegraphBalances,
         OctantBalances,
+        LidoCsmBalances,
         EigenlayerBalances,
         HedgeyBalances,
         BlurBalances,
@@ -1113,9 +1115,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             account: ChecksumEvmAddress,
             chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        bool,
+            list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+            list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+            bool,
     ]:
         """
         Accepts an account and a list of chains to check activity in. For each chain checks whether
@@ -1147,11 +1149,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             accounts: list[ChecksumEvmAddress],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+            list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+            list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+            list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+            list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+            list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
     ]:
         """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
 
