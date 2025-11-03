@@ -51,6 +51,7 @@ from .interfaces import SolanaDecoderInterface
 from .structures import (
     SolanaDecoderContext,
     SolanaDecodingOutput,
+    SolanaEventDecoderContext,
 )
 from .tools import SolanaDecoderTools
 
@@ -69,7 +70,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class SolanaDecodingRules:
-    address_mappings: dict[SolanaAddress, tuple[Any, ...]]
+    program_id_mappings: dict[SolanaAddress, tuple[Any, ...]]
+    transfer_address_mappings: dict[SolanaAddress, tuple[Any, ...]]
     all_counterparties: set['CounterpartyDetails']
 
     def __add__(self, other: 'SolanaDecodingRules') -> 'SolanaDecodingRules':
@@ -79,7 +81,8 @@ class SolanaDecodingRules:
             )
 
         return SolanaDecodingRules(
-            address_mappings=self.address_mappings | other.address_mappings,
+            program_id_mappings=self.program_id_mappings | other.program_id_mappings,
+            transfer_address_mappings=self.transfer_address_mappings | other.transfer_address_mappings,  # noqa: E501
             all_counterparties=self.all_counterparties | other.all_counterparties,
         )
 
@@ -103,7 +106,11 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             tx_mappings_table='solana_tx_mappings',
             chain_name=SupportedBlockchain.SOLANA.name.lower(),
             value_asset=A_SOL.resolve_to_asset_with_oracles(),
-            rules=SolanaDecodingRules(address_mappings={}, all_counterparties=set()),
+            rules=SolanaDecodingRules(
+                program_id_mappings={},
+                transfer_address_mappings={},
+                all_counterparties=set(),
+            ),
             premium=premium,
             base_tools=base_tools,
             misc_counterparties=[],
@@ -130,22 +137,34 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             base_tools=self.base,
             msg_aggregator=self.msg_aggregator,
         ))
-        new_address_to_decoders = decoder.addresses_to_decoders()
+        new_program_id_mappings = decoder.addresses_to_decoders()
+        new_transfer_address_mappings = decoder.transfer_addresses_to_decoders()
 
         if __debug__:  # sanity checks for now only in debug as decoders are constant
             self.assert_keys_are_unique(
-                new_struct=new_address_to_decoders,
-                main_struct=rules.address_mappings,
+                new_struct=new_program_id_mappings,
+                main_struct=rules.program_id_mappings,
                 class_name=class_name,
                 type_name='address_mappings',
             )
+            self.assert_keys_are_unique(
+                new_struct=new_transfer_address_mappings,
+                main_struct=rules.transfer_address_mappings,
+                class_name=class_name,
+                type_name='transfer_address_mappings',
+            )
 
-        rules.address_mappings.update(new_address_to_decoders)
+        rules.program_id_mappings.update(new_program_id_mappings)
+        rules.transfer_address_mappings.update(new_transfer_address_mappings)
         rules.all_counterparties.update(decoder.counterparties())
 
     @staticmethod
     def _load_default_decoding_rules() -> SolanaDecodingRules:
-        return SolanaDecodingRules(address_mappings={}, all_counterparties=set())
+        return SolanaDecodingRules(
+            program_id_mappings={},
+            transfer_address_mappings={},
+            all_counterparties=set(),
+        )
 
     def _get_tx_not_decoded_filter_query(
             self,
@@ -443,12 +462,13 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     def _decode_basic_events(
             self,
             transaction: SolanaTransaction,
-    ) -> tuple[list[SolanaEvent], list[SolanaInstruction]]:
+    ) -> tuple[list[SolanaEvent], list[SolanaEvent], list[SolanaInstruction]]:
         """Decode the basic events (fee, transfers, etc.) for the given transaction.
-        Returns a tuple containing the list of decoded events and the list of instructions that
-        have not been decoded yet.
+        Returns a tuple containing the list of decoded events, the list of transfer events,
+        and the list of instructions that have not been decoded yet.
         """
         events: list[SolanaEvent] = []
+        transfer_events: list[SolanaEvent] = []
         if (fee_event := self._maybe_decode_fee_event(transaction=transaction)) is not None:
             events.append(fee_event)
 
@@ -464,6 +484,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 instruction=instruction,
             )) is not None:
                 events.append(native_transfer_event)
+                transfer_events.append(native_transfer_event)
             elif (token_accounts := self._identify_token_transfer(
                 instruction=instruction,
                 transaction_signature=transaction.signature,
@@ -487,7 +508,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             log.error(f'Failed to fetch token account owners for transaction {transaction.signature} due to {e}')  # noqa: E501
             # Add all token transfer instructions to undecoded since we can't process them
             undecoded_instructions.extend(instruction for instruction, _ in transfers_and_token_accounts)  # noqa: E501
-            return events, undecoded_instructions
+            return events, transfer_events, undecoded_instructions
 
         for instruction, token_accounts in transfers_and_token_accounts:
             if (transfer_event := self._maybe_decode_token_transfer(
@@ -497,10 +518,11 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 token_accounts_with_owners=token_accounts_with_owners,
             )) is not None:
                 events.append(transfer_event)
+                transfer_events.append(transfer_event)
 
             undecoded_instructions.append(instruction)
 
-        return events, undecoded_instructions
+        return events, transfer_events, undecoded_instructions
 
     def _decode_transaction(
             self,
@@ -531,38 +553,45 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
         self.base.reset_sequence_counter(tx_data=transaction)
         self.base.event_instructions.clear()
-        events, undecoded_instructions = self._decode_basic_events(transaction=transaction)
+        events, transfer_events, undecoded_instructions = self._decode_basic_events(
+            transaction=transaction,
+        )
         refresh_balances, reload_decoders, process_swaps = False, set(), False
-        for instruction in undecoded_instructions:
-            if (mapping_result := self.rules.address_mappings.get(instruction.program_id)) is None:
-                continue
+        for item_list, get_mapping, create_context in ((
+            transfer_events,
+            lambda event: self.rules.transfer_address_mappings.get(event.address),
+            lambda event: SolanaEventDecoderContext(event=event, transaction=transaction, decoded_events=events),  # noqa: E501
+        ), (
+            undecoded_instructions,
+            lambda instruction: self.rules.program_id_mappings.get(instruction.program_id),
+            lambda instruction: SolanaDecoderContext(instruction=instruction, transaction=transaction, decoded_events=events),  # noqa: E501
+        )):
+            for item in item_list:
+                if (mapping_result := get_mapping(item)) is None:  # type: ignore[no-untyped-call]
+                    continue
 
-            context = SolanaDecoderContext(
-                transaction=transaction,
-                instruction=instruction,
-                decoded_events=events,
-            )
-            method, *args = mapping_result
-            decoding_output: SolanaDecodingOutput
-            decoding_output, err = decode_safely(  # can't used named arguments with *args
-                self.possible_decoding_exceptions,
-                self.msg_aggregator,
-                SupportedBlockchain.SOLANA,
-                method,
-                str(context.transaction.signature),
-                *(context, *args),
-            )
-            if err:
-                continue
+                context = create_context(item)
+                method, *args = mapping_result
+                decoding_output: SolanaDecodingOutput
+                decoding_output, err = decode_safely(  # can't used named arguments with *args
+                    self.possible_decoding_exceptions,
+                    self.msg_aggregator,
+                    SupportedBlockchain.SOLANA,
+                    method,
+                    str(context.transaction.signature),
+                    *(context, *args),
+                )
+                if err:
+                    continue
 
-            if decoding_output.refresh_balances:
-                refresh_balances = True
-            if decoding_output.reload_decoders is not None:
-                reload_decoders.update(decoding_output.reload_decoders)
-            if decoding_output.events is not None:
-                events.extend(decoding_output.events)
-            if decoding_output.process_swaps:
-                process_swaps = True
+                if decoding_output.refresh_balances:
+                    refresh_balances = True
+                if decoding_output.reload_decoders is not None:
+                    reload_decoders.update(decoding_output.reload_decoders)
+                if decoding_output.events is not None:
+                    events.extend(decoding_output.events)
+                if decoding_output.process_swaps:
+                    process_swaps = True
 
         # the events list may not be properly ordered after decoding
         events = sorted(events, key=lambda x: x.sequence_index, reverse=False)
