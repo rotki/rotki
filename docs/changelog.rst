@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`10851` Users will be able to sort the account balance table by assets again.
 * :bug:`10853` Compound V3 native token deposit/withdrawals will be properly decoded with associated balances properly detected.
+* :bug:`-` 1inch limit order swaps will now be decoded correctly.
 * :bug:`10849` Monerium bridge transactions that involve Arbitrum or Scroll will be decoded properly.
 * :bug:`-` Uniswap V4 swaps with ETH fees paid through internal transactions will now be properly decoded.
 
