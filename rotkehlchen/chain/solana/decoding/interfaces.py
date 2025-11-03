@@ -1,8 +1,11 @@
 from abc import ABC
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.decoding.interfaces import DecoderInterface
 from rotkehlchen.types import SolanaAddress
+
+from .structures import SolanaDecodingOutput, SolanaEventDecoderContext
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
@@ -24,3 +27,13 @@ class SolanaDecoderInterface(DecoderInterface[SolanaAddress, 'SolanaInquirer', '
             base_tools=base_tools,
         )
         self.msg_aggregator = msg_aggregator
+
+    def transfer_addresses_to_decoders(self) -> dict[
+        SolanaAddress,
+        tuple[Callable[[SolanaEventDecoderContext], SolanaDecodingOutput], ...],
+    ]:
+        """Subclasses may implement this to return the mappings of from/to transfer addresses
+        to corresponding decoder functions. These are run immediately after the basic transfer
+        decoding is finished.
+        """
+        return {}

@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.solana.modules.jito.constants import CPT_JITO
 from rotkehlchen.chain.solana.modules.jupiter.constants import CPT_JUPITER
 from rotkehlchen.chain.solana.modules.pump_fun.constants import CPT_PUMP_FUN
 from rotkehlchen.constants.assets import A_WSOL
@@ -339,16 +340,17 @@ def test_arbitrage_swap(
         location_label=(user := solana_accounts[0]),
         notes=f'Spend {gas_amount} SOL as transaction fee',
         counterparty=CPT_GAS,
-    ), SolanaEvent(  # TODO: decode this as a jito tip: https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=133200023
+    ), SolanaEvent(
         tx_ref=signature,
         sequence_index=1,
         timestamp=timestamp,
         event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.NONE,
+        event_subtype=HistoryEventSubType.FEE,
         asset=A_SOL,
         amount=(jito_tip_amount := FVal('0.000001')),
         location_label=user,
-        notes=f'Send {jito_tip_amount} SOL to DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh',
+        notes=f'Spend {jito_tip_amount} SOL as Jito tip',
+        counterparty=CPT_JITO,
         address=SolanaAddress('DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh'),
     ), SolanaSwapEvent(
         tx_ref=signature,

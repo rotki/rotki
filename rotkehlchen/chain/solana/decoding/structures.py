@@ -14,6 +14,14 @@ class SolanaDecoderContext:
     decoded_events: list[SolanaEvent]
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class SolanaEventDecoderContext:
+    """Arguments context for decoding rules"""
+    event: SolanaEvent
+    transaction: SolanaTransaction
+    decoded_events: list[SolanaEvent]
+
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class SolanaDecodingOutput(CommonDecodingOutput[SolanaEvent]):
     ...

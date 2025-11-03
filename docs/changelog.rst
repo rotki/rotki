@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
 * :bug:`10849` Monerium bridge transactions that involve Arbitrum or Scroll will be decoded properly.
 
