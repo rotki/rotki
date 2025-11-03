@@ -70,7 +70,7 @@ describe('forms/SolanaEventForm.vue', () => {
     location: 'solana',
     locationLabel: '7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3',
     sequenceIndex: 2411,
-    timestamp: 1686495083000,
+    timestamp: 1686495083,
     txRef: '3ASDnpwZ3cGYMQKjsSPZHbJrJ3w8CrPzbXiLEKYLVBk1QGM1mKgXYFjXcCFqfLLu8V1r5N7vP8QcEtYYvFJYDHhx',
     userNotes: 'Receive 100 SOL from 7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3',
   };

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10851` Users will be able to sort the account balance table by assets again.
 * :bug:`10853` Compound V3 native token deposit/withdrawals will be properly decoded with associated balances properly detected.
 * :bug:`10849` Monerium bridge transactions that involve Arbitrum or Scroll will be decoded properly.
 
