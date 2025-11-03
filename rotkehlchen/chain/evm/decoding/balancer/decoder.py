@@ -2,8 +2,8 @@ from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import query_balancer_data
 from rotkehlchen.chain.evm.decoding.balancer.constants import (

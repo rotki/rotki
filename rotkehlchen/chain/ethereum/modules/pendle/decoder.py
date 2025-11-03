@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.pendle.decoder import PendleCommonDecoder

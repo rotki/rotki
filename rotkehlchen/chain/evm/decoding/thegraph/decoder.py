@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any, Final
 from eth_typing.abi import ABI
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

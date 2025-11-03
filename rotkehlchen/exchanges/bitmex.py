@@ -9,10 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.chain.ethereum.utils import (
-    normalized_fval_value_decimals,
-)
+from rotkehlchen.assets.utils import normalized_fval_value_decimals, symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data

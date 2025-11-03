@@ -1,9 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

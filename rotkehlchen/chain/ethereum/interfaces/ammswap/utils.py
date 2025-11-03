@@ -1,12 +1,11 @@
 from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPool,
     LiquidityPoolAsset,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 

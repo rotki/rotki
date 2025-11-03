@@ -2,8 +2,8 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer

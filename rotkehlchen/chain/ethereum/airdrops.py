@@ -17,8 +17,12 @@ from web3.exceptions import Web3Exception
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, SolanaToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
-from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, token_normalized_value_decimals
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    get_or_create_evm_token,
+    token_normalized_value_decimals,
+)
+from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO

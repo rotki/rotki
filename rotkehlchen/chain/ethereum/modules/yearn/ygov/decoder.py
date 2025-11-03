@@ -1,10 +1,10 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YGOV, YEARN_ICON
 from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import YGOV_ADDRESS
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC_V2
 from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,

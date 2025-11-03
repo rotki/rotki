@@ -2,8 +2,8 @@ import logging
 from collections.abc import Callable
 from typing import Any, Final
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

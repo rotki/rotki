@@ -3,9 +3,9 @@ from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (

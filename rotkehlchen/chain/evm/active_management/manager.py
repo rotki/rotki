@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.utils import asset_raw_value
+from rotkehlchen.assets.utils import asset_raw_value
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:

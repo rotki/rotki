@@ -3,10 +3,9 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_single_underlying_token
+from rotkehlchen.assets.utils import asset_normalized_value, get_single_underlying_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
 from rotkehlchen.chain.evm.decoding.structures import (

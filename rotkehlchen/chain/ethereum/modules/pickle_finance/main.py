@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_PICKLE
 from rotkehlchen.errors.serialization import DeserializationError

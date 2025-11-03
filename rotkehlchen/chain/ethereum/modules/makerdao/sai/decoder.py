@@ -2,6 +2,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -11,7 +12,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
     MAKERDAO_LABEL,
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (

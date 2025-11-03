@@ -8,6 +8,7 @@ from web3 import Web3
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
+    asset_normalized_value,
     edit_token_and_clean_cache,
     get_or_create_evm_token,
 )
@@ -18,7 +19,7 @@ from rotkehlchen.chain.ethereum.modules.constants import (
     SUSHISWAP_LP_SYMBOL,
     UNISWAP_V2_LP_SYMBOL,
 )
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
+from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.structures import (

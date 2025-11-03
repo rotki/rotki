@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import EIGEN_TOKEN_ID
 from rotkehlchen.chain.ethereum.modules.puffer.constants import (
@@ -14,7 +15,6 @@ from rotkehlchen.chain.ethereum.modules.puffer.constants import (
     PUFFERX_EIGEN_S2_AIRDROP2,
     UNLOCKED_TOKENS_CLAIMED,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (

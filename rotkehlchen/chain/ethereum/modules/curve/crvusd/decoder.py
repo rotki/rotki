@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.constants import (
     CRVUSD_PEG_KEEPERS_AND_POOLS,
     CURVE_CRVUSD_CONTROLLER_ABI,
@@ -10,7 +11,7 @@ from rotkehlchen.chain.ethereum.modules.curve.crvusd.constants import (
     PEG_KEEPER_WITHDRAW_TOPIC,
 )
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.utils import query_crvusd_controllers
-from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.curve.lend.common import CurveBorrowRepayCommonDecoder

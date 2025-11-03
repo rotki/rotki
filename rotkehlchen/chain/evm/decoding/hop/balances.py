@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order

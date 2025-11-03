@@ -2,8 +2,8 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     read_balancer_pools_and_gauges_from_cache,
 )

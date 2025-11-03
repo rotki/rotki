@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict, cast
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO

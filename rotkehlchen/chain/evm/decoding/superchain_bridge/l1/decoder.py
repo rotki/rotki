@@ -2,7 +2,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

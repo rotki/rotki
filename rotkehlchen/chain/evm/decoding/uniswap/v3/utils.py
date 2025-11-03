@@ -8,10 +8,14 @@ from web3 import Web3
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    asset_normalized_value,
+    get_or_create_evm_token,
+)
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
+from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, EvmDecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_underlying
 from rotkehlchen.constants.prices import ZERO_PRICE

@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.open_ocean.constants import CPT_OPENOCEAN
 from rotkehlchen.chain.evm.decoding.open_ocean.decoder import (
     OpenOceanDecoder as OpenOceanBaseDecoder,

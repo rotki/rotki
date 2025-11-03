@@ -2,10 +2,9 @@ import abc
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (

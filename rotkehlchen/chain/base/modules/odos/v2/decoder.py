@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.odos.v2.constants import CPT_ODOS_V2
 from rotkehlchen.chain.evm.decoding.odos.v2.decoder import Odosv2DecoderBase

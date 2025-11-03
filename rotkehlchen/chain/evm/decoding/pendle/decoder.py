@@ -2,14 +2,14 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import (
+from rotkehlchen.assets.utils import (
     asset_normalized_value,
     asset_raw_value,
-    should_update_protocol_cache,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
     SWAPPED_TOPIC,

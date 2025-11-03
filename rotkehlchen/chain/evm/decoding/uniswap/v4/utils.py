@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 from eth_abi import encode as encode_abi
 from web3 import Web3
 
+from rotkehlchen.assets.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.decoding.types import get_versioned_counterparty_label
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.uniswap.utils import (

@@ -1,8 +1,8 @@
 import logging
 from typing import Any, Literal
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import STAKED
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

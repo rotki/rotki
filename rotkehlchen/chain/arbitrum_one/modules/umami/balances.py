@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.utils import get_evm_token
+from rotkehlchen.assets.utils import get_evm_token, token_normalized_value_decimals
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     CPT_UMAMI,
     UMAMI_MASTERCHEF_ABI,
@@ -11,7 +11,6 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
 )
 from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_token_price
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.prices import ZERO_PRICE

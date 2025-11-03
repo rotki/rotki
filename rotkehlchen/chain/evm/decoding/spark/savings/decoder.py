@@ -1,9 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.utils import TokenEncounterInfo
+from rotkehlchen.assets.utils import TokenEncounterInfo, token_normalized_value_decimals
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC_V3
 from rotkehlchen.chain.evm.decoding.constants import ERC4626_ABI
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK

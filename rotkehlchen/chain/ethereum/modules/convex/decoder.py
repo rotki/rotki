@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
@@ -21,7 +22,6 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
     read_convex_data_from_cache,
 )
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, STAKED
 from rotkehlchen.chain.evm.decoding.interfaces import (

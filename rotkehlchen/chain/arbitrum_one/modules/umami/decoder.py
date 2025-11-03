@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.arbitrum_one.decoding.interfaces import ArbitrumDecoderInterface
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     CPT_UMAMI,
@@ -8,7 +9,6 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
 )
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import (
     DEPOSIT_TOPIC,
     STAKE_TOPIC,

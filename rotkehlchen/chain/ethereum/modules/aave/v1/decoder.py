@@ -1,9 +1,9 @@
 from typing import Any
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

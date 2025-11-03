@@ -6,12 +6,12 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.chain.ethereum.utils import (
+from rotkehlchen.assets.utils import (
+    get_or_create_evm_token,
     token_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.extrafi.constants import (

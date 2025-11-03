@@ -3,6 +3,7 @@ from typing import Any
 
 import requests
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.modules.juicebox.constants import (
@@ -16,7 +17,6 @@ from rotkehlchen.chain.ethereum.modules.juicebox.constants import (
     PAY_SIGNATURE,
     TERMINAL_3_1_2,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

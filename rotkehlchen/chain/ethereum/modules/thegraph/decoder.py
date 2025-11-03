@@ -1,11 +1,11 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
-from rotkehlchen.chain.ethereum.utils import (
+from rotkehlchen.assets.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

@@ -1,11 +1,11 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final, Literal
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, SIMPLE_CLAIM
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
