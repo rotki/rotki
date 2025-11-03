@@ -149,6 +149,7 @@ cargo run -- --database ../data/global.db --port 4343
 - **Always type reactive variables**: `const isLoading = ref<boolean>(false)`
 - **Always type computed properties**: `const fullName = computed<string>(() => ...)`
 - If a ref type can be undefined and the default value is undefined, **Don't explicitly put it as type or default value**: `const newId = ref<number>()`
+- **Always use `{ useScope: 'global' }` parameter for `useI18n()`**: `const { t } = useI18n({ useScope: 'global' });`
 
 #### Correct Examples:
 
@@ -160,6 +161,8 @@ const isVisible = ref<boolean>(true);
 const count = ref<number>(0);
 const items = ref<string[]>([]);
 const user = ref<User>();
+
+const { t } = useI18n({ useScope: 'global' });
 
 const isEven = computed<boolean>(() => get(count) % 2 === 0);
 const formattedName = computed<string>(() => `${get(firstName)} ${get(lastName)}`);
@@ -186,6 +189,8 @@ const isVisible = ref(true);
 const count = ref(0);
 const items = ref([]);
 const user = ref();
+
+const { t } = useI18n();
 
 const isEven = computed(() => count.value % 2 === 0);
 const formattedName = computed(() => `${firstName.value} ${lastName.value}`);

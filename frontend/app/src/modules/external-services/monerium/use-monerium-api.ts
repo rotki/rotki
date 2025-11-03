@@ -1,39 +1,17 @@
 import type { ActionResult } from '@rotki/common';
+import type { MoneriumAuthResult, MoneriumStatus } from './types';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
 
-export interface MoneriumProfile {
-  id: string;
-  name?: string;
-  kind?: string;
-}
-
-export interface MoneriumStatus {
-  authenticated: boolean;
-  userEmail?: string;
-  defaultProfileId?: string;
-  profiles?: MoneriumProfile[];
-  expiresAt?: number;
-  tokenType?: string;
-}
-
-export interface MoneriumAuthResult {
-  success: boolean;
-  message: string;
-  userEmail?: string;
-  defaultProfileId?: string;
-  profiles?: MoneriumProfile[];
-}
-
 interface UseMoneriumOAuthApiReturn {
-  getStatus: () => Promise<MoneriumStatus>;
   completeOAuth: (
     accessToken: string,
     refreshToken: string,
     expiresIn: number,
   ) => Promise<MoneriumAuthResult>;
   disconnect: () => Promise<{ success: boolean }>;
+  getStatus: () => Promise<MoneriumStatus>;
 }
 
 const basePath = '/services/monerium';
