@@ -257,6 +257,9 @@ defineExpose({
       :data-category="category"
       :category="category"
       class="mt-4"
+      :class="[
+        { [$style.pulse]: (expanded.length === 0 && selectionMode) },
+      ]"
       group="evm"
       :accounts="accounts"
       @edit="emit('edit', $event)"
@@ -301,5 +304,23 @@ defineExpose({
         />
       </template>
     </AccountBalancesTable>
-  </ruicard>
+  </RuiCard>
 </template>
+
+<style module>
+.pulse {
+  :global(button[class*='_expander_']) {
+    animation: pulse 1.5s ease-in-out infinite !important;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    @apply bg-yellow-600/0;
+  }
+
+  50% {
+    @apply bg-yellow-600/30;
+  }
+}
+</style>

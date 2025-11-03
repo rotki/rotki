@@ -135,7 +135,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
       </template>
       <template #body.append>
         <RowAppend
-          label-colspan="3"
+          :label-colspan="selectionMode ? 5 : 4"
           :label="t('common.total')"
           class="[&>td]:p-4"
         >

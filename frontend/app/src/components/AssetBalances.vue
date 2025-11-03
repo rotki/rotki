@@ -23,7 +23,7 @@ defineOptions({
 });
 
 const search = defineModel<string>('search', { default: '', required: false });
-const selected = defineModel<string[] | undefined>('selected', { required: true });
+const selected = defineModel<string[] | undefined>('selected', { required: false });
 
 const props = withDefaults(defineProps<{
   balances: AssetBalanceWithPrice[];
@@ -243,7 +243,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       #body.append
     >
       <RowAppend
-        label-colspan="3"
+        :label-colspan="selectionMode ? 5 : 4"
         :label="t('common.total')"
         :is-mobile="false"
         :right-patch-colspan="2"

@@ -52,6 +52,7 @@ export function useAccountAssetSelection(
     if (status.success) {
       set(selectedAssets, []);
       await onRefresh();
+      toggleSelectionMode();
     }
   }
 
@@ -72,6 +73,7 @@ export function useAccountAssetSelection(
     if (status.success) {
       set(selectedAssets, []);
       await onRefresh();
+      toggleSelectionMode();
     }
   }
 
