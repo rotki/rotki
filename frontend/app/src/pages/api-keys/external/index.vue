@@ -38,7 +38,7 @@ const services = [
     name: 'opensea',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/MoneriumAuth.vue')),
+    component: defineAsyncComponent(() => import('@/modules/external-services/monerium/MoneriumAuth.vue')),
     name: 'monerium',
   },
   {
@@ -46,7 +46,7 @@ const services = [
     name: 'thegraph',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/GnosisPayAuth.vue')),
+    component: defineAsyncComponent(() => import('@/modules/external-services/gnosis-pay/components/GnosisPayAuth.vue')),
     name: 'gnosispay',
   },
   {

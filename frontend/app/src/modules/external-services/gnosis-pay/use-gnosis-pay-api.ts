@@ -1,18 +1,19 @@
 import type { ActionResult } from '@rotki/common';
+import type { GnosisPayAdminsMapping } from '@/modules/external-services/gnosis-pay/types';
 import type { PendingTask } from '@/types/task';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 
 interface GnosisPaySiweApiReturn {
-  fetchGnosisPayAdmins: () => Promise<Record<string, string[]>>;
+  fetchGnosisPayAdmins: () => Promise<GnosisPayAdminsMapping>;
   fetchNonce: () => Promise<PendingTask>;
   verifySiweSignature: (message: string, signature: string) => Promise<PendingTask>;
 }
 
 export function useGnosisPaySiweApi(): GnosisPaySiweApiReturn {
-  const fetchGnosisPayAdmins = async (): Promise<Record<string, string[]>> => {
-    const response = await api.instance.get<ActionResult<Record<string, string[]>>>(
+  const fetchGnosisPayAdmins = async (): Promise<GnosisPayAdminsMapping> => {
+    const response = await api.instance.get<ActionResult<GnosisPayAdminsMapping>>(
       '/services/gnosispay/admins',
     );
 

@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
 import { Severity } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useInterop } from '@/composables/electron-interop';
-import { useMoneriumOAuth } from '@/composables/settings/api-keys/external/monerium-oauth';
 import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useNotificationsStore } from '@/store/notifications';
 import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
+import { useMoneriumOAuth } from './use-monerium-auth';
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -1,7 +1,7 @@
-import { get, set } from '@vueuse/core';
-import { computed, type ComputedRef, type Ref, ref } from 'vue';
-import { type MoneriumStatus, useMoneriumOAuthApi } from '@/composables/api/settings/monerium-oauth';
+import type { ComputedRef, Ref } from 'vue';
+import type { MoneriumOAuthResult, MoneriumStatus } from './types';
 import { logger } from '@/utils/logging';
+import { useMoneriumOAuthApi } from './use-monerium-api';
 
 interface UseMoneriumOAuthReturn {
   authenticated: ComputedRef<boolean>;
@@ -9,7 +9,7 @@ interface UseMoneriumOAuthReturn {
     accessToken: string,
     refreshToken: string,
     expiresIn?: number,
-  ) => Promise<{ message: string; userEmail?: string; defaultProfileId?: string; profiles?: any[] }>;
+  ) => Promise<MoneriumOAuthResult>;
   disconnect: () => Promise<void>;
   loading: Ref<boolean>;
   refreshStatus: () => Promise<void>;
@@ -47,7 +47,7 @@ export function useMoneriumOAuth(): UseMoneriumOAuthReturn {
     accessToken: string,
     refreshToken: string,
     expiresIn: number = 3600,
-  ): Promise<{ message: string; userEmail?: string; defaultProfileId?: string; profiles?: any[] }> {
+  ): Promise<MoneriumOAuthResult> {
     try {
       const result = await api.completeOAuth(accessToken, refreshToken, expiresIn);
 

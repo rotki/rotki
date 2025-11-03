@@ -3,7 +3,7 @@ import { groupBy, omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useModules } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import { useMoneriumOAuth } from '@/composables/settings/api-keys/external/monerium-oauth';
+import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
