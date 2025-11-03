@@ -55,7 +55,10 @@ class OpenOceanDecoder(EvmDecoderInterface, ABC):
 
     def _decode_swapped(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode OpenOcean swaps that include a SWAPPED_TOPIC tx_log event."""
-        if context.tx_log.topics[0] != SWAPPED_TOPIC:
+        if (context.tx_log.topics[0] != SWAPPED_TOPIC or not self.base.any_tracked((
+            bytes_to_address(context.tx_log.topics[1]),  # sender
+            bytes_to_address(context.tx_log.data[:32])),  # receiver
+        )):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         spend_asset, spend_amount = self._get_asset_and_amount(
