@@ -1,16 +1,13 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.assets.utils import asset_normalized_value, token_normalized_value_decimals
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.sky.constants import (
     CPT_SKY,
     MIGRATION_ACTIONS_CONTRACT,
     SUSDS_ASSET,
     SUSDS_CONTRACT,
-)
-from rotkehlchen.chain.ethereum.utils import (
-    asset_normalized_value,
-    token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,

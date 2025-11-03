@@ -3,9 +3,13 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.assets.utils import get_evm_token, get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    asset_normalized_value,
+    get_evm_token,
+    get_or_create_evm_token,
+    token_normalized_value,
+)
 from rotkehlchen.chain.decoding.tools import BaseDecoderTools
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog

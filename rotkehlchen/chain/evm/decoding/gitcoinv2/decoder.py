@@ -2,9 +2,9 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import (

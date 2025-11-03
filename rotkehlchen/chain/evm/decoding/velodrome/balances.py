@@ -2,12 +2,12 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import (
     PROTOCOLS_WITH_BALANCES,
     BalancesSheetType,
     ProtocolWithGauges,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.velodrome.constants import VOTING_ESCROW_ABI

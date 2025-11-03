@@ -56,6 +56,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
@@ -79,10 +80,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
-from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
-    try_download_ens_avatar,
-)
+from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     query_balancer_data,

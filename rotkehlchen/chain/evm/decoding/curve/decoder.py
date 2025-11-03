@@ -3,10 +3,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import TokenEncounterInfo
+from rotkehlchen.assets.utils import TokenEncounterInfo, asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.evm.constants import (
     ADD_LIQUIDITY_DYNAMIC_ASSETS,
     DEPOSIT_TOPIC_V2,

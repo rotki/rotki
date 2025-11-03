@@ -5,10 +5,9 @@ from typing import TYPE_CHECKING, Final
 from eth_typing.abi import ABI
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to_owners_mapping
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from eth_typing import ABI
 
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.constants import CURVE_CRVUSD_CONTROLLER_ABI
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
     CURVE_COUNTERPARTY_DETAILS,

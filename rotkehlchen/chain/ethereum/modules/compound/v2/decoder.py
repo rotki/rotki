@@ -2,14 +2,17 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    asset_normalized_value,
+    get_or_create_evm_token,
+    token_normalized_value,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.compound.constants import (
     COMPTROLLER_PROXY_ADDRESS,
     CPT_COMPOUND,
 )
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

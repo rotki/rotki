@@ -1,9 +1,8 @@
 import logging
 from typing import Any
 
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

@@ -6,8 +6,9 @@ from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     get_or_create_evm_token,
     get_single_underlying_token,
+    token_normalized_value,
+    token_raw_value_decimals,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value, token_raw_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
 from rotkehlchen.constants.misc import ONE, ZERO

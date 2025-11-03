@@ -1,17 +1,17 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.assets.utils import (
+    asset_normalized_value,
+    token_normalized_value,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.modules.sky.constants import (
     CPT_SKY,
     MIGRATION_ACTIONS_CONTRACT,
     USDS_ASSET,
-)
-from rotkehlchen.chain.ethereum.utils import (
-    asset_normalized_value,
-    token_normalized_value,
-    token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import (

@@ -3,7 +3,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import ERC4626_ABI
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import RemoteError

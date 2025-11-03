@@ -2,12 +2,12 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import (
+from rotkehlchen.assets.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
     DEPOSIT_TOPIC,

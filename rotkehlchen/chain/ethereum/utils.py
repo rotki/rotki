@@ -11,15 +11,11 @@ from eth_utils import to_checksum_address
 from requests.exceptions import RequestException
 from web3 import Web3
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken, SolanaToken
-from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_XDAI
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH, HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_last_queried_ts_by_key,
@@ -41,64 +37,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 ENS_METADATA_URL = 'https://metadata.ens.domains/mainnet'
 MULTICALL_CHUNKS = 20
-
-
-def token_normalized_value_decimals(token_amount: int, token_decimals: int | None) -> FVal:
-    if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
-        token_decimals = 18
-
-    return token_amount / (FVal(10) ** FVal(token_decimals))
-
-
-def normalized_fval_value_decimals(amount: FVal, decimals: int) -> FVal:
-    return amount / (FVal(10) ** FVal(decimals))
-
-
-def token_raw_value_decimals(token_amount: FVal, token_decimals: int | None) -> int:
-    if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
-        token_decimals = 18
-
-    return (token_amount * (FVal(10) ** FVal(token_decimals))).to_int(exact=False)
-
-
-def token_normalized_value(
-        token_amount: int,
-        token: EvmToken | SolanaToken,
-) -> FVal:
-    return token_normalized_value_decimals(token_amount, token.decimals)
-
-
-def get_decimals(asset: CryptoAsset) -> int:
-    """
-    May raise:
-    - UnsupportedAsset if the given asset is not a native token or an ERC20 token
-    """
-    if asset in (A_ETH, A_XDAI, A_BSC_BNB):
-        return 18
-    try:
-        token = asset.resolve_to_evm_token()
-    except UnknownAsset as e:
-        raise UnsupportedAsset(asset.identifier) from e
-
-    return token.get_decimals()
-
-
-def asset_normalized_value(amount: int, asset: CryptoAsset) -> FVal:
-    """Takes in an amount and an asset and returns its normalized value
-
-    May raise:
-    - UnsupportedAsset if the given asset is not ETH or an ethereum token
-    """
-    return token_normalized_value_decimals(amount, get_decimals(asset))
-
-
-def asset_raw_value(amount: FVal, asset: CryptoAsset) -> int:
-    """Takes in an amount and an asset and returns its raw(wei equivalent) value
-
-    May raise:
-    - UnsupportedAsset if the given asset is not ETH or an ethereum token
-    """
-    return token_raw_value_decimals(amount, get_decimals(asset))
 
 
 def generate_address_via_create2(

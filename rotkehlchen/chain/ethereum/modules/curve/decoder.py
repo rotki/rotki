@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, UNSTAKE_TOPIC
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (

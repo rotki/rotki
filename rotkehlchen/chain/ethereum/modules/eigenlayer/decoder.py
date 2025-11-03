@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import AssetWithSymbol
-from rotkehlchen.assets.utils import TokenEncounterInfo
+from rotkehlchen.assets.utils import TokenEncounterInfo, token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
@@ -38,7 +38,6 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     WITHDRAWAL_QUEUED,
 )
 from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to_owners_mapping
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin

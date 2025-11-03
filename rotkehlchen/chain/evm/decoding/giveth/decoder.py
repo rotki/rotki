@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, SIMPLE_CLAIM
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_DETAILS_GIVETH, CPT_GIVETH
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

@@ -1,10 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.utils import get_or_create_solana_token
+from rotkehlchen.assets.utils import get_or_create_solana_token, token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.solana.decoding.constants import ANCHOR_EVENT_DISCRIMINATOR
 from rotkehlchen.chain.solana.decoding.interfaces import SolanaDecoderInterface
 from rotkehlchen.chain.solana.decoding.structures import (

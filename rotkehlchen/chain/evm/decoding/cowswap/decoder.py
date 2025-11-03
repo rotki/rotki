@@ -5,10 +5,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import TokenEncounterInfo
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    asset_normalized_value,
+    token_normalized_value,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS, CPT_COWSWAP

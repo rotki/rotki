@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal
 from eth_typing import ABI
 
 from rotkehlchen.assets.asset import AssetWithSymbol
-from rotkehlchen.assets.utils import get_evm_token
+from rotkehlchen.assets.utils import get_evm_token, token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import (

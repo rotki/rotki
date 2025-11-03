@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Literal
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.db.filtering import EvmEventFilterQuery

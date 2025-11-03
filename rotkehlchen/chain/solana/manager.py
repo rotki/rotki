@@ -9,8 +9,11 @@ from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    get_or_create_solana_token,
+    token_normalized_value,
+)
 from rotkehlchen.chain.manager import ChainManagerWithNodesMixin, ChainManagerWithTransactions
 from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_to_sol
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL

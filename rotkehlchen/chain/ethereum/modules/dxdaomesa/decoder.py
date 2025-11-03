@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

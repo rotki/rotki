@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.arbitrum_one.modules.clrfund.constants import (
     CLRFUND_CPT_DETAILS,
     CPT_CLRFUND,
@@ -10,7 +11,6 @@ from rotkehlchen.chain.arbitrum_one.modules.clrfund.constants import (
 )
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import FUNDS_CLAIMED
 from rotkehlchen.chain.evm.decoding.interfaces import CommonGrantsDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (

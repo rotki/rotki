@@ -1,8 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

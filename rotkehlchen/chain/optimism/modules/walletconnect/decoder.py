@@ -2,9 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value_decimals,
-)
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, STAKING_DEPOSIT
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface

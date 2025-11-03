@@ -1,8 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH, TOKEN_LOCKED
 from rotkehlchen.chain.evm.decoding.giveth.decoder import GivethDecoderBase

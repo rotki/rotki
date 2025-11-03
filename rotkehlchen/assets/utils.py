@@ -10,6 +10,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithOracles,
+    CryptoAsset,
     EvmToken,
     SolanaToken,
     UnderlyingToken,
@@ -20,6 +21,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
+    A_BSC_BNB,
     A_ETH,
     A_WBNB,
     A_WETH,
@@ -29,11 +31,13 @@ from rotkehlchen.constants.assets import (
     A_WETH_POLYGON,
     A_WETH_SCROLL,
     A_WXDAI,
+    A_XDAI,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, solana_address_to_identifier
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, NotSPLConformant
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -682,6 +686,64 @@ def symbol_to_asset_or_token(
         asset = maybe_asset
 
     return asset
+
+
+def token_normalized_value_decimals(token_amount: int, token_decimals: int | None) -> FVal:
+    if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
+        token_decimals = 18
+
+    return token_amount / (FVal(10) ** FVal(token_decimals))
+
+
+def normalized_fval_value_decimals(amount: FVal, decimals: int) -> FVal:
+    return amount / (FVal(10) ** FVal(decimals))
+
+
+def token_raw_value_decimals(token_amount: FVal, token_decimals: int | None) -> int:
+    if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
+        token_decimals = 18
+
+    return (token_amount * (FVal(10) ** FVal(token_decimals))).to_int(exact=False)
+
+
+def token_normalized_value(
+        token_amount: int,
+        token: EvmToken | SolanaToken,
+) -> FVal:
+    return token_normalized_value_decimals(token_amount, token.decimals)
+
+
+def get_decimals(asset: CryptoAsset) -> int:
+    """
+    May raise:
+    - UnsupportedAsset if the given asset is not a native token or an ERC20 token
+    """
+    if asset in (A_ETH, A_XDAI, A_BSC_BNB):
+        return 18
+    try:
+        token = asset.resolve_to_evm_token()
+    except UnknownAsset as e:
+        raise UnsupportedAsset(asset.identifier) from e
+
+    return token.get_decimals()
+
+
+def asset_normalized_value(amount: int, asset: CryptoAsset) -> FVal:
+    """Takes in an amount and an asset and returns its normalized value
+
+    May raise:
+    - UnsupportedAsset if the given asset is not ETH or an ethereum token
+    """
+    return token_normalized_value_decimals(amount, get_decimals(asset))
+
+
+def asset_raw_value(amount: FVal, asset: CryptoAsset) -> int:
+    """Takes in an amount and an asset and returns its raw(wei equivalent) value
+
+    May raise:
+    - UnsupportedAsset if the given asset is not ETH or an ethereum token
+    """
+    return token_raw_value_decimals(amount, get_decimals(asset))
 
 
 CHAIN_TO_WRAPPED_TOKEN: Final = {

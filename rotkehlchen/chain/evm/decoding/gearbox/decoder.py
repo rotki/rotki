@@ -3,11 +3,8 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import token_normalized_value, token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
-    token_normalized_value_decimals,
-)
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
     DEPOSIT_TOPIC,

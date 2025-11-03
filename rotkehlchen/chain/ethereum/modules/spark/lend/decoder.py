@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.spark.constants import (
     SPARK_AIRDROP_DISTRIBUTOR,
     SPARK_STAKE_TOKEN,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, DEPOSIT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK

@@ -5,13 +5,13 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
-from rotkehlchen.chain.ethereum.utils import (
+from rotkehlchen.assets.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

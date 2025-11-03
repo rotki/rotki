@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.arbitrum_one.decoding.interfaces import ArbitrumDecoderInterface
 from rotkehlchen.chain.arbitrum_one.modules.gmx.constants import (
     CPT_GMX,
@@ -18,7 +19,6 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.constants import (
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,

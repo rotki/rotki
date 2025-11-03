@@ -9,8 +9,7 @@ from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address

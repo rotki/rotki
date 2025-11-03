@@ -1,5 +1,6 @@
 from typing import Any, Final
 
+from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.digixdao.constants import (
@@ -7,7 +8,6 @@ from rotkehlchen.chain.ethereum.modules.digixdao.constants import (
     CPT_DIGIXDAO,
     DIGIX_DGD_ETH_REFUND_CONTRACT,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,

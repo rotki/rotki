@@ -2,12 +2,12 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import (
+from rotkehlchen.assets.utils import (
     asset_normalized_value,
+    get_or_create_evm_token,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
     BURN_TOPIC,
     DEFAULT_TOKEN_DECIMALS,

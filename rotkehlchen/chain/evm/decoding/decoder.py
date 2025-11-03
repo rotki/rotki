@@ -11,12 +11,16 @@ import gevent
 from web3.exceptions import Web3Exception
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_evm_token, get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    get_evm_token,
+    get_or_create_evm_token,
+    token_normalized_value,
+)
 from rotkehlchen.chain.decoding.constants import CPT_GAS, MIN_LOGS_PROCESSED_TO_SLEEP
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import decode_safely, maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
 from rotkehlchen.chain.evm.decoding.balancer.v3.decoder import Balancerv3CommonDecoder

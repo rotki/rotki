@@ -16,7 +16,11 @@ from typing import (
 )
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    get_or_create_evm_token,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_token_price
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
@@ -25,7 +29,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V2,
     CPT_YEARN_V3,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE

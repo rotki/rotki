@@ -2,12 +2,9 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import token_normalized_value, token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
-    token_normalized_value_decimals,
-)
 from rotkehlchen.chain.evm.constants import (
     ADD_LIQUIDITY_DYNAMIC_ASSETS,
     DEFAULT_TOKEN_DECIMALS,

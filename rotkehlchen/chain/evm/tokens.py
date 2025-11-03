@@ -5,11 +5,11 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, TypeVar, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
-from rotkehlchen.balances.historical import HistoricalBalancesManager
-from rotkehlchen.chain.ethereum.utils import (
+from rotkehlchen.assets.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
