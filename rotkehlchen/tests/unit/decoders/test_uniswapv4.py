@@ -651,3 +651,64 @@ def test_decrease_liquidity(
         counterparty=CPT_UNISWAP_V4,
         address=pool_manager,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x21f2a9b5F420245d86E8Faa753022dA01946B13F']])
+def test_uniswapv4_swap_with_internal_fee_transaction(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Regression test for Uniswap V4 swap
+    where the ETH fee is sent via an internal transaction."""
+    tx_hash = deserialize_evm_tx_hash('0x400609566f1da2fa6f6e7306fb059f01c94357c1e46c46575095956a584c38e5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1762175964000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000205039'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=(spend_amount := ONE),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} USDC in Uniswap V4',
+        counterparty=CPT_UNISWAP_V4,
+        address=(universal_router := string_to_evm_address('0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32')),  # noqa: E501
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(receive_amount := '0.000270113488716386'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} ETH after a swap in Uniswap V4',
+        counterparty=CPT_UNISWAP_V4,
+        address=universal_router,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(fee_amount := '0.00000067528372179'),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as a Uniswap V4 fee',
+        counterparty=CPT_UNISWAP_V4,
+        address=universal_router,
+    )]
