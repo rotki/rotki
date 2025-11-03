@@ -23,6 +23,7 @@ defineOptions({
 });
 
 const search = defineModel<string>('search', { default: '', required: false });
+const selected = defineModel<string[] | undefined>('selected', { required: false });
 
 const props = withDefaults(defineProps<{
   balances: AssetBalanceWithPrice[];
@@ -38,6 +39,7 @@ const props = withDefaults(defineProps<{
   allBreakdown?: boolean;
   visibleColumns?: TableColumn[];
   showPerProtocol?: boolean;
+  selectionMode?: boolean;
 }>(), {
   allBreakdown: false,
   details: undefined,
@@ -45,6 +47,7 @@ const props = withDefaults(defineProps<{
   hideTotal: false,
   isLiability: false,
   loading: false,
+  selectionMode: false,
   showPerProtocol: false,
   stickyHeader: false,
   visibleColumns: () => [],
@@ -171,6 +174,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
 
 <template>
   <RuiDataTable
+    v-model="selected"
     v-model:sort.external="sort"
     :cols="tableHeaders"
     :rows="sorted"
@@ -239,7 +243,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       #body.append
     >
       <RowAppend
-        label-colspan="3"
+        :label-colspan="selectionMode ? 5 : 4"
         :label="t('common.total')"
         :is-mobile="false"
         :right-patch-colspan="2"

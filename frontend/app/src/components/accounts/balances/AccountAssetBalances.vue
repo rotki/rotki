@@ -14,10 +14,14 @@ interface AccountAssetBalancesProps {
   assets: AssetBalanceWithPrice[];
   title: string;
   flat?: boolean;
+  selectionMode?: boolean;
 }
+
+const selected = defineModel<string[] | undefined>('selected', { required: true });
 
 const props = withDefaults(defineProps<AccountAssetBalancesProps>(), {
   flat: false,
+  selectionMode: false,
 });
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
@@ -87,6 +91,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
       {{ title }}
     </template>
     <RuiDataTable
+      v-model="selected"
       v-model:sort="sort"
       :rows="assets"
       :cols="cols"
@@ -130,7 +135,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
       </template>
       <template #body.append>
         <RowAppend
-          label-colspan="3"
+          :label-colspan="selectionMode ? 5 : 4"
           :label="t('common.total')"
           class="[&>td]:p-4"
         >
