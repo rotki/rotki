@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
+* :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
 * :bug:`10851` Users will be able to sort the account balance table by assets again.
 * :bug:`10853` Compound V3 native token deposit/withdrawals will be properly decoded with associated balances properly detected.
