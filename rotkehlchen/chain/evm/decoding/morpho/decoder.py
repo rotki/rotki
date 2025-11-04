@@ -16,7 +16,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -29,7 +28,7 @@ from .constants import CPT_MORPHO
 from .utils import query_morpho_reward_distributors, query_morpho_vaults
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset, EvmToken
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -50,8 +49,11 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             msg_aggregator: 'MessagesAggregator',
             bundlers: set['ChecksumEvmAddress'],
             adapters: set['ChecksumEvmAddress'],
-            weth: 'Asset',
     ) -> None:
+        """Initialize the Morpho common decoder.
+        For bundler and adapter addresses on each chain see
+        https://docs.morpho.org/get-started/resources/addresses/
+        """
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -61,7 +63,6 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         self.bundlers = bundlers
         self.adapters = adapters
         self.rewards_distributors: list[ChecksumEvmAddress] = []
-        self.weth = weth
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
@@ -150,18 +151,21 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return [], None
 
         vault_token, underlying_token, shares_amount, assets_amount = tokens_and_amounts
-        spend_events, spent_amount, receive_event, is_weth_vault = [], ZERO, None, False
+        spend_events, spent_amount, receive_event, is_wrapped_native_vault = [], ZERO, None, False
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 (
                     event.asset == underlying_token or
-                    (is_weth_vault := (event.asset == A_ETH and underlying_token == self.weth))  # WETH vaults can have an ETH send event  # noqa: E501
+                    (is_wrapped_native_vault := (
+                        event.asset == self.node_inquirer.native_token and
+                        underlying_token == self.node_inquirer.wrapped_native_token
+                    ))  # wrapped native vaults can have a native token send event
                 ) and
                 (
                     event.amount == assets_amount or
-                    (is_weth_vault and event.address in self.bundlers)
+                    (is_wrapped_native_vault and event.address in self.bundlers)
                 ) and
                 self.base.is_tracked(bytes_to_address(context.tx_log.topics[2]))  # owner address should be tracked  # noqa: E501
             ):
@@ -184,12 +188,12 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_MORPHO
                 receive_event = event
 
-            if (is_weth_vault is False and len(spend_events) == 1) and receive_event is not None:
+            if (is_wrapped_native_vault is False and len(spend_events) == 1) and receive_event is not None:  # noqa: E501
                 return spend_events, receive_event
 
         if (
             receive_event is not None and
-            (len(spend_events) == 0 or (is_weth_vault and spent_amount != assets_amount))
+            (len(spend_events) == 0 or (is_wrapped_native_vault and spent_amount != assets_amount))
         ):  # Create a deposit event for funds moved from another vault if the spend events don't cover the deposited amount.  # noqa: E501
             deposit_event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
@@ -237,8 +241,10 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 (
-                    event.asset == underlying_token or
-                    (event.asset == A_ETH and underlying_token == self.weth)  # WETH vaults can have an ETH receive event  # noqa: E501
+                    event.asset == underlying_token or (
+                        event.asset == self.node_inquirer.native_token and
+                        underlying_token == self.node_inquirer.wrapped_native_token
+                    )  # wrapped native vaults can have a native token send event
                 ) and
                 event.amount == assets_amount
             ):
