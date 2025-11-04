@@ -198,6 +198,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'compound-v3',
         'dxdaomesa',
         '1inch-v1',
+        'sushiswap',
         'sushiswap-v2',
         'weth',
         'yearn-v1',
