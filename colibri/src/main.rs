@@ -2,7 +2,7 @@ use crate::blockchain::EvmInquirerManager;
 use axum::{http::Request, routing, Router};
 use database::DBHandler;
 use glob::Pattern;
-use http::{request::Parts as RequestParts, HeaderValue};
+use axum::http::{request::Parts as RequestParts, HeaderValue};
 use log::{error, info};
 use std::collections::HashSet;
 use std::net::SocketAddr;
