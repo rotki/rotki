@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 # For logging
 log = "0.4.22"
-simplelog = "0.12.2"
 # For the asynchronous Rest API
 reqwest = { version = "0.12.24", features = ["json"]}
 tokio = { version = "1.44.2", features = ["rt-multi-thread", "fs"]}
@@ -26,7 +25,6 @@ rusqlite = { version = "0.37.0", features = ["bundled", "bundled-sqlcipher-vendo
 async-sqlite = {version = "0.5.3" }
 # for cors and network
 tower-http = {version = "0.6.2", features = ["cors", "trace"]}
-http = "1.0"
 # for detailed logs when requests happen. Tracing in maintained by the tokio team and it helps
 # to log events in multithread environments. It is used by axum (also by tokio) to signal when
 # a request happens and keeps information about it. We use tracing to extract those events and
