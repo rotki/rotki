@@ -1,13 +1,20 @@
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
+import { apiUrls } from '@/services/api-urls';
 import { setupTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validAccountOperationStatus, validAuthorizedStatus, validStatus } from '@/services/utils';
-import { AccountSession, type CreateAccountPayload, type LoginCredentials } from '@/types/login';
+import {
+  AccountSession,
+  type BasicLoginCredentials,
+  type CreateAccountPayload,
+  type LoginCredentials,
+} from '@/types/login';
 
 interface UseUserApiReturn {
   createAccount: (payload: CreateAccountPayload) => Promise<PendingTask>;
   login: (credentials: LoginCredentials) => Promise<PendingTask>;
+  colibriLogin: (credentials: BasicLoginCredentials) => Promise<boolean>;
   checkIfLogged: (username: string) => Promise<boolean>;
   loggedUsers: () => Promise<string[]>;
   getUserProfiles: () => Promise<string[]>;
@@ -39,6 +46,19 @@ export function useUsersApi(): UseUserApiReturn {
     return loggedUsers;
   };
 
+  const colibriLogout = async (): Promise<boolean> => {
+    const response = await api.instance.patch<ActionResult<boolean>>(
+      '/user/logout',
+      undefined,
+      {
+        baseURL: apiUrls.colibriApiUrl,
+        validateStatus: validAccountOperationStatus,
+      },
+    );
+
+    return response.status === 409 ? true : handleResponse(response);
+  };
+
   const logout = async (username: string): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       `/users/${username}`,
@@ -50,7 +70,11 @@ export function useUsersApi(): UseUserApiReturn {
 
     const success = response.status === 409 ? true : handleResponse(response);
     api.cancel();
-    return success;
+
+    if (success) {
+      return colibriLogout();
+    }
+    return false;
   };
 
   const createAccount = async (payload: CreateAccountPayload): Promise<PendingTask> => {
@@ -91,6 +115,21 @@ export function useUsersApi(): UseUserApiReturn {
     return handleResponse(response);
   };
 
+  const colibriLogin = async (payload: BasicLoginCredentials): Promise<boolean> => {
+    const response = await api.instance.post<ActionResult<boolean>>(
+      '/user',
+      snakeCaseTransformer({
+        payload,
+      }),
+      {
+        baseURL: apiUrls.colibriApiUrl,
+        validateStatus: validAccountOperationStatus,
+      },
+    );
+
+    return handleResponse(response);
+  };
+
   const changeUserPassword = async (username: string, currentPassword: string, newPassword: string): Promise<true> => {
     const response = await api.instance.patch<ActionResult<true>>(
       `/users/${username}/password`,
@@ -110,6 +149,7 @@ export function useUsersApi(): UseUserApiReturn {
   return {
     changeUserPassword,
     checkIfLogged,
+    colibriLogin,
     createAccount,
     getUserProfiles,
     loggedUsers,

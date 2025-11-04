@@ -1,6 +1,7 @@
 import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
 import type { TaskMeta } from '@/types/task';
+import { objectPick } from '@vueuse/shared';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
@@ -41,7 +42,7 @@ export function useLogin(): UseLoginReturn {
   const { start } = useMonitorStore();
 
   const { initialize } = useSessionSettings();
-  const { checkIfLogged, createAccount: callCreatAccount, login: callLogin } = useUsersApi();
+  const { checkIfLogged, colibriLogin, createAccount: callCreatAccount, login: callLogin } = useUsersApi();
   const { getRawSettings, setSettings } = useSettingsApi();
   const { getExchanges } = useExchangeApi();
 
@@ -152,6 +153,8 @@ export function useLogin(): UseLoginReturn {
         }, TaskMeta>(taskId, taskType, {
           title: 'login in',
         });
+
+        await colibriLogin(objectPick(credentials, ['username', 'password']));
 
         result.settings.frontendSettings = await migrateAndSaveSettings(result.settings.frontendSettings);
 
