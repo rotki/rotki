@@ -63,7 +63,7 @@ from rotkehlchen.chain.evm.decoding.quickswap.v3.utils import get_quickswap_v3_p
 from rotkehlchen.chain.evm.decoding.quickswap.v4.utils import get_quickswap_v4_position_price
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3, CPT_UNISWAP_V4
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
-from rotkehlchen.chain.evm.decoding.uniswap.v4.utils import get_uniswap_v4_position_price
+from rotkehlchen.chain.evm.decoding.uniswap.v4.price import get_uniswap_v4_position_price
 from rotkehlchen.chain.evm.protocol_constants import (
     EVM_PROTOCOLS_WITH_PRICE_LOGIC,
     LP_TOKEN_AS_POOL_PROTOCOLS,

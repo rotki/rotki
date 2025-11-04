@@ -21,7 +21,7 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
     A_ETH2,
-    A_POLYGON_POS_MATIC,
+    A_POL,
     A_USD,
     A_USDC,
 )
@@ -371,7 +371,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             write_cursor=write_cursor,
             address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
             blockchain=SupportedBlockchain.POLYGON_POS,
-            tokens=[A_POLYGON_POS_MATIC],
+            tokens=[A_POL],
         )
         random_tx_hash_in_cache = str(make_evm_tx_hash())
 

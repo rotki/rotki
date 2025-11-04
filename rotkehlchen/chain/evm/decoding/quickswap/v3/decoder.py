@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from eth_typing.abi import ABI
 
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V3
@@ -66,7 +65,6 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
         self.nft_manager_abi = nft_manager_abi
         self.counterparty = counterparty
         self.version_string = version_string
-        self.wrapped_native_currency = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
 
     def _decode_deposits_and_withdrawals(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == QUICKSWAP_INCREASE_LIQUIDITY_TOPIC:
@@ -110,7 +108,6 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
             amount1_raw=amount1_raw,
             position_id=position_id,
             evm_inquirer=self.node_inquirer,
-            wrapped_native_currency=self.wrapped_native_currency,
         )
 
     def _lp_post_decoding(

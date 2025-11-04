@@ -315,21 +315,26 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 event.event_type in {HistoryEventType.SPEND, HistoryEventType.RECEIVE} and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.amount == collateral_amount and
-                event.asset == collateral_asset and
-                event.address == compound_token.evm_address
+                (event.asset == collateral_asset or (
+                    event.asset == self.node_inquirer.native_token and
+                    collateral_asset == self.node_inquirer.wrapped_native_token
+                )) and
+                event.address in (compound_token.evm_address, self.bulker_address)
             ):
                 transfer_event = event
                 event.counterparty = CPT_COMPOUND_V3
+                event.address = compound_token.evm_address  # used to query balances later
+                asset_symbol = event.asset.resolve_to_asset_with_symbol().symbol
                 if event.event_type == HistoryEventType.SPEND:
                     notes_action = 'Enable'
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                    event.notes = f'Deposit {collateral_amount} {collateral_asset.symbol} into Compound v3'  # noqa: E501
+                    event.notes = f'Deposit {collateral_amount} {asset_symbol} into Compound v3'
                 else:
                     notes_action = 'Disable'
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                    event.notes = f'Withdraw {collateral_amount} {collateral_asset.symbol} from Compound v3'  # noqa: E501
+                    event.notes = f'Withdraw {collateral_amount} {asset_symbol} from Compound v3'
 
                 collateral_event = self.base.make_event_next_index(
                     tx_ref=context.transaction.tx_hash,
@@ -340,7 +345,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                     asset=event.asset,
                     location_label=event.location_label,
                     counterparty=event.counterparty,
-                    notes=f'{notes_action} {collateral_amount} {collateral_asset.symbol} as collateral on Compound v3',  # noqa: E501
+                    notes=f'{notes_action} {collateral_amount} {asset_symbol} as collateral on Compound v3',  # noqa: E501
                     address=event.address,
                 )
                 break

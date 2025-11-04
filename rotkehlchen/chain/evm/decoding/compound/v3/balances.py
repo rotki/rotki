@@ -69,20 +69,23 @@ class Compoundv3Balances(ProtocolWithBalance):
         """Fetch the unique collateral tokens we need to query the comet contracts for"""
         unique_collaterals: dict[ChecksumEvmAddress, set[CompoundArguments]] = defaultdict(set)
         for user_address, events in self.addresses_with_activity(
-            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},
+            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
         ).items():
             for event in events:
                 if event.address is None:
                     continue
 
-                try:
-                    compound_token = event.asset.resolve_to_evm_token()
-                except (UnknownAsset, WrongAssetType):
-                    log.warning(
-                        'Skipping compound v3 supply event during balance query since the asset '
-                        'is not an EVM token so not needed in COMET query',
-                    )
-                    continue
+                if event.asset == self.evm_inquirer.native_token:
+                    compound_token = self.evm_inquirer.wrapped_native_token
+                else:
+                    try:
+                        compound_token = event.asset.resolve_to_evm_token()
+                    except (UnknownAsset, WrongAssetType):
+                        log.warning(
+                            'Skipping compound v3 supply event during balance query since '
+                            'the asset is not an EVM token so not needed in COMET query',
+                        )
+                        continue
 
                 unique_collaterals[event.address].add(
                     CompoundArguments(

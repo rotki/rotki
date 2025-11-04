@@ -4,7 +4,11 @@ Changelog
 
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+* :bug:`10851` Users will be able to sort the account balance table by assets again.
+* :bug:`10853` Compound V3 native token deposit/withdrawals will be properly decoded with associated balances properly detected.
+* :bug:`-` 1inch limit order swaps will now be decoded correctly.
 * :bug:`10849` Monerium bridge transactions that involve Arbitrum or Scroll will be decoded properly.
+* :bug:`-` Uniswap V4 swaps with ETH fees paid through internal transactions will now be properly decoded.
 
 * :release:`1.41.0 <2025-10-30>`
 * :feature:`10604` Add support for Philippine Peso (PHP) as a fiat currency.

@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.rainbow.constants import (
     RAINBOW_ROUTER_CONTRACT,
 )
 from rotkehlchen.chain.evm.transactions import EvmTransactions
-from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_OP, A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_OP, A_POL
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -500,7 +500,7 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         location=Location.POLYGON_POS,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(gas_fees),
         location_label=user_address,
         notes=f'Burn {gas_fees} POL for gas',
@@ -511,7 +511,7 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         event_subtype=HistoryEventSubType.SPEND,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(swap_amount),
         location_label=user_address,
         notes=f'Swap {swap_amount} POL in Rainbow',
@@ -535,7 +535,7 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         timestamp=timestamp,
         location=Location.POLYGON_POS,
         event_subtype=HistoryEventSubType.FEE,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(fee_amount),
         location_label=user_address,
         notes=f'Spend {fee_amount} POL as Rainbow fee',

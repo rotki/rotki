@@ -84,16 +84,12 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer | BinanceSCInquirer',  # noqa: E501
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            native_asset: Asset,
-            wrapped_native_asset: Asset,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.native_asset = native_asset.resolve_to_crypto_asset()
-        self.wrapped_native_asset = wrapped_native_asset.resolve_to_evm_token()
         self.settlement_address = GPV2_SETTLEMENT_ADDRESS
         self.native_asset_flow_addresses = NATIVE_ASSET_FLOW_ADDRESSES
         self.cowswap_api = CowswapAPI(
@@ -112,29 +108,29 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             for event in context.decoded_events:
                 if (
                     event.event_type == HistoryEventType.SPEND and
-                    event.asset == self.native_asset and
+                    event.asset == self.node_inquirer.native_token and
                     event.address in self.native_asset_flow_addresses
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.PLACE_ORDER
-                    event.notes = f'Deposit {event.amount} {self.native_asset.symbol} to swap it for {target_token.symbol} in cowswap'  # noqa: E501
+                    event.notes = f'Deposit {event.amount} {self.node_inquirer.native_token.symbol} to swap it for {target_token.symbol} in cowswap'  # noqa: E501
                     event.counterparty = CPT_COWSWAP
 
         elif context.tx_log.topics[0] in (INVALIDATE_NATIVE_ASSET_ORDER_SIGNATURE, REFUND_NATIVE_ASSET_ORDER_SIGNATURE):  # noqa: E501
             for event in context.decoded_events:
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
-                    event.asset == self.native_asset and
+                    event.asset == self.node_inquirer.native_token and
                     event.address in self.native_asset_flow_addresses
                 ):
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.counterparty = CPT_COWSWAP
                     if context.tx_log.topics[0] == INVALIDATE_NATIVE_ASSET_ORDER_SIGNATURE:
                         event.event_subtype = HistoryEventSubType.CANCEL_ORDER
-                        event.notes = f'Invalidate an order that intended to swap {event.amount} {self.native_asset.symbol} in cowswap'  # noqa: E501
+                        event.notes = f'Invalidate an order that intended to swap {event.amount} {self.node_inquirer.native_token.symbol} in cowswap'  # noqa: E501
                     else:  # Refund
                         event.event_subtype = HistoryEventSubType.REFUND
-                        event.notes = f'Refund {event.amount} unused {self.native_asset.symbol} from cowswap'  # noqa: E501
+                        event.notes = f'Refund {event.amount} unused {self.node_inquirer.native_token.symbol} from cowswap'  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -166,16 +162,16 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             order_uid = tx_log.data[224:280].hex()
 
             if (
-                from_token_address == self.wrapped_native_asset.evm_address and
+                from_token_address == self.node_inquirer.wrapped_native_token.evm_address and
                 owner_address in self.native_asset_flow_addresses
             ):
-                from_asset = self.native_asset  # native asset swaps are made by eth flow contract in cowswap  # noqa: E501
+                from_asset = self.node_inquirer.native_token  # native asset swaps are made by eth flow contract in cowswap  # noqa: E501
             else:  # need get_or_create_evm_token because token may not exist if there was a remote error the first time that the token appeared.  # noqa: E501
                 from_asset = self.base.get_or_create_evm_token(
                     address=from_token_address,
                     encounter=tx_info,
                 )
-            to_asset = self.native_asset if to_token_address == ETH_SPECIAL_ADDRESS else self.base.get_or_create_evm_token(  # noqa: E501
+            to_asset = self.node_inquirer.native_token if to_token_address == ETH_SPECIAL_ADDRESS else self.base.get_or_create_evm_token(  # noqa: E501
                 address=to_token_address,
                 encounter=tx_info,
             )
@@ -235,7 +231,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             if receive_event is None:
                 continue
 
-            if swap_data.from_asset != self.native_asset:
+            if swap_data.from_asset != self.node_inquirer.native_token:
                 # If a token is spent, there has to be an event for that.
                 spend_event = related_transfer_events.get((EventDirection.OUT, swap_data.from_asset, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
                 if spend_event is None:
@@ -363,8 +359,6 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer',
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            native_asset: Asset,
-            wrapped_native_asset: Asset,
             vcow_token: Asset,
             cow_token: Asset,
             gno_token: Asset,
@@ -373,8 +367,6 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_asset=native_asset,
-            wrapped_native_asset=wrapped_native_asset,
         )
         self.vcow_token = vcow_token.resolve_to_evm_token()
         self.cow_token = cow_token.resolve_to_evm_token()

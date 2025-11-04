@@ -16,10 +16,10 @@ from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import (
     A_ETH,
     A_ETH2,
+    A_ETH_POL,
     A_EUR,
     A_KFEE,
     A_POL,
-    A_POLYGON_POS_MATIC,
     A_USD,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -196,9 +196,9 @@ class PriceHistorian:
             )
             return Price(usd_price * usd_to_target_price) if usd_to_target_price is not None else None  # noqa: E501
 
-        if from_asset == A_POLYGON_POS_MATIC and timestamp > POLYGON_POS_POL_HARDFORK:
+        if from_asset == A_POL and timestamp > POLYGON_POS_POL_HARDFORK:
             return PriceHistorian._get_cached_price_or_query(
-                from_asset=A_POL,
+                from_asset=A_ETH_POL,
                 to_asset=to_asset,
                 timestamp=timestamp,
                 max_seconds_distance=max_seconds_distance,

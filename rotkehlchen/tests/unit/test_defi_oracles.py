@@ -22,7 +22,7 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_LINK,
     A_OPTIMISM_ETH,
-    A_POLYGON_POS_MATIC,
+    A_POL,
     A_USDC,
     A_WETH,
 )
@@ -138,7 +138,7 @@ def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
 
     # v3 historical on polygon
     assert inquirer_defi._uniswapv3.query_historical_price(
-        from_asset=A_POLYGON_POS_MATIC,
+        from_asset=A_POL,
         to_asset=A_POLYGON_USDC,
         timestamp=Timestamp(1725944400),
     ) == Price(FVal('0.3785896756190174'))

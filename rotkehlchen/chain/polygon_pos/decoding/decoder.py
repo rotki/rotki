@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.polygon_pos.modules.monerium.constants import V1_TO_V2_MONERIUM_MAPPINGS
 from rotkehlchen.chain.polygon_pos.tokens import POLYGON_MONERIUM_LEGACY_ADDRESSES
-from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_POL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -34,7 +34,7 @@ class PolygonPOSTransactionDecoder(EVMTransactionDecoder):
             database=database,
             evm_inquirer=polygon_pos_inquirer,
             transactions=transactions,
-            value_asset=A_POLYGON_POS_MATIC.resolve_to_asset_with_oracles(),
+            value_asset=A_POL.resolve_to_asset_with_oracles(),
             event_rules=[],
             misc_counterparties=[],
             base_tools=BaseEvmDecoderTools(

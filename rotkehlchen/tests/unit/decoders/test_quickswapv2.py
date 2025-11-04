@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V2
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_ETH, A_POL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -35,7 +35,7 @@ def test_swap(
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(gas_amount := '0.01856947464736948'),
         location_label=(user_address := polygon_pos_accounts[0]),
         notes=f'Burn {gas_amount} POL for gas',
@@ -95,7 +95,7 @@ def test_add_liquidity(
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(gas_amount := '0.090286647653894201'),
         location_label=(user_address := polygon_pos_accounts[0]),
         notes=f'Burn {gas_amount} POL for gas',

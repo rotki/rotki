@@ -338,7 +338,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 earned_event=earned_event,
                 match_fn=lambda primary, secondary: (
                     (underlying_token := get_single_underlying_token(secondary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
-                    (underlying_token == primary.asset or (underlying_token == self.wrapped_native_token and primary.asset == self.node_inquirer.native_token))  # noqa: E501
+                    (underlying_token == primary.asset or (underlying_token == self.node_inquirer.wrapped_native_token and primary.asset == self.node_inquirer.native_token))  # noqa: E501
                 ),
             )
 
@@ -351,7 +351,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 earned_event=earned_event,
                 match_fn=lambda primary, secondary: (  # use symbols due to Monerium and its different versions  # noqa: E501
                     (underlying_token := get_single_underlying_token(primary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
-                    (underlying_token.symbol == secondary.asset.resolve_to_crypto_asset().symbol or (underlying_token == self.wrapped_native_token and secondary.asset == self.node_inquirer.native_token))  # noqa: E501
+                    (underlying_token.symbol == secondary.asset.resolve_to_crypto_asset().symbol or (underlying_token == self.node_inquirer.wrapped_native_token and secondary.asset == self.node_inquirer.native_token))  # noqa: E501
                 ),
             )
 

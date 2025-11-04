@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from eth_abi import decode as decode_abi
 
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, asset_normalized_value
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -69,7 +69,6 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                 cache_type=CacheType.BALANCER_V3_POOLS,
             ),
         )
-        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain]
 
     def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         # no-op implementation of abstract method from ReloadablePoolsAndGaugesDecoderMixin.
@@ -142,7 +141,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                 amount=amount_raw,
                 asset=(token := self.base.get_or_create_evm_asset(deserialize_evm_address(token_address))),  # noqa: E501
             )
-            if token == self.wrapped_native_token:
+            if token == self.node_inquirer.wrapped_native_token:
                 for event in context.decoded_events:
                     if (
                             event.event_type == from_event_type and
@@ -227,9 +226,9 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             # wrapping/unwrapping operations can happen before swaps, so using individual
             # swap log amounts would miss wrapped token portions and only capture direct
             # swap amounts, leading to incomplete event matching across the full transaction flow
-            if (token_out := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[2]))) == self.wrapped_native_token:  # noqa: E501
+            if (token_out := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[2]))) == self.node_inquirer.wrapped_native_token:  # noqa: E501
                 out_assets.add(self.node_inquirer.native_token)
-            if (token_in := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[3]))) == self.wrapped_native_token:  # noqa: E501
+            if (token_in := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[3]))) == self.node_inquirer.wrapped_native_token:  # noqa: E501
                 in_assets.add(self.node_inquirer.native_token)
 
             in_assets.add(token_in)

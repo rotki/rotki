@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -20,7 +22,7 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
     A_LUSD,
-    A_POLYGON_POS_MATIC,
+    A_POL,
     A_USDC,
     A_USDT,
     A_WETH,
@@ -34,6 +36,11 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.constants import A_CHI, A_PAN
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
+
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
@@ -592,7 +599,7 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal('0.0579902'),
             location_label=user_addy,
             notes='Burn 0.0579902 POL for gas',
@@ -891,7 +898,7 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas),
             location_label=user,
             notes=f'Burn {gas} POL for gas',
@@ -1038,4 +1045,53 @@ def test_1inch_swap_via_pancake(arbitrum_one_inquirer, arbitrum_one_accounts):
         notes=f'Receive {amount_in} ETH as a result of a {CPT_ONEINCH_V6} swap',
         address=ONEINCH_V6_ROUTER,
         counterparty=CPT_ONEINCH_V6,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_limit_order_swap(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list['ChecksumEvmAddress'],
+):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x55110fd84a901ec4a6650bb3069ed3465f5a37f09060dbbcb6d2195d4114f72c')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=10,
+        timestamp=(timestamp := TimestampMS(1761913740000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=(a_gno := Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb')),
+        amount=(approval_amount := FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935')),  # noqa: E501
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Set GNO spending approval of {user_address} by 0x111111125421cA6dc452d289314280a0f8842A65 to {approval_amount}',  # noqa: E501
+        address=string_to_evm_address('0x111111125421cA6dc452d289314280a0f8842A65'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=11,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=a_gno,
+        amount=(spend_amount := FVal('0.5')),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} GNO in a 1inch limit order',
+        counterparty=CPT_ONEINCH_V6,
+        address=string_to_evm_address('0x3Ea8d8E835fA597D9AB64E10f4fA33EC9Bc261f9'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=12,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+        amount=(receive_amount := FVal('56.115414177458869692')),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} EURe as the result of a 1inch limit order',
+        counterparty=CPT_ONEINCH_V6,
+        address=string_to_evm_address('0x3Ea8d8E835fA597D9AB64E10f4fA33EC9Bc261f9'),
     )]

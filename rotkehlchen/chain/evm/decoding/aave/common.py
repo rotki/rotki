@@ -4,11 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import (
-    CHAIN_TO_WRAPPED_TOKEN,
-    asset_normalized_value,
-    get_single_underlying_token,
-)
+from rotkehlchen.assets.utils import asset_normalized_value, get_single_underlying_token
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -67,7 +63,6 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
         self.repay_signature = repay_signature
         self.native_gateways = native_gateways
         self.label = label
-        self.wrapped_native_token = CHAIN_TO_WRAPPED_TOKEN[evm_inquirer.blockchain].resolve_to_evm_token()  # noqa: E501
         EvmDecoderInterface.__init__(
             self,
             evm_inquirer=evm_inquirer,
@@ -176,7 +171,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
                     self._token_is_aave_contract(event.asset) and
                     (
                         (underlying_token := get_single_underlying_token(event.asset.resolve_to_evm_token())) is not None and  # noqa: E501
-                        (underlying_token == token or (user in self.native_gateways and underlying_token == self.wrapped_native_token))  # noqa: E501
+                        (underlying_token == token or (user in self.native_gateways and underlying_token == self.node_inquirer.wrapped_native_token))  # noqa: E501
                     )
                 ):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED

@@ -15,7 +15,7 @@ from rotkehlchen.chain.optimism.modules.compound.v3.constants import (
     COMPOUND_BULKER_ADDRESS as OPTIMISM_BULKER_ADDRESS,
 )
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_WBTC
+from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POL, A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -26,6 +26,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -290,7 +291,7 @@ def test_polygon_pos_withdraw(polygon_pos_inquirer, polygon_pos_accounts):
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas_fees),
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {gas_fees} POL for gas',
@@ -561,3 +562,53 @@ def test_arbitrum_one_withdraw_eth_with_unwrapping(arbitrum_one_inquirer, arbitr
             address=ARBITRUM_BULKER_ADDRESS,
         )]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xD413dCf1b80E10a8Ba7Cab329DA7545cCc827319']])
+def test_deposit_native_eth(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Check that depositing native ETH works correctly."""
+    tx_hash = deserialize_evm_tx_hash('0xde4dcd5588a4f2e2c3a6f24b5386cf289aad5f3b7a3f99d5411ca815dccc9fa3')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1761848615000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_fees := '0.000082791232942678'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=A_ETH,
+        amount=FVal(deposit_amount := '0.01'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} ETH into Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=(compound_contract := string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3')),  # noqa: E501
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Enable {deposit_amount} ETH as collateral on Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=compound_contract,
+    )]

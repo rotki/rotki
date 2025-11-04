@@ -155,7 +155,6 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
         amount1_raw: int,
         position_id: int,
         evm_inquirer: 'EvmNodeInquirer',
-        wrapped_native_currency: Asset,
 ) -> EvmDecodingOutput:
     """This method decodes a Uniswap V3 like LP liquidity increase or decrease.
 
@@ -204,7 +203,7 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
             if found_events[idx]:
                 continue  # Skip if we already found an event for this token
 
-            if resolved_asset_amount.asset == wrapped_native_currency and event.asset == evm_inquirer.native_token:  # noqa: E501
+            if resolved_asset_amount.asset == evm_inquirer.wrapped_native_token and event.asset == evm_inquirer.native_token:  # noqa: E501
                 maybe_event_asset_symbol = event.asset.symbol_or_name()
             else:
                 if event.asset != resolved_asset_amount.asset:

@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
-from rotkehlchen.constants.assets import A_BSC_BNB, A_WBNB
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
@@ -21,6 +20,4 @@ class CowswapDecoder(CowswapCommonDecoder):
             evm_inquirer=binance_sc_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_asset=A_BSC_BNB,
-            wrapped_native_asset=A_WBNB,
         )

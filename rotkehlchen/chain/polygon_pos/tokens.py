@@ -4,7 +4,7 @@ from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
     POLYGON_MONERIUM_LEGACY_ADDRESSES,
 )
-from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_POL
 
 if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress
@@ -21,5 +21,5 @@ class PolygonPOSTokens(EvmTokens):
         return (
                 POLYGON_MONERIUM_LEGACY_ADDRESSES |
                 super()._per_chain_token_exceptions() |
-                {A_POLYGON_POS_MATIC.resolve_to_evm_token().evm_address}
+                {A_POL.resolve_to_evm_token().evm_address}
         )

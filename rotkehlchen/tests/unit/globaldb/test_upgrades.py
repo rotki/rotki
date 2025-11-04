@@ -1547,7 +1547,7 @@ def test_foreign_keys_enabled_without_assets_update(tmp_path, messages_aggregato
             cursor.execute('PRAGMA journal_mode;')
             assert cursor.fetchone()[0].lower() == 'delete'
 
-        observed: dict[str, object] = {}
+        observed = {}
 
         def fake_upgrade_step(connection: DBConnection, progress_handler: Any) -> None:
             with connection.read_ctx() as upgrade_cursor:
