@@ -8,7 +8,7 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_ETH2,
     A_KSM,
-    A_POLYGON_POS_MATIC,
+    A_POL,
     A_SOL,
     A_XDAI,
 )
@@ -26,7 +26,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.AVALANCHE: A_AVAX,
         SupportedBlockchain.POLKADOT: A_DOT,
         SupportedBlockchain.OPTIMISM: A_ETH,
-        SupportedBlockchain.POLYGON_POS: A_POLYGON_POS_MATIC,
+        SupportedBlockchain.POLYGON_POS: A_POL,
         SupportedBlockchain.ARBITRUM_ONE: A_ETH,
         SupportedBlockchain.BASE: A_ETH,
         SupportedBlockchain.GNOSIS: A_XDAI,

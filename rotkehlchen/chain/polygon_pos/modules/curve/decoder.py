@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
 )
 from rotkehlchen.chain.evm.decoding.curve.decoder import CurveCommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_POL
 
 from .constants import AAVE_POOLS
 
@@ -29,7 +29,7 @@ class CurveDecoder(CurveCommonDecoder):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_currency=A_POLYGON_POS_MATIC,
+            native_currency=A_POL,
             aave_pools=AAVE_POOLS,
             curve_deposit_contracts={
                 DEPOSIT_AND_STAKE_ZAP,

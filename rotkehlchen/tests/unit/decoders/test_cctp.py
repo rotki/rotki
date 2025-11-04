@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.cctp.constants import CPT_CCTP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.polygon_pos.modules.cctp.constants import USDC_IDENTIFIER_POLYGON
-from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC, A_USDC
+from rotkehlchen.constants.assets import A_ETH, A_POL, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -124,7 +124,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas),
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {gas} POL for gas',

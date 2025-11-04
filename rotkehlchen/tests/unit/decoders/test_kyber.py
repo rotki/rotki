@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.decoding.kyber.constants import CPT_KYBER
 from rotkehlchen.chain.evm.decoding.kyber.decoder import KYBER_AGGREGATOR_CONTRACT
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ARB, A_CRV, A_ETH, A_POLYGON_POS_MATIC, A_USDC
+from rotkehlchen.constants.assets import A_ARB, A_CRV, A_ETH, A_POL, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -381,7 +381,7 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas),
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {gas} POL for gas',

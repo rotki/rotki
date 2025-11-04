@@ -15,7 +15,7 @@ from rotkehlchen.chain.optimism.modules.compound.v3.constants import (
     COMPOUND_BULKER_ADDRESS as OPTIMISM_BULKER_ADDRESS,
 )
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_WBTC
+from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POL, A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -291,7 +291,7 @@ def test_polygon_pos_withdraw(polygon_pos_inquirer, polygon_pos_accounts):
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas_fees),
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {gas_fees} POL for gas',

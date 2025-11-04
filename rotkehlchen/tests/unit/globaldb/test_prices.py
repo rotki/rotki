@@ -5,8 +5,8 @@ from rotkehlchen.constants.assets import (
     A_BAL,
     A_BTC,
     A_ETH,
+    A_ETH_POL,
     A_POL,
-    A_POLYGON_POS_MATIC,
     A_USD,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -152,14 +152,14 @@ def test_matic_pol_hardforked_price(price_historian: PriceHistorian):
     before_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK - 1)
     after_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK + 1)
     assert GlobalDBHandler.add_single_historical_price(HistoricalPrice(  # set MATIC price ZERO
-        from_asset=A_POLYGON_POS_MATIC,
+        from_asset=A_POL,
         to_asset=A_USD,
         source=HistoricalPriceOracle.MANUAL,
         timestamp=before_hardfork,
         price=Price(ZERO),
     ))
     assert GlobalDBHandler.add_single_historical_price(HistoricalPrice(  # set POL price ONE
-        from_asset=A_POL,
+        from_asset=A_ETH_POL,
         to_asset=A_USD,
         source=HistoricalPriceOracle.MANUAL,
         timestamp=after_hardfork,
@@ -167,12 +167,12 @@ def test_matic_pol_hardforked_price(price_historian: PriceHistorian):
     ))
 
     assert price_historian.query_historical_price(
-        from_asset=A_POLYGON_POS_MATIC,
+        from_asset=A_POL,
         to_asset=A_USD,
         timestamp=before_hardfork,
     ) == Price(ZERO)  # MATIC price is ZERO
     assert price_historian.query_historical_price(
-        from_asset=A_POLYGON_POS_MATIC,  # query MATIC after hardfork
+        from_asset=A_POL,  # query MATIC after hardfork
         to_asset=A_USD,
         timestamp=after_hardfork,
     ) == Price(ONE)  # POL price is ONE
