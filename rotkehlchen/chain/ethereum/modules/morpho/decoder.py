@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.morpho.decoder import MorphoCommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_WETH
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -36,6 +35,12 @@ class MorphoDecoder(MorphoCommonDecoder):
                 string_to_evm_address('0x4A6c312ec70E8747a587EE860a0353cd42Be0aE0'),  # GeneralAdapter1  # noqa: E501
                 string_to_evm_address('0xf83D17dFE160597b19e4FdD8ea61A23e9a87F962'),  # ERC20WrapperAdapter  # noqa: E501
                 string_to_evm_address('0x03b5259Bd204BfD4A616E5B79b0B786d90c6C38f'),  # ParaswapAdapter  # noqa: E501
+                string_to_evm_address('0xb09e40EbE31b738fbf20289270a397118707D475'),  # AaveV3MigrationAdapter “Core”  # noqa: E501
+                string_to_evm_address('0x2CC8d502a65824B4cF9A58DB03490bA024BDB806'),  # AaveV3MigrationAdapter “Prime”  # noqa: E501
+                string_to_evm_address('0x4011dc6581fA05F9B0c7A12AdCd676e2b1a59ca3'),  # AaveV3MigrationAdapter “EtherFi”  # noqa: E501
+                string_to_evm_address('0xdBa5bdE29eA030Bfa6A608592dFcA1D02CB26773'),  # CompoundV3MigrationAdapter  # noqa: E501
+                string_to_evm_address('0x9e2ea2d5785598a163D569D795f286F5C55ad972'),  # AaveV3OptimizerMigrationAdapter  # noqa: E501
+                string_to_evm_address('0x40288815C399709dFC0875A384B637fFe387961B'),  # AaveV2MigrationAdapter  # noqa: E501
+                string_to_evm_address('0x9B89c07f480Df1945279031b5fC6fF241b8f1101'),  # CompoundV2MigrationAdapter  # noqa: E501
             },
-            weth=A_WETH,
         )

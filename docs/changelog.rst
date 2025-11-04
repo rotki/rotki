@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Morpho support is now extended to all chains rotki supports in which it is deployed including Arbitrum One, Polygon PoS, Optimism, etc.
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
 * :bug:`10851` Users will be able to sort the account balance table by assets again.
