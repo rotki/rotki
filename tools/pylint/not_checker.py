@@ -37,7 +37,7 @@ class NotBooleanChecker(BaseChecker):
             operand_type = operand_type.returns if operand_type else None
             if isinstance(operand_type, astroid.Subscript):
                 # This means return is like Optional[Something]. Ignore these cases
-                # as it's not possible to determine the type afaics
+                # as it's not possible to determine the type as far as I can see
                 return
         else:
             operand_type = utils.node_type(node.operand)

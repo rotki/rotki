@@ -85,7 +85,7 @@ class FlameGraphCollector:
 
         # Correct the flamegraph proportionally to the time spent in the
         # function call. This is important for functions which are considerably
-        # slower then the others.
+        # slower than the others.
         #
         # Because from within the interpreter it's not possible to execute a
         # function on stable intervals, the count of stacks does not correspond
