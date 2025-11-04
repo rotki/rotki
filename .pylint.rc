@@ -9,7 +9,7 @@ ignored-modules=rsqlite
 # Blacklist files or directories (basenames, not paths)
 ignore=
 
-# blacklist files or directories by regex  (basenames, not paths)
+# blacklist files or directories by regex (basenames, not paths)
 ignore-patterns=
 
 [EXCEPTIONS]
@@ -61,7 +61,7 @@ logging-modules=logging
 #    too-many-arguments,  # we don't conform to certain number
 #    line-too-long,  # already checked by others
 #    missing-timeout,  # we already check this via ruff S113. But we skip all test files
-#    use-implicit-booleaness-not-comparison  # we don't use implitic booleaness in the code
+#    use-implicit-booleaness-not-comparison  # we don't use implicit booleanness in the code
 #    assignment-from-none  # this is a useless rule and issues false positives especially when considering typing
 
 # When wanting to discover new things to check for comment the following line and uncomment above
