@@ -23,8 +23,7 @@ from .constants import (
     FILL_DISCRIMINATOR,
     JUPITER_AGGREGATOR_PROGRAM_V6,
     JUPITER_RFQ_ORDER_ENGINE_PROGRAM,
-    ROUTE_DISCRIMINATOR,
-    ROUTE_V2_DISCRIMINATOR,
+    ROUTE_DISCRIMINATORS_TO_MINT_IDX,
     SWAP_EVENT_DISCRIMINATOR,
     SWAPS_EVENT_DISCRIMINATOR,
 )
@@ -58,13 +57,16 @@ class JupiterDecoder(SolanaDecoderInterface):
 
         # Find the route instruction corresponding to this swap event instruction
         for instruction in context.transaction.instructions:
-            if instruction.execution_index == context.instruction.parent_execution_index and (
-                (is_v2 := match_discriminator(instruction.data, ROUTE_V2_DISCRIMINATOR)) or
-                match_discriminator(instruction.data, ROUTE_DISCRIMINATOR)
+            if (
+                instruction.execution_index != context.instruction.parent_execution_index or
+                (mint_idx := ROUTE_DISCRIMINATORS_TO_MINT_IDX.get(instruction.data[:8])) is None or
+                len(instruction.accounts) < mint_idx + 1
             ):
-                destination_mint = instruction.accounts[4] if is_v2 else instruction.accounts[5]
-                route_instruction = instruction
-                break
+                continue
+
+            destination_mint = instruction.accounts[mint_idx]
+            route_instruction = instruction
+            break
         else:
             log.error(f'Failed to find Jupiter route instruction in transaction {context.transaction!s}')  # noqa: E501
             return DEFAULT_SOLANA_DECODING_OUTPUT
