@@ -317,6 +317,187 @@ def test_route_v2_with_multiple_underlying_swaps(
 
 
 @pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['FD7ocZaUHGHcqArBmLPVq8ByWsY29MVctfU4Nhjfrr4J']])
+def test_exact_out_route(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    signature = deserialize_tx_signature('s5sthr57drUS4gyg5SVaCrbXnAEE584BYBGaYgKRMkUgERZupJ9KxN3cQ8RDR1cNiASjuTM5svQWiCGL5V5Ds4y')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1762286408000)),
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+        amount=FVal(spend_amount := '9.958003'),
+        location_label=(user_address := solana_accounts[0]),
+        notes=f'Swap {spend_amount} USDC in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('2mV68czKxnQB5AhCA96eyBtisWQkv6Skzhcak7fffvFo'),
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('solana/token:7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs'),
+        amount=FVal(receive_amount := '0.003078'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} WETH as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('2mV68czKxnQB5AhCA96eyBtisWQkv6Skzhcak7fffvFo'),
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+        amount=FVal(fee_amount := '0.019955'),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} USDC as Jupiter platform fee',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('2mV68czKxnQB5AhCA96eyBtisWQkv6Skzhcak7fffvFo'),
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['AS25zph72ZmhtLAz2LjEF9qT8vv5x29GJsXVj1DBNKrw']])
+def test_exact_out_route_v2(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    signature = deserialize_tx_signature('5XYf7V6rNjRuStgG1ELmug5K5ErGWtfZBa4msAdqw1PeYWAYEg6qcJyFqoHJ5uNmNp3B6YdnQgdyQrpg2XZUDE3q')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1762285595000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal(fee_amount := '0.000776831'),
+        location_label=(user_address := solana_accounts[0]),
+        notes=f'Spend {fee_amount} SOL as transaction fee',
+        counterparty=CPT_GAS,
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+        amount=FVal(spend_amount := '27.853252'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} USDC in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('23XoPQqGw9WMsLoqTu8HMzJLD6RnXsufbKyWPLJywsCT'),
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('solana/token:5TfqNKZbn9AnNtzq8bbkyhKgcPGTfNDc9wNzFrTBpump'),
+        amount=FVal(receive_amount := '10000'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} PFP as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('23XoPQqGw9WMsLoqTu8HMzJLD6RnXsufbKyWPLJywsCT'),
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['7HK4mhjjr3S6BpkWyzGgtjV3X5sgavRewg422GTrF3vw']])
+def test_shared_accounts_route(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    signature = deserialize_tx_signature('62osuRs27DqDwWdgLR7VXQmTntc3h8ZKMWAr5Jfe8BG6Yt7LS46rptyN2queAmPeWM6w3PbeQ7YADnPCYjx3NPhQ')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1762287751000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal('0.000005003'),
+        location_label=solana_accounts[0],
+        notes='Spend 0.000005003 SOL as transaction fee',
+        counterparty=CPT_GAS,
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_WSOL,
+        amount=FVal('0.117958294'),
+        location_label=solana_accounts[0],
+        notes='Swap 0.117958294 WSOL in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('6U91aKa8pmMxkJwBCfPTmUEfZi6dHe7DcFq2ALvB2tbB'),
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('solana/token:9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump'),
+        amount=FVal('73.976227'),
+        location_label=solana_accounts[0],
+        notes='Receive 73.976227 FARTCOIN as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('6U91aKa8pmMxkJwBCfPTmUEfZi6dHe7DcFq2ALvB2tbB'),
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa']])
+def test_shared_accounts_route_v2(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    signature = deserialize_tx_signature('2tWRF2xVhaXKBTsTssiLhAchpJN8GbqeM3uKHdPBuTtbxzCXngGKwiQCfcekCk1XNmcXZTHwi8BSCjTGLoYh1DZv')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1761665834000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal(fee_amount := '0.000316086'),
+        location_label=solana_accounts[0],
+        notes=f'Spend {fee_amount} SOL as transaction fee',
+        counterparty=CPT_GAS,
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('solana/token:cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij'),
+        amount=FVal(spend_amount := '0.00000391'),
+        location_label=solana_accounts[0],
+        notes=f'Swap {spend_amount} cbbtc in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('69yhtoJR4JYPPABZcSNkzuqbaFbwHsCkja1sP1Q2aVT5'),
+    ), SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('solana/token:METvsvVRapdj9cFLzq4Tr43xK4tAjQfwX76z3n6mWQL'),
+        amount=FVal(receive_amount := '0.974674'),
+        location_label=solana_accounts[0],
+        notes=f'Receive {receive_amount} MET as the result of a swap in Jupiter',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('69yhtoJR4JYPPABZcSNkzuqbaFbwHsCkja1sP1Q2aVT5'),
+    )]
+
+
+@pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['E2MPTDnFPNiCRmbJGKYSYew48NWRGVNfHjoiibFP5VL2']])
 def test_arbitrage_swap(
         solana_inquirer: 'SolanaInquirer',
