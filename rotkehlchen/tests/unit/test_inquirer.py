@@ -58,11 +58,11 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETC,
     A_ETH,
+    A_ETH_POL,
     A_EUR,
     A_KFEE,
     A_LINK,
     A_POL,
-    A_POLYGON_POS_MATIC,
     A_USD,
     A_USDC,
     A_USDT,
@@ -1011,11 +1011,11 @@ def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
         wraps=inquirer._coingecko.query_multiple_current_prices,
     ) as patched_gecko:
         freezer.move_to(datetime.datetime.fromtimestamp(before_hardfork, tz=datetime.UTC))
-        inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
-        assert patched_gecko.call_args.kwargs['from_assets'] == [A_POLYGON_POS_MATIC]
-        freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
-        inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
+        inquirer.find_usd_price(A_POL, ignore_cache=True)
         assert patched_gecko.call_args.kwargs['from_assets'] == [A_POL]
+        freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
+        inquirer.find_usd_price(A_POL, ignore_cache=True)
+        assert patched_gecko.call_args.kwargs['from_assets'] == [A_ETH_POL]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

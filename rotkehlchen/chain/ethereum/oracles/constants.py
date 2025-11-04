@@ -9,7 +9,7 @@ from rotkehlchen.constants.assets import (
     A_ETH_EURE,
     A_EUR,
     A_OP,
-    A_POLYGON_POS_MATIC,
+    A_POL,
     A_USD,
     A_USDC,
     A_USDT,
@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import (
     A_WETH_BASE,
     A_WETH_OPT,
     A_WETH_POLYGON,
-    A_WMATIC,
+    A_WPOL,
 )
 from rotkehlchen.types import ChainID
 
@@ -29,7 +29,7 @@ UNISWAP_ASSET_TO_EVM_ASSET: Final = {
     A_EUR: A_ETH_EURE,
     A_ETH: A_WETH,
     A_BSC_BNB: A_WBNB,
-    A_POLYGON_POS_MATIC: A_WMATIC,
+    A_POL: A_WPOL,
 }
 
 A_POLYGON_USDC: Final = Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174')
@@ -53,7 +53,7 @@ UNISWAP_ETH_ASSETS: Final = {
 }
 UNISWAP_ROUTING_ASSETS: Final = {
     ChainID.ETHEREUM: [A_WETH, A_DAI, A_USDT],
-    ChainID.POLYGON_POS: [A_POLYGON_POS_MATIC, A_WETH_POLYGON, A_POLYGON_USDC, A_POLYGON_POS_USDT],
+    ChainID.POLYGON_POS: [A_POL, A_WETH_POLYGON, A_POLYGON_USDC, A_POLYGON_POS_USDT],
     ChainID.ARBITRUM_ONE: [A_WETH_ARB, A_ARBITRUM_USDC, A_ARBITRUM_USDT],
     ChainID.OPTIMISM: [A_OP, A_WETH_OPT, A_OPTIMISM_USDC, A_OPTIMISM_USDT],
     ChainID.BASE: [A_WETH_BASE, A_BASE_USDC],

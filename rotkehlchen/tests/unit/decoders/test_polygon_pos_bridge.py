@@ -16,7 +16,7 @@ from rotkehlchen.chain.polygon_pos.modules.polygon_pos_bridge.decoder import (
     PLASMA_BRIDGE_CHILD_CHAIN,
 )
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_POL, A_POLYGON_POS_MATIC, A_USDT, Asset
+from rotkehlchen.constants.assets import A_ETH, A_ETH_POL, A_POL, A_USDT, Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -46,7 +46,7 @@ def test_polygon_pos_bridge_l2_deposit(
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} POL for gas',
@@ -85,7 +85,7 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} POL for gas',
@@ -97,7 +97,7 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(deposit_amount),
             location_label=user_address,
             notes=f'Bridge {deposit_amount} POL from Polygon POS to Ethereum via Polygon bridge',
@@ -151,7 +151,7 @@ def test_polygon_pos_bridge_l2_plasma_withdraw(
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(bridge_amount),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} POL from Ethereum to Polygon POS via Polygon bridge',
@@ -267,7 +267,7 @@ def test_polygon_pos_bridge_deposit_plasma(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=A_POL,
+            asset=A_ETH_POL,
             amount=ZERO,
             location_label=user_address,
             notes=f'Revoke POL spending approval of {user_address} by {PLASMA_BRIDGE_ADDRESS}',
@@ -279,7 +279,7 @@ def test_polygon_pos_bridge_deposit_plasma(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
-            asset=A_POL,
+            asset=A_ETH_POL,
             amount=FVal(bridge_amount),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} POL from Ethereum to Polygon POS via Polygon bridge',
@@ -448,7 +448,7 @@ def test_polygon_pos_bridge_plasma_process_exit(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
-            asset=A_POL,
+            asset=A_ETH_POL,
             amount=FVal(bridge_amount),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} POL from Polygon POS to Ethereum via Polygon bridge',

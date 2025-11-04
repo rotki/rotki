@@ -3,7 +3,7 @@ from typing import Final
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.hop.structures import HopBridgeEventData
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_WETH_POLYGON, A_WMATIC
+from rotkehlchen.constants.assets import A_WETH_POLYGON, A_WPOL
 
 BRIDGES: Final = {
     string_to_evm_address('0xb98454270065A31D71Bf635F6F7Ee6A518dFb849'): HopBridgeEventData(
@@ -22,7 +22,7 @@ BRIDGES: Final = {
         hop_identifier='eip155:137/erc20:0x9F93ACA246F457916E49Ec923B8ed099e313f763',
         saddle_swap=string_to_evm_address('0xB2f7d27B21a69a033f85C42d5EB079043BAadC81'),
     ), string_to_evm_address('0x553bC791D746767166fA3888432038193cEED5E2'): HopBridgeEventData(
-        identifier=A_WMATIC.identifier,
+        identifier=A_WPOL.identifier,
         amm_wrapper=string_to_evm_address('0x884d1Aa15F9957E1aEAA86a82a72e49Bc2bfCbe3'),
         hop_identifier='eip155:137/erc20:0x712F0cf37Bdb8299D0666727F73a5cAbA7c1c24c',
         saddle_swap=string_to_evm_address('0x3d4Cc8A61c7528Fd86C55cfe061a78dCBA48EDd1'),

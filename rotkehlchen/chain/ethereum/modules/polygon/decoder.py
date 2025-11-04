@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.constants.assets import A_ETH_MATIC, A_POL
+from rotkehlchen.constants.assets import A_ETH_MATIC, A_ETH_POL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -59,7 +59,7 @@ class PolygonDecoder(EvmDecoderInterface):
             to_address=POLYGON_MIGRATION_ADDRESS,
         ) for from_type, asset, to_subtype, notes in (
             (HistoryEventType.SPEND, A_ETH_MATIC, HistoryEventSubType.SPEND, f'Migrate {amount} MATIC to POL'),  # noqa: E501
-            (HistoryEventType.RECEIVE, A_POL, HistoryEventSubType.RECEIVE, f'Receive {amount} POL from MATIC->POL migration'),  # noqa: E501
+            (HistoryEventType.RECEIVE, A_ETH_POL, HistoryEventSubType.RECEIVE, f'Receive {amount} POL from MATIC->POL migration'),  # noqa: E501
         )]
         return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_POLYGON)
 

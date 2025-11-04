@@ -4,7 +4,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNOR_ALPHA
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_SAI
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POL, A_SAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -154,7 +154,7 @@ def test_polygon_bulkcheckout_receive_matic(polygon_pos_inquirer, polygon_pos_ac
         location=Location.POLYGON_POS,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.DONATE,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(amount),
         location_label=user_address,
         notes=f'Receive donation of {amount} POL from {donor} via gitcoin',

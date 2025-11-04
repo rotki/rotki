@@ -26,8 +26,8 @@ from rotkehlchen.constants.assets import (
     A_WETH_ARB,
     A_WETH_BASE,
     A_WETH_OPT,
-    A_WETH_POLYGON,
     A_WETH_SCROLL,
+    A_WPOL,
     A_WXDAI,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, solana_address_to_identifier
@@ -690,7 +690,7 @@ CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.OPTIMISM: A_WETH_OPT,
     SupportedBlockchain.BASE: A_WETH_BASE,
     SupportedBlockchain.GNOSIS: A_WXDAI,
-    SupportedBlockchain.POLYGON_POS: A_WETH_POLYGON,
+    SupportedBlockchain.POLYGON_POS: A_WPOL,
     SupportedBlockchain.BINANCE_SC: A_WBNB,
     SupportedBlockchain.SCROLL: A_WETH_SCROLL,
 }

@@ -15,7 +15,7 @@ from rotkehlchen.constants.assets import (
     A_ARB,
     A_BSC_BNB,
     A_ETH,
-    A_POLYGON_POS_MATIC,
+    A_POL,
     A_WETH,
     A_XDAI,
 )
@@ -55,7 +55,7 @@ def test_openocean_swap_token_to_token(
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            asset=A_POLYGON_POS_MATIC,
+            asset=A_POL,
             amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} POL for gas',

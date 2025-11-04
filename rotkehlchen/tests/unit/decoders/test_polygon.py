@@ -4,7 +4,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.polygon.constants import POLYGON_MIGRATION_ADDRESS
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_POL
+from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_ETH_POL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -64,7 +64,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         location=Location.ETHEREUM,
         event_type=HistoryEventType.MIGRATE,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_POL,
+        asset=A_ETH_POL,
         amount=FVal(amount),
         location_label=ethereum_accounts[0],
         notes=f'Receive {amount} POL from MATIC->POL migration',

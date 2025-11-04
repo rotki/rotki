@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_POL
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
@@ -197,7 +197,7 @@ def test_native_token_balance(
     usdc = EvmToken('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359')
     weth = EvmToken('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619')
     usdt = EvmToken('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F')
-    pol = A_POLYGON_POS_MATIC.resolve_to_evm_token()
+    pol = A_POL.resolve_to_evm_token()
 
     with (
         patch.object(blockchain.polygon_pos.node_inquirer, 'default_call_order', mock_default_call_order),  # noqa: E501

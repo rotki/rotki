@@ -5,7 +5,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN
 from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import PROFILE_REGISTRY
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_POL
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -347,7 +347,7 @@ def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accou
         location=Location.POLYGON_POS,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.DONATE,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(amount_str),
         location_label=user_address,
         notes=f'Receive a gitcoin donation of {amount_str} POL from {donator}',
@@ -399,7 +399,7 @@ def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
         location=Location.POLYGON_POS,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
-        asset=A_POLYGON_POS_MATIC,
+        asset=A_POL,
         amount=FVal(gas_str),
         location_label=user_address,
         notes=f'Burn {gas_str} POL for gas',
