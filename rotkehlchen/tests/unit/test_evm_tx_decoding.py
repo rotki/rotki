@@ -431,3 +431,40 @@ def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_a
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
+def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x36d18e69806af47ea9469156917af9e0278fa315256d08a566023dce5df08c70')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1756420055000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.001220261148478126'),
+            location_label=(user_address := '0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379'),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPLOY,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            address=(contract_address := '0x3337286E850cf01B8A8B6094574f0dd6a2108B16'),
+            notes=f'Deploy a new contract at {contract_address}',
+        ),
+    ]
