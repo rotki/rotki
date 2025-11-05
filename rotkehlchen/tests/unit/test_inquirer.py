@@ -45,7 +45,6 @@ from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CP
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
-from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -58,11 +57,9 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETC,
     A_ETH,
-    A_ETH_POL,
     A_EUR,
     A_KFEE,
     A_LINK,
-    A_POL,
     A_USD,
     A_USDC,
     A_USDT,
@@ -996,26 +993,6 @@ def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHa
     price, oracle = inquirer.find_usd_price_and_oracle(A_USDT)
     assert oracle == CurrentPriceOracle.MANUALCURRENT
     assert price == Price(FVal('10.010'))
-
-
-@pytest.mark.freeze_time
-@pytest.mark.vcr
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
-    """Test that we return price of POL for MATIC after hardfork"""
-    before_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK - 1)
-    after_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK + 1)
-
-    with patch(
-        'rotkehlchen.externalapis.coingecko.Coingecko.query_multiple_current_prices',
-        wraps=inquirer._coingecko.query_multiple_current_prices,
-    ) as patched_gecko:
-        freezer.move_to(datetime.datetime.fromtimestamp(before_hardfork, tz=datetime.UTC))
-        inquirer.find_usd_price(A_POL, ignore_cache=True)
-        assert patched_gecko.call_args.kwargs['from_assets'] == [A_POL]
-        freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
-        inquirer.find_usd_price(A_POL, ignore_cache=True)
-        assert patched_gecko.call_args.kwargs['from_assets'] == [A_ETH_POL]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
