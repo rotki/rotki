@@ -110,7 +110,7 @@ defineExpose({
               color="primary"
               size="sm"
               hide-details
-              @click.prevent.stop
+              @click.prevent
             />
 
             <span class="capitalize text-sm text-rui-text-secondary">
