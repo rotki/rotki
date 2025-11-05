@@ -1004,8 +1004,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 asset=self.value_asset,
                 amount=amount,
                 location_label=tx.from_address,
-                notes='Contract deployment',
-                address=None,  # TODO: Find out contract address
+                notes=f'Deploy a new contract at {tx_receipt.contract_address}',
+                address=tx_receipt.contract_address,
             ))
             return events
 

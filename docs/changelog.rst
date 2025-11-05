@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` rotki will now decode more kinds of Jupiter swaps.
 * :bug:`-` Fix an issue where editing the latest price of an asset in the asset page shows the wrong initial price.
+* :bug:`-` Contract deployment events will now display the deployed contract address in the event notes.
 * :bug:`10851` Users will be able to sort the account balance table by assets again.
 * :bug:`10853` Compound V3 native token deposit/withdrawals will be properly decoded with associated balances properly detected.
 * :bug:`-` 1inch limit order swaps will now be decoded correctly.
