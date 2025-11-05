@@ -49,6 +49,9 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
         }
       };
     },
+    {
+      debounceInMs: 100,
+    },
   );
 
   return {

@@ -2,7 +2,7 @@ use crate::blockchain::EvmInquirerManager;
 use axum::{http::Request, routing, Router};
 use database::DBHandler;
 use glob::Pattern;
-use axum::http::{request::Parts as RequestParts, HeaderValue};
+use axum::http::{header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, request::Parts as RequestParts, HeaderValue};
 use log::{error, info};
 use std::collections::HashSet;
 use std::net::SocketAddr;
@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::{Mutex, RwLock};
 use tower_http::{
-    cors::{AllowOrigin, CorsLayer},
+    cors::{AllowOrigin, Any, CorsLayer},
     trace::TraceLayer,
 };
 
@@ -88,20 +88,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     // configure cors to allow only requests from the localhost
-    let cors_layer = CorsLayer::new().allow_origin(AllowOrigin::predicate(
-        move |origin: &HeaderValue, _request_parts: &RequestParts| {
-            if let Ok(origin_str) = origin.to_str() {
-                // Check if the origin matches any of our glob patterns
-                for pattern in &cors_patterns {
-                    if pattern.matches(origin_str) {
-                        return true;
+    let cors_layer = CorsLayer::new()
+        .allow_origin(AllowOrigin::predicate(
+            move |origin: &HeaderValue, _request_parts: &RequestParts| {
+                if let Ok(origin_str) = origin.to_str() {
+                    // Check if the origin matches any of our glob patterns
+                    for pattern in &cors_patterns {
+                        if pattern.matches(origin_str) {
+                            return true;
+                        }
                     }
-                    error!("failed to match CORS on {}", pattern);
+                    error!("Origin {} did not match any CORS patterns", origin_str);
                 }
-            }
-            false
-        },
-    ));
+                false
+            },
+        ))
+        .allow_methods(Any)
+        .allow_headers([CONTENT_TYPE, AUTHORIZATION, ACCEPT]);
 
     let app = Router::new()
         .merge(stateless_routes)

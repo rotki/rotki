@@ -34,8 +34,22 @@ pub async fn unlock_user(
         .join("rotkehlchen.db");
 
     match db.unlock(db_path, payload.password).await {
-        Ok(_) => (StatusCode::OK, "Ok").into_response(),
-        Err(err) => (StatusCode::BAD_REQUEST, err.to_string()).into_response(),
+        Ok(_) => (
+            StatusCode::OK,
+            Json(ApiResponse::<bool> {
+                result: Some(true),
+                message: "".to_string(),
+            }),
+        )
+            .into_response(),
+        Err(err) => (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::<bool> {
+                result: None,
+                message: err.to_string(),
+            }),
+        )
+            .into_response(),
     }
 }
 
@@ -70,7 +84,7 @@ pub async fn logout_user(State(state): State<Arc<AppState>>) -> impl IntoRespons
     if db.client.is_none() {
         return (
             StatusCode::BAD_REQUEST,
-            Json(ApiResponse::<String> {
+            Json(ApiResponse::<bool> {
                 result: None,
                 message: "DB not unlocked".to_string(),
             }),
@@ -81,8 +95,15 @@ pub async fn logout_user(State(state): State<Arc<AppState>>) -> impl IntoRespons
     // Explicitly close the SQLite connection if available, then drop the handle
     if let Some(client) = &db.client {
         // If the client exposes a close method (rusqlite-backed), call it
-        let _ = client.close();
+        std::mem::drop(client.close());
     }
     db.client = None;
-    (StatusCode::OK, "Ok").into_response()
+    (
+        StatusCode::OK,
+        Json(ApiResponse::<bool> {
+            result: Some(true),
+            message: "".to_string(),
+        }),
+    )
+        .into_response()
 }

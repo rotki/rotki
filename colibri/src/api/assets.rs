@@ -16,7 +16,7 @@ pub async fn get_assets_mappings(
     #[derive(Serialize)]
     struct Resp {
         assets: HashMap<String, AssetMappings>,
-        asset_collections: HashMap<u32, CollectionInfo>,
+        asset_collections: HashMap<String, CollectionInfo>,
     }
 
     match state
@@ -31,26 +31,30 @@ pub async fn get_assets_mappings(
                 .into_iter()
                 .partition(|id| !info.contains_key(id.as_str()));
 
-            if missing.len() != 0 {
+            if !missing.is_empty() {
                 // TODO
             }
 
-            return Json(Resp {
-                assets: info,
-                asset_collections: collections,
-            })
-            .into_response();
+            (
+                StatusCode::OK,
+                Json(ApiResponse::<Resp> {
+                    result: Some(Resp {
+                        assets: info,
+                        asset_collections: collections,
+                    }),
+                    message: "".to_string(),
+                }),
+            )
         }
         Err(e) => {
             log::error!("{}", e);
-            return (
+            (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<String> {
+                Json(ApiResponse::<Resp> {
                     result: None,
                     message: "Failed to query identifiers from database".to_string(),
                 }),
             )
-                .into_response();
         }
-    };
+    }
 }

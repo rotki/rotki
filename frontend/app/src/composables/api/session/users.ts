@@ -47,7 +47,7 @@ export function useUsersApi(): UseUserApiReturn {
   };
 
   const colibriLogout = async (): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
+    const response = await api.instance.post<ActionResult<boolean>>(
       '/user/logout',
       undefined,
       {
@@ -60,6 +60,7 @@ export function useUsersApi(): UseUserApiReturn {
   };
 
   const logout = async (username: string): Promise<boolean> => {
+    await colibriLogout();
     const response = await api.instance.patch<ActionResult<boolean>>(
       `/users/${username}`,
       {
@@ -70,11 +71,7 @@ export function useUsersApi(): UseUserApiReturn {
 
     const success = response.status === 409 ? true : handleResponse(response);
     api.cancel();
-
-    if (success) {
-      return colibriLogout();
-    }
-    return false;
+    return success;
   };
 
   const createAccount = async (payload: CreateAccountPayload): Promise<PendingTask> => {
@@ -118,9 +115,7 @@ export function useUsersApi(): UseUserApiReturn {
   const colibriLogin = async (payload: BasicLoginCredentials): Promise<boolean> => {
     const response = await api.instance.post<ActionResult<boolean>>(
       '/user',
-      snakeCaseTransformer({
-        payload,
-      }),
+      snakeCaseTransformer(payload),
       {
         baseURL: apiUrls.colibriApiUrl,
         validateStatus: validAccountOperationStatus,

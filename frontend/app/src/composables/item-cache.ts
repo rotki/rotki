@@ -6,6 +6,7 @@ import { logger } from '@/utils/logging';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;
 const CACHE_SIZE = 500;
+const DEBOUNCE_TIME = 800;
 
 export interface CacheEntry<T> {
   key: string;
@@ -15,8 +16,9 @@ export interface CacheEntry<T> {
 type CacheFetch<T> = (keys: string[]) => Promise<() => IterableIterator<CacheEntry<T>>>;
 
 interface CacheOptions {
-  expiry: number;
-  size: number;
+  debounceInMs?: number;
+  expiry?: number;
+  size?: number;
 }
 
 interface UseItemCacheReturn<T> {
@@ -32,11 +34,9 @@ interface UseItemCacheReturn<T> {
 
 export function useItemCache<T>(
   fetch: CacheFetch<T>,
-  options: CacheOptions = {
-    expiry: CACHE_EXPIRY,
-    size: CACHE_SIZE,
-  },
+  options: CacheOptions = {},
 ): UseItemCacheReturn<T> {
+  const { debounceInMs = DEBOUNCE_TIME, expiry = CACHE_EXPIRY, size = CACHE_SIZE } = options;
   const recent: Map<string, number> = new Map();
   const unknown: Map<string, number> = new Map();
   const cache = ref<Record<string, T | null>>({});
@@ -73,14 +73,14 @@ export function useItemCache<T>(
   const put = (key: string, item: T): void => {
     recent.delete(key);
 
-    if (recent.size === options.size) {
-      logger.debug(`Hit cache size of ${options.size} going to evict items`);
+    if (recent.size === size) {
+      logger.debug(`Hit cache size of ${size} going to evict items`);
       const removeKey = recent.keys().next().value;
       assert(removeKey, 'removeKey is null or undefined');
       recent.delete(removeKey);
       deleteCacheKey(removeKey);
     }
-    recent.set(key, Date.now() + options.expiry);
+    recent.set(key, Date.now() + expiry);
     updateCacheKey(key, item);
   };
 
@@ -91,7 +91,7 @@ export function useItemCache<T>(
 
     set(batch, []);
     startPromise(processBatch(currentBatch));
-  }, 800);
+  }, debounceInMs);
 
   async function processBatch(keys: string[]): Promise<void> {
     try {
@@ -107,7 +107,7 @@ export function useItemCache<T>(
           recent.delete(key);
           deleteCacheKey(key);
 
-          unknown.set(key, Date.now() + options.expiry);
+          unknown.set(key, Date.now() + expiry);
         }
       }
     }
@@ -141,7 +141,7 @@ export function useItemCache<T>(
 
       if (expiry && expiry > now) {
         expired = true;
-        recent.set(key, now + options.expiry);
+        recent.set(key, now + expiry);
       }
     }
 
@@ -153,7 +153,7 @@ export function useItemCache<T>(
 
   const refresh = (key: string): void => {
     const now = Date.now();
-    recent.set(key, now + options.expiry);
+    recent.set(key, now + expiry);
     if (unknown.has(key))
       unknown.delete(key);
 

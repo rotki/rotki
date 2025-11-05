@@ -37,7 +37,7 @@ pub struct AssetMappings {
     pub asset_type: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub collection_id: Option<u32>,
+    pub collection_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub evm_chain: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -60,12 +60,11 @@ pub struct CollectionInfo {
 impl GlobalDB {
     pub async fn get_assets_mappings(
         &self,
-        identifiers: &Vec<String>,
-    ) -> DBOutput<(HashMap<String, AssetMappings>, HashMap<u32, CollectionInfo>)> {
-        let mut collections: HashMap<u32, CollectionInfo> = HashMap::new();
+        identifiers: &[String],
+    ) -> DBOutput<(HashMap<String, AssetMappings>, HashMap<String, CollectionInfo>)> {
+        let mut collections: HashMap<String, CollectionInfo> = HashMap::new();
         let mut assets: HashMap<String, AssetMappings> = HashMap::new();
-        let params = std::iter::repeat("?")
-            .take(identifiers.len())
+        let params = std::iter::repeat_n("?", identifiers.len())
             .collect::<Vec<_>>()
             .join(",");
 
@@ -86,7 +85,7 @@ impl GlobalDB {
 
             // Insert the collection only once (keeps the first seen value)
             if let Some(id) = collection_id {
-                collections.entry(id).or_insert_with(|| CollectionInfo {
+                collections.entry(id.to_string()).or_insert_with(|| CollectionInfo {
                     name: row.get("collection_name").unwrap_or_default(),
                     symbol: row.get("collection_symbol").unwrap_or_default(),
                     main_asset: row.get("main_asset").unwrap_or_default(),
@@ -97,7 +96,7 @@ impl GlobalDB {
             assets.entry(identifier).or_insert_with(|| AssetMappings {
                 name: row.get("name").unwrap_or_default(),
                 symbol: row.get("symbol").unwrap_or_default(),
-                collection_id: collection_id,
+                collection_id: collection_id.map(|id| id.to_string()),
                 asset_type: row.get("asset_type").unwrap_or_default(),
                 evm_chain: row.get("evm_chain").unwrap_or_default(),
                 custom_asset_type: row.get("custom_asset_type").unwrap_or_default(),
