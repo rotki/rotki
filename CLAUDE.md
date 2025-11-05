@@ -235,7 +235,7 @@ async function fetchData() {
 
 #### Pinia Store Structure
 1. State definitions
-2. Computed getters  
+2. Computed getters
 3. Actions
 4. Optional watchers
 
@@ -254,7 +254,7 @@ async function fetchData() {
   // Example structure:
   src/modules/balances/use-balances-store.ts
   src/modules/balances/use-balances-store.spec.ts
-  
+
   src/composables/accounts/use-account-import-export.ts
   src/composables/accounts/use-account-import-export.spec.ts
   ```
@@ -301,7 +301,7 @@ In very simple terms, the way the decoding works is that we go through all the t
 
 The event creation consists of creating a `HistoryBaseEntry`. These are the most basic form of events in rotki and are used everywhere. The fields as far as decoded transactions are concerned are explained below:
 
-- `event_identifier` is always the transaction hash. This identifies history events in the same transaction.
+- `group_identifier` is always the transaction hash. This identifies history events in the same transaction.
 - `sequence_index` is the order of the event in the transaction. Many times this is the log index, but decoders tend to play with this to make events appear in a specific way.
 - `asset` is the asset involved in the event.
 - `balance` is the balance of the involved asset.
@@ -442,4 +442,3 @@ When reviewing code changes, follow this systematic approach:
   ❌ WRONG: '0x5a0b54d5dc17e0aadc383d2db43b0a0d3e029c4c'
 - If you see "Invalid XXX account in DB" it's almost certain the address is not checksummed. Always checksum addresses you use with to_checksum_address
 - `string_to_evm_address()` is just a no-op typing function. It will not checksum the literal argument to a checksummed evm address. That means you should make sure to only give checksummed EVM address literals to it
-

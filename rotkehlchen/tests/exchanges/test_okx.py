@@ -12,7 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL, A_XMR
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -546,7 +546,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('30009.966'),
             location_label='okx',
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE1',
             ),
@@ -556,7 +556,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('1871.42147976'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE1',
             ),
@@ -567,7 +567,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('1.87142147976'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE1',
             ),
@@ -578,7 +578,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('0.61740'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE2',
             ),
@@ -589,7 +589,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('10'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE2',
             ),
@@ -600,7 +600,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('0.01'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE2',
             ),
@@ -611,7 +611,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('1.48176'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE3',
             ),
@@ -622,7 +622,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('24'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE3',
             ),
@@ -633,7 +633,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('0.024'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE3',
             ),
@@ -644,7 +644,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('1852.20000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE4',
             ),
@@ -655,7 +655,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('30000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE4',
             ),
@@ -666,7 +666,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
             amount=FVal('24'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE4',
             ),
@@ -677,7 +677,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('3513.8312'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE5',
             ),
@@ -688,7 +688,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('3514.18258312'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE5',
             ),
@@ -699,7 +699,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('3.51418258312'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE5',
             ),
@@ -710,7 +710,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('5792.2972152799999995'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE6',
             ),
@@ -721,7 +721,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('4.5'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE6',
             ),
@@ -732,7 +732,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.00315'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE6',
             ),
@@ -743,7 +743,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('3600'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE7',
             ),
@@ -754,7 +754,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('3600'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE7',
             ),
@@ -765,7 +765,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('3.6'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE7',
             ),
@@ -776,7 +776,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('850'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE8',
             ),
@@ -787,7 +787,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('850'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE8',
             ),
@@ -798,7 +798,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('0.85'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.OKX,
                 unique_id='TRADE8',
             ),

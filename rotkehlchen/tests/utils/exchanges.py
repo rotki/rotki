@@ -482,11 +482,11 @@ def assert_binance_asset_movements_result(
         got_fiat: bool,
 ) -> None:
     for movement in movements:
-        movement.event_identifier = 'x'  # reset event_identifier since its different depending on location.  # noqa: E501
+        movement.group_identifier = 'x'  # reset group_identifier since its different depending on location.  # noqa: E501
 
     location_label = 'binance'
     assert movements[:6] == [AssetMovement(
-            event_identifier='x',
+            group_identifier='x',
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
@@ -498,7 +498,7 @@ def assert_binance_asset_movements_result(
                 'transaction_id': '0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1',  # noqa: E501
             },
         ), AssetMovement(
-            event_identifier='x',
+            group_identifier='x',
             timestamp=TimestampMS(1508398632000),
             location=location,
             location_label=location_label,
@@ -510,7 +510,7 @@ def assert_binance_asset_movements_result(
                 'transaction_id': 'c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509',  # noqa: E501
             },
         ), AssetMovement(
-            event_identifier='x',
+            group_identifier='x',
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
@@ -522,7 +522,7 @@ def assert_binance_asset_movements_result(
                 'transaction_id': '0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1',  # noqa: E501
             },
         ), AssetMovement(
-            event_identifier='x',
+            group_identifier='x',
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
@@ -531,7 +531,7 @@ def assert_binance_asset_movements_result(
             amount=FVal('0.01'),
             is_fee=True,
         ), AssetMovement(
-            event_identifier='x',
+            group_identifier='x',
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
@@ -543,7 +543,7 @@ def assert_binance_asset_movements_result(
                 'transaction_id': 'b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509',  # noqa: E501
             },
         ), AssetMovement(
-            event_identifier='x',
+            group_identifier='x',
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
@@ -558,7 +558,7 @@ def assert_binance_asset_movements_result(
         return
 
     assert movements[6:] == [AssetMovement(
-        event_identifier='x',
+        group_identifier='x',
         timestamp=TimestampMS(1626144956000),
         location=location,
         location_label=location_label,
@@ -567,7 +567,7 @@ def assert_binance_asset_movements_result(
         amount=FVal('10.00'),
         extra_data={'transaction_id': '7d76d611-0568-4f43-afb6-24cac7767365'},
     ), AssetMovement(
-        event_identifier='x',
+        group_identifier='x',
         timestamp=TimestampMS(1636144956000),
         location=location,
         location_label=location_label,
@@ -576,7 +576,7 @@ def assert_binance_asset_movements_result(
         amount=FVal('10.00'),
         extra_data={'transaction_id': '8e76d611-0568-4f43-afb6-24cac7767365'},
     ), AssetMovement(
-        event_identifier='x',
+        group_identifier='x',
         timestamp=TimestampMS(1636144956000),
         location=location,
         location_label=location_label,

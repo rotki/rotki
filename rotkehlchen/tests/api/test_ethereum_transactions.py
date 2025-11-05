@@ -221,7 +221,7 @@ def query_events(
     First query all events with grouping enabled. Then if any events have more,
     take those events and ask for the extras. Return the full set.
     """
-    extra_json = json.copy() | {'group_by_event_ids': True}
+    extra_json = json.copy() | {'aggregate_by_group_ids': True}
     response = requests.post(
         api_url_for(server, 'historyeventresource'),
         json=extra_json,
@@ -236,7 +236,7 @@ def query_events(
     augmented_entries = []
     for entry in entries:
         if entry['grouped_events_num'] != 1:
-            extra_json = json.copy() | {'event_identifiers': [entry['entry']['event_identifier']]}
+            extra_json = json.copy() | {'group_identifiers': [entry['entry']['group_identifier']]}
             response = requests.post(
                 api_url_for(server, 'historyeventresource'),
                 json=extra_json,
@@ -745,7 +745,7 @@ def test_query_transactions_check_decoded_events(
             'amount': '0.00863351371344',
             'counterparty': CPT_GAS,
             'address': None,
-            'event_identifier': '10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+            'group_identifier': '10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
             'event_subtype': 'fee',
             'event_type': 'spend',
             'location': 'ethereum',
@@ -765,7 +765,7 @@ def test_query_transactions_check_decoded_events(
             'amount': '0.096809163374771208',
             'counterparty': None,
             'address': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
-            'event_identifier': '10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+            'group_identifier': '10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
             'event_subtype': 'none',
             'event_type': 'spend',
             'location': 'ethereum',
@@ -787,7 +787,7 @@ def test_query_transactions_check_decoded_events(
             'address': None,
             'amount': '0.017690836625228792',
             'counterparty': CPT_GAS,
-            'event_identifier': '10x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+            'group_identifier': '10x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
             'event_subtype': 'fee',
             'event_type': 'spend',
             'location': 'ethereum',
@@ -807,7 +807,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
             'amount': '1166',
             'counterparty': None,
-            'event_identifier': '10x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+            'group_identifier': '10x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
             'event_subtype': 'none',
             'event_type': 'spend',
             'location': 'ethereum',
@@ -829,7 +829,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
             'amount': '0.125',
             'counterparty': None,
-            'event_identifier': '10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',  # noqa: E501
+            'group_identifier': '10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',  # noqa: E501
             'event_subtype': 'none',
             'event_type': 'receive',
             'location': 'ethereum',
@@ -851,7 +851,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
             'amount': '1166',
             'counterparty': None,
-            'event_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
+            'group_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
             'event_subtype': 'none',
             'event_type': 'receive',
             'location': 'ethereum',
@@ -876,7 +876,7 @@ def test_query_transactions_check_decoded_events(
     tx2_events[1]['customized'] = True
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in event.items() if key != 'event_identifier'},
+        json={key: value for key, value in event.items() if key != 'group_identifier'},
     )
     assert_simple_ok_response(response)
 
@@ -887,7 +887,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
             'amount': '1',
             'counterparty': CPT_CURVE,
-            'event_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
+            'group_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
             'event_subtype': 'deposit asset',
             'event_type': 'deposit',
             'location': 'ethereum',
@@ -903,7 +903,7 @@ def test_query_transactions_check_decoded_events(
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'event_identifier'},  # noqa: E501
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'group_identifier'},  # noqa: E501
     )
     result = assert_proper_sync_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
@@ -1453,7 +1453,7 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
         events_before_redecoding = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=filter_query,
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
 
     # trigger the deletion of the transaction's data by redecoding it
@@ -1468,7 +1468,7 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
         events_after_redecoding = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=filter_query,
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
     assert events_before_redecoding == events_after_redecoding
 

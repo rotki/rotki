@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR, A_SOL, A_USDC
@@ -493,28 +493,28 @@ def test_query_events_analysis(
                 *create_swap_events(
                     timestamp=TimestampMS(1718562595000),
                     location=Location.KRAKEN,
-                    event_identifier='1xyz',
+                    group_identifier='1xyz',
                     spend=AssetAmount(asset=A_BTC, amount=ONE),
                     receive=AssetAmount(asset=A_ETH, amount=ONE),
                     fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ), *create_swap_events(
                     timestamp=TimestampMS(1734373795000),
                     location=Location.COINBASE,
-                    event_identifier='2xyz',
+                    group_identifier='2xyz',
                     spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
                     receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
                     fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ), *create_swap_events(
                     timestamp=TimestampMS(1734373795000),
                     location=Location.EXTERNAL,
-                    event_identifier='3xyz',
+                    group_identifier='3xyz',
                     spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
                     receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
                     fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ), *create_swap_events(
                     timestamp=TimestampMS(1702751395000),  # last year
                     location=Location.EXTERNAL,
-                    event_identifier='4xyz',
+                    group_identifier='4xyz',
                     spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
                     receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
                     fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
@@ -736,7 +736,7 @@ def test_wrap_stats_counts_non_evm_chains(
                 amount=ONE,
                 location_label=str(make_solana_address()),
             ), HistoryEvent(
-                event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{make_btc_tx_id()}',
+                group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{make_btc_tx_id()}',
                 sequence_index=0,
                 timestamp=ts_ms,
                 location=Location.BITCOIN,

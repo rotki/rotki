@@ -200,11 +200,11 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
         events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
     assert events == [EvmEvent(
         identifier=1,
-        event_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
+        group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
@@ -247,11 +247,11 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
         events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
     assert events == [EvmEvent(
         identifier=1,
-        event_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
+        group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
@@ -300,11 +300,11 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
     assert events == [EvmEvent(
         identifier=1,
-        event_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
+        group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
@@ -318,7 +318,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         address=address,
     ), EvmEvent(
         identifier=2,
-        event_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
+        group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=ts_sec_to_ms(timestamp),
@@ -332,7 +332,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         address=address,
     ), EvmEvent(
         identifier=3,
-        event_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
+        group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=ts_sec_to_ms(timestamp),

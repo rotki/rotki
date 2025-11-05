@@ -230,14 +230,14 @@ class HistoryQueryingManager:
                     from_ts=Timestamp(0),
                     to_ts=end_ts,
                 ),
-                group_by_event_ids=False,
+                aggregate_by_group_ids=False,
             )
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
 
-        history.sort(  # sort events first by timestamp (in milliseconds), then by event_identifier, and finally by sequence index if HistoryBaseEntry  # noqa: E501
+        history.sort(  # sort events first by timestamp (in milliseconds), then by group_identifier, and finally by sequence index if HistoryBaseEntry  # noqa: E501
             key=lambda x: (
-                (x.timestamp, x.event_identifier, x.sequence_index) if isinstance(x, HistoryBaseEntry)  # noqa: E501
+                (x.timestamp, x.group_identifier, x.sequence_index) if isinstance(x, HistoryBaseEntry)  # noqa: E501
                 else (ts_sec_to_ms(x.get_timestamp()), '', 1)
             ),
         )

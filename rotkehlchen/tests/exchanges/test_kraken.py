@@ -42,7 +42,7 @@ from rotkehlchen.history.events.structures.asset_movement import create_asset_mo
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_floatstr
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -335,7 +335,7 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[0].amount == ONE
     assert movements[0].event_type == HistoryEventType.WITHDRAWAL
     assert movements[0].event_subtype == HistoryEventSubType.REMOVE_ASSET
-    assert movements[1].event_identifier == movements[0].event_identifier
+    assert movements[1].group_identifier == movements[0].group_identifier
     assert movements[1].sequence_index == 1
     assert movements[1].timestamp == TimestampMS(1439994442000)
     assert movements[1].location == Location.KRAKEN
@@ -402,7 +402,7 @@ def test_kraken_trade_with_spend_receive(kraken):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_EUR,
             amount=FVal('100'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.KRAKEN,
                 unique_id='11636406000865',
             ),
@@ -414,7 +414,7 @@ def test_kraken_trade_with_spend_receive(kraken):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('1'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.KRAKEN,
                 unique_id='11636406000865',
             ),
@@ -426,7 +426,7 @@ def test_kraken_trade_with_spend_receive(kraken):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_EUR,
             amount=FVal('0.4500'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.KRAKEN,
                 unique_id='11636406000865',
             ),
@@ -489,7 +489,7 @@ def test_kraken_trade_with_adjustment(kraken):
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_DAO,
                 amount=FVal('0.0008854800'),
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=Location.KRAKEN,
                     unique_id='adjustment12',
                 ),
@@ -501,7 +501,7 @@ def test_kraken_trade_with_adjustment(kraken):
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_ETH,
                 amount=FVal('0.0000088548'),
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=Location.KRAKEN,
                     unique_id='adjustment12',
                 ),
@@ -543,7 +543,7 @@ def test_kraken_adjustment(kraken):
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
         ) == [HistoryEvent(
             identifier=1,
-            event_identifier='xxxx',
+            group_identifier='xxxx',
             sequence_index=0,
             timestamp=TimestampMS(1731508592028),
             location=Location.KRAKEN,
@@ -605,7 +605,7 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
                 amount=FVal('0.000001'),
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=Location.KRAKEN,
                     unique_id='11636406000855',
                 ),
@@ -617,7 +617,7 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USD,
                 amount=ZERO,
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=Location.KRAKEN,
                     unique_id='11636406000855',
                 ),
@@ -629,7 +629,7 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_USD,
                 amount=ZERO,
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=Location.KRAKEN,
                     unique_id='21636406000865',
                 ),
@@ -641,7 +641,7 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_BTC,
                 amount=FVal('0.0000001'),
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=Location.KRAKEN,
                     unique_id='21636406000865',
                 ),
@@ -1135,13 +1135,13 @@ def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APISe
         events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
 
     assert events == [
         HistoryEvent(
             identifier=1,
-            event_identifier='XXXXXXXXXXXX',
+            group_identifier='XXXXXXXXXXXX',
             sequence_index=0,
             timestamp=TimestampMS(1636738550756),
             location=Location.KRAKEN,
@@ -1171,7 +1171,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
         spend=AssetAmount(asset=custom_asset, amount=ONE),
         receive=AssetAmount(asset=custom_asset, amount=ONE),
         fee=AssetAmount(asset=custom_asset, amount=ONE),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.KRAKEN,
             unique_id='UNIQUE_ID',
         ),
@@ -1203,7 +1203,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
             (HistoryEventType.STAKING, HistoryEventSubType.FEE, 'Spend 1 Gold Bar as Kraken staking fee'),  # noqa: E501
     ):
         event = HistoryEvent(
-            event_identifier='foo',
+            group_identifier='foo',
             sequence_index=1,
             timestamp=TimestampMS(10000000000),
             location=Location.KRAKEN,

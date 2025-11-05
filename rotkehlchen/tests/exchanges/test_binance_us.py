@@ -11,7 +11,7 @@ from rotkehlchen.exchanges.binance import BINANCEUS_BASE_URL, Binance
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_MYTRADES_RESPONSE,
@@ -77,7 +77,7 @@ def test_binanceus_trades_location(function_scope_binance):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=FVal('48.0000120000000000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BINANCEUS,
                 unique_id='28457',
             ),
@@ -88,7 +88,7 @@ def test_binanceus_trades_location(function_scope_binance):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BNB,
             amount=FVal('12.00000000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BINANCEUS,
                 unique_id='28457',
             ),
@@ -99,7 +99,7 @@ def test_binanceus_trades_location(function_scope_binance):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BNB,
             amount=FVal('10.10000000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BINANCEUS,
                 unique_id='28457',
             ),

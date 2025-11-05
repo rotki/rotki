@@ -162,7 +162,7 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                         )
                     except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                         rotki.msg_aggregator.add_error(
-                            f'Failed to fix swap with event identifier {update[0]}. '
+                            f'Failed to fix swap with group identifier {update[0]}. '
                             'Skipping it, check logs for more details',
                         )
                         log.error(f'During _fix_swap_event_identifiers found a conflict while applying update {update}. error: {e}. Skipping')  # noqa: E501
@@ -273,7 +273,7 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                         'notes, type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
                         (
                             event.entry_type.value,
-                            event.event_identifier,
+                            event.group_identifier,
                             event.sequence_index,
                             event.timestamp,
                             event.location.serialize_for_db(),

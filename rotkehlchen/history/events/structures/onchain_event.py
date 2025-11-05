@@ -71,14 +71,14 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
             counterparty: str | None = None,
             address: T_Address | None = None,
             extra_data: dict[str, Any] | None = None,
-            event_identifier: str | None = None,
+            group_identifier: str | None = None,
     ) -> None:
-        if event_identifier is None:
-            event_identifier = self._calculate_event_identifier(tx_ref, location)
+        if group_identifier is None:
+            group_identifier = self._calculate_group_identifier(tx_ref, location)
 
         HistoryBaseEntry.__init__(  # explicitly calling constructor
             self=self,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
@@ -108,11 +108,11 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
 
     @staticmethod
     @abstractmethod
-    def _calculate_event_identifier(tx_ref: T_TxRef, location: Location) -> str:
-        """Calculate the event identifier from transaction reference and location.
+    def _calculate_group_identifier(tx_ref: T_TxRef, location: Location) -> str:
+        """Calculate the group identifier from transaction reference and location.
 
         This method must be implemented by subclasses to handle chain-specific
-        event identifier generation logic.
+        group identifier generation logic.
         """
 
     @staticmethod
@@ -214,7 +214,7 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
         amount = deserialize_fval(entry[7], 'amount', 'onchain event')
         return cls(
             identifier=entry[0],
-            event_identifier=entry[1],
+            group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
             location=Location.deserialize_from_db(entry[4]),

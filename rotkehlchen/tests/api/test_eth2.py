@@ -948,30 +948,30 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             rotkehlchen_api_server,
             'historyeventresource',
         ),
-        json={'group_by_event_ids': True},
+        json={'aggregate_by_group_ids': True},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 23
     assert result['entries_total'] == 23
-    event_identifier = None
+    group_identifier = None
     for entry in result['entries']:
-        entry_block_number = entry['entry']['event_identifier'][4:]
+        entry_block_number = entry['entry']['group_identifier'][4:]
         if entry_block_number == str(block_number):
             assert entry['grouped_events_num'] == 3
-            event_identifier = entry['entry']['event_identifier']
+            group_identifier = entry['entry']['group_identifier']
         elif entry_block_number in {17055026, 16589592, 15938405}:
             assert entry['grouped_events_num'] == 2
         elif entry_block_number in {16135531, 15849710, 15798693}:
             assert entry['grouped_events_num'] == 1
 
     # now query the events of the combined group
-    assert event_identifier is not None
+    assert group_identifier is not None
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'historyeventresource',
         ),
-        json={'group_by_event_ids': False, 'event_identifiers': [event_identifier]},
+        json={'aggregate_by_group_ids': False, 'group_identifiers': [group_identifier]},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 3
@@ -979,21 +979,21 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     for outer_entry in result['entries']:
         entry = outer_entry['entry']
         if entry['sequence_index'] == 0:
-            assert entry['event_identifier'] == event_identifier
+            assert entry['group_identifier'] == group_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'informational'  # fee recipient not tracked
             assert entry['event_subtype'] == 'block production'
             assert entry['validator_index'] == vindex1
             assert entry['amount'] == '0.126419309459217215'
         elif entry['sequence_index'] == 1:
-            assert entry['event_identifier'] == event_identifier
+            assert entry['group_identifier'] == group_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'informational'
             assert entry['event_subtype'] == 'mev reward'
             assert entry['validator_index'] == vindex1
             assert entry['amount'] == mev_reward
         elif entry['sequence_index'] == 2:
-            assert entry['event_identifier'] == event_identifier
+            assert entry['group_identifier'] == group_identifier
             assert entry['entry_type'] == 'evm event'
             assert entry['amount'] == mev_reward
             assert entry['tx_ref'] == str(tx_hash)
@@ -1002,7 +1002,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             raise AssertionError('Should not get to this sequence index')
 
     # Also check that querying by validator indices work
-    assert event_identifier is not None
+    assert group_identifier is not None
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -1031,7 +1031,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         assert entry['entry']['entry_type'] == 'eth block event'
 
     # check that filtering by entry_types works properly with include behaviour (default)
-    assert event_identifier is not None
+    assert group_identifier is not None
     entry_types_include_arg = {
         'values': ['eth block event'],
         # default behaviour is include
@@ -1050,7 +1050,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         assert entry['entry_type'] == 'eth block event'
 
     # check that filtering by entry_types works properly with exclude behaviour
-    assert event_identifier is not None
+    assert group_identifier is not None
     entry_types_exclude_arg = {
         'values': ['eth block event'],
         'behaviour': 'exclude',
@@ -1265,8 +1265,8 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
         2. mev reward event - Should remain unmodified.
         3. evm event - Should be updated by combine_block_with_tx_events.
     - Two block events with an address that will get tracked:
-        1. event_identifier will be passed when redecoding - Event type will be updated to staking.
-        2. event_identifier will not be passed - Event type will remain informational.
+        1. group_identifier will be passed when redecoding - Event type will be updated to staking.
+        2. group_identifier will not be passed - Event type will remain informational.
 
     `fee_recipient_tracked` is initially set to False on all events.
     """

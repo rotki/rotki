@@ -30,7 +30,7 @@ ALL_DETAILS_KEYS = {
 class EvmEvent(OnchainEvent[EVMTxHash, ChecksumEvmAddress]):  # hash in superclass
 
     @staticmethod
-    def _calculate_event_identifier(tx_ref: EVMTxHash, location: Location) -> str:
+    def _calculate_group_identifier(tx_ref: EVMTxHash, location: Location) -> str:
         return f'{location.to_chain_id()}{tx_ref!s}'
 
     @staticmethod

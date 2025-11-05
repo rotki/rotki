@@ -5,8 +5,8 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteSwapData,
     ZKSyncLiteTransaction,
@@ -252,7 +252,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
     )
     with rotki.data.db.user_write() as write_cursor:
         for event in [HistoryEvent(
-            event_identifier=f'{prefix}{tx_hash}',
+            group_identifier=f'{prefix}{tx_hash}',
             sequence_index=0,
             timestamp=TimestampMS(1600000000000),
             location=location,
@@ -261,15 +261,15 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
             asset=asset,
             amount=FVal('0.0001'),
         ) for prefix, hashes, location, asset in (
-            (BTC_EVENT_IDENTIFIER_PREFIX, (btc_tx_hash1, btc_tx_hash2, btc_tx_hash3), Location.BITCOIN, A_BTC),  # noqa: E501
-            (BCH_EVENT_IDENTIFIER_PREFIX, (bch_tx_hash1, bch_tx_hash2, bch_tx_hash3), Location.BITCOIN_CASH, A_BCH),  # noqa: E501
+            (BTC_GROUP_IDENTIFIER_PREFIX, (btc_tx_hash1, btc_tx_hash2, btc_tx_hash3), Location.BITCOIN, A_BTC),  # noqa: E501
+            (BCH_GROUP_IDENTIFIER_PREFIX, (bch_tx_hash1, bch_tx_hash2, bch_tx_hash3), Location.BITCOIN_CASH, A_BCH),  # noqa: E501
         ) for tx_hash in hashes]:
             events_db.add_history_event(
                 write_cursor=write_cursor,
                 event=event,
                 mapping_values=(  # Mark the first event as customized
                     {HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED}
-                    if btc_tx_hash1 in event.event_identifier or bch_tx_hash1 in event.event_identifier else {}  # noqa: E501
+                    if btc_tx_hash1 in event.group_identifier or bch_tx_hash1 in event.group_identifier else {}  # noqa: E501
                 ),
             )
         for cache_key in (DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK):
@@ -295,7 +295,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(location=location),
             )) == 2  # only deleted the one event for the specified hash
-            assert all(tx_hash not in x.event_identifier for x in events)
+            assert all(tx_hash not in x.group_identifier for x in events)
 
         # then delete all for this chain
         response = requests.delete(
@@ -308,7 +308,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(location=location),
             )) == 1  # Only the customized event remains
-            assert customized_tx_hash in events[0].event_identifier
+            assert customized_tx_hash in events[0].group_identifier
             # also check that the cached tx block is removed
             assert cursor.execute(
                 'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ?;',
@@ -365,7 +365,7 @@ def test_purge_solana_transaction_data(rotkehlchen_api_server: 'APIServer') -> N
             cursor=cursor,
             filter_query=SolanaEventFilterQuery.make(),
         )) == 2  # only deleted one event for the specified hash
-        assert all(deleted_signature != x.event_identifier for x in events)
+        assert all(deleted_signature != x.group_identifier for x in events)
 
     # then delete all
     assert_simple_ok_response(requests.delete(
@@ -380,7 +380,7 @@ def test_purge_solana_transaction_data(rotkehlchen_api_server: 'APIServer') -> N
             cursor=cursor,
             filter_query=SolanaEventFilterQuery.make(),
         )) == 1  # Only the customized event remains
-        assert events[0].event_identifier == customized_event.event_identifier
+        assert events[0].group_identifier == customized_event.group_identifier
 
 
 def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:

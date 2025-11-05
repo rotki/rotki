@@ -296,7 +296,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
     with gnosis_inquirer.database.user_write() as write_cursor:
         write_cursor.executemany(
             'INSERT INTO history_events('
-            'identifier, entry_type, event_identifier, sequence_index, notes, timestamp, '
+            'identifier, entry_type, group_identifier, sequence_index, notes, timestamp, '
             'location, asset, amount, type, subtype, ignored'
             ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
             [
@@ -329,7 +329,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
             ],
         )
         write_cursor.execute(
-            'SELECT identifier FROM history_events WHERE event_identifier=?',
+            'SELECT identifier FROM history_events WHERE group_identifier=?',
             ('evm-gnosis-1',),
         )
         identifier = write_cursor.fetchone()[0]
@@ -338,7 +338,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
             (identifier, tx_hash, CPT_GNOSIS_PAY),
         )
         write_cursor.execute(
-            'SELECT identifier FROM history_events WHERE event_identifier=?',
+            'SELECT identifier FROM history_events WHERE group_identifier=?',
             ('evm-gnosis-2',),
         )
         second_identifier = write_cursor.fetchone()[0]

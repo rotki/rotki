@@ -137,7 +137,7 @@ class NexoImporter(BaseExchangeImporter):
                 amount = deserialize_fval_force_positive(csv_row['Input Amount'])
 
             event = HistoryEvent(
-                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
@@ -153,7 +153,7 @@ class NexoImporter(BaseExchangeImporter):
             input_asset = asset_from_nexo(csv_row['Input Currency'])
             input_amount = deserialize_fval_force_positive(csv_row['Input Amount'])
             event = HistoryEvent(
-                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
@@ -167,7 +167,7 @@ class NexoImporter(BaseExchangeImporter):
             self.add_history_events(write_cursor, [event])
         elif entry_type == 'Manual Sell Order':
             event = HistoryEvent(
-                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
@@ -183,7 +183,7 @@ class NexoImporter(BaseExchangeImporter):
             self.add_history_events(
                 write_cursor=write_cursor,
                 history_events=create_swap_events(
-                    event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                    group_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                     timestamp=ts_sec_to_ms(timestamp),
                     location=Location.NEXO,
                     spend=AssetAmount(

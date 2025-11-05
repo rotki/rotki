@@ -64,7 +64,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
         events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EthWithdrawalFilterQuery.make(),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
 
     assert len(events) == 94
@@ -186,7 +186,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
         events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(to_ts=Timestamp(1682370000)),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
 
     expected_events = [EthBlockEvent(
@@ -380,7 +380,7 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
         events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EthWithdrawalFilterQuery.make(),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
 
     # check that the two exits were detected
@@ -550,7 +550,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
                 from_ts=Timestamp(1738537200),  # 03/02/2025
                 to_ts=Timestamp(1738655703),  # 04/02/2025 08:55 UTC
             ),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
 
     timestamp, user_address, mevbot_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C'), 21771728  # noqa: E501
@@ -575,7 +575,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
     )]
     expected_events += [EvmEvent(
         identifier=1 + counter,
-        event_identifier=f'BP1_{block_number}',
+        group_identifier=f'BP1_{block_number}',
         tx_ref=tx_hash,
         sequence_index=2 + counter,
         timestamp=timestamp,

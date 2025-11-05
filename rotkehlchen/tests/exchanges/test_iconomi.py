@@ -10,7 +10,7 @@ from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
@@ -80,7 +80,7 @@ def test_query_trade_history(function_scope_iconomi):
         asset=A_REP,
         amount=FVal('1000.23'),
         location_label='iconomi',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.ICONOMI,
             unique_id='8362abff-12fd-4f6e-a152-590295d89bd2',
         ),
@@ -91,7 +91,7 @@ def test_query_trade_history(function_scope_iconomi):
         asset=A_EUR,
         amount=FVal('1505.63'),
         location_label='iconomi',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.ICONOMI,
             unique_id='8362abff-12fd-4f6e-a152-590295d89bd2',
         ),
@@ -102,7 +102,7 @@ def test_query_trade_history(function_scope_iconomi):
         asset=A_EUR,
         amount=FVal('999.9'),
         location_label='iconomi',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.ICONOMI,
             unique_id='e8c2c522-e43a-4cd9-b73b-812903bc85ca',
         ),
@@ -113,7 +113,7 @@ def test_query_trade_history(function_scope_iconomi):
         asset=A_REP,
         amount=FVal('1234'),
         location_label='iconomi',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.ICONOMI,
             unique_id='e8c2c522-e43a-4cd9-b73b-812903bc85ca',
         ),

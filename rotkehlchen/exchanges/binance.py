@@ -53,7 +53,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -174,7 +174,7 @@ def trade_from_binance(
         receive=receive,
         fee=fee,
         location_label=exchange_name,
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=location,
             unique_id=unique_id,
         ),
@@ -781,8 +781,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         continue
 
                     event = HistoryEvent(
-                        event_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash  # noqa: E501
-                        sequence_index=0,  # since event_identifier is always different
+                        group_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash  # noqa: E501
+                        sequence_index=0,  # since group_identifier is always different
                         timestamp=timestamp,
                         location=self.location,
                         location_label=self.name,  # the name of the CEX instance
@@ -854,8 +854,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     continue
 
                 event = HistoryEvent(
-                    event_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash
-                    sequence_index=0,  # since event_identifier is always different
+                    group_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash
+                    sequence_index=0,  # since group_identifier is always different
                     timestamp=timestamp,
                     location=self.location,
                     location_label=self.name,  # the name of the CEX instance
@@ -1335,7 +1335,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     amount=deserialize_fval(raw_data['totalFee']),
                 ),
                 location_label=self.name,
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=self.location,
                     unique_id=unique_id,
                 ) if unique_id else f'{uuid4().hex}',

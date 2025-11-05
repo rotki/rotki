@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 # staking. Then we need to consider the rewards in other assets that appear in the same
 # transaction and this is why we use the IN operator as filter.
 QUERY_STAKING_EVENTS = """
-WHERE event_identifier IN
-(SELECT A.event_identifier FROM history_events AS A JOIN history_events AS B ON A.event_identifier = B.event_identifier
+WHERE group_identifier IN
+(SELECT A.group_identifier FROM history_events AS A JOIN history_events AS B ON A.group_identifier = B.group_identifier
     JOIN chain_events_info AS C ON A.identifier=C.identifier WHERE C.counterparty=? AND A.asset=?
     AND B.asset=? AND B.subtype != ? AND B.type == ?
 ) AND type=? AND subtype=?
@@ -40,9 +40,9 @@ BINDINGS_STAKING_EVENTS = [
 ]
 # stability pool rewards
 QUERY_STABILITY_POOL_EVENTS = """
-WHERE event_identifier IN (
-    SELECT A.event_identifier FROM history_events AS A JOIN history_events AS B ON
-    A.event_identifier = B.event_identifier JOIN chain_events_info AS C ON A.identifier=C.identifier
+WHERE group_identifier IN (
+    SELECT A.group_identifier FROM history_events AS A JOIN history_events AS B ON
+    A.group_identifier = B.group_identifier JOIN chain_events_info AS C ON A.identifier=C.identifier
     WHERE C.counterparty = 'liquity' AND B.asset=? AND B.subtype=?
 ) AND type=? AND subtype=?
 """  # noqa: E501

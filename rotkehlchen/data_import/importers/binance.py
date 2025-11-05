@@ -42,14 +42,14 @@ log = RotkehlchenLogsAdapter(logger)
 
 BinanceCsvRow = dict[str, Any]
 BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
-EVENT_IDENTIFIER_PREFIX = 'BNC_'
+GROUP_IDENTIFIER_PREFIX = 'BNC_'
 INDEX = '_index'
 
 
 def hash_binance_csv_row(csv_row: BinanceCsvRow) -> str:
     """Hash the CSV row excluding the INDEX
 
-    NOTE: This creates unique event identifiers by hashing CSV data. If asset
+    NOTE: This creates unique group identifiers by hashing CSV data. If asset
     identifiers change (e.g., SOL-2 to SOL), the same CSV will produce different
     hashes, breaking duplicate detection. We can't fix this because we don't store
     the original CSV data. This happens because the 'Coin' column is converted to
@@ -137,7 +137,7 @@ class BinanceTransferEntry(BinanceMultipleEntry):
         row = data[0]
         return [
             HistoryEvent(
-                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(row)}',
+                group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
@@ -344,7 +344,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 spend=AssetAmount(asset=from_asset, amount=from_amount),
                 receive=AssetAmount(asset=to_asset, amount=to_amount),
                 fee=fee,
-                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(trade_rows[0])}',  # any row works, just using the first to create the event identifier  # noqa: E501
+                group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(trade_rows[0])}',  # any row works, just using the first to create the group identifier  # noqa: E501
                 spend_notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             ))
 
@@ -412,7 +412,7 @@ class BinanceDistributionEntry(BinanceSingleEntry):
         """
         importer.add_history_events(write_cursor, history_events=[
             HistoryEvent(
-                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
+                group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
@@ -446,7 +446,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             data: BinanceCsvRow,
     ) -> None:
         event = HistoryEvent(
-            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
+            group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,
@@ -488,7 +488,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
         """
         asset = data['Coin']
         amount = abs(data['Change'])
-        event_identifier = f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}'
+        group_identifier = f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}'
         timestamp_ms = ts_sec_to_ms(timestamp)
         staking_event = None
         if data['Operation'] in {
@@ -498,7 +498,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
             'Swap Farming Rewards',
         }:
             staking_event = HistoryEvent(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
                 location=Location.BINANCE,
@@ -515,7 +515,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
             'Staking Purchase',
         }:
             staking_event = HistoryEvent(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
                 location=Location.BINANCE,
@@ -532,7 +532,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
             'Staking Redemption',
         }:
             staking_event = HistoryEvent(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
                 location=Location.BINANCE,
@@ -580,7 +580,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
             action = 'profit' if is_profit else 'loss'
             notes = f'{amount} {data["Coin"].symbol} realized {action} on binance USD-MFutures'
         return HistoryEvent(
-            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
+            group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,
@@ -633,7 +633,7 @@ class BinancePOSEntry(BinanceSingleEntry):
             event_subtype = HistoryEventSubType.NONE
 
         event = HistoryEvent(
-            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
+            group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,

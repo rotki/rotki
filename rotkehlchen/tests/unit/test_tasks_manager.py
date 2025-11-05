@@ -363,7 +363,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
             write_cursor=write_cursor,
             history=[
                 EvmEvent(  # is before last_balance_save
-                    event_identifier='0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    group_identifier='0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(1000),
                     location=Location.OPTIMISM,
@@ -374,7 +374,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     location_label=accounts[0],
                     tx_ref=make_evm_tx_hash(),
                 ), EvmEvent(  # USDT was received before last_balance_save
-                    event_identifier='0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    group_identifier='0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(2000),
                     location=Location.ETHEREUM,
@@ -385,7 +385,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     location_label=accounts[0],
                     tx_ref=make_evm_tx_hash(),
                 ), EvmEvent(  # is a new receive event of this token after last_balance_save
-                    event_identifier='0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    group_identifier='0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(3000),
                     location=Location.ETHEREUM,
@@ -396,7 +396,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     location_label=accounts[1],
                     tx_ref=make_evm_tx_hash(),
                 ), EvmEvent(  # is a new receive event of this token after last_balance_save
-                    event_identifier='0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    group_identifier='0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(4000),
                     location=Location.OPTIMISM,

@@ -202,7 +202,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
         )
 
     assert events == [SwapEvent(
-        event_identifier='6870b958a71561119578ac1c98d346fdcbe1ec89e0408fc9a1d825df17fc8f3a',
+        group_identifier='6870b958a71561119578ac1c98d346fdcbe1ec89e0408fc9a1d825df17fc8f3a',
         timestamp=TimestampMS(1702297236826),
         location=Location.BYBIT,
         event_subtype=HistoryEventSubType.SPEND,
@@ -210,7 +210,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
         amount=FVal('8.29549'),
         location_label='bybit',
     ), SwapEvent(
-        event_identifier='6870b958a71561119578ac1c98d346fdcbe1ec89e0408fc9a1d825df17fc8f3a',
+        group_identifier='6870b958a71561119578ac1c98d346fdcbe1ec89e0408fc9a1d825df17fc8f3a',
         timestamp=TimestampMS(1702297236826),
         location=Location.BYBIT,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -218,7 +218,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
         amount=FVal('0.119'),
         location_label='bybit',
     ), SwapEvent(
-        event_identifier='e17bb4a812dcbfd54c097cda3990f99fe38fb8d829843636051dc9be8dd9c12d',
+        group_identifier='e17bb4a812dcbfd54c097cda3990f99fe38fb8d829843636051dc9be8dd9c12d',
         timestamp=TimestampMS(1702297107954),
         location=Location.BYBIT,
         event_subtype=HistoryEventSubType.SPEND,
@@ -226,7 +226,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
         amount=FVal('17.482000'),
         location_label='bybit',
     ), SwapEvent(
-        event_identifier='e17bb4a812dcbfd54c097cda3990f99fe38fb8d829843636051dc9be8dd9c12d',
+        group_identifier='e17bb4a812dcbfd54c097cda3990f99fe38fb8d829843636051dc9be8dd9c12d',
         timestamp=TimestampMS(1702297107954),
         location=Location.BYBIT,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -234,7 +234,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
         amount=FVal('20.00'),
         location_label='bybit',
     ), SwapEvent(
-        event_identifier='294efd1df37cfe316f763f198ec6c471412d806497d2d2d5c90a2b53402db3ac',
+        group_identifier='294efd1df37cfe316f763f198ec6c471412d806497d2d2d5c90a2b53402db3ac',
         timestamp=TimestampMS(1701201377325),
         location=Location.BYBIT,
         event_subtype=HistoryEventSubType.SPEND,
@@ -242,7 +242,7 @@ def test_trades(bybit_exchange: Bybit) -> None:
         amount=FVal('5.1573250'),
         location_label='bybit',
     ), SwapEvent(
-        event_identifier='294efd1df37cfe316f763f198ec6c471412d806497d2d2d5c90a2b53402db3ac',
+        group_identifier='294efd1df37cfe316f763f198ec6c471412d806497d2d2d5c90a2b53402db3ac',
         timestamp=TimestampMS(1701201377325),
         location=Location.BYBIT,
         event_subtype=HistoryEventSubType.RECEIVE,

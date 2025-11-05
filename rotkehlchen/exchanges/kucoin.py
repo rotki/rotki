@@ -37,7 +37,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -616,7 +616,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     amount=deserialize_fval_or_zero(raw_result['fee']),
                 ),
                 location_label=self.name,
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=self.location,
                     unique_id=str(trade_id),
             ),

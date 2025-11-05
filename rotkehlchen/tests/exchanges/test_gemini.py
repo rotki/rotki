@@ -17,7 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
@@ -153,7 +153,7 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('3311.315'),
         location_label='gemini',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.GEMINI,
             unique_id='560627330',
         ),
@@ -164,7 +164,7 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_BTC,
         amount=FVal('0.5'),
         location_label='gemini',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.GEMINI,
             unique_id='560627330',
         ),
@@ -175,7 +175,7 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('33.11315'),
         location_label='gemini',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.GEMINI,
             unique_id='560627330',
         ),
@@ -186,7 +186,7 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_ETH,
         amount=FVal('1'),
         location_label='gemini',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.GEMINI,
             unique_id='560628883',
         ),
@@ -197,7 +197,7 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('20.00'),
         location_label='gemini',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.GEMINI,
             unique_id='560628883',
         ),
@@ -208,7 +208,7 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('0.20'),
         location_label='gemini',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.GEMINI,
             unique_id='560628883',
         ),
@@ -230,9 +230,9 @@ def test_gemini_query_all_trades_pagination(sandbox_gemini):
 
     identifiers = defaultdict(int)
     for event in events:
-        # The same event_identifier can be present up to 3 times (spend/receive/fee events).
-        assert identifiers[event.event_identifier] <= 3, 'trade included multiple times in the results'  # noqa: E501
-        identifiers[event.event_identifier] += 1
+        # The same group_identifier can be present up to 3 times (spend/receive/fee events).
+        assert identifiers[event.group_identifier] <= 3, 'trade included multiple times in the results'  # noqa: E501
+        identifiers[event.group_identifier] += 1
 
     assert len(events) == 1773
 

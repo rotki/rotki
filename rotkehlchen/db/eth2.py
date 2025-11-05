@@ -825,8 +825,8 @@ class DBEth2:
         with self.db.conn.read_ctx() as cursor:
             changes = [
                 (
-                    (event_identifier := EthBlockEvent.form_event_identifier(entry[1])),
-                    event_identifier,
+                    (group_identifier := EthBlockEvent.form_group_identifier(entry[1])),
+                    group_identifier,
                     f'{entry[2]} as mev reward for block {entry[1]} in {(tx_hash := deserialize_evm_tx_hash(entry[3]))!s}',  # noqa: E501
                     HistoryEventType.STAKING.serialize(),
                     HistoryEventSubType.MEV_REWARD.serialize(),
@@ -845,7 +845,7 @@ class DBEth2:
             for changes_entry in changes:
                 result = write_cursor.execute(
                     'SELECT COUNT(*) FROM history_events HE LEFT JOIN chain_events_info CE ON '
-                    'HE.identifier = CE.identifier WHERE HE.event_identifier=? AND CE.tx_ref=?',
+                    'HE.identifier = CE.identifier WHERE HE.group_identifier=? AND CE.tx_ref=?',
                     (changes_entry[0], changes_entry[7]),
                 ).fetchone()[0]
                 if result == 1:  # Has already been moved.
@@ -856,8 +856,8 @@ class DBEth2:
                 try:
                     write_cursor.execute(
                         'UPDATE history_events '
-                        'SET event_identifier=?, sequence_index=('
-                        'SELECT MAX(sequence_index) FROM history_events E2 WHERE E2.event_identifier=?)+1, '  # noqa: E501
+                        'SET group_identifier=?, sequence_index=('
+                        'SELECT MAX(sequence_index) FROM history_events E2 WHERE E2.group_identifier=?)+1, '  # noqa: E501
                         'notes=?, type=?, subtype=?, extra_data=? WHERE identifier=?',
                         changes_entry[:-1],
                     )

@@ -9,8 +9,8 @@ from solders.solders import Signature
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -165,7 +165,7 @@ class DBHistoryEvents:
                         (*bindings, event.asset.identifier, event.identifier))
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     raise InputError(
-                        f'Tried to edit event to have event_identifier {event.event_identifier} '
+                        f'Tried to edit event to have group_identifier {event.group_identifier} '
                         f'and sequence_index {event.sequence_index} but it already exists',
                     ) from e
                 if write_cursor.rowcount != 1:
@@ -204,8 +204,8 @@ class DBHistoryEvents:
             if force_delete is False:
                 with self.db.conn.read_ctx() as cursor:
                     cursor.execute(
-                        'SELECT COUNT(*) == 1 FROM history_events WHERE event_identifier=(SELECT '
-                        'event_identifier FROM history_events WHERE identifier=? AND entry_type=?)',  # noqa: E501
+                        'SELECT COUNT(*) == 1 FROM history_events WHERE group_identifier=(SELECT '
+                        'group_identifier FROM history_events WHERE identifier=? AND entry_type=?)',  # noqa: E501
                         (identifier, HistoryBaseEntryType.EVM_EVENT.serialize_for_db()),
                     )
                     if bool(cursor.fetchone()[0]) is True:
@@ -335,8 +335,8 @@ class DBHistoryEvents:
         placeholders = ', '.join(['?'] * len(tx_refs))
         bindings: list[str | bytes]
         if location.is_bitcoin():
-            where_str = f'WHERE event_identifier IN ({placeholders})'
-            id_prefix = BTC_EVENT_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_EVENT_IDENTIFIER_PREFIX  # noqa: E501
+            where_str = f'WHERE group_identifier IN ({placeholders})'
+            id_prefix = BTC_GROUP_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_GROUP_IDENTIFIER_PREFIX  # noqa: E501
             bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_refs]
         else:
             where_str = (
@@ -350,7 +350,7 @@ class DBHistoryEvents:
 
         if (
             delete_customized is False and
-            (length := len(customized_event_ids := self.get_customized_event_identifiers(
+            (length := len(customized_event_ids := self.get_customized_group_identifiers(
                 cursor=write_cursor,
                 location=location,
             ))) != 0
@@ -360,7 +360,7 @@ class DBHistoryEvents:
 
         write_cursor.execute(f'DELETE FROM history_events {where_str}', bindings)
 
-    def get_customized_event_identifiers(
+    def get_customized_group_identifiers(
             self,
             cursor: 'DBCursor',
             location: Location | None,
@@ -411,12 +411,12 @@ class DBHistoryEvents:
     def _create_history_events_query(
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: bool = False,
+            aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
         base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
-        if group_by_event_ids:
+        if aggregate_by_group_ids:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
                 with_pagination=False,
@@ -435,8 +435,8 @@ class DBHistoryEvents:
             suffix, limit = base_suffix, []
         else:
             suffix, limit = (
-                f'* FROM (SELECT {base_suffix}) WHERE event_identifier IN ('
-                'SELECT DISTINCT event_identifier FROM history_events '
+                f'* FROM (SELECT {base_suffix}) WHERE group_identifier IN ('
+                'SELECT DISTINCT group_identifier FROM history_events '
                 'ORDER BY timestamp DESC, sequence_index ASC LIMIT ?)'  # only select the last LIMIT groups  # noqa: E501
             ), [entries_limit]
 
@@ -447,8 +447,8 @@ class DBHistoryEvents:
                 order_by = ''
 
             return (
-                f'{prefix} FROM (SELECT {base_suffix} WHERE event_identifier IN '
-                f'(SELECT event_identifier FROM (SELECT {suffix}) {filters}) {order_by})',
+                f'{prefix} FROM (SELECT {base_suffix} WHERE group_identifier IN '
+                f'(SELECT group_identifier FROM (SELECT {suffix}) {filters}) {order_by})',
                 limit + query_bindings,
             )
 
@@ -460,7 +460,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool = ...,
     ) -> list[tuple[int, HistoryBaseEntry]]:
         ...
@@ -471,7 +471,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[HistoryBaseEntry]:
         ...
@@ -482,7 +482,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, EthDepositEvent]]:
         ...
@@ -493,7 +493,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EthDepositEvent]:
         ...
@@ -504,7 +504,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: EthWithdrawalFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EthWithdrawalEvent]:
         ...
@@ -515,7 +515,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, EvmEvent]]:
         ...
@@ -526,7 +526,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EvmEvent]:
         ...
@@ -537,7 +537,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: SolanaEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, SolanaEvent]]:
         ...
@@ -548,7 +548,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: SolanaEventFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[SolanaEvent]:
         ...
@@ -559,7 +559,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventWithCounterpartyFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, SolanaEvent | EvmEvent]]:
         ...
@@ -570,7 +570,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventWithCounterpartyFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[SolanaEvent | EvmEvent]:
         ...
@@ -581,7 +581,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventWithTxRefFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]]:
         ...
@@ -592,7 +592,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventWithTxRefFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[SolanaEvent | EvmEvent | HistoryEvent]:
         ...
@@ -603,7 +603,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             entries_limit: int | None,
-            group_by_event_ids: bool = ...,
+            aggregate_by_group_ids: bool = ...,
             match_exact_events: bool = ...,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
@@ -624,7 +624,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             entries_limit: int | None,
-            group_by_event_ids: bool = False,
+            aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
@@ -642,7 +642,7 @@ class DBHistoryEvents:
         """
         base_query, filters_bindings = self._create_history_events_query(
             filter_query=filter_query,
-            group_by_event_ids=group_by_event_ids,
+            aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
             entries_limit=entries_limit,
         )
@@ -652,7 +652,7 @@ class DBHistoryEvents:
         ethereum_tracked_accounts: set[ChecksumEvmAddress] | None = None
         cursor.execute(base_query, filters_bindings)
         output: list[HistoryBaseEntry] | list[tuple[int, HistoryBaseEntry]] = []
-        type_idx = 1 if group_by_event_ids else 0
+        type_idx = 1 if aggregate_by_group_ids else 0
         data_start_idx = type_idx + 1
         failed_to_deserialize = False
         for entry in cursor:
@@ -719,7 +719,7 @@ class DBHistoryEvents:
                 failed_to_deserialize = True
                 continue
 
-            if group_by_event_ids is True:
+            if aggregate_by_group_ids is True:
                 output.append((entry[0], deserialized_event))  # type: ignore
             else:
                 output.append(deserialized_event)  # type: ignore
@@ -737,7 +737,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool = ...,
     ) -> list[tuple[int, HistoryBaseEntry]]:
         ...
@@ -747,7 +747,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[HistoryBaseEntry]:
         ...
@@ -757,7 +757,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, EthDepositEvent]]:
         ...
@@ -767,7 +767,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EthDepositEvent]:
         ...
@@ -777,7 +777,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EthWithdrawalFilterQuery,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EthWithdrawalEvent]:
         ...
@@ -787,7 +787,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, EvmEvent]]:
         ...
@@ -797,7 +797,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[EvmEvent]:
         ...
@@ -807,7 +807,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: SolanaEventFilterQuery,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, SolanaEvent]]:
         ...
@@ -817,7 +817,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: SolanaEventFilterQuery,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[SolanaEvent]:
         ...
@@ -827,7 +827,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventWithCounterpartyFilterQuery,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, SolanaEvent | EvmEvent]]:
         ...
@@ -837,7 +837,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventWithCounterpartyFilterQuery,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[SolanaEvent | EvmEvent]:
         ...
@@ -847,7 +847,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventWithTxRefFilterQuery,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> list[tuple[int, SolanaEvent | EvmEvent | HistoryEvent]]:
         ...
@@ -857,7 +857,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventWithTxRefFilterQuery,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> list[SolanaEvent | EvmEvent | HistoryEvent]:
         ...
@@ -867,7 +867,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
-            group_by_event_ids: bool = ...,
+            aggregate_by_group_ids: bool = ...,
             match_exact_events: bool = ...,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
@@ -887,7 +887,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
-            group_by_event_ids: bool = False,
+            aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
@@ -907,7 +907,7 @@ class DBHistoryEvents:
             cursor=cursor,
             filter_query=filter_query,
             entries_limit=None,
-            group_by_event_ids=group_by_event_ids,
+            aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
         )
 
@@ -917,7 +917,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[True],
+            aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]], int, int]:
         ...
@@ -928,7 +928,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: Literal[False] = ...,
+            aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
     ) -> tuple[list[HistoryBaseEntry], int, int]:
         ...
@@ -939,7 +939,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
-            group_by_event_ids: bool = False,
+            aggregate_by_group_ids: bool = False,
             match_exact_events: bool = ...,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry], int, int]:
         """
@@ -952,7 +952,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             filter_query: 'HistoryBaseEntryFilterQuery',
             entries_limit: int | None,
-            group_by_event_ids: bool = False,
+            aggregate_by_group_ids: bool = False,
             match_exact_events: bool = False,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry], int, int]:
         """Gets all history events for all types, based on the filter query.
@@ -964,14 +964,14 @@ class DBHistoryEvents:
             cursor=cursor,
             filter_query=filter_query,
             entries_limit=entries_limit,
-            group_by_event_ids=group_by_event_ids,
+            aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
         )
         count_without_limit, count_with_limit = self.get_history_events_count(
             cursor=cursor,
             query_filter=filter_query,
             entries_limit=entries_limit,
-            group_by_event_ids=group_by_event_ids,
+            aggregate_by_group_ids=aggregate_by_group_ids,
         )
         return events, count_without_limit, count_with_limit
 
@@ -1038,7 +1038,7 @@ class DBHistoryEvents:
             self,
             cursor: 'DBCursor',
             query_filter: HistoryBaseEntryFilterQuery,
-            group_by_event_ids: bool = False,
+            aggregate_by_group_ids: bool = False,
             entries_limit: int | None = None,
     ) -> tuple[int, int]:
         """
@@ -1049,7 +1049,7 @@ class DBHistoryEvents:
         """
         query_without_limit, query_without_limit_bindings = self._create_history_events_query(
             filter_query=query_filter,
-            group_by_event_ids=group_by_event_ids,
+            aggregate_by_group_ids=aggregate_by_group_ids,
             entries_limit=None,
         )
         count_without_limit = cursor.execute(
@@ -1065,7 +1065,7 @@ class DBHistoryEvents:
         # Otherwise, get the limited count
         query_with_limit, query_with_limit_bindings = self._create_history_events_query(
             filter_query=query_filter,
-            group_by_event_ids=group_by_event_ids,
+            aggregate_by_group_ids=aggregate_by_group_ids,
             entries_limit=entries_limit,
         )
         count_with_limit = cursor.execute(
@@ -1075,7 +1075,7 @@ class DBHistoryEvents:
 
         # If we're grouping by event IDs and got 0 results but should have some,
         # fall back to using the minimum of limit and total
-        if group_by_event_ids and count_with_limit == 0 and entries_limit > 0:
+        if aggregate_by_group_ids and count_with_limit == 0 and entries_limit > 0:
             count_with_limit = min(entries_limit, count_without_limit)
 
         return count_without_limit, count_with_limit
@@ -1188,7 +1188,7 @@ class DBHistoryEvents:
             'SELECT E.identifier FROM history_events E LEFT JOIN eth_staking_events_info S '
             'ON E.identifier=S.identifier WHERE E.sequence_index=1 AND S.identifier IS NOT NULL '
             'AND (SELECT COUNT(*) FROM history_events E2 WHERE '
-            'E2.event_identifier=E.event_identifier) > 2',
+            'E2.group_identifier=E.group_identifier) > 2',
         )
         return [x[0] for x in cursor]
 
@@ -1239,7 +1239,7 @@ class DBHistoryEvents:
             )
             eth_on_gas_per_address = {row[0]: str(row[1]) for row in cursor}
             cursor.execute(
-                'SELECT chain_id, COUNT(DISTINCT event_identifier) as tx_count FROM chain_events_info '  # noqa: E501
+                'SELECT chain_id, COUNT(DISTINCT group_identifier) as tx_count FROM chain_events_info '  # noqa: E501
                 'JOIN history_events ON chain_events_info.identifier = history_events.identifier '
                 'JOIN evm_transactions ON evm_transactions.tx_hash = chain_events_info.tx_ref '
                 'WHERE history_events.timestamp >= ? AND history_events.timestamp <= ? AND '
@@ -1252,7 +1252,7 @@ class DBHistoryEvents:
                 transactions_per_chain[chain.name] = row[1]
 
             cursor.execute(
-                'SELECT COUNT(DISTINCT history_events.event_identifier) FROM chain_events_info '
+                'SELECT COUNT(DISTINCT history_events.group_identifier) FROM chain_events_info '
                 'JOIN history_events ON chain_events_info.identifier = history_events.identifier '
                 'WHERE history_events.location = ? AND history_events.timestamp >= ? AND history_events.timestamp <= ? '  # noqa: E501
                 f'AND {skip_spam_assets}',
@@ -1262,7 +1262,7 @@ class DBHistoryEvents:
                 transactions_per_chain[SupportedBlockchain.SOLANA.name] = solana_count
 
             cursor.execute(
-                'SELECT location, COUNT(DISTINCT event_identifier) FROM history_events '
+                'SELECT location, COUNT(DISTINCT group_identifier) FROM history_events '
                 'WHERE location IN (?, ?) AND timestamp >= ? AND timestamp <= ? '
                 f'AND {skip_spam_assets} GROUP BY location',
                 (
@@ -1277,7 +1277,7 @@ class DBHistoryEvents:
                 transactions_per_chain[chain.name] = row[1]
 
             cursor.execute(
-                f'SELECT location, COUNT(DISTINCT event_identifier) AS unique_events FROM history_events '  # noqa: E501
+                f'SELECT location, COUNT(DISTINCT group_identifier) AS unique_events FROM history_events '  # noqa: E501
                 f'WHERE location IN ({",".join("?" * len(possible_trades_locations := ALL_SUPPORTED_EXCHANGES + (Location.EXTERNAL,)))}) AND timestamp BETWEEN ? AND ? GROUP BY location',  # noqa: E501
                 (*[i.serialize_for_db() for i in possible_trades_locations], from_ts_ms, to_ts_ms),
             )
@@ -1304,7 +1304,7 @@ class DBHistoryEvents:
             placeholders = ','.join('?' * len(CHAINS_WITH_TRANSACTIONS))
             bindings = tuple(Location.from_chain(blockchain).serialize_for_db() for blockchain in CHAINS_WITH_TRANSACTIONS)  # noqa: E501
             cursor.execute(
-                "SELECT unixepoch(date(datetime(timestamp/1000, 'unixepoch'), 'localtime'), 'utc'), COUNT(DISTINCT event_identifier) as tx_count "  # noqa: E501
+                "SELECT unixepoch(date(datetime(timestamp/1000, 'unixepoch'), 'localtime'), 'utc'), COUNT(DISTINCT group_identifier) as tx_count "  # noqa: E501
                 f'FROM history_events WHERE location IN ({placeholders}) '
                 'AND timestamp >= ? AND timestamp <= ? AND asset NOT IN '
                 "(SELECT value FROM multisettings WHERE name = 'ignored_asset') "

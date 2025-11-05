@@ -218,7 +218,7 @@ def detect_duplicate_event(
     with importer.db.conn.read_ctx() as read_cursor:
         read_cursor.execute(
             f"SELECT COUNT(*) FROM history_events WHERE "
-            f"event_identifier LIKE '{event_prefix}%' "
+            f"group_identifier LIKE '{event_prefix}%' "
             "AND asset=? AND amount=? AND timestamp=? AND location=? "
             "AND type=? AND subtype=?",
             (asset.identifier, str(amount), timestamp_ms, location.serialize_for_db(),

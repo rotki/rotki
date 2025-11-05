@@ -560,14 +560,14 @@ def _events_to_consume(
         accounting_treatment = TxAccountingTreatment.deserialize_from_db(raw_treatment[0])
         if accounting_treatment == TxAccountingTreatment.SWAP:
             _, peeked_event = events_iterator.peek((None, None))
-            if peeked_event is None or peeked_event.event_identifier != event.event_identifier:
-                log.error(f'Event with {event.event_identifier=} should have a SWAP IN event')
+            if peeked_event is None or peeked_event.group_identifier != event.group_identifier:
+                log.error(f'Event with {event.group_identifier=} should have a SWAP IN event')
                 return ids_processed
             _, next_event = next(events_iterator)
             ids_processed.append((next_event.identifier, cache_identifier))  # type: ignore[arg-type]
 
             _, peeked_event = events_iterator.peek((None, None))
-            if peeked_event and peeked_event.event_identifier == event.event_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+            if peeked_event and peeked_event.group_identifier == event.group_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
                 # consume the related fee if it exists
                 _, next_event = next(events_iterator)
                 ids_processed.append((next_event.identifier, cache_identifier))  # type: ignore[arg-type]
@@ -622,8 +622,8 @@ def query_missing_accounting_rules(
         related_events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
-                event_identifiers=list({event.event_identifier for event in events}),
-                order_by_rules=[('event_identifier', True), ('sequence_index', True)],
+                group_identifiers=list({event.group_identifier for event in events}),
+                order_by_rules=[('group_identifier', True), ('sequence_index', True)],
             ),
         )
 
@@ -659,7 +659,7 @@ def query_missing_accounting_rules(
                     event.event_type == HistoryEventType.INFORMATIONAL or
                     # staking events all have a process() function for accounting
                     isinstance(event, EthStakingEvent) or
-                    (isinstance(event, EvmEvent) and event.event_identifier.startswith('BP1_'))
+                    (isinstance(event, EvmEvent) and event.group_identifier.startswith('BP1_'))
             ):
 
                 accountant.processable_events_cache.add(event.identifier, EventAccountingRuleStatus.PROCESSED)  # type: ignore  # noqa: E501

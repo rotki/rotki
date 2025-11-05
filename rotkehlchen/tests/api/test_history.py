@@ -477,7 +477,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server: 'APIServer') -> No
         db.add_history_events(
             write_cursor=write_cursor,
             history=[HistoryEvent(
-                event_identifier='whatever',
+                group_identifier='whatever',
                 sequence_index=0,
                 timestamp=TimestampMS(1665336822000),
                 location=Location.EXTERNAL,
@@ -490,7 +490,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server: 'APIServer') -> No
                 location=Location.EXTERNAL,
                 spend=AssetAmount(amount=FVal('1'), asset=A_EUR),
                 receive=AssetAmount(amount=FVal('320'), asset=A_DAI),
-                event_identifier='tradeid1',
+                group_identifier='tradeid1',
             )],
         )
 

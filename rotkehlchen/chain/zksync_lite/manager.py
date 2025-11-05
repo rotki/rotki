@@ -631,7 +631,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         target = None
         tracked_from = transaction.from_address in tracked_addresses
         tracked_to = transaction.to_address in tracked_addresses
-        event_identifier = ZKL_IDENTIFIER.format(tx_hash=str(transaction.tx_hash))
+        group_identifier = ZKL_IDENTIFIER.format(tx_hash=str(transaction.tx_hash))
         events = []
         event_data: list[tuple[int, HistoryEventType, HistoryEventSubType, Asset, FVal, ChecksumEvmAddress, ChecksumEvmAddress | None, str]] = []  # noqa: E501
         match transaction.tx_type:
@@ -769,7 +769,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
 
         for sequence_index, event_type, event_subtype, asset, amount, location_label, target, notes in event_data:  # noqa: E501
             events.append(EvmEvent(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 tx_ref=transaction.tx_hash,
                 sequence_index=sequence_index,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
@@ -792,7 +792,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 fee_type = 'Bridging'
 
             events.append(EvmEvent(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 tx_ref=transaction.tx_hash,
                 sequence_index=events[-1].sequence_index + 1,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
@@ -841,7 +841,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         for tx_index, transaction in enumerate(transactions):
             with self.database.user_write() as write_cursor:  # delete old tx events
                 write_cursor.execute(
-                    'DELETE FROM history_events WHERE event_identifier=?',
+                    'DELETE FROM history_events WHERE group_identifier=?',
                     (ZKL_IDENTIFIER.format(tx_hash=str(transaction.tx_hash)),),
                 )
 

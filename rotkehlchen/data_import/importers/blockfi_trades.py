@@ -11,7 +11,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -66,7 +66,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
                     amount=deserialize_fval(csv_row['Buy Quantity']),
                 ),
                 spend_notes=csv_row['Type'],
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=Location.BLOCKFI,
                     unique_id=csv_row['Trade ID'],
                 ),

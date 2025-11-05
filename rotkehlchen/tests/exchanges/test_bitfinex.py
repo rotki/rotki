@@ -27,7 +27,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_NEO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
@@ -453,7 +453,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('49.3425179516'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -464,7 +464,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_WBTC,
         amount=FVal('0.26334268'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -475,7 +475,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.09868591'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -504,7 +504,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('0.26334268'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -515,7 +515,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('49.3425179516'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -526,7 +526,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('0.09868591'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -566,7 +566,7 @@ def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
         event_subtype=HistoryEventSubType.SPEND,
         asset=rlc,
         amount=FVal('0.26334268'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -577,7 +577,7 @@ def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('49.3425179516'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -588,7 +588,7 @@ def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
         event_subtype=HistoryEventSubType.FEE,
         asset=rlc,
         amount=FVal('0.09868591'),
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITFINEX,
             unique_id='399251013',
         ),
@@ -728,7 +728,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='1',
             ),
@@ -739,7 +739,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.26334268'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='1',
             ),
@@ -750,7 +750,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('0.09868591'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='1',
             ),
@@ -761,7 +761,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.26334268'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='2',
             ),
@@ -772,7 +772,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='2',
             ),
@@ -783,7 +783,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.09868591'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='2',
             ),
@@ -794,7 +794,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('0.500000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='3',
             ),
@@ -805,7 +805,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WBTC,
             amount=FVal('10000.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='3',
             ),
@@ -816,7 +816,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('20.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='3',
             ),
@@ -827,7 +827,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBTC,
             amount=FVal('10000.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='4',
             ),
@@ -838,7 +838,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('0.500000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='4',
             ),
@@ -849,7 +849,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BTC,
             amount=FVal('20.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='4',
             ),
@@ -951,7 +951,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='1',
             ),
@@ -962,7 +962,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.26334268'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='1',
             ),
@@ -973,7 +973,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('0.09868591'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='1',
             ),
@@ -984,7 +984,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.26334268'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='2',
             ),
@@ -995,7 +995,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDT,
             amount=FVal('49.3425179516'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='2',
             ),
@@ -1006,7 +1006,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.09868591'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='2',
             ),
@@ -1017,7 +1017,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('0.500000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='3',
             ),
@@ -1028,7 +1028,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WBTC,
             amount=FVal('10000.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='3',
             ),
@@ -1039,7 +1039,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('20.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='3',
             ),
@@ -1050,7 +1050,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBTC,
             amount=FVal('10000.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='4',
             ),
@@ -1061,7 +1061,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('0.500000'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='4',
             ),
@@ -1072,7 +1072,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_WBTC,
             amount=FVal('20.0'),
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=Location.BITFINEX,
                 unique_id='4',
             ),

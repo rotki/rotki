@@ -88,14 +88,14 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
             location=Location.EXTERNAL,
-            event_identifier='1xyz',
+            group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=Price(FVal('268.678317859')) * FVal(82)),
             receive=AssetAmount(asset=A_BTC, amount=FVal(82)),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1449809536000),  # cryptocompare hourly BTC/EUR price: 386.175
             location=Location.POLONIEX,
-            event_identifier='2xyz',
+            group_identifier='2xyz',
             spend=AssetAmount(asset=A_BTC, amount=Price(FVal('0.0010275')) * FVal(375)),
             receive=AssetAmount(asset=A_XMR, amount=FVal(375)),
             fee=AssetAmount(asset=A_XMR, amount=FVal('0.9375')),
@@ -103,7 +103,7 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
         *create_swap_events(
             timestamp=TimestampMS(1458070370000),  # cryptocompare hourly XMR/EUR price: 1.0443027675  # noqa: E501
             location=Location.KRAKEN,
-            event_identifier='3xyz',
+            group_identifier='3xyz',
             spend=AssetAmount(asset=A_XMR, amount=FVal(45)),
             receive=AssetAmount(asset=A_EUR, amount=Price(FVal('1.0443027675')) * FVal(45)),
             fee=AssetAmount(asset=A_XMR, amount=FVal('0.117484061344')),
@@ -128,14 +128,14 @@ def test_buy_event_creation(accountant):
         *create_swap_events(
             timestamp=TimestampMS(1476979735000),
             location=Location.KRAKEN,
-            event_identifier='1xyz',
+            group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=Price(FVal('578.505')) * FVal(5)),
             receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
             fee=AssetAmount(asset=A_BTC, amount=FVal('0.0012')),
         ), *create_swap_events(
             timestamp=TimestampMS(1476979735000),
             location=Location.KRAKEN,
-            event_identifier='2xyz',
+            group_identifier='2xyz',
             spend=AssetAmount(asset=A_EUR, amount=Price(FVal('578.505')) * FVal(5)),
             receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
             fee=AssetAmount(asset=A_EUR, amount=FVal('0.0012')),
@@ -162,7 +162,7 @@ def test_no_corresponding_buy_for_sell(accountant, google_service):
     history = create_swap_events(
         timestamp=TimestampMS(1476979735000),
         location=Location.KRAKEN,
-        event_identifier='1xyz',
+        group_identifier='1xyz',
         spend=AssetAmount(asset=A_BTC, amount=ONE),
         receive=AssetAmount(asset=A_EUR, amount=FVal('2519.62')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.02')),
@@ -210,7 +210,7 @@ def test_sell_fiat_for_crypto(accountant, google_service):
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
             location=Location.KRAKEN,
-            event_identifier='1xyz',
+            group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=FVal(2000)),
             receive=AssetAmount(asset=A_BTC, amount=FVal('0.002') * FVal(2000)),
         ),
@@ -220,14 +220,14 @@ def test_sell_fiat_for_crypto(accountant, google_service):
         *create_swap_events(
             timestamp=TimestampMS(1496979735000),
             location=Location.KRAKEN,
-            event_identifier='2xyz',
+            group_identifier='2xyz',
             spend=AssetAmount(asset=A_CHF, amount=FVal(500)),
             receive=AssetAmount(asset=A_ETH, amount=FVal('0.004') * FVal(500)),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1506979735000),
             location=Location.KRAKEN,
-            event_identifier='3xyz',
+            group_identifier='3xyz',
             spend=AssetAmount(asset=A_ETH, amount=ONE),
             receive=AssetAmount(asset=A_EUR, amount=FVal(25000)),
         ),
@@ -259,14 +259,14 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),  # 1 ETH = 0.8583 EUR according to oracle
             location=Location.KRAKEN,
-            event_identifier='1xyz',
+            group_identifier='1xyz',
             spend=AssetAmount(asset=A_EUR, amount=buy_price),
             receive=AssetAmount(asset=A_ETH, amount=ONE),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1463508234000),  # 1 ETH = 10.785 EUR according to oracle
             location=Location.KRAKEN,
-            event_identifier='2xyz',
+            group_identifier='2xyz',
             spend=AssetAmount(asset=A_ETH, amount=ONE),
             receive=AssetAmount(asset=A_EUR, amount=sell_price),
         ),
@@ -298,14 +298,14 @@ def test_other_currency_fiat_trades(accountant, google_service):
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),  # 1 ETH = 0.8583 EUR according to oracle
             location=Location.KRAKEN,
-            event_identifier='1xyz',
+            group_identifier='1xyz',
             spend=AssetAmount(asset=A_USD, amount=buy_price),
             receive=AssetAmount(asset=A_ETH, amount=ONE),
         ),
         *create_swap_events(
             timestamp=TimestampMS(1463508234000),  # 1 ETH = 10.785 EUR according to oracle
             location=Location.KRAKEN,
-            event_identifier='2xyz',
+            group_identifier='2xyz',
             spend=AssetAmount(asset=A_ETH, amount=ONE),
             receive=AssetAmount(asset=A_USD, amount=sell_price),
         ),
@@ -341,7 +341,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     events = create_swap_events(
         timestamp=ts_sec_to_ms(time),
         location=Location.KRAKEN,
-        event_identifier='1xyz',
+        group_identifier='1xyz',
         spend=AssetAmount(asset=A_BTC, amount=FVal('0.11000') * FVal('2.5')),
         receive=AssetAmount(asset=A_EUR, amount=FVal('2.5')),
         fee=AssetAmount(asset=fgp, amount=FVal('0.15')),
@@ -372,7 +372,7 @@ def test_acquisition_price_not_found(accountant, google_service):
     zero is taken and asset is not ignored and no missing acquisition is counted"""
     history = [
         HistoryEvent(
-            event_identifier='1',
+            group_identifier='1',
             sequence_index=0,
             timestamp=TimestampMS(1446979735000),
             location=Location.EXTERNAL,
@@ -383,7 +383,7 @@ def test_acquisition_price_not_found(accountant, google_service):
         ), *create_swap_events(
             timestamp=TimestampMS(1635314397000),  # cryptocompare hourly COMP/EUR price: 261.39
             location=Location.POLONIEX,
-            event_identifier='2xyz',
+            group_identifier='2xyz',
             spend=AssetAmount(asset=A_COMP, amount=ONE),
             receive=AssetAmount(asset=A_EUR, amount=FVal('261.39')),
         ),
@@ -407,14 +407,14 @@ def test_no_fiat_missing_acquisitions(accountant):
             location=Location.UPHOLD,
             spend=AssetAmount(asset=A_USD, amount=FVal('0.8982')),
             receive=AssetAmount(asset=A_EUR, amount=ONE),
-            event_identifier='trade1',
+            group_identifier='trade1',
         ),
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
             location=Location.POLONIEX,
             spend=AssetAmount(asset=A_EUR, amount=FVal(355.9)),
             receive=AssetAmount(asset=A_BTC, amount=ONE),
-            event_identifier='trade2',
+            group_identifier='trade2',
         ),
     ]
     accounting_history_process(accountant, Timestamp(1446979735), Timestamp(1635314397), history)
@@ -443,7 +443,7 @@ def test_non_history_event_in_history_iterator(accountant):
     receive_amount_str = '10000'
     event_timestamp_ms = TimestampMS(1635314397 - DAY_IN_SECONDS * 1000)
     history = [HistoryEvent(
-        event_identifier='1',
+        group_identifier='1',
         sequence_index=0,
         timestamp=event_timestamp_ms,
         location=Location.EXTERNAL,

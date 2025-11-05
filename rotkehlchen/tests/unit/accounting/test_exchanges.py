@@ -90,13 +90,13 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
             ), *create_swap_events(
                 timestamp=TimestampMS(1611426201001),
                 location=Location.COINBASE,
-                event_identifier='1xyz',
+                group_identifier='1xyz',
                 spend=AssetAmount(asset=A_BTC, amount=FVal(1.5)),
                 receive=AssetAmount(asset=A_ETH, amount=ONE),
             ), *create_swap_events(
                 timestamp=TimestampMS(1611426201003),
                 location=Location.EXTERNAL,
-                event_identifier='2xyz',
+                group_identifier='2xyz',
                 spend=AssetAmount(asset=A_USDT, amount=FVal(7)),
                 receive=AssetAmount(asset=A_LINK, amount=FVal(49)),
             )],
@@ -181,7 +181,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
     history = [
         HistoryEvent(  # should be ignored
             identifier=7,
-            event_identifier='event_0',
+            group_identifier='event_0',
             sequence_index=1,
             timestamp=TimestampMS(1675532700000),
             location=Location.KRAKEN,
@@ -192,7 +192,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             notes='SPEND 0.0025 ETH in kraken',
         ), HistoryEvent(  # should be ignored as part of the trade
             identifier=8,
-            event_identifier='event_0',
+            group_identifier='event_0',
             sequence_index=2,
             timestamp=TimestampMS(1675532700000),
             location=Location.KRAKEN,
@@ -203,7 +203,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             notes='Receive 0.0025 EUR in kraken',
         ), HistoryEvent(  # should be processed
             identifier=9,
-            event_identifier='event_1',
+            group_identifier='event_1',
             sequence_index=1,
             timestamp=TimestampMS(1675913100000),
             location=Location.KRAKEN,
@@ -214,7 +214,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             notes='Staking reward of 0.1932938 ETH in kraken',
         ), HistoryEvent(  # should be processed
             identifier=10,
-            event_identifier='event_2',
+            group_identifier='event_2',
             sequence_index=1,
             timestamp=TimestampMS(1675914100000),
             location=Location.KRAKEN,
@@ -225,7 +225,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             notes='Receive forked asset',
         ), HistoryEvent(  # should be ignored
             identifier=11,
-            event_identifier='event_3',
+            group_identifier='event_3',
             sequence_index=1,
             timestamp=TimestampMS(1695914100000),
             location=Location.KRAKEN,

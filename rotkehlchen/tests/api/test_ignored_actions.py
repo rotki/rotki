@@ -140,7 +140,7 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: 'APIServer'
     accountant = rotkehlchen_api_server.rest_api.rotkehlchen.accountant
     events_list = [
         HistoryEvent(
-            event_identifier='a',
+            group_identifier='a',
             sequence_index=0,
             timestamp=TimestampMS(1467279735000),
             location=Location.BLOCKCHAIN,
@@ -149,7 +149,7 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: 'APIServer'
             amount=FVal(1000),
             asset=A_ETH,
         ), HistoryEvent(
-            event_identifier='b',
+            group_identifier='b',
             sequence_index=0,
             timestamp=TimestampMS(1467279736000),
             location=Location.BLOCKCHAIN,

@@ -151,7 +151,7 @@ class CointrackingImporter(BaseExchangeImporter):
                     receive=AssetAmount(asset=base_asset, amount=base_amount_bought),
                     fee=fee,
                     spend_notes=notes,
-                    event_identifier=f'{COINTRACKING_EVENT_PREFIX}{hash_csv_row(csv_row)}',
+                    group_identifier=f'{COINTRACKING_EVENT_PREFIX}{hash_csv_row(csv_row)}',
                 ),
             )
         elif row_type in {'Deposit', 'Withdrawal'}:
@@ -195,7 +195,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 raise SkippedCSVEntry(f'Staking event for {asset} at {timestamp} already exists in the DB')  # noqa: E501
 
             event = HistoryEvent(
-                event_identifier=f'{COINTRACKING_EVENT_PREFIX}_{uuid4().hex}',
+                group_identifier=f'{COINTRACKING_EVENT_PREFIX}_{uuid4().hex}',
                 sequence_index=0,
                 timestamp=timestamp,
                 location=location,

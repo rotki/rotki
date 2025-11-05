@@ -61,7 +61,7 @@ def test_gas_fees_after_year(accountant, google_service):
     tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         HistoryEvent(
-            event_identifier='1',
+            group_identifier='1',
             sequence_index=0,
             timestamp=TimestampMS(1539713238000),  # 178.615 EUR/ETH
             location=Location.ETHEREUM,

@@ -103,7 +103,7 @@ def _gain_one_ether(
     kwargs: dict[str, Any]
     if entry_type == 'history_event':
         event_class = HistoryEvent
-        kwargs = {'event_identifier': f'rotki_events_{EXAMPLE_TX_HASH_HEX}'}
+        kwargs = {'group_identifier': f'rotki_events_{EXAMPLE_TX_HASH_HEX}'}
     else:  # can only be evm event
         event_class = EvmEvent
         kwargs = {'tx_ref': EXAMPLE_EVM_HASH}
@@ -359,7 +359,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         index=1,
         extra_data={
             'tx_ref': EXAMPLE_TX_HASH_HEX,
-            'group_id': f'{swap_spend_event.event_identifier}12',
+            'group_id': f'{swap_spend_event.group_identifier}12',
         },
     )
     expected_spend_event.count_entire_amount_spend = False
@@ -379,7 +379,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         index=2,
         extra_data={
             'tx_ref': EXAMPLE_TX_HASH_HEX,
-            'group_id': f'{swap_receive_event.event_identifier}12',
+            'group_id': f'{swap_receive_event.group_identifier}12',
         },
     )
     expected_receive_event.count_entire_amount_spend = False

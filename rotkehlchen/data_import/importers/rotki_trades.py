@@ -12,7 +12,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
-from rotkehlchen.history.events.utils import create_event_identifier_from_swap
+from rotkehlchen.history.events.utils import create_group_identifier_from_swap
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount
 
@@ -50,7 +50,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
                 receive=(receive := AssetAmount(asset=receive_asset, amount=receive_amount)),
                 spend_notes=csv_row['Description'],
                 fee=AssetAmount(asset=fee_currency, amount=fee) if fee_currency is not None and fee is not None else None,  # noqa: E501
-                event_identifier=create_event_identifier_from_swap(
+                group_identifier=create_group_identifier_from_swap(
                     location=location,
                     timestamp=timestamp,
                     spend=spend,

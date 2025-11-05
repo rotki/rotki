@@ -12,7 +12,7 @@ from rotkehlchen.exchanges.bitcoinde import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -87,7 +87,7 @@ def test_query_trade_history(function_scope_bitcoinde):
         asset=A_EUR,
         amount=FVal('2341.21'),
         location_label='bitcoinde',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITCOINDE,
             unique_id='X1',
         ),
@@ -98,7 +98,7 @@ def test_query_trade_history(function_scope_bitcoinde):
         asset=A_BTC,
         amount=FVal('10'),
         location_label='bitcoinde',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITCOINDE,
             unique_id='X1',
         ),
@@ -109,7 +109,7 @@ def test_query_trade_history(function_scope_bitcoinde):
         asset=A_EUR,
         amount=FVal('1.5214'),
         location_label='bitcoinde',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITCOINDE,
             unique_id='X1',
         ),
@@ -120,7 +120,7 @@ def test_query_trade_history(function_scope_bitcoinde):
         asset=A_EUR,
         amount=FVal('4124.124'),
         location_label='bitcoinde',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITCOINDE,
             unique_id='X2',
         ),
@@ -131,7 +131,7 @@ def test_query_trade_history(function_scope_bitcoinde):
         asset=A_BTC,
         amount=FVal('241.214'),
         location_label='bitcoinde',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITCOINDE,
             unique_id='X2',
         ),
@@ -142,7 +142,7 @@ def test_query_trade_history(function_scope_bitcoinde):
         asset=A_EUR,
         amount=FVal('0.93452135'),
         location_label='bitcoinde',
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.BITCOINDE,
             unique_id='X2',
         ),

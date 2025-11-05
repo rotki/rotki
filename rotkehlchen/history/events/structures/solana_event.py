@@ -46,7 +46,7 @@ class SolanaEvent(OnchainEvent[Signature, SolanaAddress]):  # hash in superclass
             counterparty: str | None = None,
             address: SolanaAddress | None = None,
             extra_data: dict[str, Any] | None = None,
-            event_identifier: str | None = None,
+            group_identifier: str | None = None,
     ) -> None:
         super().__init__(
             tx_ref=tx_ref,
@@ -63,11 +63,11 @@ class SolanaEvent(OnchainEvent[Signature, SolanaAddress]):  # hash in superclass
             counterparty=counterparty,
             address=address,
             extra_data=extra_data,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
         )
 
     @staticmethod
-    def _calculate_event_identifier(tx_ref: Signature, location: Location) -> str:
+    def _calculate_group_identifier(tx_ref: Signature, location: Location) -> str:
         return str(tx_ref)
 
     @staticmethod

@@ -1277,8 +1277,8 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, filter_query: 'HistoryBaseEntryFilterQuery', group_by_event_ids: bool) -> Response:  # noqa: E501
-        return self.rest_api.get_history_events(filter_query=filter_query, group_by_event_ids=group_by_event_ids)  # noqa: E501
+    def post(self, filter_query: 'HistoryBaseEntryFilterQuery', aggregate_by_group_ids: bool) -> Response:  # noqa: E501
+        return self.rest_api.get_history_events(filter_query=filter_query, aggregate_by_group_ids=aggregate_by_group_ids)  # noqa: E501
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_put_schema, location='json')

@@ -12,7 +12,7 @@ CHAIN_EVENT_FIELDS_TYPE = tuple[
 
 CHAIN_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
-    str,            # event_identifier
+    str,            # group_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # location

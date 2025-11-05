@@ -114,7 +114,7 @@ def test_query_owned_assets(
         db.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
-                event_identifier='1',
+                group_identifier='1',
                 sequence_index=1,
                 timestamp=TimestampMS(1),
                 location=Location.ETHEREUM,

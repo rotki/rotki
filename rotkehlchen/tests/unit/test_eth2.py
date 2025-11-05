@@ -724,7 +724,7 @@ def test_combine_block_with_tx_events(eth2, database):
         events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-                        group_by_event_ids=False,
+                        aggregate_by_group_ids=False,
         )
 
     modified_event = EvmEvent(
@@ -739,7 +739,7 @@ def test_combine_block_with_tx_events(eth2, database):
         amount=mev_reward,
         location_label=vindex1_address,
         notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
-        event_identifier=EthBlockEvent.form_event_identifier(block_number),
+        group_identifier=EthBlockEvent.form_group_identifier(block_number),
         extra_data={'validator_index': vindex1},
     )
     assert modified_event == events[2]

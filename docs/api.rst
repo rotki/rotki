@@ -4982,7 +4982,7 @@ Dealing with History Events
                       "asset": "ETH",
                       "amount": "0.00863351371344",
                       "counterparty": "gas",
-                      "event_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "group_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "event_subtype": "fee",
                       "event_type": "spend",
                       "location": "ethereum",
@@ -5007,7 +5007,7 @@ Dealing with History Events
                       "asset": "ETH",
                       "amount": "0.00163351371344",
                       "counterparty": "gas",
-                      "event_identifier": "10x1c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "group_identifier": "10x1c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "event_subtype": "fee",
                       "event_type": "spend",
                       "location": "ethereum",
@@ -5030,7 +5030,7 @@ Dealing with History Events
 		      "entry_type": "eth_withdrawal_event",
                       "asset": "ETH",
                       "amount": "0.00163351371344",
-                      "event_identifier": "EW_1454_20453",
+                      "group_identifier": "EW_1454_20453",
                       "event_subtype": "remove_asset",
                       "event_type": "staking",
                       "location": "ethereum",
@@ -5053,7 +5053,7 @@ Dealing with History Events
 		      "entry_type": "eth_block_event",
                       "asset": "ETH",
                       "amount": "0.00163351371344",
-                      "event_identifier": "evm_1_block_15534342",
+                      "group_identifier": "evm_1_block_15534342",
                       "event_subtype": "block_production",
                       "event_type": "staking",
                       "location": "ethereum",
@@ -5076,7 +5076,7 @@ Dealing with History Events
                       "asset": "ETH",
                       "amount": "32",
                       "counterparty": "eth2",
-                      "event_identifier": "10x2c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "group_identifier": "10x2c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "event_subtype": "deposit asset",
                       "event_type": "staking",
                       "location": "ethereum",
@@ -5105,7 +5105,7 @@ Dealing with History Events
                       "location_label": "Binance US 1",
                       "asset": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
                       "amount": "200",
-                      "event_identifier": "269b64de6a51caa372a3b455341a41a9da2ae743794e81011b5da1c3b6e1195b",
+                      "group_identifier": "269b64de6a51caa372a3b455341a41a9da2ae743794e81011b5da1c3b6e1195b",
                       "sequence_index": 0,
                       "extra_data": {
                           "address": "0x29aE5D9A1f28f82c358f8DF5A029bC0D5452b66E",
@@ -5126,7 +5126,7 @@ Dealing with History Events
                       "location_label": null,
                       "asset": "USD",
                       "amount": "32.2400",
-                      "event_identifier": "9e0bfb56dbe8c3d4d3a71584740826df3f901cb0c55a11ee33887afefc7a99d7",
+                      "group_identifier": "9e0bfb56dbe8c3d4d3a71584740826df3f901cb0c55a11ee33887afefc7a99d7",
                       "sequence_index": 0,
                       "extra_data": null,
                       "auto_notes": "Swap 32.2400 USD in Kraken"
@@ -5144,7 +5144,7 @@ Dealing with History Events
                       "location_label": null,
                       "asset": "XMR",
                       "amount": "0.2000496400",
-                      "event_identifier": "9e0bfb56dbe8c3d4d3a71584740826df3f901cb0c55a11ee33887afefc7a99d7",
+                      "group_identifier": "9e0bfb56dbe8c3d4d3a71584740826df3f901cb0c55a11ee33887afefc7a99d7",
                       "sequence_index": 1,
                       "extra_data": null,
                       "auto_notes": "Receive 0.2000496400 XMR after a swap in Kraken"
@@ -5162,7 +5162,7 @@ Dealing with History Events
                       "location_label": null,
                       "asset": "USD",
                       "amount": "0.1290",
-                      "event_identifier": "9e0bfb56dbe8c3d4d3a71584740826df3f901cb0c55a11ee33887afefc7a99d7",
+                      "group_identifier": "9e0bfb56dbe8c3d4d3a71584740826df3f901cb0c55a11ee33887afefc7a99d7",
                       "sequence_index": 2,
                       "extra_data": null,
                       "auto_notes": "Spend 0.1290 USD as Kraken swap fee"
@@ -5180,7 +5180,7 @@ Dealing with History Events
                       "amount": "0.123",
                       "identifier": 10,
                       "entry_type": "evm swap event",
-                      "event_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "group_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "sequence_index": 5,
                       "extra_data": null,
                       "tx_ref": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
@@ -5200,7 +5200,7 @@ Dealing with History Events
                       "amount": "0.0032",
                       "identifier": 7,
                       "entry_type": "evm swap event",
-                      "event_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "group_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "sequence_index": 6,
                       "extra_data": null,
                       "tx_ref": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
@@ -5220,7 +5220,7 @@ Dealing with History Events
                       "amount": "120",
                       "identifier": 8,
                       "entry_type": "evm swap event",
-                      "event_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "group_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "sequence_index": 7,
                       "extra_data": null,
                       "tx_ref": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
@@ -5240,7 +5240,7 @@ Dealing with History Events
                       "amount": "0.0002",
                       "identifier": 10,
                       "entry_type": "evm swap event",
-                      "event_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "group_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "sequence_index": 9,
                       "extra_data": null,
                       "tx_ref": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
@@ -5257,11 +5257,11 @@ Dealing with History Events
           "message": ""
       }
 
-   :resjson list decoded_events: A list of history events, with some events grouped into sub-lists (for instance the spend/receive/fee events making up a swap). Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry may also have a `has_details` flag if true. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry may have a `customized` flag set to true. If it does, it means the event has been customized/added by the user. Each entry may also have a `hidden` flag if set to true. If it does then that means it should be hidden in the UI due to consolidation of events. Also if `group_by_event_ids` exist and is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the common event identifier. The consumer has to query this endpoint again with `group_by_event_ids` set to false and with the `event_identifiers` filter set to the identifier of the events having more than 1 event. Finally `ignored_in_accounting` is set to `true` when the user has marked this event as ignored. Following are all possible entries depending on entry type.
+   :resjson list decoded_events: A list of history events, with some events grouped into sub-lists (for instance the spend/receive/fee events making up a swap). Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry may also have a `has_details` flag if true. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry may have a `customized` flag set to true. If it does, it means the event has been customized/added by the user. Each entry may also have a `hidden` flag if set to true. If it does then that means it should be hidden in the UI due to consolidation of events. Also if `aggregate_by_group_ids` exist and is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the group identifier. The consumer has to query this endpoint again with `aggregate_by_group_ids` set to false and with the `group_identifiers` filter set to the identifier of the events having more than 1 event. Finally `ignored_in_accounting` is set to `true` when the user has marked this event as ignored. Following are all possible entries depending on entry type.
    :resjson string identifier: Common key. This is the identifier of a single event.
    :resjson string entry_type: Common key. This identifies the category of the event and determines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
-   :resjson string event_identifier: Common key. An event identifier grouping multiple events under a common group. This is how we group transaction events under a transaction, staking related events under block production etc.
-   :resjson int sequence_index: Common key. This is an index that tries to provide the order of history entries for a single event_identifier.
+   :resjson string group_identifier: Common key. An identifier grouping multiple events under a common group. This is how we group transaction events under a transaction, staking related events under block production etc.
+   :resjson int sequence_index: Common key. This is an index that tries to provide the order of history entries for a single group_identifier.
    :resjson int timestamp: Common key. The timestamp of the entry
    :resjson string event_accounting_rule_status: Common key. It explains the status of accounting rules for the event. Possible values are: ``has rule``: Meaning the event has a rule. ``processed``: meaning the event will be processed because it is affected by another event. ``not processed`` meaning it doesn't have any rule and won't be processed by accounting.
    :resjson string location: Common key. The location of the entry. Such as "ethereum", "optimism", etc.
@@ -5308,7 +5308,7 @@ Dealing with History Events
 
             {
                "entry_type": "history event",
-               "event_identifier": "RE_xxxxxxxxxx",
+               "group_identifier": "RE_xxxxxxxxxx",
                "location": "ethereum",
                "timestamp": 1569924574,
                "amount": "1.542",
@@ -5320,11 +5320,11 @@ Dealing with History Events
                "user_notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
             }
 
-         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single group_identifier.
          :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
          :reqjson object amount: The amount of the event.
          :reqjson string asset: The asset identifier for this entry
-         :reqjson string event_identifier: The event identifier to be used for the event.
+         :reqjson string group_identifier: The group identifier to be used for the event.
          :reqjson string event_type: The main event type of the entry. Possible event types can be seen in the `HistoryEventType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L54>`_.
          :reqjson string event_subtype: The subtype for the entry. Possible event types can be seen in the `HistoryEventSubType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L72>`_.
          :reqjson string[optional] location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
@@ -5345,7 +5345,7 @@ Dealing with History Events
             {
                "entry_type": "evm event",
                "tx_ref": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
-               "event_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+               "group_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
                "sequence_index": 162,
                "timestamp": 1569924574,
                "location": "ethereum",
@@ -5360,8 +5360,8 @@ Dealing with History Events
             }
 
          :reqjson string tx_ref: This is the transaction hash of the evm event
-         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
-         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson string[optional] group_identifier: The group identifier to be used for the event.
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single group_identifier.
          :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
          :reqjson object amount: The amount of the event.
          :reqjson string asset: The asset identifier for this entry
@@ -5388,7 +5388,7 @@ Dealing with History Events
 
             {
                "entry_type": "eth block event",
-               "event_identifier": "BLOCK_11",
+               "group_identifier": "BLOCK_11",
                "timestamp": 1569924574,
                "amount": "1.542",
                "block_number": 11,
@@ -5397,7 +5397,7 @@ Dealing with History Events
                "is_mev_reward": true
             }
 
-         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
+         :reqjson string[optional] group_identifier: The group identifier to be used for the event.
          :reqjson object amount: The amount of the event.
          :reqjson int block_number: This is the number of the block where the event took place.
          :reqjson int validator_index: This is the index of the validator.
@@ -5421,7 +5421,7 @@ Dealing with History Events
                "timestamp": 1569924574,
                "amount": "1.542",
                "tx_ref": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
-               "event_identifier": "RE_xxxxxxxxxx",
+               "group_identifier": "RE_xxxxxxxxxx",
                "validator_index": 1,
                "sequence_index": 162,
                "depositor": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -5429,10 +5429,10 @@ Dealing with History Events
             }
 
          :reqjson string tx_ref: This is the transaction hash of the evm event
-         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single group_identifier.
          :reqjson object amount: The amount of the event.
          :reqjson int validator_index: This is the index of the validator.
-         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
+         :reqjson string[optional] group_identifier: The group identifier to be used for the event.
          :reqjson string depositor: an evm address field to specify the depositor in an "eth deposit event".
          :reqjson object[optional] extra_data: An object containing any other data to be stored.
 
@@ -5455,10 +5455,10 @@ Dealing with History Events
                "is_exit": true,
                "validator_index": 1,
                "withdrawal_address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
-               "event_identifier": "EW_XX_XXXXX"
+               "group_identifier": "EW_XX_XXXXX"
             }
 
-         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
+         :reqjson string[optional] group_identifier: The group identifier to be used for the event.
          :reqjson object amount: The amount of the event.
          :reqjson int validator_index: This is the index of the validator.
          :reqjson string withdrawal_address: an evm address field to specify the withdrawer in an "eth withdrawal event".
@@ -5490,12 +5490,12 @@ Dealing with History Events
             }
 
          :reqjson string tx_ref: This is the transaction signature of the solana event
-         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single group_identifier.
          :reqjson object amount: The amount of the event.
          :reqjson string asset: The asset identifier for this entry
          :reqjson string event_type: The main event type of the entry. Possible event types can be seen in the `HistoryEventType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L54>`_.
          :reqjson string event_subtype: The subtype for the entry. Possible event types can be seen in the `HistoryEventSubType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L72>`_.
-         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
+         :reqjson string[optional] group_identifier: The group identifier to be used for the event.
          :reqjson string[optional] location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
          :reqjson string[optional] user_notes: This is the user editable part of the description of the event entry in plain text explaining what is being done.
          :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For a send it's the target. For a receive it's the sender. For bridged transfer it's the bridge's network identifier. For a protocol interaction it's the protocol.
@@ -5526,7 +5526,7 @@ Dealing with History Events
                 "address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
                 "transaction_id": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
                 "user_notes": ["Example note", ""],
-                "event_identifier": "AM_xxxxxxxxxx"
+                "group_identifier": "AM_xxxxxxxxxx"
             }
 
          :reqjson string event_type: The type of asset movement event ("deposit" or "withdrawal")
@@ -5537,9 +5537,9 @@ Dealing with History Events
          :reqjson string[optional] fee_asset: The identifier of the asset in which the fee was paid. If provided, fee must also be provided
          :reqjson string[optional] address: The address involved in the movement
          :reqjson string[optional] transaction_id: The transaction hash of the movement.
-         :reqjson string[optional] unique_id: A unique identifier for this asset movement used in conjunction with the location to generate the event_identifier. It's generally the uuid of the event in the exchange.
+         :reqjson string[optional] unique_id: A unique identifier for this asset movement used in conjunction with the location to generate the group_identifier. It's generally the uuid of the event in the exchange.
          :resjson list user_notes[optional]: Custom notes for each of the underlying events. Each note will be appended after the autogenerated event description.
-         :reqjson string[optional] event_identifier: Custom identifier for the event (overrides the value generated from unique_id and location)
+         :reqjson string[optional] group_identifier: Custom identifier for the event (overrides the value generated from unique_id and location)
 
    .. tab:: Swap Event
 
@@ -5574,9 +5574,9 @@ Dealing with History Events
          :reqjson string receive_asset: The identifier of the asset being received (e.g. "USD", "BTC")
          :reqjson string[optional] fee_amount: The fee amount charged for the swap. If provided, fee_asset must also be provided
          :reqjson string[optional] fee_asset: The identifier of the asset in which the fee was paid. If provided, fee must also be provided
-         :reqjson string[optional] unique_id: A unique identifier for this swap used in conjunction with the location to generate the event_identifier. It's generally the uuid of the event in the exchange if its an exchange event.
+         :reqjson string[optional] unique_id: A unique identifier for this swap used in conjunction with the location to generate the group_identifier. It's generally the uuid of the event in the exchange if its an exchange event.
          :resjson list user_notes[optional]: Custom notes for each of the underlying events. Each note will be appended after the autogenerated event description.
-         :reqjson string[optional] event_identifier: Custom identifier for the event (overrides the value generated from unique_id and location)
+         :reqjson string[optional] group_identifier: Custom identifier for the event (overrides the value generated from unique_id and location)
          :reqjson string[optional] location_label: A string field that provides more information about the location. For swaps this is the name of the specific exchange where the swap occurred (for instance "Kraken 1")
 
    .. tab:: Evm Swap Event
@@ -5635,12 +5635,12 @@ Dealing with History Events
          Main schema:
 
          :reqjson string tx_ref: This is the transaction hash of the evm event
-         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier. This value will be the index of the first event in the swap event group, and other events in the group will be given consecutive indexes after this value.
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single group_identifier. This value will be the index of the first event in the swap event group, and other events in the group will be given consecutive indexes after this value.
          :reqjson string location: The location/exchange where the swap occurred
          :reqjson list[object] spend: List of spend events. See above for sub-event object specification.
          :reqjson list[object] receive: List of receive events.
          :reqjson list[object][optional] fee: List of fee events.
-         :reqjson string[optional] event_identifier: Custom identifier for the event.
+         :reqjson string[optional] group_identifier: Custom identifier for the event.
          :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For evm swaps this is the protocol that the swap interacted with.
          :reqjson string[optional] product: A defi product that this event is associated with (pool, gauge, etc).
          :reqjson string[optional] address: Any relevant address that this event interacted with.
@@ -5697,11 +5697,11 @@ Dealing with History Events
          Main schema:
 
          :reqjson string tx_ref: This is the transaction signature of the solana event
-         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier. This value will be the index of the first event in the swap event group, and other events in the group will be given consecutive indexes after this value.
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single group_identifier. This value will be the index of the first event in the swap event group, and other events in the group will be given consecutive indexes after this value.
          :reqjson list[object] spend: List of spend events. See above for sub-event object specification.
          :reqjson list[object] receive: List of receive events.
          :reqjson list[object][optional] fee: List of fee events.
-         :reqjson string[optional] event_identifier: Custom identifier for the event.
+         :reqjson string[optional] group_identifier: Custom identifier for the event.
          :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For solana swaps this is the protocol that the swap interacted with.
          :reqjson string[optional] address: Any relevant address that this event interacted with.
 
@@ -5741,7 +5741,7 @@ Dealing with History Events
       {
           "entry_type": "evm event",
           "identifier": 243,
-          "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+          "group_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "sequence_index": 162,
           "timestamp": 1569924574,
           "location": "blockchain",
@@ -5755,8 +5755,8 @@ Dealing with History Events
       }
 
    The request object uses all the same arguments for each entry type as the `add event endpoint <add_event_args_label_>`_, with the addition of the identifier which signifies which entry will be edited.
-   When dealing with event types where all the events for an event_identifier are added/edited as a group (such as swap events and asset movements), use the identifier of the primary event in the group, i.e. for asset movements, the identifier of the deposit/withdrawal event, and for swap events, the identifier of the spend event.
-   For events that are edited as a group but may have other events/groups with the same event_identifier (such as evm swap events), specify the identifiers of all the events in the group, for example: ``"identifiers": [1,2,3,4]``
+   When dealing with event types where all the events for an group_identifier are added/edited as a group (such as swap events and asset movements), use the identifier of the primary event in the group, i.e. for asset movements, the identifier of the deposit/withdrawal event, and for swap events, the identifier of the spend event.
+   For events that are edited as a group but may have other events/groups with the same group_identifier (such as evm swap events), specify the identifiers of all the events in the group, for example: ``"identifiers": [1,2,3,4]``
 
    **Example Response**:
 
@@ -5884,11 +5884,11 @@ Exporting History Events
 
    :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
    :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
-   :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only the first event of each group but also the number of events the group has. Default is false.
+   :reqjson bool aggregate_by_group_ids: A boolean determining if results should be grouped by common group identifiers. If true, the result will return only the first event of each group but also the number of events the group has. Default is false.
    :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
    :reqjson int to_timestamp: The timestamp until which to query. Default is now.
    :reqjson list[int] identifiers: List of unique integer identifiers of the history events to retrieve.
-   :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
+   :reqjson list[string] group_identifiers: An optional list of group identifiers to filter for.
    :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
    :reqjson list location: An optional location name to filter events only for that location.
@@ -6233,7 +6233,7 @@ Export PnL report debug data
             "events": [
                 {
                 "identifier": 12,
-                "event_identifier": "0xb626d9d9e3a5b9ecbe0c2194cf96ab7561063c6d31e0e6799d56a589b8094609",
+                "group_identifier": "0xb626d9d9e3a5b9ecbe0c2194cf96ab7561063c6d31e0e6799d56a589b8094609",
                 "sequence_index": 0,
                 "timestamp": 1651258550,
                 "location": "blockchain",
@@ -6248,7 +6248,7 @@ Export PnL report debug data
                 },
                 {
                 "identifier": 8,
-                "event_identifier": "0xa9905f5eaa664a53e6513f7ba2147dcebc3e54d4062df9df1925116b6a220014",
+                "group_identifier": "0xa9905f5eaa664a53e6513f7ba2147dcebc3e54d4062df9df1925116b6a220014",
                 "sequence_index": 0,
                 "timestamp": 1651259834,
                 "location": "blockchain",
@@ -13066,7 +13066,7 @@ Managing custom accounting rules
   :reqjsonarr optional[array[string]] counterparties: List of possible counterparties to use while filtering. Instead of a string a null value can also be given to mean counterparty being None.
   :reqjsonarr optional[array[int]] identifiers: List of rule identifiers to filter by. Only rules with these identifiers will be returned.
   :reqjsonarr optional[string] custom_rule_handling: Controls filtering of rules by event ID association. Possible values: 'all' (default - no filtering), 'only' (only rules with event IDs), 'exclude' (only rules without event IDs). Cannot be used together with event_ids when set to 'only' or 'exclude'.
-  :reqjsonarr optional[array[int]] event_ids: List of specific event identifiers to filter accounting rules by. Only rules that apply to these specific events will be returned. Cannot be used together with custom_rule_handling when it's set to 'only' or 'exclude'.
+  :reqjsonarr optional[array[int]] event_ids: List of specific group identifiers to filter accounting rules by. Only rules that apply to these specific events will be returned. Cannot be used together with custom_rule_handling when it's set to 'only' or 'exclude'.
 
 
   **Example Response**
@@ -13983,7 +13983,7 @@ Historical Balance Queries
         }
 
         :resjson list[integer] times: Timestamps of balance changes.
-        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance amount.
+        :resjson list last_group_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance amount.
         :resjson list[string] values: Net asset balance amount at each corresponding timestamp.
         :statuscode 200: Historical balances returned
         :statuscode 400: Malformed query
@@ -14029,7 +14029,7 @@ Historical Balance Queries
             "result": {
               "times": [1672531200, 1673308800, 1674518400],
               "values": ["50000.5", "48750.25", "52100.75"],
-              "last_event_identifier": [1, "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f"],
+              "last_group_identifier": [1, "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f"],
               "missing_prices": [
                 ["BTC", 1672531200],
                 ["ETH", 1674518400]
@@ -14040,7 +14040,7 @@ Historical Balance Queries
 
         :resjson list[integer] times: Timestamps at which net worth was calculated
         :resjson list[string] values: Net worth value at each corresponding timestamp in user's profit currency
-        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance.
+        :resjson list last_group_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance.
         :resjson list[list] missing_prices: List of [asset_identifier, timestamp] pairs where price data was missing
         :statuscode 200: Historical net worth values returned
         :statuscode 400: Malformed query

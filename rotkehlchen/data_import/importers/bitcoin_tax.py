@@ -68,7 +68,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             self,
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
-            event_identifier: str,
+            group_identifier: str,
             timestamp: TimestampMS,
             location: Location,
             action: str,
@@ -101,7 +101,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         self.add_history_events(
             write_cursor=write_cursor,
             history_events=create_swap_events(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 timestamp=timestamp,
                 location=location,
                 spend=spend_asset_amount,
@@ -115,7 +115,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             self,
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
-            event_identifier: str,
+            group_identifier: str,
             timestamp: TimestampMS,
             location: Location,
             action: str,
@@ -136,7 +136,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
 
         event_type, event_subtype = ACTION_TO_HISTORY_EVENT_TYPE[action]
         event = HistoryEvent(
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
             sequence_index=0,
             timestamp=timestamp,
             location=location,
@@ -149,7 +149,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         self.add_history_events(write_cursor, [event])
         if fee_asset_amount is not None:
             fee_event = HistoryEvent(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 sequence_index=1,
                 timestamp=timestamp,
                 location=location,
@@ -181,8 +181,8 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         if all(value == '' for value in csv_row.values()):
             raise SkippedCSVEntry('Empty row.')
 
-        # use a deterministic event_identifier to avoid duplicate events in case of reimport
-        event_identifier = f'{ROTKI_EVENT_PREFIX}BTX_{hash_csv_row(csv_row)}'
+        # use a deterministic group_identifier to avoid duplicate events in case of reimport
+        group_identifier = f'{ROTKI_EVENT_PREFIX}BTX_{hash_csv_row(csv_row)}'
         timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
             date=csv_row['Date'],
             formatstr=timestamp_format,
@@ -216,7 +216,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             self._consume_trade_event(
                 write_cursor=write_cursor,
                 csv_row=csv_row,
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 timestamp=timestamp,
                 location=location,
                 action=action,
@@ -233,7 +233,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         self._consume_income_spending_event(
             write_cursor=write_cursor,
             csv_row=csv_row,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
             timestamp=timestamp,
             location=location,
             action=action,

@@ -20,7 +20,7 @@ from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.events.structures.swap import create_swap_events
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
@@ -296,7 +296,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                         amount=deserialize_fval_or_zero(tx['fee_amount']),
                     ),
                     location_label=self.name,
-                    event_identifier=create_event_identifier_from_unique_id(
+                    group_identifier=create_group_identifier_from_unique_id(
                         location=self.location,
                         unique_id=str(tx['transactionId']),
                     ),

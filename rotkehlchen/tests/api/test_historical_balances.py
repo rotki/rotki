@@ -46,7 +46,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     events = [
         HistoryEvent(  # Day 1: Initial receive
-            event_identifier='btc_receive_1',
+            group_identifier='btc_receive_1',
             sequence_index=0,
             timestamp=ts_sec_to_ms(START_TS),
             event_type=HistoryEventType.RECEIVE,
@@ -57,7 +57,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             notes='Receive BTC',
         ),
         HistoryEvent(  # another receive
-            event_identifier='eth_receive_1',
+            group_identifier='eth_receive_1',
             sequence_index=1,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + 3000)),
             event_type=HistoryEventType.RECEIVE,
@@ -68,7 +68,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             notes='Receive ETH',
         ),
         HistoryEvent(  # Day 3: Partial spend
-            event_identifier='btc_spend_1',
+            group_identifier='btc_spend_1',
             sequence_index=2,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),
             event_type=HistoryEventType.SPEND,
@@ -86,7 +86,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             amount=FVal('3'),
         ),
         HistoryEvent(  # Staking deposit/withdrawals should also be ignored
-            event_identifier='btc_spend_1',
+            group_identifier='btc_spend_1',
             sequence_index=4,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),
             event_type=HistoryEventType.STAKING,
@@ -165,7 +165,7 @@ def test_get_historical_asset_balance(
                 location=Location.EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
-                event_identifier='tradeid',
+                group_identifier='tradeid',
             ),
         )
 
@@ -200,13 +200,13 @@ def test_get_historical_asset_amounts_over_time(
                 location=Location.EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('24000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('1.5')),
-                event_identifier='trade1',
+                group_identifier='trade1',
             ), *create_swap_events(  # Second swap with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
                 location=Location.EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('8000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.5')),
-                event_identifier='trade2',
+                group_identifier='trade2',
             )],
         )
 
@@ -224,7 +224,7 @@ def test_get_historical_asset_amounts_over_time(
     result = assert_proper_sync_response_with_result(response)
     # Check all balance amount change points are present with correct amounts
     assert len(result['times']) == len(result['values'])
-    assert 'last_event_identifier' not in result
+    assert 'last_group_identifier' not in result
     for ts, amount in zip(result['times'], result['values'], strict=True):
         assert ts in {START_TS, START_TS + DAY_IN_SECONDS * 2, START_TS + DAY_IN_SECONDS * 3}
         assert amount in {'2', '1.5', '3.5'}
@@ -239,7 +239,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     events = [
         HistoryEvent(
-            event_identifier='btc_spend_2',
+            group_identifier='btc_spend_2',
             sequence_index=3,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
             event_type=HistoryEventType.SPEND,
@@ -250,7 +250,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
             notes='BTC first overspend attempt',
         ),
         HistoryEvent(
-            event_identifier='btc_spend_3',
+            group_identifier='btc_spend_3',
             sequence_index=4,
             timestamp=ts_sec_to_ms(four_days_after_start := Timestamp(START_TS + DAY_IN_SECONDS * 4)),  # noqa: E501
             event_type=HistoryEventType.SPEND,
@@ -282,7 +282,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
     assert len(result['times']) == len(result['values'])
     assert len(result['times']) == 2
 
-    assert result['last_event_identifier'] == [6, events[0].event_identifier]
+    assert result['last_group_identifier'] == [6, events[0].group_identifier]
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
     assert result['values'][0] == '2'  # Initial balance
@@ -297,7 +297,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     events = [
         HistoryEvent(
-            event_identifier='btc_spend_2',
+            group_identifier='btc_spend_2',
             sequence_index=3,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
             event_type=HistoryEventType.SPEND,
@@ -308,7 +308,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
             notes='BTC first overspend attempt',
         ),
         HistoryEvent(
-            event_identifier='btc_spend_3',
+            group_identifier='btc_spend_3',
             sequence_index=4,
             timestamp=ts_sec_to_ms(four_days_after_start := Timestamp(START_TS + DAY_IN_SECONDS * 4)),  # noqa: E501
             event_type=HistoryEventType.SPEND,
@@ -340,7 +340,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
     assert len(result['times']) == len(result['values'])
     assert len(result['times']) == 2
 
-    assert result['last_event_identifier'] == [6, events[0].event_identifier]
+    assert result['last_group_identifier'] == [6, events[0].group_identifier]
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
     assert result['values'][0] == '2'  # Initial balance
@@ -439,7 +439,7 @@ def test_get_historical_netvalue(
         DBHistoryEvents(database=db).add_history_events(
             write_cursor=write_cursor,
             history=[HistoryEvent(
-                event_identifier='eur_receive_1',
+                group_identifier='eur_receive_1',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(START_TS),  # Day 1
                 event_type=HistoryEventType.RECEIVE,
@@ -451,13 +451,13 @@ def test_get_historical_netvalue(
             ), *create_swap_events(
                 timestamp=ts_sec_to_ms(DAY_AFTER_START_TS),  # Day 2,
                 location=Location.EXTERNAL,
-                event_identifier='1xyz',
+                group_identifier='1xyz',
                 spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
             ), *create_swap_events(
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),  # Day 3,
                 location=Location.EXTERNAL,
-                event_identifier='2xyz',
+                group_identifier='2xyz',
                 spend=AssetAmount(asset=A_ETH, amount=FVal('0.2')),
                 receive=AssetAmount(asset=A_EUR, amount=FVal('240.0')),
             )],
@@ -476,7 +476,7 @@ def test_get_historical_netvalue(
     result = assert_proper_sync_response_with_result(response)
 
     assert len(result['missing_prices']) == 0
-    assert 'last_event_identifier' not in result
+    assert 'last_group_identifier' not in result
     assert len(result['times']) == len(result['values']) == 3
     assert all(ts in result['times'] for ts in (
         timestamp_to_daystart_timestamp(START_TS),
@@ -522,7 +522,7 @@ def test_get_historical_netvalue(
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['missing_prices']) == 0
-    assert 'last_event_identifier' not in result
+    assert 'last_group_identifier' not in result
     assert len(result['times']) == len(result['values']) == 3
     assert all(ts in result['times'] for ts in expected_timestamps[::2])
 
@@ -577,7 +577,7 @@ def test_get_historical_netvalue_missing_prices(
     result = assert_proper_sync_response_with_result(response)
 
     # Check missing prices are reported
-    assert 'last_event_identifier' not in result
+    assert 'last_group_identifier' not in result
     assert len(result['missing_prices']) > 0
     assert all(
         entry[0] == A_BTC.identifier
@@ -599,7 +599,7 @@ def test_get_historical_netvalue_with_negative_amount(
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     events = [
         HistoryEvent(
-            event_identifier='btc_spend_2',
+            group_identifier='btc_spend_2',
             sequence_index=3,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
             event_type=HistoryEventType.SPEND,
@@ -610,7 +610,7 @@ def test_get_historical_netvalue_with_negative_amount(
             notes='BTC first overspend attempt',
         ),
         HistoryEvent(
-            event_identifier='btc_spend_3',
+            group_identifier='btc_spend_3',
             sequence_index=4,
             timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 4)),
             event_type=HistoryEventType.SPEND,
@@ -661,7 +661,7 @@ def test_get_historical_netvalue_with_negative_amount(
     )
     result = assert_proper_sync_response_with_result(response)
 
-    assert 'last_event_identifier' in result
+    assert 'last_group_identifier' in result
     assert len(result['missing_prices']) == 0
     assert len(result['times']) == len(result['values']) == 2
     assert all(ts in result['times'] for ts in (

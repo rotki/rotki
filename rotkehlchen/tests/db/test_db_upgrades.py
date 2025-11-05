@@ -76,12 +76,12 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-def make_serialized_event_identifier(location: Location, raw_event_identifier: bytes) -> str:
-    """Creates a serialized event identifier using the logic at the moment of v32_v33 upgrade"""
-    if location == Location.KRAKEN or raw_event_identifier.startswith(b'rotki_events'):
-        return raw_event_identifier.decode()
+def make_serialized_group_identifier(location: Location, raw_group_identifier: bytes) -> str:
+    """Creates a serialized group identifier using the logic at the moment of v32_v33 upgrade"""
+    if location == Location.KRAKEN or raw_group_identifier.startswith(b'rotki_events'):
+        return raw_group_identifier.decode()
 
-    hex_representation = raw_event_identifier.hex()
+    hex_representation = raw_group_identifier.hex()
     if hex_representation.startswith('0x') is True:
         return hex_representation
     return '0x' + hex_representation
@@ -104,9 +104,9 @@ def assert_tx_hash_is_bytes(
         assert isinstance(z_old[tx_hash_index], str)
         l_new = list(z_new)
         if is_history_event is True:
-            l_new[tx_hash_index] = make_serialized_event_identifier(
+            l_new[tx_hash_index] = make_serialized_group_identifier(
                 location=Location.deserialize_from_db(l_new[4]),
-                raw_event_identifier=l_new[1],
+                raw_group_identifier=l_new[1],
             )
         else:
             l_new[tx_hash_index] = str(deserialize_evm_tx_hash(l_new[tx_hash_index]))
@@ -3348,7 +3348,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
-    removed_tables = {'evm_events_info'}
+    removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -3357,16 +3357,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {
-        'accounting_rule_events',
-        'solana_transactions',
-        'solana_tx_account_keys',
-        'chain_events_info',
-        'solana_tx_instruction_accounts',
-        'solana_tx_instructions',
-        'solanatx_address_mappings',
-        'solana_tx_mappings',
-    }
+    assert new_tables == set()
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -3754,5 +3745,44 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
         ]
         assert cursor.execute('SELECT * FROM external_service_credentials WHERE name IN (?, ?)', ('monerium', 'gnosis_pay')).fetchall() == []  # noqa: E501
         assert cursor.execute('SELECT * FROM gnosispay_data').fetchall() == [gnosispay_data[:-1]]
+
+    db.logout()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 50 to version 51"""
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
+    db_v50 = _init_db_with_target_version(
+        target_version=50,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v50.conn.read_ctx() as cursor:
+        assert column_exists(cursor=cursor, table_name='history_events', column_name='event_identifier')  # noqa: E501
+        assert not column_exists(cursor=cursor, table_name='history_events', column_name='group_identifier')  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM chain_events_info').fetchone()[0] == 1
+        assert cursor.execute('SELECT identifier, event_identifier, sequence_index, asset FROM history_events ORDER BY identifier').fetchall() == (result := [  # noqa: E501
+            (1, 'TEST_EVENT_1', 0, 'ETH'),
+            (2, 'TEST_EVENT_2', 0, 'BTC'),
+            (3, 'TEST_EVENT_3', 1, 'USD'),
+        ])
+
+    db_v50.logout()
+    db = _init_db_with_target_version(
+        target_version=51,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.read_ctx() as cursor:
+        assert not column_exists(cursor=cursor, table_name='history_events', column_name='event_identifier')  # noqa: E501
+        assert column_exists(cursor=cursor, table_name='history_events', column_name='group_identifier')  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM chain_events_info').fetchone()[0] == 1  # ensure that fk relations are kept  # noqa: E501
+        assert cursor.execute('SELECT identifier, group_identifier, sequence_index, asset FROM history_events ORDER BY identifier').fetchall() == result  # noqa: E501
+        assert cursor.execute(  # Verify the unique constraint was updated
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='history_events'",
+        ).fetchone()[0].find('UNIQUE(group_identifier, sequence_index)') != -1
 
     db.logout()

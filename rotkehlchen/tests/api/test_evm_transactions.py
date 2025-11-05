@@ -284,7 +284,7 @@ def test_transaction_reference_addition(rotkehlchen_api_server: 'APIServer', sol
     )
     with database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM solana_transactions WHERE signature=?', (deserialize_tx_signature(solana_signature).to_bytes(),)).fetchone()[0] == 1  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE event_identifier=?', (solana_signature,)).fetchone()[0] == 2  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE group_identifier=?', (solana_signature,)).fetchone()[0] == 2  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
