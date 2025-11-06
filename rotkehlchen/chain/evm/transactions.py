@@ -79,17 +79,19 @@ def with_tx_status_messaging(func: T) -> T:
                     'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
                 },
             )
-            result = func(self, address, start_ts, end_ts, *args, **kwargs)
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.TRANSACTION_STATUS,
-                data={
-                    'address': address,
-                    'chain': self.evm_inquirer.blockchain.value,
-                    'subtype': str(TransactionStatusSubType.EVM),
-                    'period': [start_ts, end_ts],
-                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
-                },
-            )
+            try:
+                result = func(self, address, start_ts, end_ts, *args, **kwargs)
+            finally:  # always send completion status to prevent inconclusive frontend state
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.TRANSACTION_STATUS,
+                    data={
+                        'address': address,
+                        'chain': self.evm_inquirer.blockchain.value,
+                        'subtype': str(TransactionStatusSubType.EVM),
+                        'period': [start_ts, end_ts],
+                        'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+                    },
+                )
 
             return result
 
