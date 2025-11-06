@@ -22,7 +22,11 @@ class Aavev3Decoder(Aavev3LikeCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             pool_addresses=(string_to_evm_address('0x6807dc923806fE8Fd134338EABCA509979a7e0cB'),),
-            native_gateways=(string_to_evm_address('0xe63eAf6DAb1045689BD3a332bC596FfcF54A5C88'),),
+            native_gateways=(
+                string_to_evm_address('0xe63eAf6DAb1045689BD3a332bC596FfcF54A5C88'),
+                string_to_evm_address('0x0c2C95b24529664fE55D4437D7A31175CFE6c4f7'),
+                string_to_evm_address('0xd91d1331db4F436DaF47Ec9Dd86deCb8EEF946B4'),
+            ),
             treasury=string_to_evm_address('0x25Ec457d1778b0E5316e7f38f3c22baF413F1A8C'),
             incentives=string_to_evm_address('0xC206C2764A9dBF27d599613b8F9A63ACd1160ab4'),
             collateral_swap_address=string_to_evm_address('0x33E0b3fc976DC9C516926BA48CfC0A9E10a2aAA5'),

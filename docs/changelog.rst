@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10894` rotki will now properly decode more Aave V3 transactions involving native tokens.
 * :bug:`-` ERC20 transfers will no longer be missed when transaction querying fails due to network problems.
 * :bug:`-` rotki will now decode more kinds of Jupiter swaps.
 * :bug:`-` Fix an issue where editing the latest price of an asset in the asset page shows the wrong initial price.
