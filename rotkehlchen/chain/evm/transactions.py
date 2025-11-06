@@ -437,6 +437,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
+                return
 
         log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers done for address {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
         with self.database.user_write() as write_cursor:
