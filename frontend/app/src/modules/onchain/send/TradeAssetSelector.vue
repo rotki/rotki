@@ -42,14 +42,14 @@ const { useQueryingBalances } = useBalanceQueries(connected, connectedAddress);
 const assetDetail = getAssetDetail(asset, chain);
 
 const chainOptions = computed(() => [
-  'evm',
+  'all',
   ...get(supportedChainsForConnectedAccount),
 ]);
 
 const assetOptions = computed(() => {
   const chain = get(internalChain);
   const options = get(allOwnedAssets);
-  if (chain === 'evm') {
+  if (chain === 'all') {
     return options.filter(item => get(supportedChainsForConnectedAccount).includes(item.chain));
   }
   return options.filter(item => item.chain === chain);

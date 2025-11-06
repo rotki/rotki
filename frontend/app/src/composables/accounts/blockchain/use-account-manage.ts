@@ -67,7 +67,7 @@ export type AccountManageState = AccountManage | StakingValidatorManage | XpubMa
 
 export function createNewBlockchainAccount(): AccountManageAdd {
   return {
-    chain: 'evm',
+    chain: 'all',
     data: [
       {
         address: '',
@@ -191,7 +191,7 @@ export function useAccountManage(): UseAccountManageReturn {
         updateAccounts(state.chain, await editAccount(state.data, state.chain));
       }
       else {
-        if (state.chain === 'evm') {
+        if (state.chain === 'all') {
           await addEvmAccounts({
             modules: state.modules,
             payload: state.data,

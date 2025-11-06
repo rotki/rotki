@@ -674,8 +674,7 @@
     },
     "form": {
       "labels": {
-        "address": "地址",
-        "for_all_chain": "为所有链保存这个名字"
+        "address": "地址"
       },
       "no_suggestions_available": "没有可用的建议",
       "validation": {

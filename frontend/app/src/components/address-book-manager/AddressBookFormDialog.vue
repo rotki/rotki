@@ -39,11 +39,10 @@ const loading = ref(false);
 const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof LatestPriceForm>>('form');
 const stateUpdated = ref(false);
-const forAllChains = ref<boolean>(false);
 
 const emptyForm: () => AddressBookPayload = () => ({
   address: '',
-  blockchain: get(selectedChain) ?? null,
+  blockchain: get(selectedChain) ?? 'all',
   location: get(location) || 'private',
   name: '',
 });
@@ -65,7 +64,7 @@ async function save() {
   const isEdit = get(editMode) ?? !!get(editableItem);
   const payload = {
     address: address.trim(),
-    blockchain: get(forAllChains) ? null : blockchain,
+    blockchain: blockchain === 'all' ? null : blockchain,
     name: name.trim(),
   };
 
@@ -127,7 +126,10 @@ watchImmediate([open, editableItem], ([open, editableItem]) => {
   }
   else {
     if (editableItem) {
-      set(modelValue, editableItem);
+      set(modelValue, {
+        ...editableItem,
+        blockchain: editableItem.blockchain || 'all',
+      });
     }
     else {
       set(modelValue, emptyForm());
@@ -152,7 +154,6 @@ watchImmediate([open, editableItem], ([open, editableItem]) => {
       v-model="modelValue"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
-      v-model:for-all-chains="forAllChains"
       :edit-mode="editMode ?? !!editableItem"
     />
   </BigDialog>
