@@ -378,6 +378,7 @@ jobs:
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: [ 'build-linux', 'build-windows', 'build-macos', 'docker-merge' ]
     runs-on: ubuntu-latest
+    environment: nightly_notify
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -388,11 +389,13 @@ jobs:
         run: |
           pip install requests
 
-          data=($(echo "${RESULT}" | sed 's/[][,]//g'))
-          for i in "${data[@]}"
+          data=($(echo "${RESULT}" | sed 's/[][,"]//g'))
+          echo "Processing ${#data[@]} entries"
+          for idx in "${!data[@]}"
           do
-            if [[ $i == "failure" ]]; then
-                ./.github/scripts/notifier.py --webhook ${{ secrets.WEBHOOK }} --run-id ${{ github.run_id }}
+            echo "Processing entry $idx: ${data[$idx]}"
+            if [[ ${data[$idx]} == "failure" ]]; then
+                ./.github/scripts/notifier.py --webhook ${{ secrets.DISCORD_WEBHOOK }} --run-id ${{ github.run_id }}
                 exit 1;
             fi
           done

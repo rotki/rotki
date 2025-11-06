@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import sys
 from http import HTTPStatus
 
@@ -9,8 +10,12 @@ import requests
 ALL_DEVS = '1105142033590526052'
 BACKEND_DEVS = '983289520000737330'
 
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
     parser = argparse.ArgumentParser(description='job failure notifier')
     parser.add_argument(
         '--webhook',
@@ -33,10 +38,12 @@ def main() -> None:
 
     if args.test:
         group = BACKEND_DEVS
+        group_key = 'backend devs'
         emoji = ':test_tube:'
         job_type = 'tests'
     else:
         group = ALL_DEVS
+        group_key = 'all devs'
         emoji = ':construction_site:'
         job_type = 'builds'
 
@@ -50,8 +57,14 @@ def main() -> None:
     }
 
     response = requests.post(url=url, data=data, timeout=30)
-    if response.status_code != HTTPStatus.OK:
+    if response.status_code != HTTPStatus.OK and response.status_code != HTTPStatus.NO_CONTENT:
+        logger.error(
+            f'Failed to notify {group_key} group for {job_type} job. '
+            f'Status code: {response.status_code}',
+        )
         sys.exit(1)
+
+    logger.info(f'Successfully notified {group_key} group for {job_type} job')
 
 
 if __name__ == '__main__':
