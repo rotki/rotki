@@ -4,6 +4,7 @@ import { useAddressBookForm } from '@/composables/address-book/form';
 const props = defineProps<{
   text: string;
   blockchain: string;
+  name?: string;
 }>();
 
 const emit = defineEmits<{
@@ -18,6 +19,7 @@ function openAddressBookForm() {
   showGlobalDialog({
     address: props.text,
     blockchain: props.blockchain,
+    name: props.name || '',
   });
 }
 </script>

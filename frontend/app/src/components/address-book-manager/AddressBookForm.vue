@@ -4,20 +4,20 @@ import type { SelectOptions } from '@/types/common';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
 import { Blockchain } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { helpers, required } from '@vuelidate/validators';
 import { each } from 'es-toolkit/compat';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import AppImage from '@/components/common/AppImage.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useBlockie } from '@/composables/accounts/blockie';
 import { useFormStateWatcher } from '@/composables/form';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { nullDefined, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<AddressBookPayload>({ required: true });
-const forAllChains = defineModel<boolean>('forAllChains', { required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
@@ -31,6 +31,8 @@ withDefaults(
 );
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { supportedChains } = useSupportedChains();
 
 const name = useRefPropVModel(modelValue, 'name');
 const location = useRefPropVModel(modelValue, 'location');
@@ -52,7 +54,7 @@ const rules = {
     required: helpers.withMessage(t('address_book.form.validation.address'), required),
   },
   blockchain: {
-    required: helpers.withMessage(t('address_book.form.validation.chain'), requiredIf(logicNot(forAllChains))),
+    required: helpers.withMessage(t('address_book.form.validation.chain'), required),
   },
   name: {
     required: helpers.withMessage(t('address_book.form.validation.name'), required),
@@ -73,16 +75,6 @@ const v$ = useVuelidate(
 
 useFormStateWatcher(states, stateUpdated);
 
-function checkPassedForm() {
-  const data = get(modelValue);
-  if (data) {
-    set(forAllChains, !data.blockchain);
-  }
-  else {
-    set(forAllChains, false);
-  }
-}
-
 const { getBlockie } = useBlockie();
 
 function fetchNames() {
@@ -92,6 +84,11 @@ function fetchNames() {
     addressMap[chain]?.forEach(address => get(addressNameSelector(address, chain)));
   });
 }
+
+const chainOptions = computed(() => [
+  'evm',
+  ...get(supportedChains).map(item => item.id).filter(item => item !== Blockchain.ETH2),
+]);
 
 /**
  * if new suggestions does not include last suggested and selected address, reset address
@@ -104,10 +101,6 @@ watch(addressSuggestions, (suggestions, oldSuggestions) => {
 
 watchEffect(fetchNames);
 onMounted(fetchNames);
-
-onBeforeMount(() => {
-  checkPassedForm();
-});
 
 defineExpose({
   validate: () => get(v$).$validate(),
@@ -125,16 +118,10 @@ defineExpose({
       text-attr="label"
       variant="outlined"
     />
-    <RuiSwitch
-      v-model="forAllChains"
-      :disabled="editMode"
-      color="primary"
-      :label="t('address_book.form.labels.for_all_chain')"
-    />
     <ChainSelect
       v-model="blockchainModel"
-      :disabled="editMode || forAllChains"
-      exclude-eth-staking
+      :disabled="editMode"
+      :items="chainOptions"
       :error-messages="toMessages(v$.blockchain)"
     />
     <div class="flex gap-2">

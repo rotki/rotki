@@ -795,8 +795,7 @@
     },
     "form": {
       "labels": {
-        "address": "Adresse",
-        "for_all_chain": "Enregistrer ce nom pour toutes les chaînes"
+        "address": "Adresse"
       },
       "no_suggestions_available": "Aucune suggestion disponible",
       "validation": {

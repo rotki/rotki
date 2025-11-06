@@ -669,8 +669,7 @@
     },
     "form": {
       "labels": {
-        "address": "Address",
-        "for_all_chain": "Save this name for all chains"
+        "address": "Address"
       },
       "no_suggestions_available": "No Suggestions Available",
       "validation": {
