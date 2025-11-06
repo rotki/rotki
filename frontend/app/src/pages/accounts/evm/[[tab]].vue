@@ -55,7 +55,7 @@ const { chainIds } = useAccountCategoryHelper(category);
 const usedChainIds = computed(() => {
   if (get(isAccountsTabSelected)) {
     return [
-      'evm',
+      'all',
       ...get(chainIds),
     ];
   }

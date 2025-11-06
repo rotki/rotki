@@ -86,7 +86,7 @@ function fetchNames() {
 }
 
 const chainOptions = computed(() => [
-  'evm',
+  'all',
   ...get(supportedChains).map(item => item.id).filter(item => item !== Blockchain.ETH2),
 ]);
 

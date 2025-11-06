@@ -62,7 +62,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
     return 'beaconchain';
   }
 
-  if ((selectedChain === 'evm' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
+  if ((selectedChain === 'all' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
     return 'etherscan';
 
   if (get(isSolanaChains(selectedChain)) && !get(apiKey('helius')))

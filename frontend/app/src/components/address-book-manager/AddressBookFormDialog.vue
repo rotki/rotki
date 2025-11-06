@@ -42,7 +42,7 @@ const stateUpdated = ref(false);
 
 const emptyForm: () => AddressBookPayload = () => ({
   address: '',
-  blockchain: get(selectedChain) ?? 'evm',
+  blockchain: get(selectedChain) ?? 'all',
   location: get(location) || 'private',
   name: '',
 });
@@ -64,7 +64,7 @@ async function save() {
   const isEdit = get(editMode) ?? !!get(editableItem);
   const payload = {
     address: address.trim(),
-    blockchain: blockchain === 'evm' ? null : blockchain,
+    blockchain: blockchain === 'all' ? null : blockchain,
     name: name.trim(),
   };
 
@@ -128,7 +128,7 @@ watchImmediate([open, editableItem], ([open, editableItem]) => {
     if (editableItem) {
       set(modelValue, {
         ...editableItem,
-        blockchain: editableItem.blockchain || 'evm',
+        blockchain: editableItem.blockchain || 'all',
       });
     }
     else {

@@ -23,7 +23,7 @@ const { chain } = toRefs(props);
 const { getChainName } = useSupportedChains();
 const name = computed(() => {
   const chainVal = get(chain);
-  if (chainVal === 'evm')
+  if (chainVal === 'all')
     return t('account_form.labels.all_supported_chains');
 
   return get(getChainName(chain));
@@ -42,7 +42,7 @@ const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockc
   >
     <template #avatar>
       <div
-        v-if="chain === 'evm'"
+        v-if="chain === 'all'"
         class="grid grid-cols-2 gap-0.5 icon-bg"
       >
         <ChainIcon
