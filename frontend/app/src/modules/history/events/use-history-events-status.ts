@@ -14,6 +14,7 @@ interface UseHistoryEventStatusReturn {
   processing: ComputedRef<boolean>;
   refreshing: ComputedRef<boolean>;
   sectionLoading: ComputedRef<boolean>;
+  isRepulling: ComputedRef<boolean>;
   shouldFetchEventsRegularly: ComputedRef<boolean>;
 }
 
@@ -31,16 +32,18 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
   const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
   const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
   const queryExchangeEventsLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_EVENTS);
+  const isRepulling = useIsTaskRunning(TaskType.REPULLING_TXS);
   const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
 
   const refreshing = logicOr(sectionLoading, anyEventsDecoding, queryExchangeEventsLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
   const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
   const shouldFetchEventsRegularly = logicOr(querying, refreshing);
-  const processing = logicOr(isTransactionsLoading, querying, refreshing);
+  const processing = logicOr(isTransactionsLoading, isRepulling, querying, refreshing);
 
   return {
     anyEventsDecoding,
     ethBlockEventsDecoding,
+    isRepulling,
     processing,
     refreshing,
     sectionLoading,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HistoryEventAction } from '@/composables/history/events/types';
 import type { AddTransactionHashPayload } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { get } from '@vueuse/core';
@@ -6,6 +7,7 @@ import { useHistoryEventsDialogManager } from '@/composables/history/events/dial
 import { DIALOG_TYPES, type DialogEventHandlers } from './dialog-types';
 
 const accountingRuleToEdit = defineModel<AccountingRuleEntry | undefined>('accountingRuleToEdit', { required: true });
+const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
 withDefaults(defineProps<{
   eventHandlers?: DialogEventHandlers;
@@ -141,9 +143,9 @@ defineExpose({
     <RepullingTransactionFormDialog
       v-if="currentDialog.type === DIALOG_TYPES.REPULLING_TRANSACTION"
       v-model="dialogIsOpen"
+      v-model:current-action="currentAction"
       :loading="sectionLoading"
-      @refresh-txs="eventHandlers.onRepullTransactions?.($event)"
-      @refresh-exchange-events="eventHandlers.onRepullExchangeEvents?.($event)"
+      :event-handlers="eventHandlers"
     />
 
     <MissingRulesDialog

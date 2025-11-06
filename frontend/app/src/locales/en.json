@@ -5148,9 +5148,10 @@
       "add_exchange_link": "add an exchange",
       "address_hint": "Leave it empty to re-pull transactions from all addresses",
       "exchange": "Exchange",
+      "finished": "Repulling events finished",
       "no_accounts": "You don't have any blockchain accounts registered. Please {link} first.",
       "no_exchanges": "You don't have any exchanges connected. Please {link} first.",
-      "title": "Re-Pulling Events"
+      "repulling": "Repulling events"
     },
     "title": "History Events",
     "unignore": "Unignore events in Accounting"
