@@ -74,7 +74,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
@@ -740,7 +740,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 except (RemoteError, BinancePermissionError) as e:
                     self.msg_aggregator.add_error(
                         f'Failed to query binance flexible lending interest history between '
-                        f'{query_start_ts} and {query_end_ts}. {e!s}',
+                        f'{timestamp_to_date(query_start_ts)} and '
+                        f'{timestamp_to_date(query_end_ts)}. {e!s}',
                     )
                     return True
 
@@ -813,7 +814,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             except (RemoteError, BinancePermissionError) as e:
                 self.msg_aggregator.add_error(
                     f'Failed to query binance locked lending interest history between '
-                    f'{query_start_ts} and {query_end_ts}. {e!s}',
+                    f'{timestamp_to_date(query_start_ts)} and '
+                    f'{timestamp_to_date(query_end_ts)}. {e!s}',
                 )
                 return True
 
