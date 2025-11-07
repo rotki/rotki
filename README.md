@@ -23,7 +23,7 @@
 [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/rotki/rotki/badge)](https://www.gitpoap.io/gh/rotki/rotki)
 [![Github downloads](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
 [![Hiring](https://img.shields.io/badge/Hiring-Open-brightgreen)](https://rotki.com/jobs/)
-[![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://twitter.com/rotkiapp)
+[![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://x.com/rotkiapp)
 [![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.rotki.com/)
 
 </div>
