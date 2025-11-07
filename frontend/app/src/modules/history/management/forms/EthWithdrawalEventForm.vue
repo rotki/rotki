@@ -30,7 +30,7 @@ const { data } = toRefs(props);
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
-const eventIdentifier = ref<string>('');
+const groupIdentifier = ref<string>('');
 const timestamp = ref<number>(0);
 const amount = ref<string>('');
 const validatorIndex = ref<string>('');
@@ -44,7 +44,7 @@ const commonRules = createCommonRules();
 
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
-  eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
   timestamp: commonRules.createExternalValidationRule(),
   validatorIndex: commonRules.createRequiredValidatorIndexRule(),
   withdrawalAddress: commonRules.createRequiredValidWithdrawalAddressRule(),
@@ -58,7 +58,7 @@ const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStat
 
 const states = {
   amount,
-  eventIdentifier,
+  groupIdentifier,
   isExit,
   timestamp,
   validatorIndex,
@@ -78,7 +78,7 @@ useFormStateWatcher(states, stateUpdated);
 const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
-  set(eventIdentifier, null);
+  set(groupIdentifier, null);
   set(timestamp, dayjs().valueOf());
   set(amount, '0');
   set(validatorIndex, '');
@@ -90,7 +90,7 @@ function reset() {
 }
 
 function applyEditableData(entry: EthWithdrawalEvent) {
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -102,7 +102,7 @@ function applyEditableData(entry: EthWithdrawalEvent) {
 }
 
 function applyGroupHeaderData(entry: EthWithdrawalEvent) {
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
   set(timestamp, entry.timestamp);
@@ -123,7 +123,7 @@ async function save(): Promise<boolean> {
   const payload: NewEthWithdrawalEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-    eventIdentifier: get(eventIdentifier),
+    groupIdentifier: get(groupIdentifier),
     isExit: get(isExit),
     timestamp: get(timestamp),
     validatorIndex: parseInt(get(validatorIndex)),
@@ -235,13 +235,13 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="eventIdentifier"
+            v-model="groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="eventIdentifier"
+            data-cy="groupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
-            :error-messages="toMessages(v$.eventIdentifier)"
-            @blur="v$.eventIdentifier.$touch()"
+            :error-messages="toMessages(v$.groupIdentifier)"
+            @blur="v$.groupIdentifier.$touch()"
           />
         </div>
       </RuiAccordion>

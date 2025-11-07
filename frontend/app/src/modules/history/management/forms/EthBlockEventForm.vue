@@ -29,7 +29,7 @@ const { data } = toRefs(props);
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
-const eventIdentifier = ref<string>('');
+const groupIdentifier = ref<string>('');
 const timestamp = ref<number>(0);
 const amount = ref<string>('');
 const blockNumber = ref<string>('');
@@ -45,8 +45,8 @@ const commonRules = createCommonRules();
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
   blockNumber: commonRules.createRequiredBlockNumberRule(),
-  eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
   feeRecipient: commonRules.createRequiredValidFeeRecipientRule(),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
   timestamp: commonRules.createExternalValidationRule(),
   validatorIndex: commonRules.createRequiredValidatorIndexRule(),
 };
@@ -59,8 +59,8 @@ const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStat
 const states = {
   amount,
   blockNumber,
-  eventIdentifier,
   feeRecipient,
+  groupIdentifier,
   isMevReward,
   timestamp,
   validatorIndex,
@@ -77,7 +77,7 @@ const v$ = useVuelidate(
 useFormStateWatcher(states, stateUpdated);
 
 function reset() {
-  set(eventIdentifier, null);
+  set(groupIdentifier, null);
   set(timestamp, dayjs().valueOf());
   set(amount, '0');
   set(blockNumber, '');
@@ -90,7 +90,7 @@ function reset() {
 }
 
 function applyEditableData(entry: EthBlockEvent) {
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
   set(blockNumber, entry.blockNumber.toString());
@@ -103,7 +103,7 @@ function applyEditableData(entry: EthBlockEvent) {
 }
 
 function applyGroupHeaderData(entry: EthBlockEvent) {
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -127,8 +127,8 @@ async function save(): Promise<boolean> {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     blockNumber: parseInt(get(blockNumber)),
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
-    eventIdentifier: get(eventIdentifier),
     feeRecipient: get(feeRecipient),
+    groupIdentifier: get(groupIdentifier),
     isMevReward: get(isMevReward),
     timestamp: get(timestamp),
     validatorIndex: parseInt(get(validatorIndex)),
@@ -252,13 +252,13 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="eventIdentifier"
+            v-model="groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="eventIdentifier"
+            data-cy="groupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
-            :error-messages="toMessages(v$.eventIdentifier)"
-            @blur="v$.eventIdentifier.$touch()"
+            :error-messages="toMessages(v$.groupIdentifier)"
+            @blur="v$.groupIdentifier.$touch()"
           />
         </div>
       </RuiAccordion>

@@ -41,7 +41,7 @@ const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCAT
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const txRef = ref<string>('');
-const eventIdentifier = ref<string>('');
+const groupIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const timestamp = ref<number>(0);
 const location = ref<string>('');
@@ -67,9 +67,9 @@ const rules = {
   amount: commonRules.createRequiredAmountRule(),
   asset: commonRules.createRequiredAssetRule(),
   counterparty: commonRules.createValidCounterpartyRule(counterparties),
-  eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
   eventSubtype: commonRules.createRequiredEventSubtypeRule(),
   eventType: commonRules.createRequiredEventTypeRule(),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
   location: commonRules.createRequiredLocationRule(),
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
@@ -89,10 +89,10 @@ const states = {
   amount,
   asset,
   counterparty,
-  eventIdentifier,
   eventSubtype,
   eventType,
   extraData,
+  groupIdentifier,
   location,
   locationLabel,
   notes,
@@ -114,7 +114,7 @@ useFormStateWatcher(states, stateUpdated);
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(txRef, '');
-  set(eventIdentifier, null);
+  set(groupIdentifier, null);
   set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(address, '');
@@ -134,7 +134,7 @@ function reset() {
 function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txRef, entry.txRef);
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(eventType, entry.eventType);
@@ -153,7 +153,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
 
 function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(location, entry.location || get(lastLocation));
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
@@ -181,10 +181,10 @@ async function save(): Promise<boolean> {
     asset: get(asset),
     counterparty: get(counterparty) || null,
     entryType: HistoryEventEntryType.EVM_EVENT,
-    eventIdentifier: get(eventIdentifier) ?? null,
     eventSubtype: get(eventSubtype),
     eventType: get(eventType),
     extraData: get(extraData) || null,
+    groupIdentifier: get(groupIdentifier) ?? null,
     location: get(location),
     locationLabel: get(locationLabel) || null,
     sequenceIndex: get(sequenceIndex) || '0',
@@ -343,13 +343,13 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="eventIdentifier"
+            v-model="groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="eventIdentifier"
+            data-cy="groupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
-            :error-messages="toMessages(v$.eventIdentifier)"
-            @blur="v$.eventIdentifier.$touch()"
+            :error-messages="toMessages(v$.groupIdentifier)"
+            @blur="v$.groupIdentifier.$touch()"
           />
 
           <JsonInput

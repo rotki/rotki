@@ -45,7 +45,7 @@ const historyEventTypesData = [{
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
-const eventIdentifier = ref<string>('');
+const groupIdentifier = ref<string>('');
 const timestamp = ref<number>(0);
 const location = ref<string>('');
 const locationLabel = ref<string>('');
@@ -69,10 +69,10 @@ const rules = {
   amount: commonRules.createRequiredAmountRule(),
   asset: commonRules.createRequiredAssetRule(),
   blockchain: commonRules.createExternalValidationRule(),
-  eventIdentifier: commonRules.createExternalValidationRule(),
   eventType: commonRules.createRequiredEventTypeRule(),
   fee: commonRules.createRequiredFeeRule(requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
   feeAsset: commonRules.createRequiredFeeAssetRule(requiredIf(logicAnd(hasFee, refIsTruthy(fee)))),
+  groupIdentifier: commonRules.createExternalValidationRule(),
   location: commonRules.createRequiredLocationRule(),
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
@@ -90,10 +90,10 @@ const states = {
   amount,
   asset,
   blockchain,
-  eventIdentifier,
   eventType,
   fee,
   feeAsset,
+  groupIdentifier,
   hasFee,
   location,
   locationLabel,
@@ -128,7 +128,7 @@ const locationLabelSuggestions = computed<string[]>(() => {
 });
 
 function reset() {
-  set(eventIdentifier, '');
+  set(groupIdentifier, '');
   set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(locationLabel, '');
@@ -147,7 +147,7 @@ function reset() {
 function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent) {
   const eventNotes = entry.userNotes ?? '';
 
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(locationLabel, entry.locationLabel ?? '');
@@ -195,10 +195,10 @@ async function save(): Promise<boolean> {
     asset: get(asset),
     blockchain: get(blockchain),
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    eventIdentifier: get(eventIdentifier),
     eventType: get(eventType),
     fee: null,
     feeAsset: null,
+    groupIdentifier: get(groupIdentifier),
     location: get(location),
     locationLabel: get(locationLabel),
     timestamp: get(timestamp),
@@ -406,13 +406,13 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="eventIdentifier"
+            v-model="groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="eventIdentifier"
+            data-cy="groupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
-            :error-messages="toMessages(v$.eventIdentifier)"
-            @blur="v$.eventIdentifier.$touch()"
+            :error-messages="toMessages(v$.groupIdentifier)"
+            @blur="v$.groupIdentifier.$touch()"
           />
 
           <RuiTextField

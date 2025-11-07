@@ -5,7 +5,7 @@
         "entry": {
           "identifier": 412,
           "entry_type": "evm event",
-          "event_identifier": "10xda4098b5cdbf1b41aa896b3205090a66ab0d155dd53ed6249d0e4f1e3c58941a",
+          "group_identifier": "10xda4098b5cdbf1b41aa896b3205090a66ab0d155dd53ed6249d0e4f1e3c58941a",
           "tx_ref": "0xda4098b5cdbf1b41aa896b3205090a66ab0d155dd53ed6249d0e4f1e3c58941a",
           "sequence_index": 0,
           "timestamp": 1680334463,
@@ -30,7 +30,7 @@
         "entry": {
           "identifier": 44,
           "entry_type":  "evm event",
-          "event_identifier": "10x1642d8718a8e76d168cea542136bd8bef23c388ae561e8e59378ade262f58a05",
+          "group_identifier": "10x1642d8718a8e76d168cea542136bd8bef23c388ae561e8e59378ade262f58a05",
           "tx_ref": "0x1642d8718a8e76d168cea542136bd8bef23c388ae561e8e59378ade262f58a05",
           "sequence_index": 0,
           "timestamp": 1677849167,
@@ -55,7 +55,7 @@
         "entry": {
           "identifier": 467,
           "entry_type":  "evm event",
-          "event_identifier": "10xf7a261f0c4c4f8df73842204cd007571c4686c3c707bd080a5013e30c57dcd0f",
+          "group_identifier": "10xf7a261f0c4c4f8df73842204cd007571c4686c3c707bd080a5013e30c57dcd0f",
           "tx_ref": "0xf7a261f0c4c4f8df73842204cd007571c4686c3c707bd080a5013e30c57dcd0f",
           "sequence_index": 0,
           "timestamp": 1677704327,
@@ -80,7 +80,7 @@
         "entry": {
           "identifier": 435,
           "entry_type":  "evm event",
-          "event_identifier": "10xe6a9c95c7e8a4af9d3b36b108bc10c163e3d675d8c79843e342d3ec9d6ab5eb6",
+          "group_identifier": "10xe6a9c95c7e8a4af9d3b36b108bc10c163e3d675d8c79843e342d3ec9d6ab5eb6",
           "tx_ref": "0xe6a9c95c7e8a4af9d3b36b108bc10c163e3d675d8c79843e342d3ec9d6ab5eb6",
           "sequence_index": 0,
           "timestamp": 1677225479,
@@ -105,7 +105,7 @@
         "entry": {
           "identifier": 125,
           "entry_type":  "evm event",
-          "event_identifier": "10x42bfe33daafe88871fab4c1312ac4af18e8833141f9e4dac9d956a365958d20f",
+          "group_identifier": "10x42bfe33daafe88871fab4c1312ac4af18e8833141f9e4dac9d956a365958d20f",
           "tx_ref": "0x42bfe33daafe88871fab4c1312ac4af18e8833141f9e4dac9d956a365958d20f",
           "sequence_index": 0,
           "timestamp": 1677214547,
@@ -130,7 +130,7 @@
         "entry": {
           "identifier": 262,
           "entry_type":  "evm event",
-          "event_identifier": "10x8f58929cecafc6927fc6934c27c3ffcdef10477b1fbe4f600ad6c5db0bb23400",
+          "group_identifier": "10x8f58929cecafc6927fc6934c27c3ffcdef10477b1fbe4f600ad6c5db0bb23400",
           "tx_ref": "0x8f58929cecafc6927fc6934c27c3ffcdef10477b1fbe4f600ad6c5db0bb23400",
           "sequence_index": 0,
           "timestamp": 1675964171,

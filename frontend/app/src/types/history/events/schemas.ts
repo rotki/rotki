@@ -7,9 +7,9 @@ export const CommonHistoryEvent = z.object({
   amount: NumericString,
   asset: z.string(),
   autoNotes: z.string().optional(),
-  eventIdentifier: z.string(),
   eventSubtype: z.string(),
   eventType: z.string(),
+  groupIdentifier: z.string(),
   identifier: z.number(),
   location: z.string(),
   locationLabel: z.string().nullable(),
@@ -153,7 +153,7 @@ export interface AddSwapEventPayload {
 }
 
 export interface EditSwapEventPayload extends Omit<AddSwapEventPayload, 'uniqueId'> {
-  eventIdentifier: string;
+  groupIdentifier: string;
   identifier: number;
 }
 
@@ -176,18 +176,18 @@ export interface EditEvmSwapEventPayload extends AddEvmSwapEventPayload {
 
 export type EditEvmHistoryEventPayload = Omit<
   EvmHistoryEvent,
-  'ignoredInAccounting' | 'customized' | 'eventIdentifier'
+  'ignoredInAccounting' | 'customized' | 'groupIdentifier'
 > & {
-  eventIdentifier: string | null;
+  groupIdentifier: string | null;
 };
 
 export type NewEvmHistoryEventPayload = Omit<EditEvmHistoryEventPayload, 'identifier'>;
 
 export type EditSolanaEventPayload = Omit<
   SolanaEvent,
-  'ignoredInAccounting' | 'customized' | 'eventIdentifier' | 'location'
+  'ignoredInAccounting' | 'customized' | 'groupIdentifier' | 'location'
 > & {
-  eventIdentifier: string | null;
+  groupIdentifier: string | null;
 };
 
 export type NewSolanaEventPayload = Omit<EditSolanaEventPayload, 'identifier'>;
@@ -205,7 +205,7 @@ export interface EditEthBlockEventPayload {
   blockNumber: number;
   feeRecipient: string;
   isMevReward: boolean;
-  eventIdentifier: string | null;
+  groupIdentifier: string | null;
 }
 
 export type NewEthBlockEventPayload = Omit<EditEthBlockEventPayload, 'identifier'>;
@@ -217,7 +217,7 @@ export interface EditEthDepositEventPayload {
   amount: BigNumber;
   validatorIndex: number;
   txRef: string;
-  eventIdentifier: string | null;
+  groupIdentifier: string | null;
   sequenceIndex: number | string;
   depositor: string;
   extraData: object | null;
@@ -233,7 +233,7 @@ export interface EditEthWithdrawalEventPayload {
   validatorIndex: number;
   withdrawalAddress: string;
   isExit: boolean;
-  eventIdentifier: string | null;
+  groupIdentifier: string | null;
 }
 
 export type NewEthWithdrawalEventPayload = Omit<EditEthWithdrawalEventPayload, 'identifier'>;
@@ -246,7 +246,7 @@ export interface EditAssetMovementEventPayload {
   eventType: string;
   location: string;
   locationLabel: string | null;
-  eventIdentifier: string | null;
+  groupIdentifier: string | null;
   asset: string;
   fee: string | null;
   feeAsset: string | null;

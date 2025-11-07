@@ -51,9 +51,9 @@ describe('form/EthDepositEventForm.vue', () => {
     asset: asset.symbol,
     counterparty: 'eth2',
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
-    eventIdentifier: '10x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
     eventSubtype: 'deposit asset',
     eventType: 'staking',
+    groupIdentifier: '10x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
     identifier: 11344,
     location: 'ethereum',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
@@ -112,13 +112,13 @@ describe('form/EthDepositEventForm.vue', () => {
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
     const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
-    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-cy=depositor] .input-value');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(validatorIndexInput.element.value).toBe('');
     expect(txRefInput.element.value).toBe('');
-    expect(eventIdentifierInput.element.value).toBe('');
+    expect(groupIdentifierInput.element.value).toBe('');
     expect(depositorInput.element.value).toBe('');
     expect(sequenceIndexInput.element.value).toBe('0');
   });
@@ -133,14 +133,14 @@ describe('form/EthDepositEventForm.vue', () => {
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
     const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
-    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-cy=depositor] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
     expect(txRefInput.element.value).toBe(event.txRef);
-    expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
+    expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
     expect(depositorInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe('0');
     expect(sequenceIndexInput.element.value).toBe('10');
@@ -156,14 +156,14 @@ describe('form/EthDepositEventForm.vue', () => {
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
     const txRefInput = wrapper.find<HTMLInputElement>('[data-cy=tx-ref] input');
-    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
     const depositorInput = wrapper.find<HTMLInputElement>('[data-cy=depositor] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
     expect(txRefInput.element.value).toBe(event.txRef);
-    expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
+    expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
     expect(depositorInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
     expect(sequenceIndexInput.element.value.replace(',', '')).toBe(event.sequenceIndex.toString());
@@ -197,8 +197,8 @@ describe('form/EthDepositEventForm.vue', () => {
       amount: bigNumberify('2.5'),
       depositor: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
       entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
-      eventIdentifier: null,
       extraData: {},
+      groupIdentifier: null,
       sequenceIndex: '5',
       timestamp: nowInMs,
       txRef: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
@@ -264,8 +264,8 @@ describe('form/EthDepositEventForm.vue', () => {
       amount: bigNumberify('4.5'),
       depositor: event.locationLabel,
       entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
-      eventIdentifier: event.eventIdentifier,
       extraData: {},
+      groupIdentifier: event.groupIdentifier,
       identifier: event.identifier,
       sequenceIndex: event.sequenceIndex.toString(),
       timestamp: event.timestamp,

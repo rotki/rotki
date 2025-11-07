@@ -42,7 +42,7 @@ function emptyEvent(): FormData {
 
 const states = ref<FormData>(emptyEvent());
 const hasFee = ref<boolean>(false);
-const identifiers = ref<{ eventIdentifier: string; identifier: number }>();
+const identifiers = ref<{ groupIdentifier: string; identifier: number }>();
 const errorMessages = ref<Record<string, string[]>>({});
 const spendAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('spendAssetPriceForm');
 const receiveAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('receiveAssetPriceForm');
@@ -182,7 +182,7 @@ watchImmediate(() => props.data, (data) => {
   assert(receive);
 
   set(hasFee, fee !== undefined);
-  set(identifiers, pick(spend, ['eventIdentifier', 'identifier']));
+  set(identifiers, pick(spend, ['groupIdentifier', 'identifier']));
 
   const userNotes: [string, string, string] | [string, string] = fee !== undefined
     ? [

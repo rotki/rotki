@@ -46,7 +46,7 @@ describe('forms/SolanaSwapEventForm', () => {
   const txRef = '5j7s6NiJS3JAkvgkoc18WpRHTZBBSz9GJPNvr1XmBEjGVaVe6RmQ6YkC6LyZNMfkZqCjhTMTDTTsF4g3XCk5jxZg';
   const address = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
   const locationLabel = 'DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG7EvgfK';
-  const eventIdentifier = `1${txRef}`;
+  const groupIdentifier = `1${txRef}`;
 
   const data: GroupEventData<SolanaSwapEvent> = {
     eventsInGroup: [{
@@ -56,10 +56,10 @@ describe('forms/SolanaSwapEventForm', () => {
       autoNotes: 'Swap 0.1 SOL on Jupiter',
       counterparty: 'jupiter',
       entryType: 'solana swap event',
-      eventIdentifier,
       eventSubtype: 'spend',
       eventType: 'trade',
       extraData: null,
+      groupIdentifier,
       identifier: 3456,
       location: 'solana',
       locationLabel,
@@ -74,10 +74,10 @@ describe('forms/SolanaSwapEventForm', () => {
       autoNotes: 'Receive 300 USDC after a swap on Jupiter',
       counterparty: 'jupiter',
       entryType: 'solana swap event',
-      eventIdentifier,
       eventSubtype: 'receive',
       eventType: 'trade',
       extraData: null,
+      groupIdentifier,
       identifier: 3457,
       location: 'solana',
       locationLabel,
@@ -92,10 +92,10 @@ describe('forms/SolanaSwapEventForm', () => {
       autoNotes: 'Spend 0.000005 SOL as fee',
       counterparty: 'jupiter',
       entryType: 'solana swap event',
-      eventIdentifier,
       eventSubtype: 'fee',
       eventType: 'trade',
       extraData: null,
+      groupIdentifier,
       identifier: 3458,
       location: 'solana',
       locationLabel,

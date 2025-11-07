@@ -4,7 +4,7 @@ import { isSwapTypeEvent } from '@/modules/history/management/forms/form-guards'
 
 export interface TransactionGroup {
   chain: string;
-  eventIdentifier: string;
+  groupIdentifier: string;
   events: number[];
 }
 
@@ -86,17 +86,17 @@ function processSingleSwapEvent(
   partialSwapGroups: SwapGroup[],
   processedIds: Set<number>,
 ): void {
-  const eventIdentifier = group.eventIdentifier;
+  const groupIdentifier = group.groupIdentifier;
   const relatedEvents = allGroups.filter((g) => {
     if (Array.isArray(g)) {
-      return g.some(e => e.eventIdentifier === eventIdentifier && isSwapTypeEvent(e.entryType));
+      return g.some(e => e.groupIdentifier === groupIdentifier && isSwapTypeEvent(e.entryType));
     }
-    return !Array.isArray(g) && g.eventIdentifier === eventIdentifier && isSwapTypeEvent(g.entryType);
+    return !Array.isArray(g) && g.groupIdentifier === groupIdentifier && isSwapTypeEvent(g.entryType);
   });
 
   const allSwapEventIds = relatedEvents.flatMap((g) => {
     if (Array.isArray(g)) {
-      return g.filter(e => e.eventIdentifier === eventIdentifier).map(e => e.identifier);
+      return g.filter(e => e.groupIdentifier === groupIdentifier).map(e => e.identifier);
     }
     return g.identifier;
   });
@@ -122,8 +122,8 @@ function processEvmTransaction(
   partialSwapGroups: SwapGroup[],
   processedIds: Set<number>,
 ): void {
-  const eventIdentifier = group.eventIdentifier;
-  const txEvents = groupedEvents[eventIdentifier];
+  const groupIdentifier = group.groupIdentifier;
+  const txEvents = groupedEvents[groupIdentifier];
 
   if (txEvents && txEvents.length > 0) {
     // Check if this transaction contains swap events
@@ -152,11 +152,11 @@ function processEvmTransaction(
       }
       else if (selectedInTx.length === eventIds.length) {
         // All events selected - treat as complete transaction
-        const txRef = 'txRef' in group && group.txRef ? group.txRef : group.eventIdentifier;
+        const txRef = 'txRef' in group && group.txRef ? group.txRef : group.groupIdentifier;
         completeTransactions.set(txRef, {
           chain: group.location,
-          eventIdentifier,
           events: eventIds,
+          groupIdentifier,
         });
         eventIds.forEach(id => processedIds.add(id));
       }

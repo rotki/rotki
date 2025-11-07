@@ -197,7 +197,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
           :loading="eventsLoading"
           @add-event="addEvent($event, row);"
           @toggle-ignore="toggle($event)"
-          @redecode="redecode($event, row.eventIdentifier)"
+          @redecode="redecode($event, row.groupIdentifier)"
           @delete-tx="confirmTxAndEventsDelete($event)"
         />
       </LazyLoader>
@@ -207,8 +207,8 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
       <HistoryEventsList
         class="-my-4"
         :class="{ 'opacity-50': row.ignoredInAccounting }"
-        :all-events="allEventsMapped[row.eventIdentifier] || []"
-        :displayed-events="displayedEventsMapped[row.eventIdentifier] || []"
+        :all-events="allEventsMapped[row.groupIdentifier] || []"
+        :displayed-events="displayedEventsMapped[row.groupIdentifier] || []"
         :event-group="row"
         :hide-actions="hideActions"
         :loading="sectionLoading || eventsLoading"

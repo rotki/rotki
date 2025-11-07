@@ -30,7 +30,7 @@ const { notify } = useNotificationsStore();
 async function createCsv(directoryPath?: string): Promise<{ result: boolean | { filePath: string }; message?: string } | null> {
   try {
     const { taskId } = await exportHistoryEventsCSV({
-      ...omit(get(filters), ['limit', 'offset', 'groupByEventIds']),
+      ...omit(get(filters), ['limit', 'offset', 'aggregateByGroupIds']),
       matchExactEvents: get(matchExactEvents),
     }, directoryPath);
     const { result } = await awaitTask<boolean | { filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_HISTORY_EVENTS, {

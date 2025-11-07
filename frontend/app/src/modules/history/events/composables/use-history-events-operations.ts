@@ -33,7 +33,7 @@ interface UseHistoryEventsOperationsReturn {
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
   suggestNextSequenceId: (group: HistoryEventEntry) => string;
   confirmTxAndEventsDelete: (payload: LocationAndTxRef) => void;
-  redecode: (payload: PullEventPayload, eventIdentifier: string) => void;
+  redecode: (payload: PullEventPayload, groupIdentifier: string) => void;
   confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean }) => void;
   toggle: (event: HistoryEventEntry) => Promise<void>;
 }
@@ -57,7 +57,7 @@ export function useHistoryEventsOperations(
   const { deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
-    toData: (item: HistoryEventEntry) => item.eventIdentifier,
+    toData: (item: HistoryEventEntry) => item.groupIdentifier,
   }, selected, () => {
     emit('refresh');
   });
@@ -102,9 +102,9 @@ export function useHistoryEventsOperations(
     if (!allFlattened?.length)
       return (Number(group.sequenceIndex) + 1).toString();
 
-    const eventIdentifierHeader = group.eventIdentifier;
+    const groupIdentifierHeader = group.groupIdentifier;
     const filtered = allFlattened
-      .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
+      .filter(({ groupIdentifier, hidden }) => groupIdentifier === groupIdentifierHeader && !hidden)
       .map(({ sequenceIndex }) => Number(sequenceIndex))
       .sort((a, b) => b - a);
 
@@ -140,13 +140,13 @@ export function useHistoryEventsOperations(
     }, async () => onConfirmTxAndEventDelete(payload));
   }
 
-  function redecode(payload: PullEventPayload, eventIdentifier: string): void {
+  function redecode(payload: PullEventPayload, groupIdentifier: string): void {
     if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
       emit('refresh:block-event', { blockNumbers: payload.data });
       return;
     }
 
-    const groupedEvents = get(allEventsMapped)[eventIdentifier] || [];
+    const groupedEvents = get(allEventsMapped)[groupIdentifier] || [];
     const childEvents = flatten(groupedEvents);
     const isAnyCustom = childEvents.some(item => item.customized);
 

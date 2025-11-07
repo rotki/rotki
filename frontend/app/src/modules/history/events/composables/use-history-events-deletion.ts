@@ -29,7 +29,7 @@ export function useHistoryEventsDeletion(
   const { deleteHistoryEvent } = useHistoryEvents();
 
   const { ignoreSingle } = useIgnore<HistoryEventEntry>(
-    { toData: item => item.eventIdentifier },
+    { toData: item => item.groupIdentifier },
     ref([]),
     refreshCallback,
   );
@@ -66,9 +66,9 @@ export function useHistoryEventsDeletion(
     transactions: Map<string, TransactionGroup>,
   ): Promise<{ message?: string; success: boolean }> {
     try {
-      for (const [, { eventIdentifier, events: eventIds }] of transactions) {
-        // Use eventIdentifier to look up the events
-        const txEvents = eventIdentifier ? get(groupedEventsByTxRef)[eventIdentifier] || [] : [];
+      for (const [, { events: eventIds, groupIdentifier }] of transactions) {
+        // Use groupIdentifier to look up the events
+        const txEvents = groupIdentifier ? get(groupedEventsByTxRef)[groupIdentifier] || [] : [];
 
         // Flatten the events array
         const allEvents = txEvents.flat().filter((e: any) => !Array.isArray(e));

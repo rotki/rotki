@@ -4,8 +4,8 @@ import type { FilterObjectWithBehaviour } from '@/types/filtering';
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
-  readonly groupByEventIds: boolean;
-  readonly eventIdentifiers?: string | string[];
+  readonly aggregateByGroupIds: boolean;
+  readonly groupIdentifiers?: string | string[];
   readonly eventTypes?: string | string[];
   readonly eventSubtypes?: string | string[];
   readonly locationLabels?: string | string[];
@@ -22,6 +22,6 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly notesSubstring?: string;
 }
 
-export interface HistoryEventExportPayload extends Omit<HistoryEventRequestPayload, 'groupByEventIds' | 'limit' | 'offset'> {
+export interface HistoryEventExportPayload extends Omit<HistoryEventRequestPayload, 'aggregateByGroupIds' | 'limit' | 'offset'> {
   readonly matchExactEvents: boolean;
 }

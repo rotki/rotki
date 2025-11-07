@@ -54,9 +54,9 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     amount: bigNumberify('2.5'),
     asset: asset.symbol,
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-    eventIdentifier: 'EW_123_19647',
     eventSubtype: 'remove asset',
     eventType: 'staking',
+    groupIdentifier: 'EW_123_19647',
     identifier: 11343,
     isExit: true,
     location: 'ethereum',
@@ -180,7 +180,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     expect(addHistoryEventMock).toHaveBeenCalledWith({
       amount: bigNumberify('2.5'),
       entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-      eventIdentifier: null,
+      groupIdentifier: null,
       isExit: true,
       timestamp: nowInMs,
       validatorIndex: 123,
@@ -246,7 +246,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     expect(editHistoryEventMock).toHaveBeenCalledWith({
       amount: bigNumberify('4.5'),
       entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-      eventIdentifier: event.eventIdentifier,
+      groupIdentifier: event.groupIdentifier,
       identifier: event.identifier,
       isExit: false,
       timestamp: event.timestamp,
