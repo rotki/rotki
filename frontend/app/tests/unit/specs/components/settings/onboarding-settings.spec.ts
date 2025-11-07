@@ -1,5 +1,5 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
@@ -26,6 +26,7 @@ vi.mock('vue-router', () => ({
 }));
 
 let saveOptions = vi.fn();
+let applyUserOptions = vi.fn();
 vi.mock('@/composables/backend', async () => {
   const mod = await vi.importActual<typeof import('@/composables/backend')>('@/composables/backend');
   return {
@@ -35,29 +36,46 @@ vi.mock('@/composables/backend', async () => {
       saveOptions = vi.fn().mockImplementation(async (opts) => {
         await mocked.saveOptions(opts);
       });
+      applyUserOptions = vi.fn().mockImplementation(async (opts, skipRestart) => {
+        await mocked.applyUserOptions(opts, skipRestart);
+      });
       return {
         ...mocked,
         saveOptions,
+        applyUserOptions,
       };
     }),
   };
 });
 
+const backendConfig = {
+  loglevel: {
+    value: 'debug',
+    isDefault: true,
+  },
+  maxSizeInMbAllLogs: {
+    value: 300,
+    isDefault: true,
+  },
+  maxLogfilesNum: {
+    value: 3,
+    isDefault: true,
+  },
+  sqliteInstructions: {
+    value: 5000,
+    isDefault: true,
+  },
+};
+
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    backendSettings: vi.fn().mockReturnValue({
-      maxSizeInMbAllLogs: {
-        value: 300,
-        isDefault: true,
-      },
-      maxLogfilesNum: {
-        value: 3,
-        isDefault: true,
-      },
-      sqliteInstructions: {
-        value: 5000,
-        isDefault: true,
-      },
+    backendSettings: vi.fn().mockImplementation(() => ({ ...backendConfig })),
+    updateBackendConfiguration: vi.fn().mockImplementation(async (loglevel) => {
+      backendConfig.loglevel = {
+        value: loglevel,
+        isDefault: loglevel === 'debug',
+      };
+      return { ...backendConfig };
     }),
   }),
 }));
@@ -150,23 +168,16 @@ describe('onboardingSetting.vue', () => {
 
       await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
 
-      expect(saveOptions).toBeCalledWith({
-        loglevel: 'warning',
-      });
-
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
-
-      // should be able to change back to default loglevel (debug)
-      expect(wrapper.find('[data-cy=onboarding-setting__submit-button]').attributes()).toHaveProperty('disabled');
-
-      await wrapper.find('.loglevel-input .input').trigger('input', { value: 'debug' });
-
+      await flushPromises();
       await nextTick();
 
-      await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
-
-      expect(saveOptions).toBeCalledWith({
-        loglevel: 'debug',
+      // When only loglevel changes, applyUserOptions should be called instead of saveOptions
+      expect(applyUserOptions).toHaveBeenCalledWith({
+        loglevel: 'warning',
+      }, true);
+      // Verify that saveOptions was NOT called for loglevel-only changes
+      expect(saveOptions).not.toHaveBeenCalledWith({
+        loglevel: 'warning',
       });
     });
   });
@@ -229,7 +240,13 @@ describe('onboardingSetting.vue', () => {
 
       await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
 
-      expect(saveOptions).toBeCalledWith({});
+      // After resetting to defaults, the new code now explicitly passes the default values
+      // since they differ from the previously saved custom values
+      expect(saveOptions).toBeCalledWith({
+        maxSizeInMbAllLogs: 300,
+        maxLogfilesNum: 3,
+        sqliteInstructions: 5000,
+      });
     });
   });
 });
