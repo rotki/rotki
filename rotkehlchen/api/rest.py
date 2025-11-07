@@ -115,6 +115,7 @@ from rotkehlchen.constants.limits import (
 from rotkehlchen.constants.misc import (
     AIRDROPS_TOLERANCE,
     AVATARIMAGESDIR_NAME,
+    DEFAULT_LOGLEVEL,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
@@ -4444,8 +4445,20 @@ class RestAPI:
                 'value': self.rotkehlchen.args.sqlite_instructions,
                 'is_default': self.rotkehlchen.args.sqlite_instructions == DEFAULT_SQL_VM_INSTRUCTIONS_CB,  # noqa: E501
             },
+            'loglevel': {
+                'value': (current_level := logging.getLevelName(logger.getEffectiveLevel())),
+                'is_default': current_level == DEFAULT_LOGLEVEL,
+            },
         }
         return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)
+
+    def update_log_level(self, loglevel: str) -> Response:
+        """Update the current log level"""
+        (global_logger := logging.getLogger()).setLevel(numeric_level := getattr(logging, loglevel))  # noqa: E501
+        for handler in global_logger.handlers:
+            handler.setLevel(numeric_level)
+
+        return self.get_config_arguments()
 
     def get_user_notes(self, filter_query: UserNotesFilterQuery) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:

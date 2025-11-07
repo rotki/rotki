@@ -138,7 +138,7 @@ class PywsgiFilter(logging.Filter):
 
 
 def configure_logging(args: argparse.Namespace) -> None:
-    loglevel = args.loglevel.upper()
+    loglevel = args.loglevel
     formatters = {
         'default': {
             'format': '[%(asctime)s] %(levelname)s %(name)s %(message)s',

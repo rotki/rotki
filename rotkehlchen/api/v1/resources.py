@@ -63,6 +63,7 @@ from rotkehlchen.api.v1.schemas import (
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
+    ConfigurationUpdateSchema,
     ConnectToRPCNodes,
     CounterpartyAssetMappingDeleteEntrySchema,
     CounterpartyAssetMappingsPostSchema,
@@ -2941,9 +2942,14 @@ class DetectTokensResource(BaseMethodView):
 
 
 class ConfigurationsResource(BaseMethodView):
+    put_schema = ConfigurationUpdateSchema()
 
     def get(self) -> Response:
         return self.rest_api.get_config_arguments()
+
+    @use_kwargs(put_schema, location='json')
+    def put(self, loglevel: str) -> Response:
+        return self.rest_api.update_log_level(loglevel=loglevel)
 
 
 class UserNotesResource(BaseMethodView):

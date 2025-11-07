@@ -47,7 +47,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_substrate_address,
 )
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_ETH2
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE, VALID_LOGLEVELS, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
@@ -4399,3 +4399,13 @@ class DeletePremiumDeviceSchema(Schema):
 class EditPremiumDeviceSchema(Schema):
     device_identifier = NonEmptyStringField(required=True)
     device_name = NonEmptyStringField(required=True)
+
+
+class ConfigurationUpdateSchema(Schema):
+    loglevel = fields.String(
+        required=True,
+        validate=validate.OneOf(
+            choices=VALID_LOGLEVELS,
+            error=f'Invalid log level. Must be one of {VALID_LOGLEVELS}',
+        ),
+    )

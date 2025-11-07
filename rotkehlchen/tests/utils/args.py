@@ -24,7 +24,7 @@ def default_args(
         data_dir: str | None = None,
         ethrpc_endpoint: str | None = None,
         max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB,
-        loglevel: str = 'debug',
+        loglevel: str = 'DEBUG',
 ):
     return ConfigurationArgs(
         loglevel=loglevel,

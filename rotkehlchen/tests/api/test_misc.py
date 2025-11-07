@@ -1,3 +1,4 @@
+import logging
 import os
 from http import HTTPStatus
 from pathlib import Path
@@ -395,6 +396,32 @@ def test_configuration(rotkehlchen_api_server: 'APIServer') -> None:
     assert result['max_logfiles_num']['value'] == DEFAULT_MAX_LOG_BACKUP_FILES
     assert result['sqlite_instructions']['is_default'] is True
     assert result['sqlite_instructions']['value'] == DEFAULT_SQL_VM_INSTRUCTIONS_CB
+    assert result['loglevel']['value'] == 'DEBUG'
+    assert result['loglevel']['is_default'] is True
+
+
+def test_update_log_level(
+        rotkehlchen_api_server: 'APIServer',
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test updating log level via configuration endpoint"""
+    assert_error_response(  # Test invalid log level
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'configurationsresource'),
+            json={'loglevel': 'invalid'},
+        ),
+        contained_in_msg='Invalid log level',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    assert assert_proper_sync_response_with_result(requests.put(  # Switch to trace level
+        api_url_for(rotkehlchen_api_server, 'configurationsresource'),
+        json={'loglevel': (given_loglevel := 'TRACE')},
+    ))['loglevel']['value'] == given_loglevel
+
+    logger = logging.getLogger('rotkehlchen.test')
+    logger.trace('Test trace message')  # type: ignore[attr-defined]
+    assert 'Test trace message' in caplog.text
 
 
 def test_query_all_chain_ids(rotkehlchen_api_server: 'APIServer') -> None:
