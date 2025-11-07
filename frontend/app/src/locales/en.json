@@ -1432,8 +1432,8 @@
     "advanced": "Advanced",
     "config_file_disabled": "This parameter is already set in the rotki_config.json",
     "confirm": {
-      "message": "Are you sure you want to rest the backend settings to default?",
-      "title": "Rest backend settings"
+      "message": "Are you sure you want to reset the backend settings to default?",
+      "title": "Reset backend settings"
     },
     "data_directory": {
       "select": "Select where rotki will store the data"
@@ -1466,6 +1466,7 @@
         "label": "Log Directory"
       },
       "log_level": {
+        "hint": "Specify minimum severity level for recorded log messages.",
         "label": "Log Level"
       }
     },

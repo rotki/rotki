@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10901` Users will now be able to change the log level without restarting the app, in the "Settings > General" menu.
 * :bug:`10862` rotki will now show a warning when a Gnosis Pay or Monerium transaction is manually redecoded but credentials are missing.
 * :bug:`-` rotki will now provide a clear device limit message when premium is deactivated due to exceeding the device limit.
 * :bug:`10914` rotki will now query polkadot and kusama balances correctly again after their migration to asset hub.
