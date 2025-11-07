@@ -145,7 +145,8 @@ defineExpose({
       v-model="dialogIsOpen"
       v-model:current-action="currentAction"
       :loading="sectionLoading"
-      :event-handlers="eventHandlers"
+      :repull-transactions="eventHandlers.onRepullTransactions"
+      :repull-exchange-events="eventHandlers.onRepullExchangeEvents"
     />
 
     <MissingRulesDialog

@@ -90,13 +90,15 @@ function resetQueryStatus() {
   resetUndecodedTransactionsStatus();
   set(currentAction, HISTORY_EVENT_ACTIONS.QUERY);
 }
+
+const isQueryOrRepulling = logicOr(isQuery, isRepulling);
 </script>
 
 <template>
   <HistoryQueryStatusBar
     v-if="usedShow"
     :colspan="colspan"
-    :finished="isQuery || isRepulling ? !loading : !receivingProtocolCacheStatus && !anyEventsDecoding"
+    :finished="isQueryOrRepulling ? !loading : !receivingProtocolCacheStatus && !anyEventsDecoding"
     @reset="resetQueryStatus()"
   >
     <template #current>
@@ -129,7 +131,7 @@ function resetQueryStatus() {
 
     <template #dialog>
       <HistoryQueryStatusDialog
-        v-if="(isQuery || isRepulling) && !refreshProtocolCacheTaskRunning"
+        v-if="isQueryOrRepulling && !refreshProtocolCacheTaskRunning"
         :only-chains="onlyChains"
         :locations="locations"
         :events="events"

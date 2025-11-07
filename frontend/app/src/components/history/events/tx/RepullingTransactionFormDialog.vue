@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { DialogEventHandlers } from '@/components/history/events/dialog-types';
+import type { Exchange } from '@/types/exchanges';
 import type { ChainAddress, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
 import dayjs from 'dayjs';
 import { useTemplateRef } from 'vue';
@@ -18,10 +18,10 @@ const modelValue = defineModel<boolean>({ required: true });
 const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
 const props = withDefaults(defineProps<{
-  eventHandlers?: DialogEventHandlers;
   loading?: boolean;
+  repullTransactions?: (account: ChainAddress) => void;
+  repullExchangeEvents?: (exchanges: Exchange[]) => void;
 }>(), {
-  eventHandlers: () => ({}),
   loading: false,
 });
 
@@ -97,7 +97,7 @@ async function handleExchangeSubmission(
   set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   const newEventsDetected = await repullingExchangeEvents(exchangePayload);
   if (newEventsDetected && exchange) {
-    props.eventHandlers.onRepullExchangeEvents?.([exchange]);
+    props.repullExchangeEvents?.([exchange]);
     logger.debug('New exchange events detected');
   }
 }
@@ -116,8 +116,8 @@ async function handleBlockchainSubmission(data: RepullingTransactionPayload): Pr
   set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   const newTransactionsDetected = await repullingTransactions(blockchainPayload);
   if (newTransactionsDetected) {
-    props.eventHandlers.onRepullTransactions?.(refreshPayload);
     const chains = [data.chain];
+    props.repullTransactions?.(refreshPayload);
     logger.debug(`New transactions detected ${chains.join(', ')}`);
   }
 }
