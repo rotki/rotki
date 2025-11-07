@@ -563,7 +563,7 @@ def test_erc721_token_ownership_verification(
         DBHistoryEvents(database).add_history_events(
             write_cursor=write_cursor,
             history=[HistoryEvent(
-                event_identifier='xxx',
+                group_identifier='xxx',
                 sequence_index=0,
                 timestamp=TimestampMS(1645260370000),
                 location=Location.ETHEREUM,
@@ -573,7 +573,7 @@ def test_erc721_token_ownership_verification(
                 amount=ONE,
                 asset=token_7776,
             ), HistoryEvent(
-                event_identifier='xxy',
+                group_identifier='xxy',
                 sequence_index=0,
                 timestamp=TimestampMS(1645260470000),
                 location=Location.ETHEREUM,
@@ -583,7 +583,7 @@ def test_erc721_token_ownership_verification(
                 location_label=user_address,
                 asset=token_7776,
             ), HistoryEvent(
-                event_identifier='xyx',
+                group_identifier='xyx',
                 sequence_index=0,
                 timestamp=TimestampMS(1645260570000),
                 location=Location.ETHEREUM,
@@ -593,7 +593,7 @@ def test_erc721_token_ownership_verification(
                 location_label=user_address,
                 asset=token_7776,
             ), HistoryEvent(
-                event_identifier='yxx',
+                group_identifier='yxx',
                 sequence_index=0,
                 timestamp=TimestampMS(1645260670000),
                 location=Location.ETHEREUM,
@@ -603,7 +603,7 @@ def test_erc721_token_ownership_verification(
                 location_label=user_address,
                 asset=token_7809,
             ), HistoryEvent(
-                event_identifier='yyx',
+                group_identifier='yyx',
                 sequence_index=0,
                 timestamp=TimestampMS(1645260770000),
                 location=Location.ETHEREUM,
@@ -613,7 +613,7 @@ def test_erc721_token_ownership_verification(
                 location_label=user_address,
                 asset=token_7809,
             ), HistoryEvent(
-                event_identifier='yyy',
+                group_identifier='yyy',
                 sequence_index=0,
                 timestamp=TimestampMS(1645260870000),
                 location=Location.ETHEREUM,
@@ -623,7 +623,7 @@ def test_erc721_token_ownership_verification(
                 location_label=user_address,
                 asset=token_7809,
             ), HistoryEvent(
-                event_identifier='1x',
+                group_identifier='1x',
                 sequence_index=0,
                 timestamp=TimestampMS(1645360870000),
                 location=Location.ETHEREUM,
@@ -633,7 +633,7 @@ def test_erc721_token_ownership_verification(
                 location_label=user_address,
                 asset=broken_erc721_token_1,
             ), HistoryEvent(
-                event_identifier='2x',
+                group_identifier='2x',
                 sequence_index=0,
                 timestamp=TimestampMS(1645460870000),
                 location=Location.ETHEREUM,

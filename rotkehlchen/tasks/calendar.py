@@ -129,7 +129,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         with self.database.conn.read_ctx() as cursor:
             return DBHistoryEvents(database=self.database).get_history_events_internal(
                 cursor=cursor,
-                group_by_event_ids=False,
+                aggregate_by_group_ids=False,
                 filter_query=EvmEventFilterQuery.make(
                     and_op=True,
                     counterparties=counterparties,

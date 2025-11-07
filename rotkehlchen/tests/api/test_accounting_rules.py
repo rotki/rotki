@@ -446,7 +446,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(
             rotkehlchen_api_server,
             'historyeventresource',
-        ), json={'event_identifiers': [events[0].event_identifier]},
+        ), json={'group_identifiers': [events[0].group_identifier]},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2
@@ -476,7 +476,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(
             rotkehlchen_api_server,
             'historyeventresource',
-        ), json={'event_identifiers': [events[0].event_identifier]},
+        ), json={'group_identifiers': [events[0].group_identifier]},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2
@@ -505,7 +505,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(
             rotkehlchen_api_server,
             'historyeventresource',
-        ), json={'event_identifiers': [events[0].event_identifier]},
+        ), json={'group_identifiers': [events[0].group_identifier]},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2
@@ -526,7 +526,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(
             rotkehlchen_api_server,
             'historyeventresource',
-        ), json={'event_identifiers': [events[0].event_identifier]},
+        ), json={'group_identifiers': [events[0].group_identifier]},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2

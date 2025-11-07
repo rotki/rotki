@@ -50,7 +50,7 @@ def test_get_associated_locations(
                 location=Location.NEXO,
                 spend=AssetAmount(asset=A_EUR, amount=ONE),
                 receive=AssetAmount(asset=A_ETH, amount=FVal('281.14')),
-                event_identifier='tradeid',
+                group_identifier='tradeid',
             ))
 
     # get locations
@@ -84,7 +84,7 @@ def test_get_location_labels(
         (1, 'Kraken 2', Location.KRAKEN),
     ):
         events.extend([HistoryEvent(
-            event_identifier=f'xyz_{location_label}_{idx}',
+            group_identifier=f'xyz_{location_label}_{idx}',
             sequence_index=idx,
             timestamp=TimestampMS(1500000000000 + idx),
             location=location,
@@ -128,7 +128,7 @@ def test_get_location_labels_excludes_untracked_accounts(
     with db.user_write() as cursor:
         DBHistoryEvents(db).add_history_events(write_cursor=cursor, history=[
             HistoryEvent(
-                event_identifier='tracked_event',
+                group_identifier='tracked_event',
                 sequence_index=0,
                 timestamp=TimestampMS(1500000000000),
                 location=Location.ETHEREUM,
@@ -138,7 +138,7 @@ def test_get_location_labels_excludes_untracked_accounts(
                 event_subtype=HistoryEventSubType.NONE,
                 location_label=(tracked_address := ethereum_accounts[0]),
             ), HistoryEvent(
-                event_identifier='untracked_event',
+                group_identifier='untracked_event',
                 sequence_index=0,
                 timestamp=TimestampMS(1500000000000),
                 location=Location.ETHEREUM,

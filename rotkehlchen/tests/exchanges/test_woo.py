@@ -336,7 +336,7 @@ def test_deserialize_trade_buy(mock_woo: Woo):
         asset=A_ETH,
         amount=FVal('50000.00'),
         location_label=mock_woo.name,
-        event_identifier=(event_identifier := '4e59a50777b6eddb1a916539d7151fd47c489b0badc8488a01a5f835e52844c8'),  # noqa: E501
+        group_identifier=(group_identifier := '4e59a50777b6eddb1a916539d7151fd47c489b0badc8488a01a5f835e52844c8'),  # noqa: E501
     ), SwapEvent(
         timestamp=timestamp,
         location=Location.WOO,
@@ -344,7 +344,7 @@ def test_deserialize_trade_buy(mock_woo: Woo):
         asset=A_BTC,
         amount=FVal('1.0'),
         location_label=mock_woo.name,
-        event_identifier=event_identifier,
+        group_identifier=group_identifier,
     ), SwapEvent(
         timestamp=timestamp,
         location=Location.WOO,
@@ -352,7 +352,7 @@ def test_deserialize_trade_buy(mock_woo: Woo):
         asset=A_ETH,
         amount=FVal('0.1'),
         location_label=mock_woo.name,
-        event_identifier=event_identifier,
+        group_identifier=group_identifier,
     )]
 
 
@@ -375,7 +375,7 @@ def test_deserialize_trade_sell(mock_woo):
         asset=A_ETH,
         amount=FVal('2.0'),
         location_label=mock_woo.name,
-        event_identifier=(event_identifier := '98e48230961b7e3427b04a4264bcbee3eede633906d549202b946d26e6538f7f'),  # noqa: E501
+        group_identifier=(group_identifier := '98e48230961b7e3427b04a4264bcbee3eede633906d549202b946d26e6538f7f'),  # noqa: E501
     ), SwapEvent(
         timestamp=timestamp,
         location=Location.WOO,
@@ -383,7 +383,7 @@ def test_deserialize_trade_sell(mock_woo):
         asset=A_USDT,
         amount=FVal('6000.00'),
         location_label=mock_woo.name,
-        event_identifier=event_identifier,
+        group_identifier=group_identifier,
     ), SwapEvent(
         timestamp=timestamp,
         location=Location.WOO,
@@ -391,7 +391,7 @@ def test_deserialize_trade_sell(mock_woo):
         asset=A_USDT,
         amount=FVal('0.2'),
         location_label=mock_woo.name,
-        event_identifier=event_identifier,
+        group_identifier=group_identifier,
     )]
 
 

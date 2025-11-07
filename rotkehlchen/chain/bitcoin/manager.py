@@ -48,7 +48,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             database: 'DBHandler',
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
             asset: Asset,
-            event_identifier_prefix: str,
+            group_identifier_prefix: str,
             cache_key: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             api_callbacks: list[BtcApiCallback],
     ) -> None:
@@ -58,7 +58,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         self.blockchain = blockchain
         self.location = Location.from_chain(self.blockchain)
         self.asset = asset
-        self.event_identifier_prefix = event_identifier_prefix
+        self.group_identifier_prefix = group_identifier_prefix
         self.cache_key = cache_key
         self.api_callbacks = api_callbacks
 
@@ -325,7 +325,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             location_label: str | None = None,
     ) -> HistoryEvent:
         return HistoryEvent(
-            event_identifier=f'{self.event_identifier_prefix}{tx.tx_id}',
+            group_identifier=f'{self.group_identifier_prefix}{tx.tx_id}',
             sequence_index=0,  # events are reshuffled later
             timestamp=ts_sec_to_ms(tx.timestamp),
             location=self.location,

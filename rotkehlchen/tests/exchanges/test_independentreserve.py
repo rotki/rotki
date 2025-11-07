@@ -14,7 +14,7 @@ from rotkehlchen.exchanges.independentreserve import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_AUD
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
@@ -208,7 +208,7 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_ETH,
         amount=FVal('0.5'),
         location_label=exchange.name,
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.INDEPENDENTRESERVE,
             unique_id=(unique_id_1 := 'foo1'),
         ),
@@ -219,7 +219,7 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_AUD,
         amount=FVal('301.85'),
         location_label=exchange.name,
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.INDEPENDENTRESERVE,
             unique_id=unique_id_1,
         ),
@@ -230,7 +230,7 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_AUD,
         amount=FVal('679.4419574775'),
         location_label=exchange.name,
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.INDEPENDENTRESERVE,
             unique_id=(unique_id_2 := 'foo2'),
         ),
@@ -241,7 +241,7 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_ETH,
         amount=FVal('2.64117379'),
         location_label=exchange.name,
-        event_identifier=create_event_identifier_from_unique_id(
+        group_identifier=create_group_identifier_from_unique_id(
             location=Location.INDEPENDENTRESERVE,
             unique_id=unique_id_2,
         ),

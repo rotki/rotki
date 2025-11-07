@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
 ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
-    str,            # event_identifier
+    str,            # group_identifier
     int,            # sequence_index
     int,            # timestamp
     str | None,  # location label
@@ -52,7 +52,7 @@ ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
 
 EVM_DEPOSIT_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
-    str,            # event_identifier
+    str,            # group_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # depositor
@@ -75,7 +75,7 @@ class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superc
 
     def __init__(
             self,
-            event_identifier: str,
+            group_identifier: str,
             sequence_index: int,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
@@ -91,7 +91,7 @@ class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superc
         self.is_exit_or_blocknumber = is_exit_or_blocknumber
         super().__init__(
             identifier=identifier,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -135,18 +135,18 @@ class EthWithdrawalEvent(EthStakingEvent):
             withdrawal_address: ChecksumEvmAddress,
             is_exit: bool,
             identifier: int | None = None,
-            event_identifier: str | None = None,
+            group_identifier: str | None = None,
     ) -> None:
-        if event_identifier is None:
+        if group_identifier is None:
             # withdrawals happen at least every couple of days. For them to happen in the same
             # day for same validator we would need to drop to less than 115200 validators
             # https://ethereum.org/en/staking/withdrawals/#how-soon
             days = int(timestamp / 1000 / 86400)
-            event_identifier = f'EW_{validator_index}_{days}'
+            group_identifier = f'EW_{validator_index}_{days}'
 
         super().__init__(
             identifier=identifier,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
             sequence_index=0,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,
@@ -180,7 +180,7 @@ class EthWithdrawalEvent(EthStakingEvent):
         amount = deserialize_fval(entry[5], 'amount', 'eth withdrawal event')
         return cls(
             identifier=entry[0],
-            event_identifier=entry[1],
+            group_identifier=entry[1],
             timestamp=TimestampMS(entry[3]),
             amount=amount,
             withdrawal_address=entry[4],  # type: ignore  # exists for these events
@@ -327,7 +327,7 @@ class EthBlockEvent(EthStakingEvent):
             block_number: int,
             is_mev_reward: bool,
             identifier: int | None = None,
-            event_identifier: str | None = None,
+            group_identifier: str | None = None,
     ) -> None:
 
         if is_mev_reward:
@@ -343,7 +343,7 @@ class EthBlockEvent(EthStakingEvent):
 
         super().__init__(
             identifier=identifier,
-            event_identifier=self.form_event_identifier(block_number) if event_identifier is None else event_identifier,  # noqa: E501
+            group_identifier=self.form_group_identifier(block_number) if group_identifier is None else group_identifier,  # noqa: E501
             sequence_index=sequence_index,
             timestamp=timestamp,
             event_type=event_type,
@@ -356,7 +356,7 @@ class EthBlockEvent(EthStakingEvent):
         )
 
     @staticmethod
-    def form_event_identifier(block_number: int) -> str:
+    def form_group_identifier(block_number: int) -> str:
         return f'BP1_{block_number}'
 
     @property
@@ -387,7 +387,7 @@ class EthBlockEvent(EthStakingEvent):
         amount = deserialize_fval(entry[5], 'amount', 'eth block event')
         return cls(
             identifier=entry[0],
-            event_identifier=entry[1],
+            group_identifier=entry[1],
             timestamp=TimestampMS(entry[3]),
             amount=amount,
             fee_recipient=entry[4],  # type: ignore  # exists for these events
@@ -467,7 +467,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             depositor: ChecksumEvmAddress,
             extra_data: dict[str, Any] | None = None,
             identifier: int | None = None,
-            event_identifier: str | None = None,
+            group_identifier: str | None = None,
     ) -> None:
         suffix = f'{validator_index}' if validator_index != UNKNOWN_VALIDATOR_INDEX else 'with a not yet known validator index'  # noqa: E501
         super().__init__(  # super should call evm event
@@ -484,7 +484,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             counterparty=CPT_ETH2,
             address=ETH2_DEPOSIT_ADDRESS,
             identifier=identifier,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
             extra_data=extra_data,
         )  # for EthStakingEvent, just do manually to not reassign all common ones
         self.validator_index = validator_index
@@ -530,7 +530,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             amount=amount,
             depositor=entry[4],  # type: ignore  # exists for these events
             identifier=entry[0],
-            event_identifier=entry[1],
+            group_identifier=entry[1],
         )
 
     @classmethod
@@ -557,7 +557,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             amount=base_data['amount'],
             depositor=deserialize_evm_address(base_data['location_label']),
             identifier=base_data['identifier'],
-            event_identifier=base_data['event_identifier'],
+            group_identifier=base_data['group_identifier'],
         )
 
     # -- Methods of AccountingEventMixin

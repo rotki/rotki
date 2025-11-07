@@ -42,7 +42,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -776,7 +776,7 @@ class Coinbase(ExchangeInterface):
             receive=AssetAmount(asset=native_asset, amount=native_amount),
             fee=fee,
             location_label=self.name,
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=self.location,
                 unique_id=str(tx_a['trade']['id']),
             ),
@@ -870,7 +870,7 @@ class Coinbase(ExchangeInterface):
                 asset=asset_from_coinbase(event['fee']['currency'], time=timestamp),
             ) if 'fee' in event else None,
             location_label=self.name,
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=self.location,
                 unique_id=str(event['id']),
             ),
@@ -936,7 +936,7 @@ class Coinbase(ExchangeInterface):
                 amount=abs(deserialize_fval_or_zero(event['advanced_trade_fill']['commission'])),
             ),
             location_label=self.name,
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=self.location,
                 unique_id=str(event['id']),
             ),
@@ -1099,7 +1099,7 @@ class Coinbase(ExchangeInterface):
             asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
             notes = raw_data.get('details', {}).get('header', '')
             tx_type = raw_data['type']
-            event_identifier = f'{CB_EVENTS_PREFIX}{raw_data["id"]!s}'
+            group_identifier = f'{CB_EVENTS_PREFIX}{raw_data["id"]!s}'
             timestamp_ms = ts_sec_to_ms(timestamp)
             if notes != '':
                 notes += f' {"from coinbase earn" if tx_type == "send" else "as " + tx_type}'
@@ -1136,7 +1136,7 @@ class Coinbase(ExchangeInterface):
                 event_type, event_subtype = HistoryEventType.RECEIVE, HistoryEventSubType.NONE
 
             return HistoryEvent(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 sequence_index=0,
                 timestamp=timestamp_ms,
                 location=Location.COINBASE,

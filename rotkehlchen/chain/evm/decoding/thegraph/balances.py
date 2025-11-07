@@ -69,7 +69,7 @@ class ThegraphCommonBalances(ProtocolWithBalance):
         delegations_unique = set()
         for event in events:
             if event.location_label is None or event.extra_data is None:
-                log.info(f'Event {event.event_identifier} missing extra_data or location_label')
+                log.info(f'Event {event.group_identifier} missing extra_data or location_label')
                 continue
 
             # simple staking where you just need to delegate to an indexer

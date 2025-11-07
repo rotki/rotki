@@ -59,7 +59,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         events: list[HistoryBaseEntry] = []
         asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Currency')  # noqa: E501
         history_event = HistoryEvent(
-            event_identifier=identifier,
+            group_identifier=identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
@@ -72,7 +72,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         events.append(history_event)
         if fee and fee != ZERO:
             fee_event = HistoryEvent(
-                event_identifier=identifier,
+                group_identifier=identifier,
                 sequence_index=sequence_index + 1,
                 timestamp=timestamp,
                 location=location,

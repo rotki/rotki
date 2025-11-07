@@ -43,11 +43,11 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
             counterparty: str | None = None,
             address: SolanaAddress | None = None,
             extra_data: dict[str, Any] | None = None,
-            event_identifier: str | None = None,
+            group_identifier: str | None = None,
     ):
         """Combines SolanaEvent with SwapEvent to represent solana swaps.
 
-        The event_identifier is initialized from SolanaEvent constructor
+        The group_identifier is initialized from SolanaEvent constructor
         """
         super().__init__(
             tx_ref=tx_ref,
@@ -63,7 +63,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
             counterparty=counterparty,
             address=address,
             extra_data=extra_data,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
         )
 
     @property
@@ -83,7 +83,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
         amount = deserialize_fval(entry[7], 'amount', 'solana swap event')
         return cls(
             identifier=entry[0],
-            event_identifier=entry[1],
+            group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
             location_label=entry[5],

@@ -96,7 +96,7 @@ class KucoinImporter(BaseExchangeImporter):
                                 asset=asset_from_kucoin(fee_currency),
                                 amount=deserialize_fval_or_zero(get_key_if_has_val(row, fee_key)),
                             ) if fee_currency is not None else None,
-                            event_identifier=f'KU{hash_csv_row(row)}',
+                            group_identifier=f'KU{hash_csv_row(row)}',
                         ),
                     )
                     self.imported_entries += 1

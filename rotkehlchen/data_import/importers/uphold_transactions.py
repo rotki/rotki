@@ -81,7 +81,7 @@ Activity from uphold with uphold transaction id:
                 else:
                     raise SkippedCSVEntry(f'Uncaught transaction type: {transaction_type}.')
                 event = HistoryEvent(
-                    event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
+                    group_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                     sequence_index=0,
                     timestamp=ts_sec_to_ms(timestamp),
                     location=Location.UPHOLD,
@@ -106,7 +106,7 @@ Activity from uphold with uphold transaction id:
                             receive=AssetAmount(asset=destination_asset, amount=destination_amount),  # noqa: E501
                             fee=AssetAmount(asset=fee_asset, amount=fee),
                             spend_notes=notes,
-                            event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
+                            group_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                         ),
                     )
                 else:
@@ -122,7 +122,7 @@ Activity from uphold with uphold transaction id:
                 )]
                 if fee != ZERO:
                     events.append(AssetMovement(
-                        event_identifier=events[0].event_identifier,
+                        group_identifier=events[0].group_identifier,
                         location=Location.UPHOLD,
                         event_type=HistoryEventType.WITHDRAWAL,
                         timestamp=ts_sec_to_ms(timestamp),
@@ -141,7 +141,7 @@ Activity from uphold with uphold transaction id:
                         receive=AssetAmount(asset=destination_asset, amount=destination_amount),
                         fee=AssetAmount(asset=fee_asset, amount=fee),
                         spend_notes=notes,
-                        event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
+                        group_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                     ),
                 )
             else:
@@ -158,7 +158,7 @@ Activity from uphold with uphold transaction id:
                 )]
                 if fee != ZERO:
                     events.append(AssetMovement(
-                        event_identifier=events[0].event_identifier,
+                        group_identifier=events[0].group_identifier,
                         location=Location.UPHOLD,
                         event_type=HistoryEventType.DEPOSIT,
                         timestamp=ts_sec_to_ms(timestamp),
@@ -177,7 +177,7 @@ Activity from uphold with uphold transaction id:
                         receive=AssetAmount(asset=destination_asset, amount=destination_amount),
                         fee=AssetAmount(asset=fee_asset, amount=fee),
                         spend_notes=notes,
-                        event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
+                        group_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                     ),
                 )
             else:

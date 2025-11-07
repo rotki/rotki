@@ -59,7 +59,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
 
         events: list[HistoryBaseEntry] = []
         amount, amount_symbol = csv_row['Amount'].split(' ')
-        event_identifier = f'{BITSTAMP_EVENT_PREFIX}_{uuid4().hex}'
+        group_identifier = f'{BITSTAMP_EVENT_PREFIX}_{uuid4().hex}'
         if csv_row['Type'] == 'Market':
             value_str, value_symbol = csv_row['Value'].split(' ')
             fee_str, fee_symbol = csv_row['Fee'].split(' ')
@@ -75,7 +75,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 spend=spend,
                 location=Location.BITSTAMP,
                 receive=receive,
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 fee=AssetAmount(
                     asset=asset_from_bitstamp(fee_symbol),
                     amount=deserialize_fval_or_zero(fee_str),
@@ -83,7 +83,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             ))
         elif csv_row['Type'] in {'Deposit', 'Withdrawal'}:
             events.append(AssetMovement(
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 event_type=HistoryEventType.DEPOSIT if csv_row['Type'] == 'Deposit' else HistoryEventType.WITHDRAWAL,  # noqa: E501
                 timestamp=timestamp,
                 location=Location.BITSTAMP,

@@ -55,21 +55,21 @@ history1 = [
     *create_swap_events(
         timestamp=TimestampMS(1446979735000),
         location=Location.EXTERNAL,
-        event_identifier='1xyz',
+        group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('268.678317859') * FVal(82)),
         receive=AssetAmount(asset=A_BTC, amount=FVal(82)),
     ),
     *create_swap_events(
         timestamp=TimestampMS(1446979735000),
         location=Location.EXTERNAL,
-        event_identifier='2xyz',
+        group_identifier='2xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('0.2315893') * FVal(1450)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(1450)),
     ),
     *create_swap_events(
         timestamp=TimestampMS(1473505138000),  # cryptocompare hourly BTC/EUR price: 556.435
         location=Location.POLONIEX,
-        event_identifier='3xyz',  # cryptocompare hourly ETH/EUR price: 10.36
+        group_identifier='3xyz',  # cryptocompare hourly ETH/EUR price: 10.36
         spend=AssetAmount(asset=A_BTC, amount=FVal('0.01858275') * FVal(50)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(50)),
         fee=AssetAmount(asset=A_ETH, amount=FVal('0.06999999999999999')),
@@ -77,7 +77,7 @@ history1 = [
     *create_swap_events(
         timestamp=TimestampMS(1475042230000),  # cryptocompare hourly BTC/EUR price: 537.805
         location=Location.POLONIEX,
-        event_identifier='4xyz',  # cryptocompare hourly ETH/EUR price: 11.925
+        group_identifier='4xyz',  # cryptocompare hourly ETH/EUR price: 11.925
         spend=AssetAmount(asset=A_ETH, amount=FVal(25)),
         receive=AssetAmount(asset=A_BTC, amount=FVal('0.02209898') * FVal(25)),
         fee=AssetAmount(asset=A_BTC, amount=FVal('0.00082871175')),

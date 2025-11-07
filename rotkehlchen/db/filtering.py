@@ -13,8 +13,8 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.constants import (
@@ -749,7 +749,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -766,7 +766,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             limit=limit,
             offset=offset,
             order_by_rules=order_by_rules,
-            group_by_field='event_identifier',
+            group_by_field='group_identifier',
         )
         if customized_events_only is True:
             if filter_query.join_clause is not None:  # atm "should not happen"
@@ -859,12 +859,12 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                     columns=null_columns,
                 ),
             )
-        if event_identifiers is not None:
+        if group_identifiers is not None:
             filters.append(
                 DBMultiStringFilter(
                     and_op=True,
-                    column='event_identifier',
-                    values=event_identifiers,
+                    column='group_identifier',
+                    values=group_identifiers,
                 ),
             )
         if exclude_ignored_assets is True:
@@ -959,7 +959,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -993,19 +993,19 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             identifiers=identifiers,
-            event_identifiers=event_identifiers,
+            group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
             notes_substring=notes_substring,
         )
         if tx_refs is not None and len(tx_refs) > 0:
-            event_identifiers, tx_ref_values = [], []
+            group_identifiers, tx_ref_values = [], []
             for tx_ref in tx_refs:
                 if isinstance(tx_ref, str):  # BTCTxId is simply a NewType (can't be used with isinstance) wrapping str  # noqa: E501
-                    event_identifiers.extend([
-                        f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_ref}',
-                        f'{BCH_EVENT_IDENTIFIER_PREFIX}{tx_ref}',
+                    group_identifiers.extend([
+                        f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_ref}',
+                        f'{BCH_GROUP_IDENTIFIER_PREFIX}{tx_ref}',
                     ])
                 elif isinstance(tx_ref, Signature):
                     tx_ref_values.append(tx_ref.to_bytes())
@@ -1013,11 +1013,11 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
                     tx_ref_values.append(tx_ref)
 
             tx_ref_filters: list[DBFilter] = []
-            if len(event_identifiers) > 0:
+            if len(group_identifiers) > 0:
                 tx_ref_filters.append(DBMultiStringFilter(
                     and_op=True,
-                    column='event_identifier',
-                    values=event_identifiers,
+                    column='group_identifier',
+                    values=group_identifiers,
                 ))
 
             if len(tx_ref_values) > 0:
@@ -1086,7 +1086,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -1121,7 +1121,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             identifiers=identifiers,
-            event_identifiers=event_identifiers,
+            group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
@@ -1168,7 +1168,7 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -1201,7 +1201,7 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             identifiers=identifiers,
-            event_identifiers=event_identifiers,
+            group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
@@ -1277,7 +1277,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -1307,7 +1307,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             identifiers=identifiers,
-            event_identifiers=event_identifiers,
+            group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
@@ -1385,7 +1385,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -1414,7 +1414,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             identifiers=identifiers,
-            event_identifiers=event_identifiers,
+            group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
@@ -1467,7 +1467,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -1497,7 +1497,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             identifiers=identifiers,
-            event_identifiers=event_identifiers,
+            group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
@@ -1547,7 +1547,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             identifiers: list[int] | None = None,
-            event_identifiers: list[str] | None = None,
+            group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
@@ -1576,7 +1576,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             identifiers=identifiers,
-            event_identifiers=event_identifiers,
+            group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             tx_hashes=tx_hashes,

@@ -352,7 +352,7 @@ class HistoricalBalancesManager:
             current_balances[event.asset] += event.amount
         else:
             if current_balances[event.asset] - event.amount < ZERO:
-                return event.identifier, event.event_identifier
+                return event.identifier, event.group_identifier
 
             current_balances[event.asset] -= event.amount
             if current_balances[event.asset] == ZERO:

@@ -125,7 +125,7 @@ def test_query_solana_transactions(
             filter_query=SolanaEventFilterQuery.make(),
         )
         assert {signature1, signature2, signature3} == {
-            deserialize_tx_signature(x.event_identifier) for x in events
+            deserialize_tx_signature(x.group_identifier) for x in events
         }
         assert str(fake_signature) in rotki.data.db.get_ignored_action_ids(cursor=cursor)
 

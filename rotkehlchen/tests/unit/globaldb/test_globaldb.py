@@ -598,7 +598,7 @@ def test_global_db_restore(globaldb, database):
             history=create_swap_events(
                 timestamp=TimestampMS(12312312000),
                 location=Location.BLOCKFI,
-                event_identifier='this-is-so-unique',
+                group_identifier='this-is-so-unique',
                 spend=AssetAmount(
                     asset=symbol_to_asset_or_token('LOLZ'),
                     amount=FVal(2),

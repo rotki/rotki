@@ -96,7 +96,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
             )])
         elif entry_type in {'Interest Payment', 'Bonus Payment', 'Referral Bonus'}:
             event = HistoryEvent(
-                event_identifier=f'{BLOCKFI_PREFIX}{hash_csv_row(csv_row)}',
+                group_identifier=f'{BLOCKFI_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BLOCKFI,

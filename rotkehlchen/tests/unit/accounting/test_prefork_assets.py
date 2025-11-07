@@ -24,27 +24,27 @@ def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_se
     history3 = create_swap_events(
         timestamp=TimestampMS(1446979735000),  # 11/08/2015
         location=Location.EXTERNAL,
-        event_identifier='1xyz',
+        group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('0.2315893') * FVal(1450)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(1450)),
     ) + create_swap_events(  # selling ETH prefork should also reduce our ETC amount
         timestamp=TimestampMS(1461021812000),  # 18/04/2016 (taxable)
         location=Location.KRAKEN,
-        event_identifier='2xyz',
+        group_identifier='2xyz',
         spend=AssetAmount(asset=A_ETH, amount=FVal(50)),  # cryptocompare hourly ETC/EUR price: 7.88  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('7.88') * FVal(50)),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.5215')),
     ) + create_swap_events(  # selling ETC after the fork
         timestamp=TimestampMS(1481979135000),  # 17/12/2016
         location=Location.KRAKEN,
-        event_identifier='3xyz',
+        group_identifier='3xyz',
         spend=AssetAmount(asset=A_ETC, amount=FVal(550)),  # cryptocompare hourly ETC/EUR price: 7.88  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('1.78') * FVal(550)),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.9375')),
     ) + create_swap_events(  # selling ETH after the fork
         timestamp=TimestampMS(1482138141000),  # 19/12/2016
         location=Location.KRAKEN,
-        event_identifier='4xyz',
+        group_identifier='4xyz',
         spend=AssetAmount(asset=A_ETH, amount=FVal(10)),  # cryptocompare hourly ETH/EUR price: 7.45  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('7.45') * FVal(10)),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.12')),
@@ -75,28 +75,28 @@ def test_buying_selling_btc_before_bchfork(accountant, google_service):
     history = create_swap_events(
         timestamp=TimestampMS(1491593374000),  # 04/07/2017
         location=Location.EXTERNAL,
-        event_identifier='1xyz',
+        group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('1128.905') * FVal('6.5')),
         receive=AssetAmount(asset=A_BTC, amount=FVal('6.5')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.55')),
     ) + create_swap_events(  # selling BTC prefork should also reduce the BCH equivalent -- taxable
         timestamp=TimestampMS(1500595200000),  # 21/07/2017
         location=Location.EXTERNAL,
-        event_identifier='2xyz',
+        group_identifier='2xyz',
         spend=AssetAmount(asset=A_BTC, amount=FVal('0.5')),
         receive=AssetAmount(asset=A_EUR, amount=FVal('2380.835') * FVal('0.5')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.15')),
     ) + create_swap_events(  # selling BCH after the fork -- taxable
         timestamp=TimestampMS(1512693374000),  # 08/12/2017
         location=Location.KRAKEN,
-        event_identifier='3xyz',
+        group_identifier='3xyz',
         spend=AssetAmount(asset=A_BCH, amount=FVal('2.1')),  # cryptocompare hourly BCH/EUR price: 995.935  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('995.935') * FVal('2.1')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.26')),
     ) + create_swap_events(
         timestamp=TimestampMS(1514937600000),  # 03/01/2018
         location=Location.KRAKEN,
-        event_identifier='4xyz',
+        group_identifier='4xyz',
         spend=AssetAmount(asset=A_BTC, amount=FVal('1.2')),  # cryptocompare hourly BCH/EUR price: 995.935  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('12404.88') * FVal('1.2')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.52')),
@@ -127,7 +127,7 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
     history = create_swap_events(  # 6.5 BTC 6.5 BCH 6.5 BSV
         timestamp=TimestampMS(1491593374000),  # 04/07/2017
         location=Location.EXTERNAL,
-        event_identifier='1xyz',
+        group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('1128.905') * FVal('6.5')),
         receive=AssetAmount(asset=A_BTC, amount=FVal('6.5')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.55')),
@@ -135,7 +135,7 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
         # 6 BTC 6 BCH 6 BSV
         timestamp=TimestampMS(1500595200000),  # 21/07/2017
         location=Location.EXTERNAL,
-        event_identifier='2xyz',
+        group_identifier='2xyz',
         spend=AssetAmount(asset=A_BTC, amount=FVal('0.5')),
         receive=AssetAmount(asset=A_EUR, amount=FVal('2380.835') * FVal('0.5')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.15')),
@@ -143,14 +143,14 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
         # 6 BTC 3.9 BCH 3.9 BSV
         timestamp=TimestampMS(1512693374000),  # 08/12/2017
         location=Location.KRAKEN,
-        event_identifier='3xyz',
+        group_identifier='3xyz',
         spend=AssetAmount(asset=A_BCH, amount=FVal('2.1')),  # cryptocompare hourly BCH/EUR price: 995.935  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('995.935') * FVal('2.1')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.26')),
     ) + create_swap_events(  # 4.8 BTC 3.9 BCH 3.9 BSV
         timestamp=TimestampMS(1514937600000),  # 03/01/2018
         location=Location.KRAKEN,
-        event_identifier='4xyz',
+        group_identifier='4xyz',
         spend=AssetAmount(asset=A_BTC, amount=FVal('1.2')),  # cryptocompare hourly BCH/EUR price: 995.935  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('12404.88') * FVal('1.2')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.52')),
@@ -158,7 +158,7 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
         # 4.8 BTC 4.9 BCH 4.9 BSV
         timestamp=TimestampMS(1524937600000),
         location=Location.KRAKEN,
-        event_identifier='5xyz',
+        group_identifier='5xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('1146.98') * ONE),
         receive=AssetAmount(asset=A_BCH, amount=ONE),  # cryptocompare hourly BCH/EUR price: 1146.98  # noqa: E501
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.52')),
@@ -166,7 +166,7 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
         # 4.8 BTC 4.6 BCH 4.6 BSV
         timestamp=TimestampMS(1525937600000),
         location=Location.KRAKEN,
-        event_identifier='6xyz',
+        group_identifier='6xyz',
         spend=AssetAmount(asset=A_BCH, amount=FVal('0.3')),  # cryptocompare hourly BCH/EUR price: 1146.98  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('1272.05') * FVal('0.3')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.52')),
@@ -174,7 +174,7 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
         # 4.8 BTC 4.1 BCH 4.6 BSV
         timestamp=TimestampMS(1552304352000),
         location=Location.KRAKEN,
-        event_identifier='7xyz',
+        group_identifier='7xyz',
         spend=AssetAmount(asset=A_BCH, amount=FVal('0.5')),  # cryptocompare hourly BCH/EUR price: 114.27  # noqa: E501
         receive=AssetAmount(asset=A_EUR, amount=FVal('114.27') * FVal('0.5')),
         fee=AssetAmount(asset=A_EUR, amount=FVal('0.52')),

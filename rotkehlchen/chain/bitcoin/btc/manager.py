@@ -11,7 +11,7 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCYPHER_TX_IO_LIMIT,
     BLOCKCYPHER_TX_LIMIT,
     BLOCKSTREAM_BASE_URL,
-    BTC_EVENT_IDENTIFIER_PREFIX,
+    BTC_GROUP_IDENTIFIER_PREFIX,
     MEMPOOL_SPACE_BASE_URL,
 )
 from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
@@ -48,7 +48,7 @@ class BitcoinManager(BitcoinCommonManager):
             database=database,
             blockchain=SupportedBlockchain.BITCOIN,
             asset=A_BTC,
-            event_identifier_prefix=BTC_EVENT_IDENTIFIER_PREFIX,
+            group_identifier_prefix=BTC_GROUP_IDENTIFIER_PREFIX,
             cache_key=DBCacheDynamic.LAST_BTC_TX_BLOCK,
             api_callbacks=[BtcApiCallback(
                 name='blockchain.info',

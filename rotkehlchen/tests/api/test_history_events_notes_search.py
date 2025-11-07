@@ -27,7 +27,7 @@ def test_history_events_search_by_notes(
     # Create test events with different notes
     events = [
         HistoryEvent(
-            event_identifier='event1',
+            group_identifier='event1',
             sequence_index=0,
             timestamp=TimestampMS(1000),
             location=Location.BINANCE,
@@ -37,7 +37,7 @@ def test_history_events_search_by_notes(
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
         ), HistoryEvent(
-            event_identifier='event2',
+            group_identifier='event2',
             sequence_index=0,
             timestamp=TimestampMS(2000),
             location=Location.KRAKEN,
@@ -47,7 +47,7 @@ def test_history_events_search_by_notes(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         ), HistoryEvent(
-            event_identifier='event3',
+            group_identifier='event3',
             sequence_index=0,
             timestamp=TimestampMS(3000),
             location=Location.COINBASE,
@@ -57,7 +57,7 @@ def test_history_events_search_by_notes(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
         ), HistoryEvent(
-            event_identifier='event4',
+            group_identifier='event4',
             sequence_index=0,
             timestamp=TimestampMS(4000),
             location=Location.EXTERNAL,
@@ -86,7 +86,7 @@ def test_history_events_search_by_notes(
 
     # Should find events 1, 3, and 4
     assert result['entries_found'] == 3
-    found_identifiers = {entry['entry']['event_identifier'] for entry in result['entries']}
+    found_identifiers = {entry['entry']['group_identifier'] for entry in result['entries']}
     assert found_identifiers == {'event1', 'event3', 'event4'}
 
     # Test 2: Search for "exchange" in notes (case insensitive)
@@ -101,7 +101,7 @@ def test_history_events_search_by_notes(
 
     # Should find event 1 only
     assert result['entries_found'] == 1
-    assert result['entries'][0]['entry']['event_identifier'] == 'event1'
+    assert result['entries'][0]['entry']['group_identifier'] == 'event1'
 
     # Test 3: Search for "Custom" in notes
     response = requests.post(
@@ -115,7 +115,7 @@ def test_history_events_search_by_notes(
 
     # Should find event 4 only
     assert result['entries_found'] == 1
-    assert result['entries'][0]['entry']['event_identifier'] == 'event4'
+    assert result['entries'][0]['entry']['group_identifier'] == 'event4'
 
     # Test 4: Search for non-existent substring
     response = requests.post(
@@ -141,7 +141,7 @@ def test_history_events_combined_filters(
     # Create test events
     events = [
         HistoryEvent(
-            event_identifier='eth_event_1',
+            group_identifier='eth_event_1',
             sequence_index=0,
             timestamp=TimestampMS(1000),
             location=Location.BINANCE,
@@ -151,7 +151,7 @@ def test_history_events_combined_filters(
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
         ), HistoryEvent(
-            event_identifier='eth_event_2',
+            group_identifier='eth_event_2',
             sequence_index=0,
             timestamp=TimestampMS(2000),
             location=Location.KRAKEN,
@@ -161,7 +161,7 @@ def test_history_events_combined_filters(
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
         ), HistoryEvent(
-            event_identifier='usd_event',
+            group_identifier='usd_event',
             sequence_index=0,
             timestamp=TimestampMS(3000),
             location=Location.BINANCE,
@@ -193,5 +193,5 @@ def test_history_events_combined_filters(
 
     # Should find only the ETH event from Binance
     assert result['entries_found'] == 1
-    assert result['entries'][0]['entry']['event_identifier'] == 'eth_event_1'
+    assert result['entries'][0]['entry']['group_identifier'] == 'eth_event_1'
     assert result['entries'][0]['entry']['location'] == 'binance'

@@ -200,7 +200,7 @@ def test_history_export_download_csv(
         start_ts=Timestamp(0),
         end_ts=Timestamp(1640493376),
         history_list=[HistoryEvent(
-            event_identifier=str(make_evm_tx_hash()),
+            group_identifier=str(make_evm_tx_hash()),
             sequence_index=0,
             timestamp=TimestampMS(1601040360000),
             location=Location.ETHEREUM,
@@ -236,7 +236,7 @@ def test_history_export_download_csv(
         end_ts=Timestamp(1640493376),
         history_list=[EvmEvent(
             tx_ref=tx_hash,
-            event_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
+            group_identifier=ZKL_IDENTIFIER.format(tx_hash=str(tx_hash)),
             sequence_index=0,
             timestamp=TimestampMS(1601040360000),
             location=Location.ZKSYNC_LITE,

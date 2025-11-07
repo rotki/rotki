@@ -15,7 +15,7 @@ from rotkehlchen.types import Location, TimestampMS
 
 def make_history_event():
     return HistoryEvent(
-        event_identifier=uuid4().hex,
+        group_identifier=uuid4().hex,
         sequence_index=0,
         timestamp=TimestampMS(randint(1000, 16433333000)),
         location=Location.BLOCKCHAIN,

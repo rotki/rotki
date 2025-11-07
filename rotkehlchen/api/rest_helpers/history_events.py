@@ -28,11 +28,11 @@ def edit_grouped_events_with_optional_fee(
     May raise:
     - InputError
     """
-    if (result := write_cursor.execute(  # Get the event_identifier, selecting by the identifier of the first event.  # noqa: E501
-        'SELECT event_identifier FROM history_events WHERE identifier=?',
+    if (result := write_cursor.execute(  # Get the group_identifier, selecting by the identifier of the first event.  # noqa: E501
+        'SELECT group_identifier FROM history_events WHERE identifier=?',
         (events[0].identifier,),
     ).fetchone()) is not None:
-        event_identifier = result[0]
+        group_identifier = result[0]
     else:
         raise InputError(f'Tried to edit event with id {events[0].identifier} but could not find it in the DB')  # noqa: E501
 
@@ -42,13 +42,13 @@ def edit_grouped_events_with_optional_fee(
             write_cursor=write_cursor,
             events=events,
             identifiers=identifiers,  # type: ignore[arg-type]  # will not be none for evm swaps
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
         )
         return
 
     existing_event_count = write_cursor.execute(
-        'SELECT COUNT(*) FROM history_events WHERE event_identifier=?',
-        (event_identifier,),
+        'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+        (group_identifier,),
     ).fetchone()[0]
     no_fee_num = 1 if events_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else 2
     with_fee_num = no_fee_num + 1
@@ -57,8 +57,8 @@ def edit_grouped_events_with_optional_fee(
         # in the db we had a fee entry and now we have removed it
         events_to_edit = events[:new_event_count]
         write_cursor.execute(
-            'DELETE FROM history_events WHERE event_identifier=? and sequence_index=?',
-            (events[0].event_identifier, events[0].sequence_index + no_fee_num),
+            'DELETE FROM history_events WHERE group_identifier=? and sequence_index=?',
+            (events[0].group_identifier, events[0].sequence_index + no_fee_num),
         )
     elif new_event_count == with_fee_num and existing_event_count == no_fee_num:
         # we didn't have a fee in the db and we have it now
@@ -81,7 +81,7 @@ def edit_grouped_chain_swap_events(
         write_cursor: 'DBCursor',
         events: list[HistoryBaseEntry],
         identifiers: list[int],
-        event_identifier: str,
+        group_identifier: str,
 ) -> None:
     """Handle editing of grouped chain swap events.
     Determines which events to add, edit, or remove using the `identifiers`
@@ -110,11 +110,11 @@ def edit_grouped_chain_swap_events(
 
     for event in new_events:
         if write_cursor.execute(  # Check if this event will hit a sequence_index that is already in use.  # noqa: E501
-            'SELECT COUNT(*) FROM history_events WHERE event_identifier=? AND sequence_index=?',
-            (event_identifier, event.sequence_index),
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=? AND sequence_index=?',
+            (group_identifier, event.sequence_index),
         ).fetchone()[0] != 0:
             raise InputError(
-                f'Tried to insert an event with event_identifier {event_identifier} and '
+                f'Tried to insert an event with group_identifier {group_identifier} and '
                 f'sequence_index {event.sequence_index}, but an event already exists at '
                 'that sequence_index.',
             )

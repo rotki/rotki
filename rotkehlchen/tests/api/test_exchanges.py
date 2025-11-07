@@ -730,7 +730,7 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
 
     # test event to check that editing an exchange with history events edits the location label
     test_event = HistoryEvent(
-        event_identifier='STARK-STARK-STARK',
+        group_identifier='STARK-STARK-STARK',
         sequence_index=0,
         timestamp=TimestampMS(1673146287380),
         location=Location.KRAKEN,
@@ -1109,7 +1109,7 @@ def test_exchange_events_range_query(
     def make_events() -> list[HistoryEvent]:
         return [
             HistoryEvent(
-                event_identifier='evt-1',
+                group_identifier='evt-1',
                 sequence_index=0,
                 timestamp=TimestampMS(1),
                 location=Location.KRAKEN,
@@ -1119,7 +1119,7 @@ def test_exchange_events_range_query(
                 amount=ONE,
             ),
             HistoryEvent(
-                event_identifier='evt-2',
+                group_identifier='evt-2',
                 sequence_index=0,
                 timestamp=TimestampMS(2),
                 location=Location.KRAKEN,

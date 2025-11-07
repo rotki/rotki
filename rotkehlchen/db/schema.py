@@ -525,7 +525,7 @@ DB_CREATE_HISTORY_EVENTS = """
 CREATE TABLE IF NOT EXISTS history_events (
     identifier INTEGER NOT NULL PRIMARY KEY,
     entry_type INTEGER NOT NULL,
-    event_identifier TEXT NOT NULL,
+    group_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
@@ -538,7 +538,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     extra_data TEXT,
     ignored INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    UNIQUE(event_identifier, sequence_index)
+    UNIQUE(group_identifier, sequence_index)
 );
 """
 

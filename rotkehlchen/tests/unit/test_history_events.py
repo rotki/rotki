@@ -32,7 +32,7 @@ def test_serialize_with_invalid_type_subtype():
     event_subtype = HistoryEventSubType.SPEND
     assert event_subtype not in EVENT_CATEGORY_MAPPINGS[event_type]
     event = HistoryEvent(
-        event_identifier='1',
+        group_identifier='1',
         sequence_index=1,
         timestamp=TimestampMS(1),
         location=Location.KRAKEN,
@@ -53,7 +53,7 @@ def test_serialize_with_invalid_type_subtype():
             'asset': 'ETH',
             'amount': '1',
             'entry_type': 'history event',
-            'event_identifier': '1',
+            'group_identifier': '1',
             'event_subtype': 'spend',
             'event_type': 'transfer',
             'extra_data': None,

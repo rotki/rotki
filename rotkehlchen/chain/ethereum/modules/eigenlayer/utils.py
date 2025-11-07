@@ -15,7 +15,7 @@ def get_eigenpods_to_owners_mapping(db: DBHandler) -> dict[ChecksumEvmAddress, C
     """Read stored events and get the deployed eigenpods to owners mappings"""
     with db.conn.read_ctx() as cursor:
         cursor.execute(
-            'SELECT event_identifier, extra_data FROM history_events JOIN chain_events_info ON '
+            'SELECT group_identifier, extra_data FROM history_events JOIN chain_events_info ON '
             'history_events.identifier=chain_events_info.identifier WHERE counterparty=? AND '
             'type=? AND subtype=? AND location=? AND extra_data IS NOT NULL',
             (

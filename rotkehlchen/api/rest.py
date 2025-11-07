@@ -3058,7 +3058,7 @@ class RestAPI:
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             concerning_address = write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=? RETURNING from_address', (tx_ref,)).fetchone()  # noqa: E501
             deleted_event_data = write_cursor.execute(
-                'DELETE FROM history_events WHERE event_identifier=? RETURNING location_label',
+                'DELETE FROM history_events WHERE group_identifier=? RETURNING location_label',
                 (ZKL_IDENTIFIER.format(tx_hash=str(tx_ref)),),
             ).fetchone()
             if deleted_event_data is not None:
@@ -4000,7 +4000,7 @@ class RestAPI:
     def get_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
-            group_by_event_ids: bool,
+            aggregate_by_group_ids: bool,
     ) -> Response:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         entries_limit, has_premium = get_user_limit(
@@ -4013,15 +4013,15 @@ class RestAPI:
                 cursor=cursor,
                 filter_query=filter_query,
                 entries_limit=entries_limit,
-                group_by_event_ids=group_by_event_ids,
-                match_exact_events=True,  # set to True since the frontend requests the event_identifiers manually in their second call to this endpoint. https://github.com/orgs/rotki/projects/11?pane=issue&itemId=110464193  # noqa: E501
+                aggregate_by_group_ids=aggregate_by_group_ids,
+                match_exact_events=True,  # set to True since the frontend requests the group_identifiers manually in their second call to this endpoint. https://github.com/orgs/rotki/projects/11?pane=issue&itemId=110464193  # noqa: E501
             )
             entries_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
                 entries_table='history_events',
-                group_by='event_identifier' if group_by_event_ids else None,
+                group_by='group_identifier' if aggregate_by_group_ids else None,
             )
-            customized_event_ids = dbevents.get_customized_event_identifiers(
+            customized_event_ids = dbevents.get_customized_group_identifiers(
                 cursor=cursor,
                 location=filter_query.location,
             )
@@ -4038,7 +4038,7 @@ class RestAPI:
         grouped_events_nums: list[int | None]
         grouped_events_nums, events = (
             zip(*events_result, strict=False)  # type: ignore  # mypy doesn't understand significance of boolean check.
-            if group_by_event_ids is True and len(events_result) != 0 else
+            if aggregate_by_group_ids is True and len(events_result) != 0 else
             ([None] * len(events_result), events_result)
         )
         result = {
@@ -5702,7 +5702,7 @@ class RestAPI:
                     )
                     assets = tuple(Asset(row[0]) for row in cursor)
 
-            balances, last_event_identifier = HistoricalBalancesManager(self.rotkehlchen.data.db).get_assets_amounts(  # noqa: E501
+            balances, last_group_identifier = HistoricalBalancesManager(self.rotkehlchen.data.db).get_assets_amounts(  # noqa: E501
                 assets=assets,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
@@ -5716,8 +5716,8 @@ class RestAPI:
             'times': list(balances),
             'values': [str(x) for x in balances.values()],
         }
-        if last_event_identifier is not None:
-            result['last_event_identifier'] = last_event_identifier
+        if last_group_identifier is not None:
+            result['last_group_identifier'] = last_group_identifier
 
         return api_response(_wrap_in_ok_result(result=result))
 
@@ -5742,7 +5742,7 @@ class RestAPI:
             'values': [str(x) for x in netvalue.values()],
         }
         if last_event_id is not None:
-            result['last_event_identifier'] = last_event_id
+            result['last_group_identifier'] = last_event_id
 
         return api_response(_wrap_in_ok_result(result=result))
 

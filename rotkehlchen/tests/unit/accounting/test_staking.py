@@ -55,7 +55,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
     ts_addition = 3854824000
     history = [
         HistoryEvent(
-            event_identifier=b'XXX',
+            group_identifier=b'XXX',
             sequence_index=0,
             timestamp=event_start_timestamp + ts_addition,
             location=Location.KRAKEN,
@@ -66,7 +66,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
         ), HistoryEvent(
-            event_identifier=b'YYY',
+            group_identifier=b'YYY',
             sequence_index=0,
             timestamp=event_start_timestamp,
             location=Location.KRAKEN,
@@ -113,7 +113,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             block_number=17508810,
             is_mev_reward=False,
         ), HistoryEvent(
-            event_identifier='XXX',
+            group_identifier='XXX',
             sequence_index=0,
             timestamp=TimestampMS(1687117319001),
             location=Location.KRAKEN,
@@ -165,7 +165,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             is_mev_reward=True,
         ), EvmEvent(
             tx_ref=tx_hash,
-            event_identifier=f'BP1_{block_number}',
+            group_identifier=f'BP1_{block_number}',
             sequence_index=2,
             timestamp=TimestampMS(1687117319001),
             location=Location.ETHEREUM,
@@ -177,7 +177,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.MEV_REWARD,
         ), HistoryEvent(
-            event_identifier='XXX',
+            group_identifier='XXX',
             sequence_index=0,
             timestamp=TimestampMS(1687117319001),
             location=Location.KRAKEN,

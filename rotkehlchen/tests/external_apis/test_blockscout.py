@@ -35,7 +35,7 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
             filter_query=EthWithdrawalFilterQuery.make(
                 order_by_rules=[('timestamp', True), ('history_events_identifier', True)],
             ),
-            group_by_event_ids=False,
+            aggregate_by_group_ids=False,
         )
 
     assert len(events) == 188

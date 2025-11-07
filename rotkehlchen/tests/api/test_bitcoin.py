@@ -637,7 +637,7 @@ def test_delete_btc_account(
                 dbevents.add_history_event(
                     write_cursor=write_cursor,
                     event=HistoryEvent(
-                        event_identifier=make_btc_tx_id(),
+                        group_identifier=make_btc_tx_id(),
                         sequence_index=0,
                         timestamp=TimestampMS(1500000000000),
                         location=Location.BITCOIN,
@@ -671,7 +671,7 @@ def test_delete_btc_account(
         )
         assert len(events) == 3  # Events remaining are the customized event from address1 and both events from address2  # noqa: E501
         assert events[0].location_label == btc_accounts[0]
-        assert events[0].identifier in dbevents.get_customized_event_identifiers(
+        assert events[0].identifier in dbevents.get_customized_group_identifiers(
             cursor=cursor,
             location=Location.BITCOIN,
         )

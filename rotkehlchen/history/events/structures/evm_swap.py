@@ -44,11 +44,11 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             counterparty: str | None = None,
             address: 'ChecksumEvmAddress | None' = None,
             extra_data: dict[str, Any] | None = None,
-            event_identifier: str | None = None,
+            group_identifier: str | None = None,
     ):
         """Combines EvmEvent with SwapEvent to represent evm swaps.
 
-        The event_identifier is initialized from EvmEvent constructor
+        The group_identifier is initialized from EvmEvent constructor
         """
         super().__init__(
             tx_ref=tx_ref,
@@ -65,7 +65,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             counterparty=counterparty,
             address=address,
             extra_data=extra_data,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
         )
 
     @property
@@ -85,7 +85,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
         amount = deserialize_fval(entry[7], 'amount', 'evm swap event')
         return cls(
             identifier=entry[0],
-            event_identifier=entry[1],
+            group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
             location=Location.deserialize_from_db(entry[4]),

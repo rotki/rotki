@@ -126,7 +126,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         binding_tuples = ((
             event.entry_type.value,
-            event.event_identifier,
+            event.group_identifier,
             event.sequence_index,
             event.timestamp,
             event.location.serialize_for_db(),

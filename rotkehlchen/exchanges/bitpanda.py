@@ -34,7 +34,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -292,7 +292,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 receive=receive,
                 fee=AssetAmount(asset=A_BEST, amount=fee),
                 location_label=self.name,
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=self.location,
                     unique_id=str(entry['id']),
                 ),

@@ -10,16 +10,40 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
 from rotkehlchen.data_migrations.manager import MIGRATION_LIST, DataMigrationManager
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.history.events.utils import create_event_identifier
+from rotkehlchen.history.events.utils import create_group_identifier
 from rotkehlchen.tests.data_migrations.test_migrations import MockRotkiForMigrations
 from rotkehlchen.types import AssetAmount, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_now
+
+
+def _insert_swap_events(db: DBHandler, events: list[SwapEvent]) -> None:
+    """Insert swap events with raw SQL to avoid dependencies on changing DB methods"""
+    with db.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO history_events(event_identifier, sequence_index, timestamp, location, '
+            'location_label, asset, amount, notes, type, subtype, identifier, entry_type, '
+            'extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [(
+                event.group_identifier,
+                event.sequence_index,
+                event.timestamp,
+                event.location.serialize_for_db(),
+                event.location_label,
+                event.asset.identifier,
+                str(event.amount),
+                event.notes,
+                event.event_type.serialize(),
+                event.event_subtype.serialize(),
+                event.identifier,
+                event.entry_type.serialize_for_db(),
+                event.extra_data,
+            ) for event in events],
+        )
 
 
 def create_broken_swap_events(
@@ -36,7 +60,7 @@ def create_broken_swap_events(
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=ONE,
-        event_identifier=create_event_identifier(
+        group_identifier=create_group_identifier(
             location=location,
             timestamp=timestamp,
             asset=A_ETH,
@@ -52,7 +76,7 @@ def create_broken_swap_events(
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=ONE * 2,
-        event_identifier=create_event_identifier(
+        group_identifier=create_group_identifier(
             location=location,
             timestamp=timestamp,
             asset=A_BTC,
@@ -68,7 +92,7 @@ def create_broken_swap_events(
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=ONE / 10,
-        event_identifier=create_event_identifier(
+        group_identifier=create_group_identifier(
             location=location,
             timestamp=timestamp,
             asset=A_USD,
@@ -79,11 +103,9 @@ def create_broken_swap_events(
     )
 
     # Add to database
-    db_events = DBHistoryEvents(db)
-    with db.user_write() as write_cursor:
-        db_events.add_history_events(write_cursor, history=[spend_event, receive_event, fee_event])
+    _insert_swap_events(db=db, events=[spend_event, receive_event, fee_event])
 
-    return spend_event.event_identifier, receive_event.event_identifier, fee_event.event_identifier
+    return spend_event.group_identifier, receive_event.group_identifier, fee_event.group_identifier
 
 
 def _init_v47_backup_conn(database, password: str | None) -> DBConnection:
@@ -104,6 +126,7 @@ def _init_v47_backup_conn(database, password: str | None) -> DBConnection:
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_custom_database', ['v48_rotkehlchen.db'])
 @pytest.mark.parametrize('data_migration_version', [19])
 def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
     """Test that migration 20 correctly fixes SwapEvent identifiers"""
@@ -128,7 +151,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=ONE * 5,
-        event_identifier=create_event_identifier(
+        group_identifier=create_group_identifier(
             location=Location.KRAKEN,
             timestamp=ts2,
             asset=A_ETH,
@@ -143,7 +166,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=ONE * 10,
-        event_identifier=create_event_identifier(
+        group_identifier=create_group_identifier(
             location=Location.KRAKEN,
             timestamp=ts2,
             asset=A_BTC,
@@ -152,12 +175,10 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
         ),
     )
 
-    db_events = DBHistoryEvents(database)
-    with database.user_write() as write_cursor:
-        db_events.add_history_events(write_cursor, history=[spend_event2, receive_event2])
+    _insert_swap_events(db=database, events=[spend_event2, receive_event2])
 
-    spend_id2 = spend_event2.event_identifier
-    receive_id2 = receive_event2.event_identifier
+    spend_id2 = spend_event2.group_identifier
+    receive_id2 = receive_event2.group_identifier
 
     # Also create a correctly linked swap (should not be touched by migration)
     correct_events = create_swap_events(
@@ -165,13 +186,12 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
         location=Location.COINBASE,
         spend=AssetAmount(asset=A_ETH, amount=ONE * 3),
         receive=AssetAmount(asset=A_BTC, amount=ONE * 6),
-        event_identifier='correct_swap_id',
+        group_identifier='correct_swap_id',
     )
 
-    with database.user_write() as write_cursor:
-        db_events.add_history_events(write_cursor, history=correct_events)
+    _insert_swap_events(db=database, events=correct_events)
 
-    correct_id = correct_events[0].event_identifier
+    correct_id = correct_events[0].group_identifier
 
     # Verify the broken state before migration
     with database.conn.read_ctx() as cursor:
@@ -257,6 +277,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_custom_database', ['v48_rotkehlchen.db'])
 @pytest.mark.parametrize('data_migration_version', [19])
 def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
     """Test the edge case where multiple swaps happen at same timestamp/location"""
@@ -274,7 +295,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=ONE,
-            event_identifier=create_event_identifier(
+            group_identifier=create_group_identifier(
                 location=location,
                 timestamp=ts,
                 asset=A_ETH,
@@ -288,7 +309,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=ONE * 2,
-            event_identifier=create_event_identifier(
+            group_identifier=create_group_identifier(
                 location=location,
                 timestamp=ts,
                 asset=A_BTC,
@@ -306,7 +327,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=ONE * 3,
-            event_identifier=create_event_identifier(
+            group_identifier=create_group_identifier(
                 location=location,
                 timestamp=ts,
                 asset=A_BTC,
@@ -320,7 +341,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=ONE * 4,
-            event_identifier=create_event_identifier(
+            group_identifier=create_group_identifier(
                 location=location,
                 timestamp=ts,
                 asset=A_ETH,
@@ -330,10 +351,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
         ),
     ]
 
-    db_events = DBHistoryEvents(database)
-    with database.user_write() as write_cursor:
-        db_events.add_history_events(write_cursor, history=swap1_events + swap2_events)
-
+    _insert_swap_events(db=database, events=swap1_events + swap2_events)
     with patch('rotkehlchen.data_migrations.manager.MIGRATION_LIST', new=[MIGRATION_LIST[10]]):  # Migration 20 is at index 10  # noqa: E501
         DataMigrationManager(rotki).maybe_migrate_data()
 

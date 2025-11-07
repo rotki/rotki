@@ -105,7 +105,7 @@ from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEventExtraData, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import (
-    create_event_identifier_from_swap,
+    create_group_identifier_from_swap,
 )
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
@@ -583,8 +583,8 @@ class HistoryEventSchema(
 ):
     """Schema for querying history events"""
     exclude_ignored_assets = fields.Boolean(load_default=True)
-    group_by_event_ids = fields.Boolean(load_default=False)
-    event_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
+    aggregate_by_group_ids = fields.Boolean(load_default=False)
+    group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
@@ -683,7 +683,7 @@ class HistoryEventSchema(
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
-            'event_identifiers': data['event_identifiers'],
+            'group_identifiers': data['group_identifiers'],
             'location_labels': location_labels,
             'assets': [data['asset']] if data['asset'] is not None else None,
             'event_types': data['event_types'],
@@ -797,7 +797,7 @@ class HistoryEventSchema(
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
         """Generates extra fields that will be returned after validation"""
-        return {'group_by_event_ids': data['group_by_event_ids']}
+        return {'aggregate_by_group_ids': data['aggregate_by_group_ids']}
 
 
 class CreateHistoryEventSchema(Schema):
@@ -829,7 +829,7 @@ class CreateHistoryEventSchema(Schema):
     class BaseEvmEventSchema(Schema):
         """Base schema for EVM events. Used for EvmEvents and EvmSwapEvents."""
         tx_ref = EVMTransactionHashField(required=True)
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         counterparty = EmptyAsNoneStringField(load_default=None)
         address = EvmAddressField(load_default=None)
         extra_data = fields.Dict(load_default=None)
@@ -838,7 +838,7 @@ class CreateHistoryEventSchema(Schema):
     class BaseSolanaEventSchema(Schema):
         """Base schema for Solana events. Used for SolanaEvents and SolanaSwapEvents."""
         tx_ref = SolanaSignatureField(required=True)
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         counterparty = EmptyAsNoneStringField(load_default=None)
         address = SolanaAddressField(load_default=None)
         extra_data = fields.Dict(load_default=None)
@@ -868,7 +868,7 @@ class CreateHistoryEventSchema(Schema):
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
             sequence_index = data['sequence_index']
             timestamp = data['timestamp']
-            event_identifier = data['event_identifier']
+            group_identifier = data['group_identifier']
             counterparty = data['counterparty']
             extra_data = data['extra_data']
             # Use .get() here since identifiers may have been excluded from the schema in the
@@ -896,7 +896,7 @@ class CreateHistoryEventSchema(Schema):
                         amount=subtype_data['amount'],
                         location_label=subtype_data['location_label'],
                         notes=subtype_data['user_notes'],
-                        event_identifier=event_identifier,
+                        group_identifier=group_identifier,
                         extra_data=extra_data if subtype == HistoryEventSubType.SPEND and idx == 0 else None,  # Only set extra_data on first spend event  # noqa: E501
                         counterparty=counterparty,
                     )
@@ -914,7 +914,7 @@ class CreateHistoryEventSchema(Schema):
             )
 
     class CreateBaseHistoryEventSchema(BaseEventSchema):
-        event_identifier = NonEmptyStringField(required=True)
+        group_identifier = NonEmptyStringField(required=True)
         location = LocationField(required=True)
 
         @post_load
@@ -961,7 +961,7 @@ class CreateHistoryEventSchema(Schema):
 
     class CreateEthBlockEventEventSchema(BaseSchema):
         is_mev_reward = fields.Boolean(required=True)
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         fee_recipient = EvmAddressField(required=True)
         block_number = fields.Integer(
             required=True,
@@ -993,7 +993,7 @@ class CreateHistoryEventSchema(Schema):
     class CreateEthDepositEventEventSchema(BaseSchema):
         tx_ref = EVMTransactionHashField(required=True)
         depositor = EvmAddressField(required=True)
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         sequence_index = fields.Integer(required=True)
         validator_index = fields.Integer(
             required=True,
@@ -1014,7 +1014,7 @@ class CreateHistoryEventSchema(Schema):
 
     class CreateEthWithdrawalEventEventSchema(BaseSchema):
         is_exit = fields.Boolean(required=True)
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         withdrawal_address = EvmAddressField(required=True)
         validator_index = fields.Integer(
             required=True,
@@ -1045,7 +1045,7 @@ class CreateHistoryEventSchema(Schema):
         unique_id = EmptyAsNoneStringField(required=False, load_default=None)
         address = EmptyAsNoneStringField(required=False, load_default=None)  # It can be an address for any chain not only the supported ones so we validate it as string.  # noqa: E501
         transaction_id = EmptyAsNoneStringField(required=False, load_default=None)  # It can be a transaction from any chain. We don't do any special validation on it.  # noqa: E501
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
         fee_asset = AssetField(load_default=None, required=False, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
         user_notes = fields.List(EmptyAsNoneStringField(), required=False, validate=validate.Length(min=1, max=2))  # noqa: E501
@@ -1095,7 +1095,7 @@ class CreateHistoryEventSchema(Schema):
                 timestamp=data['timestamp'],
                 event_type=data['event_type'],
                 identifier=data.get('identifier'),
-                event_identifier=data['event_identifier'],
+                group_identifier=data['group_identifier'],
                 amount=data['amount'],
                 extra_data=extra_data,
                 fee_identifier=CreateHistoryEventSchema.history_event_context.get()['schema'].get_grouped_event_identifier(
@@ -1116,7 +1116,7 @@ class CreateHistoryEventSchema(Schema):
                 identifier=data.get('identifier'),
                 event_type=data['event_type'],
                 extra_data=extra_data,
-                event_identifier=data['event_identifier'],
+                group_identifier=data['group_identifier'],
                 location_label=data['location_label'],
                 notes=movement_notes,
             )]
@@ -1136,7 +1136,7 @@ class CreateHistoryEventSchema(Schema):
         location_label = EmptyAsNoneStringField(required=False, load_default=None)
         unique_id = EmptyAsNoneStringField(required=False, load_default=None)
         user_notes = fields.List(EmptyAsNoneStringField(), required=False, load_default=[], validate=validate.Length(min=2, max=3))  # noqa: E501
-        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
 
         @post_load
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
@@ -1164,8 +1164,8 @@ class CreateHistoryEventSchema(Schema):
 
             spend = AssetAmount(asset=data['spend_asset'], amount=data['spend_amount'])
             receive = AssetAmount(asset=data['receive_asset'], amount=data['receive_amount'])
-            if (event_identifier := data['event_identifier']) is None:
-                event_identifier = create_event_identifier_from_swap(
+            if (group_identifier := data['group_identifier']) is None:
+                group_identifier = create_group_identifier_from_swap(
                     location=data['location'],
                     timestamp=data['timestamp'],
                     spend=spend,
@@ -1187,7 +1187,7 @@ class CreateHistoryEventSchema(Schema):
                 receive_notes=receive_notes,
                 fee_notes=fee_notes,
                 identifier=data.get('identifier'),
-                event_identifier=event_identifier,
+                group_identifier=group_identifier,
                 receive_identifier=context_schema.get_grouped_event_identifier(
                     data=data,
                     subtype=HistoryEventSubType.RECEIVE,
@@ -1244,7 +1244,7 @@ class CreateHistoryEventSchema(Schema):
             subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.FEE],
             sequence_index_offset: int,
     ) -> int | None:
-        """Retrieve grouped event's identifier, returns None for create."""
+        """Retrieve grouped identifier, returns None for create."""
         return None
 
     @post_load
@@ -1280,14 +1280,14 @@ class EditHistoryEventSchema(CreateHistoryEventSchema):
             sequence_index_offset: int,
     ) -> int | None:
         """Retrieve grouped event's identifier, returns None for create.
-        Since there may be multiple groups with the same event_identifier, only select an event
+        Since there may be multiple groups with the same group_identifier, only select an event
         that has the correct offset after the main event of this group. This works since grouped
         event indexes increment consecutively from the main event's index.
         """
         with self.database.conn.read_ctx() as cursor:
             result = cursor.execute(
                 'SELECT h2.identifier, h2.sequence_index FROM history_events h1 '
-                'JOIN history_events h2 ON h2.event_identifier = h1.event_identifier AND '
+                'JOIN history_events h2 ON h2.group_identifier = h1.group_identifier AND '
                 f'h2.sequence_index = h1.sequence_index + {sequence_index_offset} AND '
                 'h2.subtype = ? WHERE h1.identifier = ?',
                 (subtype.serialize(), data['identifier']),

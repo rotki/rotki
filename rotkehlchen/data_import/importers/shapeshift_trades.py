@@ -90,7 +90,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
                 receive=AssetAmount(asset=buy_asset, amount=buy_amount),
                 fee=AssetAmount(asset=buy_asset, amount=fee),  # Assumption that minerFee is denominated in outputCurrency  # noqa: E501
                 spend_notes=notes,
-                event_identifier=f'SHF{hash_csv_row(csv_row)}',
+                group_identifier=f'SHF{hash_csv_row(csv_row)}',
             ),
         )
 

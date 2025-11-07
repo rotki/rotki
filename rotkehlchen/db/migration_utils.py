@@ -21,14 +21,14 @@ def create_swap_events_v47_v48(
         location_label: str | None = None,
         spend_notes: str | None = None,
 ) -> list[SwapEvent]:
-    """Create event identifier and SwapEvents using exact v47->v48 upgrade logic.
+    """Create group identifier and SwapEvents using exact v47->v48 upgrade logic.
 
     FROZEN: Do not modify. Used for v47->v48 upgrade and data migration 20.
     """
     if unique_id:
-        event_identifier = hash_id(str(location) + unique_id)
+        group_identifier = hash_id(str(location) + unique_id)
     else:
-        event_identifier = hash_id(
+        group_identifier = hash_id(
             str(location)
             + str(timestamp)
             + spend.asset.identifier
@@ -46,7 +46,7 @@ def create_swap_events_v47_v48(
             amount=spend.amount,
             location_label=location_label,
             notes=spend_notes,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
         ),
         SwapEvent(
             timestamp=timestamp,
@@ -56,7 +56,7 @@ def create_swap_events_v47_v48(
             amount=receive.amount,
             location_label=location_label,
             notes=None,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
         ),
     ]
 
@@ -69,7 +69,7 @@ def create_swap_events_v47_v48(
             amount=fee.amount,
             location_label=location_label,
             notes=None,
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
         ))
 
     return events

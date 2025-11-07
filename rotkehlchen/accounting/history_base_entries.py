@@ -97,7 +97,7 @@ class EventsAccountant:
                 )
                 return 1
 
-            if not isinstance(next_event, HistoryBaseEntry) or next_event.event_identifier != event.event_identifier:  # noqa: E501
+            if not isinstance(next_event, HistoryBaseEntry) or next_event.group_identifier != event.group_identifier:  # noqa: E501
                 log.error(
                     f'Tried to process accounting swap but the in '
                     f'event for {event} is not there',
@@ -106,7 +106,7 @@ class EventsAccountant:
 
             in_event = cast('HistoryBaseEntry', next(events_iterator))  # guaranteed by the if check  # noqa: E501
             next_event = events_iterator.peek(None)
-            if next_event and isinstance(next_event, HistoryBaseEntry) and next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+            if next_event and isinstance(next_event, HistoryBaseEntry) and next_event.group_identifier == event.group_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
                 fee_event = cast('HistoryBaseEntry', next(events_iterator))  # guaranteed by if check  # noqa: E501
 
             with self.pot.database.conn.read_ctx() as cursor:
@@ -174,7 +174,7 @@ class EventsAccountant:
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')
             return 2
 
-        group_id = out_event.event_identifier + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
+        group_id = out_event.group_identifier + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
         extra_data = general_extra_data | {'group_id': group_id}
         _, trade_taxable_amount = self.pot.add_out_event(
             originating_event_id=out_event.identifier,

@@ -44,7 +44,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
@@ -555,7 +555,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ) -> list[SwapEvent]:
         """Processes events from trade parts to a list of SwapEvents. If it's an adjustment
         adds it to a separate list"""
-        event_id = trade_parts[0].event_identifier
+        event_id = trade_parts[0].group_identifier
         is_spend_receive = False
         trade_assets = []
         spend_part, receive_part, fee_part, kfee_part = None, None, None, None
@@ -625,7 +625,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 location=Location.KRAKEN,
                 spend=AssetAmount(asset=spend_asset, amount=spend_amount),
                 receive=AssetAmount(asset=receive_asset, amount=receive_amount),
-                event_identifier=create_event_identifier_from_unique_id(
+                group_identifier=create_group_identifier_from_unique_id(
                     location=self.location,
                     unique_id=exchange_uuid,
                 ),
@@ -656,7 +656,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             spend=AssetAmount(asset=spend_part.asset, amount=spend_part.amount),
             receive=AssetAmount(asset=receive_part.asset, amount=receive_part.amount),
             fee=fee,
-            event_identifier=create_event_identifier_from_unique_id(
+            group_identifier=create_group_identifier_from_unique_id(
                 location=self.location,
                 unique_id=exchange_uuid,
             ),
@@ -688,8 +688,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         """
         swap_events = []
         max_ts = 0
-        get_attr = operator.attrgetter('event_identifier')
-        # Create a list of lists where each sublist has the events for the same event identifier
+        get_attr = operator.attrgetter('group_identifier')
+        # Create a list of lists where each sublist has the events for the same group identifier
         grouped_events = [list(g) for k, g in itertools.groupby(sorted(trade_events, key=get_attr), get_attr)]  # noqa: E501
         for trade_parts in grouped_events:
             if len(events := self.process_kraken_events_for_trade(trade_parts)) == 0:
@@ -724,9 +724,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     location=Location.KRAKEN,
                     spend=AssetAmount(asset=spend_event.asset, amount=spend_event.amount),
                     receive=AssetAmount(asset=receive_event.asset, amount=receive_event.amount),
-                    event_identifier=create_event_identifier_from_unique_id(
+                    group_identifier=create_group_identifier_from_unique_id(
                         location=self.location,
-                        unique_id='adjustment' + a1.event_identifier + a2.event_identifier,
+                        unique_id='adjustment' + a1.group_identifier + a2.group_identifier,
                     ),
                     location_label=self.name,
                 ))
@@ -967,7 +967,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         continue
 
                     history_event = HistoryEvent(
-                        event_identifier=identifier,
+                        group_identifier=identifier,
                         sequence_index=idx,
                         timestamp=timestamp,
                         location=Location.KRAKEN,
@@ -979,12 +979,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         event_subtype=event_subtype,
                     )
                     if history_event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):  # noqa: E501
-                        receive_spend_events[history_event.event_identifier].append((idx, history_event))  # noqa: E501
+                        receive_spend_events[history_event.group_identifier].append((idx, history_event))  # noqa: E501
                     else:
                         group_events.append((idx, history_event))
                 if event_type != HistoryEventType.INFORMATIONAL and fee_amount != ZERO:  # avoid processing ignored events with fees that were converted to informational  # noqa: E501
                     group_events.append((idx, HistoryEvent(
-                        event_identifier=identifier,
+                        group_identifier=identifier,
                         sequence_index=current_fee_index,
                         timestamp=timestamp,
                         location=Location.KRAKEN,

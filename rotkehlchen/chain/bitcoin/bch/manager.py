@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.bitcoin.bch.constants import (
-    BCH_EVENT_IDENTIFIER_PREFIX,
+    BCH_GROUP_IDENTIFIER_PREFIX,
     BLOCKCHAIN_INFO_HASKOIN_BASE_URL,
     HASKOIN_BASE_URL,
     HASKOIN_BATCH_SIZE,
@@ -50,7 +50,7 @@ class BitcoinCashManager(BitcoinCommonManager):
             database=database,
             blockchain=SupportedBlockchain.BITCOIN_CASH,
             asset=A_BCH,
-            event_identifier_prefix=BCH_EVENT_IDENTIFIER_PREFIX,
+            group_identifier_prefix=BCH_GROUP_IDENTIFIER_PREFIX,
             cache_key=DBCacheDynamic.LAST_BCH_TX_BLOCK,
             api_callbacks=[BtcApiCallback(
                 name='haskoin',

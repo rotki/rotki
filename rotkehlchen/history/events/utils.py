@@ -36,27 +36,27 @@ def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
     return data
 
 
-def create_event_identifier_from_unique_id(
+def create_group_identifier_from_unique_id(
         location: Location,
         unique_id: str,
 ) -> str:
     return hash_id(str(location) + unique_id)
 
 
-def create_event_identifier(
+def create_group_identifier(
         location: Location,
         timestamp: 'TimestampMS',
         asset: 'Asset',
         amount: 'FVal',
         unique_id: str | None,
 ) -> str:
-    """Create a unique event identifier from the given parameters.
+    """Create a unique group identifier from the given parameters.
     `unique_id` is a transaction id from an exchange, which in combination with the
-    location makes a unique event identifier. If this is not available, the location,
+    location makes a unique group identifier. If this is not available, the location,
     timestamp, asset, and balance must all be combined to ensure a unique identifier.
     """
     if unique_id:
-        return create_event_identifier_from_unique_id(location, unique_id)
+        return create_group_identifier_from_unique_id(location, unique_id)
 
     return hash_id(
         str(location) +
@@ -66,7 +66,7 @@ def create_event_identifier(
     )
 
 
-def create_event_identifier_from_swap(
+def create_group_identifier_from_swap(
         location: Location,
         timestamp: 'TimestampMS',
         spend: AssetAmount,
@@ -74,7 +74,7 @@ def create_event_identifier_from_swap(
         unique_id: str | None = None,
 ) -> str:
     if unique_id:
-        return create_event_identifier_from_unique_id(location, unique_id)
+        return create_group_identifier_from_unique_id(location, unique_id)
 
     return hash_id(
         str(location)

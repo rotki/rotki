@@ -264,7 +264,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'notes, type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             ((
                 event.entry_type.value,
-                event.event_identifier,
+                event.group_identifier,
                 event.sequence_index,
                 event.timestamp,
                 event.location.serialize_for_db(),

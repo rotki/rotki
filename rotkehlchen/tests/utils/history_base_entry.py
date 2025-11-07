@@ -29,13 +29,13 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
-    HistoryBaseEntryType.HISTORY_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'event_identifier'},  # noqa: E501
+    HistoryBaseEntryType.HISTORY_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'group_identifier'},  # noqa: E501
     HistoryBaseEntryType.ETH_BLOCK_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'block_number', 'event_subtype', 'fee_recipient', 'location_label', 'is_mev_reward'},  # noqa: E501
-    HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_ref', 'validator_index', 'sequence_index', 'event_identifier'},  # noqa: E501
+    HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_ref', 'validator_index', 'sequence_index', 'group_identifier'},  # noqa: E501
     HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'is_exit'},  # noqa: E501
-    HistoryBaseEntryType.EVM_EVENT: {'tx_ref', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'counterparty', 'product', 'address', 'extra_data', 'event_identifier'},  # noqa: E501
-    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_type', 'asset', 'event_identifier', 'extra_data'},  # noqa: E501
-    HistoryBaseEntryType.SWAP_EVENT: {'location', 'asset', 'event_identifier'},
+    HistoryBaseEntryType.EVM_EVENT: {'tx_ref', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'counterparty', 'product', 'address', 'extra_data', 'group_identifier'},  # noqa: E501
+    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_type', 'asset', 'group_identifier', 'extra_data'},  # noqa: E501
+    HistoryBaseEntryType.SWAP_EVENT: {'location', 'asset', 'group_identifier'},
 }
 
 
@@ -48,11 +48,11 @@ def pop_multiple_keys(serialized_event: dict[str, Any], entry_type: HistoryBaseE
 
 
 def maybe_group_entries(entries: list[HistoryBaseEntry]) -> list[list[HistoryBaseEntry]]:
-    """Group AssetMovements and SwapEvents by their event_identifier so they can be processed
+    """Group AssetMovements and SwapEvents by their group_identifier so they can be processed
     as a unit when adding/editing via the api.
 
-    Only specific entry types are grouped by event_identifier because while the other types may
-    share event_identifiers they are still processed individually when adding/editing via the api.
+    Only specific entry types are grouped by group_identifier because while the other types may
+    share group_identifiers they are still processed individually when adding/editing via the api.
     """
     grouped_entries, need_group_by_id = [], []
     for entry in entries:
@@ -64,7 +64,7 @@ def maybe_group_entries(entries: list[HistoryBaseEntry]) -> list[list[HistoryBas
         else:
             grouped_entries.append([entry])
 
-    grouped_entries.extend([list(g) for k, g in groupby(need_group_by_id, lambda entry: entry.event_identifier)])  # noqa: E501
+    grouped_entries.extend([list(g) for k, g in groupby(need_group_by_id, lambda entry: entry.group_identifier)])  # noqa: E501
     return grouped_entries
 
 
@@ -86,15 +86,15 @@ def entries_to_input_dict(
         serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
     pop_multiple_keys(serialized, entry.entry_type)
     if entry.entry_type == HistoryBaseEntryType.EVM_EVENT:
-        serialized.pop('event_identifier')
+        serialized.pop('group_identifier')
     elif entry.entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
         serialized['withdrawal_address'] = serialized.pop('location_label')
     elif entry.entry_type == HistoryBaseEntryType.ETH_BLOCK_EVENT:
         serialized['fee_recipient'] = serialized.pop('location_label')
         serialized['is_mev_reward'] = serialized.pop('event_subtype') == HistoryEventSubType.MEV_REWARD.serialize()  # noqa: E501
     elif entry.entry_type == HistoryBaseEntryType.ETH_DEPOSIT_EVENT:
-        if include_identifier is False:  # when creating an eth deposit event we don't include the event_identifier  # noqa: E501
-            serialized.pop('event_identifier')
+        if include_identifier is False:  # when creating an eth deposit event we don't include the group_identifier  # noqa: E501
+            serialized.pop('group_identifier')
         serialized['depositor'] = serialized.pop('location_label')
     elif entry.entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT:
         if (extra_data := serialized.get('extra_data')) is not None:
@@ -183,7 +183,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.NONE,
         address=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
     ), HistoryEvent(
-        event_identifier='STARK-STARK-STARK',
+        group_identifier='STARK-STARK-STARK',
         sequence_index=0,
         timestamp=TimestampMS(1673146287380),
         location=Location.KRAKEN,
@@ -242,7 +242,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('5792.2972152799999995'),
-        event_identifier='TRADE1',
+        group_identifier='TRADE1',
         location_label='Okx 1',
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
@@ -250,7 +250,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('4.5'),
-        event_identifier='TRADE1',
+        group_identifier='TRADE1',
         location_label='Okx 1',
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
@@ -258,7 +258,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.00315'),
-        event_identifier='TRADE1',
+        group_identifier='TRADE1',
         location_label='Okx 1',
     )]
 
@@ -290,5 +290,5 @@ def store_and_retrieve_events(
             )
         return dbevents.get_history_events_internal(
             cursor=write_cursor,
-            filter_query=HistoryEventFilterQuery.make(event_identifiers=[events[0].event_identifier]),
+            filter_query=HistoryEventFilterQuery.make(group_identifiers=[events[0].group_identifier]),
         )  # query them from db to retrieve them with their identifier

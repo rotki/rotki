@@ -8,8 +8,8 @@ from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS, E
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
@@ -44,7 +44,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     int,            # entry type
-    str,            # event_identifier
+    str,            # group_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # location
@@ -80,7 +80,7 @@ ExtraDataType = TypeVar('ExtraDataType', bound='dict[str, Any] | AssetMovementEx
 
 
 class HistoryBaseEntryData(TypedDict, Generic[ExtraDataType]):
-    event_identifier: str
+    group_identifier: str
     sequence_index: int
     timestamp: TimestampMS
     location: Location
@@ -102,7 +102,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
 
     def __init__(
             self,
-            event_identifier: str,
+            group_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -116,7 +116,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             extra_data: ExtraDataType | None = None,
     ) -> None:
         """
-        - `event_identifier`: the identifier shared between related events
+        - `group_identifier`: the identifier shared between related events
         - `sequence_index`: When this event is executed relative to other related events
         - `location_label`: a string field that allows to provide more information about
            the location. When we use this structure in blockchains, it is used to specify
@@ -124,7 +124,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         - `extra_data`: Contains event specific extra data. Optional, only for events that
            need to keep extra information such as the CDP ID of a makerdao vault etc.
         """
-        self.event_identifier = event_identifier
+        self.group_identifier = group_identifier
         self.sequence_index = sequence_index
         self.timestamp = timestamp
         self.location = location
@@ -158,7 +158,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             return False
 
         return (  # ignores are due to object and type check above not recognized
-            self.event_identifier == other.event_identifier and  # type: ignore
+            self.group_identifier == other.group_identifier and  # type: ignore
             self.sequence_index == other.sequence_index and  # type: ignore
             self.timestamp == other.timestamp and  # type: ignore
             self.location == other.location and  # type: ignore
@@ -175,7 +175,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
     def _history_base_entry_repr_fields(self) -> list[str]:
         """Returns a list of printable fields"""
         return [
-            f'{self.event_identifier=}',
+            f'{self.group_identifier=}',
             f'{self.sequence_index=}',
             f'{self.timestamp=}',
             f'{self.location=}',
@@ -192,16 +192,16 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
     def _serialize_base_tuple_for_db(self) -> tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE]:
         return (
             (
-                'history_events(entry_type, event_identifier, sequence_index,'
+                'history_events(entry_type, group_identifier, sequence_index,'
                 'timestamp, location, location_label, asset, amount, notes,'
                 'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             ), (
-                'UPDATE history_events SET entry_type=?, event_identifier=?, '
+                'UPDATE history_events SET entry_type=?, group_identifier=?, '
                 'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
                 'amount=?, notes=?, type=?, subtype=?, extra_data=?'
             ), (
                 self.entry_type.value,
-                self.event_identifier,
+                self.group_identifier,
                 self.sequence_index,
                 self.timestamp,
                 self.location.serialize_for_db(),
@@ -280,7 +280,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             'amount': str(self.amount),
             'identifier': self.identifier,
             'entry_type': self.entry_type.serialize(),
-            'event_identifier': self.event_identifier,
+            'group_identifier': self.group_identifier,
             'sequence_index': self.sequence_index,
             'extra_data': self.extra_data,
         }
@@ -293,9 +293,9 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             elif self.event_subtype == HistoryEventSubType.FEE:
                 serialized_data['auto_notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
         elif self.location == Location.BITCOIN:
-            serialized_data['tx_ref'] = self.event_identifier.replace(BTC_EVENT_IDENTIFIER_PREFIX, '')  # noqa: E501
+            serialized_data['tx_ref'] = self.group_identifier.replace(BTC_GROUP_IDENTIFIER_PREFIX, '')  # noqa: E501
         elif self.location == Location.BITCOIN_CASH:
-            serialized_data['tx_ref'] = self.event_identifier.replace(BCH_EVENT_IDENTIFIER_PREFIX, '')  # noqa: E501
+            serialized_data['tx_ref'] = self.group_identifier.replace(BCH_GROUP_IDENTIFIER_PREFIX, '')  # noqa: E501
 
         return serialized_data
 
@@ -382,7 +382,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         """
         try:
             return HistoryBaseEntryData(
-                event_identifier=data['event_identifier'],
+                group_identifier=data['group_identifier'],
                 sequence_index=data['sequence_index'],
                 timestamp=TimestampMS(deserialize_timestamp(data['timestamp'])),
                 location=Location.deserialize(data['location']),
@@ -424,7 +424,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
 
     # -- Methods of AccountingEventMixin
     def should_ignore(self, ignored_ids: set[str]) -> bool:
-        return self.event_identifier in ignored_ids
+        return self.group_identifier in ignored_ids
 
     def get_timestamp(self) -> Timestamp:
         return self.get_timestamp_in_sec()
@@ -440,7 +440,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         if self.identifier is not None:
             return hash(self.identifier)
 
-        return hash(str(self.event_identifier) + str(self.sequence_index))
+        return hash(str(self.group_identifier) + str(self.sequence_index))
 
 
 class HistoryEvent(HistoryBaseEntry):
@@ -448,7 +448,7 @@ class HistoryEvent(HistoryBaseEntry):
 
     def __init__(
             self,
-            event_identifier: str,
+            group_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -462,7 +462,7 @@ class HistoryEvent(HistoryBaseEntry):
             extra_data: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
-            event_identifier=event_identifier,
+            group_identifier=group_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
@@ -499,7 +499,7 @@ class HistoryEvent(HistoryBaseEntry):
         amount = deserialize_fval(entry[7], 'amount', 'history event')
         return cls(
             identifier=entry[0],
-            event_identifier=entry[1],
+            group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
             location=Location.deserialize_from_db(entry[4]),

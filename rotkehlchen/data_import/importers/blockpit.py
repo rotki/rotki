@@ -109,7 +109,7 @@ class BlockpitImporter(BaseExchangeImporter):
                         amount=fee_amount,
                     ),
                     spend_notes=notes,
-                    event_identifier=f'{BLOCKPIT_EVENT_PREFIX}{hash_csv_row(csv_row)}',
+                    group_identifier=f'{BLOCKPIT_EVENT_PREFIX}{hash_csv_row(csv_row)}',
                 ),
             )
         elif transaction_type in {'Deposit', 'Withdrawal', 'NonTaxableIn', 'NonTaxableOut'}:
@@ -129,7 +129,7 @@ class BlockpitImporter(BaseExchangeImporter):
             )]
             if fee_amount != ZERO:
                 events.append(AssetMovement(
-                    event_identifier=events[0].event_identifier,
+                    group_identifier=events[0].group_identifier,
                     location=location,
                     event_type=movement_type,
                     timestamp=ts_sec_to_ms(timestamp),
@@ -173,7 +173,7 @@ class BlockpitImporter(BaseExchangeImporter):
                 event_description = 'Fee of'
 
             event = HistoryEvent(
-                event_identifier=f'{BLOCKPIT_EVENT_PREFIX}_{uuid4().hex}',
+                group_identifier=f'{BLOCKPIT_EVENT_PREFIX}_{uuid4().hex}',
                 sequence_index=1,
                 timestamp=timestamp_ms,
                 location=location,
@@ -186,7 +186,7 @@ class BlockpitImporter(BaseExchangeImporter):
 
             if csv_row['Fee Asset'] != '':
                 fee_event = HistoryEvent(
-                    event_identifier=f'{BLOCKPIT_EVENT_PREFIX}_{uuid4().hex}',
+                    group_identifier=f'{BLOCKPIT_EVENT_PREFIX}_{uuid4().hex}',
                     sequence_index=0,
                     timestamp=timestamp_ms,
                     location=location,

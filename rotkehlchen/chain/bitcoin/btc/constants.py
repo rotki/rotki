@@ -16,5 +16,5 @@ BLOCKCYPHER_TX_LIMIT: Final = 50
 # See https://www.blockcypher.com/dev/bitcoin/#rate-limits-and-tokens
 BLOCKCYPHER_BATCH_SIZE: Final = 2
 
-# Combined with the tx id to create the event identifiers for bitcoin transactions.
-BTC_EVENT_IDENTIFIER_PREFIX: Final = 'btc_'
+# Combined with the tx id to create the group identifiers for bitcoin transactions.
+BTC_GROUP_IDENTIFIER_PREFIX: Final = 'btc_'

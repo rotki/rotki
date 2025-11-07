@@ -5,8 +5,8 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -44,7 +44,7 @@ def do_tx_query_and_get_events(
         events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
-                order_by_rules=[('timestamp', True), ('event_identifier', True), ('sequence_index', True)],  # noqa: E501
+                order_by_rules=[('timestamp', True), ('group_identifier', True), ('sequence_index', True)],  # noqa: E501
             ),
         )
     assert len(events) == expected_len
@@ -101,7 +101,7 @@ def test_query_btc_transactions(
 
     assert events[74:76] == [HistoryEvent(
         identifier=83,
-        event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf'),  # noqa: E501
+        group_identifier=(group_identifier := f'{BTC_GROUP_IDENTIFIER_PREFIX}67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf'),  # noqa: E501
         sequence_index=0,
         # The two apis disagree on the timestamp here. Seems to be a bug in blockchain.info.
         # I've seen it switch between two different timestamps when repeating the same query.
@@ -117,7 +117,7 @@ def test_query_btc_transactions(
         notes=f'Spend {fee_amount} BTC for fees',
     ), HistoryEvent(
         identifier=84,
-        event_identifier=event_identifier,
+        group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BITCOIN,
@@ -130,7 +130,7 @@ def test_query_btc_transactions(
     )]
     assert events[0] == HistoryEvent(
         identifier=67,
-        event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}0d39207fd965314941546a698e5f76277818e8b95f41b2e02dfe1901db86acf1',
+        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}0d39207fd965314941546a698e5f76277818e8b95f41b2e02dfe1901db86acf1',
         sequence_index=0,
         timestamp=TimestampMS(1519764871000),
         location=Location.BITCOIN,
@@ -196,7 +196,7 @@ def test_query_bch_transactions(
 
     assert events[100:] == [HistoryEvent(
         identifier=83,
-        event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}cc39c599f9684909efbec9a86a37bbe583fd9865f61e90c684b290b092b818f2',
+        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}cc39c599f9684909efbec9a86a37bbe583fd9865f61e90c684b290b092b818f2',
         sequence_index=0,
         timestamp=TimestampMS(1703868928000),
         location=Location.BITCOIN_CASH,
@@ -218,7 +218,7 @@ def test_query_bch_transactions(
         ),
     ), HistoryEvent(
         identifier=82,
-        event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}dcc1e78d9a48643553f4cd9b71564fb8032f6fd48ede977f8806be15ac29b917',
+        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}dcc1e78d9a48643553f4cd9b71564fb8032f6fd48ede977f8806be15ac29b917',
         sequence_index=0,
         timestamp=TimestampMS(1732270516000),
         location=Location.BITCOIN_CASH,
@@ -230,7 +230,7 @@ def test_query_bch_transactions(
         notes=f'Receive {receive_amount_1} BCH from bitcoincash:qpx003lsm24lu7q2nf7zh640n52gdl2kucna02956q, bitcoincash:qpq4ajfp58lpj70r232pf7pt55s9vm8x4yxmd6c90w',  # noqa: E501
     ), HistoryEvent(
         identifier=80,
-        event_identifier=(event_identifier := f'{BCH_EVENT_IDENTIFIER_PREFIX}3944ec023a1a4004d26c476051160ab97c1004a5a34799fc197c885acc745ead'),  # noqa: E501
+        group_identifier=(group_identifier := f'{BCH_GROUP_IDENTIFIER_PREFIX}3944ec023a1a4004d26c476051160ab97c1004a5a34799fc197c885acc745ead'),  # noqa: E501
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749190001000)),
         location=Location.BITCOIN_CASH,
@@ -242,7 +242,7 @@ def test_query_bch_transactions(
         notes=f'Spend {fee_amount} BCH for fees',
     ), HistoryEvent(
         identifier=81,
-        event_identifier=event_identifier,
+        group_identifier=group_identifier,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BITCOIN_CASH,
@@ -255,7 +255,7 @@ def test_query_bch_transactions(
     )]
     assert events[0] == HistoryEvent(
         identifier=79,
-        event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}7eb2146b27dbf6e4ea0d61c2e85a6aeae2415392043fa44904b0a88f1341a662',
+        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}7eb2146b27dbf6e4ea0d61c2e85a6aeae2415392043fa44904b0a88f1341a662',
         sequence_index=0,
         timestamp=TimestampMS(1545323818000),
         location=Location.BITCOIN_CASH,
