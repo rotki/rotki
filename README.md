@@ -158,7 +158,7 @@ Need help or want to discuss features? Connect with us!
 ### 📌 **Follow Us for Updates**
 [![Website](https://img.shields.io/badge/Visit%20rotki-1E90FF?logoColor=white&style=for-the-badge)](https://rotki.com)
 [![Docs](https://img.shields.io/badge/Read%20the%20Docs-FF4500?logo=read-the-docs&logoColor=white&style=for-the-badge)](https://docs.rotki.com/)
-[![X (Twitter)](https://img.shields.io/badge/Follow%20on%20X-000000?logo=x&logoColor=white&style=for-the-badge)](https://twitter.com/rotkiapp)
+[![X (Twitter)](https://img.shields.io/badge/Follow%20on%20X-000000?logo=x&logoColor=white&style=for-the-badge)](https://x.com/rotkiapp)
 [![LinkedIn](https://img.shields.io/badge/Connect%20on%20LinkedIn-0077B5?logo=linkedin&logoColor=white&style=for-the-badge)](https://www.linkedin.com/company/rotki)  
 
 ---
