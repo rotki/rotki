@@ -1,10 +1,9 @@
-import type { MaybeRef } from '@vueuse/core';
 import type { AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { ChainAddress } from '@/types/history/events';
 import { Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useAccountAdditionService } from '@/composables/blockchain/use-account-addition-service';
-import { useAccountOperations } from '@/composables/blockchain/use-account-operations';
+import { type RefreshAccountsParams, useAccountOperations } from '@/composables/blockchain/use-account-operations';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
@@ -20,13 +19,13 @@ interface UseBlockchainsReturn {
   addEvmAccounts: (payload: AddAccountsPayload, options?: AddAccountsOption) => Promise<void>;
   detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
-  refreshAccounts: (blockchain?: MaybeRef<string>, addresses?: string[], isXpub?: boolean, periodic?: boolean) => Promise<void>;
+  refreshAccounts: (params?: RefreshAccountsParams) => Promise<void>;
 }
 
 export function useBlockchains(): UseBlockchainsReturn {
   // Use services for complex logic
   const accountAdditionService = useAccountAdditionService();
-  const accountOperations = useAccountOperations();
+  const { detectEvmAccounts, fetchAccounts, refreshAccounts } = useAccountOperations();
 
   // Keep essential stores and composables
   const { getChainName } = useSupportedChains();
@@ -36,7 +35,7 @@ export function useBlockchains(): UseBlockchainsReturn {
 
   const addEvmAccounts = async (payload: AddAccountsPayload, options?: AddAccountsOption): Promise<void> => {
     const onComplete = async (params: { addedAccounts: any[]; modulesToEnable?: any[] }): Promise<void> =>
-      accountAdditionService.completeAccountAddition(params, accountOperations.refreshAccounts);
+      accountAdditionService.completeAccountAddition(params, refreshAccounts);
 
     if (payload.payload.length === 1) {
       const addResult = await accountAdditionService.addSingleEvmAddress(payload.payload[0]);
@@ -79,7 +78,7 @@ export function useBlockchains(): UseBlockchainsReturn {
     }
 
     const onComplete = async (params: { addedAccounts: ChainAddress[]; chain: string; isXpub?: boolean; modulesToEnable?: any[] }): Promise<void> =>
-      accountAdditionService.completeAccountAddition(params, accountOperations.refreshAccounts);
+      accountAdditionService.completeAccountAddition(params, refreshAccounts);
 
     if (filteredPayload.length === 1 || isXpub) {
       const addResult = await accountAdditionService.addSingleAccount(isXpub ? payload : filteredPayload[0], chain);
@@ -103,9 +102,6 @@ export function useBlockchains(): UseBlockchainsReturn {
         startPromise(accountAdditionService.addMultipleAccounts(filteredPayload, chain, modules, onComplete));
     }
   };
-
-  // Delegate to services
-  const { detectEvmAccounts, fetchAccounts, refreshAccounts } = accountOperations;
 
   return {
     addAccounts,

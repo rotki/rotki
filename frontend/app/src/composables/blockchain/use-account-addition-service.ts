@@ -1,3 +1,4 @@
+import type { RefreshAccountsParams } from '@/composables/blockchain/use-account-operations';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { Module } from '@/types/modules';
 import { type Account, assert, Blockchain } from '@rotki/common';
@@ -53,7 +54,7 @@ interface ChainAccountAdditionParams {
   modulesToEnable?: Module[];
 }
 
-type RefreshAccountsCallback = (chain?: string, addresses?: string[], isXpub?: boolean) => Promise<void>;
+type RefreshAccountsCallback = (params: RefreshAccountsParams) => Promise<void>;
 
 type EvmCompletionCallback = (params: EvmAccountAdditionParams) => Promise<void>;
 
@@ -106,7 +107,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       modulesToEnable,
     } = params;
 
-    await onRefreshAccounts(chain, addedAccounts.map(item => item.address), isXpub);
+    await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
     const chains = chain ? [chain] : get(supportedChains).map(chain => chain.id);
     // Sort accounts by chain, so they are called in order
     const sortedAccounts = addedAccounts.sort(CHAIN_ORDER_COMPARATOR(chains));

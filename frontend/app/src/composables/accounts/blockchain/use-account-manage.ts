@@ -273,7 +273,7 @@ export function useAccountManage(): UseAccountManageReturn {
         startPromise(fetchAccounts(Blockchain.ETH2));
       }
       else {
-        startPromise(refreshAccounts(Blockchain.ETH2));
+        startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
       }
     }
     else if (typeof result.message === 'string') {
