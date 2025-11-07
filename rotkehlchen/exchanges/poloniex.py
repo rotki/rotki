@@ -496,6 +496,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
         """
         try:
             asset = asset_from_poloniex(movement_data['currency'])
+            amount = deserialize_fval_force_positive(movement_data['amount'])
             if movement_type == HistoryEventType.DEPOSIT:
                 fee = None
                 uid_key = 'depositNumber'
@@ -504,7 +505,14 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 fee = AssetAmount(
                     asset=asset,
                     amount=deserialize_fval_or_zero(movement_data['fee']),
-                )
+                )  # amount should be total amount withdrawn including the fee according to https://api-docs.poloniex.com/spot/api/private/wallet  # noqa: E501
+                amount -= fee.amount
+                if amount <= 0:
+                    msg = 'Found a poloniex withdrawal with fee > amount.'
+                    log.error(f'{msg} Data: {movement_data}')
+                    self.msg_aggregator.add_error(f'{msg} Ignoring. Check logs for more details')
+                    return []
+
                 uid_key = 'withdrawalRequestsId'
                 split = movement_data['status'].split(':')
                 if len(split) != 2:
@@ -520,7 +528,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 event_type=movement_type,
                 timestamp=ts_sec_to_ms(deserialize_timestamp(movement_data['timestamp'])),
                 asset=asset,
-                amount=deserialize_fval_force_positive(movement_data['amount']),
+                amount=amount,
                 fee=fee,
                 unique_id=f'{movement_type.serialize()}_{movement_data[uid_key]!s}',  # movement_data[uid_key] is only unique within the same event type  # noqa: E501
                 extra_data=maybe_set_transaction_extra_data(

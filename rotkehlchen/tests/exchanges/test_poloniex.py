@@ -371,7 +371,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1458994442000),
         asset=A_BTC,
-        amount=FVal('5.0'),
+        amount=FVal('4.5'),
         unique_id='withdrawal_1',
         extra_data={
             'address': '131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR',
@@ -392,7 +392,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1468994442000),
         asset=A_ETH,
-        amount=FVal('10.0'),
+        amount=FVal('9.9'),
         unique_id='withdrawal_2',
         extra_data={
             'address': '0xB7E033598Cb94EF5A35349316D3A2e4f95f308Da',
