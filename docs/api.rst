@@ -920,8 +920,8 @@ Getting or modifying settings
    :statuscode 409: Tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
-Getting backend arguments
-================================
+Getting or modifying backend arguments
+=========================================
 
 .. http:get:: /api/(version)/settings/configuration
 
@@ -955,6 +955,10 @@ Getting backend arguments
                    "sqlite_instructions": {
                            "value": 5000,
                            "is_default": true
+                   },
+                   "loglevel": {
+                           "value": "DEBUG",
+                           "is_default": true
                    }
            },
            "message": ""
@@ -963,10 +967,62 @@ Getting backend arguments
    :resjson object max_size_in_mb_all_logs: Maximum size in megabytes that will be used for all rotki logs.
    :resjson object max_num_log_files: Maximum number of logfiles to keep.
    :resjson object sqlite_instructions: Instructions per sqlite context switch. 0 means disabled.
+   :resjson object loglevel: The current logging level of the backend.
    :resjson int value: Value used for the configuration.
    :resjson bool is_default: `true` if the setting was not modified and `false` if it was.
 
    :statuscode 200: Querying of the backend configuration was successful
+   :statuscode 500: Internal rotki error
+
+.. http:put:: /api/(version)/settings/configuration
+
+   By doing a PUT, you can modify the backend log level at runtime. Currently, only the ``loglevel`` parameter is supported for modification.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/settings/configuration HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+          "loglevel": "TRACE"
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+           "result": {
+               "max_size_in_mb_all_logs": {
+                  "value": 300,
+                  "is_default": true
+               },
+               "max_logfiles_num": {
+                  "value": 3,
+                  "is_default": true
+               },
+               "sqlite_instructions": {
+                  "value": 5000,
+                  "is_default": true
+               },
+               "loglevel": {
+                  "value": "TRACE",
+                  "is_default": false
+               }
+           },
+           "message": ""
+       }
+
+   :reqjson string loglevel: The logging level to set. Must be one of: ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+
+   :statuscode 200: Backend configuration was successfully updated
+   :statuscode 400: Provided loglevel is not supported
    :statuscode 500: Internal rotki error
 
 Adding information for web3 nodes
