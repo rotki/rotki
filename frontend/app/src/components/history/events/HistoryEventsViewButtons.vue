@@ -104,7 +104,7 @@ const { t } = useI18n({ useScope: 'global' });
         <template #prepend>
           <RuiIcon name="lu-clock-arrow-up" />
         </template>
-        {{ t('transactions.repulling.title') }}
+        {{ t('transactions.repulling.action') }}
       </RuiButton>
     </div>
   </RuiMenu>
