@@ -31,7 +31,7 @@ const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCAT
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
-const eventIdentifier = ref<string>('');
+const groupIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const timestamp = ref<number>(0);
 const location = ref<string>('');
@@ -50,9 +50,9 @@ const commonRules = createCommonRules();
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
   asset: commonRules.createRequiredAssetRule(),
-  eventIdentifier: commonRules.createRequiredEventIdentifierRule(),
   eventSubtype: commonRules.createRequiredEventSubtypeRule(),
   eventType: commonRules.createRequiredEventTypeRule(),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(),
   location: commonRules.createRequiredLocationRule(),
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
@@ -69,9 +69,9 @@ const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStat
 const states = {
   amount,
   asset,
-  eventIdentifier,
   eventSubtype,
   eventType,
+  groupIdentifier,
   location,
   locationLabel,
   notes,
@@ -98,7 +98,7 @@ const locationLabelSuggestions = computed(() =>
 
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(eventIdentifier, '');
+  set(groupIdentifier, '');
   set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(locationLabel, '');
@@ -114,7 +114,7 @@ function reset() {
 
 function applyEditableData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(eventType, entry.eventType);
@@ -132,7 +132,7 @@ function applyGroupHeaderData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(timestamp, entry.timestamp);
 }
 
@@ -149,9 +149,9 @@ async function save(): Promise<boolean> {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
     entryType: HistoryEventEntryType.HISTORY_EVENT,
-    eventIdentifier: get(eventIdentifier),
     eventSubtype: get(eventSubtype),
     eventType: get(eventType),
+    groupIdentifier: get(groupIdentifier),
     location: get(location),
     locationLabel: get(locationLabel) || null,
     sequenceIndex: get(sequenceIndex) || '0',
@@ -229,14 +229,14 @@ defineExpose({
     </div>
 
     <RuiTextField
-      v-model="eventIdentifier"
+      v-model="groupIdentifier"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="eventIdentifier"
+      data-cy="groupIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
-      :error-messages="toMessages(v$.eventIdentifier)"
-      @blur="v$.eventIdentifier.$touch()"
+      :error-messages="toMessages(v$.groupIdentifier)"
+      @blur="v$.groupIdentifier.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />

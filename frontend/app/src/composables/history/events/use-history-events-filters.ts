@@ -33,7 +33,7 @@ interface HistoryEventsFiltersOptions {
 
 interface UseHistoryEventsFiltersReturn {
   locationLabels: Ref<string[]>;
-  eventIdentifiers: ComputedRef<string[] | undefined>;
+  groupIdentifiers: ComputedRef<string[] | undefined>;
   fetchData: () => Promise<void>;
   filters: ComputedRef<Filters>;
   groupLoading: Ref<boolean>;
@@ -83,9 +83,9 @@ export function useHistoryEventsFilters(
     return identifiers ? [identifiers as string] : undefined;
   });
 
-  const eventIdentifiersFromQuery = computed<string[] | undefined>(() => {
-    const { eventIdentifiers } = get(route).query;
-    return eventIdentifiers ? [eventIdentifiers as string] : undefined;
+  const groupIdentifiersFromQuery = computed<string[] | undefined>(() => {
+    const { groupIdentifiers } = get(route).query;
+    return groupIdentifiers ? [groupIdentifiers as string] : undefined;
   });
 
   const usedLocationLabels = computed<string[]>(() => {
@@ -125,8 +125,8 @@ export function useHistoryEventsFilters(
     }),
     extraParams: computed(() => ({
       customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
-      eventIdentifiers: get(eventIdentifiersFromQuery),
       excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
+      groupIdentifiers: get(groupIdentifiersFromQuery),
       identifiers: get(identifiersFromQuery),
     })),
     filterSchema: () => useHistoryEventFilter({
@@ -155,10 +155,10 @@ export function useHistoryEventsFilters(
     })),
     requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
       const params: Writeable<Partial<HistoryEventRequestPayload>> = {
+        aggregateByGroupIds: true,
         counterparties: get(protocols),
         eventSubtypes: get(eventSubTypes),
         eventTypes: get(eventTypes),
-        groupByEventIds: true,
       };
 
       const accountsValue = get(usedLocationLabels);
@@ -233,9 +233,9 @@ export function useHistoryEventsFilters(
   });
 
   return {
-    eventIdentifiers: eventIdentifiersFromQuery,
     fetchData,
     filters,
+    groupIdentifiers: groupIdentifiersFromQuery,
     groupLoading,
     groups,
     highlightedIdentifiers,

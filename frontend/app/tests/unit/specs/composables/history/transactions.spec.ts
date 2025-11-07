@@ -75,8 +75,8 @@ describe('composables::history/events/tx', () => {
     const eventsCollection = await useHistoryEvents().fetchHistoryEvents({
       limit: -1,
       offset: 0,
-      eventIdentifiers: [],
-      groupByEventIds: false,
+      groupIdentifiers: [],
+      aggregateByGroupIds: false,
     });
 
     events = eventsCollection.data;

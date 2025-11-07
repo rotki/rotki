@@ -45,7 +45,7 @@ describe('forms/EvmSwapEventForm', () => {
   const txRef = '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f';
   const address = '0xA090e606E30bD747d4E6245a1517EbE430F0057e';
   const locationLabel = '0x6e15887E2CEC81434C16D587709f64603b39b541';
-  const eventIdentifier = `1${txRef}`;
+  const groupIdentifier = `1${txRef}`;
 
   const data: GroupEventData<EvmSwapEvent> = {
     eventsInGroup: [{
@@ -55,10 +55,10 @@ describe('forms/EvmSwapEventForm', () => {
       autoNotes: 'Swap 0.1 ETH on Uniswap',
       counterparty: 'uniswap-v3',
       entryType: 'evm swap event',
-      eventIdentifier,
       eventSubtype: 'spend',
       eventType: 'trade',
       extraData: null,
+      groupIdentifier,
       identifier: 3456,
       location: 'ethereum',
       locationLabel,
@@ -73,10 +73,10 @@ describe('forms/EvmSwapEventForm', () => {
       autoNotes: 'Receive 300 USDC after a swap on Uniswap',
       counterparty: 'uniswap-v3',
       entryType: 'evm swap event',
-      eventIdentifier,
       eventSubtype: 'receive',
       eventType: 'trade',
       extraData: null,
+      groupIdentifier,
       identifier: 3457,
       location: 'ethereum',
       locationLabel,
@@ -91,10 +91,10 @@ describe('forms/EvmSwapEventForm', () => {
       autoNotes: 'Spend 0.005 ETH as gas fee',
       counterparty: 'uniswap-v3',
       entryType: 'evm swap event',
-      eventIdentifier,
       eventSubtype: 'fee',
       eventType: 'trade',
       extraData: null,
+      groupIdentifier,
       identifier: 3458,
       location: 'ethereum',
       locationLabel,

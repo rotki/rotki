@@ -8,7 +8,7 @@ interface CreateCommonRules {
   createRequiredAmountRule: <T>() => ValidationRuleCollection<T>;
   createRequiredAssetRule: <T>() => ValidationRuleCollection<T>;
   createRequiredBlockNumberRule: <T>() => ValidationRuleCollection<T>;
-  createRequiredEventIdentifierRule: <T>(condition?: () => boolean) => ValidationRuleCollection<T>;
+  createRequiredGroupIdentifierRule: <T>(condition?: () => boolean) => ValidationRuleCollection<T>;
   createRequiredEventSubtypeRule: <T>() => ValidationRuleCollection<T>;
   createRequiredEventTypeRule: <T>() => ValidationRuleCollection<T>;
   createRequiredFeeAssetRule: <T>(requiredCondition?: ValidationRuleWithoutParams) => ValidationRuleCollection<T>;
@@ -53,12 +53,6 @@ export function useEventFormValidation(): UseEventFormValidationReturn {
     createRequiredBlockNumberRule: () => ({
       required: helpers.withMessage(t('transactions.events.form.block_number.validation.non_empty'), required),
     }),
-    createRequiredEventIdentifierRule: (condition?: () => boolean) => ({
-      required: helpers.withMessage(
-        t('transactions.events.form.event_identifier.validation.non_empty'),
-        condition === undefined ? required : requiredIf(condition),
-      ),
-    }),
     createRequiredEventSubtypeRule: () => ({
       required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
     }),
@@ -75,6 +69,12 @@ export function useEventFormValidation(): UseEventFormValidationReturn {
       required: helpers.withMessage(
         t('transactions.events.form.fee.validation.non_empty'),
         requiredCondition,
+      ),
+    }),
+    createRequiredGroupIdentifierRule: (condition?: () => boolean) => ({
+      required: helpers.withMessage(
+        t('transactions.events.form.event_identifier.validation.non_empty'),
+        condition === undefined ? required : requiredIf(condition),
       ),
     }),
     createRequiredLocationRule: () => ({

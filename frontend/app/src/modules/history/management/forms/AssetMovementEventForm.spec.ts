@@ -59,7 +59,6 @@ describe('forms/AssetMovementEventForm.vue', () => {
     amount: bigNumberify(10),
     asset: asset.symbol,
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    eventIdentifier: 'STJ6KRHJYGA',
     eventSubtype: 'remove asset',
     eventType: 'withdrawal',
     extraData: {
@@ -67,6 +66,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       reference: 'TEST123',
       transactionId: '0x9834594deca004e626ea06c287abab60003f3752402a2b09ca88657db50292cf',
     },
+    groupIdentifier: 'STJ6KRHJYGA',
     identifier: 449,
     location: 'kraken',
     locationLabel: 'Kraken 1',
@@ -79,12 +79,12 @@ describe('forms/AssetMovementEventForm.vue', () => {
     amount: bigNumberify(0.1),
     asset: asset.symbol,
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    eventIdentifier: 'STJ6KRHJYGA',
     eventSubtype: 'fee',
     eventType: 'withdrawal',
     extraData: {
       reference: 'TEST123',
     },
+    groupIdentifier: 'STJ6KRHJYGA',
     identifier: 450,
     location: 'kraken',
     locationLabel: 'Kraken 1',
@@ -145,7 +145,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input').element.value).toBe('');
+    expect(wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input').element.value).toBe('');
     expect(wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value').element.value).toBe('');
   });
 
@@ -161,7 +161,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const now = dayjs();
     const nowInMs = now.valueOf();
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-cy=eventIdentifier] input').setValue('TEST123');
+    await wrapper.find('[data-cy=groupIdentifier] input').setValue('TEST123');
     await wrapper.find('[data-cy=eventType] input').setValue('deposit');
     await wrapper.find('[data-cy=locationLabel] input').setValue('Kraken 1');
     await wrapper.find('[data-cy=location] input').setValue('kraken');
@@ -189,10 +189,10 @@ describe('forms/AssetMovementEventForm.vue', () => {
       asset: 'BTC',
       blockchain: '',
       entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-      eventIdentifier: 'TEST123',
       eventType: 'deposit',
       fee,
       feeAsset,
+      groupIdentifier: 'TEST123',
       location: 'kraken',
       locationLabel: 'Kraken 1',
       timestamp: nowInMs,
@@ -219,12 +219,12 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await wrapper.setProps({ data: { eventsInGroup: [event], type: 'edit-group' } });
     await vi.advanceTimersToNextTimerAsync();
 
-    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
     const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
+    expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
     expect(locationLabelInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
     expect(notesTextArea.element.value).toBe(event.userNotes);
@@ -274,10 +274,10 @@ describe('forms/AssetMovementEventForm.vue', () => {
         amount: bigNumberify('250'),
         asset: 'USD',
         entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-        eventIdentifier: event.eventIdentifier,
         eventType: event.eventType,
         fee: null,
         feeAsset: null,
+        groupIdentifier: event.groupIdentifier,
         identifier: event.identifier,
         location: event.location,
         locationLabel: event.locationLabel,
@@ -310,10 +310,10 @@ describe('forms/AssetMovementEventForm.vue', () => {
       asset: 'ETH',
       blockchain: event.extraData?.blockchain,
       entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-      eventIdentifier: event.eventIdentifier,
       eventType: event.eventType,
       fee: fee.amount.toString(),
       feeAsset: fee.asset,
+      groupIdentifier: event.groupIdentifier,
       identifier: event.identifier,
       location: event.location,
       locationLabel: event.locationLabel,
@@ -343,10 +343,10 @@ describe('forms/AssetMovementEventForm.vue', () => {
         amount: bigNumberify('10'),
         asset: 'ETH',
         entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-        eventIdentifier: event.eventIdentifier,
         eventType: event.eventType,
         fee: null,
         feeAsset: null,
+        groupIdentifier: event.groupIdentifier,
         identifier: event.identifier,
         location: event.location,
         locationLabel: event.locationLabel,

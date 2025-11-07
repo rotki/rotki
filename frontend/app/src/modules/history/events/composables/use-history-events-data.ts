@@ -68,9 +68,9 @@ export function useHistoryEventsData(
 
     const response = await fetchHistoryEvents({
       ...get(pageParams),
-      eventIdentifiers: dataValue.flatMap(item => Array.isArray(item) ? item.map(i => i.eventIdentifier) : item.eventIdentifier),
+      aggregateByGroupIds: false,
       excludeIgnoredAssets: false,
-      groupByEventIds: false,
+      groupIdentifiers: dataValue.flatMap(item => Array.isArray(item) ? item.map(i => i.groupIdentifier) : item.groupIdentifier),
       identifiers: get(identifiers),
       limit: -1,
       offset: 0,
@@ -93,14 +93,14 @@ export function useHistoryEventsData(
   function processArrayEvent(event: HistoryEventEntry[], mapping: Record<string, HistoryEventRow[]>): void {
     const filtered = event.filter(({ hidden }) => !hidden);
     if (filtered.length > 0) {
-      const eventId = filtered[0].eventIdentifier;
+      const eventId = filtered[0].groupIdentifier;
       addEventToMapping(mapping, eventId, filtered);
     }
   }
 
   function processSingleEvent(event: HistoryEventEntry, mapping: Record<string, HistoryEventRow[]>): void {
     if (!event.hidden) {
-      const eventId = event.eventIdentifier;
+      const eventId = event.groupIdentifier;
       addEventToMapping(mapping, eventId, event);
     }
   }

@@ -9,9 +9,9 @@ function removeIdentifierParam(): void {
   router.push({ query });
 }
 
-function removeEventIdentifierParam(): void {
+function removeGroupIdentifierParam(): void {
   const query = { ...route.query };
-  delete query.eventIdentifiers;
+  delete query.groupIdentifiers;
   delete query.highlightIdentifier;
   router.push({ query });
 }
@@ -34,7 +34,7 @@ function removeEventIdentifierParam(): void {
   </div>
 
   <div
-    v-if="route.query.eventIdentifiers"
+    v-if="route.query.groupIdentifiers"
     class="mb-4"
   >
     <RuiChip
@@ -42,7 +42,7 @@ function removeEventIdentifierParam(): void {
       color="primary"
       size="sm"
       variant="outlined"
-      @click:close="removeEventIdentifierParam()"
+      @click:close="removeGroupIdentifierParam()"
     >
       {{ t('transactions.events.show_negative_balance') }}
     </RuiChip>

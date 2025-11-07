@@ -134,7 +134,7 @@ watch(() => get(eventGroup), () => {
     :class="{ 'pl-[3.125rem]': hasIgnoredEvent }"
   >
     <HistoryEventsListTable
-      :key="eventGroup.eventIdentifier"
+      :key="eventGroup.groupIdentifier"
       :event-group="eventGroup"
       :events="limitedEvents"
       :all-events="combinedAllEvents"

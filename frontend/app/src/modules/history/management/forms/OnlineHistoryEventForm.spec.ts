@@ -59,9 +59,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     amount: bigNumberify(10),
     asset: asset.symbol,
     entryType: HistoryEventEntryType.HISTORY_EVENT,
-    eventIdentifier: 'STJ6KRHJYGA',
     eventSubtype: 'reward',
     eventType: 'staking',
+    groupIdentifier: 'STJ6KRHJYGA',
     identifier: 449,
     location: 'kraken',
     locationLabel: 'Kraken 1',
@@ -118,11 +118,11 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
     const locationLabel = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
-    expect(eventIdentifierInput.element.value).toBe('');
+    expect(groupIdentifierInput.element.value).toBe('');
     expect(locationLabel.element.value).toBe('');
     expect(sequenceIndexInput.element.value).toBe('0');
   });
@@ -135,13 +135,13 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
     const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
+    expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
     expect(locationLabelInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe('0');
     expect(sequenceIndexInput.element.value).toBe('10');
@@ -156,13 +156,13 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
-    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
     const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
+    expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
     expect(locationLabelInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
     expect(sequenceIndexInput.element.value.replace(',', '')).toBe(event.sequenceIndex.toString());
@@ -216,7 +216,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=eventIdentifier] input').setValue(event.eventIdentifier);
+    await wrapper.find('[data-cy=groupIdentifier] input').setValue(event.groupIdentifier);
     await wrapper.find('[data-cy=location] input').setValue(event.location);
     await wrapper.find('[data-cy=locationLabel] input').setValue(event.locationLabel);
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(event.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
@@ -240,9 +240,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       amount: event.amount,
       asset: event.asset,
       entryType: HistoryEventEntryType.HISTORY_EVENT,
-      eventIdentifier: event.eventIdentifier,
       eventSubtype: event.eventSubtype,
       eventType: event.eventType,
+      groupIdentifier: event.groupIdentifier,
       location: event.location,
       locationLabel: event.locationLabel,
       sequenceIndex: event.sequenceIndex.toString(),
@@ -301,9 +301,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       amount: bigNumberify(50),
       asset: 'USD',
       entryType: HistoryEventEntryType.HISTORY_EVENT,
-      eventIdentifier: event.eventIdentifier,
       eventSubtype: event.eventSubtype,
       eventType: event.eventType,
+      groupIdentifier: event.groupIdentifier,
       identifier: event.identifier,
       location: event.location,
       locationLabel: event.locationLabel,

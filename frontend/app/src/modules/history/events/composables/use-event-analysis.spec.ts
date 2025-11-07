@@ -22,10 +22,10 @@ describe('use-event-analysis', () => {
         customized: false,
         entryType: HistoryEventEntryType.EVM_EVENT,
         eventAccountingRuleStatus: HistoryEventAccountingRuleStatus.PROCESSED,
-        eventIdentifier: '0xabc123',
         eventSubtype: 'spend',
         eventType: 'transfer',
         extraData: null,
+        groupIdentifier: '0xabc123',
         identifier: 1,
         ignoredInAccounting: false,
         location: 'ethereum',
@@ -43,7 +43,7 @@ describe('use-event-analysis', () => {
 
       mockEvmEvent3 = {
         ...mockEvmEvent1,
-        eventIdentifier: '0xdef456',
+        groupIdentifier: '0xdef456',
         identifier: 3,
         txRef: 'tx2',
       };
@@ -54,10 +54,10 @@ describe('use-event-analysis', () => {
         customized: false,
         entryType: HistoryEventEntryType.SWAP_EVENT,
         eventAccountingRuleStatus: HistoryEventAccountingRuleStatus.PROCESSED,
-        eventIdentifier: 'swap123',
         eventSubtype: 'spend',
         eventType: 'trade',
         extraData: null,
+        groupIdentifier: 'swap123',
         identifier: 10,
         ignoredInAccounting: false,
         location: 'kraken',
@@ -81,10 +81,10 @@ describe('use-event-analysis', () => {
         customized: false,
         entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
         eventAccountingRuleStatus: HistoryEventAccountingRuleStatus.PROCESSED,
-        eventIdentifier: '0xswap789',
         eventSubtype: 'spend',
         eventType: 'trade',
         extraData: null,
+        groupIdentifier: '0xswap789',
         identifier: 20,
         ignoredInAccounting: false,
         location: 'ethereum',
@@ -122,8 +122,8 @@ describe('use-event-analysis', () => {
       expect(result.completeTransactions.size).toBe(1);
       expect(result.completeTransactions.get('tx1')).toEqual({
         chain: 'ethereum',
-        eventIdentifier: '0xabc123',
         events: [1, 2],
+        groupIdentifier: '0xabc123',
       });
       expect(result.partialEventIds).toEqual([]);
       expect(result.partialSwapGroups).toEqual([]);
@@ -239,13 +239,13 @@ describe('use-event-analysis', () => {
       expect(result.completeTransactions.size).toBe(2);
       expect(result.completeTransactions.get('tx1')).toEqual({
         chain: 'ethereum',
-        eventIdentifier: '0xabc123',
         events: [1, 2],
+        groupIdentifier: '0xabc123',
       });
       expect(result.completeTransactions.get('tx2')).toEqual({
         chain: 'ethereum',
-        eventIdentifier: '0xdef456',
         events: [3],
+        groupIdentifier: '0xdef456',
       });
       expect(result.partialEventIds).toEqual([]);
       expect(result.partialSwapGroups).toEqual([]);
@@ -269,8 +269,8 @@ describe('use-event-analysis', () => {
       expect(result.completeTransactions.size).toBe(1);
       expect(result.completeTransactions.get('tx1')).toEqual({
         chain: 'ethereum',
-        eventIdentifier: '0xabc123',
         events: [1, 2],
+        groupIdentifier: '0xabc123',
       });
       expect(result.partialEventIds).toEqual([]);
       expect(result.partialSwapGroups).toEqual([

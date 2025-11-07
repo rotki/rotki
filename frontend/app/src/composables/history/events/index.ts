@@ -90,7 +90,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
         HistoryEventsCollectionResponse
       >(await fetchHistoryEventsCaller(requestData));
 
-      if (!requestData.groupByEventIds) {
+      if (!requestData.aggregateByGroupIds) {
         populateAddressBook(collection);
       }
 
@@ -174,8 +174,8 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
 
   const getEarliestEventTimestamp = async (): Promise<number | undefined> => {
     const response = await fetchHistoryEvents({
+      aggregateByGroupIds: true,
       ascending: [true],
-      groupByEventIds: true,
       limit: 1,
       offset: 0,
       orderByAttributes: ['timestamp'],

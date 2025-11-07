@@ -31,7 +31,7 @@ const { data } = toRefs(props);
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const txRef = ref<string>('');
-const eventIdentifier = ref<string>('');
+const groupIdentifier = ref<string>('');
 const timestamp = ref<number>(0);
 const amount = ref<string>('');
 const sequenceIndex = ref<string>('');
@@ -47,7 +47,7 @@ const commonRules = createCommonRules();
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
   depositor: commonRules.createRequiredValidDepositorRule(),
-  eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
   timestamp: commonRules.createExternalValidationRule(),
   txRef: commonRules.createValidTxHashRule(),
@@ -63,8 +63,8 @@ const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStat
 const states = {
   amount,
   depositor,
-  eventIdentifier,
   extraData,
+  groupIdentifier,
   sequenceIndex,
   timestamp,
   txRef,
@@ -87,7 +87,7 @@ const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(txRef, '');
-  set(eventIdentifier, null);
+  set(groupIdentifier, null);
   set(timestamp, dayjs().valueOf());
   set(amount, '0');
   set(validatorIndex, '');
@@ -101,7 +101,7 @@ function reset() {
 function applyEditableData(entry: EthDepositEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txRef, entry.txRef);
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -114,7 +114,7 @@ function applyEditableData(entry: EthDepositEvent) {
 
 function applyGroupHeaderData(entry: EthDepositEvent) {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(eventIdentifier, entry.eventIdentifier);
+  set(groupIdentifier, entry.groupIdentifier);
   set(txRef, entry.txRef);
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel ?? '');
@@ -137,8 +137,8 @@ async function save(): Promise<boolean> {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     depositor: get(depositor),
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
-    eventIdentifier: get(eventIdentifier) ?? null,
     extraData: get(extraData) || null,
+    groupIdentifier: get(groupIdentifier) ?? null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp: get(timestamp),
     txRef: get(txRef),
@@ -264,13 +264,13 @@ defineExpose({
         </template>
         <div class="py-2">
           <RuiTextField
-            v-model="eventIdentifier"
+            v-model="groupIdentifier"
             variant="outlined"
             color="primary"
-            data-cy="eventIdentifier"
+            data-cy="groupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
-            :error-messages="toMessages(v$.eventIdentifier)"
-            @blur="v$.eventIdentifier.$touch()"
+            :error-messages="toMessages(v$.groupIdentifier)"
+            @blur="v$.groupIdentifier.$touch()"
           />
 
           <JsonInput
