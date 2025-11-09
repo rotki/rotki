@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10914` rotki will now query polkadot and kusama balances correctly again after their migration to asset hub.
 * :bug:`-` rotki will no longer count fee in the withdrawn amount in poloniex
 * :bug:`10894` rotki will now properly decode more Aave V3 transactions involving native tokens.
 * :bug:`-` ERC20 transfers will no longer be missed when transaction querying fails due to network problems.

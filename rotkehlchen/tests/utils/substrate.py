@@ -28,13 +28,13 @@ log = RotkehlchenLogsAdapter(logger)
 SUBSTRATE_ACC1_PUBLIC_KEY = '0xa6659e4c3f22c2aa97d54a36e31ab57a617af62bd43ec62ed570771492069270'
 SUBSTRATE_ACC1_DOT_ADDR = '14mB8stSf1vdP7WzbVr82YPgGGF7cBK9N7KxiVEac9UQgYj7'
 SUBSTRATE_ACC1_KSM_ADDR = 'GLVeryFRbg5hEKvQZcAnLvXZEXhiYaBjzSDwrXBXrfPF7wj'
-SUBSTRATE_ACC2_PUBLIC_KEY = '0x7e0bd3a5719525e3a4778010994c71be04eb6b7cd2e90931a76a3c89fa412b12'
+SUBSTRATE_ACC2_PUBLIC_KEY = '0x203066b0a657bdbdbe9974c20a2644881f384f9b206c7c394054c0d411d7bc6e'
 SUBSTRATE_ACC2_DOT_ADDR = '13rGYiGMwLkHbt5Q5rcdyS4Tq7kmJgdE4d4tLex6Pwa7cVZA'
-SUBSTRATE_ACC2_KSM_ADDR = 'FRb4hMAhvVjuztKtvNgjEbK863MR3tGSWB9a2EhKem6AygK'
+SUBSTRATE_ACC2_KSM_ADDR = 'DJXRnqb3aTRpQfZtfZKFB3rXrDcdKjyS7C3BrrB5oWMDrxJ'
 
 # Use 2 nodes for tests
 KUSAMA_TEST_NODES = (
-    KusamaNodeName.PARITY,
+    KusamaNodeName.DWELLIR,
     KusamaNodeName.ONFINALITY,
 )
 
@@ -42,7 +42,7 @@ KUSAMA_SS58_FORMAT = 2
 POLKADOT_SS58_FORMAT = 2
 KUSAMA_MAIN_ASSET_DECIMALS = FVal(12)
 KUSAMA_DEFAULT_OWN_RPC_ENDPOINT = 'http://localhost:9933'
-KUSAMA_TEST_RPC_ENDPOINT = 'https://ksm.getblock.io/ae78eb1d-2643-4e22-b691-0ecb9d9c5e08/mainnet/'  # made by lef for testing # noqa: E501
+KUSAMA_TEST_RPC_ENDPOINT = 'https://assethub-kusama.api.onfinality.io/rpc?apikey=4f8b5736-9951-4a54-b789-0a384c50c4ed'  # made byq lef for testing # noqa: E501
 
 
 def attempt_connect_test_nodes(
