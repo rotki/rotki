@@ -10,8 +10,8 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_RPC_ENDPOINT
 
 
-@pytest.mark.vcr
-@pytest.mark.freeze_time('2023-10-12 09:00:00 GMT')
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2025-11-09 17:00:00 GMT')
 def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server: APIServer) -> None:
     """Test that successfully setting/unsetting an own node (via `ksm_rpc_endpoint` setting)
     updates the `available_node_attributes_map`, sorts `available_nodes_call_order`,
