@@ -225,6 +225,7 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
         required=True,
         allow_only=[TokenKind.ERC20, TokenKind.ERC721],
     )
+    collectible_id = EmptyAsNoneStringField(load_default=None)
     underlying_tokens = DelimitedOrNormalList(
         fields.Nested(UnderlyingTokenInfoSchema),
         load_default=None,
@@ -237,8 +238,7 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
             **kwargs: Any,
     ) -> None:
         super().validate_schema(data, **kwargs)
-        given_underlying_tokens = data.get('underlying_tokens')
-        if given_underlying_tokens is not None:
+        if (given_underlying_tokens := data.get('underlying_tokens')) is not None:
             weight_sum = sum(x['weight'] for x in given_underlying_tokens)
             if weight_sum > ONE:
                 raise ValidationError(
@@ -249,6 +249,18 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
                 raise ValidationError(
                     f'The sum of underlying token weights for {data["address"]} '
                     f'is {weight_sum * 100} and does not add up to 100%',
+                )
+
+        if (collectible_id := data['collectible_id']) is not None:
+            if data['token_kind'] != TokenKind.ERC721:
+                raise ValidationError(
+                    message='collectible_id can only be specified for ERC721 tokens',
+                    field_name='collectible_id',
+                )
+            if not collectible_id.isdigit():
+                raise ValidationError(
+                    message='collectible_id must be a valid positive integer',
+                    field_name='collectible_id',
                 )
 
     @post_load
@@ -280,6 +292,7 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
             decimals=data['decimals'],
             protocol=data['protocol'],
             underlying_tokens=underlying_tokens,
+            collectible_id=data['collectible_id'],
         )
 
 
