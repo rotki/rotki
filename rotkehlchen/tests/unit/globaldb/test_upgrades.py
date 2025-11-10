@@ -40,6 +40,7 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 )
 from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
+from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.database import column_exists, index_exists
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
@@ -1477,6 +1478,7 @@ def test_applying_all_upgrade(globaldb: GlobalDBHandler, messages_aggregator):
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global.db'])
+@requires_env([TestEnvironment.STANDARD])  # skip in nightlies due to github api rate limits
 @pytest.mark.parametrize('target_globaldb_version', [4])
 @pytest.mark.parametrize('reload_user_assets', [False])
 def test_assets_updates_applied_before_v10_change(globaldb, messages_aggregator):
