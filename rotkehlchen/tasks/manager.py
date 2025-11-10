@@ -648,7 +648,7 @@ class TaskManager:
             result = self.database.get_static_cache(
                 cursor=cursor, name=DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
             )
-            if result is not None and now - result <= HOUR_IN_SECONDS:
+            if result is not None and now - result <= DAY_IN_SECONDS:
                 return None
 
         task_name = 'Periodically process events'
