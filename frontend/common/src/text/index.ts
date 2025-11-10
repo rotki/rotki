@@ -248,17 +248,98 @@ export function isValidBchAddress(address?: string): boolean {
   return /^[pq][02-9ac-hj-np-z]{41,}$/.test(address);
 }
 
-export function isValidAddress(address?: string): boolean {
-  return isValidEthAddress(address) || isValidBtcAddress(address) || isValidBchAddress(address) || isValidSolanaAddress(address);
+// Logic taken from https://github.com/cryptocoinjs/base-x/blob/master/src/esm/index.js
+function decodeBase58(str: string): Uint8Array {
+  const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const BASE = 58;
+  const LEADER = ALPHABET.charAt(0);
+  const FACTOR = Math.log(BASE) / Math.log(256);
+
+  // Create lookup map indexed by character code
+  const BASE_MAP = new Uint8Array(256);
+  for (let j = 0; j < BASE_MAP.length; j++) {
+    BASE_MAP[j] = 255;
+  }
+  for (let i = 0; i < ALPHABET.length; i++) {
+    BASE_MAP[ALPHABET.charCodeAt(i)] = i;
+  }
+
+  if (str.length === 0)
+    return new Uint8Array();
+
+  // Skip and count leading '1's (zeros)
+  let psz = 0;
+  let zeroes = 0;
+  let length = 0;
+  while (str[psz] === LEADER) {
+    zeroes++;
+    psz++;
+  }
+
+  // Allocate enough space in big-endian base256 representation
+  const size = (((str.length - psz) * FACTOR) + 1) >>> 0;
+  const b256 = new Uint8Array(size);
+
+  // Process the characters
+  while (psz < str.length) {
+    const charCode = str.charCodeAt(psz);
+
+    // Base map cannot be indexed using char code > 255
+    if (charCode > 255)
+      throw new Error('Invalid character');
+
+    // Decode character
+    let carry = BASE_MAP[charCode];
+
+    // Invalid character
+    if (carry === 255)
+      throw new Error('Invalid character');
+
+    let i = 0;
+    for (let it = size - 1; (carry !== 0 || i < length) && (it !== -1); it--, i++) {
+      carry += (BASE * b256[it]) >>> 0;
+      b256[it] = (carry % 256) >>> 0;
+      carry = (carry / 256) >>> 0;
+    }
+
+    if (carry !== 0)
+      throw new Error('Non-zero carry');
+
+    length = i;
+    psz++;
+  }
+
+  // Skip leading zeroes in b256
+  let it = size - length;
+  while (it !== size && b256[it] === 0) {
+    it++;
+  }
+
+  // Construct result with leading zeros
+  const vch = new Uint8Array(zeroes + (size - it));
+  let j = zeroes;
+  while (it !== size) {
+    vch[j++] = b256[it++];
+  }
+
+  return vch;
 }
 
 export function isValidSolanaAddress(address?: string): boolean {
-  if (!address)
+  if (!address || address.length < 32 || address.length > 44)
     return false;
 
-  // Solana addresses are base58 encoded and should be 32-44 characters long
-  // They use the base58 alphabet: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
-  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+  try {
+    const decoded = decodeBase58(address);
+    return decoded.length === 32;
+  }
+  catch {
+    return false;
+  }
+}
+
+export function isValidAddress(address?: string): boolean {
+  return isValidEthAddress(address) || isValidBtcAddress(address) || isValidBchAddress(address) || isValidSolanaAddress(address);
 }
 
 export function isValidEvmTxHash(address?: string): boolean {
@@ -278,12 +359,16 @@ export function isValidBtcTxHash(txHash?: string): boolean {
 }
 
 export function isValidSolanaSignature(signature?: string): boolean {
-  if (!signature)
+  if (!signature || signature.length < 87 || signature.length > 88)
     return false;
 
-  // Solana signatures are base58 encoded and typically 87-88 characters
-  const solanaSignatureRegex = /^[1-9A-HJ-NP-Za-km-z]{87,88}$/;
-  return solanaSignatureRegex.test(signature);
+  try {
+    const decoded = decodeBase58(signature);
+    return decoded.length === 64; // Solana signatures are 64 bytes
+  }
+  catch {
+    return false;
+  }
 }
 
 export function isValidTxHashOrSignature(txHash?: string): boolean {
@@ -301,7 +386,7 @@ export function isValidUrl(text?: string): boolean {
   if (!text)
     return false;
 
-  return /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}(\.[\d()A-Za-z]{1,6})?\b([\w#%&()+./:=?@~-]*)$/.test(text);
+  return /^https?:\/\/(www\.)?[\w#%+.:=@~-]{1,256}\.[\d()A-Za-z]{1,6}\b([\w#%&()+./:=?@~-]*)$/.test(text);
 }
 
 // Transform HTML code entities such as &bull; into “•”
