@@ -108,11 +108,12 @@ const { isDetectingTokens, isSectionLoading, operationRunning, refreshDisabled }
 const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
 async function refreshClick() {
-  await fetchAccounts(get(chainIds), true);
+  const chains = get(chainIds);
+  await fetchAccounts(chains, true);
   if (get(isEvm))
-    await handleBlockchainRefresh();
+    await handleBlockchainRefresh(chains);
   else
-    await refreshBlockchainBalances(get(chainIds));
+    await refreshBlockchainBalances(chains);
   await fetchData();
 }
 
