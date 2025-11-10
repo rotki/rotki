@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from gql.transport.exceptions import TransportQueryError
 
-from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.graph import Graph
 
 RE_MULTIPLE_WHITESPACE: Final = re.compile(r'\s+')
 UNISWAP_GRAPH_ID: Final = 'A3Np3RQbaBA6oKJgiwDJeo5T3zrYfGHPWFYayMwtNDum'
@@ -50,7 +50,7 @@ def test_exception_retries(database, add_subgraph_api_key):  # pylint: disable=u
     client.execute.side_effect = TransportQueryError('any message')
 
     backoff_factor_patch = patch(
-        'rotkehlchen.chain.ethereum.graph.RETRY_BACKOFF_FACTOR',
+        'rotkehlchen.externalapis.graph.RETRY_BACKOFF_FACTOR',
         new=0,
     )
     client_patch = patch.object(graph, 'client', new=client)
@@ -85,7 +85,7 @@ def test_success_result(database, add_subgraph_api_key):  # pylint: disable=unus
     client.execute.return_value = expected_result
 
     backoff_factor_patch = patch(
-        'rotkehlchen.chain.ethereum.graph.RETRY_BACKOFF_FACTOR',
+        'rotkehlchen.externalapis.graph.RETRY_BACKOFF_FACTOR',
         return_value=0,
     )
     client_patch = patch.object(graph, 'client', new=client)
