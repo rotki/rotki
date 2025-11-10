@@ -6,7 +6,6 @@ import ens
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -20,6 +19,7 @@ from rotkehlchen.constants.resolver import tokenid_belongs_to_collection
 from rotkehlchen.errors.api import APIKeyNotConfigured
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.graph import Graph
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
