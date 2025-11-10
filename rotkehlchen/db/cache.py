@@ -68,6 +68,11 @@ class BinancePairLastTradeArgsType(TypedDict):
     queried_pair: str
 
 
+class IdentifierArgType(TypedDict):
+    """Type of kwargs, used to get the value of `DBCacheDynamic.MATCHED_ASSET_MOVEMENT`"""
+    identifier: int
+
+
 def _deserialize_int_from_str(value: str) -> int | None:
     return int(value)
 
@@ -101,6 +106,7 @@ class DBCacheDynamic(Enum):
     LAST_BCH_TX_BLOCK: Final = 'last_bch_tx_block_{address}', _deserialize_int_from_str
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
     SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
+    MATCHED_ASSET_MOVEMENT: Final = 'matched_asset_movement_{identifier}', _deserialize_int_from_str  # noqa: E501
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
@@ -120,6 +126,10 @@ class DBCacheDynamic(Enum):
 
     @overload
     def get_db_key(self, **kwargs: Unpack[IndexArgType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[IdentifierArgType]) -> str:
         ...
 
     def get_db_key(self, **kwargs: Any) -> str:
