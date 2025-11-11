@@ -32,6 +32,7 @@ from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumApiError,
     PremiumAuthenticationError,
+    PremiumPermissionError,
 )
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -523,16 +524,22 @@ class Premium:
 
             return None  # device was created or it already exists
 
-        if (
-            response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY and
-            system_platform in (DOCKER_PLATFORM_KEY, KUBERNETES_PLATFORM_KEY) and
-            self._maybe_register_docker_device(
-                device_id=device_id,
-                device_name=device_name,
-                system_platform=system_platform,
-            )
-        ):
-            return None  # success upgrading the docker device
+        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:  # device limit is exceeded
+            if (  # for Docker/Kubernetes platforms, try to upgrade existing device
+                system_platform in (DOCKER_PLATFORM_KEY, KUBERNETES_PLATFORM_KEY) and
+                self._maybe_register_docker_device(
+                    device_id=device_id,
+                    device_name=device_name,
+                    system_platform=system_platform,
+                )
+            ):
+                return None  # success upgrading the docker device
+
+            try:
+                error_msg = response.json()['error']
+            except (KeyError, JSONDecodeError):
+                error_msg = response.text
+            raise PremiumPermissionError(error_msg)
 
         check_response_status_code(response=response, status_codes=[HTTPStatus.CREATED])
 
@@ -904,6 +911,7 @@ def premium_create_and_verify(
 
     May Raise:
     - PremiumAuthenticationError if the given key is rejected by the server
+    - PremiumPermissionError if the device limit is exceeded
     - RemoteError if there are problems reaching the server
     """
     premium = Premium(
