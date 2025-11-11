@@ -93,6 +93,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
 )
+from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
 )
@@ -107,6 +108,7 @@ from rotkehlchen.chain.evm.types import (
     RemoteDataQueryStatus,
     WeightedNode,
 )
+from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.limits import (
@@ -3046,12 +3048,44 @@ class RestAPI:
         except DeserializationError as e:
             raise InputError(str(e)) from e
 
-        chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
+        events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
             tx_hashes=[tx_ref],
             send_ws_notifications=True,
             ignore_cache=True,  # always redecode from here
             delete_customized=delete_custom,
         )
+
+        # notify user if gnosis pay or monerium tx was redecoded but api key is missing
+        if not has_premium_check(self.rotkehlchen.premium):
+            return
+
+        has_gnosis_pay, has_monerium = False, False
+        for event in events:
+            if chain == SupportedBlockchain.GNOSIS and event.counterparty == CPT_GNOSIS_PAY:
+                has_gnosis_pay = True
+                break
+            elif event.counterparty == CPT_MONERIUM:
+                has_monerium = True
+                break
+        else:
+            return
+
+        if (
+            has_gnosis_pay and
+            self.rotkehlchen.data.db.get_external_service_credentials(
+                service_name=ExternalService.GNOSIS_PAY,
+            ) is None
+        ):
+            self.rotkehlchen.msg_aggregator.add_message(
+                message_type=WSMessageType.MISSING_API_KEY,
+                data={'service': HistoryEventQueryType.GNOSIS_PAY.serialize()},
+            )
+
+        elif has_monerium and init_monerium(self.rotkehlchen.data.db) is None:
+            self.rotkehlchen.msg_aggregator.add_message(
+                message_type=WSMessageType.MISSING_API_KEY,
+                data={'service': HistoryEventQueryType.MONERIUM.serialize()},
+            )
 
     def _decode_given_evmlike_tx(self, tx_ref: EVMTxHash, delete_custom: bool) -> None:
         """Re-pull and decode the given evmlike transaction.
