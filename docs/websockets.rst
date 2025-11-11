@@ -650,3 +650,26 @@ Trades were queried from a binance exchange, but no market pairs are selected to
 
 - ``location``: Location of the binance exchange. Either ``binance`` or ``binanceus``
 - ``name``: Name of the exchange.
+
+
+Premium Status Update
+=================================
+
+Sent when the premium subscription status changes, such as activation, deactivation, or expiration.
+
+::
+
+    {
+        "type": "premium_status_update",
+        "data": {
+            "is_premium_active": false,
+            "expired": false,
+            "reason": "Device limit of 4 exceeded"
+        }
+    }
+
+
+- ``is_premium_active``: Whether premium features are currently active
+- ``expired``: Whether the premium subscription has expired
+- ``reason``: Only included when device limit is exceeded. Contains the device limit error message.
+

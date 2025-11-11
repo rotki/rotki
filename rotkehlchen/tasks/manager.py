@@ -42,7 +42,7 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.api import PremiumAuthenticationError
+from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
@@ -486,6 +486,17 @@ class TaskManager:
                 msg_aggregator=self.msg_aggregator,
                 db=self.database,
             )
+        except PremiumPermissionError as e:  # only a device limit exceeded can happen here
+            log.debug(f'Device limit exceeded: {e}. Sending premium deactivate with reason')
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
+                data={
+                    'is_premium_active': False,
+                    'expired': False,
+                    'reason': str(e),
+                },
+            )
+            self.deactivate_premium()
         except RemoteError:
             if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:
                 self.premium_check_retries += 1

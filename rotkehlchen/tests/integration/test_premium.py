@@ -20,9 +20,9 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumAuthenticationError,
+    PremiumPermissionError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import (
     DOCKER_PLATFORM_KEY,
     KUBERNETES_PLATFORM_KEY,
@@ -765,13 +765,14 @@ def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -
 
     def mock_device_registration(url, **kwargs):  # pylint: disable=unused-argument
         nonlocal device_registered
+        if device_limit_reached:
+            return MockResponse(HTTPStatus.UNPROCESSABLE_ENTITY, json.dumps({'error': f'Device limit of {device_limit} exceeded'}))  # noqa: E501
+
         device_registered = True
         return MockResponse(HTTPStatus.CREATED, json.dumps({'registered': True}))
 
     def mock_device_check(url, **kwargs):  # pylint: disable=unused-argument
-        if device_limit_reached:
-            return MockResponse(HTTPStatus.FORBIDDEN, '')
-
+        # return NOT_FOUND to trigger device registration attempt
         status_code = HTTPStatus.OK if device_registered else HTTPStatus.NOT_FOUND
         return MockResponse(status_code, '')
 
@@ -784,7 +785,7 @@ def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -
         patch.object(premium.session, 'put', side_effect=mock_device_registration),
     ):
         if device_limit_reached is True:
-            with pytest.raises(PremiumAuthenticationError):
+            with pytest.raises(PremiumPermissionError):
                 premium.authenticate_device()
         else:
             premium.authenticate_device()
@@ -852,7 +853,7 @@ def test_docker_device_version_update(rotki_premium_object, database):
             patch.object(premium.session, 'delete') as mock_delete,
         ):
             # No cached info, should just fail
-            with pytest.raises(RemoteError):
+            with pytest.raises(PremiumPermissionError):
                 premium._register_new_device('test_device_id')
             mock_delete.assert_not_called()
 
@@ -864,7 +865,7 @@ def test_docker_device_version_update(rotki_premium_object, database):
             patch.object(premium.session, 'put', return_value=MockResponse(HTTPStatus.UNPROCESSABLE_ENTITY, '{}')),  # noqa: E501
             patch.object(premium.session, 'delete') as mock_delete,
         ):
-            with pytest.raises(RemoteError):
+            with pytest.raises(PremiumPermissionError):
                 premium._register_new_device('test_device_id')
             mock_delete.assert_not_called()
 

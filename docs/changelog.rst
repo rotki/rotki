@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now provide a clear device limit message when premium is deactivated due to exceeding the device limit.
 * :bug:`10914` rotki will now query polkadot and kusama balances correctly again after their migration to asset hub.
 * :bug:`-` rotki will no longer count fee in the withdrawn amount in poloniex
 * :bug:`10894` rotki will now properly decode more Aave V3 transactions involving native tokens.
