@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`10734` Users will now be able to specify the collectible ID of an ERC721 token in the asset manager.
 * :bug:`10901` Users will now be able to change the log level without restarting the app, in the "Settings > General" menu.
 * :bug:`10862` rotki will now show a warning when a Gnosis Pay or Monerium transaction is manually redecoded but credentials are missing.
 * :bug:`-` rotki will now provide a clear device limit message when premium is deactivated due to exceeding the device limit.
