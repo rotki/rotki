@@ -15,7 +15,8 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
       return isPremium;
     },
     (data, wasPremium) => {
-      if (data.isPremiumActive && !wasPremium) {
+      const { expired, isPremiumActive, reason } = data;
+      if (isPremiumActive && !wasPremium) {
         return {
           category: NotificationCategory.DEFAULT,
           display: true,
@@ -24,13 +25,13 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
           title: t('notification_messages.premium.active.title'),
         };
       }
-      else if (!data.isPremiumActive && wasPremium) {
+      else if (!isPremiumActive && wasPremium) {
         return {
           category: NotificationCategory.DEFAULT,
           display: true,
-          message: data.expired
+          message: reason || (expired
             ? t('notification_messages.premium.inactive.expired_message')
-            : t('notification_messages.premium.inactive.network_problem_message'),
+            : t('notification_messages.premium.inactive.network_problem_message')),
           severity: Severity.ERROR,
           title: t('notification_messages.premium.inactive.title'),
         };
