@@ -22,8 +22,8 @@ const queries: OnlineHistoryEventsQueryType[] = [
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { apiKey, load } = useExternalApiKeys(t);
-const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
+const { apiKey } = useExternalApiKeys(t);
+const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
 
 interface QueryConfig {
   enabled: boolean;
@@ -73,13 +73,6 @@ function updateSelection(selection: OnlineHistoryEventsQueryType[]): void {
   set(modelValue, selection);
   emit('update:all-selected', isEqual(selection.sort(), get(enabledQueries).sort()));
 }
-
-onBeforeMount(async () => {
-  await Promise.all([
-    load(),
-    refreshStatus(),
-  ]);
-});
 
 defineExpose({
   toggleSelectAll,

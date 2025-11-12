@@ -6,6 +6,7 @@ import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } fro
 import { assert, toCapitalCase, transformCase } from '@rotki/common';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { useConfirmStore } from '@/store/confirm';
+import { useSessionAuthStore } from '@/store/session/auth';
 import { DialogType } from '@/types/dialogs';
 import { logger } from '@/utils/logging';
 
@@ -36,12 +37,24 @@ interface UseExternalApiKeysReturn {
 }
 
 export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof useI18n>['t']): UseExternalApiKeysReturn => {
-  const loading = ref(false);
-  const keys = ref<ExternalServiceKeys>();
+  const loading = ref<boolean>(false);
   const status = ref<Record<string, Status>>({});
 
   const { show } = useConfirmStore();
   const { deleteExternalServices, queryExternalServices, setExternalServices } = useExternalServicesApi();
+
+  const { logged } = storeToRefs(useSessionAuthStore());
+
+  const keys: Ref<ExternalServiceKeys | undefined> = asyncComputed<ExternalServiceKeys | undefined>(
+    async () => {
+      if (get(logged))
+        return queryExternalServices();
+
+      return undefined;
+    },
+    undefined,
+    { evaluating: loading },
+  );
 
   const apiKey = (
     name: MaybeRef<ExternalServiceName>,

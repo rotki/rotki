@@ -1,6 +1,6 @@
-import { get, set } from '@vueuse/core';
-import { computed, type ComputedRef, type Ref, ref } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import { type MoneriumStatus, useMoneriumOAuthApi } from '@/composables/api/settings/monerium-oauth';
+import { useSessionAuthStore } from '@/store/session/auth';
 import { logger } from '@/utils/logging';
 
 interface UseMoneriumOAuthReturn {
@@ -17,18 +17,36 @@ interface UseMoneriumOAuthReturn {
   status: Ref<MoneriumStatus | undefined>;
 }
 
-export function useMoneriumOAuth(): UseMoneriumOAuthReturn {
-  const status = ref<MoneriumStatus>();
+export const useMoneriumOAuth = createSharedComposable((): UseMoneriumOAuthReturn => {
   const loading = ref<boolean>(false);
   const api = useMoneriumOAuthApi();
+
+  const { logged } = storeToRefs(useSessionAuthStore());
+
+  const status: Ref<MoneriumStatus | undefined> = asyncComputed<MoneriumStatus | undefined>(
+    async () => {
+      if (get(logged)) {
+        try {
+          return await api.getStatus();
+        }
+        catch (error) {
+          logger.error('Failed to fetch Monerium status', error);
+          return { authenticated: false };
+        }
+      }
+
+      return undefined;
+    },
+    undefined,
+    { evaluating: loading },
+  );
 
   const authenticated = computed<boolean>(() => !!get(status)?.authenticated);
 
   async function refreshStatus(): Promise<void> {
     set(loading, true);
     try {
-      const result = await api.getStatus();
-      set(status, result);
+      set(status, await api.getStatus());
     }
     catch (error) {
       logger.error('Failed to fetch Monerium status', error);
@@ -94,4 +112,4 @@ export function useMoneriumOAuth(): UseMoneriumOAuthReturn {
     setStatus,
     status,
   };
-}
+});
