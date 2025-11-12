@@ -43,7 +43,7 @@ const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm, isSolanaChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
-const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
+const { apiKey } = useExternalApiKeys(t);
 
 const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
 
@@ -152,10 +152,6 @@ watch(inputMode, (mode) => {
       chain: selectedChain,
     });
   }
-});
-
-onBeforeMount(async () => {
-  await loadApiKeys();
 });
 
 defineExpose({
