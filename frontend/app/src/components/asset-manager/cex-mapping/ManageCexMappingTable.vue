@@ -4,7 +4,6 @@ import type { CexMapping } from '@/types/asset';
 import type { Collection } from '@/types/collection';
 import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -47,13 +46,6 @@ const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
   key: 'actions',
   label: t('common.actions_text'),
 }]);
-
-function setPage(page: number) {
-  set(paginationModel, {
-    ...get(paginationModel),
-    page,
-  });
-}
 </script>
 
 <template>
@@ -67,55 +59,48 @@ function setPage(page: number) {
         v-model:symbol="symbol"
       />
     </div>
-    <CollectionHandler
-      :collection="collection"
-      @set-page="setPage($event)"
+    <RuiDataTable
+      v-model:pagination.external="paginationModel"
+      :rows="collection.data"
+      dense
+      striped
+      :loading="loading"
+      :cols="cols"
+      :sticky-offset="64"
+      row-attr="location"
+      outlined
     >
-      <template #default="{ data }">
-        <RuiDataTable
-          v-model:pagination.external="paginationModel"
-          :rows="data"
-          dense
-          striped
-          :loading="loading"
-          :cols="cols"
-          :sticky-offset="64"
-          row-attr="location"
-          outlined
+      <template #item.location="{ row }">
+        <div
+          v-if="!row.location"
+          class="flex flex-col gap-1 items-center"
         >
-          <template #item.location="{ row }">
-            <div
-              v-if="!row.location"
-              class="flex flex-col gap-1 items-center"
-            >
-              <div class="icon-bg">
-                <RuiIcon
-                  name="lu-building-2"
-                  color="secondary"
-                />
-              </div>
-              <div class="text-rui-text-secondary whitespace-nowrap">
-                {{ t('asset_management.cex_mapping.all_exchanges') }}
-              </div>
-            </div>
-            <LocationDisplay
-              v-else
-              :identifier="row.location"
+          <div class="icon-bg">
+            <RuiIcon
+              name="lu-building-2"
+              color="secondary"
             />
-          </template>
-          <template #item.asset="{ row }">
-            <AssetDetails :asset="row.asset" />
-          </template>
-          <template #item.actions="{ row }">
-            <RowActions
-              :edit-tooltip="t('asset_table.edit_tooltip')"
-              :delete-tooltip="t('asset_table.delete_tooltip')"
-              @edit-click="emit('edit', row)"
-              @delete-click="emit('delete', row)"
-            />
-          </template>
-        </RuiDataTable>
+          </div>
+          <div class="text-rui-text-secondary whitespace-nowrap">
+            {{ t('asset_management.cex_mapping.all_exchanges') }}
+          </div>
+        </div>
+        <LocationDisplay
+          v-else
+          :identifier="row.location"
+        />
       </template>
-    </CollectionHandler>
+      <template #item.asset="{ row }">
+        <AssetDetails :asset="row.asset" />
+      </template>
+      <template #item.actions="{ row }">
+        <RowActions
+          :edit-tooltip="t('asset_table.edit_tooltip')"
+          :delete-tooltip="t('asset_table.delete_tooltip')"
+          @edit-click="emit('edit', row)"
+          @delete-click="emit('delete', row)"
+        />
+      </template>
+    </RuiDataTable>
   </div>
 </template>

@@ -3,7 +3,6 @@ import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { CounterpartyMapping } from '@/modules/asset-manager/counterparty-mapping/schema';
 import type { Collection } from '@/types/collection';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
@@ -47,13 +46,6 @@ const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
   key: 'actions',
   label: t('common.actions_text'),
 }]);
-
-function setPage(page: number) {
-  set(paginationModel, {
-    ...get(paginationModel),
-    page,
-  });
-}
 </script>
 
 <template>
@@ -67,41 +59,34 @@ function setPage(page: number) {
         v-model:symbol="symbol"
       />
     </div>
-    <CollectionHandler
-      :collection="collection"
-      @set-page="setPage($event)"
+    <RuiDataTable
+      v-model:pagination.external="paginationModel"
+      :rows="collection.data"
+      dense
+      striped
+      :loading="loading"
+      :cols="cols"
+      :sticky-offset="64"
+      row-attr="counterparty"
+      outlined
     >
-      <template #default="{ data }">
-        <RuiDataTable
-          v-model:pagination.external="paginationModel"
-          :rows="data"
-          dense
-          striped
-          :loading="loading"
-          :cols="cols"
-          :sticky-offset="64"
-          row-attr="counterparty"
-          outlined
-        >
-          <template #item.counterparty="{ row }">
-            <CounterpartyDisplay
-              class="justify-center"
-              :counterparty="row.counterparty"
-            />
-          </template>
-          <template #item.asset="{ row }">
-            <AssetDetails :asset="row.asset" />
-          </template>
-          <template #item.actions="{ row }">
-            <RowActions
-              :edit-tooltip="t('asset_table.edit_tooltip')"
-              :delete-tooltip="t('asset_table.delete_tooltip')"
-              @edit-click="emit('edit', row)"
-              @delete-click="emit('delete', row)"
-            />
-          </template>
-        </RuiDataTable>
+      <template #item.counterparty="{ row }">
+        <CounterpartyDisplay
+          class="justify-center"
+          :counterparty="row.counterparty"
+        />
       </template>
-    </CollectionHandler>
+      <template #item.asset="{ row }">
+        <AssetDetails :asset="row.asset" />
+      </template>
+      <template #item.actions="{ row }">
+        <RowActions
+          :edit-tooltip="t('asset_table.edit_tooltip')"
+          :delete-tooltip="t('asset_table.delete_tooltip')"
+          @edit-click="emit('edit', row)"
+          @delete-click="emit('delete', row)"
+        />
+      </template>
+    </RuiDataTable>
   </div>
 </template>
