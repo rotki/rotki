@@ -31,7 +31,7 @@ from rotkehlchen.constants.misc import (
     GLOBALDIR_NAME,
     NFT_DIRECTIVE,
 )
-from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
@@ -341,15 +341,18 @@ class GlobalDBHandler:
                         'started': entry[6],
                     })
                 elif asset_type == AssetType.EVM_TOKEN:
-                    data.update({
+                    evm_data = {
                         'address': entry[2],
                         'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
-                        'token_kind': TokenKind.deserialize_evm_from_db(entry[13]).serialize(),
+                        'token_kind': (token_kind := TokenKind.deserialize_evm_from_db(entry[13])).serialize(),  # noqa: E501
                         'decimals': entry[3],
                         'underlying_tokens': None,
                         'protocol': entry[11],
-                    })
-                    data.update(common_data)
+                    } | common_data
+                    if token_kind == TokenKind.ERC721:
+                        evm_data['collectible_id'] = tokenid_to_collectible_id(entry[0])
+
+                    data.update(evm_data)
                 elif asset_type == AssetType.SOLANA_TOKEN:
                     data.update({
                         'protocol': entry[11],

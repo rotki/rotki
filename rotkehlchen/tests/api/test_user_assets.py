@@ -1138,6 +1138,18 @@ def test_add_edit_erc721_token(rotkehlchen_api_server: APIServer) -> None:
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # ERC721 token without collectible_id should be rejected
+    erc721_without_collectible_id = valid_erc721_token_data.copy()
+    del erc721_without_collectible_id['collectible_id']
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json=erc721_without_collectible_id,
+        ),
+        contained_in_msg='collectible_id is required for ERC721 tokens',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
     # Test adding ERC721 token with collectible ID
     result = assert_proper_sync_response_with_result(requests.put(
         api_url_for(rotkehlchen_api_server, 'allassetsresource'),

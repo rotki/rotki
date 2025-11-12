@@ -251,10 +251,10 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
                     f'is {weight_sum * 100} and does not add up to 100%',
                 )
 
-        if (collectible_id := data['collectible_id']) is not None:
-            if data['token_kind'] != TokenKind.ERC721:
+        if data['token_kind'] == TokenKind.ERC721:
+            if (collectible_id := data['collectible_id']) is None:
                 raise ValidationError(
-                    message='collectible_id can only be specified for ERC721 tokens',
+                    message='collectible_id is required for ERC721 tokens',
                     field_name='collectible_id',
                 )
             if not collectible_id.isdigit():
@@ -262,6 +262,11 @@ class EvmTokenSchema(TokenWithDecimalAndProtocolSchema):
                     message='collectible_id must be a valid positive integer',
                     field_name='collectible_id',
                 )
+        elif data['collectible_id'] is not None:
+            raise ValidationError(
+                message='collectible_id can only be specified for ERC721 tokens',
+                field_name='collectible_id',
+            )
 
     @post_load
     def transform_data(

@@ -3539,6 +3539,17 @@ Querying all supported assets
                   "cryptocompare":"VET",
                   "coingecko":"vet",
                   "protocol":"None"
+              },
+              {
+                  "identifier": "eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1234",
+                  "evm_address": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+                  "evm_chain":"ethereum",
+                  "token_kind":"erc721",
+                  "name": "Bored Ape Yacht Club #1234",
+                  "symbol": "BAYC",
+                  "asset_type": "evm token",
+                  "collectible_id": "1234",
+                  "protocol":"None"
               }
           ],
           "message": ""
@@ -3558,6 +3569,7 @@ Querying all supported assets
    :resjson string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known. If missing a query by symbol is attempted.
    :resjson string coingecko: The coingecko identifier for the asset. can be missing if not known.
    :resjson string protocol: An optional string for evm tokens denoting the protocol they belong to. For example uniswap, for uniswap LP tokens.
+   :resjson string collectible_id: Only present for ERC721 tokens. The token ID of the NFT.
    :resjson object underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage(value in the range of 0 to 100) that each token contributes to the pool.
    :resjson string notes: If the type is ``custom_asset`` this is a string field with notes added by the user.
    :resjson string custom_asset_type: If the type is ``custom_asset`` this field contains the custom type set by the user for the asset.
