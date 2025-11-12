@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 import { useUserNotesApi } from '@/composables/api/session/user-notes';
@@ -58,6 +57,8 @@ const {
   }],
   extraParams,
 });
+
+const { data, limit } = getCollectionData(notes);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -224,158 +225,302 @@ watch(shouldIncreasePage, (increasePage) => {
     ref="wrapper"
     class="px-4 pb-4 note__wrapper"
   >
-    <CollectionHandler :collection="notes">
-      <template #default="{ data, limit }">
-        <RuiAlert
-          v-if="showUpgradeRow"
-          type="warning"
-          class="mb-4"
+    <RuiAlert
+      v-if="showUpgradeRow"
+      type="warning"
+      class="mb-4"
+    >
+      <i18n-t
+        scope="global"
+        keypath="notes_menu.limit_warning"
+        tag="span"
+      >
+        <template #limit>
+          {{ limit }}
+        </template>
+        <template #link>
+          <ExternalLink
+            :text="t('upgrade_row.rotki_premium')"
+            color="warning"
+            premium
+          />
+        </template>
+      </i18n-t>
+    </RuiAlert>
+
+    <div v-if="data.length > 0">
+      <div class="flex flex-col gap-3">
+        <template
+          v-for="note in data"
+          :key="note.identifier"
         >
-          <i18n-t
-            scope="global"
-            keypath="notes_menu.limit_warning"
-            tag="span"
+          <RuiCard
+            dense
+            class="note__item"
+            :class="{
+              'note__item--deleting': animateDelete && idToDelete === note.identifier,
+            }"
           >
-            <template #limit>
-              {{ limit }}
-            </template>
-            <template #link>
-              <ExternalLink
-                :text="t('upgrade_row.rotki_premium')"
-                color="warning"
-                premium
-              />
-            </template>
-          </i18n-t>
-        </RuiAlert>
-
-        <div v-if="data.length > 0">
-          <div class="flex flex-col gap-3">
-            <template
-              v-for="note in data"
-              :key="note.identifier"
-            >
-              <RuiCard
-                dense
-                class="note__item"
-                :class="{
-                  'note__item--deleting': animateDelete && idToDelete === note.identifier,
-                }"
+            <div class="flex justify-between items-center">
+              <div class="font-bold note__title">
+                {{ note.title }}
+              </div>
+              <RuiButton
+                class="!p-2"
+                variant="text"
+                icon
+                @click="togglePin(note)"
               >
-                <div class="flex justify-between items-center">
-                  <div class="font-bold note__title">
-                    {{ note.title }}
-                  </div>
-                  <RuiButton
-                    class="!p-2"
-                    variant="text"
-                    icon
-                    @click="togglePin(note)"
-                  >
-                    <RuiIcon
-                      v-if="note.isPinned"
-                      color="primary"
-                      size="20"
-                      name="lu-pin"
-                      class="[&_path]:fill-rui-primary"
-                    />
-                    <RuiIcon
-                      v-else
-                      size="20"
-                      name="lu-pin"
-                    />
-                  </RuiButton>
-                </div>
-
-                <div class="text-rui-text-secondary note__content">
-                  {{ note.content }}
-                </div>
-
-                <div
-                  v-if="showDeleteConfirmation && idToDelete === note.identifier"
-                  class="flex justify-between items-center pt-2"
-                >
-                  <div class="note__content font-italic flex-1">
-                    {{ t('notes_menu.delete_confirmation') }}
-                  </div>
-                  <RuiButton
-                    variant="text"
-                    icon
-                    size="sm"
-                    color="error"
-                    @click="clearDeleteDialog()"
-                  >
-                    <RuiIcon
-                      size="16"
-                      color="error"
-                      name="lu-x"
-                    />
-                  </RuiButton>
-
-                  <RuiButton
-                    variant="text"
-                    icon
-                    size="sm"
-                    @click="confirmDelete()"
-                  >
-                    <RuiIcon
-                      size="16"
-                      color="success"
-                      name="lu-check"
-                    />
-                  </RuiButton>
-                </div>
-                <div
+                <RuiIcon
+                  v-if="note.isPinned"
+                  color="primary"
+                  size="20"
+                  name="lu-pin"
+                  class="[&_path]:fill-rui-primary"
+                />
+                <RuiIcon
                   v-else
-                  class="flex justify-between items-center pt-2"
+                  size="20"
+                  name="lu-pin"
+                />
+              </RuiButton>
+            </div>
+
+            <div class="text-rui-text-secondary note__content">
+              {{ note.content }}
+            </div>
+
+            <div
+              v-if="showDeleteConfirmation && idToDelete === note.identifier"
+              class="flex justify-between items-center pt-2"
+            >
+              <div class="note__content font-italic flex-1">
+                {{ t('notes_menu.delete_confirmation') }}
+              </div>
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+                color="error"
+                @click="clearDeleteDialog()"
+              >
+                <RuiIcon
+                  size="16"
+                  color="error"
+                  name="lu-x"
+                />
+              </RuiButton>
+
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+                @click="confirmDelete()"
+              >
+                <RuiIcon
+                  size="16"
+                  color="success"
+                  name="lu-check"
+                />
+              </RuiButton>
+            </div>
+            <div
+              v-else
+              class="flex justify-between items-center pt-2"
+            >
+              <i18n-t
+                scope="global"
+                keypath="notes_menu.last_updated"
+                class="note__datetime text-rui-text-secondary font-italic flex-1"
+                tag="span"
+              >
+                <template #datetime>
+                  <DateDisplay :timestamp="note.lastUpdateTimestamp" />
+                </template>
+              </i18n-t>
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+                @click="editNote(note)"
+              >
+                <RuiIcon
+                  size="16"
+                  name="lu-pencil"
+                />
+              </RuiButton>
+
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+                @click="deleteNote(note.identifier)"
+              >
+                <RuiIcon
+                  size="16"
+                  name="lu-trash-2"
+                />
+              </RuiButton>
+              <RuiAlert
+                v-if="showUpgradeRow"
+                type="warning"
+                class="mb-4"
+              >
+                <i18n-t
+                  scope="global"
+                  keypath="notes_menu.limit_warning"
+                  tag="span"
                 >
-                  <i18n-t
-                    scope="global"
-                    keypath="notes_menu.last_updated"
-                    class="note__datetime text-rui-text-secondary font-italic flex-1"
-                    tag="span"
-                  >
-                    <template #datetime>
-                      <DateDisplay :timestamp="note.lastUpdateTimestamp" />
-                    </template>
-                  </i18n-t>
-                  <RuiButton
-                    variant="text"
-                    icon
-                    size="sm"
-                    @click="editNote(note)"
-                  >
-                    <RuiIcon
-                      size="16"
-                      name="lu-pencil"
+                  <template #limit>
+                    {{ limit }}
+                  </template>
+                  <template #link>
+                    <ExternalLink
+                      :text="t('upgrade_row.rotki_premium')"
+                      color="warning"
+                      premium
                     />
-                  </RuiButton>
+                  </template>
+                </i18n-t>
+              </RuiAlert>
 
-                  <RuiButton
-                    variant="text"
-                    icon
-                    size="sm"
-                    @click="deleteNote(note.identifier)"
+              <div v-if="data.length > 0">
+                <div class="flex flex-col gap-3">
+                  <template
+                    v-for="note in data"
+                    :key="note.identifier"
                   >
-                    <RuiIcon
-                      size="16"
-                      name="lu-trash-2"
-                    />
-                  </RuiButton>
+                    <RuiCard
+                      dense
+                      class="note__item"
+                      :class="{
+                        'note__item--deleting': animateDelete && idToDelete === note.identifier,
+                      }"
+                    >
+                      <div class="flex justify-between items-center">
+                        <div class="font-bold note__title">
+                          {{ note.title }}
+                        </div>
+                        <RuiButton
+                          class="!p-2"
+                          variant="text"
+                          icon
+                          @click="togglePin(note)"
+                        >
+                          <RuiIcon
+                            v-if="note.isPinned"
+                            color="primary"
+                            size="20"
+                            name="lu-pin"
+                            class="[&_path]:fill-rui-primary"
+                          />
+                          <RuiIcon
+                            v-else
+                            size="20"
+                            name="lu-pin"
+                          />
+                        </RuiButton>
+                      </div>
+
+                      <div class="text-rui-text-secondary note__content">
+                        {{ note.content }}
+                      </div>
+
+                      <div
+                        v-if="showDeleteConfirmation && idToDelete === note.identifier"
+                        class="flex justify-between items-center pt-2"
+                      >
+                        <div class="note__content font-italic flex-1">
+                          {{ t('notes_menu.delete_confirmation') }}
+                        </div>
+                        <RuiButton
+                          variant="text"
+                          icon
+                          size="sm"
+                          color="error"
+                          @click="clearDeleteDialog()"
+                        >
+                          <RuiIcon
+                            size="16"
+                            color="error"
+                            name="lu-x"
+                          />
+                        </RuiButton>
+
+                        <RuiButton
+                          variant="text"
+                          icon
+                          size="sm"
+                          @click="confirmDelete()"
+                        >
+                          <RuiIcon
+                            size="16"
+                            color="success"
+                            name="lu-check"
+                          />
+                        </RuiButton>
+                      </div>
+                      <div
+                        v-else
+                        class="flex justify-between items-center pt-2"
+                      >
+                        <i18n-t
+                          scope="global"
+                          keypath="notes_menu.last_updated"
+                          class="note__datetime text-rui-text-secondary font-italic flex-1"
+                          tag="span"
+                        >
+                          <template #datetime>
+                            <DateDisplay :timestamp="note.lastUpdateTimestamp" />
+                          </template>
+                        </i18n-t>
+                        <RuiButton
+                          variant="text"
+                          icon
+                          size="sm"
+                          @click="editNote(note)"
+                        >
+                          <RuiIcon
+                            size="16"
+                            name="lu-pencil"
+                          />
+                        </RuiButton>
+
+                        <RuiButton
+                          variant="text"
+                          icon
+                          size="sm"
+                          @click="deleteNote(note.identifier)"
+                        >
+                          <RuiIcon
+                            size="16"
+                            name="lu-trash-2"
+                          />
+                        </RuiButton>
+                      </div>
+                    </RuiCard>
+                  </template>
                 </div>
-              </RuiCard>
-            </template>
-          </div>
-        </div>
+              </div>
 
-        <div
-          v-else
-          class="note__empty text-rui-text"
-        >
-          {{ t('notes_menu.empty_notes') }}
-        </div>
-      </template>
-    </CollectionHandler>
+              <div
+                v-else
+                class="note__empty text-rui-text"
+              >
+                {{ t('notes_menu.empty_notes') }}
+              </div>
+            </div>
+          </RuiCard>
+        </template>
+      </div>
+    </div>
+
+    <div
+      v-else
+      class="note__empty text-rui-text"
+    >
+      {{ t('notes_menu.empty_notes') }}
+    </div>
   </div>
 
   <UserNotesFormDialog
