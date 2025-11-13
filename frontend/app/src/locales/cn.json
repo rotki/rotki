@@ -3372,8 +3372,11 @@
   },
   "upgrade_row": {
     "events": "从 {from} 到 {to} 处理了 {limit} out of {total} {label}。要查看更多请升级到 {link}",
+    "events_premium": "从 {from} 到 {to} 处理了 {limit} out of {total} {label}。要查看更多请 {link}",
     "rotki_premium": "rotki 高级版",
-    "upgrade": "显示 {limit} out of {total} {label}。要查看更多，请升级到 {link}"
+    "upgrade": "显示 {limit} out of {total} {label}。要查看更多，请升级到 {link}",
+    "upgrade_premium": "显示 {limit} out of {total} {label}。要查看更多请 {link}",
+    "upgrade_your_plan": "升级您的计划"
   },
   "user_dropdown": {
     "change_privacy_mode": {

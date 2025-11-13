@@ -3768,8 +3768,11 @@
   },
   "upgrade_row": {
     "events": "Traitement de {limit} sur {total} {label} à partir de {from} jusqu'à {to}. Pour en afficher plus, merci de passer à {link}",
+    "events_premium": "Traitement de {limit} sur {total} {label} à partir de {from} jusqu'à {to}. Pour en afficher plus, merci de {link}",
     "rotki_premium": "rotki Premium",
-    "upgrade": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de passer à {link}"
+    "upgrade": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de passer à {link}",
+    "upgrade_premium": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de {link}",
+    "upgrade_your_plan": "améliorer votre plan"
   },
   "user_dropdown": {
     "change_privacy_mode": {

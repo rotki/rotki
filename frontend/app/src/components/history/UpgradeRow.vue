@@ -1,29 +1,60 @@
 <script setup lang="ts">
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import { usePremium } from '@/composables/premium';
 
-withDefaults(
-  defineProps<{
-    colspan: number;
-    label: string;
-    total: number;
-    limit: number;
-    events?: boolean;
-    timeStart?: number;
-    timeEnd?: number;
-    found?: number;
-    entriesFoundTotal?: number;
-  }>(),
-  {
-    entriesFoundTotal: undefined,
-    events: false,
-    found: undefined,
-    timeEnd: 0,
-    timeStart: 0,
-  },
-);
+const props = withDefaults(defineProps<{
+  colspan: number;
+  label: string;
+  total: number;
+  limit: number;
+  events?: boolean;
+  timeStart?: number;
+  timeEnd?: number;
+  found?: number;
+  entriesFoundTotal?: number;
+}>(), {
+  entriesFoundTotal: undefined,
+  events: false,
+  found: undefined,
+  timeEnd: 0,
+  timeStart: 0,
+});
 
 const { t } = useI18n({ useScope: 'global' });
+
+const premium = usePremium();
+
+// Linter hints: Ensure all keys are detectable by calling t() with explicit strings
+if (false as boolean) {
+  t('upgrade_row.events');
+  t('upgrade_row.events_premium');
+  t('upgrade_row.upgrade');
+  t('upgrade_row.upgrade_premium');
+}
+
+const messageKey = computed<string>(() => {
+  const isPremium = get(premium);
+  if (props.events)
+    return isPremium ? 'upgrade_row.events_premium' : 'upgrade_row.events';
+
+  return isPremium ? 'upgrade_row.upgrade_premium' : 'upgrade_row.upgrade';
+});
+
+const linkText = computed<string>(() => {
+  const isPremium = get(premium);
+  return isPremium
+    ? t('upgrade_row.upgrade_your_plan')
+    : t('upgrade_row.rotki_premium');
+});
+
+const linkUrl = computed<string | undefined>(() => {
+  const isPremium = get(premium);
+  return isPremium ? 'https://rotki.com/home/subscription' : undefined;
+});
+
+const displayTotal = computed<number>(() => props.entriesFoundTotal ?? props.total);
+const displayLimit = computed<number>(() => props.found ?? props.limit);
 </script>
 
 <template>
@@ -33,62 +64,44 @@ const { t } = useI18n({ useScope: 'global' });
       class="font-medium py-2"
     >
       <i18n-t
-        v-if="events"
         scope="global"
-        keypath="upgrade_row.events"
+        :keypath="messageKey"
         tag="div"
         class="md:text-center"
       >
         <template #total>
-          {{ total }}
+          {{ displayTotal }}
         </template>
         <template #limit>
-          {{ limit }}
+          {{ displayLimit }}
         </template>
         <template #label>
           {{ label }}
         </template>
         <template #link>
           <ExternalLink
-            :text="t('upgrade_row.rotki_premium')"
+            :text="linkText"
+            :url="linkUrl"
             premium
             color="primary"
           />
         </template>
-        <template #from>
+        <template
+          v-if="events"
+          #from
+        >
           <DateDisplay
             class="mx-1"
-            :timestamp="timeStart"
+            :timestamp="timeStart || 0"
           />
         </template>
-        <template #to>
+        <template
+          v-if="events"
+          #to
+        >
           <DateDisplay
             class="ml-1"
-            :timestamp="timeEnd"
-          />
-        </template>
-      </i18n-t>
-      <i18n-t
-        v-else
-        scope="global"
-        tag="div"
-        keypath="upgrade_row.upgrade"
-        class="md:text-center"
-      >
-        <template #total>
-          {{ entriesFoundTotal ? entriesFoundTotal : total }}
-        </template>
-        <template #limit>
-          {{ found !== undefined ? found : limit }}
-        </template>
-        <template #label>
-          {{ label }}
-        </template>
-        <template #link>
-          <ExternalLink
-            :text="t('upgrade_row.rotki_premium')"
-            premium
-            color="primary"
+            :timestamp="timeEnd || 0"
           />
         </template>
       </i18n-t>
