@@ -111,7 +111,7 @@ def test_delete_download_backup_errors(
 ) -> None:
     """Test that errors are handled properly in backup deletion and download"""
     user_data_dir = Path(data_dir, username)
-    # Make sure deleting file outside  of user data dir fails
+    # Make sure deleting file outside of user data dir fails
     undeletable_file = Path(data_dir / 'notdeletablefile')
     undeletable_file.touch()
     assert undeletable_file.exists()

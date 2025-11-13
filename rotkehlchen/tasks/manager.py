@@ -273,7 +273,7 @@ class TaskManager:
             return None
 
         now_ts = ts_now()
-        # Make sure there is a long enough period  between an asset's histohour query
+        # Make sure there is a long enough period between an asset's histohour query
         # to avoid getting rate limited by cryptocompare
         if now_ts - self.cryptocompare.last_histohour_query_ts <= CRYPTOCOMPARE_HISTOHOUR_FREQUENCY:  # noqa: E501
             return None
