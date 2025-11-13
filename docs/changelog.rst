@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :release:`1.41.1 <2025-11-13>`
+* :release:`1.41.1 <2025-11-14>`
 * :bug: `-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.
 * :feature:`10734` Users will now be able to specify the collectible ID of an ERC721 token in the asset manager.
 * :bug:`10901` Users will now be able to change the log level without restarting the app, in the "Settings > General" menu.
