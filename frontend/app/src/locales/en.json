@@ -4148,7 +4148,8 @@
     },
     "error": {
       "removing_failed": "Deleting the keys was not successful",
-      "setting_failed": "Setting the keys was not successful"
+      "setting_failed": "Setting the keys was not successful",
+      "setup_failed_description": "Failed to setup your rotki Premium subscription, reason: {error}"
     },
     "fields": {
       "api_key": "API Key",
