@@ -196,7 +196,7 @@ def combine_nested_dicts_inplace(
             if inner_key in inner_dict_a:
                 inner_dict_a[inner_key] = op(inner_dict_a[inner_key], value_b)
             elif op is operator.sub:
-                inner_dict_a[inner_key] = op(inner_dict_a.default_factory(), value_b)  # type: ignore[misc]
+                inner_dict_a[inner_key] = op(inner_dict_b.default_factory(), value_b)  # type: ignore[misc]
             else:
                 inner_dict_a[inner_key] = value_b
     return a
