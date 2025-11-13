@@ -8,6 +8,7 @@ import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.
 import { useInterop } from '@/composables/electron-interop';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { toMessages } from '@/utils/validation';
@@ -16,21 +17,23 @@ defineOptions({
   name: 'PremiumApiKeys',
 });
 
-const { username } = storeToRefs(useSessionAuthStore());
-const store = usePremiumStore();
-const { premium } = storeToRefs(store);
-const { deletePremium, setup } = store;
-
 const { t } = useI18n({ useScope: 'global' });
-
-const { premiumUserLoggedIn } = useInterop();
 
 const apiKey = ref<string>('');
 const apiSecret = ref<string>('');
 const edit = ref<boolean>(true);
-const $externalResults = ref<Record<string, string[]>>({});
+const error = ref<string>();
 
-const mainActionText = computed(() => {
+const { username } = storeToRefs(useSessionAuthStore());
+const store = usePremiumStore();
+const { premium } = storeToRefs(store);
+const { deletePremium, setup } = store;
+const { show } = useConfirmStore();
+const { setMessage } = useMessageStore();
+
+const { premiumUserLoggedIn } = useInterop();
+
+const mainActionText = computed<string>(() => {
   if (!get(premium))
     return t('premium_settings.actions.setup');
   else if (!get(edit))
@@ -50,7 +53,7 @@ const v$ = useVuelidate(
     apiKey,
     apiSecret,
   },
-  { $autoDirty: true, $externalResults },
+  { $autoDirty: true },
 );
 
 function cancelEdit() {
@@ -73,7 +76,7 @@ async function setupPremium() {
     return;
   }
 
-  set($externalResults, {});
+  set(error, undefined);
   if (!(await get(v$).$validate()))
     return;
 
@@ -84,16 +87,7 @@ async function setupPremium() {
   });
 
   if (!result.success) {
-    if (typeof result.message === 'string') {
-      set($externalResults, {
-        ...get($externalResults),
-        apiKey: [result.message ?? t('premium_settings.error.setting_failed')],
-      });
-    }
-    else {
-      set($externalResults, result.message);
-    }
-
+    set(error, result.message ?? t('premium_settings.error.setting_failed'));
     return;
   }
   premiumUserLoggedIn(true);
@@ -106,21 +100,12 @@ async function remove() {
 
   const result = await deletePremium();
   if (!result.success) {
-    set($externalResults, {
-      ...get($externalResults),
-      apiKey: [result.message ?? t('premium_settings.error.removing_failed')],
-    });
+    set(error, result.message ?? t('premium_settings.error.removing_failed'));
     return;
   }
   premiumUserLoggedIn(false);
   reset();
 }
-
-onMounted(() => {
-  set(edit, !get(premium) && !get(edit));
-});
-
-const { show } = useConfirmStore();
 
 function showDeleteConfirmation() {
   show(
@@ -133,6 +118,21 @@ function showDeleteConfirmation() {
     remove,
   );
 }
+
+watch(error, (errorMessage) => {
+  if (!errorMessage)
+    return;
+
+  setMessage({
+    description: t('premium_settings.error.setup_failed_description', { error: errorMessage }),
+    success: false,
+    title: t('premium_settings.error.setting_failed'),
+  });
+});
+
+onMounted(() => {
+  set(edit, !get(premium) && !get(edit));
+});
 </script>
 
 <template>
