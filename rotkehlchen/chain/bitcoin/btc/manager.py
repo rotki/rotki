@@ -111,6 +111,7 @@ class BitcoinManager(BitcoinCommonManager):
             self,
             accounts: Sequence[BTCAddress],
     ) -> dict[BTCAddress, FVal]:
+        log.debug('Querying blockchain.info for accounts')
         balances: dict[BTCAddress, FVal] = {}
         for entry in self._query_blockchain_info(accounts):
             balances[entry['address']] = satoshis_to_btc(ensure_type(
