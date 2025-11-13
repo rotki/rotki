@@ -11,7 +11,11 @@ from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
+from rotkehlchen.errors.api import (
+    PremiumAuthenticationError,
+    PremiumPermissionError,
+    RotkehlchenPermissionError,
+)
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
@@ -325,7 +329,7 @@ class PremiumSyncManager(LockableQueryMixIn):
     def _abort_new_syncing_premium_user(
             self,
             username: str,
-            original_exception: PremiumAuthenticationError | RemoteError,
+            original_exception: PremiumAuthenticationError | PremiumPermissionError | RemoteError,
     ) -> None:
         """At this point we are at a new user trying to create an account with
         premium API keys and we failed. But a directory was created. Remove it.
@@ -369,7 +373,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                     msg_aggregator=self.data.msg_aggregator,
                     db=self.data.db,
                 )
-            except (PremiumAuthenticationError, RemoteError) as e:
+            except (PremiumAuthenticationError, PremiumPermissionError, RemoteError) as e:
                 self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
         # else, if we got premium data in the DB initialize it and try to sync with the server
