@@ -92,7 +92,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         This is the main post-processing function for rotki logs
 
         This function:
-        - appends all kwargs to the final message, redacting any sensitive information
+        - appends all kwargs to the final message, redacting sensitive keys inside a ``json_data`` payload
         - appends the greenlet id in the log message
         """
         msg, greenlet = str(given_msg), gevent.getcurrent()
