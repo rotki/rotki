@@ -1,7 +1,7 @@
 import re
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -19,6 +19,7 @@ from rotkehlchen.chain.bitcoin.utils import (
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS, SupportedBlockchain
+from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.errors.misc import RemoteError, XPUBError
 from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
@@ -563,3 +564,68 @@ def test_bitcoin_balance_api_resolver(
                 ),
             ):
                 bitcoin_manager.query_balances(addresses)
+
+
+def test_local_bitcoin_mempool_api(
+        network_mocking: bool,
+        bitcoin_manager: 'BitcoinManager',
+) -> None:
+    """Test that bitcoin balances are queried from local mempool instance"""
+    address_re = re.compile(r'.*/address/(.*)')
+    addresses = [
+        BTCAddress('3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5'),
+        BTCAddress('34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL'),
+        BTCAddress('3J7sT2fbDaF3XrjpWM5GsUyaDr7i7psi88'),
+        BTCAddress('36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB'),
+        BTCAddress('33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP'),
+    ]
+
+    def mock_blockstream_or_mempool_query(url, **kwargs):  # pylint: disable=unused-argument
+        match = address_re.search(url)
+        assert match
+        address = match.group(1)
+        contents = f"""{{
+        "address": "{address}",
+        "chain_stats": {{"funded_txo_count": 216, "funded_txo_sum": 255627050,
+        "spent_txo_count": 201, "spent_txo_sum": 253106719, "tx_count": 238
+        }},
+        "mempool_stats": {{
+        "funded_txo_count": 0, "funded_txo_sum": 0, "spent_txo_count": 0, "spent_txo_sum": 0,
+        "tx_count": 0}}}}"""
+        return MockResponse(200, contents)
+
+    blockstream_mempool_mock = patch(
+        'requests.get',
+        side_effect=mock_blockstream_or_mempool_query,
+    ) if network_mocking else nullcontext()
+
+    find_usd_price_mock = patch(
+        'rotkehlchen.inquirer.Inquirer.find_usd_price',
+        return_value=90_000,
+    ) if network_mocking else nullcontext()
+
+    local_mempool_data = WeightedNode.deserialize({
+        'active': True,  # type: ignore
+        'blockchain': SupportedBlockchain.BITCOIN,  # type: ignore
+        'endpoint': 'http://localhost:4080',
+        'node': 'local mempool',
+        'owned': True,  # type: ignore
+        'weight': 0,  # type: ignore
+        'identifier': 0,  # type: ignore
+    })
+    get_rpc_nodes_mock = patch(
+        'rotkehlchen.db.dbhandler.DBHandler.get_rpc_nodes',
+        return_value=[local_mempool_data],
+    )
+
+    # Test balances are returned properly if first source works
+    with blockstream_mempool_mock as mock_mempool:
+        with get_rpc_nodes_mock, find_usd_price_mock:
+            bitcoin_manager.query_balances(addresses)
+
+        expected_calls = [
+            call(url=f'http://localhost:4080/api/address/{address}', timeout=5)
+            for address in addresses
+        ]
+
+        mock_mempool.assert_has_calls(expected_calls)  # type: ignore

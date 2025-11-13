@@ -125,7 +125,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             only_active=True,
         )
         if custom_mempool_api:
-            log.debug('Querying custom API')
+            log.debug(f'Querying custom {self.blockchain} APIs')
             for api in custom_mempool_api:
                 if not api.node_info.owned:
                     raise InputError('Unowned Mempool instances are not supported')
