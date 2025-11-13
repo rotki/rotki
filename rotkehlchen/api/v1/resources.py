@@ -930,7 +930,7 @@ class DatabaseBackupsResource(BaseMethodView):
 
 class AllAssetsResource(BaseMethodView):
     """
-    Supports querying of all assets and modification of fiat assets / crypto assets / evm tokens.
+    Supports querying of all assets and modification of fiat assets / crypto assets / evm token.
     """
 
     delete_schema = StringIdentifierSchema()
