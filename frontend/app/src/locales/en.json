@@ -5198,8 +5198,11 @@
   },
   "upgrade_row": {
     "events": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please upgrade to {link}",
+    "events_premium": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please {link}",
     "rotki_premium": "rotki Premium",
-    "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}"
+    "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
+    "upgrade_premium": "Displaying {limit} out of {total} {label}. To view more please {link}",
+    "upgrade_your_plan": "upgrade your plan"
   },
   "user_dropdown": {
     "change_privacy_mode": {
