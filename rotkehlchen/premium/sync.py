@@ -341,9 +341,11 @@ class PremiumSyncManager(LockableQueryMixIn):
             user_data_dir,  # type: ignore
             self.data.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
         )
-        raise PremiumAuthenticationError(
-            f'Could not verify keys for the new account. {original_exception!s}',
-        ) from original_exception
+        msg = f'Could not verify keys for the new account. {original_exception!s}.'
+        if isinstance(original_exception, PremiumPermissionError):
+            msg += ' _DEVICE_LIMIT_LINK_'  # will be replaced with a link to docs in the frontend.
+
+        raise PremiumAuthenticationError(msg) from original_exception
 
     def try_premium_at_start(
             self,
