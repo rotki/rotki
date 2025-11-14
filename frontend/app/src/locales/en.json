@@ -1813,6 +1813,9 @@
         "valid_username": "A profile name must contain only alphanumeric characters and have no spaces"
       }
     },
+    "error": {
+      "device_limit_link": "Click {here} if you want to learn more about managing premium devices"
+    },
     "have_account": {
       "description": "Already have an account?",
       "log_in": "Unlock your account"
@@ -4147,6 +4150,9 @@
       "title": "Delete rotki premium keys?"
     },
     "error": {
+      "device_limit": {
+        "learn_more": "Learn more"
+      },
       "removing_failed": "Deleting the keys was not successful",
       "setting_failed": "Setting the keys was not successful",
       "setup_failed_description": "Failed to setup your rotki Premium subscription, reason: {error}"

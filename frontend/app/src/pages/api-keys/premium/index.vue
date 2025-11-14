@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
@@ -31,7 +32,7 @@ const { deletePremium, setup } = store;
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
 
-const { premiumUserLoggedIn } = useInterop();
+const { openUrl, premiumUserLoggedIn } = useInterop();
 
 const mainActionText = computed<string>(() => {
   if (!get(premium))
@@ -123,11 +124,31 @@ watch(error, (errorMessage) => {
   if (!errorMessage)
     return;
 
-  setMessage({
-    description: t('premium_settings.error.setup_failed_description', { error: errorMessage }),
-    success: false,
-    title: t('premium_settings.error.setting_failed'),
-  });
+  const DEVICE_LIMIT_PLACEHOLDER = '_DEVICE_LIMIT_LINK_';
+
+  if (errorMessage.includes(DEVICE_LIMIT_PLACEHOLDER)) {
+    const cleanedMessage = errorMessage.replace(DEVICE_LIMIT_PLACEHOLDER, '').trim();
+
+    show(
+      {
+        message: cleanedMessage,
+        primaryAction: t('premium_settings.error.device_limit.learn_more'),
+        secondaryAction: t('common.actions.dismiss'),
+        title: t('premium_settings.error.setting_failed'),
+        type: 'warning',
+      },
+      async () => {
+        await openUrl(externalLinks.premiumDevices);
+      },
+    );
+  }
+  else {
+    setMessage({
+      description: t('premium_settings.error.setup_failed_description', { error: errorMessage }),
+      success: false,
+      title: t('premium_settings.error.setting_failed'),
+    });
+  }
 });
 
 onMounted(() => {
