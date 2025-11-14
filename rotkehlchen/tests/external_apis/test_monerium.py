@@ -2,6 +2,7 @@ import json
 from http import HTTPStatus
 from unittest.mock import patch
 
+import gevent
 import pytest
 import requests
 
@@ -12,7 +13,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.externalapis.monerium import init_monerium
+from rotkehlchen.externalapis.monerium import MoneriumOAuthClient, init_monerium
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -270,3 +271,45 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
         )
 
     assert events[0].notes == 'Send 2353.57 EURe via bank transfer to Yabir Benchakhtir (ESXX KKKK OOOO IIII KKKK LLLL) with memo "Venta inversion"'  # noqa: E501
+
+
+def test_concurrent_refresh_is_serialized(database, monerium_credentials):
+    """Ensure concurrent Monerium queries do not refresh the token twice."""
+    with database.conn.read_ctx() as cursor:
+        cached_value = database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+        )
+    assert cached_value is not None
+    credentials = json.loads(cached_value)
+    credentials['expires_at'] = ts_now() - 10  # force refresh path
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+            value=json.dumps(credentials),
+        )
+
+    client = MoneriumOAuthClient(database=database, session=requests.Session())
+    refresh_calls: list[int] = []
+
+    def fake_refresh(self):
+        refresh_calls.append(ts_now())
+        gevent.sleep(0.1)  # give time for the second greenlet to reach the lock
+        assert self._credentials is not None
+        self._credentials.expires_at = ts_now() + 3600
+
+    with patch.object(
+        MoneriumOAuthClient,
+        '_refresh_access_token',
+        autospec=True,
+        side_effect=fake_refresh,
+    ):
+        first = gevent.spawn(client.ensure_access_token)
+        gevent.sleep(0)
+        second = gevent.spawn(client.ensure_access_token)
+        gevent.joinall([first, second])
+
+    assert len(refresh_calls) == 1
+    assert client._credentials is not None
+    assert client._credentials.expires_at > ts_now()
