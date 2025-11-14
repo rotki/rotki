@@ -183,6 +183,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   };
 
   const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
+    const notifyUser = (error: string): void => notify({
+      display: true,
+      message: t('actions.transactions_redecode.error.description', {
+        error,
+      }),
+      title: t('actions.transactions_redecode.error.title'),
+    });
+
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
       const { taskId } = await pullAndRecodeTransactionRequest(payload);
@@ -205,22 +213,22 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         };
       }
 
-      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
+      const { message, result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
 
-      if (result)
+      if (result) {
         clearDependedSection();
+      }
+      else {
+        notifyUser(message ?? '');
+      }
     }
     catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.transactions_redecode.error.description', {
-            error,
-          }),
-          title: t('actions.transactions_redecode.error.title'),
-        });
+      if (isTaskCancelled(error)) {
+        return;
       }
+
+      logger.error(error);
+      notifyUser(error);
     }
   };
 
