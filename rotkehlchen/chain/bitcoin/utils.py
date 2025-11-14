@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import platform
 from collections.abc import Sequence
 from enum import Enum, auto
@@ -10,10 +11,14 @@ from bip_utils import P2TRAddrEncoder, P2WPKHAddrEncoder
 
 from rotkehlchen.errors.serialization import EncodingError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import ensure_type
 from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.misc import satoshis_to_btc
 from rotkehlchen.utils.network import request_get_dict
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 BIP32_HARDEN: int = 0x80000000
 
@@ -259,6 +264,7 @@ def query_blockstream_like_balances(
         accounts: Sequence[BTCAddress],
 ) -> dict[BTCAddress, FVal]:
     """Query balances from APIs similar to blockstream.info"""
+    log.debug(f'Querying f{base_url} for balances')
     balances = {}
     for account in accounts:
         balance, _ = query_blockstream_like_account_info(base_url, account)
