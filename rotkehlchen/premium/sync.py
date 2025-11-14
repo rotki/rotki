@@ -326,6 +326,15 @@ class PremiumSyncManager(LockableQueryMixIn):
             log.info('User approved data sync from server')
             self._sync_data_from_server_and_replace_local(perform_migrations)  # may raise due to password  # noqa: E501
 
+    @staticmethod
+    def maybe_add_device_limit_link(exception: Exception, msg: str) -> str:
+        """Adds a placeholder to the error message to be replaced with a link to the docs in
+        the frontend if the exception is a PremiumPermissionError."""
+        if isinstance(exception, PremiumPermissionError):
+            msg += ' _DEVICE_LIMIT_LINK_'
+
+        return msg
+
     def _abort_new_syncing_premium_user(
             self,
             username: str,
@@ -341,11 +350,10 @@ class PremiumSyncManager(LockableQueryMixIn):
             user_data_dir,  # type: ignore
             self.data.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
         )
-        msg = f'Could not verify keys for the new account. {original_exception!s}.'
-        if isinstance(original_exception, PremiumPermissionError):
-            msg += ' _DEVICE_LIMIT_LINK_'  # will be replaced with a link to docs in the frontend.
-
-        raise PremiumAuthenticationError(msg) from original_exception
+        raise PremiumAuthenticationError(self.maybe_add_device_limit_link(
+            exception=original_exception,
+            msg=f'Could not verify keys for the new account. {original_exception!s}.',
+        )) from original_exception
 
     def try_premium_at_start(
             self,
@@ -390,7 +398,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                     msg_aggregator=self.data.msg_aggregator,
                     db=self.data.db,
                 )
-            except (PremiumAuthenticationError, RemoteError) as e:
+            except (PremiumAuthenticationError, PremiumPermissionError, RemoteError) as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
                     f'the API keys found in the Database. {e}'

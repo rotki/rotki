@@ -66,7 +66,7 @@ from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.db.utils import replace_tag_mappings, table_exists
-from rotkehlchen.errors.api import PremiumAuthenticationError
+from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     EthSyncError,
@@ -653,8 +653,11 @@ class Rotkehlchen:
                     msg_aggregator=self.msg_aggregator,
                     db=self.data.db,
                 )
-            except RemoteError as e:
-                raise PremiumAuthenticationError(str(e)) from e
+            except (PremiumPermissionError, RemoteError) as e:
+                raise PremiumAuthenticationError(self.premium_sync_manager.maybe_add_device_limit_link(  # noqa: E501
+                    exception=e,
+                    msg=str(e),
+                )) from e
 
         self.premium_sync_manager.premium = self.premium
         self.accountant.activate_premium_status(self.premium)
