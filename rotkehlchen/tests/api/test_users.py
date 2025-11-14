@@ -309,8 +309,8 @@ def test_user_creation_with_invalid_premium_credentials(
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
     for side_effect, expected_msg in (
-        (RemoteError('Invalid API-KEY'), 'Invalid API-KEY'),
-        (PremiumPermissionError('Device limit of 4 exceeded'), 'Device limit of 4 exceeded'),
+        (RemoteError('Invalid API-KEY'), 'Invalid API-KEY.'),
+        (PremiumPermissionError('Device limit of 4 exceeded'), 'Device limit of 4 exceeded. _DEVICE_LIMIT_LINK_'),  # noqa: E501
     ):
         with (
             ExitStack() as stack,
@@ -324,6 +324,10 @@ def test_user_creation_with_invalid_premium_credentials(
             contained_in_msg=f'Could not verify keys for the new account. {expected_msg}',
             status_code=HTTPStatus.CONFLICT,
         )
+
+        # ensure the timestamp used in the autobackup name is different in the next iteration of
+        # the loop, since the second backup was overwriting the first one sometimes otherwise.
+        gevent.sleep(1)
 
     # Check that the directory was NOT created
     assert not Path(users_dir / username).exists(), 'The directory should not have been created'

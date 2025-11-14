@@ -418,7 +418,7 @@ class MoneriumOAuthClient:
             return
 
         with self._refresh_lock:
-            # ensure that no other greenlet refreshed already the token
+            # ensure that no other greenlet has already refreshed the token
             if not self._credentials.is_expiring():  # type: ignore
                 return
 
