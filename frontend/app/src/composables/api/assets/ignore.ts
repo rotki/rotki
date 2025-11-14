@@ -1,4 +1,5 @@
 import type { ActionResult } from '@rotki/common';
+import { apiUrls } from '@/services/api-urls';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
@@ -13,6 +14,7 @@ interface UseAssetIgnoreApiReturn {
 export function useAssetIgnoreApi(): UseAssetIgnoreApiReturn {
   const getIgnoredAssets = async (): Promise<string[]> => {
     const response = await api.instance.get<ActionResult<string[]>>('/assets/ignored', {
+      baseURL: apiUrls.colibriApiUrl,
       validateStatus: validWithoutSessionStatus,
     });
 

@@ -39,6 +39,7 @@ glob = "0.3.2"
 # used for smart contract interaction
 alloy = {version = "1.0.38", features = ["contract"]}
 base64 = "0.22.1"
+thiserror = "2.0.16"
 
 [dev-dependencies]
 mockito = "1.6.1"
