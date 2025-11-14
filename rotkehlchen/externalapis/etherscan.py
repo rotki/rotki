@@ -276,7 +276,11 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, ABC):
                         if result == 'Contract source code not verified':
                             return None
                         if json_ret.get('message', '') == 'NOTOK':
-                            if result.startswith(('Max calls per sec rate', 'Max rate limit reached')):  # different variants of the same message found in the different versions. Sent when there is a short 5 secs rate limit.  # noqa: E501
+                            if result.startswith((
+                                'Max calls per sec rate',  # short-term rate limit (5 seconds)
+                                'Max rate limit reached',  # different variant of the message above
+                                'Free API access is temporarily unavailable',  # free tier apikey blocked during high load periods  # noqa: E501
+                            )):
                                 log.debug(
                                     f'Got response: {response.text} from etherscan while '
                                     f'querying chain {chain_id}. Will backoff for {backoff} seconds.',  # noqa: E501
