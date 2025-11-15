@@ -1,0 +1,126 @@
+from unittest.mock import patch
+
+import pytest
+import requests
+
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
+from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
+from rotkehlchen.tests.utils.factories import make_evm_address
+
+
+@pytest.fixture(name='metrics_payload')
+def _patched_metrics_fetcher_session():
+    stats = LidoCsmNodeOperatorStats(
+        operator_type_id=1,
+        operator_type_label='Permissionless',
+        current_bond=FVal('1.0'),
+        required_bond=FVal('2.0'),
+        claimable_bond=FVal('0.5'),
+        total_deposited_keys=42,
+        rewards_steth=FVal('0.3'),
+    )
+    with patch(
+        'rotkehlchen.api.rest.LidoCsmMetricsFetcher.get_operator_stats',
+        return_value=stats,
+    ):
+        yield stats.serialize()
+
+
+def test_get_lido_csm_node_operators(rotkehlchen_api_server) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+
+    address = make_evm_address()
+    db.add_node_operator(address=address, node_operator_id=5)
+    stats = LidoCsmNodeOperatorStats(
+        operator_type_id=1,
+        operator_type_label='Permissionless',
+        current_bond=FVal('1.0'),
+        required_bond=FVal('2.0'),
+        claimable_bond=FVal('0.5'),
+        total_deposited_keys=42,
+        rewards_steth=FVal('0.3'),
+    )
+    db.set_metrics(node_operator_id=5, metrics=stats)
+    expected_metrics = stats.serialize()
+
+    result = assert_proper_sync_response_with_result(
+        requests.get(api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource')),
+    )
+
+    assert result == [{
+        'address': address,
+        'node_operator_id': 5,
+        'metrics': expected_metrics,
+    }]
+
+
+def test_add_lido_csm_node_operator(
+        rotkehlchen_api_server,
+        metrics_payload,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+
+    result = assert_proper_sync_response_with_result(
+        requests.put(
+            api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource'),
+            json={
+                'address': make_evm_address(),
+                'node_operator_id': 10,
+            },
+        ),
+    )
+    assert len(result) == 1
+    assert result[0]['node_operator_id'] == 10
+    assert result[0]['metrics'] == metrics_payload
+
+    entries = db.get_node_operators()
+    assert len(entries) == 1
+    assert entries[0].node_operator_id == 10
+    assert entries[0].metrics is not None
+    assert entries[0].metrics.serialize() == metrics_payload
+
+
+def test_delete_lido_csm_node_operator(rotkehlchen_api_server) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+
+    address = make_evm_address()
+    db.add_node_operator(address=address, node_operator_id=3)
+
+    result = assert_proper_sync_response_with_result(
+        requests.delete(
+            api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource'),
+            json={
+                'address': address,
+                'node_operator_id': 3,
+            },
+        ),
+    )
+    assert result == []
+    assert db.get_node_operators() == ()
+
+
+def test_refresh_metrics_endpoint_persists(
+        rotkehlchen_api_server,
+        metrics_payload,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+    db.add_node_operator(address=make_evm_address(), node_operator_id=7)
+
+    result = assert_proper_sync_response_with_result(
+        requests.post(api_url_for(rotkehlchen_api_server, 'lidocsmmetricsresource')),
+    )
+    assert len(result) == 1
+    assert result[0]['node_operator_id'] == 7
+    assert result[0]['metrics'] == metrics_payload
+
+    entries = db.get_node_operators()
+    assert len(entries) == 1
+    assert entries[0].node_operator_id == 7
+    assert entries[0].metrics is not None
+    assert entries[0].metrics.serialize() == metrics_payload
