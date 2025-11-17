@@ -116,33 +116,33 @@ def test_serialize(blockchain_balances):
     expected_serialized_dict = {
         SupportedBlockchain.BITCOIN.serialize(): {
             'standalone': {
-                '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd': {'amount': '1', 'usd_value': '1'},
-                '16zNpyv8KxChtjXnE5nYcPqcXcrSQXX2JW': {'amount': '1', 'usd_value': '1'},
-                '16zNpyv8KxChtjXnE5oYcPqcXcrSQXX2JJ': {'amount': '1', 'usd_value': '1'},
-                '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r': {'amount': '1', 'usd_value': '1'},
-                '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe': {'amount': '1', 'usd_value': '1'}},
+                '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                '16zNpyv8KxChtjXnE5nYcPqcXcrSQXX2JW': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                '16zNpyv8KxChtjXnE5oYcPqcXcrSQXX2JJ': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe': {'amount': '1', 'usd_value': '1', 'value': '0'}},  # noqa: E501
             'xpubs': [
                 {
                     'addresses': {
-                        'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5': {'amount': '1', 'usd_value': '1'},  # noqa: E501
-                        'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev': {'amount': '1', 'usd_value': '1'},  # noqa: E501
-                        'bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra': {'amount': '1', 'usd_value': '1'},  # noqa: E501
-                        'bc1qr5r8vryfzexvhjrx5fh5uj0s2ead8awpqspalz': {'amount': '1', 'usd_value': '1'},  # noqa: E501
-                        'bc1qup7f8g5k3h5uqzfjed03ztgn8hhe542w69wc0g': {'amount': '1', 'usd_value': '1'},  # noqa: E501
+                        'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                        'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                        'bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                        'bc1qr5r8vryfzexvhjrx5fh5uj0s2ead8awpqspalz': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                        'bc1qup7f8g5k3h5uqzfjed03ztgn8hhe542w69wc0g': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
                     },
                     'derivation_path': 'm/0',
                     'xpub': xpub_data.xpub.xpub}]},
         ethereum_chain_key: {
             address1: {
-                'assets': {'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1'}}},
+                'assets': {'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1', 'value': '0'}}},  # noqa: E501
                 'liabilities': {},
             },
         },
         optimism_chain_key: {
             address2: {
                 'assets': {
-                    'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1'}},
-                    OPTIMISM_OP_TOKEN.serialize(): {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1'}},  # noqa: E501
+                    'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1', 'value': '0'}},  # noqa: E501
+                    OPTIMISM_OP_TOKEN.serialize(): {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1', 'value': '0'}},  # noqa: E501
                 },
                 'liabilities': {},
             },
@@ -152,7 +152,7 @@ def test_serialize(blockchain_balances):
 
     # change something and see it is also reflected in the serialized dict
     a.optimism[address2].assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), usd_value=FVal('100'))  # noqa: E501
-    expected_serialized_dict[optimism_chain_key][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {DEFAULT_BALANCE_LABEL: {'amount': '100', 'usd_value': '100'}}  # noqa: E501
+    expected_serialized_dict[optimism_chain_key][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {DEFAULT_BALANCE_LABEL: {'amount': '100', 'usd_value': '100', 'value': '0'}}  # noqa: E501
     a.eth[address1].assets.pop(A_ETH.identifier)
     expected_serialized_dict[ethereum_chain_key][address1] = {'assets': {}, 'liabilities': {}}
     assert a.serialize(given_chain=None) == expected_serialized_dict

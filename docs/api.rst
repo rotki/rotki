@@ -9705,16 +9705,16 @@ Getting manually tracked balances
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a GET on the manually tracked balances endpoint will return all the manually tracked balance accounts from the database.
-   If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
+   If a value threshold is provided, only balances with value greater than the threshold are returned (in user's main currency).
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/balances/manual?usd_value_threshold=1000 HTTP/1.1
+      GET /api/1/balances/manual?value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
-   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
+   :query decimal value_threshold: Optional. If provided, only returns balances with value greater than this threshold (in user's main currency).
 
    **Example Response**:
 
@@ -9730,7 +9730,7 @@ Getting manually tracked balances
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "50.315",
-                  "usd_value": "2370.13839",
+                  "value": "2370.13839",
                   "tags": ["public"],
                   "location": "blockchain"
               }, {
@@ -9738,21 +9738,21 @@ Getting manually tracked balances
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
-                  "usd_value": "9087.22",
+                  "value": "9087.22",
                   "location": "blockchain"
               }, {
                   "identifier": 3,
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "76.2"
-                  "usd_value": "6067.77",
+                  "value": "6067.77",
                   "tags": ["private", "inheritance"],
                   "location": "blockchain"
               }]
           "message": ""
       }
 
-   :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
+   :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current value in user's main currency per account.
    :statuscode 200: Balances successfully queried
    :statuscode 401: User is not logged in.
    :statuscode 500: Internal rotki error
@@ -9817,7 +9817,7 @@ Adding manually tracked balances
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "50.315",
-                  "usd_value": "2370.13839",
+                  "value": "2370.13839",
                   "tags": ["public"],
                   "location": "blockchain",
                    "balance_type": "asset"
@@ -9826,7 +9826,7 @@ Adding manually tracked balances
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
-                  "usd_value": "9087.22",
+                  "value": "9087.22",
                   "location": "blockchain",
                   "balance_type": "asset"
               }, {
@@ -9834,7 +9834,7 @@ Adding manually tracked balances
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "76.2"
-                  "usd_value": "6067.77",
+                  "value": "6067.77",
                   "tags": ["private", "inheritance"]
                   "location": "blockchain",
                   "balance_type": "asset"
@@ -9903,7 +9903,7 @@ Editing manually tracked balances
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "4.5",
-                  "usd_value": "210.548",
+                  "value": "210.548",
                   "tags": ["public"],
                   "location": "blockchain",
                   "balance_type": "asset"
@@ -9912,7 +9912,7 @@ Editing manually tracked balances
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
-                  "usd_value": "9087.22",
+                  "value": "9087.22",
                   "location": "blockchain",
                   "balance_type": "asset"
               }, {
@@ -9920,7 +9920,7 @@ Editing manually tracked balances
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "10"
-                  "usd_value": "1330.85"
+                  "value": "1330.85"
                   "location": "kraken",
                   "balance_type": "asset"
               }]
@@ -9973,7 +9973,7 @@ Deleting manually tracked balances
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
-                  "usd_value": "9087.22",
+                  "value": "9087.22",
                   "location": "blockchain",
                   "balance_type": "asset"
               }]
