@@ -2166,25 +2166,26 @@ class RestAPI:
 
         return OK_RESULT
 
-    def _get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
+    def _get_manually_tracked_balances(self, value_threshold: FVal | None) -> dict[str, Any]:
         db_entries = get_manually_tracked_balances(
             db=self.rotkehlchen.data.db,
             balance_type=None,
             include_entries_with_missing_assets=True,
+            use_main_currency=True,
         )
         # Filter balances if threshold is set
-        if usd_value_threshold is not None:
+        if value_threshold is not None:
             db_entries = [
                 entry for entry in db_entries
-                if entry.value.usd_value > usd_value_threshold
+                if entry.value.value > value_threshold
             ]
 
         balances = process_result({'balances': db_entries})
         return _wrap_in_ok_result(balances)
 
     @async_api_call()
-    def get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
-        return self._get_manually_tracked_balances(usd_value_threshold=usd_value_threshold)
+    def get_manually_tracked_balances(self, value_threshold: FVal | None) -> dict[str, Any]:
+        return self._get_manually_tracked_balances(value_threshold=value_threshold)
 
     @overload
     def _modify_manually_tracked_balances(  # pylint: disable=unused-argument
@@ -2217,7 +2218,7 @@ class RestAPI:
         except TagConstraintError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
 
-        return self._get_manually_tracked_balances(usd_value_threshold=None)
+        return self._get_manually_tracked_balances(value_threshold=None)
 
     @async_api_call()
     def add_manually_tracked_balances(

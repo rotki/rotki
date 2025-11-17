@@ -1693,8 +1693,9 @@ class AllBalancesQuerySchema(AsyncQueryArgumentSchema):
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class ManualBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):
-    """Schema for querying manual balances with optional USD threshold filtering"""
+class ManualBalanceQuerySchema(AsyncQueryArgumentSchema):
+    """Schema for querying manual balances with optional value threshold filtering"""
+    value_threshold = AmountField(load_default=None)
 
 
 class ExternalServiceSchema(Schema):
