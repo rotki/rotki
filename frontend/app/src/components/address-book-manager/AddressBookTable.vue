@@ -3,7 +3,6 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { Collection } from '@/types/collection';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useAddressBookDeletion } from '@/composables/address-book/use-address-book-deletion';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
@@ -54,54 +53,38 @@ function edit(item: AddressBookEntry) {
   emit('edit', item);
 }
 
-function setPage(page: number) {
-  set(paginationModel, {
-    ...get(paginationModel),
-    page,
-  });
-}
-
 const { showDeleteConfirmation } = useAddressBookDeletion(location, refresh);
 </script>
 
 <template>
-  <div>
-    <CollectionHandler
-      :collection="collection"
-      @set-page="setPage($event)"
-    >
-      <template #default="{ data }">
-        <RuiDataTable
-          v-model:pagination.external="paginationModel"
-          v-model:sort.external="sortModel"
-          :rows="data"
-          :cols="cols"
-          :loading="loading"
-          row-attr="address"
-          outlined
-          dense
-        >
-          <template #item.address="{ row }">
-            <AccountDisplay
-              :account="{
-                address: row.address,
-                chain: row.blockchain ?? 'ALL',
-              }"
-              :use-alias-name="false"
-              :truncate="false"
-            />
-          </template>
-          <template #item.actions="{ row }">
-            <RowActions
-              :disabled="loading"
-              :delete-tooltip="t('address_book.actions.delete.tooltip')"
-              :edit-tooltip="t('address_book.actions.edit.tooltip')"
-              @delete-click="showDeleteConfirmation(row)"
-              @edit-click="edit(row)"
-            />
-          </template>
-        </RuiDataTable>
-      </template>
-    </CollectionHandler>
-  </div>
+  <RuiDataTable
+    v-model:pagination.external="paginationModel"
+    v-model:sort.external="sortModel"
+    :rows="collection.data"
+    :cols="cols"
+    :loading="loading"
+    row-attr="address"
+    outlined
+    dense
+  >
+    <template #item.address="{ row }">
+      <AccountDisplay
+        :account="{
+          address: row.address,
+          chain: row.blockchain ?? 'ALL',
+        }"
+        :use-alias-name="false"
+        :truncate="false"
+      />
+    </template>
+    <template #item.actions="{ row }">
+      <RowActions
+        :disabled="loading"
+        :delete-tooltip="t('address_book.actions.delete.tooltip')"
+        :edit-tooltip="t('address_book.actions.edit.tooltip')"
+        @delete-click="showDeleteConfirmation(row)"
+        @edit-click="edit(row)"
+      />
+    </template>
+  </RuiDataTable>
 </template>

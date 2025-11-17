@@ -15,6 +15,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -140,7 +141,7 @@ def get_main_currency_price(
     except NoPriceForGivenTimestamp:
         main_currency_price = Price(ONE)
         msg_aggregator.add_error(
-            f'Could not find {main_currency.symbol} price for timestamp {timestamp}. '
+            f'Could not find {main_currency.symbol} price for date {timestamp_to_date(timestamp)}. '  # noqa: E501
             f'Using USD for export. Please add manual price '
             f'from USD to your main currency {main_currency}',
         )

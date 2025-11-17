@@ -59,12 +59,12 @@ const filteredItems = computed(() => {
 const mappedOptions = computed(() => {
   const filtered = get(filteredItems);
   const chains = get(supportedChains).filter(item => filtered.includes(item.id));
-  if (get(items).includes('evm')) {
+  if (get(items).includes('all')) {
     chains.unshift({
-      id: 'evm',
+      id: 'all',
       image: '',
       name: '',
-      type: 'evm',
+      type: 'all',
     });
   }
 

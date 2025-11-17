@@ -5,6 +5,7 @@ from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional
 
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY, OKX_LOCATION_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
@@ -362,10 +363,18 @@ class ExchangeManager:
         if (exchange := self.get_exchange(name=name, location=location)) is None:
             raise InputError(f'{location!s} exchange {name} is not registered')
 
+        exchange.send_history_events_status_msg(
+            step=HistoryEventsStep.QUERYING_EVENTS_STARTED,
+        )
+        exchange.send_history_events_status_msg(
+            step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+            period=[start_ts, end_ts],
+        )
         events_list, actual_end_ts = exchange.query_online_history_events(
             start_ts=start_ts,
             end_ts=end_ts,
         )
+        exchange.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
         if (total_events := len(events_list)) == 0:
             return 0, 0, 0, actual_end_ts
 

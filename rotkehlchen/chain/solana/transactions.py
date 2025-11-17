@@ -225,13 +225,12 @@ class SolanaTransactions:
             address=address,
             until=until_sig,
             before=before_sig,
-        ) if x not in existing_signatures]) == 0:
-            return  # There are no missed transactions in the specified range
+        ) if x not in existing_signatures]) != 0:
+            self.query_transactions_for_signatures(
+                signatures=sigs_to_query,
+                relevant_address=address,
+            )
 
-        self.query_transactions_for_signatures(
-            signatures=sigs_to_query,
-            relevant_address=address,
-        )
         self._send_tx_status_message(
             address=address,
             period=(start_ts, end_ts),

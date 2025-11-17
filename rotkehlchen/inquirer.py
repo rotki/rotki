@@ -70,7 +70,6 @@ from rotkehlchen.chain.evm.protocol_constants import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
-from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
@@ -711,16 +710,13 @@ class Inquirer:
     @staticmethod
     def _maybe_replace_asset(asset: Asset) -> Asset:
         """Get the asset to actually use when finding the price of the specified asset.
-        Uses the main asset for collection assets and also handles special cases like ETH2 and POL.
+        Uses the main asset for collection assets and also handles the ETH2 special case.
         Returns either a replacement asset, or the original asset.
         """
         if asset == A_ETH2:
             return A_ETH
-        elif (
-            (collection_main_asset_id := GlobalDBHandler.get_collection_main_asset(asset.identifier)) is not None and  # noqa: E501
-            (collection_main_asset_id != 'eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6' or ts_now() > POLYGON_POS_POL_HARDFORK)  # only use the pol token after the hardfork.  # noqa: E501
-        ):
-            return Asset(collection_main_asset_id)
+        elif (main_asset_id := GlobalDBHandler.get_collection_main_asset(asset.identifier)) is not None:  # noqa: E501
+            return Asset(main_asset_id)
 
         return asset
 

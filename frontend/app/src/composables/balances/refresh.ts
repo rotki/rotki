@@ -45,7 +45,7 @@ export const useRefresh = createSharedComposable(() => {
     set(massDetecting, undefined);
   };
 
-  const handleBlockchainRefresh = async (blockchain?: MaybeRef<string>, forceRedetect = false): Promise<void> => {
+  const handleBlockchainRefresh = async (blockchain?: MaybeRef<string | string[]>, forceRedetect = false): Promise<void> => {
     const chain = get(blockchain);
     const behaviour = get(blockchainRefreshButtonBehaviour);
 

@@ -5,6 +5,7 @@ import HistoryQuerySection from '@/modules/dashboard/progress/components/History
 import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
 import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
 import { useMainStore } from '@/store/main';
+import { isMajorOrMinorUpdate } from '@/utils/version';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -86,15 +87,31 @@ const showSection = logicOr(
 );
 
 onMounted(async () => {
-  if (get(appVersion) === get(queryStatus, 'lastUsedVersion')) {
+  const currentVersion = get(appVersion);
+  const lastVersion = get(queryStatus, 'lastUsedVersion');
+
+  // If it's a major or minor update, reset dismissal timestamps
+  if (isMajorOrMinorUpdate(currentVersion, lastVersion)) {
+    set(queryStatus, {
+      lastBalanceProgressDismissedTs: 0,
+      lastDismissedTs: 0,
+      lastUsedVersion: currentVersion,
+    });
+    set(justUpdated, true);
     return;
   }
+
+  // If version is the same or just a patch update, keep existing dismissal state
+  if (currentVersion === lastVersion) {
+    return;
+  }
+
+  // Update version but keep dismissal timestamps for patch updates
   set(queryStatus, {
     lastBalanceProgressDismissedTs: get(queryStatus, 'lastBalanceProgressDismissedTs') || 0,
     lastDismissedTs: get(queryStatus, 'lastDismissedTs') || 0,
-    lastUsedVersion: get(appVersion),
+    lastUsedVersion: currentVersion,
   });
-  set(justUpdated, true);
 });
 </script>
 

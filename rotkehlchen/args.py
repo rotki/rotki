@@ -7,6 +7,7 @@ from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    VALID_LOGLEVELS,
 )
 from rotkehlchen.utils.misc import get_system_spec
 
@@ -102,8 +103,9 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--loglevel',
         help='Choose the logging level',
-        choices=['trace', 'debug', 'info', 'warning', 'error', 'critical'],
-        default='debug',
+        type=str.upper,
+        choices=VALID_LOGLEVELS,
+        default='DEBUG',
     )
     p.add_argument(
         '--logfromothermodules',

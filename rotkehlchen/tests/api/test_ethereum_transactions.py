@@ -1633,3 +1633,46 @@ def test_monerium_gnosis_pay_events_update(
         else:
             assert monerium_instance_mock.update_events.call_count == 0
             assert gnosis_pay_instance_mock.update_events.call_count == 0
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_notify_missing_credentials_on_redecode(
+        rotkehlchen_api_server: 'APIServer',
+        websocket_connection: 'WebsocketReader',
+) -> None:
+    """Check that a missing key notification is sent if gnosis pay or monerium events are manually
+    redecoded without having the credentials in the db.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    for counterparty, service_name in [(CPT_GNOSIS_PAY, 'gnosis pay'), (CPT_MONERIUM, 'monerium')]:
+        websocket_connection.messages.clear()
+        event = EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(1610000000),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_EUR,
+            amount=ONE,
+            counterparty=counterparty,
+        )
+        with (
+            patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_query_transaction_receipt', lambda **kwargs: None),  # noqa: E501
+            patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_create_transaction', lambda **kwargs: (None, None)),  # noqa: E501
+            patch.object(
+                target=rotki.chains_aggregator.gnosis.transactions_decoder,
+                attribute='decode_and_get_transaction_hashes',
+                return_value=[event],
+            ),
+        ):
+            assert_proper_response(requests.put(
+                api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+                json={'chain': 'gnosis', 'tx_refs': [str(event.tx_ref)]},
+            ))
+
+        websocket_connection.wait_until_messages_num(num=1, timeout=5)
+        assert websocket_connection.messages[0] == {'type': 'missing_api_key', 'data': {'service': service_name}}  # noqa: E501

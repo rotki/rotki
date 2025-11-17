@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import type { Writeable } from '@rotki/common';
-import type { RuiIcons } from '@rotki/ui-library';
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/types/backend';
-import { LogLevel } from '@shared/log-level';
 import useVuelidate from '@vuelidate/core';
 import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
 import { isEqual } from 'es-toolkit';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import LogLevelInput from '@/components/settings/backend/LogLevelInput.vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import SettingResetButton from '@/components/settings/SettingResetButton.vue';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
@@ -34,11 +33,15 @@ const maxLogSize = ref<string>('0');
 const sqliteInstructions = ref<string>('0');
 const maxLogFiles = ref<string>('0');
 
-const { backendSettings } = useSettingsApi();
+const { backendSettings, updateBackendConfiguration } = useSettingsApi();
 
 const selecting = ref<boolean>(false);
 const confirmReset = ref<boolean>(false);
-const configuration = asyncComputed<BackendConfiguration>(() => backendSettings());
+const configuration = ref<BackendConfiguration>();
+
+async function loadConfiguration(): Promise<void> {
+  set(configuration, await backendSettings());
+}
 
 function parseValue(value?: string) {
   if (!value)
@@ -55,18 +58,27 @@ function stringifyValue(value?: number) {
   return value.toString();
 }
 
-const { defaultLogDirectory, defaultLogLevel, fileConfig, logLevel, options, resetOptions, saveOptions }
-  = useBackendManagement(loaded);
+const {
+  applyUserOptions,
+  defaultLogDirectory,
+  defaultLogLevel,
+  fileConfig,
+  logLevel,
+  options,
+  resetOptions,
+  saveOptions,
+} = useBackendManagement(loaded);
 
 const initialOptions = computed<Partial<BackendOptions>>(() => {
   const config = get(configuration);
   const opts = get(options);
   const defaults = get(defaultBackendArguments);
+
   return {
     dataDirectory: opts.dataDirectory ?? get(dataDirectory),
     logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
     logFromOtherModules: opts.logFromOtherModules ?? false,
-    loglevel: opts.loglevel ?? get(defaultLogLevel),
+    loglevel: opts.loglevel ?? config?.loglevel?.value ?? get(defaultLogLevel),
     maxLogfilesNum: opts.maxLogfilesNum ?? config?.maxLogfilesNum?.value ?? defaults.maxLogfilesNum,
     maxSizeInMbAllLogs: opts.maxSizeInMbAllLogs ?? config?.maxSizeInMbAllLogs?.value ?? defaults.maxSizeInMbAllLogs,
     sqliteInstructions: opts.sqliteInstructions ?? config?.sqliteInstructions?.value ?? defaults.sqliteInstructions,
@@ -130,14 +142,17 @@ const newUserOptions = computed(() => {
   if (logFromOther !== initial.logFromOtherModules)
     newOptions.logFromOtherModules = logFromOther;
 
-  if (!get(isMaxLogFilesDefault))
-    newOptions.maxLogfilesNum = parseValue(get(maxLogFiles));
+  const maxLogFilesParsed = parseValue(get(maxLogFiles));
+  if (maxLogFilesParsed !== initial.maxLogfilesNum)
+    newOptions.maxLogfilesNum = maxLogFilesParsed;
 
-  if (!get(isMaxSizeDefault))
-    newOptions.maxSizeInMbAllLogs = parseValue(get(maxLogSize));
+  const maxLogSizeParsed = parseValue(get(maxLogSize));
+  if (maxLogSizeParsed !== initial.maxSizeInMbAllLogs)
+    newOptions.maxSizeInMbAllLogs = maxLogSizeParsed;
 
-  if (!get(isSqliteInstructionsDefaults))
-    newOptions.sqliteInstructions = parseValue(get(sqliteInstructions));
+  const sqliteInstructionsParsed = parseValue(get(sqliteInstructions));
+  if (sqliteInstructionsParsed !== initial.sqliteInstructions)
+    newOptions.sqliteInstructions = sqliteInstructionsParsed;
 
   return newOptions;
 });
@@ -183,23 +198,6 @@ watch(v$, ({ $invalid }) => {
   set(valid, !$invalid);
 });
 
-function icon(level: LogLevel): RuiIcons {
-  if (level === LogLevel.DEBUG)
-    return 'lu-bug';
-  else if (level === LogLevel.INFO)
-    return 'lu-info';
-  else if (level === LogLevel.WARNING)
-    return 'lu-triangle-alert';
-  else if (level === LogLevel.ERROR)
-    return 'lu-circle-alert';
-  else if (level === LogLevel.CRITICAL)
-    return 'lu-skull';
-  else if (level === LogLevel.TRACE)
-    return 'lu-file-search';
-
-  throw new Error(`Invalid option: ${level}`);
-}
-
 async function reset() {
   set(confirmReset, false);
   dismiss();
@@ -223,7 +221,18 @@ async function selectDataDirectory() {
 
 async function save() {
   dismiss();
-  await saveOptions(get(newUserOptions));
+  const newUserOptionsVal = get(newUserOptions);
+  const keys = Object.keys(newUserOptionsVal);
+
+  // If only loglevel changed, update configuration without restarting the backend
+  if (keys.length === 1 && keys[0] === 'loglevel') {
+    await updateBackendConfiguration(newUserOptionsVal.loglevel!);
+    await applyUserOptions({ loglevel: newUserOptionsVal.loglevel }, true);
+    await loadConfiguration();
+  }
+  else {
+    await saveOptions(newUserOptionsVal);
+  }
 }
 
 async function selectLogsDirectory() {
@@ -249,8 +258,6 @@ watch(dataDirectory, (directory) => {
   set(userDataDirectory, get(options).dataDirectory ?? directory);
 });
 
-const levels = Object.values(LogLevel);
-
 const { show } = useConfirmStore();
 
 function showResetConfirmation() {
@@ -263,7 +270,9 @@ function showResetConfirmation() {
   );
 }
 
-const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: LogLevel }>();
+onBeforeMount(async () => {
+  await loadConfiguration();
+});
 </script>
 
 <template>
@@ -288,15 +297,6 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: LogLevel }>();
     </div>
 
     <div class="flex flex-col gap-4">
-      <CreateLabel #default="{ item }">
-        <div class="flex items-center gap-3">
-          <RuiIcon
-            class="text-rui-text-secondary"
-            :name="icon(item)"
-          />
-          <span class="capitalize"> {{ item }} </span>
-        </div>
-      </CreateLabel>
       <RuiTextField
         v-model="userDataDirectory"
         data-cy="user-data-directory-input"
@@ -347,24 +347,11 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: LogLevel }>();
         </template>
       </RuiTextField>
 
-      <RuiMenuSelect
+      <LogLevelInput
         v-model="logLevel"
-        :options="levels"
-        class="loglevel-input"
         :disabled="!!fileConfig.loglevel"
-        :label="t('backend_settings.settings.log_level.label')"
-        :hide-details="!fileConfig.loglevel"
-        :hint="!!fileConfig.loglevel ? t('backend_settings.config_file_disabled') : undefined"
-        variant="outlined"
-      >
-        <template #item="{ item }">
-          <ReuseLabel :item="item" />
-        </template>
-
-        <template #selection="{ item }">
-          <ReuseLabel :item="item" />
-        </template>
-      </RuiMenuSelect>
+        :error-messages="!!fileConfig.loglevel ? t('backend_settings.config_file_disabled') : undefined"
+      />
     </div>
 
     <RuiAccordions>

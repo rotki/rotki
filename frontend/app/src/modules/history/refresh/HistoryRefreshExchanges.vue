@@ -67,7 +67,7 @@ defineExpose({
       color="primary"
       size="sm"
       hide-details
-      @click.prevent.stop="toggleSelect(exchange)"
+      @click.prevent
     />
 
     <LocationDisplay

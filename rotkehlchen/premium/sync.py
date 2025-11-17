@@ -11,7 +11,11 @@ from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
+from rotkehlchen.errors.api import (
+    PremiumAuthenticationError,
+    PremiumPermissionError,
+    RotkehlchenPermissionError,
+)
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
@@ -322,10 +326,19 @@ class PremiumSyncManager(LockableQueryMixIn):
             log.info('User approved data sync from server')
             self._sync_data_from_server_and_replace_local(perform_migrations)  # may raise due to password  # noqa: E501
 
+    @staticmethod
+    def maybe_add_device_limit_link(exception: Exception, msg: str) -> str:
+        """Adds a placeholder to the error message to be replaced with a link to the docs in
+        the frontend if the exception is a PremiumPermissionError."""
+        if isinstance(exception, PremiumPermissionError):
+            msg += ' _DEVICE_LIMIT_LINK_'
+
+        return msg
+
     def _abort_new_syncing_premium_user(
             self,
             username: str,
-            original_exception: PremiumAuthenticationError | RemoteError,
+            original_exception: PremiumAuthenticationError | PremiumPermissionError | RemoteError,
     ) -> None:
         """At this point we are at a new user trying to create an account with
         premium API keys and we failed. But a directory was created. Remove it.
@@ -337,9 +350,10 @@ class PremiumSyncManager(LockableQueryMixIn):
             user_data_dir,  # type: ignore
             self.data.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
         )
-        raise PremiumAuthenticationError(
-            f'Could not verify keys for the new account. {original_exception!s}',
-        ) from original_exception
+        raise PremiumAuthenticationError(self.maybe_add_device_limit_link(
+            exception=original_exception,
+            msg=f'Could not verify keys for the new account. {original_exception!s}.',
+        )) from original_exception
 
     def try_premium_at_start(
             self,
@@ -369,7 +383,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                     msg_aggregator=self.data.msg_aggregator,
                     db=self.data.db,
                 )
-            except (PremiumAuthenticationError, RemoteError) as e:
+            except (PremiumAuthenticationError, PremiumPermissionError, RemoteError) as e:
                 self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
         # else, if we got premium data in the DB initialize it and try to sync with the server
@@ -384,7 +398,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                     msg_aggregator=self.data.msg_aggregator,
                     db=self.data.db,
                 )
-            except (PremiumAuthenticationError, RemoteError) as e:
+            except (PremiumAuthenticationError, PremiumPermissionError, RemoteError) as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
                     f'the API keys found in the Database. {e}'

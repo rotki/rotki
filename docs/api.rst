@@ -920,8 +920,8 @@ Getting or modifying settings
    :statuscode 409: Tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
-Getting backend arguments
-================================
+Getting or modifying backend arguments
+=========================================
 
 .. http:get:: /api/(version)/settings/configuration
 
@@ -955,6 +955,10 @@ Getting backend arguments
                    "sqlite_instructions": {
                            "value": 5000,
                            "is_default": true
+                   },
+                   "loglevel": {
+                           "value": "DEBUG",
+                           "is_default": true
                    }
            },
            "message": ""
@@ -963,10 +967,62 @@ Getting backend arguments
    :resjson object max_size_in_mb_all_logs: Maximum size in megabytes that will be used for all rotki logs.
    :resjson object max_num_log_files: Maximum number of logfiles to keep.
    :resjson object sqlite_instructions: Instructions per sqlite context switch. 0 means disabled.
+   :resjson object loglevel: The current logging level of the backend.
    :resjson int value: Value used for the configuration.
    :resjson bool is_default: `true` if the setting was not modified and `false` if it was.
 
    :statuscode 200: Querying of the backend configuration was successful
+   :statuscode 500: Internal rotki error
+
+.. http:put:: /api/(version)/settings/configuration
+
+   By doing a PUT, you can modify the backend log level at runtime. Currently, only the ``loglevel`` parameter is supported for modification.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/settings/configuration HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+          "loglevel": "TRACE"
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+           "result": {
+               "max_size_in_mb_all_logs": {
+                  "value": 300,
+                  "is_default": true
+               },
+               "max_logfiles_num": {
+                  "value": 3,
+                  "is_default": true
+               },
+               "sqlite_instructions": {
+                  "value": 5000,
+                  "is_default": true
+               },
+               "loglevel": {
+                  "value": "TRACE",
+                  "is_default": false
+               }
+           },
+           "message": ""
+       }
+
+   :reqjson string loglevel: The logging level to set. Must be one of: ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+
+   :statuscode 200: Backend configuration was successfully updated
+   :statuscode 400: Provided loglevel is not supported
    :statuscode 500: Internal rotki error
 
 Adding information for web3 nodes
@@ -3483,6 +3539,17 @@ Querying all supported assets
                   "cryptocompare":"VET",
                   "coingecko":"vet",
                   "protocol":"None"
+              },
+              {
+                  "identifier": "eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1234",
+                  "evm_address": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+                  "evm_chain":"ethereum",
+                  "token_kind":"erc721",
+                  "name": "Bored Ape Yacht Club #1234",
+                  "symbol": "BAYC",
+                  "asset_type": "evm token",
+                  "collectible_id": "1234",
+                  "protocol":"None"
               }
           ],
           "message": ""
@@ -3502,6 +3569,7 @@ Querying all supported assets
    :resjson string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known. If missing a query by symbol is attempted.
    :resjson string coingecko: The coingecko identifier for the asset. can be missing if not known.
    :resjson string protocol: An optional string for evm tokens denoting the protocol they belong to. For example uniswap, for uniswap LP tokens.
+   :resjson string collectible_id: Only present for ERC721 tokens. The token ID of the NFT.
    :resjson object underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage(value in the range of 0 to 100) that each token contributes to the pool.
    :resjson string notes: If the type is ``custom_asset`` this is a string field with notes added by the user.
    :resjson string custom_asset_type: If the type is ``custom_asset`` this field contains the custom type set by the user for the asset.
@@ -3851,14 +3919,14 @@ Get asset types
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 500: Internal rotki error
 
-Adding custom asset
-======================
+Adding user assets
+===================
 
 .. http:put:: /api/(version)/assets/all
 
-   Doing a PUT on the all assets endpoint will allow you to add a new asset in the global rotki DB. Returns the identifier of the newly added asset.
+   Doing a PUT on the all assets endpoint will allow you to add a new asset in the global rotki DB. This supports fiat assets, crypto assets, EVM tokens, and Solana tokens. Returns the identifier of the newly added asset.
 
-   **Example Request**:
+   **Example Request (EVM Token)**:
 
    .. http:example:: curl wget httpie python-requests
 
@@ -3867,26 +3935,67 @@ Adding custom asset
       Content-Type: application/json;charset=UTF-8
 
       {
-          "name": "foo",
-          "symbol": "FOO",
-          "started": 1614636432,
-          "forked": "SCT",
-          "swapped_for": "SCK",
-          "coingecko": "foo-coin",
-          "cryptocompare": "FOO"
+          "asset_type": "evm token",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "evm_chain": "ethereum",
+          "token_kind": "erc20",
+          "name": "Dai Stablecoin",
+          "symbol": "DAI",
+          "decimals": 18
        }
 
-   .. _custom_asset:
+   **Example Request (Solana Token)**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/all HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "asset_type": "solana token",
+          "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "token_kind": "spl_token",
+          "name": "USD Coin",
+          "symbol": "USDC",
+          "decimals": 6
+       }
+
+   **Example Request (ERC721 NFT)**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/all HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "asset_type": "evm token",
+          "address": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+          "evm_chain": "ethereum",
+          "token_kind": "erc721",
+          "name": "Bored Ape Yacht Club",
+          "symbol": "BAYC",
+          "collectible_id": "1234",
+          "decimals": 0
+       }
+
+   .. _user_asset:
 
    :reqjson string name: The name of the asset. Required.
    :reqjson string symbol: The symbol of the asset. Required.
-   :reqjson integer started: The time the asset started existing. Optional
+   :reqjson string address: The contract address for EVM tokens or mint address for Solana tokens. Required when asset_type is ``"evm token"`` or ``"solana token"``.
+   :reqjson string evm_chain: The EVM chain name such as ``"ethereum"``, ``"optimism"``. Required when asset_type is ``"evm token"``.
+   :reqjson string token_kind: The token standard. For EVM tokens: ``"erc20"`` or ``"erc721"``. For Solana tokens: ``"spl_token"`` or ``"spl_nft"``. Required when asset_type is ``"evm token"`` or ``"solana token"``.
+   :reqjson integer decimals: The number of decimal places the token uses. Required when asset_type is ``"evm token"`` or ``"solana token"``.
+   :reqjson string collectible_id: The NFT token ID. Must be a positive integer. Only valid when token_kind is ``"erc721"``.
+   :reqjson integer started: The time the asset started existing. Optional.
    :reqjson string forked: The identifier of an asset from which this asset got forked. For example ETC would have ETH as forked. Optional.
    :reqjson string swapped_for: The identifier of an asset for which this asset got swapped for. For example GNT got swapped for GLM. Optional.
-   :resjsonarr string coingecko: The coingecko identifier for the asset. can be missing if not known.
-   :resjsonarr string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
+   :reqjson string coingecko: The coingecko identifier for the asset. can be missing if not known.
+   :reqjson string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
 
-   **Example Response**:
+   **Example Response (EVM Token)**:
 
    .. sourcecode:: http
 
@@ -3894,7 +4003,31 @@ Adding custom asset
       Content-Type: application/json
 
       {
-          "result": {"identifier": "4979582b-ee8c-4d45-b461-15c4220de666"},
+          "result": {"identifier": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"},
+          "message": ""
+      }
+
+   **Example Response (Solana Token)**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": "sol:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"},
+          "message": ""
+      }
+
+   **Example Response (ERC721 NFT)**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": "eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1234"},
           "message": ""
       }
 
@@ -3905,14 +4038,14 @@ Adding custom asset
    :statuscode 409: Some conflict at addition. For example an asset with the same type, name and symbol already exists.
    :statuscode 500: Internal rotki error
 
-Editing custom assets
-======================
+Editing user assets
+====================
 
 .. http:patch:: /api/(version)/assets/all
 
-   Doing a PATCH on the custom assets endpoint will allow you to edit an existing asset in the global rotki DB.
+   Doing a PATCH on the user assets endpoint will allow you to edit an existing asset in the global rotki DB.
 
-   **Example Request**:
+   **Example Request (EVM Token)**:
 
    .. http:example:: curl wget httpie python-requests
 
@@ -3921,17 +4054,37 @@ Editing custom assets
       Content-Type: application/json;charset=UTF-8
 
       {
-          "identifier": "4979582b-ee8c-4d45-b461-15c4220de666",
-          "name": "foo",
-          "symbol": "FOO",
-          "started": 1614636432,
-          "forked": "SCT",
-          "swapped_for": "SCK",
-          "coingecko": "foo-coin",
-          "cryptocompare": "FOO"
+          "identifier": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "asset_type": "evm token",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "evm_chain": "ethereum",
+          "token_kind": "erc20",
+          "name": "Dai Stablecoin Updated",
+          "symbol": "DAI",
+          "decimals": 18
       }
 
-   :reqjson object asset: Asset to edit. For details on the possible fields see `here <custom_asset_>`_. The only extra field has to be the identifier of the asset to edit.
+   **Example Request (ERC721 NFT)**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/assets/all HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "identifier": "eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1234",
+          "asset_type": "evm token",
+          "address": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+          "evm_chain": "ethereum",
+          "token_kind": "erc721",
+          "name": "Bored Ape Yacht Club Updated",
+          "symbol": "BAYC",
+          "collectible_id": "1234",
+          "decimals": 0
+      }
+
+   :reqjson object asset: Asset to edit. For details on the possible fields see `here <user_asset_>`_. The identifier field is required to specify which asset to edit.
 
    **Example Response**:
 
@@ -3951,12 +4104,12 @@ Editing custom assets
    :statuscode 409: Some conflict at editing. For example identifier does not exist in the DB.
    :statuscode 500: Internal rotki error
 
-Deleting custom assets
-========================
+Deleting user assets
+=====================
 
 .. http:delete:: /api/(version)/assets/all
 
-   Doing a DELETE on the custom assets endpoint will allow you to delete an existing asset from the global rotki DB.
+   Doing a DELETE on the user assets endpoint will allow you to delete an existing asset from the global rotki DB.
 
    **Example Request**:
 
@@ -3968,7 +4121,7 @@ Deleting custom assets
 
       {"identifier": "4979582b-ee8c-4d45-b461-15c4220de666"}
 
-   :reqjson string identifier: Address of the asset to delete.
+   :reqjson string identifier: Identifier of the asset to delete.
 
    **Example Response**:
 

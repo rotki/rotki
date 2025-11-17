@@ -2180,3 +2180,119 @@ def test_batch_aave3_operations_via_safe(ethereum_inquirer, ethereum_accounts) -
         counterparty=CPT_AAVE_V3,
     )]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xC4B17C8d9e1B6b2814Ef2666a577a0d1e2a99909']])
+def test_aave_v3_deposit_pol(polygon_pos_inquirer, polygon_pos_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x285cae1c14c05915f5b1e9b290b6cb6a7c9d886e7e990a7d14e6d2cd4dfa6246')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1762459387000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POL,
+        amount=FVal(gas_fees := '0.00711548312820836'),
+        location_label=polygon_pos_accounts[0],
+        notes=f'Burn {gas_fees} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_POL,
+        amount=FVal(deposit_amount := '111'),
+        location_label=polygon_pos_accounts[0],
+        notes=f'Deposit {deposit_amount} POL into AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0xBC302053db3aA514A3c86B9221082f162B91ad63'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:137/erc20:0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97'),
+        amount=FVal(deposit_amount := '110.999999999999999999'),
+        location_label=polygon_pos_accounts[0],
+        notes=f'Receive {deposit_amount} aPolWMATIC from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.INTEREST,
+        asset=Asset('eip155:137/erc20:0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97'),
+        amount=FVal(interest_amount := '0.002768840801085416'),
+        location_label=polygon_pos_accounts[0],
+        notes=f'Receive {interest_amount} aPolWMATIC as interest earned from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('scroll_accounts', [['0x72534B92C950b9D4739919bFD5FAcd81397178eb']])
+def test_aave_v3_scroll_deposit_eth(scroll_inquirer, scroll_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x76dd8a5b94409801fd86676be4d43913401eb407e3795facf063b7fb35c80e0e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1762377954000)),
+        location=Location.SCROLL,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_fees := '0.000001010005899084'),
+        location_label=scroll_accounts[0],
+        notes=f'Burn {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.SCROLL,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_ETH,
+        amount=FVal(deposit_amount := '0.03'),
+        location_label=scroll_accounts[0],
+        notes=f'Deposit {deposit_amount} ETH into AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0xE79Ca44408Dae5a57eA2a9594532f1E84d2edAa4'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.SCROLL,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:534352/erc20:0xf301805bE1Df81102C957f6d4Ce29d2B8c056B2a'),
+        amount=FVal(deposit_amount),
+        location_label=scroll_accounts[0],
+        notes=f'Receive {deposit_amount} aScrWETH from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.SCROLL,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.INTEREST,
+        asset=Asset('eip155:534352/erc20:0xf301805bE1Df81102C957f6d4Ce29d2B8c056B2a'),
+        amount=FVal(interest_amount := '0.005755623058067556'),
+        location_label=scroll_accounts[0],
+        notes=f'Receive {interest_amount} aScrWETH as interest earned from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+    )]

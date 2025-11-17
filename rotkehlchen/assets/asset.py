@@ -15,6 +15,7 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
     solana_address_to_identifier,
+    tokenid_to_collectible_id,
 )
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
@@ -606,11 +607,12 @@ class EvmToken(CryptoAsset):
             cryptocompare=entry[10],
             protocol=entry[11],
             underlying_tokens=underlying_tokens,
+            collectible_id=tokenid_to_collectible_id(entry[0]),
         )
 
     def to_dict(self) -> dict[str, Any]:
         underlying_tokens = [x.serialize() for x in self.underlying_tokens] if self.underlying_tokens is not None else None  # noqa: E501
-        return super().to_dict() | {
+        result = super().to_dict() | {
             'address': self.evm_address,
             'evm_chain': self.chain_id.to_name(),
             'token_kind': self.token_kind.serialize(),
@@ -618,6 +620,10 @@ class EvmToken(CryptoAsset):
             'protocol': self.protocol,
             'underlying_tokens': underlying_tokens,
         }
+        if self.token_kind == TokenKind.ERC721:  # only include collectible_id for ERC721 tokens
+            result['collectible_id'] = tokenid_to_collectible_id(self.identifier)
+
+        return result
 
     def get_decimals(self) -> int:
         return 18 if self.decimals is None else self.decimals

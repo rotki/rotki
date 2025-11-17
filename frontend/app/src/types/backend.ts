@@ -28,7 +28,13 @@ const NumericBackendArgument = z.object({
   value: z.number().nonnegative(),
 });
 
+const LogLevelBackendArgument = z.object({
+  isDefault: z.boolean(),
+  value: ActiveLogLevel,
+});
+
 export const BackendConfiguration = z.object({
+  loglevel: LogLevelBackendArgument,
   maxLogfilesNum: NumericBackendArgument,
   maxSizeInMbAllLogs: NumericBackendArgument,
   sqliteInstructions: NumericBackendArgument,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import { toSentenceCase } from '@rotki/common';
+import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
@@ -255,6 +256,13 @@ onMounted(() => {
   });
 });
 
+const sensitiveInputComponent = computed(() => {
+  if (!get(editMode) || get(editKeys)) {
+    return RuiRevealableTextField;
+  }
+  return RuiTextField;
+});
+
 defineExpose({
   validate: async (): Promise<boolean> => await get(v$).$validate(),
 });
@@ -350,7 +358,8 @@ defineExpose({
 
     <ExchangeKeysFormStructure :location="modelValue.location">
       <template #apiKey="{ label, hint, className }">
-        <RuiRevealableTextField
+        <Component
+          :is="sensitiveInputComponent"
           v-model.trim="apiKeyModel"
           :text-color="editMode && !editKeys && toMessages(v$.apiKey).length === 0 ? 'success' : undefined"
           variant="outlined"
@@ -366,7 +375,8 @@ defineExpose({
       </template>
 
       <template #apiSecret="{ label, hint, className }">
-        <RuiRevealableTextField
+        <Component
+          :is="sensitiveInputComponent"
           v-if="requiresApiSecret"
           v-model.trim="apiSecretModel"
           variant="outlined"
@@ -383,7 +393,8 @@ defineExpose({
       </template>
 
       <template #passphrase="{ label, hint, className }">
-        <RuiRevealableTextField
+        <Component
+          :is="sensitiveInputComponent"
           v-if="requiresPassphrase"
           v-model.trim="passphrase"
           :disabled="editMode && !editKeys"

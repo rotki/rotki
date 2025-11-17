@@ -241,6 +241,7 @@ const tags = useAccountTags(text);
           v-if="addressBookChain"
           :text="text"
           :blockchain="addressBookChain"
+          :name="aliasName"
           class="m-1"
           @open="tooltip?.onClose(true)"
         />

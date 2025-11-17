@@ -26,6 +26,7 @@ export const blockscoutLinks = {
 
 export const externalLinks = {
   premium: `${BASE_URL}products`,
+  premiumDevices: `${DOCS_BASE_URL}premium/devices`,
   sponsor: `${BASE_URL}sponsor/mint`,
   usageGuide: USAGE_GUIDE_URL,
   usageGuideSection: {

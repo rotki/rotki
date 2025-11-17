@@ -10,29 +10,30 @@ import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
 export const loadUserOptions: () => Partial<BackendOptions> = () => {
-  const defaultConfig: Partial<BackendOptions> = {
-    loglevel: getDefaultLogLevel(),
-  };
   try {
     const opts = localStorage.getItem(BACKEND_OPTIONS);
-    let options: Writeable<Partial<BackendOptions>>;
+    let options: Writeable<Partial<BackendOptions>> = {};
     if (opts)
       options = BackendOptions.parse(JSON.parse(opts));
-    else options = defaultConfig;
-
     return options;
   }
   catch {
-    return defaultConfig;
+    return {};
   }
 };
 
 export function saveUserOptions(config: Partial<BackendOptions>): void {
-  const options = JSON.stringify(config);
+  const existingOptions = loadUserOptions();
+  const updatedOptions = {
+    ...existingOptions,
+    ...config,
+  };
+  const options = JSON.stringify(updatedOptions);
   localStorage.setItem(BACKEND_OPTIONS, options);
 }
 
 interface UseBackendManagementReturn {
+  applyUserOptions: (config: Partial<BackendOptions>, skipRestart: boolean) => Promise<void>;
   logLevel: Ref<LogLevel>;
   defaultLogLevel: ComputedRef<LogLevel>;
   defaultLogDirectory: Ref<string>;
@@ -79,10 +80,12 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
       set(defaultLogDirectory, logDirectory);
   };
 
-  const applyUserOptions = async (config: Partial<BackendOptions>): Promise<void> => {
+  const applyUserOptions = async (config: Partial<BackendOptions>, skipRestart = false): Promise<void> => {
     saveUserOptions(config);
     set(userOptions, config);
-    await restartBackendWithOptions(get(options));
+    if (!skipRestart) {
+      await restartBackendWithOptions(get(options));
+    }
   };
 
   const saveOptions = async (opts: Partial<BackendOptions>): Promise<void> => {
@@ -148,6 +151,7 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   });
 
   return {
+    applyUserOptions,
     backendChanged,
     defaultLogDirectory,
     defaultLogLevel,

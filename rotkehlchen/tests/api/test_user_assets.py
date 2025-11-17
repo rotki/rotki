@@ -1099,3 +1099,76 @@ def test_importing_user_assets_list(
     assert stinch.symbol == 'st1INCH'
     assert len(stinch.underlying_tokens) == 1
     assert stinch.decimals == 18
+
+
+def test_add_edit_erc721_token(rotkehlchen_api_server: APIServer) -> None:
+    """Test ERC721 collectible ID validation, addition and editing"""
+    valid_erc721_token_data = {
+        'asset_type': 'evm token',
+        'address': '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
+        'evm_chain': 'ethereum',
+        'token_kind': 'erc721',
+        'name': 'Bored Ape Yacht Club',
+        'symbol': 'BAYC',
+        'collectible_id': '1234',
+        'decimals': 0,
+    }
+
+    # collectible_id should be rejected for non-ERC721 tokens
+    erc721_with_invalid_token_kind = valid_erc721_token_data.copy()
+    erc721_with_invalid_token_kind['token_kind'] = 'erc20'
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json=erc721_with_invalid_token_kind,
+        ),
+        contained_in_msg='collectible_id can only be specified for ERC721 tokens',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # invalid collectible_id format should be rejected
+    erc721_with_invalid_collectible_id = valid_erc721_token_data.copy()
+    erc721_with_invalid_collectible_id['collectible_id'] = 'invalid123'
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json=erc721_with_invalid_collectible_id,
+        ),
+        contained_in_msg='collectible_id must be a valid positive integer',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # ERC721 token without collectible_id should be rejected
+    erc721_without_collectible_id = valid_erc721_token_data.copy()
+    del erc721_without_collectible_id['collectible_id']
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+            json=erc721_without_collectible_id,
+        ),
+        contained_in_msg='collectible_id is required for ERC721 tokens',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test adding ERC721 token with collectible ID
+    result = assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=valid_erc721_token_data,
+    ))
+    assert (asset_id := result['identifier']) == 'eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1234'  # noqa: E501
+    token_dict = EvmToken(asset_id).to_dict()
+    assert token_dict['collectible_id'] == valid_erc721_token_data['collectible_id']
+    assert token_dict['token_kind'] == valid_erc721_token_data['token_kind']
+
+    # Test editing the same ERC721 token
+    edited_token_data = valid_erc721_token_data.copy()
+    edited_token_data['identifier'] = asset_id
+    edited_token_data['name'] = 'Bored Ape Yacht Club Updated'
+    assert assert_proper_sync_response_with_result(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json=edited_token_data,
+    ))
+    updated_token = EvmToken(asset_id)
+    updated_dict = updated_token.to_dict()
+    assert updated_dict['collectible_id'] == edited_token_data['collectible_id']
+    assert updated_dict['name'] == edited_token_data['name']

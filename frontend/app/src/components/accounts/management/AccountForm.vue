@@ -43,7 +43,7 @@ const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm, isSolanaChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
-const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
+const { apiKey } = useExternalApiKeys(t);
 
 const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
 
@@ -62,7 +62,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
     return 'beaconchain';
   }
 
-  if ((selectedChain === 'evm' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
+  if ((selectedChain === 'all' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
     return 'etherscan';
 
   if (get(isSolanaChains(selectedChain)) && !get(apiKey('helius')))
@@ -152,10 +152,6 @@ watch(inputMode, (mode) => {
       chain: selectedChain,
     });
   }
-});
-
-onBeforeMount(async () => {
-  await loadApiKeys();
 });
 
 defineExpose({

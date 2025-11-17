@@ -45,6 +45,7 @@ export const SupportedAsset = BaseAsset.extend({
   active: z.boolean().optional(),
   address: z.string().nullish(),
   assetType: z.string().nullish(),
+  collectibleId: z.string().nullish(),
   customAssetType: z.string().nullish(),
   decimals: z.number().nullish(),
   ended: z.number().nullish(),
@@ -58,6 +59,7 @@ export type SupportedAsset = z.infer<typeof SupportedAsset>;
 export const AssetInfo = z.object({
   assetType: z.string().nullish(),
   coingecko: z.string().optional(),
+  collectibleId: z.string().optional(),
   collectionId: z.string().nullish(),
   collectionName: z.string().nullish(),
   cryptocompare: z.string().optional(),

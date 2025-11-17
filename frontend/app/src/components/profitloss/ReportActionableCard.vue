@@ -106,7 +106,7 @@ const stepperContents = computed<
   }
 
   const missingPricesLength = get(actionableItemsLength).missingPricesLength;
-  if (missingPricesLength >= 0) {
+  if (missingPricesLength > 0) {
     contents.push({
       hint: t('profit_loss_report.actionable.missing_prices.hint'),
       items: get(actionableItems).missingPrices,

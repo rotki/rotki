@@ -57,7 +57,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.utils.misc import pairwise, ts_ms_to_sec, ts_now
+from rotkehlchen.utils.misc import pairwise, timestamp_to_date, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -812,8 +812,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                f'Failed to query kraken ledger between {start_ts} and '
-                f'{end_ts}. {e!s}',
+                f'Failed to query kraken ledger between {timestamp_to_date(start_ts)} and '
+                f'{timestamp_to_date(end_ts)}. {e!s}',
             )
             return [], start_ts
 

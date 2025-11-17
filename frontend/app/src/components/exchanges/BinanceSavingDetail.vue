@@ -5,7 +5,6 @@ import { type AssetBalance, Zero } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
@@ -169,40 +168,36 @@ onMounted(async () => {
         {{ t('exchange_balances.received_interest_history') }}
       </template>
 
-      <CollectionHandler :collection="collection">
-        <template #default="{ data }">
-          <RuiDataTable
-            v-model:sort="sort"
-            v-model:pagination.external="pagination"
-            outlined
-            dense
-            :cols="tableHeaders"
-            :rows="data"
-            row-attr="asset"
-            :loading="isLoading"
-          >
-            <template #item.asset="{ row }">
-              <AssetDetails :asset="row.asset" />
-            </template>
-            <template #item.amount="{ row }">
-              <AmountDisplay :value="row.amount" />
-            </template>
-            <template #item.usdValue="{ row }">
-              <AmountDisplay
-                :key="row.timestamp"
-                :amount="row.amount"
-                :value="Zero"
-                :price-asset="row.asset"
-                :fiat-currency="CURRENCY_USD"
-                :timestamp="row.timestamp"
-              />
-            </template>
-            <template #item.timestamp="{ row }">
-              <DateDisplay :timestamp="row.timestamp" />
-            </template>
-          </RuiDataTable>
+      <RuiDataTable
+        v-model:sort="sort"
+        v-model:pagination.external="pagination"
+        outlined
+        dense
+        :cols="tableHeaders"
+        :rows="collection.data"
+        row-attr="asset"
+        :loading="isLoading"
+      >
+        <template #item.asset="{ row }">
+          <AssetDetails :asset="row.asset" />
         </template>
-      </CollectionHandler>
+        <template #item.amount="{ row }">
+          <AmountDisplay :value="row.amount" />
+        </template>
+        <template #item.usdValue="{ row }">
+          <AmountDisplay
+            :key="row.timestamp"
+            :amount="row.amount"
+            :value="Zero"
+            :price-asset="row.asset"
+            :fiat-currency="CURRENCY_USD"
+            :timestamp="row.timestamp"
+          />
+        </template>
+        <template #item.timestamp="{ row }">
+          <DateDisplay :timestamp="row.timestamp" />
+        </template>
+      </RuiDataTable>
     </RuiCard>
   </div>
 </template>

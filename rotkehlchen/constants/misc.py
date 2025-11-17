@@ -12,17 +12,19 @@ AIRDROPS_TOLERANCE: Final = FVal(10e-13)
 
 # Could also try to extend HTTPStatus but looks complicated
 # https://stackoverflow.com/questions/45028991/best-way-to-extend-httpstatus-with-custom-value
-HTTP_STATUS_INTERNAL_DB_ERROR = 542
+HTTP_STATUS_INTERNAL_DB_ERROR: Final = 542
 
-NFT_DIRECTIVE = '_nft_'
+NFT_DIRECTIVE: Final = '_nft_'
 
 # API URLS
-KRAKEN_BASE_URL = 'https://api.kraken.com'
-KRAKEN_API_VERSION = '0'
+KRAKEN_BASE_URL: Final = 'https://api.kraken.com'
+KRAKEN_API_VERSION: Final = '0'
 
-DEFAULT_MAX_LOG_SIZE_IN_MB = 300
-DEFAULT_MAX_LOG_BACKUP_FILES = 3
-DEFAULT_SQL_VM_INSTRUCTIONS_CB = 5000
+DEFAULT_MAX_LOG_SIZE_IN_MB: Final = 300
+DEFAULT_MAX_LOG_BACKUP_FILES: Final = 3
+DEFAULT_SQL_VM_INSTRUCTIONS_CB: Final = 5000
+DEFAULT_LOGLEVEL: Final = 'DEBUG'
+VALID_LOGLEVELS: Final = ('TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
 
 GLOBALDIR_NAME: Final = 'global'
 GLOBALDB_NAME: Final = 'global.db'

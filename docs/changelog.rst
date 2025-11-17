@@ -6,6 +6,20 @@ Changelog
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+
+* :release:`1.41.1 <2025-11-14>`
+* :bug: `-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.
+* :feature:`10734` Users will now be able to specify the collectible ID of an ERC721 token in the asset manager.
+* :bug:`10901` Users will now be able to change the log level without restarting the app, in the "Settings > General" menu.
+* :bug:`10862` rotki will now show a warning when a Gnosis Pay or Monerium transaction is manually redecoded but credentials are missing.
+* :bug:`-` rotki will now provide a clear device limit message when premium is deactivated due to exceeding the device limit.
+* :bug:`10914` rotki will now query polkadot and kusama balances correctly again after their migration to asset hub.
+* :bug:`-` rotki will no longer count fee in the withdrawn amount in poloniex
+* :bug:`10894` rotki will now properly decode more Aave V3 transactions involving native tokens.
+* :bug:`-` ERC20 transfers will no longer be missed when transaction querying fails due to network problems.
+* :bug:`-` rotki will now decode more kinds of Jupiter swaps.
+* :bug:`-` Fix an issue where editing the latest price of an asset in the asset page shows the wrong initial price.
+* :bug:`-` Contract deployment events will now display the deployed contract address in the event notes.
 * :bug:`10851` Users will be able to sort the account balance table by assets again.
 * :bug:`10853` Compound V3 native token deposit/withdrawals will be properly decoded with associated balances properly detected.
 * :bug:`-` 1inch limit order swaps will now be decoded correctly.

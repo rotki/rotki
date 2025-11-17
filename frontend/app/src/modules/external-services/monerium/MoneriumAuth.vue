@@ -21,7 +21,7 @@ const manualRefreshToken = ref<string>('');
 const { isPackaged, openUrl } = useInterop();
 const { notify } = useNotificationsStore();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessagesStore();
-const { authenticated, completeOAuth, disconnect: disconnectOAuth, refreshStatus, status } = useMoneriumOAuth();
+const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
 
 const connectedEmail = computed<string>(() => get(status)?.userEmail ?? '');
 
@@ -155,7 +155,6 @@ function cancelTokenInput(): void {
 }
 
 onMounted(async () => {
-  await refreshStatus();
   registerOAuthCallbackHandler(handleOAuthCallback);
 });
 

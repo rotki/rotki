@@ -65,6 +65,7 @@ const { useIsTaskRunning } = useTaskStore();
 const refreshProtocolCacheTaskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === HISTORY_EVENT_ACTIONS.QUERY);
+const isRepulling = computed(() => get(currentAction) === HISTORY_EVENT_ACTIONS.REPULLING);
 
 const show = computed(() => get(loading) || get(anyEventsDecoding) || get(receivingProtocolCacheStatus) || get(items).length > 0);
 const usedShow = useRefWithDebounce(show, 400);
@@ -89,13 +90,15 @@ function resetQueryStatus() {
   resetUndecodedTransactionsStatus();
   set(currentAction, HISTORY_EVENT_ACTIONS.QUERY);
 }
+
+const isQueryOrRepulling = logicOr(isQuery, isRepulling);
 </script>
 
 <template>
   <HistoryQueryStatusBar
     v-if="usedShow"
     :colspan="colspan"
-    :finished="isQuery ? !loading : !receivingProtocolCacheStatus && !anyEventsDecoding"
+    :finished="isQueryOrRepulling ? !loading : !receivingProtocolCacheStatus && !anyEventsDecoding"
     @reset="resetQueryStatus()"
   >
     <template #current>
@@ -104,6 +107,17 @@ function resetQueryStatus() {
         v-else-if="isQuery"
         :finished="!loading"
       />
+      <HistoryQueryStatusCurrent
+        v-else-if="isRepulling"
+        :finished="!loading"
+      >
+        <template #running>
+          {{ t('transactions.repulling.repulling') }}
+        </template>
+        <template #finished>
+          {{ t('transactions.repulling.finished') }}
+        </template>
+      </HistoryQueryStatusCurrent>
       <HistoryQueryStatusCurrent v-else-if="ethBlockEventsDecoding">
         <template #running>
           {{ t('transactions.events_decoding.decoding.eth_block_events') }}
@@ -117,7 +131,7 @@ function resetQueryStatus() {
 
     <template #dialog>
       <HistoryQueryStatusDialog
-        v-if="isQuery && !refreshProtocolCacheTaskRunning"
+        v-if="isQueryOrRepulling && !refreshProtocolCacheTaskRunning"
         :only-chains="onlyChains"
         :locations="locations"
         :events="events"

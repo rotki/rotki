@@ -62,7 +62,6 @@ describe('composables::backend', () => {
       const { options, defaultLogDirectory, fileConfig } = backendManagement!;
 
       expect(get(options)).toStrictEqual({
-        loglevel: 'debug',
         logDirectory: '/Users/home/rotki/logs',
       });
       expect(get(fileConfig)).toStrictEqual({
@@ -130,7 +129,6 @@ describe('composables::backend', () => {
 
       expect(useInterop().restartBackend).toBeCalledWith({
         logDirectory: '/Users/home/rotki/logs',
-        loglevel: 'debug',
       });
     });
   });

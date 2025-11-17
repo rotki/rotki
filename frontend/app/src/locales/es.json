@@ -669,8 +669,7 @@
     },
     "form": {
       "labels": {
-        "address": "Address",
-        "for_all_chain": "Save this name for all chains"
+        "address": "Address"
       },
       "no_suggestions_available": "No Suggestions Available",
       "validation": {
@@ -987,8 +986,8 @@
     "advanced": "Advanced",
     "config_file_disabled": "This parameter is already set in the rotki_config.json",
     "confirm": {
-      "message": "Are you sure you want to rest the backend settings to default?",
-      "title": "Rest backend settings"
+      "message": "Are you sure you want to reset the backend settings to default?",
+      "title": "Reset backend settings"
     },
     "data_directory": {
       "select": "Select where rotki will store the data"

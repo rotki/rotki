@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -6,11 +7,13 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import Location, SupportedBlockchain, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -66,3 +69,26 @@ def test_delete_transactions_by_chain(
         )
         assert len(events) == ethereum_events
         assert all(event.location == Location.ETHEREUM for event in events)
+
+
+def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler', ethereum_manager: 'EthereumManager') -> None:  # noqa: E501
+    address = make_evm_address()
+    with database.conn.read_ctx() as cursor:  # verify no range is initially stored
+        assert database.get_used_query_range(
+            cursor=cursor,
+            name=(location_string := f'{ethereum_manager.node_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'),  # noqa: E501
+        ) is None
+
+    with patch.object(
+        ethereum_manager.node_inquirer.etherscan,
+        'get_token_transaction_hashes',
+        side_effect=RemoteError('Etherscan API rate limit exceeded'),
+    ):
+        ethereum_manager.transactions._get_erc20_transfers_for_ranges(
+            address=address,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1762453737),
+        )
+
+    with database.conn.read_ctx() as cursor:  # ensure the range was not marked as pulled
+        assert database.get_used_query_range(cursor=cursor, name=location_string) is None

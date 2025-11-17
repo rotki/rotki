@@ -63,7 +63,7 @@ defineExpose({
       color="primary"
       size="sm"
       hide-details
-      @click.prevent.stop="toggleSelect(query)"
+      @click.prevent
     />
 
     <span class="capitalize text-sm text-rui-text-secondary">

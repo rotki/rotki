@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
-import { One } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
@@ -25,6 +24,7 @@ const props = withDefaults(
 
 const { identifier, isCollectionParent } = toRefs(props);
 const { assetPriceInfo } = useAggregatedBalances();
+const { assetPriceInCurrentCurrency } = usePriceUtils();
 
 const { assetName } = useAssetInfoRetrieval();
 const { refreshPrice } = usePriceRefresh();
@@ -33,8 +33,9 @@ const { isLoading } = useStatusStore();
 const refreshingPrices = isLoading(Section.PRICES);
 
 const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCollectionParent)));
+const price = assetPriceInCurrentCurrency(identifier);
 
-const { isManualAssetPrice, useExchangeRate } = usePriceUtils();
+const { isManualAssetPrice } = usePriceUtils();
 const isManualPrice = isManualAssetPrice(identifier);
 
 const { t } = useI18n({ useScope: 'global' });
@@ -50,10 +51,7 @@ function setPriceForm() {
   const toAsset = get(currencySymbol);
   set(customPrice, {
     fromAsset: get(identifier),
-    price: get(info)
-      .usdPrice
-      .multipliedBy(get(useExchangeRate(toAsset)) ?? One)
-      .toFixed(),
+    price: get(price).toFixed(),
     toAsset,
   });
   set(openPriceDialog, true);
@@ -73,6 +71,11 @@ function showDeleteConfirmation() {
     () => deletePrice({ fromAsset: identifierVal }),
   );
 }
+
+const pricesLoading = computed(() => {
+  const infoVal = get(info);
+  return get(refreshing) || get(refreshingPrices) || !infoVal.usdPrice || infoVal.usdPrice.lt(0);
+});
 </script>
 
 <template>
@@ -106,7 +109,7 @@ function showDeleteConfirmation() {
       <div class="px-4 pb-3 flex flex-wrap items-center gap-1 md:gap-3">
         <AmountDisplay
           class="flex-1 text-h5 font-medium text-rui-text-secondary"
-          :loading="refreshing || !info.usdPrice || info.usdPrice.lt(0)"
+          :loading="pricesLoading"
           show-currency="symbol"
           :price-asset="identifier"
           :price-of-asset="info.usdPrice"
@@ -119,6 +122,7 @@ function showDeleteConfirmation() {
           :delete-tooltip="t('assets.custom_price.delete.tooltip')"
           :edit-tooltip="t('assets.custom_price.edit.tooltip')"
           :no-delete="!isManualPrice"
+          :disabled="pricesLoading"
           @delete-click="showDeleteConfirmation()"
           @edit-click="setPriceForm()"
         />

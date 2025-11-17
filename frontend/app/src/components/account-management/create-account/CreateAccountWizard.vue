@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/types/login';
+import { externalLinks } from '@shared/external-links';
 import CreateAccountSubmitAnalytics
   from '@/components/account-management/create-account/analytics/CreateAccountSubmitAnalytics.vue';
 import CreateAccountCredentials
@@ -8,6 +9,7 @@ import CreateAccountIntroduction
   from '@/components/account-management/create-account/introduction/CreateAccountIntroduction.vue';
 import CreateAccountPremium from '@/components/account-management/create-account/premium/CreateAccountPremium.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -45,6 +47,23 @@ function nextStep() {
 }
 
 const { t } = useI18n({ useScope: 'global' });
+
+const parsedError = computed<{ hasLink: boolean; parts: string[] }>(() => {
+  const errorMessage = get(error);
+  const linkPlaceholder = '_DEVICE_LIMIT_LINK_';
+
+  if (!errorMessage || !errorMessage.includes(linkPlaceholder)) {
+    return {
+      hasLink: false,
+      parts: [errorMessage],
+    };
+  }
+
+  return {
+    hasLink: true,
+    parts: errorMessage.split(linkPlaceholder),
+  };
+});
 
 const premiumEnabled = ref<boolean>(false);
 const premiumSetupForm = ref<PremiumSetup>({
@@ -131,7 +150,23 @@ function confirm() {
                     v-if="error"
                     type="error"
                   >
-                    {{ error }}
+                    <template v-if="parsedError.hasLink">
+                      {{ parsedError.parts[0] }}
+                      <i18n-t keypath="create_account.error.device_limit_link">
+                        <template #here>
+                          <ExternalLink
+                            :url="externalLinks.premiumDevices"
+                            custom
+                          >
+                            {{ t('common.here') }}
+                          </ExternalLink>
+                        </template>
+                      </i18n-t>
+                      {{ parsedError.parts[1] }}
+                    </template>
+                    <template v-else>
+                      {{ error }}
+                    </template>
                   </RuiAlert>
                   <div class="grid grid-cols-2 gap-4">
                     <RuiButton

@@ -26,6 +26,11 @@ def fixture_session_coingecko():
     return Coingecko(database=None)
 
 
+@pytest.fixture(name='coingecko')
+def fixture_coingecko():
+    return Coingecko(database=None)
+
+
 @pytest.fixture(name='alchemy')
 def fixture_alchemy(database: 'DBHandler'):
     with database.user_write() as write_cursor:
@@ -40,6 +45,11 @@ def fixture_alchemy(database: 'DBHandler'):
 
 
 @pytest.fixture(scope='session', name='session_defillama')
+def fixture_session_defillama():
+    return Defillama(database=None)
+
+
+@pytest.fixture(name='defillama')
 def fixture_defillama():
     return Defillama(database=None)
 
@@ -76,9 +86,9 @@ def price_historian(
         should_mock_price_queries,
         mocked_price_queries,
         cryptocompare,
-        session_coingecko,
+        coingecko,
         alchemy,
-        session_defillama,
+        defillama,
         uniswapv2_inquirer,
         uniswapv3_inquirer,
         default_mock_price_value,
@@ -92,9 +102,9 @@ def price_historian(
     historian = PriceHistorian(
         data_directory=data_dir,
         cryptocompare=cryptocompare,
-        coingecko=session_coingecko,
+        coingecko=coingecko,
         alchemy=alchemy,
-        defillama=session_defillama,
+        defillama=defillama,
         uniswapv2=uniswapv2_inquirer,
         uniswapv3=uniswapv3_inquirer,
     )

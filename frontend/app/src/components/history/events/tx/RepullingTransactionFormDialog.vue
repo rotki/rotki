@@ -6,6 +6,7 @@ import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
@@ -14,17 +15,15 @@ import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 
 const modelValue = defineModel<boolean>({ required: true });
+const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   loading?: boolean;
+  repullTransactions?: (account: ChainAddress) => void;
+  repullExchangeEvents?: (exchanges: Exchange[]) => void;
 }>(), {
   loading: false,
 });
-
-const emit = defineEmits<{
-  'refresh-txs': [account: ChainAddress];
-  'refresh-exchange-events': [exchanges: Exchange[]];
-}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -95,9 +94,10 @@ async function handleExchangeSubmission(
     toTimestamp: data.toTimestamp,
   };
 
+  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   const newEventsDetected = await repullingExchangeEvents(exchangePayload);
   if (newEventsDetected && exchange) {
-    emit('refresh-exchange-events', [exchange]);
+    props.repullExchangeEvents?.([exchange]);
     logger.debug('New exchange events detected');
   }
 }
@@ -113,10 +113,11 @@ async function handleBlockchainSubmission(data: RepullingTransactionPayload): Pr
     toTimestamp: data.toTimestamp,
   };
 
+  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   const newTransactionsDetected = await repullingTransactions(blockchainPayload);
   if (newTransactionsDetected) {
     const chains = [data.chain];
-    emit('refresh-txs', refreshPayload);
+    props.repullTransactions?.(refreshPayload);
     logger.debug(`New transactions detected ${chains.join(', ')}`);
   }
 }
@@ -132,13 +133,13 @@ async function submit(): Promise<void> {
 
   try {
     set(submitting, true);
+    set(modelValue, false);
 
     if (type === 'exchange')
       await handleExchangeSubmission(data, formRef);
     else
       await handleBlockchainSubmission(data);
 
-    set(modelValue, false);
     resetForm();
   }
   catch (error: any) {
@@ -153,7 +154,7 @@ async function submit(): Promise<void> {
 <template>
   <BigDialog
     :display="modelValue"
-    :title="t('transactions.repulling.title')"
+    :title="t('transactions.repulling.action')"
     :primary-action="t('transactions.repulling.action')"
     :action-disabled="loading || taskRunning"
     :loading="submitting || taskRunning"

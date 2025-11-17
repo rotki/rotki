@@ -39,7 +39,6 @@ from .types import (
     NodesCallOrder,
     PolkadotNodeName,
     SubstrateAddress,
-    SubstrateChainId,
 )
 from .utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 
@@ -178,7 +177,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         expected one.
         """
         # Check connection and chain ID
-        chain = self._get_chain_id(node_interface=node_interface)
+        chain = self._get_chain_id(node_interface=node_interface).replace(' Asset Hub', '')
         if chain != str(self.chain).capitalize():
             message = (
                 f'{self.chain} found unexpected chain {chain} when attempted '
@@ -336,7 +335,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
 
         return balance
 
-    def _get_chain_id(self, node_interface: SubstrateInterface) -> SubstrateChainId:
+    def _get_chain_id(self, node_interface: SubstrateInterface) -> str:
         """Return the chain identifier (name for substrate chains)"""
         log.debug(f'{self.chain} querying chain ID', url=node_interface.url)
         try:
@@ -354,7 +353,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             raise RemoteError(message) from e
 
         log.debug(f'{self.chain} chain ID', chain_id=chain_id)
-        return SubstrateChainId(chain_id)
+        return chain_id
 
     def _get_chain_properties(
             self,
@@ -464,8 +463,11 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
     def _request_chain_metadata(self) -> dict[str, Any]:
         """Subscan API metadata documentation:
         https://docs.api.subscan.io/#metadata
+
+        May raise:
+          - Remote Error
         """
-        url = f'https://{self.chain.name.lower()}.api.subscan.io/api/scan/metadata'
+        url = f'https://assethub-{self.chain.name.lower()}.api.subscan.io/api/scan/metadata'
         log.debug(f'{self.chain} subscan API request', request_url=url)
         try:
             response = requests.post(url=url, timeout=CachedSettings().get_timeout_tuple())
@@ -607,7 +609,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
     def get_chain_id(
             self,
             node_interface: SubstrateInterface | None = None,
-    ) -> SubstrateChainId:
+    ) -> str:
         """
         May raise:
         - RemoteError: `request_available_nodes()` fails to request after

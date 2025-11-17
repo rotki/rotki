@@ -173,7 +173,7 @@ rotkehlchen_mock = "rotkehlchen_mock.__main__:main"
 # dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools_scm]
-fallback_version = "1.41.0"
+fallback_version = "1.41.1"
 
 [tool.setuptools.package-data]
 "rotkehlchen.data" = ["*"]

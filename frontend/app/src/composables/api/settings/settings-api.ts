@@ -10,6 +10,7 @@ interface UseSettingApiReturn {
   getSettings: () => Promise<UserSettingsModel>;
   getRawSettings: () => Promise<SettingsUpdate>;
   backendSettings: () => Promise<BackendConfiguration>;
+  updateBackendConfiguration: (loglevel: string) => Promise<BackendConfiguration>;
 }
 
 export function useSettingsApi(): UseSettingApiReturn {
@@ -49,10 +50,25 @@ export function useSettingsApi(): UseSettingApiReturn {
     return BackendConfiguration.parse(handleResponse(response));
   };
 
+  const updateBackendConfiguration = async (loglevel: string): Promise<BackendConfiguration> => {
+    const response = await api.instance.put<ActionResult<BackendConfiguration>>(
+      '/settings/configuration',
+      snakeCaseTransformer({
+        loglevel: loglevel.toUpperCase(),
+      }),
+      {
+        validateStatus: validStatus,
+      },
+    );
+    const data = handleResponse(response);
+    return BackendConfiguration.parse(data);
+  };
+
   return {
     backendSettings,
     getRawSettings,
     getSettings,
     setSettings,
+    updateBackendConfiguration,
   };
 }

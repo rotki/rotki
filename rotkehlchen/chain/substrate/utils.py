@@ -9,15 +9,15 @@ from .types import KusamaNodeName, PolkadotNodeName, SubstrateAddress, Substrate
 
 KUSAMA_NODES_TO_CONNECT_AT_START = (
     KusamaNodeName.OWN,
-    KusamaNodeName.PARITY,
-    KusamaNodeName.ELARA,
+    KusamaNodeName.DWELLIR,
+    KusamaNodeName.STAKEWORLD,
     KusamaNodeName.ONFINALITY,
 )
 
 POLKADOT_NODES_TO_CONNECT_AT_START = (
     PolkadotNodeName.OWN,
-    PolkadotNodeName.PARITY,
-    PolkadotNodeName.ELARA,
+    PolkadotNodeName.DWELLIR,
+    PolkadotNodeName.STAKEWORLD,
     PolkadotNodeName.ONFINALITY,
 )
 

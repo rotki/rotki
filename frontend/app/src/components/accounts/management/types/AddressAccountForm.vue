@@ -108,7 +108,7 @@ const addresses = computed<string[]>({
 
 const showWalletImport = computed<boolean>(() => {
   const model = get(modelValue);
-  return get(isEvm(model.chain)) || model.chain === 'evm';
+  return get(isEvm(model.chain)) || model.chain === 'all';
 });
 
 function validate(): Promise<boolean> {
@@ -124,7 +124,7 @@ defineExpose({
 <template>
   <div class="flex flex-col gap-6">
     <ModuleActivator
-      v-if="[Blockchain.ETH, 'evm'].includes(modelValue.chain) && !editMode"
+      v-if="[Blockchain.ETH, 'all'].includes(modelValue.chain) && !editMode"
       @update:selection="selectedModules = $event"
     />
 

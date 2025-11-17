@@ -268,6 +268,7 @@ watchDebounced(route, async () => {
       <HistoryEventsDialogContainer
         ref="dialogContainer"
         v-model:accounting-rule-to-edit="accountingRuleToEdit"
+        v-model:current-action="currentAction"
         :loading="processing"
         :refreshing="refreshing"
         :section-loading="sectionLoading"

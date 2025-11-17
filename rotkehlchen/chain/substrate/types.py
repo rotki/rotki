@@ -5,8 +5,6 @@ from substrateinterface import SubstrateInterface
 
 SubstrateAddress = NewType('SubstrateAddress', str)
 SubstratePublicKey = NewType('SubstratePublicKey', str)
-
-SubstrateChainId = NewType('SubstrateChainId', str)
 BlockNumber = NewType('BlockNumber', int)
 
 
@@ -15,22 +13,22 @@ BlockNumber = NewType('BlockNumber', int)
 class KusamaNodeName(Enum):
     """Public nodes for Kusama.
 
-    Taken from: https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts#L34
+    Taken from: https://www.comparenodes.com/library/public-endpoints/assethub/
     """
     OWN = 0  # make sure it's always 0 to match PolkadotNodeName
-    PARITY = 1
+    DWELLIR = 1
     ONFINALITY = 2
-    ELARA = 3
+    STAKEWORLD = 3
 
     def __str__(self) -> str:
         if self == KusamaNodeName.OWN:
             return 'own node'
-        if self == KusamaNodeName.PARITY:
-            return 'parity'
+        if self == KusamaNodeName.DWELLIR:
+            return 'dwellir'
         if self == KusamaNodeName.ONFINALITY:
             return 'onfinality'
-        if self == KusamaNodeName.ELARA:
-            return 'elara'
+        if self == KusamaNodeName.STAKEWORLD:
+            return 'stakeworld'
 
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
@@ -40,12 +38,12 @@ class KusamaNodeName(Enum):
                 'The endpoint url for a substrate own node must be got either '
                 'via "own_rpc_endpoint" or the specific db setting',
             )
-        if self == KusamaNodeName.PARITY:
-            return 'https://kusama-rpc.polkadot.io/'
+        if self == KusamaNodeName.DWELLIR:
+            return 'https://asset-hub-kusama-rpc.n.dwellir.com/'
         if self == KusamaNodeName.ONFINALITY:
-            return 'https://kusama.api.onfinality.io/public-https'
-        if self == KusamaNodeName.ELARA:
-            return 'https://kusama.elara.patract.io'
+            return 'https://assethub-kusama.api.onfinality.io/public'
+        if self == KusamaNodeName.STAKEWORLD:
+            return 'https://ksm-rpc.stakeworld.io/assethub'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
     def is_owned(self) -> bool:
@@ -55,22 +53,22 @@ class KusamaNodeName(Enum):
 class PolkadotNodeName(Enum):
     """Public nodes for Polkadot.
 
-    Taken from: https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts#L34
+    Taken from: https://www.comparenodes.com/library/public-endpoints/assethub/
     """
     OWN = 0  # make sure it's always 0 to match KusamaNodeName
-    PARITY = 1
+    DWELLIR = 1
     ONFINALITY = 2
-    ELARA = 3
+    STAKEWORLD = 3
 
     def __str__(self) -> str:
         if self == PolkadotNodeName.OWN:
             return 'own node'
-        if self == PolkadotNodeName.PARITY:
-            return 'parity'
+        if self == PolkadotNodeName.DWELLIR:
+            return 'dwellir'
         if self == PolkadotNodeName.ONFINALITY:
             return 'onfinality'
-        if self == PolkadotNodeName.ELARA:
-            return 'elara'
+        if self == PolkadotNodeName.STAKEWORLD:
+            return 'stakeworld'
 
         raise AssertionError(f'Unexpected PolkadotNodeName: {self}')
 
@@ -80,12 +78,12 @@ class PolkadotNodeName(Enum):
                 'The endpoint url for a substrate own node must be got either '
                 'via "own_rpc_endpoint" or the specific db setting',
             )
-        if self == PolkadotNodeName.PARITY:
-            return 'https://rpc.polkadot.io/'
+        if self == PolkadotNodeName.DWELLIR:
+            return 'https://asset-hub-polkadot-rpc.n.dwellir.com/'
         if self == PolkadotNodeName.ONFINALITY:
-            return 'https://polkadot.api.onfinality.io/public-ws'
-        if self == PolkadotNodeName.ELARA:
-            return 'https://polkadot.elara.patract.io'
+            return 'https://statemint.api.onfinality.io/public'
+        if self == PolkadotNodeName.STAKEWORLD:
+            return 'https://dot-rpc.stakeworld.io/assethub'
         raise AssertionError(f'Unexpected PolkadotNodeName: {self}')
 
     def is_owned(self) -> bool:

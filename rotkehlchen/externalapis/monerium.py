@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urljoin
 
 import requests
+from gevent.lock import Semaphore
 from oauthlib.oauth2 import WebApplicationClient
 
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
@@ -304,6 +305,7 @@ class MoneriumOAuthClient:
         self.session.headers.setdefault('Accept', MONERIUM_ACCEPT_HEADER)
         self._credentials: MoneriumOAuthCredentials | None = self._load_credentials()
         self._oauth_client: WebApplicationClient | None = None
+        self._refresh_lock: Semaphore = Semaphore()
         if self._credentials is not None:
             self._oauth_client = WebApplicationClient(AUTHORIZATION_CODE_FLOW_CLIENT_ID)
 
@@ -415,7 +417,12 @@ class MoneriumOAuthClient:
         if not self._credentials.is_expiring():  # type: ignore  # ._credentials is not None because it is checked above
             return
 
-        self._refresh_access_token()
+        with self._refresh_lock:
+            # ensure that no other greenlet has already refreshed the token
+            if not self._credentials.is_expiring():  # type: ignore
+                return
+
+            self._refresh_access_token()
 
     def request(
             self,
@@ -498,7 +505,7 @@ class MoneriumOAuthClient:
         try:
             response = self.session.post(
                 url=urljoin(MONERIUM_API_BASE_URL, 'auth/token'),
-                params={
+                data={
                     'grant_type': 'refresh_token',
                     'client_id': AUTHORIZATION_CODE_FLOW_CLIENT_ID,
                     'refresh_token': self._credentials.refresh_token,

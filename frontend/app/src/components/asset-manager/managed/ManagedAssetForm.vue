@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import type { SelectOption } from '@/types/common';
-import { isValidEthAddress, isValidSolanaAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
+import {
+  EvmTokenKind,
+  isValidEthAddress,
+  isValidSolanaAddress,
+  onlyIfTruthy,
+  type SupportedAsset,
+  toSentenceCase,
+  type UnderlyingToken,
+} from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
@@ -53,6 +61,7 @@ const protocol = refOptional(useRefPropVModel(modelValue, 'protocol'), '');
 const swappedFor = refOptional(useRefPropVModel(modelValue, 'swappedFor'), '');
 const forked = refOptional(useRefPropVModel(modelValue, 'forked'), '');
 const started = useRefPropVModel(modelValue, 'started');
+const collectibleId = refOptional(useRefPropVModel(modelValue, 'collectibleId'), '');
 
 const startedModel = computed<number>({
   get: () => {
@@ -80,6 +89,7 @@ const { addAsset, editAsset } = useAssetManagementApi();
 
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 const isSolanaToken = computed<boolean>(() => get(assetType) === SOLANA_TOKEN);
+const isNft = computed<boolean>(() => get(tokenKind) === EvmTokenKind.ERC721);
 
 const isTokenRequiresAddress = logicOr(isEvmToken, isSolanaToken);
 
@@ -89,6 +99,7 @@ const states = {
   address,
   assetType,
   coingecko,
+  collectibleId,
   cryptocompare,
   decimals,
   evmChain,
@@ -111,6 +122,9 @@ const v$ = useVuelidate({
   },
   assetType: { required },
   coingecko: { externalServerValidation },
+  collectibleId: {
+    required: requiredIf(isNft),
+  },
   cryptocompare: { externalServerValidation },
   decimals: { externalServerValidation },
   evmChain: { externalServerValidation },
@@ -165,6 +179,10 @@ async function saveAsset() {
     if (!get(isSolanaToken)) {
       assetPayload = omit(assetPayload, ['decimals', 'address', 'tokenKind']);
     }
+  }
+
+  if (!get(isEvmToken) || !get(isNft)) {
+    assetPayload = omit(assetPayload, ['collectibleId']);
   }
 
   if (props.editMode) {
@@ -329,18 +347,18 @@ defineExpose({
           />
         </div>
         <div
-          class="col-span-2"
+          class="col-span-2 flex flex-col sm:flex-row gap-3"
           data-cy="address-input"
         >
           <RuiTextField
             v-model="address"
+            class="flex-1"
             variant="outlined"
             color="primary"
             :loading="fetching"
             :error-messages="toMessages(v$.address)"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
-            @keydown.space.
             @blur="v$.address.$touch()"
           >
             <template
@@ -357,6 +375,18 @@ defineExpose({
               </RuiButton>
             </template>
           </RuiTextField>
+
+          <RuiTextField
+            v-if="isNft"
+            v-model="collectibleId"
+            class="sm:w-1/4"
+            variant="outlined"
+            color="primary"
+            type="number"
+            :label="t('asset_form.labels.collectible_id')"
+            :error-messages="toMessages(v$.collectibleId)"
+            :disabled="loading || editMode"
+          />
         </div>
       </template>
 
@@ -388,7 +418,6 @@ defineExpose({
             :error-messages="toMessages(v$.address)"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
-            @keydown.space.
             @blur="v$.address.$touch()"
           />
         </div>

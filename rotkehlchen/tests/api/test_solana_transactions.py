@@ -22,6 +22,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.tests.fixtures import WebsocketReader
 
 
 @pytest.mark.vcr
@@ -133,9 +134,11 @@ def test_query_solana_transactions(
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_refetch_txs_in_range(
         rotkehlchen_api_server: 'APIServer',
         solana_accounts: list[SolanaAddress],
+        websocket_connection: 'WebsocketReader',
 ) -> None:
     """Test that refetching transactions in a given range works properly.
     First queries 3 transactions and then queries a range between the first and the third, which
@@ -164,6 +167,11 @@ def test_refetch_txs_in_range(
         },
     ))
     assert result['new_transactions_count'] == 2
+    websocket_connection.wait_until_messages_num(num=3, timeout=2)
+    assert [msg['data']['status'] for msg in websocket_connection.messages if msg['data'].get('service') is None] == [  # skip helius message  # noqa: E501
+        'querying_transactions_finished',
+        'querying_transactions_started',
+    ]
 
     with rotki.data.db.conn.read_ctx() as cursor:
         assert [

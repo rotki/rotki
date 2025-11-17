@@ -55,13 +55,13 @@ def test_get_accounts_balance(kusama_manager):
         SUBSTRATE_ACC1_KSM_ADDR,
         SUBSTRATE_ACC2_KSM_ADDR,
     ])
-    assert account_balance[SUBSTRATE_ACC1_KSM_ADDR] >= ZERO
-    assert account_balance[SUBSTRATE_ACC2_KSM_ADDR] >= ZERO
+    assert account_balance[SUBSTRATE_ACC1_KSM_ADDR] > ZERO
+    assert account_balance[SUBSTRATE_ACC2_KSM_ADDR] > ZERO
 
 
 def test_get_chain_id(kusama_manager):
     chain_id = kusama_manager.get_chain_id()
-    assert chain_id == 'Kusama'
+    assert chain_id == 'Kusama Asset Hub'
 
 
 def test_get_chain_properties(kusama_manager):
@@ -123,7 +123,7 @@ def test_set_available_nodes_call_order(kusama_manager):
         ),
     )
     node_attrs_item_3 = (
-        KusamaNodeName.PARITY,
+        KusamaNodeName.DWELLIR,
         NodeNameAttributes(
             node_interface=object(),
             weight_block=1000,
@@ -151,15 +151,15 @@ def test_format_own_rpc_endpoint(endpoint, formatted_endpoint):
 
 
 def test_connect_to_own_node(polkadot_manager: 'SubstrateManager'):
-    polkadot_manager.connect_at_start = [PolkadotNodeName.OWN, PolkadotNodeName.PARITY]
+    polkadot_manager.connect_at_start = [PolkadotNodeName.OWN, PolkadotNodeName.DWELLIR]
     polkadot_manager.own_rpc_endpoint = ''
     polkadot_manager.attempt_connections()
-    assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == ['polkadot manager connection to parity node']  # noqa: E501
+    assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == ['polkadot manager connection to dwellir node']  # noqa: E501
     polkadot_manager.greenlet_manager.clear()
     polkadot_manager.greenlet_manager.greenlets = []
     polkadot_manager.own_rpc_endpoint = 'http://localhost:1234'
     polkadot_manager.attempt_connections()
     assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == [
         'polkadot manager connection to own node node',
-        'polkadot manager connection to parity node',
+        'polkadot manager connection to dwellir node',
     ]

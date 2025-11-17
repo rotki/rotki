@@ -30,7 +30,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.db.utils import LocationData
-from rotkehlchen.errors.api import PremiumAuthenticationError
+from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -343,6 +343,33 @@ def test_premium_status_error_conditions(
 
         messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
         assert messages[0].data == {'is_premium_active': False, 'expired': error_case[1]}
+
+
+@pytest.mark.parametrize('max_tasks_num', [1])
+@pytest.mark.parametrize('use_function_scope_msg_aggregator', [True])
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_premium_device_limit_error(
+        task_manager: TaskManager,
+        rotki_premium_credentials,
+) -> None:
+    """Test that device limit errors send premium_status_update with reason."""
+    task_manager.database.set_rotkehlchen_premium(rotki_premium_credentials)
+    task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
+
+    device_limit_error = PremiumPermissionError('Device limit of 4 exceeded', {'limit_type': 'device'})  # noqa: E501
+    with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=device_limit_error):  # noqa: E501
+        task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
+        task_manager.schedule()
+        gevent.joinall(task_manager.running_greenlets)
+
+        messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+        assert len(messages) == 1
+        assert messages[0].message_type == 'premium_status_update'
+        assert messages[0].data == {
+            'is_premium_active': False,
+            'expired': False,
+            'reason': 'Device limit of 4 exceeded',
+        }
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
