@@ -127,24 +127,26 @@ class AMMSwapPlatform:
         """Utility function to update the pools underlying assets prices in USD
         (prices obtained via Inquirer) used by all AMM platforms.
         """
+        with self.database.conn.read_ctx() as cursor:
+            main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
+
         for lps in address_balances.values():
             for lp in lps:
                 # Try to get price from either known or unknown asset price.
                 # Otherwise keep existing price (zero)
                 total_user_balance = ZERO
                 for asset in lp.assets:
-                    asset_usd_price = Inquirer.find_usd_price(asset.token)
-                    # Update <LiquidityPoolAsset> if asset USD price exists
-                    if asset_usd_price != ZERO_PRICE:
-                        asset.usd_price = asset_usd_price
-                        asset.user_balance.usd_value = FVal(
-                            asset.user_balance.amount * asset_usd_price,
-                        )
+                    # Update <LiquidityPoolAsset> if asset price exists in main currency
+                    if (asset_main_currency_price := Inquirer.find_price(
+                        from_asset=asset.token,
+                        to_asset=main_currency,
+                    )) != ZERO_PRICE:
+                        asset.user_balance.value = FVal(asset.user_balance.amount * asset_main_currency_price)  # noqa: E501
 
-                    total_user_balance += asset.user_balance.usd_value
+                    total_user_balance += asset.user_balance.value
 
-                # Update <LiquidityPool> total balance in USD
-                lp.user_balance.usd_value = total_user_balance
+                # Update <LiquidityPool> total balance in main currency
+                lp.user_balance.value = total_user_balance
 
     def get_balances(self, addresses: list[ChecksumEvmAddress]) -> AddressToLPBalances:
         """Get the given addresses' balances in the current protocol"""

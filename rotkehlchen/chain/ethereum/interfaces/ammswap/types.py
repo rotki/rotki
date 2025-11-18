@@ -4,7 +4,6 @@ from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Price
@@ -19,14 +18,12 @@ class LiquidityPoolAsset:
     token: EvmToken
     total_amount: FVal | None
     user_balance: Balance
-    usd_price: Price = ZERO_PRICE
 
     def serialize(self) -> dict[str, Any]:
         return {
             'asset': self.token.serialize(),
             'total_amount': self.total_amount,
             'user_balance': self.user_balance.serialize(),
-            'usd_price': self.usd_price,
         }
 
 
