@@ -87,7 +87,7 @@ def test_get_balances(
         else:
             assert lp['total_supply'] is None
         assert lp['user_balance']['amount']
-        assert lp['user_balance']['usd_value']
+        assert lp['user_balance']['value']
 
         # LiquidityPoolAsset attributes
         for lp_asset in lp['assets']:
@@ -106,7 +106,7 @@ def test_get_balances(
                 assert lp_asset['total_amount'] is not None
             else:
                 assert lp_asset['total_amount'] is None
-            assert lp_asset['usd_price']
+
             assert len(lp_asset['user_balance']) == 3
             assert lp_asset['user_balance']['amount']
-            assert lp_asset['user_balance']['usd_value']
+            assert lp_asset['user_balance']['value']

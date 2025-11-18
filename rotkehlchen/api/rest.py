@@ -2836,16 +2836,6 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_dill_balance(self) -> dict[str, Any]:
-        addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('pickle_finance')  # noqa: E501
-        return self._eth_module_query(
-            module_name='pickle_finance',
-            method='get_dill_balances',
-            query_specific_balances_before=['defi'],
-            addresses=addresses,
-        )
-
-    @async_api_call()
     def get_liquity_troves(self) -> dict[str, Any]:
         return self._eth_module_query(
             module_name='liquity',
