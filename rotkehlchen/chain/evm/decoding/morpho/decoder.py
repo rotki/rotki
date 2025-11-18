@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import get_protocol_token_addresses
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
@@ -89,16 +90,12 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         if updated is False and len(self.vaults) != 0 and len(self.rewards_distributors) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
 
+        self.vaults = get_protocol_token_addresses(
+            protocol=CPT_MORPHO,
+            chain_id=self.node_inquirer.chain_id,
+            existing_tokens=self.vaults,
+        )
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            query_body = 'FROM evm_tokens WHERE protocol=? AND chain=?'
-            bindings = (CPT_MORPHO, self.node_inquirer.chain_id.serialize_for_db())
-
-            cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
-            if cursor.fetchone()[0] != len(self.vaults):
-                # we are missing new vaults. Populate the cache
-                cursor.execute(f'SELECT protocol, address {query_body}', bindings)
-                self.vaults = {string_to_evm_address(row[1]) for row in cursor}
-
             self.rewards_distributors = [
                 string_to_evm_address(address) for address in globaldb_get_general_cache_values(
                     cursor=cursor,

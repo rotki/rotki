@@ -13,41 +13,30 @@ from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 
 
+def patch_decoder_should_update_protocol_caches(stack: ExitStack) -> None:
+    """Patch should_update_protocol_cache to return False in all relevant decoders."""
+    for target in (
+        'evm.node_inquirer',
+        'ethereum.modules.yearn.decoder',
+        'evm.decoding.morpho.decoder',
+        'evm.decoding.stakedao.decoder',
+        'evm.decoding.stakedao.v2.decoder',
+        'evm.decoding.curve.lend.decoder',
+        'ethereum.modules.curve.crvusd.decoder',
+        'evm.decoding.pendle.decoder',
+        'evm.decoding.beefy_finance.decoder',
+    ):
+        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
+            target=f'rotkehlchen.chain.{target}.should_update_protocol_cache',
+            new=lambda *args, **kwargs: False,
+        ))
+
+
 def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> ExitStack:
     """Patch to avoid reloading on-chain data at each decoding"""
     with ExitStack() as stack:
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.ethereum.modules.yearn.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.evm.decoding.stakedao.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.evm.decoding.curve.lend.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.ethereum.modules.curve.crvusd.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.evm.decoding.pendle.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.evm.decoding.beefy_finance.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
+        patch_decoder_should_update_protocol_caches(stack)
+
         # patch_general and patch_unique are booleans to indicate if we want to patch
         # globaldb_get_general_cache_values and/or unique globaldb_get_unique_cache_value
         for counterparties, path, patch_general, patch_unique in (  # patch to not load cache from DB by default  # noqa: E501

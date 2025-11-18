@@ -12,10 +12,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import get_protocol_token_addresses
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
@@ -233,13 +232,11 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         if len(self.vaults) != 0 and not is_cache_updated:  # Skip database query if we already have vault data and cache wasn't updated  # noqa: E501
             return None
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT address FROM evm_tokens WHERE protocol=? AND chain=?',
-                (CPT_BEEFY_FINANCE, self.node_inquirer.chain_id.serialize_for_db()),
-            )
-            self.vaults = {string_to_evm_address(row[0]) for row in cursor}
-
+        self.vaults = get_protocol_token_addresses(
+            protocol=CPT_BEEFY_FINANCE,
+            chain_id=self.node_inquirer.chain_id,
+            existing_tokens=self.vaults,
+        )
         return self.addresses_to_decoders()
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

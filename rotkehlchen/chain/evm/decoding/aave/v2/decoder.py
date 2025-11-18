@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.constants import REWARDS_CLAIMED_TOPIC
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -89,7 +90,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
                 event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
 
     def _decode_incentives(self, context: 'DecoderContext') -> EvmDecodingOutput:
-        if context.tx_log.topics[0] != b'V7\xd7\xf9b$\x8a\x7f\x05\xa7\xabi\xee\xc6Dn1\xf3\xd0\xa2\x99\xd9\x97\xf15\xa6\\b\x80nx\x91':  # RewardsClaimed  # noqa: E501
+        if context.tx_log.topics[0] != REWARDS_CLAIMED_TOPIC:  # RewardsClaimed
             return DEFAULT_EVM_DECODING_OUTPUT
 
         return self._decode_incentives_common(
