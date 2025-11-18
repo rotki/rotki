@@ -171,7 +171,7 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
     assert blockchain.balances.eth[ETH_ADDRESS1].assets == {
         A_LQTY: {CPT_LIQUITY: Balance(
             amount=FVal('24534.358910568761255258'),
-            usd_value=FVal('36801.5383658531418828870'),
+            value=FVal('36801.5383658531418828870'),
         )},
     }
     assert blockchain.balances.eth[ETH_ADDRESS2].assets == {}

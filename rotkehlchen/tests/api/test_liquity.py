@@ -76,14 +76,14 @@ def test_trove_position(rotkehlchen_api_server: APIServer, inquirer: Inquirer) -
         '0x063c26fF1592688B73d8e2A18BA4C23654e2792E': {
             'collateral': {
                 'amount': '0',
-                'usd_value': '0.0',
-                'value': '0',
+                'value': '0.0',
+                'usd_value': '0',
                 'asset': 'ETH',
             },
             'debt': {
                 'amount': '0',
-                'usd_value': '0.0',
-                'value': '0',
+                'value': '0.0',
+                'usd_value': '0',
                 'asset': 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
             },
             'collateralization_ratio': None,
@@ -124,36 +124,36 @@ def test_trove_staking(rotkehlchen_api_server: APIServer, inquirer: Inquirer, et
             'staked': {
                 'asset': A_LQTY.identifier,
                 'amount': '613.102214311218459876',
-                'usd_value': '919.6533214668276898140',
-                'value': '0',
+                'usd_value': '0',
+                'value': '919.6533214668276898140',
             },
             'lusd_rewards': {
                 'asset': A_LUSD.identifier,
                 'amount': '0.031242621411895105',
-                'usd_value': '0.0468639321178426575',
-                'value': '0',
+                'usd_value': '0',
+                'value': '0.0468639321178426575',
             },
             'eth_rewards': {
                 'asset': A_ETH.identifier,
                 'amount': '0.000036437529327527',
-                'usd_value': '0.0000546562939912905',
-                'value': '0',
+                'usd_value': '0',
+                'value': '0.0000546562939912905',
             },
         },
         'proxies': {
             '0xD29d5Db21CD29BC5aA35FB071a0d5E3526b513BC': {
-                'eth_rewards': {'amount': '0', 'asset': 'ETH', 'usd_value': '0.0', 'value': '0'},
+                'eth_rewards': {'amount': '0', 'asset': 'ETH', 'usd_value': '0', 'value': '0.0'},
                 'lusd_rewards': {
                     'amount': '0',
                     'asset': 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
-                    'usd_value': '0.0',
-                    'value': '0',
+                    'usd_value': '0',
+                    'value': '0.0',
                 },
                 'staked': {
                     'amount': '0',
                     'asset': 'eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D',
-                    'usd_value': '0.0',
-                    'value': '0',
+                    'usd_value': '0',
+                    'value': '0.0',
                 },
             },
         },
@@ -221,14 +221,14 @@ def test_account_with_proxy(rotkehlchen_api_server: APIServer, inquirer: Inquire
         '0x063c26fF1592688B73d8e2A18BA4C23654e2792E': {
             'collateral': {
                 'amount': '0',
-                'usd_value': '0.0',
-                'value': '0',
+                'value': '0.0',
+                'usd_value': '0',
                 'asset': 'ETH',
             },
             'debt': {
                 'amount': '0',
-                'usd_value': '0.0',
-                'value': '0',
+                'value': '0.0',
+                'usd_value': '0',
                 'asset': 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
             },
             'collateralization_ratio': None,
@@ -239,14 +239,14 @@ def test_account_with_proxy(rotkehlchen_api_server: APIServer, inquirer: Inquire
         '0x9476832d4687c14b2c1a04E2ee4693162a7340B6': {
             'collateral': {
                 'amount': '0',
-                'usd_value': '0.0',
-                'value': '0',
+                'value': '0.0',
+                'usd_value': '0',
                 'asset': 'ETH',
             },
             'debt': {
                 'amount': '0',
-                'usd_value': '0.0',
-                'value': '0',
+                'value': '0.0',
+                'usd_value': '0',
                 'asset': 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
             },
             'collateralization_ratio': None,
@@ -331,15 +331,15 @@ def test_stability_pool(rotkehlchen_api_server: APIServer) -> None:
     expected_amount = FVal('43.180853032438783295')
     assert result[JUSTIN]['balances']['gains']['asset'] == A_ETH
     assert FVal(result[JUSTIN]['balances']['gains']['amount']) == expected_amount
-    assert FVal(result[JUSTIN]['balances']['gains']['usd_value']) == expected_amount * FVal(1.5)
+    assert FVal(result[JUSTIN]['balances']['gains']['value']) == expected_amount * FVal(1.5)
     expected_amount = FVal('114160.573902982554552744')
     assert result[JUSTIN]['balances']['rewards']['asset'] == A_LQTY
     assert FVal(result[JUSTIN]['balances']['rewards']['amount']) == expected_amount
-    assert FVal(result[JUSTIN]['balances']['rewards']['usd_value']) == expected_amount * FVal(1.5)
+    assert FVal(result[JUSTIN]['balances']['rewards']['value']) == expected_amount * FVal(1.5)
     expected_amount = FVal('10211401.723115634393264567')
     assert result[JUSTIN]['balances']['deposited']['asset'] == A_LUSD
     assert FVal(result[JUSTIN]['balances']['deposited']['amount']) == expected_amount
-    assert FVal(result[JUSTIN]['balances']['deposited']['usd_value']) == expected_amount * FVal(1.5)  # noqa: E501
+    assert FVal(result[JUSTIN]['balances']['deposited']['value']) == expected_amount * FVal(1.5)
 
 
 @pytest.mark.parametrize('new_db_unlock_actions', [None])

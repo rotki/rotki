@@ -1212,9 +1212,9 @@ def test_query_liquity_balances(
     account_balances = result['per_account'][eth_chain_key][ethereum_accounts[0]]
     assert account_balances['assets'] == {A_ETH: {
         DEFAULT_BALANCE_LABEL: {'amount': '0.068955497233628915', 'usd_value': '0.1034332458504433725', 'value': '0'},  # noqa: E501
-        CPT_LIQUITY: {'amount': '4.08915844880891399', 'usd_value': '6.133737673213370985', 'value': '0'},  # noqa: E501
+        CPT_LIQUITY: {'amount': '4.08915844880891399', 'value': '6.133737673213370985', 'usd_value': '0'},  # noqa: E501
     }}
-    assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'usd_value': '3283.0103582835479670825', 'value': '0'}}}  # noqa: E501
+    assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'value': '3283.0103582835479670825', 'usd_value': '0'}}}  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
