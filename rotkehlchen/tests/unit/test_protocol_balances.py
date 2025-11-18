@@ -1,5 +1,6 @@
 import datetime
 from collections import defaultdict
+from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -112,6 +113,7 @@ from rotkehlchen.tests.unit.decoders.test_curve_lend import (
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.balances import find_inheriting_classes
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
+from rotkehlchen.tests.utils.decoders import patch_decoder_should_update_protocol_caches
 from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
     wait_until_all_nodes_connected,
@@ -689,34 +691,8 @@ def test_compound_v3_token_balances_liabilities(
     """Test that the balances of compound v3 supplied/borrowed tokens are correct."""
     c_usdc_v3 = EvmToken('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')
 
-    with (
-        patch(
-            target='rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.ensure_cache_data_is_updated',
-        ),
-        patch(
-            target='rotkehlchen.chain.ethereum.modules.yearn.decoder.should_update_protocol_cache',
-        ),
-        patch(
-            target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
-        ),
-        patch(
-            target='rotkehlchen.chain.evm.decoding.stakedao.decoder.should_update_protocol_cache',
-        ),
-        patch(
-            target='rotkehlchen.chain.evm.decoding.curve.lend.decoder.should_update_protocol_cache',
-        ),
-        patch(
-            target='rotkehlchen.chain.ethereum.modules.curve.crvusd.decoder.should_update_protocol_cache',
-        ),
-        patch(
-            target='rotkehlchen.chain.evm.decoding.pendle.decoder.should_update_protocol_cache',
-            return_value=False,
-        ),
-        patch(
-            target='rotkehlchen.chain.evm.decoding.beefy_finance.decoder.should_update_protocol_cache',
-            return_value=False,
-        ),
-    ):
+    with ExitStack() as stack:
+        patch_decoder_should_update_protocol_caches(stack)
         blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
             ignore_cache=True,
             tx_hashes=[

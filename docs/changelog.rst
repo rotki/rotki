@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` StakeDAO V2 Curve strategy transactions will be correctly decoded with vault balances properly detected.
 * :feature:`-` Morpho support is now extended to all chains rotki supports in which it is deployed including Arbitrum One, Polygon PoS, Optimism, etc.
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
