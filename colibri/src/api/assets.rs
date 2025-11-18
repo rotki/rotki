@@ -26,15 +26,6 @@ pub async fn get_assets_mappings(
         .await
     {
         Ok((info, collections)) => {
-            let (missing, _present): (Vec<String>, Vec<String>) = payload
-                .identifiers
-                .into_iter()
-                .partition(|id| !info.contains_key(id.as_str()));
-
-            if !missing.is_empty() {
-                // TODO
-            }
-
             (
                 StatusCode::OK,
                 Json(ApiResponse::<Resp> {
