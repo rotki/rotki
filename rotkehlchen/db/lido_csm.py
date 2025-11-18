@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOpera
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval_or_zero
-from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
