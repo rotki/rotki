@@ -557,7 +557,7 @@ def mock_history_processing(
 
         # TODO: terrible way to check. Figure out something better
         limited_range_test = False
-        expected_swap_events_num = 21
+        expected_swap_events_num = 22
         expected_margin_num = 1
         expected_asset_movements_num = 21
         if not limited_range_test:
