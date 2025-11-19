@@ -220,7 +220,7 @@ def test_querying_rate_limit_exhaustion(kraken, database):
         assert len(DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-        )) == 3  # spend, receive, and fee
+        )) == 4  # spend, receive, fee, and kfee
         from_ts, to_ts = database.get_used_query_range(cursor, 'kraken_history_events_mockkraken')
 
     assert from_ts == 0
@@ -354,7 +354,9 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_with_spend_receive(kraken):
-    """Test that trades based on spend/receive events are correctly processed"""
+    """Test that trades based on spend/receive events are correctly processed.
+    Also checks the multiple fees are properly handled.
+    """
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
@@ -369,7 +371,7 @@ def test_kraken_trade_with_spend_receive(kraken):
                 "aclass": "currency",
                 "asset": "XETH",
                 "amount": "1",
-                "fee": "0.0000000000",
+                "fee": "0.000123",
                 "balance": "1001"
             },
             "L1": {
@@ -397,39 +399,42 @@ def test_kraken_trade_with_spend_receive(kraken):
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
         ) == [SwapEvent(
             identifier=1,
-            timestamp=TimestampMS(1636406000865),
+            timestamp=(timestamp := TimestampMS(1636406000855)),
             location=Location.KRAKEN,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_EUR,
             amount=FVal('100'),
-            event_identifier=create_event_identifier_from_unique_id(
+            event_identifier=(event_identifier := create_event_identifier_from_unique_id(
                 location=Location.KRAKEN,
-                unique_id='11636406000865',
-            ),
+                unique_id='11636406000855',
+            )),
             location_label=kraken.name,
         ), SwapEvent(
             identifier=2,
-            timestamp=TimestampMS(1636406000865),
+            timestamp=timestamp,
             location=Location.KRAKEN,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('1'),
-            event_identifier=create_event_identifier_from_unique_id(
-                location=Location.KRAKEN,
-                unique_id='11636406000865',
-            ),
+            event_identifier=event_identifier,
             location_label=kraken.name,
         ), SwapEvent(
             identifier=3,
-            timestamp=TimestampMS(1636406000865),
+            timestamp=timestamp,
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000123'),
+            event_identifier=event_identifier,
+            location_label=kraken.name,
+        ), SwapEvent(
+            identifier=4,
+            timestamp=timestamp,
             location=Location.KRAKEN,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_EUR,
             amount=FVal('0.4500'),
-            event_identifier=create_event_identifier_from_unique_id(
-                location=Location.KRAKEN,
-                unique_id='11636406000865',
-            ),
+            event_identifier=event_identifier,
             location_label=kraken.name,
         )]
 
