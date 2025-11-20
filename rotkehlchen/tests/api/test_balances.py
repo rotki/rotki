@@ -500,7 +500,7 @@ def test_query_all_balances_with_manually_tracked_balances(
 
 def test_query_all_balances_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that errors are handled correctly by the all balances endpoint"""
-    # invoke the endpoint with non boolean save_data
+    # invoke the endpoint with non-boolean save_data
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -512,7 +512,7 @@ def test_query_all_balances_errors(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='Not a valid boolean',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    # invoke the endpoint with non boolean async_query
+    # invoke the endpoint with non-boolean async_query
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,

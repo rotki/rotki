@@ -59,7 +59,7 @@ def test_boolean_function_does_not_trigger_checker(pylint_test_linter):
     assert len(messages) == 0
 
 
-def test_subsscript_function_does_not_crash_checker(pylint_test_linter):
+def test_subscript_function_does_not_crash_checker(pylint_test_linter):
     checker = NotBooleanChecker(linter=pylint_test_linter)
     node = astroid.extract_node("""
     def foo() -> Optional[object]:
