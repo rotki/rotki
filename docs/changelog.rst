@@ -2,10 +2,11 @@
 Changelog
 =========
 
+* :bug:`10960` rotki will now support swaps with fees in multiple different assets.
 * :bug: `10964` Fix an issue where the zoom state in the net value graph resets when the price is being queried.
 
 * :release:`1.41.1 <2025-11-14>`
-* :bug: `-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.
+* :bug:`-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.
 * :feature:`10734` Users will now be able to specify the collectible ID of an ERC721 token in the asset manager.
 * :bug:`10901` Users will now be able to change the log level without restarting the app, in the "Settings > General" menu.
 * :bug:`10862` rotki will now show a warning when a Gnosis Pay or Monerium transaction is manually redecoded but credentials are missing.

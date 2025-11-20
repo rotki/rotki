@@ -436,6 +436,7 @@ def test_kraken_trade_with_spend_receive(kraken):
             amount=FVal('0.4500'),
             event_identifier=event_identifier,
             location_label=kraken.name,
+            sequence_index=3,
         )]
 
     errors = kraken.msg_aggregator.consume_errors()
