@@ -88,7 +88,7 @@ class EventsAccountant:
             general_extra_data['tx_ref'] = str(event.tx_ref)
 
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
-            fee_event = None
+            processed_event_count = 1
             next_event = events_iterator.peek(None)
             if next_event is None:
                 log.error(
@@ -105,24 +105,31 @@ class EventsAccountant:
                 return 1
 
             in_event = cast('HistoryBaseEntry', next(events_iterator))  # guaranteed by the if check  # noqa: E501
-            next_event = events_iterator.peek(None)
-            if next_event and isinstance(next_event, HistoryBaseEntry) and next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
-                fee_event = cast('HistoryBaseEntry', next(events_iterator))  # guaranteed by if check  # noqa: E501
+            processed_event_count += 1
+            fee_events = []
+            while (
+                (next_event := events_iterator.peek(None)) and
+                isinstance(next_event, HistoryBaseEntry) and
+                next_event.event_identifier == event.event_identifier and
+                next_event.event_type == event.event_type and
+                next_event.event_subtype == HistoryEventSubType.FEE
+            ):
+                fee_events.append(cast('HistoryBaseEntry', next(events_iterator)))  # guaranteed by if check  # noqa: E501
+                processed_event_count += 1
 
             with self.pot.database.conn.read_ctx() as cursor:
                 if (
                         event.asset in (ignored_assets := self.pot.database.get_ignored_asset_ids(cursor)) or  # noqa: E501
                         in_event.asset in ignored_assets or
-                        (fee_event is not None and fee_event.asset in ignored_assets)
-                ):
-                    # skip out_event and in_event, and maybe fee_event
-                    return 3 if fee_event is not None else 2
+                        any(fee_event.asset in ignored_assets for fee_event in fee_events)
+                ):  # return early if any events in the swap group have ignored assets.
+                    return processed_event_count
 
             return self._process_swap(
                 timestamp=timestamp,
                 out_event=event,
                 in_event=in_event,
-                fee_event=fee_event,
+                fee_events=fee_events,
                 event_settings=event_settings,
                 general_extra_data=general_extra_data,
             )
@@ -147,7 +154,7 @@ class EventsAccountant:
             timestamp: Timestamp,
             out_event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
-            fee_event: HistoryBaseEntry | None,
+            fee_events: list[HistoryBaseEntry],
             event_settings: BaseEventSettings,
             general_extra_data: dict[str, Any],
     ) -> int:
@@ -158,17 +165,13 @@ class EventsAccountant:
         2. fee_event comes just after the other event (in/out) with the same asset
         3. sequence of the in_event and fee_event is preserved
         """
-        fee_info = None
-        if fee_event is not None:
-            fee_info = (fee_event.amount, fee_event.asset)
-
         prices = self.pot.get_prices_for_swap(
             timestamp=timestamp,
             amount_in=in_event.amount,
             asset_in=in_event.asset,
             amount_out=out_event.amount,
             asset_out=out_event.asset,
-            fee_info=fee_info,
+            fees_info=[(fee_event.amount, fee_event.asset) for fee_event in fee_events],
         )
         if prices is None:
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')
@@ -206,8 +209,10 @@ class EventsAccountant:
             'given_price': prices[1],
             'extra_data': extra_data,
         }
-        events_to_add_queue: list[tuple[Callable, dict[str, Any]]] = []
-        if fee_event is not None:
+        events_to_add_queue: list[tuple[Callable, dict[str, Any]]] = [
+            (self.pot.add_in_event, add_in_event_kwargs),
+        ]
+        for fee_event in fee_events:
             fee_price = None
             if fee_event.asset == self.pot.profit_currency:
                 fee_price = Price(ONE)
@@ -225,30 +230,27 @@ class EventsAccountant:
                 fee_taxable = True
                 fee_taxable_amount_ratio = trade_taxable_amount / out_event.amount
 
-            events_to_add_queue.extend([
-                (self.pot.add_in_event, add_in_event_kwargs),
-                (self.pot.add_out_event, {
-                    'originating_event_id': fee_event.identifier,
-                    'event_type': AccountingEventType.FEE,
-                    'notes': fee_event.notes,
-                    'location': fee_event.location,
-                    'timestamp': timestamp,
-                    'asset': fee_event.asset,
-                    'amount': fee_event.amount,
-                    'taxable': fee_taxable,
-                    'given_price': fee_price,
-                    # By setting the taxable amount ratio we determine how much of the fee
-                    # spending should be a taxable spend and how much free.
-                    'taxable_amount_ratio': fee_taxable_amount_ratio,
-                    'count_cost_basis_pnl': True,
-                    'count_entire_amount_spend': True,
-                    'extra_data': extra_data,
-                }),
-            ])
+            fee_out_event = (self.pot.add_out_event, {
+                'originating_event_id': fee_event.identifier,
+                'event_type': AccountingEventType.FEE,
+                'notes': fee_event.notes,
+                'location': fee_event.location,
+                'timestamp': timestamp,
+                'asset': fee_event.asset,
+                'amount': fee_event.amount,
+                'taxable': fee_taxable,
+                'given_price': fee_price,
+                # By setting the taxable amount ratio we determine how much of the fee
+                # spending should be a taxable spend and how much free.
+                'taxable_amount_ratio': fee_taxable_amount_ratio,
+                'count_cost_basis_pnl': True,
+                'count_entire_amount_spend': True,
+                'extra_data': extra_data,
+            })
             if fee_event.asset == out_event.asset or fee_event.sequence_index < in_event.sequence_index:  # noqa: E501
-                events_to_add_queue.reverse()  # we add fee first
-        else:
-            events_to_add_queue.append((self.pot.add_in_event, add_in_event_kwargs))
+                events_to_add_queue.insert(0, fee_out_event)  # we add fee first
+            else:
+                events_to_add_queue.append(fee_out_event)
 
         for adding_method, kwargs in events_to_add_queue:
             adding_method(**kwargs)  # add the queued events
