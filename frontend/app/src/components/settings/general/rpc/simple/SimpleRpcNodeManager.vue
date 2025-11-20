@@ -9,7 +9,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = defineProps<{
-  setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint';
+  setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi';
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

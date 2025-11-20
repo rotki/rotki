@@ -1305,6 +1305,11 @@ class Rotkehlchen:
             if not result:
                 return False, msg
 
+        if settings.btc_mempool_api is not None:
+            result, msg = self.chains_aggregator.set_btc_mempool_api(settings.btc_mempool_api)
+            if not result:
+                return False, msg
+
         if settings.beacon_rpc_endpoint is not None and (eth2 := self.chains_aggregator.get_module('eth2')) is not None:  # noqa: E501
             try:
                 eth2.beacon_inquirer.set_rpc_endpoint(settings.beacon_rpc_endpoint)

@@ -8,6 +8,7 @@ export const Defaults = {
   BALANCE_SAVE_FREQUENCY: 24,
   BEACON_RPC_ENDPOINT: '', // same as Kusama, must be set by user
   BTC_DERIVATION_GAP_LIMIT: 20,
+  BTC_MEMPOOL_API: '',
   DEFAULT_CONNECT_TIMEOUT: 30,
   DEFAULT_CSV_EXPORT_DELIMITER: ',',
   DEFAULT_CURRENCY_LOCATION: CurrencyLocation.AFTER,

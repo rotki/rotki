@@ -144,6 +144,7 @@
     "include_gas_costs": true,
     "ksm_rpc_endpoint": "http://localhost:9933",
     "dot_rpc_endpoint": "",
+    "btc_mempool_api": "",
     "main_currency": "USD",
     "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
     "submit_usage_analytics": true,

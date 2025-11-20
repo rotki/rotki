@@ -17,6 +17,7 @@ describe('settings::general', () => {
     thousandSeparator: ',',
     decimalSeparator: '.',
     currencyLocation: 'after' as 'after' | 'before',
+    btcMempoolApi: '',
   };
 
   before(() => {

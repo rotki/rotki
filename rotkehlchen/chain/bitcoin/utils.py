@@ -1,19 +1,29 @@
 import hashlib
+import logging
 import platform
 from collections.abc import Sequence
 from enum import Enum, auto
+from http import HTTPStatus
 from typing import Any
 
 import base58check
 import bech32
+import requests
 from bip_utils import P2TRAddrEncoder, P2WPKHAddrEncoder
 
+from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
+from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import EncodingError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import ensure_type
 from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.misc import satoshis_to_btc
-from rotkehlchen.utils.network import request_get_dict
+from rotkehlchen.utils.network import request_get_dict, retry_calls
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 BIP32_HARDEN: int = 0x80000000
 
@@ -221,6 +231,31 @@ def scriptpubkey_to_btc_address(data: bytes) -> BTCAddress:
         return scriptpubkey_to_p2sh_address(data)
 
     return scriptpubkey_to_bech32_address(data)
+
+
+def query_blockstream_like_blockheight(base_url: str) -> int:
+    """
+    Query blockheight from APIs similar to blockstream.info
+    Returns the blockheight
+    May raise:
+    - RemoteError if got problems with querying the API
+    """
+    if (response := retry_calls(
+        times=CachedSettings().get_query_retry_limit(),
+        location='bitcoin',
+        handle_429=True,
+        backoff_in_seconds=4,
+        method_name='query_blockstream_like_height',
+        function=requests.get,
+        # function's arguments
+        url=(url := f'{base_url}/blocks/tip/height'),
+        timeout=GLOBAL_REQUESTS_TIMEOUT,
+    )).status_code != HTTPStatus.OK:
+        raise RemoteError(
+            f'{url} returned status: {response.status_code} with message: {response.text}')
+
+    log.debug(f'Got response: {response.text} from {base_url}/blocks/tip/height')
+    return int(response.text)
 
 
 def query_blockstream_like_account_info(

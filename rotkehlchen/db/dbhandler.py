@@ -211,6 +211,7 @@ class DBHandler:
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
             'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
             'beacon_rpc_endpoint': (str, None),
+            'btc_mempool_api': (str, None),
             'ask_user_upon_size_discrepancy': (str_to_bool, DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY),  # noqa: E501
         }
         self.conn: DBConnection = None  # type: ignore
@@ -427,6 +428,7 @@ class DBHandler:
                 'last_data_migration',
                 'non_syncing_exchanges',
                 'beacon_rpc_endpoint',
+                'btc_mempool_api',
                 'ask_user_upon_size_discrepancy',
             ],
     ) -> int | Timestamp | bool | Asset | list['ExchangeLocationID'] | str | None:

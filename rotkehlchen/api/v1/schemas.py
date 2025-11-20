@@ -1468,6 +1468,7 @@ class ModifiableSettingsSchema(Schema):
     ksm_rpc_endpoint = fields.String(load_default=None)
     dot_rpc_endpoint = fields.String(load_default=None)
     beacon_rpc_endpoint = fields.String(load_default=None)
+    btc_mempool_api = fields.String(load_default=None)
     main_currency = AssetField(expected_type=AssetWithOracles, load_default=None)
     # TODO: Add some validation to this field
     date_display_format = EmptyAsNoneStringField(load_default=None)
@@ -1593,6 +1594,7 @@ class ModifiableSettingsSchema(Schema):
             ksm_rpc_endpoint=data['ksm_rpc_endpoint'],
             dot_rpc_endpoint=data['dot_rpc_endpoint'],
             beacon_rpc_endpoint=data['beacon_rpc_endpoint'],
+            btc_mempool_api=data['btc_mempool_api'],
             main_currency=data['main_currency'],
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],

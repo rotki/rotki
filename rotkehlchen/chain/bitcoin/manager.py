@@ -115,6 +115,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         """
         errors: dict[str, str] = {}
         for callback in self.api_callbacks:
+            log.debug(f'Querying {callback.name} for {self.blockchain} address balances')
             try:
                 if action == BtcQueryAction.BALANCES and callback.balances_fn is not None:
                     return callback.balances_fn(accounts)
