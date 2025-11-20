@@ -11,6 +11,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const submitUsageAnalytics = useComputedRef(settings, 'submitUsageAnalytics');
   const ksmRpcEndpoint = useComputedRef(settings, 'ksmRpcEndpoint');
   const dotRpcEndpoint = useComputedRef(settings, 'dotRpcEndpoint');
+  const btcMempoolApi = useComputedRef(settings, 'btcMempoolApi');
   const beaconRpcEndpoint = useComputedRef(settings, 'beaconRpcEndpoint');
   const balanceSaveFrequency = useComputedRef(settings, 'balanceSaveFrequency');
   const dateDisplayFormat = useComputedRef(settings, 'dateDisplayFormat');
@@ -59,6 +60,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     balanceSaveFrequency,
     beaconRpcEndpoint,
     btcDerivationGapLimit,
+    btcMempoolApi,
     connectTimeout,
     csvExportDelimiter,
     currency: mainCurrency,

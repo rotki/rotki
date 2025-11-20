@@ -205,6 +205,8 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
             value = 'http://polkadot.node.com:9934'
         elif setting == 'beacon_rpc_endpoint':
             value = 'http://lighthouse.mynode.com:6969'
+        elif setting == 'btc_mempool_api':
+            value = 'http://localhost:4080'
         elif setting == 'current_price_oracles':
             value = ['coingecko', 'cryptocompare', 'uniswapv2', 'uniswapv3']
         elif setting == 'historical_price_oracles':
@@ -229,7 +231,11 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
         'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node',
         return_value=(True, ''),
     )
-    with mock_web3, ksm_connect_node:
+    btc_connect_node = patch(
+        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+        return_value=(True, ''),
+    )
+    with mock_web3, ksm_connect_node, btc_connect_node:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'settingsresource'),
             json={'settings': new_settings},

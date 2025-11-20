@@ -1,7 +1,7 @@
 import re
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 
@@ -32,6 +32,7 @@ from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
+    from rotkehlchen.chain.bitcoin.types import BtcApiCallback
 
 
 def test_is_valid_btc_address():
@@ -486,7 +487,6 @@ def test_bitcoin_balance_api_resolver(
         bitcoin_manager: 'BitcoinManager',
 ) -> None:
     """Test that bitcoin balances are queried and that if one source fails we use the next"""
-    address_re = re.compile(r'.*/address/(.*)')
     addresses = [
         BTCAddress('3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5'),
         BTCAddress('34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL'),
@@ -494,20 +494,6 @@ def test_bitcoin_balance_api_resolver(
         BTCAddress('36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB'),
         BTCAddress('33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP'),
     ]
-
-    def mock_blockstream_or_mempool_query(url, **kwargs):  # pylint: disable=unused-argument
-        match = address_re.search(url)
-        assert match
-        address = match.group(1)
-        contents = f"""{{
-        "address": "{address}",
-        "chain_stats": {{"funded_txo_count": 216, "funded_txo_sum": 255627050,
-        "spent_txo_count": 201, "spent_txo_sum": 253106719, "tx_count": 238
-        }},
-        "mempool_stats": {{
-        "funded_txo_count": 0, "funded_txo_sum": 0, "spent_txo_count": 0, "spent_txo_sum": 0,
-        "tx_count": 0}}}}"""
-        return MockResponse(200, contents)
 
     def check_balances(balances_to_check: dict[BTCAddress, Balance]) -> None:
         for addr in addresses:
@@ -519,7 +505,7 @@ def test_bitcoin_balance_api_resolver(
     ) if network_mocking else nullcontext()
     blockstream_mempool_mock = patch(
         'requests.get',
-        side_effect=mock_blockstream_or_mempool_query,
+        side_effect=_mock_blockstream_or_mempool_query,
     ) if network_mocking else nullcontext()
 
     # Test balances are returned properly if first source works
@@ -563,3 +549,72 @@ def test_bitcoin_balance_api_resolver(
                 ),
             ):
                 bitcoin_manager.query_balances(addresses)
+
+
+def test_local_bitcoin_mempool_api(
+        network_mocking: bool,
+        bitcoin_manager: 'BitcoinManager',
+) -> None:
+    """Test that setting a custom BTC Mempool API works"""
+    addresses = [
+        BTCAddress('3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5'),
+        BTCAddress('34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL'),
+        BTCAddress('3J7sT2fbDaF3XrjpWM5GsUyaDr7i7psi88'),
+        BTCAddress('36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB'),
+        BTCAddress('33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP'),
+    ]
+
+    # test setting custom api
+    endpoint = 'https://localhost:4080'
+    btc_connect_node = patch(
+        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+        return_value=(True, ''),
+    )
+    with btc_connect_node as btc_connect:
+        is_connected, _msg = bitcoin_manager.set_custom_mempool_api(endpoint)
+        btc_connect.assert_called_once_with('https://localhost:4080/api')
+
+    assert is_connected
+    custom_api_callbacks: list[BtcApiCallback] = bitcoin_manager.api_callbacks
+    assert len(custom_api_callbacks) == 1
+    custom_api_callback = custom_api_callbacks[0]
+    assert custom_api_callback.name == 'custom mempool api'
+
+    # Test querying balances uses it
+    blockstream_mempool_mock = patch(
+        'requests.get',
+        side_effect=_mock_blockstream_or_mempool_query,
+    ) if network_mocking else nullcontext()
+
+    find_usd_price_mock = patch(
+        'rotkehlchen.inquirer.Inquirer.find_usd_price',
+        return_value=90_000,
+    ) if network_mocking else nullcontext()
+
+    # Test balances are returned properly if first source works
+    with blockstream_mempool_mock as mock_mempool:
+        with find_usd_price_mock:
+            bitcoin_manager.query_balances(addresses)
+
+        expected_calls = [
+            call(url=f'https://localhost:4080/api/address/{address}', timeout=5)
+            for address in addresses
+        ]
+
+        mock_mempool.assert_has_calls(expected_calls)  # type: ignore
+
+
+def _mock_blockstream_or_mempool_query(url, **kwargs):  # pylint: disable=unused-argument
+    address_re = re.compile(r'.*/address/(.*)')
+    match = address_re.search(url)
+    assert match
+    address = match.group(1)
+    contents = f"""{{
+    "address": "{address}",
+    "chain_stats": {{"funded_txo_count": 216, "funded_txo_sum": 255627050,
+    "spent_txo_count": 201, "spent_txo_sum": 253106719, "tx_count": 238
+    }},
+    "mempool_stats": {{
+    "funded_txo_count": 0, "funded_txo_sum": 0, "spent_txo_count": 0, "spent_txo_sum": 0,
+    "tx_count": 0}}}}"""
+    return MockResponse(200, contents)

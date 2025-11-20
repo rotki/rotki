@@ -112,6 +112,7 @@ STRING_KEYS = (
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
+    'btc_mempool_api',
     'date_display_format',
     'frontend_settings',
     'csv_export_delimiter',
@@ -131,6 +132,7 @@ CachedDBSettingsFieldNames = Literal[
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
+    'btc_mempool_api',
     'main_currency',
     'date_display_format',
     'submit_usage_analytics',
@@ -191,6 +193,7 @@ class DBSettings:
     ksm_rpc_endpoint: str = 'http://localhost:9933'
     dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
     beacon_rpc_endpoint: str = ''  # must be set by user
+    btc_mempool_api: str = ''
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
@@ -283,6 +286,7 @@ class ModifiableDBSettings(NamedTuple):
     ask_user_upon_size_discrepancy: bool | None = None
     auto_detect_tokens: bool | None = None
     csv_export_delimiter: str | None = None
+    btc_mempool_api: str | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

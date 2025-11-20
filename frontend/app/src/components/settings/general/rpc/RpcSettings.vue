@@ -8,7 +8,7 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { isOfEnum } from '@/utils';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -44,6 +44,13 @@ const evmChainTabs = useArrayMap(txEvmChains, (chain) => {
 
 const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
   ...get(evmChainTabs),
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue')),
+    id: 'btc_mempool_space',
+    image: getPublicServiceImagePath('mempool.png'),
+    name: 'Bitcoin Mempool',
+    setting: 'btcMempoolApi',
+  },
   {
     // Solana behaves like EVM RPC nodes in UI/API
     chain: Blockchain.SOLANA,

@@ -1,4 +1,5 @@
 import logging
+import urllib
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
@@ -18,10 +19,13 @@ from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback, BtcTxIO, BtcTxIODirection
 from rotkehlchen.chain.bitcoin.utils import (
     query_blockstream_like_balances,
+    query_blockstream_like_blockheight,
     query_blockstream_like_has_transactions,
 )
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -44,34 +48,42 @@ log = RotkehlchenLogsAdapter(logger)
 class BitcoinManager(BitcoinCommonManager):
 
     def __init__(self, database: 'DBHandler') -> None:
+        if custom_btc_mempool_api := CachedSettings().get_entry('btc_mempool_api'):
+            api_callbacks = [self.get_custom_mempool_api_callback(custom_btc_mempool_api)]  # type: ignore
+
+        else:
+            api_callbacks = self.get_default_api_callbacks()
         super().__init__(
             database=database,
             blockchain=SupportedBlockchain.BITCOIN,
             asset=A_BTC,
             group_identifier_prefix=BTC_GROUP_IDENTIFIER_PREFIX,
             cache_key=DBCacheDynamic.LAST_BTC_TX_BLOCK,
-            api_callbacks=[BtcApiCallback(
-                name='blockchain.info',
-                balances_fn=self._query_blockchain_info_balances,
-                has_transactions_fn=self._query_blockchain_info_has_transactions,
-                transactions_fn=self._query_blockchain_info_transactions,
-            ), BtcApiCallback(
-                name='blockstream.info',
-                balances_fn=lambda accounts: query_blockstream_like_balances(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
-                has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
-                transactions_fn=None,  # this API doesn't handle p2pk txs properly
-            ), BtcApiCallback(
-                name='mempool.space',
-                balances_fn=lambda accounts: query_blockstream_like_balances(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
-                has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
-                transactions_fn=None,  # this API doesn't handle p2pk txs properly
-            ), BtcApiCallback(
-                name='blockcypher.com',
-                balances_fn=None,  # TODO implement blockcypher for all actions
-                has_transactions_fn=None,
-                transactions_fn=self._query_blockcypher_transactions,
-            )],
+            api_callbacks=api_callbacks,
         )
+
+    def get_default_api_callbacks(self) -> list[BtcApiCallback]:
+        return [BtcApiCallback(
+            name='blockchain.info',
+            balances_fn=self._query_blockchain_info_balances,
+            has_transactions_fn=self._query_blockchain_info_has_transactions,
+            transactions_fn=self._query_blockchain_info_transactions,
+        ), BtcApiCallback(
+            name='blockstream.info',
+            balances_fn=lambda accounts: query_blockstream_like_balances(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
+            has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
+            transactions_fn=None,  # this API doesn't handle p2pk txs properly
+        ), BtcApiCallback(
+            name='mempool.space',
+            balances_fn=lambda accounts: query_blockstream_like_balances(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
+            has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
+            transactions_fn=None,  # this API doesn't handle p2pk txs properly
+        ), BtcApiCallback(
+            name='blockcypher.com',
+            balances_fn=None,  # TODO implement blockcypher for all actions
+            has_transactions_fn=None,
+            transactions_fn=self._query_blockcypher_transactions,
+        )]
 
     @staticmethod
     def _query_blockchain_info(
@@ -111,6 +123,7 @@ class BitcoinManager(BitcoinCommonManager):
             self,
             accounts: Sequence[BTCAddress],
     ) -> dict[BTCAddress, FVal]:
+        log.debug('Querying blockchain.info for accounts')
         balances: dict[BTCAddress, FVal] = {}
         for entry in self._query_blockchain_info(accounts):
             balances[entry['address']] = satoshis_to_btc(ensure_type(
@@ -280,6 +293,43 @@ class BitcoinManager(BitcoinCommonManager):
             multi_io=multi_io,
         )
 
+    def set_custom_mempool_api(self, endpoint: str) -> tuple[bool, str]:
+        """
+        Sets the API Callbacks to be used with a custom Mempool API instance if
+        fetching the blocheight from the custom API is successful.
+        """
+
+        if endpoint == '':  # i.e. we are deleting the custom endpoint
+            log.debug(f'{self.blockchain} removing own node at endpoint: {endpoint}')
+            self.api_callbacks = self.get_default_api_callbacks()
+            return True, ''
+        else:
+            endpoint = urllib.parse.urljoin(endpoint, '/api')
+            is_connected, msg = self._connect_node(endpoint)
+            if is_connected:
+                self.api_callbacks = [self.get_custom_mempool_api_callback(endpoint)]
+                return True, ''
+
+        return is_connected, msg
+
+    def _connect_node(self, endpoint: str) -> tuple[bool, str]:
+        """Attempt to connect to a node, check its blockheight
+
+        May raise:
+        - RemoteError: connecting to a node fails at any of the steps executed.
+        """
+        try:
+            last_block = query_blockstream_like_blockheight(endpoint)
+        except RemoteError as e:
+            message = (
+                f'{self.blockchain} failed to connect to {endpoint} due to {e!s}.'
+            )
+            return False, message
+
+        message = f'{self.blockchain} connected to {endpoint} at blockheight {last_block}'
+        log.info(message)
+        return True, message
+
     @staticmethod
     def deserialize_tx_io_from_blockcypher(
             data: dict[str, Any],
@@ -311,4 +361,18 @@ class BitcoinManager(BitcoinCommonManager):
             script=bytes.fromhex(data['script']),
             address=data.get('addr'),
             direction=direction,
+        )
+
+    @staticmethod
+    def get_custom_mempool_api_callback(api_url: str) -> BtcApiCallback:
+        """
+        Retrieve custom mempool API callbacks based on provided mempool settings.
+
+        :param api_url: Custom url for the mempool api
+        """
+        return BtcApiCallback(
+            name='custom mempool api',
+            balances_fn=lambda accounts: query_blockstream_like_balances(base_url=api_url, accounts=accounts),  # noqa: E501
+            has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=api_url, accounts=accounts),  # noqa: E501
+            transactions_fn=None,  # this API doesn't handle p2pk txs properly
         )
