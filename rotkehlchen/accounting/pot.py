@@ -359,7 +359,7 @@ class AccountingPot(CustomizableDateMixin):
             asset_in: Asset,
             amount_out: FVal,
             asset_out: Asset,
-            fee_info: tuple[FVal, Asset] | None,
+            fees_info: list[tuple[FVal, Asset]],
     ) -> tuple[Price, Price] | None:
         """
         Calculates the prices for assets going in and out of a swap/trade.
@@ -405,13 +405,14 @@ class AccountingPot(CustomizableDateMixin):
 
         # when `self.settings.include_fees_in_cost_basis == False` we completely ignore fees in
         # this function since they are not included in the cost basis
-        fee_price = None
-        if fee_info is not None and self.settings.include_fees_in_cost_basis:
-            with contextlib.suppress(PriceQueryUnsupportedAsset, RemoteError):
-                fee_price = self.get_rate_in_profit_currency(
-                    asset=fee_info[1],
-                    timestamp=timestamp,
-                )
+        fee_asset_prices = {}
+        if self.settings.include_fees_in_cost_basis:
+            for fee_info in fees_info:
+                with contextlib.suppress(PriceQueryUnsupportedAsset, RemoteError):
+                    fee_asset_prices[fee_info[1]] = self.get_rate_in_profit_currency(
+                        asset=fee_info[1],
+                        timestamp=timestamp,
+                    )
 
         # Determine whether to use `out_price` or `in_price` for calculations
         price_to_use: Literal['in', 'out']
@@ -432,8 +433,9 @@ class AccountingPot(CustomizableDateMixin):
             total_paid = amount_out * out_price  # type: ignore[operator]  # out_price is not None
 
         if asset_in.is_fiat():
-            if fee_info is not None and fee_price is not None:
-                total_paid -= fee_price * fee_info[0]  # Subtract fee from cost basis
+            for fee_info in fees_info:
+                if (fee_price := fee_asset_prices.get(fee_info[1])) is not None:
+                    total_paid -= fee_price * fee_info[0]  # Subtract fee from cost basis
 
             calculated_out_price = Price(total_paid / amount_out)
 
@@ -443,8 +445,9 @@ class AccountingPot(CustomizableDateMixin):
                 calculated_in_price = Price((amount_out * out_price) / amount_in)  # type: ignore[operator]  # out_price is not None
 
         else:  # if asset_out is fiat or both assets are crypto or both are fiat
-            if fee_info is not None and fee_price is not None:
-                total_paid += fee_price * fee_info[0]  # Add fee to cost basis
+            for fee_info in fees_info:
+                if (fee_price := fee_asset_prices.get(fee_info[1])) is not None:
+                    total_paid += fee_price * fee_info[0]  # Add fee to cost basis
 
             calculated_in_price = Price(total_paid / amount_in)
 
