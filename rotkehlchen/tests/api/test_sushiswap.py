@@ -107,6 +107,6 @@ def test_get_balances(
             else:
                 assert lp_asset['total_amount'] is None
             assert lp_asset['usd_price']
-            assert len(lp_asset['user_balance']) == 2
+            assert len(lp_asset['user_balance']) == 3
             assert lp_asset['user_balance']['amount']
             assert lp_asset['user_balance']['usd_value']
