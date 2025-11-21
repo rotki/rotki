@@ -23,7 +23,7 @@
 [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/rotki/rotki/badge)](https://www.gitpoap.io/gh/rotki/rotki)
 [![Github downloads](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
 [![Hiring](https://img.shields.io/badge/Hiring-Open-brightgreen)](https://rotki.com/jobs/)
-[![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://twitter.com/rotkiapp)
+[![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://x.com/rotkiapp)
 [![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.rotki.com/)
 
 </div>
@@ -158,7 +158,7 @@ Need help or want to discuss features? Connect with us!
 ### 📌 **Follow Us for Updates**
 [![Website](https://img.shields.io/badge/Visit%20rotki-1E90FF?logoColor=white&style=for-the-badge)](https://rotki.com)
 [![Docs](https://img.shields.io/badge/Read%20the%20Docs-FF4500?logo=read-the-docs&logoColor=white&style=for-the-badge)](https://docs.rotki.com/)
-[![X (Twitter)](https://img.shields.io/badge/Follow%20on%20X-000000?logo=x&logoColor=white&style=for-the-badge)](https://twitter.com/rotkiapp)
+[![X (Twitter)](https://img.shields.io/badge/Follow%20on%20X-000000?logo=x&logoColor=white&style=for-the-badge)](https://x.com/rotkiapp)
 [![LinkedIn](https://img.shields.io/badge/Connect%20on%20LinkedIn-0077B5?logo=linkedin&logoColor=white&style=for-the-badge)](https://www.linkedin.com/company/rotki)  
 
 ---
