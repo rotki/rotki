@@ -1,4 +1,4 @@
-from rotkehlchen.externalapis.etherscan import _hashes_tuple_to_list
+from rotkehlchen.externalapis.etherscan_like import _hashes_tuple_to_list
 
 
 def test_hashes_tuple_to_list():

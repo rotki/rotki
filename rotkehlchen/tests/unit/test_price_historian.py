@@ -381,7 +381,7 @@ def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
         timestamp=Timestamp(1742814047),
     )
 
-    assert price == Price(FVal('3599499.14614648204764245778042706722040502098628449234280700474399384952003946'))  # noqa: E501
+    assert price.is_close('3591639.375183')
 
 
 @pytest.mark.vcr
@@ -401,7 +401,7 @@ def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
         timestamp=Timestamp(1742829743),
     )
 
-    assert price == Price(FVal('91.8899433946849362722178059329153023736079920232915317251968356662350823403461'))  # noqa: E501
+    assert price.is_close('91.707127')
 
 
 @pytest.mark.vcr

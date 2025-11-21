@@ -589,7 +589,13 @@ def deserialize_evm_transaction(
     source = 'etherscan' if evm_inquirer is None else 'web3'
     raw_receipt_data = None
     try:
-        tx_hash = parent_tx_hash if parent_tx_hash is not None else deserialize_evm_tx_hash(data['hash'])  # noqa: E501
+        if parent_tx_hash is not None:
+            tx_hash = parent_tx_hash
+        elif (raw_tx_hash := data.get('hash')) is not None:
+            tx_hash = deserialize_evm_tx_hash(raw_tx_hash)
+        else:  # for internal transactions blockscout has a `transactionHash` key instead.
+            tx_hash = deserialize_evm_tx_hash(data['transactionHash'])
+
         block_number = read_integer(data, 'blockNumber', source)
         block_data = None
         if 'timeStamp' not in data:
@@ -625,12 +631,12 @@ def deserialize_evm_transaction(
                 parent_tx_hash=tx_hash,
                 chain_id=chain_id,
                 # traceId is missing when querying by parent hash
-                trace_id=int(data.get('traceId', '0')),
+                trace_id=int(data.get('traceId', '0') or 0),  # use `or 0` since the key can also be present but have an empty string value.  # noqa: E501
                 from_address=from_address,
                 to_address=to_address,
                 value=value,
-                gas=int(data.get('gas', '0')),
-                gas_used=int(data.get('gasUsed', '0')),
+                gas=int(data.get('gas', '0') or 0),
+                gas_used=int(data.get('gasUsed', '0') or 0),
             ), None
 
         # else normal transaction
