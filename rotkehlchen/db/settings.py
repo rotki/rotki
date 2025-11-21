@@ -68,6 +68,11 @@ DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES = True
 DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
 DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
 DEFAULT_AUTO_DETECT_TOKENS = True
+DEFAULT_EVMCHAINS_TO_SKIP_DETECTION: tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ...] = (
+    SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.BINANCE_SC,
+    SupportedBlockchain.BASE,
+)
 DEFAULT_CSV_EXPORT_DELIMITER = ','
 
 JSON_KEYS = (
@@ -206,7 +211,7 @@ class DBSettings:
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: Sequence[ExchangeLocationID] = field(default_factory=list)
-    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = field(default_factory=list)  # Both EVM and EVMLike chains # noqa: E501
+    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = DEFAULT_EVMCHAINS_TO_SKIP_DETECTION  # Both EVM and EVMLike chains # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: E501

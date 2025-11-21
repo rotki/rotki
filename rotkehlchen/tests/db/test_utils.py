@@ -9,7 +9,7 @@ from rotkehlchen.db.utils import (
     form_query_to_filter_timestamps,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SUPPORTED_EVM_EVMLIKE_CHAINS, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 
 
 @pytest.mark.parametrize(
@@ -195,8 +195,14 @@ def test_db_tuple_to_str(data, tuple_type, expected_str):
 
 
 @pytest.mark.parametrize(('db_settings', 'expected_chains'), [
-    ({'evmchains_to_skip_detection': []}, set(SUPPORTED_EVM_EVMLIKE_CHAINS)),
-    ({'evmchains_to_skip_detection': [SupportedBlockchain.POLYGON_POS, SupportedBlockchain.BASE, SupportedBlockchain.ARBITRUM_ONE]}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS, SupportedBlockchain.SCROLL, SupportedBlockchain.BINANCE_SC, SupportedBlockchain.ZKSYNC_LITE}),  # noqa: E501
+    # Default excludes Optimism/BSC/Base due to paid Etherscan API requirement
+    ({}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.POLYGON_POS, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS, SupportedBlockchain.SCROLL, SupportedBlockchain.ZKSYNC_LITE}),  # noqa: E501
+    # Additional user exclusions further reduce available chains
+    ({'evmchains_to_skip_detection': [SupportedBlockchain.OPTIMISM, SupportedBlockchain.BINANCE_SC, SupportedBlockchain.BASE, SupportedBlockchain.POLYGON_POS, SupportedBlockchain.ARBITRUM_ONE]}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS, SupportedBlockchain.SCROLL, SupportedBlockchain.ZKSYNC_LITE}),  # noqa: E501
+    # Users with paid API keys can enable specific chains by removing them from skip list
+    ({'evmchains_to_skip_detection': [SupportedBlockchain.BINANCE_SC]}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.POLYGON_POS, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS, SupportedBlockchain.SCROLL, SupportedBlockchain.ZKSYNC_LITE, SupportedBlockchain.OPTIMISM, SupportedBlockchain.BASE}),  # noqa: E501
+    # Users can enable all paid chains by setting empty skip list
+    ({'evmchains_to_skip_detection': []}, {SupportedBlockchain.ETHEREUM, SupportedBlockchain.POLYGON_POS, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.AVALANCHE, SupportedBlockchain.GNOSIS, SupportedBlockchain.SCROLL, SupportedBlockchain.ZKSYNC_LITE, SupportedBlockchain.OPTIMISM, SupportedBlockchain.BINANCE_SC, SupportedBlockchain.BASE}),  # noqa: E501
 ])
 def test_get_chains_to_detect_evm_accounts(database, expected_chains):
     assert set(database.get_chains_to_detect_evm_accounts()) == expected_chains

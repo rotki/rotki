@@ -407,7 +407,8 @@ def test_detect_evm_accounts(
     Test that the endpoint to detect new evm addresses works properly
     and sends the ws messages
 
-    The given account is everywhere.
+    The given account is everywhere, but Optimism/BSC/Base are excluded from
+    auto-detection by default due to paid Etherscan API requirement.
     """
     response = requests.post(api_url_for(
         rotkehlchen_api_server,
@@ -420,12 +421,9 @@ def test_detect_evm_accounts(
     assert msg['type'] == 'evmlike_accounts_detection'
     assert sorted(msg['data'], key=operator.itemgetter('chain', 'address')) == sorted([
         {'chain': SupportedBlockchain.POLYGON_POS.serialize(), 'address': ethereum_accounts[0]},
-        {'chain': SupportedBlockchain.OPTIMISM.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.ARBITRUM_ONE.serialize(), 'address': ethereum_accounts[0]},
-        {'chain': SupportedBlockchain.BASE.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.GNOSIS.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.SCROLL.serialize(), 'address': ethereum_accounts[0]},
-        {'chain': SupportedBlockchain.BINANCE_SC.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.ZKSYNC_LITE.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.AVALANCHE.serialize(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('chain', 'address'))
@@ -435,12 +433,15 @@ def test_detect_evm_accounts(
         blockchain_accounts = db.get_blockchain_accounts(cursor)
     assert ethereum_accounts[0] in blockchain_accounts.eth
     assert ethereum_accounts[0] in blockchain_accounts.polygon_pos
-    assert ethereum_accounts[0] in blockchain_accounts.optimism
+    # Optimism should not be auto-detected
+    assert ethereum_accounts[0] not in blockchain_accounts.optimism
     assert ethereum_accounts[0] in blockchain_accounts.arbitrum_one
-    assert ethereum_accounts[0] in blockchain_accounts.base
+    # Base should not be auto-detected
+    assert ethereum_accounts[0] not in blockchain_accounts.base
     assert ethereum_accounts[0] in blockchain_accounts.gnosis
     assert ethereum_accounts[0] in blockchain_accounts.scroll
-    assert ethereum_accounts[0] in blockchain_accounts.binance_sc
+    # BSC should not be auto-detected
+    assert ethereum_accounts[0] not in blockchain_accounts.binance_sc
     assert ethereum_accounts[0] in blockchain_accounts.zksync_lite
     assert ethereum_accounts[0] in blockchain_accounts.avax
 
