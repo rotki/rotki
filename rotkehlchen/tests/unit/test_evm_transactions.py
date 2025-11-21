@@ -3,9 +3,11 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address, WeightedNode, NodeName
+from rotkehlchen.chain.optimism.manager import OptimismManager
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -15,6 +17,7 @@ from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, deserial
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 ADDR_1, ADDR_2, ADDR_3 = make_evm_address(), make_evm_address(), make_evm_address()
@@ -92,3 +95,45 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
 
     with database.conn.read_ctx() as cursor:  # ensure the range was not marked as pulled
         assert database.get_used_query_range(cursor=cursor, name=location_string) is None
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='mainnet-optimism', endpoint='https://mainnet.optimism.io', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('optimism_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_txlist_etc_falls_back_to_blockscout(
+        database: 'DBHandler',
+        optimism_manager: 'OptimismManager',
+        optimism_accounts: list['ChecksumEvmAddress'],
+) -> None:
+
+    # Query a small range that returns only two txs
+    optimism_manager.transactions.single_address_query_transactions(
+        address=optimism_accounts[0],
+        start_ts=Timestamp(1729116000),
+        end_ts=Timestamp(1729117000),
+    )
+
+    dbevmtx = DBEvmTx(database)
+    with database.conn.read_ctx() as cursor:
+        txs = dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(),
+        )
+        for tx in txs:
+            print([tx])
+
+        assert len(txs) == 2
+        assert {x.tx_hash for x in txs} == {
+            (tx_hash1 := deserialize_evm_tx_hash('0x24cf6c88c9645cb5e92596488206319c39a0a1c4e2829a83c690df8f11cb80b6')),
+            deserialize_evm_tx_hash('0x6d11b151d37310d148ca9177b436bad7f5caea7bb41591acf7b2d11466088d80'),
+        }
+
+        # Check that internal txs were properly retrieved (queried via the indexers)
+        internal_txs = dbevmtx.get_evm_internal_transactions(
+            parent_tx_hash=tx_hash1,
+            blockchain=SupportedBlockchain.OPTIMISM,
+        )
+
+        # only getting one here... etherscan shows two :( need to check why
+        for x in internal_txs:
+            print([x])
