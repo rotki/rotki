@@ -9,6 +9,8 @@ from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
+from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -123,8 +125,12 @@ class Liquity(EthereumModule):
         )
 
         data: dict[ChecksumEvmAddress, Trove] = {}
-        eth_price = Inquirer.find_usd_price(A_ETH)
-        lusd_price = Inquirer.find_usd_price(A_LUSD)
+        main_currency_prices = Inquirer.find_prices(
+            from_assets=[A_ETH, A_LUSD],
+            to_asset=CachedSettings().main_currency,
+        )
+        eth_price = main_currency_prices.get(A_ETH, ZERO_PRICE)
+        lusd_price = main_currency_prices.get(A_LUSD, ZERO_PRICE)
         for idx, output in enumerate(outputs):
             status, result = output
             if status is True:
@@ -143,21 +149,21 @@ class Liquity(EthereumModule):
                         asset=A_ETH,
                         balance=Balance(
                             amount=collateral,
-                            usd_value=eth_price * collateral,
+                            value=eth_price * collateral,
                         ),
                     )
                     debt_balance = AssetBalance(
                         asset=A_LUSD,
                         balance=Balance(
                             amount=debt,
-                            usd_value=lusd_price * debt,
+                            value=lusd_price * debt,
                         ),
                     )
                     # Avoid division errors
                     collateralization_ratio: FVal | None
                     liquidation_price: FVal | None
                     if debt > 0:
-                        collateralization_ratio = eth_price * collateral / debt * 100
+                        collateralization_ratio = eth_price * collateral / (lusd_price * debt) * 100  # noqa: E501
                     else:
                         collateralization_ratio = None
                     if collateral > 0:
@@ -228,6 +234,7 @@ class Liquity(EthereumModule):
         # the structure of the queried data is:
         # staked address 1, reward 1 of address 1, reward 2 of address 1, staked address 2, reward 1 of address 2, ...  # noqa: E501
         data: defaultdict[ChecksumEvmAddress, LiquityBalanceWithProxy] = defaultdict(default_balance_with_proxy_factory)  # noqa: E501
+        main_currency = CachedSettings().main_currency
         for idx, output in enumerate(outputs):
             # depending on the output index get the address we are tracking
             current_address = addresses[idx // 3]
@@ -248,7 +255,11 @@ class Liquity(EthereumModule):
                     break
 
             # get price information for the asset and deserialize the amount
-            asset_price = Inquirer.find_usd_price(asset)
+            main_currency_prices = Inquirer.find_prices(
+                from_assets=[asset],
+                to_asset=main_currency,
+            )
+            asset_main_price = main_currency_prices.get(asset, ZERO_PRICE)
             amount = deserialize_fval(
                 token_normalized_value_decimals(gain_info, 18),
             )
@@ -266,7 +277,7 @@ class Liquity(EthereumModule):
                     asset=asset,
                     balance=Balance(
                         amount=amount,
-                        usd_value=asset_price * amount,
+                        value=asset_main_price * amount,
                     ),
                 )
             else:
@@ -277,7 +288,7 @@ class Liquity(EthereumModule):
                     asset=asset,
                     balance=Balance(
                         amount=amount,
-                        usd_value=asset_price * amount,
+                        value=asset_main_price * amount,
                     ),
                 )
         return data

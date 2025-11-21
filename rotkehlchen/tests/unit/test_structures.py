@@ -3,7 +3,7 @@ from collections import defaultdict
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import InputError
@@ -199,12 +199,12 @@ def test_balance_sheet_serialize():
     )
     assert a.serialize() == {
         'assets': {
-            'USD': {DEFAULT_BALANCE_LABEL: {'amount': '2', 'usd_value': '2'}},
-            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '3', 'usd_value': '900'}},
+            'USD': {DEFAULT_BALANCE_LABEL: {'amount': '2', 'usd_value': '2', 'value': '0'}},
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '3', 'usd_value': '900', 'value': '0'}},
         },
         'liabilities': {
-            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': '5', 'usd_value': '5.1'}},  # noqa: E501
-            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '0.5', 'usd_value': '150'}},
+            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': '5', 'usd_value': '5.1', 'value': '0'}},  # noqa: E501
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '0.5', 'usd_value': '150', 'value': '0'}},
         },
     }
 
@@ -222,11 +222,11 @@ def test_balance_sheet_to_dict():
     )
     assert a.to_dict() == {
         'assets': {
-            'USD': {DEFAULT_BALANCE_LABEL: {'amount': FVal('2'), 'usd_value': FVal('2')}},
-            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('3'), 'usd_value': FVal('900')}},
+            'USD': {DEFAULT_BALANCE_LABEL: {'amount': FVal('2'), 'usd_value': FVal('2'), 'value': ZERO}},  # noqa: E501
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('3'), 'usd_value': FVal('900'), 'value': ZERO}},  # noqa: E501
         },
         'liabilities': {
-            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': FVal('5'), 'usd_value': FVal('5.1')}},  # noqa: E501
-            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('0.5'), 'usd_value': FVal('150')}},
+            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': FVal('5'), 'usd_value': FVal('5.1'), 'value': ZERO}},  # noqa: E501
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('0.5'), 'usd_value': FVal('150'), 'value': ZERO}},  # noqa: E501
         },
     }

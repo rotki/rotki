@@ -1111,10 +1111,10 @@ class ManuallyTrackedBalancesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool, usd_value_threshold: FVal | None) -> Response:
+    def get(self, async_query: bool, value_threshold: FVal | None) -> Response:
         return self.rest_api.get_manually_tracked_balances(
             async_query=async_query,
-            usd_value_threshold=usd_value_threshold,
+            value_threshold=value_threshold,
         )
 
     @require_loggedin_user()
