@@ -21,18 +21,26 @@ class BalanceType(DBCharEnumMixIn):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class Balance:
     amount: FVal = ZERO
+    # TODO(isaac): remove this once usd_value -> migration is complete
+    # https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=139835208
     usd_value: FVal = ZERO
+    value: FVal = ZERO
 
     def serialize(self) -> dict[str, str]:
-        return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
+        return {
+            'amount': str(self.amount),
+            'value': str(self.value),
+            'usd_value': str(self.usd_value),
+        }
 
     def to_dict(self) -> dict[str, FVal]:
-        return {'amount': self.amount, 'usd_value': self.usd_value}
+        return {'amount': self.amount, 'usd_value': self.usd_value, 'value': self.value}
 
     def __add__(self, other: Any) -> 'Balance':
         other = _evaluate_balance_input(other, 'addition')
         return Balance(
             amount=self.amount + other.amount,
+            value=self.value + other.value,
             usd_value=self.usd_value + other.usd_value,
         )
 
@@ -44,6 +52,7 @@ class Balance:
         return Balance(
             amount=self.amount + other.amount,
             usd_value=self.usd_value + other.usd_value,
+            value=self.value + other.value,
         )
 
     def __sub__(self, other: Any) -> 'Balance':
@@ -51,6 +60,7 @@ class Balance:
         return Balance(
             amount=self.amount - other.amount,
             usd_value=self.usd_value - other.usd_value,
+            value=self.value - other.value,
         )
 
     def __mul__(self, other: Any) -> 'Balance':
@@ -60,27 +70,31 @@ class Balance:
         return Balance(
             amount=self.amount * other,
             usd_value=self.usd_value * other,
+            value=self.value * other,
         )
 
     def __neg__(self) -> 'Balance':
-        return Balance(amount=-self.amount, usd_value=-self.usd_value)
+        return Balance(amount=-self.amount, usd_value=-self.usd_value, value=-self.value)
 
     def __abs__(self) -> 'Balance':
-        return Balance(amount=abs(self.amount), usd_value=abs(self.usd_value))
+        return Balance(amount=abs(self.amount), usd_value=abs(self.usd_value), value=abs(self.value))  # noqa: E501
 
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:
     transformed_input = other
     if isinstance(other, dict):
-        if len(other) == 2 and 'amount' in other and 'usd_value' in other:
+        # TODO(isaac): change this to == 2 and use dictionary access instead of .get()
+        # this is here to allow incremental refactor.
+        if len(other) >= 2 and 'amount' in other and 'usd_value' in other:
             try:
                 amount = FVal(other['amount'])
                 usd_value = FVal(other['usd_value'])
+                value = FVal(other.get('value', ZERO))
             except (ValueError, KeyError) as e:
                 raise InputError(
                     f'Found valid dict object but with invalid values during Balance {operation}',
                 ) from e
-            transformed_input = Balance(amount=amount, usd_value=usd_value)
+            transformed_input = Balance(amount=amount, usd_value=usd_value, value=value)
         else:
             raise InputError(f'Found invalid dict object during Balance {operation}')
     elif not isinstance(other, Balance):
@@ -101,6 +115,10 @@ class AssetBalance:
     @property
     def usd_value(self) -> FVal:
         return self.balance.usd_value
+
+    @property
+    def value(self) -> FVal:
+        return self.balance.value
 
     def serialize(self) -> dict[str, str]:
         result = self.balance.serialize()

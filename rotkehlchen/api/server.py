@@ -129,7 +129,6 @@ from rotkehlchen.api.v1.resources import (
     OraclesResource,
     OwnedAssetsResource,
     PeriodicDataResource,
-    PickleDillResource,
     PingResource,
     PremiumCapabilitiesResource,
     PremiumDevicesResource,
@@ -279,7 +278,6 @@ URLS_V1: URLS = [
     ('/blockchains/eth/modules/<string:module>/balances', EvmModuleBalancesResource),
     ('/blockchains/eth/modules/<string:module>/v<string:version>/balances', EvmModuleBalancesWithVersionResource),  # noqa: E501
     ('/blockchains/eth/modules/<string:module>/stats', ModuleStatsResource),
-    ('/blockchains/eth/modules/pickle/dill', PickleDillResource),
     ('/blockchains/eth/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/evm/accounts', EvmAccountsResource),
     ('/blockchains/type/<string:chain_type>/accounts', ChainTypeAccountResource),
