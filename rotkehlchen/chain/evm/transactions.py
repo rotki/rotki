@@ -194,8 +194,7 @@ class EvmTransactions(ABC):  # noqa: B024
         Otherwise, data is fetched without updating the query range.
         """
         period_as_blocks = self.evm_inquirer.maybe_timestamp_to_block_range(period)
-        for new_transactions in self.evm_inquirer.etherscan.get_transactions(
-                chain_id=self.evm_inquirer.chain_id,
+        for new_transactions in self.evm_inquirer.get_transactions(
                 account=address,
                 action='txlist',
                 period_or_hash=period_as_blocks,
@@ -302,8 +301,7 @@ class EvmTransactions(ABC):  # noqa: B024
         else:
             query_period_or_hash = period_or_hash
 
-        for new_internal_txs in self.evm_inquirer.etherscan.get_transactions(
-                chain_id=self.evm_inquirer.chain_id,
+        for new_internal_txs in self.evm_inquirer.get_transactions(
                 account=address,
                 period_or_hash=query_period_or_hash,
                 action='txlistinternal',
@@ -465,8 +463,7 @@ class EvmTransactions(ABC):  # noqa: B024
         to_block = self.evm_inquirer.get_blocknumber_by_time(ts=Timestamp(period.to_value))
 
         log.debug(f'Querying erc20 transfers of {address} from {period.from_value} to {period.to_value} in {self.evm_inquirer.chain_name}')  # noqa: E501
-        for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
-            chain_id=self.evm_inquirer.chain_id,
+        for erc20_tx_hashes in self.evm_inquirer.get_token_transaction_hashes(
             account=address,
             from_block=from_block,
             to_block=to_block,
@@ -528,8 +525,7 @@ class EvmTransactions(ABC):  # noqa: B024
             from_block = self.evm_inquirer.get_blocknumber_by_time(ts=start_ts)
             to_block = self.evm_inquirer.get_blocknumber_by_time(ts=end_ts)
 
-            for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
-                chain_id=self.evm_inquirer.chain_id,
+            for erc20_tx_hashes in self.evm_inquirer.get_token_transaction_hashes(
                 account=address,
                 from_block=from_block,
                 to_block=to_block,
