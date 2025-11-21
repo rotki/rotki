@@ -156,6 +156,8 @@ TABLES_AT_INIT = [
     'linked_rules_properties',
     'unresolved_remote_conflicts',
     'key_value_cache',
+    'lido_csm_node_operators',
+    'lido_csm_node_operator_metrics',
     'zksynclite_tx_type',
     'zksynclite_transactions',
     'zksynclite_swaps',

@@ -239,6 +239,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'omni',
         'blur',
         'lido',
+        'lido-csm',
         'cctp',
         'gearbox',
         'paladin',
