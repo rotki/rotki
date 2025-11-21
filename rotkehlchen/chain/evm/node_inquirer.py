@@ -1,10 +1,10 @@
+import itertools
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Sequence
-from contextlib import suppress
+from collections.abc import Callable, Iterator, Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import requests
 from eth_abi.exceptions import DecodingError
@@ -49,6 +49,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -64,6 +65,7 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
+    EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
     Timestamp,
@@ -79,6 +81,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+T = TypeVar('T')
 
 
 def _connect_task_prefix(chain_name: str) -> str:
@@ -1203,25 +1207,21 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             ts: Timestamp,
             closest: Literal['before', 'after'] = 'before',
     ) -> int:
-        """Searches for the blocknumber of a specific timestamp
-        - Performs the blockscout api call by default first
-        - If RemoteError gets raised it queries etherscan
-        May raise RemoteError
+        """Searches for the blocknumber of a specific timestamp, checking the cached values first
+        and then querying the indexers, with blockscout first, then etherscan.
+        May raise RemoteError if all indexers fail.
         """
         # check if value exists in the cache
         if (block_number := self.timestamp_to_block_cache[self.chain_id].get(ts)) is not None:
             return block_number
 
-        assert self.blockscout is not None, 'Blockscout should be set'
-        with suppress(RemoteError):
-            block_number = self.blockscout.get_blocknumber_by_time(ts, closest)
-            self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
-            return block_number
-
-        block_number = self.etherscan.get_blocknumber_by_time(
-            chain_id=self.chain_id,
-            ts=ts,
-            closest=closest,
+        block_number = self._try_indexers(
+            func=lambda indexer: indexer.get_blocknumber_by_time(
+                chain_id=self.chain_id,
+                ts=ts,
+                closest=closest,
+            ),
+            indexers=(self.blockscout, self.etherscan),
         )
         self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
         return block_number
@@ -1322,6 +1322,96 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             return False
 
         return all(result_tuple[0] for result_tuple in outputs)
+
+    @overload
+    def get_transactions(
+            self,
+            account: ChecksumEvmAddress | None,
+            action: Literal['txlistinternal'],
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+    ) -> Iterator[list[EvmInternalTransaction]]:
+        ...
+
+    @overload
+    def get_transactions(
+            self,
+            account: ChecksumEvmAddress | None,
+            action: Literal['txlist'],
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+    ) -> Iterator[list[EvmTransaction]]:
+        ...
+
+    def get_transactions(
+            self,
+            account: ChecksumEvmAddress | None,
+            action: Literal['txlist', 'txlistinternal'],
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+    ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
+        """Returns an iterator of transaction lists for a given account, action, and period/hash.
+        Tries etherscan first, then blockscout. Raises RemoteError if both fail.
+        """
+        yield from self._try_indexers_iterable(func=lambda indexer: indexer.get_transactions(  # type: ignore[misc]
+            chain_id=self.chain_id,
+            account=account,
+            period_or_hash=period_or_hash,
+            action=action,
+        ))
+
+    def get_token_transaction_hashes(
+            self,
+            account: ChecksumEvmAddress,
+            from_block: int | None = None,
+            to_block: int | None = None,
+    ) -> Iterator[list[EVMTxHash]]:
+        yield from self._try_indexers_iterable(func=lambda indexer: indexer.get_token_transaction_hashes(  # noqa: E501
+            chain_id=self.chain_id,
+            account=account,
+            from_block=from_block,
+            to_block=to_block,
+        ))
+
+    def _try_indexers(
+            self,
+            func: Callable[[EtherscanLikeApi], T],
+            indexers: tuple[Blockscout | Etherscan | None, ...] | None = None,
+    ) -> T:
+        """Tries to call the given function on the indexers in order until one succeeds.
+        Raises RemoteError if all fail.
+        """
+        errors = []
+        # TODO: Make indexer order configurable: https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141661235  # noqa: E501
+        for indexer in indexers or (self.etherscan, self.blockscout):
+            if indexer is None:
+                # TODO: remove this after blockscout is refactored to only have a single instance
+                # for all chains https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141630657  # noqa: E501
+                continue
+
+            try:
+                return func(indexer)
+            except (RemoteError, NotImplementedError) as e:
+                log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
+                errors.append((indexer.name, e))
+
+        raise RemoteError(
+            f'Failed to query any indexer. '
+            f"Errors: {', '.join(f'{name}: {e!s}' for name, e in errors)}",
+        )
+
+    def _try_indexers_iterable(
+            self,
+            func: Callable[[EtherscanLikeApi], Iterator[T]],
+    ) -> Iterator[T]:
+        """Wrapper for _try_indexers that returns an iterator instead of a single value."""
+        def _query_indexer_iterator(indexer: EtherscanLikeApi) -> Iterator[T]:
+            """Consume the first item in the iterator returned by `func` so if it fails the
+            exception is raised immediately, and _try_indexers goes to the next indexer.
+            """
+            generator = func(indexer)
+            # Force execution for first item so we go to the next indexer if this one fails.
+            first_batch = next(generator)
+            return itertools.chain([first_batch], generator)
+
+        yield from self._try_indexers(func=_query_indexer_iterator)
 
 
 class EvmNodeInquirerWithProxies(EvmNodeInquirer):

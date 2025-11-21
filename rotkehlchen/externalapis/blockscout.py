@@ -12,6 +12,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import HasChainActivity
+from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
@@ -19,10 +20,10 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_int
 from rotkehlchen.types import (
     BLOCKSCOUT_TO_CHAINID,
+    SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
     ChainID,
     ChecksumEvmAddress,
-    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -33,11 +34,15 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
+# Blockscout returns a maximum of 10000 transactions per request.
+# https://docs.blockscout.com/devs/apis/rpc/account#get-transactions-by-address
+BLOCKSCOUT_PAGINATION_LIMIT = 10000
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Blockscout(ExternalServiceWithApiKey):
+class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
     """Blockscout API handler https://eth.blockscout.com/api-docs"""
 
     def __init__(
@@ -47,41 +52,52 @@ class Blockscout(ExternalServiceWithApiKey):
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.chain_id = blockchain.to_chain_id()
-        super().__init__(
+        ExternalServiceWithApiKey.__init__(
+            self,
             database=database,
             service_name={v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}[self.chain_id],
         )
-        self.msg_aggregator = msg_aggregator
+        EtherscanLikeApi.__init__(
+            self,
+            database=database,
+            msg_aggregator=msg_aggregator,
+            pagination_limit=BLOCKSCOUT_PAGINATION_LIMIT,
+            name='Blockscout',
+        )
         self.session = create_session()
         set_user_agent(self.session)
-        match blockchain:
-            case SupportedBlockchain.ETHEREUM:
-                self.url = 'https://eth.blockscout.com/api'
-            case SupportedBlockchain.OPTIMISM:
-                self.url = 'https://optimism.blockscout.com/api'
-            case SupportedBlockchain.BASE:
-                self.url = 'https://base.blockscout.com/api'
-            case SupportedBlockchain.ARBITRUM_ONE:
-                self.url = 'https://arbitrum.blockscout.com/api'
-            case SupportedBlockchain.GNOSIS:
-                self.url = 'https://gnosis.blockscout.com/api'
-            case SupportedBlockchain.POLYGON_POS:
-                self.url = 'https://polygon.blockscout.com/api'
-            case SupportedBlockchain.SCROLL:
-                self.url = 'https://scroll.blockscout.com/api'
+        self.url = self._get_url(self.chain_id)
+
+    def _get_url(self, chain_id: ChainID) -> str:
+        match chain_id:
+            case ChainID.ETHEREUM:
+                return 'https://eth.blockscout.com/api'
+            case ChainID.OPTIMISM:
+                return 'https://explorer.optimism.io/api'
+            case ChainID.BASE:
+                return 'https://base.blockscout.com/api'
+            case ChainID.ARBITRUM_ONE:
+                return 'https://arbitrum.blockscout.com/api'
+            case ChainID.GNOSIS:
+                return 'https://gnosis.blockscout.com/api'
+            case ChainID.POLYGON_POS:
+                return 'https://polygon.blockscout.com/api'
+            case ChainID.SCROLL:
+                return 'https://scroll.blockscout.com/api'
             case _:
-                raise NotImplementedError(f'Blockscout not implement for {blockchain}')
+                raise NotImplementedError(f'Blockscout is not implemented for {chain_id.name}')
 
     def _query_and_process(
             self,
             query_str: str,
             params: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> dict[str, Any]:
         """Shared logic between v1 and v2 for querying blockscout api"""
         log.debug(f'Querying blockscout API for {query_str} with {params}')
         times = (cached_settings := CachedSettings()).get_query_retry_limit()
         retries_num = times
-        timeout = cached_settings.get_timeout_tuple()
+        timeout = timeout or cached_settings.get_timeout_tuple()
         backoff_in_seconds = 10
 
         while True:
@@ -128,55 +144,66 @@ class Blockscout(ExternalServiceWithApiKey):
 
         return json_ret  # 'txlistinternal', 'txlist', 'tokentx
 
-    @overload
-    def _query_v1(
+    @overload  # type: ignore[override]
+    def _query(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['account'],
             action: Literal['txlistinternal', 'txlist', 'tokentx'],
-            query_args: dict[str, Any] | None = None,
-    ) -> list[Any]:
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]]:
         ...
 
     @overload
-    def _query_v1(
+    def _query(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['account'],
             action: Literal['balance'],
-            query_args: dict[str, Any] | None = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> int:
         ...
 
     @overload
-    def _query_v1(
+    def _query(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['block'],
             action: Literal['getblocknobytime'],
-            query_args: dict[str, Any] | None = None,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
     ) -> dict[str, Any] | int:
         ...
 
     @overload
-    def _query_v1(
+    def _query(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: str,
             action: str,
-            query_args: dict[str, Any] | None = None,
-    ) -> dict[str, Any] | list[Any] | int:
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
         ...
 
-    def _query_v1(
+    def _query(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: str,
             action: str,
-            query_args: dict[str, Any] | None = None,
-    ) -> dict[str, Any] | list[Any] | int:
-        query_args = {} if query_args is None else query_args
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
+        query_args = {} if options is None else options
         query_args |= {'module': module, 'action': action}
         if (api_key := self._get_api_key()) is not None:
             query_args['apikey'] = api_key
         response = self._query_and_process(
-            query_str=self.url,
+            query_str=self._get_url(chain_id=chain_id),
             params=query_args,
+            timeout=timeout,
         )
         if (
             (message := response.get('message')) is not None and
@@ -327,6 +354,7 @@ class Blockscout(ExternalServiceWithApiKey):
 
     def get_blocknumber_by_time(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             ts: Timestamp,
             closest: Literal['before', 'after'] = 'before',
     ) -> int:
@@ -337,13 +365,14 @@ class Blockscout(ExternalServiceWithApiKey):
         - RemoteError: If it fails to call the remote server or response doesn't have the correct
         format
         """
-        if ts < get_earliest_ts(self.chain_id):
+        if ts < get_earliest_ts(chain_id):
             return 0  # behave like etherscan for timestamps close to the genesis
 
-        response = self._query_v1(
+        response = self._query(
+            chain_id=chain_id,
             module='block',
             action='getblocknobytime',
-            query_args={'timestamp': ts, 'closest': closest},
+            options={'timestamp': ts, 'closest': closest},
         )
 
         if isinstance(response, int):
@@ -374,15 +403,15 @@ class Blockscout(ExternalServiceWithApiKey):
         May raise: RemoteError
         """
         options = {'address': str(account), 'page': 1}
-        result = self._query_v1(module='account', action='txlist', query_args=options)
+        result = self._query(chain_id=self.chain_id, module='account', action='txlist', options=options)  # noqa: E501
         if len(result) != 0:
             return HasChainActivity.TRANSACTIONS
 
-        result = self._query_v1(module='account', action='txlistinternal', query_args=options)
+        result = self._query(chain_id=self.chain_id, module='account', action='txlistinternal', options=options)  # noqa: E501
         if len(result) != 0:
             return HasChainActivity.TRANSACTIONS
 
-        result = self._query_v1(module='account', action='tokentx', query_args=options)
+        result = self._query(chain_id=self.chain_id, module='account', action='tokentx', options=options)  # noqa: E501
         if len(result) != 0:
             return HasChainActivity.TOKENS
 
@@ -390,10 +419,11 @@ class Blockscout(ExternalServiceWithApiKey):
             # since ethereum, gnosis and polygon have a lot of spam transactions for addresses
             # that were never used we add as requirement that in those chains the user must have
             # some balance.
-            balance = self._query_v1(
+            balance = self._query(
+                chain_id=self.chain_id,
                 module='account',
                 action='balance',
-                query_args={'address': account},
+                options={'address': account},
             )
             if balance != 0:
                 return HasChainActivity.BALANCE
