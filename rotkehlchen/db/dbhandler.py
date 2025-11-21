@@ -172,6 +172,13 @@ TABLES_WITH_ASSETS = (
 
 DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
 
+# Chains excluded from account auto-discovery due to lack of free Etherscan API access
+EVMCHAINS_WITHOUT_FREE_ETHERSCAN_API: tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ...] = (
+    SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.BINANCE_SC,
+    SupportedBlockchain.BASE,
+)
+
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
@@ -3761,4 +3768,4 @@ class DBHandler:
         perform EVM account detection on"""
         with self.conn.read_ctx() as cursor:
             excluded_chains = self.get_settings(cursor).evmchains_to_skip_detection
-        return list(set(SUPPORTED_EVM_EVMLIKE_CHAINS) - set(excluded_chains))
+        return list(set(SUPPORTED_EVM_EVMLIKE_CHAINS) - set(excluded_chains) - set(EVMCHAINS_WITHOUT_FREE_ETHERSCAN_API))  # noqa: E501
