@@ -8,7 +8,10 @@ if TYPE_CHECKING:
 
 
 def is_valid_bitcoin_address(chain: 'SupportedBlockchain', value: str) -> bool:
-    """Returns False only if it's a bitcoin chain with an invalid address."""
+    """
+    Returns False only if `chain` is a Bitcoin chain and `value` is an
+    invalid address; otherwise returns True.
+    """
     return (
         not chain.is_bitcoin() or
         (is_valid_btc_address(value) or is_valid_bitcoin_cash_address(value))
