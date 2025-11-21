@@ -280,7 +280,7 @@ class GoogleCalendarAPI:
             # Convert timestamp to datetime
             try:
                 # Check if timestamp is in milliseconds (common issue)
-                if isinstance(entry.timestamp, int | float) and entry.timestamp > 1e10:
+                if isinstance(entry.timestamp, (int, float)) and entry.timestamp > 1e10:
                     # Timestamp is likely in milliseconds, convert to seconds
                     timestamp_seconds = entry.timestamp / 1000
                     log.debug(
