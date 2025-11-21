@@ -41,6 +41,7 @@ extensions = [
     'releases',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
+    'sphinx.ext.extlinks',
     'sphinxcontrib.httpdomain',
     'sphinxcontrib.httpexample',
     'sphinx_inline_tabs',
@@ -50,6 +51,11 @@ extensions = [
 # 'releases' (changelog) settings
 releases_issue_uri = 'https://github.com/rotki/rotki/issues/%s'
 releases_release_uri = 'https://github.com/rotki/rotki/releases/tag/v%s'
+
+# 'extlinks' settings for custom link roles
+extlinks = {
+    'releasetag': ('https://github.com/rotki/rotki/releases/tag/v%s', '%s'),
+}
 # Enables 0.x.y releases to not be grouped into feature and bugfix releases
 # see: http://releases.readthedocs.io/en/latest/concepts.html#unstable-prehistory-mode
 # This needs to be kept enabled even once 1.0 has been reached!

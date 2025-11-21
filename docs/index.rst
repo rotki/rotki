@@ -8,3 +8,4 @@ Contents
    api
    websockets
    changelog
+   dev_changelog
