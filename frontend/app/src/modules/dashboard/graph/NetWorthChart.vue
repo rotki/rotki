@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber, type NetValue, Zero } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
 import VChart from 'vue-echarts';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -43,7 +44,10 @@ watchImmediate(isDark, () => {
   nextTick(setupChartEventHandlers);
 });
 
-watchImmediate(chartOption, () => {
+watchImmediate(() => get(chartData).times, (times, oldTimes) => {
+  if (isEqual(times, oldTimes)) {
+    return;
+  }
   setupZoomToolHandler();
 });
 </script>
