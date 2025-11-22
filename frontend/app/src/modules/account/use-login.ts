@@ -101,7 +101,9 @@ export function useLogin(): UseLoginReturn {
         settings,
         username: payload.credentials.username,
       };
-      return await unlock(data);
+      const response = await unlock(data);
+      await colibriLogin(objectPick(payload.credentials, ['username', 'password']));
+      return response;
     }
     catch (error: any) {
       logger.error(error);
