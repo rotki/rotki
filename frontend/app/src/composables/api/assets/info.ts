@@ -1,6 +1,7 @@
 import type { ActionResult } from '@rotki/common';
 import type { EvmChainAddress } from '@/types/history/events';
 import type { PendingTask } from '@/types/task';
+import { apiUrls } from '@/services/api-urls';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
@@ -28,6 +29,7 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
       '/assets/mappings',
       { identifiers },
       {
+        baseURL: apiUrls.colibriApiUrl,
         validateStatus: validStatus,
       },
     );

@@ -1,5 +1,5 @@
-use std::io::{self, Write};
 use rustc_version::{version, Version};
+use std::io::{self, Write};
 
 /// Warn users about outdated rust versions
 fn main() {

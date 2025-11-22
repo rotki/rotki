@@ -103,6 +103,7 @@ const backendUrl = `http://127.0.0.1:${backendPort}`;
 const frontendUrl = `http://localhost:${frontendPort}`;
 
 process.env.CYPRESS_BACKEND_URL = backendUrl;
+process.env.CYPRESS_COLIBRI_URL = colibriUrl;
 process.env.VITE_BACKEND_URL = backendUrl;
 process.env.VITE_COLIBRI_URL = colibriUrl;
 

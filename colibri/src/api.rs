@@ -1,8 +1,10 @@
+pub mod assets;
 mod constants;
 pub mod database;
 pub mod globaldb_endpoints;
 pub mod health;
 pub mod icons;
+mod schemas;
 mod utils;
 
 use crate::blockchain::EvmInquirerManager;

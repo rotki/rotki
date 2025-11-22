@@ -26,6 +26,7 @@
 import type { FieldMessage } from './types';
 
 const backendUrl = Cypress.env('BACKEND_URL');
+const colibriUrl = Cypress.env('COLIBRI_URL');
 
 const WAIT_TIME_MS = 5000;
 const TIMEOUT_MS = 120000;
@@ -62,7 +63,11 @@ function logout() {
           },
         })
         .its('body')
-        .then(body => body.result);
+        .then(() => cy.request({
+          url: `${colibriUrl}/user/logout`,
+          method: 'POST',
+          failOnStatusCode: false,
+        }));
     });
 }
 
@@ -154,7 +159,17 @@ function createAccount(username: string, password = '1234') {
       async_query: true,
     },
     failOnStatusCode: false,
-  }).its('body').then(checkForTaskCompletion);
+  }).its('body').then((result) => {
+    checkForTaskCompletion(result);
+    return cy.request({
+      url: `${colibriUrl}/user`,
+      method: 'POST',
+      body: {
+        username,
+        password,
+      },
+    });
+  });
 }
 
 function addEtherscanKey(key: string) {
