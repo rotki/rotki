@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 
 #[derive(Clone)]
 pub struct GlobalDB {
-    conn: Arc<Mutex<Connection>>,
+    pub conn: Arc<Mutex<Connection>>,
 }
 
 /// The GlobalDB handler for Colibri
