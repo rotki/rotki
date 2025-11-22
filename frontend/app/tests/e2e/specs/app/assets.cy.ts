@@ -15,7 +15,7 @@ describe('assets', () => {
 
     cy.intercept({
       method: 'GET',
-      url: '/api/1/assets/ignored',
+      url: '/assets/ignored',
     }).as('getIgnoredAsset');
 
     cy.wait('@getIgnoredAsset', { timeout: 15000 }).its('response.statusCode').should('equal', 200);
