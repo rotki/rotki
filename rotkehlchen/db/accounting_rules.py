@@ -566,11 +566,14 @@ def _events_to_consume(
             _, next_event = next(events_iterator)
             ids_processed.append((next_event.identifier, cache_identifier))  # type: ignore[arg-type]
 
-            _, peeked_event = events_iterator.peek((None, None))
-            if peeked_event and peeked_event.event_identifier == event.event_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
-                # consume the related fee if it exists
-                _, next_event = next(events_iterator)
-                ids_processed.append((next_event.identifier, cache_identifier))  # type: ignore[arg-type]
+            while True:  # consume all related fee events
+                _, peeked_event = events_iterator.peek((None, None))
+                if peeked_event and peeked_event.event_identifier == event.event_identifier and peeked_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+                    _, next_event = next(events_iterator)
+                    ids_processed.append((next_event.identifier, cache_identifier))  # type: ignore[arg-type]
+                    continue
+
+                break
 
         return ids_processed
 

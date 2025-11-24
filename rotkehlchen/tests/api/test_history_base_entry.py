@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
@@ -977,6 +978,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         assert cursor.execute(*query_for_events).fetchone()[0] == 1
 
 
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
@@ -1183,6 +1185,19 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'extra_data': {'reference': 'TRADE2'},
         'auto_notes': 'Swap 0.01 ETH in Bitfinex',
     }
+
+    # Check that a swap with multiple fees has the accounting rule status set properly,
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'event_identifiers': ['test_id']},
+    ))
+    assert len(result['entries']) == 4
+    assert all(
+        entry['event_accounting_rule_status'] in (
+            EventAccountingRuleStatus.HAS_RULE.serialize(),
+            EventAccountingRuleStatus.PROCESSED.serialize(),
+        ) for entry in result['entries']
+    )
 
 
 def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
