@@ -309,11 +309,11 @@ def test_query_balances(mock_woo):
         assert mock_woo.query_balances()[0] == {
             A_WOO: Balance(
                 amount=FVal('1'),
-                usd_value=FVal('1.5'),
+                value=FVal('1.5'),
             ),
             A_ETH: Balance(
                 amount=FVal('2'),
-                usd_value=FVal('3'),
+                value=FVal('3'),
             ),
         }
 

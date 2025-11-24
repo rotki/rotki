@@ -777,7 +777,7 @@ class RestAPI:
     def _query_all_exchange_balances(
             self,
             ignore_cache: bool,
-            usd_value_threshold: FVal | None = None,
+            value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
         final_balances = {}
         error_msg = ''
@@ -799,12 +799,12 @@ class RestAPI:
             result = None
             status_code = HTTPStatus.CONFLICT
         else:  # Filter balances by threshold for each exchange
-            if usd_value_threshold is not None:
+            if value_threshold is not None:
                 filtered_balances = {}
                 for location, balances in final_balances.items():
                     filtered_balances[location] = {
                         asset: balance for asset, balance in balances.items()
-                        if balance.usd_value > usd_value_threshold
+                        if balance.value > value_threshold
                     }
                 result = filtered_balances
             else:
@@ -880,13 +880,13 @@ class RestAPI:
             self,
             location: Location | None,
             ignore_cache: bool,
-            usd_value_threshold: FVal | None = None,
+            value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
         if location is None:
             # Query all exchanges
             return self._query_all_exchange_balances(
                 ignore_cache=ignore_cache,
-                usd_value_threshold=usd_value_threshold,
+                value_threshold=value_threshold,
             )
 
         # else query only the specific exchange
@@ -910,10 +910,10 @@ class RestAPI:
             balances = combine_dicts(balances, result)
 
         # Filter balances by threshold for a single exchange
-        if usd_value_threshold is not None:
+        if value_threshold is not None:
             balances = {
                 asset: balance for asset, balance in balances.items()
-                if balance.usd_value > usd_value_threshold
+                if balance.value > value_threshold
             }
 
         return {
@@ -2179,7 +2179,6 @@ class RestAPI:
             db=self.rotkehlchen.data.db,
             balance_type=None,
             include_entries_with_missing_assets=True,
-            use_main_currency=True,
         )
         # Filter balances if threshold is set
         if value_threshold is not None:

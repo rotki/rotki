@@ -328,27 +328,27 @@ def test_query_balances_asset_balance(
         assert asset_balance == {
             A_EUR: Balance(
                 amount=FVal('99.9999999'),
-                usd_value=FVal('149.99999985'),
+                value=FVal('149.99999985'),
             ),
             A_GLM: Balance(
                 amount=FVal('0.0000001'),
-                usd_value=FVal('0.00000015'),
+                value=FVal('0.00000015'),
             ),
             A_LINK: Balance(
                 amount=FVal('777.777777'),
-                usd_value=FVal('1166.6666655'),
+                value=FVal('1166.6666655'),
             ),
             A_NEO: Balance(
                 amount=FVal('1'),
-                usd_value=FVal('1.5'),
+                value=FVal('1.5'),
             ),
             A_USDT: Balance(
                 amount=FVal('19790.1529257'),
-                usd_value=FVal('29685.22938855'),
+                value=FVal('29685.22938855'),
             ),
             A_WBTC: Balance(
                 amount=FVal('1'),
-                usd_value=FVal('1.5'),
+                value=FVal('1.5'),
             ),
         }
         assert msg == ''

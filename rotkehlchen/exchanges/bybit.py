@@ -437,6 +437,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         - DeserializationError
         """
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        main_currency = CachedSettings().main_currency
         for coin_data in entries:
             try:
                 asset = asset_from_bybit(coin_data['coin'])
@@ -447,10 +448,8 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                 )) == ZERO:
                     continue
 
-                if coin_data.get('usdValue', '') != '':
-                    usd_value = deserialize_fval(coin_data['usdValue'], name=f'Bybit usd value for {asset}', location='bybit')  # we don't need to calculate it since it is provided by bybit  # noqa: E501
-                else:
-                    usd_value = Inquirer.find_usd_price(asset=asset) * amount
+                value = amount * Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -464,7 +463,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                     msg = f'Missing key entry for {msg}.'
                 raise DeserializationError(f'Error processing Bybit balance entry {coin_data}. {msg}') from e  # noqa: E501
 
-            assets_balance[asset] += Balance(amount=amount, usd_value=usd_value)
+            assets_balance[asset] += Balance(amount=amount, value=value)
 
         return assets_balance
 

@@ -326,6 +326,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg)
             return None, msg
 
+        main_currency = CachedSettings().main_currency
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for entry in balances:
             try:
@@ -340,17 +341,17 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
 
                 asset = asset_from_gemini(entry['currency'])
                 try:
-                    usd_price = Inquirer.find_usd_price(asset=asset)
+                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing gemini {balance_type} balance result due to '
-                        f'inability to query USD price: {e!s}. Skipping balance entry',
+                        f'inability to query price: {e!s}. Skipping balance entry',
                     )
                     continue
 
                 returned_balances[asset] += Balance(
                     amount=amount,
-                    usd_value=amount * usd_price,
+                    value=amount * price,
                 )
             except UnknownAsset as e:
                 self.send_unknown_asset_message(

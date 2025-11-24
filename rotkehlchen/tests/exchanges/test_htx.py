@@ -74,8 +74,8 @@ def test_balances(htx_exchange: Htx):
         balances, _ = htx_exchange.query_balances()
 
     assert balances == {
-        Asset('ATOM'): Balance(amount=FVal('1.100000007177861711'), usd_value=FVal('1.6500000107667925665')),  # noqa: E501
-        A_CRV: Balance(amount=FVal('0.100000007177861711'), usd_value=FVal('0.1500000107667925665')),  # noqa: E501
+        Asset('ATOM'): Balance(amount=FVal('1.100000007177861711'), value=FVal('1.6500000107667925665')),  # noqa: E501
+        A_CRV: Balance(amount=FVal('0.100000007177861711'), value=FVal('0.1500000107667925665')),
     }
 
 

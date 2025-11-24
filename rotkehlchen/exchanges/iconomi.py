@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -154,6 +155,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: dict[AssetWithOracles, Balance] = {}
+        main_currency = CachedSettings().main_currency
         try:
             resp_info = self._api_query('get', 'user/balance')
         except RemoteError as e:
@@ -173,17 +175,6 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                 asset = asset_from_iconomi(ticker)
 
                 try:
-                    usd_value = deserialize_fval(balance_info['value'], 'usd_value', 'iconomi')
-                except (DeserializationError, KeyError) as e:
-                    msg = str(e)
-                    if isinstance(e, KeyError):
-                        msg = f'missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
-                        f'Skipping iconomi balance entry {balance_info} due to {msg}',
-                    )
-                    continue
-
-                try:
                     amount = deserialize_fval(balance_info['balance'])
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
@@ -194,9 +185,18 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
+                try:
+                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing Iconomi balance entry due to inability to '
+                        f'query price: {e!s}. Skipping balance entry',
+                    )
+                    continue
+
                 assets_balance[asset] = Balance(
                     amount=amount,
-                    usd_value=usd_value,
+                    value=amount * price,
                 )
             except UnsupportedAsset:
                 self.msg_aggregator.add_warning(
@@ -245,9 +245,19 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
+                amount = usd_value / aust_usd_price
+                try:
+                    price = Inquirer.find_price(from_asset=self.aust, to_asset=main_currency)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing Iconomi balance entry due to inability to '
+                        f'query price: {e!s}. Skipping balance entry',
+                    )
+                    continue
+
                 assets_balance[self.aust] = Balance(
-                    amount=usd_value / aust_usd_price,
-                    usd_value=usd_value,
+                    amount=amount,
+                    value=amount * price,
                 )
             else:
                 self.msg_aggregator.add_warning(

@@ -62,6 +62,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -444,6 +445,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
     def _deserialize_accounts_balances(
             self,
             response_dict: dict[str, list[dict[str, Any]]],
+            main_currency: 'Asset',
     ) -> dict[AssetWithOracles, Balance]:
         """May raise RemoteError
         """
@@ -502,17 +504,17 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 continue
             try:
-                usd_price = Inquirer.find_usd_price(asset=asset)
+                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
             except RemoteError:
                 self.msg_aggregator.add_error(
                     f'Failed to deserialize a kucoin balance after failing to '
-                    f'request the USD price of {asset.identifier}. Ignoring it.',
+                    f'request the price of {asset.identifier}. Ignoring it.',
                 )
                 continue
 
             assets_balance[asset] += Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                value=amount * price,
             )
 
         return dict(assets_balance)
@@ -740,7 +742,10 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg)
             raise RemoteError(msg) from e
 
-        account_balances = self._deserialize_accounts_balances(response_dict=response_dict)
+        account_balances = self._deserialize_accounts_balances(
+            response_dict=response_dict,
+            main_currency=CachedSettings().main_currency,
+        )
         return account_balances, ''
 
     def query_online_history_events(

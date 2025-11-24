@@ -48,9 +48,9 @@ def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
     assert msg == ''
     assert len(balances) == 3
     assert balances[A_ETH].amount == FVal('32.0')
-    assert balances[A_ETH].usd_value == FVal('10000.031241234')
+    assert balances[A_ETH].value == FVal('48.0')
     assert balances[A_REP].amount == FVal('0.5314532451')
-    assert balances[A_REP].usd_value == FVal('0.834903071')
+    assert balances[A_REP].value == FVal('0.79717986765')
 
     warnings = iconomi.msg_aggregator.consume_warnings()
     assert len(warnings) == 2

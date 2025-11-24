@@ -16,6 +16,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -185,6 +186,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(msg) from e
 
         assets_balance: dict[AssetWithOracles, Balance] = {}
+        main_currency = CachedSettings().main_currency
         for entry, raw_amount in response_dict.items():
             if not entry.endswith('_balance'):
                 continue
@@ -219,18 +221,18 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 continue
             try:
-                usd_price = Inquirer.find_usd_price(asset=asset)
+                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
             except RemoteError as e:
                 log.error(str(e))
                 self.msg_aggregator.add_error(
                     f'Error processing Bitstamp balance result due to inability to '
-                    f'query USD price: {e!s}. Skipping balance entry.',
+                    f'query price: {e!s}. Skipping balance entry.',
                 )
                 continue
 
             assets_balance[asset] = Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                value=amount * price,
             )
 
         return assets_balance, ''

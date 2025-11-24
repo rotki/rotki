@@ -209,7 +209,7 @@ def test_query_balances_skips_inquirer_error(mock_bitstamp):
 
     with (
         patch(
-            'rotkehlchen.exchanges.bitstamp.Inquirer.find_usd_price',
+            'rotkehlchen.exchanges.bitstamp.Inquirer.find_price',
             side_effect=RemoteError('test'),
         ),
         patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response),
@@ -248,11 +248,11 @@ def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disab
         assert asset_balance == {
             A_ETH: Balance(
                 amount=FVal('32'),
-                usd_value=FVal('48'),
+                value=FVal('48'),
             ),
             A_LINK: Balance(
                 amount=FVal('1000'),
-                usd_value=FVal('1500'),
+                value=FVal('1500'),
             ),
         }
         assert msg == ''

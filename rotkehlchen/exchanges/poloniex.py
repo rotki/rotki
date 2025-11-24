@@ -374,6 +374,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             return None, msg
 
         assets_balance: dict[AssetWithOracles, Balance] = {}
+        main_currency = CachedSettings().main_currency
         for account_info in resp:
             try:
                 balances = account_info['balances']
@@ -426,25 +427,25 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                         continue  # https://github.com/rotki/rotki/issues/2530
 
                     try:
-                        usd_price = Inquirer.find_usd_price(asset=asset)
+                        price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
                     except RemoteError as e:
                         self.msg_aggregator.add_error(
                             f'Error processing poloniex balance entry due to inability to '
-                            f'query USD price: {e!s}. Skipping balance entry',
+                            f'query price: {e!s}. Skipping balance entry',
                         )
                         continue
 
                     amount = available + on_orders
-                    usd_value = amount * usd_price
+                    value = amount * price
                     assets_balance[asset] = Balance(
                         amount=amount,
-                        usd_value=usd_value,
+                        value=value,
                     )
                     log.debug(
                         'Poloniex balance query',
                         currency=asset,
                         amount=amount,
-                        usd_value=usd_value,
+                        value=value,
                     )
 
         return assets_balance, ''

@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -128,12 +129,13 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(msg) from e
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        main_currency = CachedSettings().main_currency
         for entry in balances:
             try:
                 if (amount := deserialize_fval(entry['holding'] + entry['staked'])) == ZERO:
                     continue
                 asset = asset_from_woo(entry['token'])
-                usd_price = Inquirer.find_usd_price(asset=asset)
+                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
             except (DeserializationError, KeyError) as e:
                 log.error('Error processing a Woo balance.', entry=entry, error=str(e))
                 self.msg_aggregator.add_error(
@@ -150,12 +152,12 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Woo balance result due to inability to '
-                    f'query USD price: {e}. Skipping balance entry.',
+                    f'query price: {e}. Skipping balance entry.',
                 )
                 continue
             assets_balance[asset] += Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                value=amount * price,
             )
 
         return dict(assets_balance), ''

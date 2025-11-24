@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BEST, A_ETH, A_EUR, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -93,13 +94,13 @@ FIAT_WALLETS_RESPONSE = """{"data":[{"type":"fiat_wallet","attributes":{"fiat_id
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{
-    A_BEST: FVal(20),
-    A_ETH: FVal(3000),
-    A_AXS: FVal(40),
-    A_EUR: FVal(0.85),
-    A_TRY: FVal(0.103),
+    (A_EUR, A_EUR): ONE,
+    (A_BEST, A_EUR): FVal(20),
+    (A_ETH, A_EUR): FVal(3000),
+    (A_AXS, A_EUR): FVal(40),
+    (A_TRY, A_EUR): FVal(0.103),
 }])
-def test_balances(mock_bitpanda):
+def test_balances(mock_bitpanda, inquirer):
     """Test that balances are correctly queried"""
 
     def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
@@ -121,15 +122,15 @@ def test_balances(mock_bitpanda):
     assert msg == ''
     assert len(balances) == 5
     assert balances[A_ETH].amount == FVal('100.55')
-    assert balances[A_ETH].usd_value == FVal('301650')
+    assert balances[A_ETH].value == FVal('301650')
     assert balances[A_BEST].amount == FVal('210')
-    assert balances[A_BEST].usd_value == FVal('4200')
+    assert balances[A_BEST].value == FVal('4200')
     assert balances[A_AXS].amount == FVal('15.5')
-    assert balances[A_AXS].usd_value == FVal('620')
+    assert balances[A_AXS].value == FVal('620')
     assert balances[A_EUR].amount == FVal('1500.51')
-    assert balances[A_EUR].usd_value == FVal('1275.4335')
+    assert balances[A_EUR].value == FVal('1500.51')
     assert balances[A_TRY].amount == FVal('155.22')
-    assert balances[A_TRY].usd_value == FVal('15.98766')
+    assert balances[A_TRY].value == FVal('15.98766')
 
 
 TRADES_RESPONSE = """{"data":[

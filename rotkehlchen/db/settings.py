@@ -539,3 +539,7 @@ class CachedSettings:
     @property
     def oracle_penalty_threshold_count(self) -> int:
         return self._settings.oracle_penalty_threshold_count
+
+    @property
+    def main_currency(self) -> Asset:
+        return self._settings.main_currency

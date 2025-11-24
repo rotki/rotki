@@ -361,6 +361,7 @@ class Coinbase(ExchangeInterface):
             return None, f'{msg_prefix} Check logs for more details'
 
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        main_currency = CachedSettings().main_currency
         for account in resp:
             try:
                 if (balance := account.get('balance')) is None:
@@ -381,18 +382,15 @@ class Coinbase(ExchangeInterface):
 
                 asset = asset_from_coinbase(account['balance']['currency'])
                 try:
-                    usd_price = Inquirer.find_usd_price(asset=asset)
+                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Error processing coinbase balance entry due to inability to '
-                        f'query USD price: {e!s}. Skipping balance entry',
+                    log.error(
+                        f'Error processing coinbase balance for {asset.identifier} due to'
+                        f' inability to query price: {e!s}. Skipping balance entry',
                     )
                     continue
 
-                returned_balances[asset] += Balance(
-                    amount=amount,
-                    usd_value=amount * usd_price,
-                )
+                returned_balances[asset] += Balance(amount=amount, value=amount * price)
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,

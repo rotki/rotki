@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -46,14 +46,10 @@ def get_manually_tracked_balances(
         db: 'DBHandler',
         balance_type: BalanceType | None = None,
         include_entries_with_missing_assets: bool = False,
-        use_main_currency: bool = False,
 ) -> list[ManuallyTrackedBalanceWithValue]:
     """Gets the manually tracked balances
     If `include_entries_with_missing_assets` is set to True then entries with unknown assets
     are included in the returned list.
-
-    If `use_main_currency` is True then prices are
-    calculated in user's main currency instead of USD.
     """
     with db.conn.read_ctx() as cursor:
         balances = db.get_manually_tracked_balances(
@@ -61,7 +57,7 @@ def get_manually_tracked_balances(
             balance_type=balance_type,
             include_entries_with_missing_assets=include_entries_with_missing_assets,
         )
-        target_asset = db.get_setting(cursor, name='main_currency').resolve_to_asset_with_oracles() if use_main_currency else A_USD  # noqa: E501
+        target_asset = CachedSettings().main_currency
 
     balances_with_value = []
     for entry in balances:
@@ -77,18 +73,11 @@ def get_manually_tracked_balances(
             )
             price = ZERO_PRICE
 
-        # TODO(isaac): Remove this if/else once usd_value -> value refactor is complete
-        # and also remove the `use_main_currency` flag.
-        if use_main_currency:
-            value = Balance(amount=entry.amount, value=price * entry.amount)
-        else:
-            value = Balance(amount=entry.amount, usd_value=price * entry.amount)
-
         balances_with_value.append(ManuallyTrackedBalanceWithValue(
             identifier=entry.identifier,
             asset=entry.asset,
             label=entry.label,
-            value=value,
+            value=Balance(amount=entry.amount, value=price * entry.amount),
             location=entry.location,
             tags=entry.tags,
             balance_type=entry.balance_type,
@@ -159,7 +148,6 @@ def account_for_manually_tracked_asset_balances(
     manually_tracked_balances = get_manually_tracked_balances(
         db=db,
         balance_type=BalanceType.ASSET,
-        use_main_currency=True,
     )
     for m_entry in manually_tracked_balances:
         location_str = str(m_entry.location)

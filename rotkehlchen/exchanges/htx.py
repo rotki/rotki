@@ -159,6 +159,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Query balances for the accounts linked to the api key"""
         returned_balances: dict[AssetWithOracles, Balance] = {}
+        main_currency = CachedSettings().main_currency
         for account in self.get_accounts():
             account_id = account['id']
             path = f'/v1/account/accounts/{account_id}/balance'
@@ -211,17 +212,17 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                     continue
 
                 try:
-                    usd_price = Inquirer.find_usd_price(asset=asset)
+                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing HTX balance entry due to inability to '
-                        f'query USD price: {e!s}. Skipping balance entry',
+                        f'query price: {e!s}. Skipping balance entry',
                     )
                     continue
 
                 returned_balances[asset] = Balance(
                     amount=amount,
-                    usd_value=amount * usd_price,
+                    value=amount * price,
                 )
 
         return returned_balances, ''

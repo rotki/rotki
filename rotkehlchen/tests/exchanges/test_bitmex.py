@@ -290,7 +290,7 @@ def test_bitmex_query_balances(sandbox_bitmex):
     assert msg == ''
     assert len(balances) == 2
     assert balances[A_BTC].amount == FVal('1.23456789')
-    assert balances[A_BTC].usd_value == FVal('1.851851835')
+    assert balances[A_BTC].value == FVal('1.851851835')
     assert balances[A_USDT].amount == FVal('31.164180')
 
     warnings = sandbox_bitmex.msg_aggregator.consume_warnings()

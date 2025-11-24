@@ -12,6 +12,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import MONTH_IN_MILLISECONDS, WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -55,7 +56,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -297,6 +298,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             new_balance_data: dict[str, Any],
             balance_key: str,
             existing_balances: defaultdict['AssetWithOracles', Balance],
+            main_currency: 'Asset',
     ) -> defaultdict['AssetWithOracles', Balance]:
         """Deserialize a balance dict using the amount from the specified balance_key.
         Returns the updated existing_balances.
@@ -310,7 +312,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 asset = asset_from_cryptocom(instrument_name)
                 existing_balances[asset] += Balance(
                     amount=amount,
-                    usd_value=amount * Inquirer.find_usd_price(asset=asset),
+                    value=amount * Inquirer.find_price(from_asset=asset, to_asset=main_currency),
                 )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
@@ -330,7 +332,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Error processing {self.name} {instrument_name} balance result due to inability '
-                f'to query USD price: {e!s}. Skipping balance result.',
+                f'to query price: {e!s}. Skipping balance result.',
             )
 
         return existing_balances
@@ -348,6 +350,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             return None, f'{self.name} balance query failed: {result.message}'
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        main_currency = CachedSettings().main_currency
 
         if result.result is not None:
             balance_data = result.result.get('data', [])
@@ -361,12 +364,14 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                         new_balance_data=position_entry,
                         balance_key='quantity',
                         existing_balances=assets_balance,
+                        main_currency=main_currency,
                     )
             else:  # No positions - the account has likely not been funded yet. Get total cash balance.  # noqa: E501
                 assets_balance = self.deserialize_balance(
                     new_balance_data=balance_entry,
                     balance_key='total_cash_balance',
                     existing_balances=assets_balance,
+                    main_currency=main_currency,
                 )
 
         return dict(assets_balance), ''

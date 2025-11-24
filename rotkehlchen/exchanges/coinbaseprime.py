@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -465,6 +466,7 @@ class Coinbaseprime(ExchangeInterface):
             log.error(f'{msg_prefix} Could not reach coinbase due to {e}')
             return None, f'{msg_prefix} Check logs for more details'
 
+        main_currency = CachedSettings().main_currency
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for account_id in portfolio_ids:
             try:
@@ -496,17 +498,17 @@ class Coinbaseprime(ExchangeInterface):
 
                     asset = asset_from_coinbase(balance_entry['symbol'])
                     try:
-                        usd_price = Inquirer.find_usd_price(asset=asset)
+                        price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
                     except RemoteError as e:
                         log.error(
                             f'Error processing coinbase balance entry due to inability to '
-                            f'query USD price: {e!s}. Skipping balance entry',
+                            f'query price: {e!s}. Skipping balance entry',
                         )
                         continue
 
                     returned_balances[asset] += Balance(
                         amount=total_balance,
-                        usd_value=total_balance * usd_price,
+                        value=total_balance * price,
                     )
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
