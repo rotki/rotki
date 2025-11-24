@@ -1133,7 +1133,7 @@ class CreateHistoryEventSchema(Schema):
             return {'events': events}
 
     class CreateSwapEventSchema(Schema):
-        identifier = fields.Integer(required=True)
+        identifiers = fields.List(fields.Integer(), required=True)
         timestamp = TimestampMSField(required=True)
         location = LocationField(required=True)
         spend_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
@@ -1179,7 +1179,18 @@ class CreateHistoryEventSchema(Schema):
                 if unique_id is not None:
                     extra_data['reference'] = unique_id
 
-            context_schema = CreateHistoryEventSchema.history_event_context.get()['schema']
+            # Use .get() here since identifiers may have been excluded from the schema in the
+            # post load of CreateHistoryEventSchema.
+            if (
+                (identifiers := data.get('identifiers')) is not None and
+                (id_count := len(identifiers)) > 0
+            ):
+                spend_identifier = identifiers[0]
+                receive_identifier = identifiers[1] if id_count > 1 else None
+                fee_identifiers = identifiers[2:] if id_count > 2 else []
+            else:
+                spend_identifier, receive_identifier, fee_identifiers = None, None, []
+
             events = create_swap_events_multi_fee(
                 timestamp=data['timestamp'],
                 location=data['location'],
@@ -1188,25 +1199,21 @@ class CreateHistoryEventSchema(Schema):
                 fees=None if fee_count == 0 else [(
                     AssetAmount(asset=fee_entry['asset'], amount=fee_entry['amount']),  # type: ignore[index]  # fee_entry will not be None since fees is checked above to be longer than fee_notes
                     notes,
-                    context_schema.get_grouped_event_identifier(
-                        data=data,
-                        subtype=HistoryEventSubType.FEE,
-                        sequence_index_offset=2 + idx,
-                    ),
+                    fee_identifiers[idx] if idx < len(fee_identifiers) else None,
                 ) for idx, (fee_entry, notes) in enumerate(zip_longest(fees, fee_notes, fillvalue=None))],  # noqa: E501
                 location_label=data['location_label'],
                 spend_notes=spend_notes,
                 receive_notes=receive_notes,
-                identifier=data.get('identifier'),
+                identifier=spend_identifier,
                 event_identifier=event_identifier,
-                receive_identifier=context_schema.get_grouped_event_identifier(
-                    data=data,
-                    subtype=HistoryEventSubType.RECEIVE,
-                    sequence_index_offset=1,
-                ),
+                receive_identifier=receive_identifier,
                 extra_data=extra_data,
             )
-            return {'events': events}
+            return (
+                {'events': events}
+                if identifiers is None else
+                {'events': events, 'identifiers': identifiers}
+            )
 
     class CreateEvmSwapEventSchema(BaseOnchainSwapEventSchema, BaseEvmEventSchema):
 
@@ -1261,11 +1268,11 @@ class CreateHistoryEventSchema(Schema):
     ) -> dict[str, Any]:
         entry_type = data.pop('entry_type')  # already used to decide schema
         # Exclude the identifier field unless `include_identifier` is True. Most event types
-        # have the same field name of `identifier` but for swap events (EVM and Solana) it is
-        # plural since this field is a list containing multiple identifiers in that case.
+        # have the same field name of `identifier` but for swap events it is plural since
+        # this field is a list containing multiple identifiers in that case.
         exclude = () if self.include_identifier else (
             ('identifiers',)
-            if entry_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT) else  # noqa: E501
+            if entry_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT, HistoryBaseEntryType.SWAP_EVENT) else  # noqa: E501
             ('identifier',)
         )
         self.history_event_context.set({'schema': self})
