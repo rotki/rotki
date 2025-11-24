@@ -245,6 +245,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: dict[AssetWithOracles, Balance] = {}
+        main_currency = CachedSettings().main_currency
         try:
             response = self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:
@@ -257,7 +258,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         for entry in response:
             try:
                 asset = independentreserve_asset(entry['CurrencyCode'])
-                usd_price = Inquirer.find_usd_price(asset=asset)
+                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
                 amount = deserialize_fval(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
             except UnsupportedAsset as e:
@@ -272,10 +273,10 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     details='balance query',
                 )
                 continue
-            except RemoteError as e:  # raised only by find_usd_price
+            except RemoteError as e:  # raised only by find_price
                 self.msg_aggregator.add_error(
                     f'Error processing IndependentReserve balance entry due to inability to '
-                    f'query USD price: {e!s}. Skipping balance entry',
+                    f'query price: {e!s}. Skipping balance entry',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -289,7 +290,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
 
             assets_balance[asset] = Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                value=amount * price,
             )
 
         self.account_guids = account_guids

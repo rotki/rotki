@@ -156,8 +156,8 @@ def test_query_some_balances(
 
     assert msg == ''
     assert balances == {
-        A_AUD: Balance(amount=FVal(2.5), usd_value=FVal(3.75)),
-        A_ETC: Balance(amount=FVal(100), usd_value=FVal(150)),
+        A_AUD: Balance(amount=FVal(2.5), value=FVal(3.75)),
+        A_ETC: Balance(amount=FVal(100), value=FVal(150)),
     }
 
 

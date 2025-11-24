@@ -18,7 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.constants import A_SOL
+from rotkehlchen.tests.utils.constants import A_SOL, A_XRP
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
@@ -175,11 +175,11 @@ def test_query_balances(bybit_exchange: Bybit):
     )
     with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
         assert bybit_exchange.query_balances()[0] == {
-            A_SOL: Balance(amount=FVal('0.119'), usd_value=FVal('8.22967611')),
-            Asset('eip155:1/erc20:0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'): Balance(amount=FVal('20'), usd_value=FVal('16.77825124')),  # noqa: E501
-            A_ETH: Balance(amount=FVal('1.0025'), usd_value=FVal('7.05038468')),  # 1 from funding + 0.0025 from unified account  # noqa: E501
-            A_USDC: Balance(amount=FVal('19.12681'), usd_value=FVal('19.15084719')),
-            Asset('XRP'): Balance(amount=FVal(2), usd_value=FVal(3)),  # only in funding
+            A_SOL: Balance(amount=FVal('0.119'), value=FVal('0.1785')),
+            Asset('eip155:1/erc20:0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'): Balance(amount=FVal('20'), value=FVal('30')),  # noqa: E501
+            A_ETH: Balance(amount=FVal('1.0025'), value=FVal('1.50375')),  # 1 from funding + 0.0025 from unified account  # noqa: E501
+            A_USDC: Balance(amount=FVal('19.12681'), value=FVal('28.690215')),
+            A_XRP: Balance(amount=FVal(2), value=FVal(3)),  # only in funding
         }
 
 

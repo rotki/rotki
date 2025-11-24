@@ -453,6 +453,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             return None, msg
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        main_currency = CachedSettings().main_currency
         wallets_len = len(wallets)
         for idx, entry in enumerate(wallets + fiat_wallets):
 
@@ -489,16 +490,16 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 continue
 
             try:
-                usd_price = Inquirer.find_usd_price(asset=asset)
+                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitpanda balance entry due to inability to '
-                    f'query USD price: {e!s}. Skipping balance entry',
+                    f'query price: {e!s}. Skipping balance entry',
                 )
                 continue
             assets_balance[asset] += Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                value=amount * price,
             )
 
         return dict(assets_balance), ''

@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_USD, A_USDC, A_USDT
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.cryptocom import Cryptocom
@@ -74,14 +75,14 @@ def test_query_balances(mock_cryptocom):
         attribute='_api_query',
         return_value=MockResponse(HTTPStatus.OK, text=json.dumps(BALANCES_RESPONSE)),
     ), patch(
-        target='rotkehlchen.inquirer.Inquirer.find_usd_price',
-        side_effect=lambda asset: (FVal(112000) if asset == A_BTC else FVal(1)),
+        target='rotkehlchen.inquirer.Inquirer.find_price',
+        side_effect=lambda from_asset, to_asset: (FVal(112000) if from_asset == A_BTC else ONE),
     )):
         balances, msg = mock_cryptocom.query_balances()
         assert msg == ''
         assert len(balances) == 2
-        assert balances[A_BTC] == Balance(amount=FVal('0.00016915'), usd_value=FVal('18.94480000'))
-        assert balances[A_USD] == Balance(amount=FVal('80.1508'), usd_value=FVal('80.1508'))
+        assert balances[A_BTC] == Balance(amount=FVal('0.00016915'), value=FVal('18.94480000'))
+        assert balances[A_USD] == Balance(amount=FVal('80.1508'), value=FVal('80.1508'))
 
 
 def test_query_trades(mock_cryptocom):

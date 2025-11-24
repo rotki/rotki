@@ -117,9 +117,9 @@ def test_coinbase_query_balances(function_scope_coinbase):
     assert msg == ''
     assert len(balances) == 2
     assert balances[A_BTC].amount == FVal('5.23')
-    assert balances[A_BTC].usd_value == FVal('7.8450000000')
+    assert balances[A_BTC].value == FVal('7.8450000000')
     assert balances[A_ETH].amount == FVal('39.59')
-    assert balances[A_ETH].usd_value == FVal('59.385000000')
+    assert balances[A_ETH].value == FVal('59.385000000')
 
     warnings = coinbase.msg_aggregator.consume_warnings()
     errors = coinbase.msg_aggregator.consume_errors()
@@ -175,7 +175,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             assert len(balances) == expected_balances_for_no_warnings
             if len(balances) != 0:
                 assert balances[A_BTC].amount == FVal('4')
-                assert balances[A_BTC].usd_value == FVal('6')
+                assert balances[A_BTC].value == FVal('6')
         else:
             assert len(warnings) == expected_warnings_num
             assert len(errors) == expected_errors_num

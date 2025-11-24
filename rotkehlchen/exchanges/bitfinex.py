@@ -19,6 +19,7 @@ from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_f
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -847,6 +848,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         currency_index = 1
         balance_index = 2
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        main_currency = CachedSettings().main_currency
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH:
                 log.error(
@@ -879,11 +881,11 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 continue
 
             try:
-                usd_price = Inquirer.find_usd_price(asset=asset)
+                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to query USD price: {e!s}. Skipping balance result.',
+                    f'to query price: {e!s}. Skipping balance result.',
                 )
                 continue
 
@@ -898,7 +900,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
 
             assets_balance[asset] += Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                value=amount * price,
             )
 
         return dict(assets_balance), ''

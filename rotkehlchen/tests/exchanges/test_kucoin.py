@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_USD, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
@@ -221,27 +221,27 @@ def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disabl
             'holds': '0',
         },
     ]
-    assets_balance = mock_kucoin._deserialize_accounts_balances({'data': accounts_data})
+    assets_balance = mock_kucoin._deserialize_accounts_balances({'data': accounts_data}, main_currency=A_USD)  # noqa: E501
     assert assets_balance == {
         A_BTC: Balance(
             amount=FVal('2.61018067'),
-            usd_value=FVal('3.915271005'),
+            value=FVal('3.915271005'),
         ),
         A_ETH: Balance(
             amount=FVal('47.43934995'),
-            usd_value=FVal('71.159024925'),
+            value=FVal('71.159024925'),
         ),
         A_KCS: Balance(
             amount=FVal('0.2'),
-            usd_value=FVal('0.30'),
+            value=FVal('0.30'),
         ),
         A_USDT: Balance(
             amount=FVal('45097.26244755'),
-            usd_value=FVal('67645.893671325'),
+            value=FVal('67645.893671325'),
         ),
         A_BSV: Balance(
             amount=FVal('1'),
-            usd_value=FVal('1.5'),
+            value=FVal('1.5'),
         ),
     }
 
@@ -545,15 +545,15 @@ def test_query_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argume
     assert assets_balance == {
         A_USDT: Balance(
             amount=FVal('14.30997447'),
-            usd_value=FVal('21.464961705'),
+            value=FVal('21.464961705'),
         ),
         A_ETH: Balance(
             amount=FVal('0.00797524'),
-            usd_value=FVal('0.011962860'),
+            value=FVal('0.011962860'),
         ),
         A_BTC: Balance(
             amount=FVal('0.0000649'),
-            usd_value=FVal('0.00009735'),
+            value=FVal('0.00009735'),
         ),
     }
     assert msg == ''

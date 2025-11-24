@@ -231,6 +231,10 @@ class AssetValueThresholdSchema(Schema):
     usd_value_threshold = AmountField(load_default=None)
 
 
+class ValueThresholdSchema(Schema):
+    value_threshold = AmountField(load_default=None)
+
+
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(load_default=False)
@@ -1769,9 +1773,8 @@ class AllBalancesQuerySchema(AsyncQueryArgumentSchema):
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class ManualBalanceQuerySchema(AsyncQueryArgumentSchema):
+class ManualBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
     """Schema for querying manual balances with optional value threshold filtering"""
-    value_threshold = AmountField(load_default=None)
 
 
 class ExternalServiceSchema(Schema):
@@ -1909,7 +1912,7 @@ class ExchangeEventsRangeQuerySchema(
     ...
 
 
-class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):
+class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
 

@@ -11,7 +11,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, AssetResolver
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BNB, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BNB, A_ETH, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
@@ -269,7 +269,7 @@ def test_add_and_query_manually_tracked_balances(
 A_CYFM = Asset('eip155:1/erc20:0x3f06B5D78406cD97bdf10f5C420B241D32759c80')
 
 
-@pytest.mark.parametrize('mocked_current_prices', [{(A_CYFM.identifier, A_EUR.identifier): ZERO}])
+@pytest.mark.parametrize('mocked_current_prices', [{(A_CYFM, A_USD): ZERO}])
 def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding a manually tracked balance of an asset for which we cant
     query a price is handled properly both in the adding and querying part

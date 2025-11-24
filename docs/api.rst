@@ -2126,14 +2126,14 @@ Querying the balances of exchanges
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/balances/binance?usd_value_threshold=1000 HTTP/1.1
+      GET /api/1/exchanges/balances/binance?value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
-   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
+   :query decimal value_threshold: Optional. If provided, only returns balances with value greater than this threshold. This is in the user's preferred currency.
 
    **Example Response**:
 
@@ -2159,7 +2159,7 @@ Querying the balances of exchanges
 
 .. http:get:: /api/(version)/exchanges/balances/
 
-   Doing a GET on the exchanges balances endpoint will return the balances of all assets currently held in all exchanges. If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
+   Doing a GET on the exchanges balances endpoint will return the balances of all assets currently held in all exchanges. If a value threshold is provided, only balances with value greater than the threshold are returned.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2168,12 +2168,12 @@ Querying the balances of exchanges
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/balances?usd_value_threshold=1000 HTTP/1.1
+      GET /api/1/exchanges/balances?value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
+   :query decimal value_threshold: Optional. If provided, only returns balances with value greater than this threshold. This is in the user's preferred currency.
 
    .. _balances_result:
 
