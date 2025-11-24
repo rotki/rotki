@@ -1,5 +1,9 @@
 <script lang="ts" setup>
-const userNotes = defineModel<[string, string] | [string, string, string]>({ required: true });
+import type { SwapEventUserNotes } from '@/types/history/events/schemas';
+
+const userNotes = defineModel<SwapEventUserNotes>({ required: true });
+
+// Array indices: [0] = spend, [1] = receive, [2] = fee
 
 defineProps<{
   errorMessages: string[];
@@ -52,7 +56,7 @@ const { t } = useI18n({ useScope: 'global' });
           @blur="emit('blur')"
         />
         <RuiTextArea
-          v-if="hasFee && userNotes.length === 3"
+          v-if="hasFee"
           v-model="userNotes[2]"
           prepend-icon="lu-sticky-note"
           data-cy="fee-notes"
