@@ -159,8 +159,7 @@ export interface AddSwapEventPayload {
 }
 
 export interface EditSwapEventPayload extends Omit<AddSwapEventPayload, 'uniqueId'> {
-  eventIdentifier: string;
-  identifier: number;
+  identifiers: number[];
 }
 
 export interface AddEvmSwapEventPayload {

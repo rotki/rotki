@@ -263,9 +263,8 @@ describe('forms/SwapEventForm', () => {
     expect(editHistoryEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
         entryType: 'swap event',
-        eventIdentifier: '24bf5c3b2031b1224d7f0e642fde058ac8316039969762b67981372229fe1a7f',
         fees: [{ amount: '2', asset: 'USD' }],
-        identifier: 2737,
+        identifiers: [2737, 2738, 2739],
         location: 'binance',
         receiveAmount: '20',
         receiveAsset: 'USD',

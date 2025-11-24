@@ -5,7 +5,7 @@ import type { AddSwapEventPayload, FeeEntry, SwapEvent, SwapEventUserNotes } fro
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
-import { omit, pick } from 'es-toolkit';
+import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
@@ -53,7 +53,7 @@ function emptyEvent(): FormData {
 
 const states = ref<FormData>(emptyEvent());
 const hasFee = ref<boolean>(false);
-const identifiers = ref<{ eventIdentifier: string; identifier: number }>();
+const identifiers = ref<number[]>();
 const errorMessages = ref<Record<string, string[]>>({});
 const spendAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('spendAssetPriceForm');
 const receiveAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('receiveAssetPriceForm');
@@ -146,10 +146,11 @@ async function save(): Promise<boolean> {
     fees,
   };
 
+  const eventIdentifiers = get(identifiers);
   const result = isEditMode
     ? await editHistoryEvent({
         ...omit(payload, ['uniqueId']),
-        ...get(identifiers),
+        identifiers: eventIdentifiers!,
       })
     : await addHistoryEvent(payload);
 
@@ -188,7 +189,13 @@ watchImmediate(() => props.data, (data) => {
 
   const hasFeeEvents = feeEvents.length > 0;
   set(hasFee, hasFeeEvents);
-  set(identifiers, pick(spend, ['eventIdentifier', 'identifier']));
+  // Collect all identifiers: [spendId, receiveId, ...feeIds]
+  const allIdentifiers = [
+    spend.identifier,
+    receive.identifier,
+    ...feeEvents.map(fee => fee.identifier),
+  ];
+  set(identifiers, allIdentifiers);
 
   const fees: FeeEntry[] = feeEvents.map(fee => ({
     amount: fee.amount.toString(),

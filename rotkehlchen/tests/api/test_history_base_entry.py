@@ -390,8 +390,8 @@ def test_add_edit_delete_entries(
 
         # now let's try to edit event_identifier for all possible events.
         for idx, group in enumerate(grouped_entries):
-            if group[0].identifier in {2, 4}:
-                continue  # we deleted those
+            if group[0].identifier in {2, 4, 12}:
+                continue  # we deleted 2 & 4, and 12 is a swap, which requires a list of identifiers is tested in test_add_edit_swap_events  # noqa: E501
             for entry in group:
                 entry.event_identifier = f'new_eventid{idx}'
             json_data = entries_to_input_dict(group, include_identifier=True)
@@ -983,7 +983,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     entries = [
         {
             'entry_type': 'swap event',
-            'timestamp': 1569924575000,
+            'timestamp': (swap1_timestamp := 1569924575000),
             'location': 'bitfinex',
             'spend_amount': '50',
             'spend_asset': 'USD',
@@ -1027,7 +1027,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         entry['identifier'] = result['identifier']
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events_internal(
+        assert len(events := db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             group_by_event_ids=False,
@@ -1035,8 +1035,16 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
 
     # Edit the event identifier of the first entry and add a fee
     entry = entries[0].copy()
-    entry['fees'], entry['event_identifier'], entry['user_notes'] = [{'amount': '0.1', 'asset': 'USD'}], 'test_id', ['Note1', 'Note2', 'Note3']  # noqa: E501
-    requests.patch(api_url_for(rotkehlchen_api_server, 'historyeventresource'), json=entry)
+    entry.pop('identifier')
+    entry['identifiers'] = [
+        event.identifier for event in events
+        if event.timestamp == swap1_timestamp
+    ]
+    entry['fees'], entry['event_identifier'], entry['user_notes'] = [{'amount': '0.1', 'asset': 'USD'}, {'amount': '0.01', 'asset': 'ETH'}], 'test_id', ['Note1', 'Note2', 'Note3', 'Note4']  # noqa: E501
+    assert_proper_sync_response_with_result(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    ))
     with rotki.data.db.conn.read_ctx() as cursor:
         assert (events := db.get_history_events_internal(
             cursor=cursor,
@@ -1062,7 +1070,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             notes='Note2',
             event_identifier='test_id',
         ), SwapEvent(
-            identifier=10,  # highest id since it was added during edit
+            identifier=10,  # higher id since it was added during edit
             timestamp=TimestampMS(1569924575000),
             location=Location.BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
@@ -1070,6 +1078,16 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             amount=FVal('0.1'),
             notes='Note3',
             event_identifier='test_id',
+        ), SwapEvent(
+            identifier=11,  # higher id since it was added during edit
+            timestamp=TimestampMS(1569924575000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.01'),
+            notes='Note4',
+            event_identifier='test_id',
+            sequence_index=3,
         ), SwapEvent(
             identifier=3,
             timestamp=TimestampMS(1569924576000),
@@ -1149,7 +1167,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         )]
 
     # Check event serialization.
-    assert generate_events_response(data=[events[3]])[0]['entry'] == {
+    assert generate_events_response(data=[events[4]])[0]['entry'] == {
         'timestamp': 1569924576000,
         'event_type': 'trade',
         'event_subtype': 'spend',
