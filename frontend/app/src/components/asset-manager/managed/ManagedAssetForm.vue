@@ -20,6 +20,7 @@ import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenMa
 import CopyButton from '@/components/helper/CopyButton.vue';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
@@ -522,7 +523,7 @@ defineExpose({
           </template>
           <template #default>
             <div class="p-4">
-              <RuiDateTimePicker
+              <DateTimePicker
                 v-model="startedModel"
                 color="primary"
                 variant="outlined"

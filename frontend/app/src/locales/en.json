@@ -2212,6 +2212,23 @@
     "subtitle": "These are the supported date formatting options",
     "title": "Date Format"
   },
+  "date_time_picker": {
+    "days_before": "{days} Days Before",
+    "month_before": "1 Month Before",
+    "months_before": "{months} Months Before",
+    "week_before": "1 Week Before",
+    "year_before": "1 Year Before",
+    "yesterday": "Yesterday"
+  },
+  "date_time_range_picker": {
+    "last_1_month": "Last 1 month",
+    "last_1_year": "Last 1 year",
+    "last_6_months": "Last 6 months",
+    "last_7_days": "Last 7 days",
+    "last_12_hours": "Last 12 hours",
+    "last_24_hours": "Last 24 hours",
+    "last_90_days": "Last 90 days"
+  },
   "docker_warning": {
     "action": "Yes, I understand",
     "documentation": "documentation",

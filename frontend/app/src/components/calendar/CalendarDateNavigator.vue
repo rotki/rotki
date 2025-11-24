@@ -2,6 +2,7 @@
 import type { RuiButton } from '@rotki/ui-library';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useTemplateRef } from 'vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useRefWithDebounce } from '@/composables/ref';
 
 const model = defineModel<Dayjs>({ required: true });
@@ -87,7 +88,7 @@ watch(usedAnyFocused, (curr, prev) => {
         class="p-4 flex items-start"
         tabindex="-1"
       >
-        <RuiDateTimePicker
+        <DateTimePicker
           v-model="datetime"
           color="primary"
           variant="outlined"

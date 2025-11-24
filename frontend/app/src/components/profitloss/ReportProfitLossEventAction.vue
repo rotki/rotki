@@ -5,6 +5,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
@@ -140,7 +141,7 @@ async function updatePrice() {
             disabled
             outlined
           />
-          <RuiDateTimePicker
+          <DateTimePicker
             :model-value="timestamp"
             disabled
             color="primary"
