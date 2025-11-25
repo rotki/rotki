@@ -31,6 +31,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.routescan import Routescan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -43,6 +44,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ARBITRUM_ONE]](chain_id=ChainID.ARBITRUM_ONE)
@@ -50,6 +52,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=SupportedBlockchain.ARBITRUM_ONE,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

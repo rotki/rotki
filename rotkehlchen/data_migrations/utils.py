@@ -6,7 +6,6 @@ from rotkehlchen.externalapis.etherscan import ROTKI_PACKAGED_KEY
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
-    ApiKey,
     ExternalService,
     ExternalServiceApiCredentials,
 )
@@ -47,7 +46,7 @@ def update_data_and_detect_accounts(
                     write_cursor=write_cursor,  # add temporary etherscan key for the given chains
                     credentials=[ExternalServiceApiCredentials(
                         service=ExternalService.ETHERSCAN,
-                        api_key=ApiKey(ROTKI_PACKAGED_KEY),
+                        api_key=ROTKI_PACKAGED_KEY,
                     )],
                 )
 

@@ -1,9 +1,11 @@
+from contextlib import ExitStack
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
@@ -11,10 +13,18 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    EvmInternalTransaction,
+    EvmTransaction,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
@@ -82,15 +92,18 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
             name=(location_string := f'{ethereum_manager.node_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'),  # noqa: E501
         ) is None
 
-    with (patch.object(
-        ethereum_manager.node_inquirer.etherscan,
-        'get_token_transaction_hashes',
-        side_effect=RemoteError('Etherscan API rate limit exceeded'),
-    ), patch.object(
-        ethereum_manager.node_inquirer.blockscout,
-        'get_token_transaction_hashes',
-        side_effect=RemoteError('Blockscout API rate limit exceeded'),
-    )):
+    with ExitStack() as stack:
+        for indexer in (
+            ethereum_manager.node_inquirer.etherscan,
+            ethereum_manager.node_inquirer.blockscout,
+            ethereum_manager.node_inquirer.routescan,
+        ):
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_token_transaction_hashes',
+                side_effect=RemoteError('FAIL')),
+            )
+
         ethereum_manager.transactions._get_erc20_transfers_for_ranges(
             address=address,
             start_ts=Timestamp(0),
@@ -104,49 +117,71 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='mainnet-optimism', endpoint='https://mainnet.optimism.io', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('optimism_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
-def test_txlist_etc_falls_back_to_blockscout(
+@pytest.mark.parametrize('tested_indexer', ['blockscout', 'routescan'])
+def test_indexers_fall_back_properly(
         database: 'DBHandler',
         optimism_manager: 'OptimismManager',
         optimism_accounts: list['ChecksumEvmAddress'],
+        tested_indexer: str,
 ) -> None:
-    """Test that the txlist, etc which rely on indexers such as etherscan and blockscout
-    properly fall back to blockscout when etherscan fails.
+    """Test that queries such as txlist, txlistinteral, etc which rely on indexers such as
+    etherscan, blockscout, and routescan properly fall back to the next indexer on failure.
     """
     assert optimism_manager.node_inquirer.blockscout is not None
-    with (
-        patch.object(
-            target=optimism_manager.node_inquirer.blockscout,
-            attribute='get_transactions',
-            wraps=optimism_manager.node_inquirer.blockscout.get_transactions,
-        ) as blockscout_get_txs_mock,
-        patch.object(
-            target=optimism_manager.node_inquirer.blockscout,
-            attribute='get_token_transaction_hashes',
-            wraps=optimism_manager.node_inquirer.blockscout.get_token_transaction_hashes,
-        ) as blockscout_get_token_txs_mock,
-        patch.object(
-            target=optimism_manager.node_inquirer.etherscan,
-            attribute='get_transactions',
-            side_effect=RemoteError('FAIL'),
-        ) as etherscan_get_txs_mock,
-        patch.object(
-            target=optimism_manager.node_inquirer.etherscan,
-            attribute='get_token_transaction_hashes',
-            side_effect=RemoteError('FAIL'),
-        ) as etherscan_get_token_txs_mock,
-    ):
+    txs_mocks, hashes_mocks, unused_mocks, have_reached_tested_indexer = [], [], [], False
+    with ExitStack() as stack:
+        for indexer, name in (
+            (optimism_manager.node_inquirer.etherscan, 'etherscan'),
+            (optimism_manager.node_inquirer.blockscout, 'blockscout'),
+            (optimism_manager.node_inquirer.routescan, 'routescan'),
+        ):
+            txs_mock = stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_transactions',
+                wraps=indexer.get_transactions,
+            ) if name == tested_indexer else patch.object(
+                target=indexer,
+                attribute='get_transactions',
+                side_effect=RemoteError('FAIL'),
+            ))
+            hashes_mock = stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_token_transaction_hashes',
+                wraps=indexer.get_token_transaction_hashes,
+            ) if name == tested_indexer else patch.object(
+                target=indexer,
+                attribute='get_token_transaction_hashes',
+                side_effect=RemoteError('FAIL'),
+            ))
+
+            if have_reached_tested_indexer:
+                unused_mocks.extend([txs_mock, hashes_mock])
+            else:
+                txs_mocks.append(txs_mock)
+                hashes_mocks.append(hashes_mock)
+
+            if name == tested_indexer:
+                have_reached_tested_indexer = True
+
         optimism_manager.transactions.single_address_query_transactions(
             address=optimism_accounts[0],
             start_ts=Timestamp(1729116000),
             end_ts=Timestamp(1729117000),
         )  # Query a small range that returns only two txs
 
-    assert blockscout_get_txs_mock.call_count == 2
-    assert {x.kwargs['action'] for x in blockscout_get_txs_mock.call_args_list} == {'txlist', 'txlistinternal'}  # noqa: E501
-    assert blockscout_get_txs_mock.call_args_list == etherscan_get_txs_mock.call_args_list
-    assert blockscout_get_token_txs_mock.call_count == 1
-    assert blockscout_get_token_txs_mock.call_args_list == etherscan_get_token_txs_mock.call_args_list  # noqa: E501
+    # Check the txlist and txlistinternal actions were called for all used indexers
+    assert all(txs_mock.call_count == 2 for txs_mock in txs_mocks)
+    assert all(
+        {x.kwargs['action'] for x in txs_mock.call_args_list} == {'txlist', 'txlistinternal'}
+        for txs_mock in txs_mocks
+    )
+    # Check that the tx hashes query only happened once for all used indexers
+    assert all(hashes_mock.call_count == 1 for hashes_mock in hashes_mocks)
+    assert all(hashes_mock.call_args_list == hashes_mocks[0].call_args_list for hashes_mock in hashes_mocks)  # noqa: E501
+    # Check that all unused indexers were not called
+    assert all(unused_mock.call_count == 0 for unused_mock in unused_mocks)
 
+    # Check that the actual tx data is present in the DB
     dbevmtx = DBEvmTx(database)
     with database.conn.read_ctx() as cursor:
         txs = dbevmtx.get_transactions(
@@ -165,3 +200,45 @@ def test_txlist_etc_falls_back_to_blockscout(
             blockchain=SupportedBlockchain.OPTIMISM,
         )
         assert len(internal_txs) == 1  # tx has two internal txs but only one involves the tracked address.  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_all_indexers_get_same_tx_results(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that all indexers return the same results for the same tx queries."""
+    txlist_results: list[list[EvmTransaction]] = []
+    txlistinteral_results: list[list[EvmInternalTransaction]] = []
+    for indexer in (
+        ethereum_inquirer.etherscan,
+        ethereum_inquirer.blockscout,
+        ethereum_inquirer.routescan,
+    ):
+        for action, result_list in (
+            ('txlist', txlist_results),
+            ('txlistinternal', txlistinteral_results),
+        ):
+            # get_transactions returns an iterator of lists. Consume the iterator, check that
+            # only one list was returned, and append that list to the result_list.
+            assert len(result := list(indexer.get_transactions(  # type: ignore[call-overload]  # mypy doesn't understand that action will be a valid literal
+                chain_id=ethereum_inquirer.chain_id,
+                account=ethereum_accounts[0],
+                action=action,
+                period_or_hash=TimestampOrBlockRange(
+                    range_type='timestamps',
+                    from_value=Timestamp(1720000000),
+                    to_value=Timestamp(1735000000),
+                ),
+            ))) == 1
+            result_list.append(result[0])
+
+    # Check that there are 6 txs and 1 internal tx for the requested range and that the results
+    # from each indexer all match. trace_id is excluded since it varies between indexers.
+    assert len(txlist_results[0]) == 6
+    assert all(x == txlist_results[0] for x in txlist_results[1:])
+    assert len(txlistinteral_results[0]) == 1
+    for idx, internal_tx_list in enumerate(txlistinteral_results):
+        txlistinteral_results[idx] = [x._replace(trace_id=0) for x in internal_tx_list]
+    assert all(x == txlistinteral_results[0] for x in txlistinteral_results[1:])

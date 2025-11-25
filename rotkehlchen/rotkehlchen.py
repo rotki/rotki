@@ -83,6 +83,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
+from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -375,11 +376,6 @@ class Rotkehlchen:
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
-        etherscan = Etherscan(
-            database=self.data.db,
-            msg_aggregator=self.data.db.msg_aggregator,
-        )
-
         # Initialize blockchain querying modules
         self.chains_aggregator = ChainsAggregator(
             blockchain_accounts=blockchain_accounts,
@@ -387,7 +383,14 @@ class Rotkehlchen:
                 node_inquirer=(ethereum_inquirer := EthereumInquirer(
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
-                    etherscan=etherscan,
+                    etherscan=(etherscan := Etherscan(
+                        database=self.data.db,
+                        msg_aggregator=self.data.db.msg_aggregator,
+                    )),
+                    routescan=(routescan := Routescan(
+                        database=self.data.db,
+                        msg_aggregator=self.msg_aggregator,
+                    )),
                 )),
                 premium=self.premium,
                 beacon_chain=self.beaconchain,
@@ -397,6 +400,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,
+                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
@@ -405,6 +409,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,
+                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
@@ -413,6 +418,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,
+                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
@@ -421,6 +427,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,
+                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
@@ -429,6 +436,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,
+                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
@@ -437,6 +445,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,
+                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
@@ -445,6 +454,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,
+                    routescan=routescan,
                 ),
                 premium=self.premium,
             ),
