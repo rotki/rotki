@@ -119,6 +119,10 @@ export type BalanceUsdValueThreshold = z.infer<typeof BalanceUsdValueThresholdV1
 const EvmQueryIndicatorMinOutOfSyncPeriod = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
 const EvmQueryIndicatorDismissalThreshold = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
 
+const PasswordConfirmationInterval = z.number().min(Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS).max(Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS).int();
+const LastPasswordConfirmed = z.number().int().nonnegative();
+const EnablePasswordConfirmation = z.boolean();
+
 export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
   amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
@@ -140,6 +144,7 @@ export const FrontendSettings = z.object({
   defaultThemeVersion: z.number().default(1),
   defiSetupDone: z.boolean().default(false),
   enableAliasNames: z.boolean().default(true),
+  enablePasswordConfirmation: EnablePasswordConfirmation.default(true),
   evmQueryIndicatorDismissalThreshold: EvmQueryIndicatorDismissalThreshold.default(Defaults.DEFAULT_EVM_QUERY_INDICATOR_DISMISSAL_THRESHOLD),
   evmQueryIndicatorMinOutOfSyncPeriod: EvmQueryIndicatorMinOutOfSyncPeriod.default(Defaults.DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD),
   explorers: ExplorersSettings.default({}),
@@ -148,10 +153,12 @@ export const FrontendSettings = z.object({
   itemsPerPage: z.number().positive().int().default(10),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
   lastKnownTimeframe: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
+  lastPasswordConfirmed: LastPasswordConfirmed.default(0),
   lightTheme: ThemeColors.default(LIGHT_COLORS),
   minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
   nftsInNetValue: z.boolean().default(true),
   notifyNewNfts: z.boolean().optional().default(false),
+  passwordConfirmationInterval: PasswordConfirmationInterval.default(Defaults.DEFAULT_PASSWORD_CONFIRMATION_INTERVAL),
   persistPrivacySettings: z.boolean().default(false),
   persistTableSorting: z.boolean().default(false),
   privacyMode: PrivacyModeEnum.default(PrivacyMode.NORMAL),

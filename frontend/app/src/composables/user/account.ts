@@ -1,7 +1,9 @@
 import type { Ref } from 'vue';
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { wait } from '@shared/utils';
+import dayjs from 'dayjs';
 import { useBackendManagement } from '@/composables/backend';
+import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumHelper } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
@@ -10,8 +12,9 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useWebsocketStore } from '@/store/websocket';
-import { setLastLogin } from '@/utils/account-management';
+import { lastLogin, setLastLogin } from '@/utils/account-management';
 
 interface UseAccountManagementReturn {
   loading: Ref<boolean>;
@@ -106,16 +109,52 @@ export function useAccountManagement(): UseAccountManagementReturn {
   };
 }
 
-interface UseAutoLoginReturn { autolog: Ref<boolean> }
+interface UseAutoLoginReturn {
+  autolog: Ref<boolean>;
+  needsPasswordConfirmation: Ref<boolean>;
+  confirmPassword: (password: string) => Promise<boolean>;
+  username: Ref<string>;
+}
 
 export function useAutoLogin(): UseAutoLoginReturn {
   const autolog = ref<boolean>(false);
+  const isAutoLoginFlow = ref<boolean>(false);
 
   const { login } = useLogin();
   const { connected } = storeToRefs(useMainStore());
-  const { canRequestData, checkForAssetUpdate, logged } = storeToRefs(useSessionAuthStore());
+  const authStore = useSessionAuthStore();
+  const { canRequestData, checkForAssetUpdate, logged, needsPasswordConfirmation, username } = storeToRefs(authStore);
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumHelper();
+  const { getPassword } = useInterop();
+  const frontendSettingsStore = useFrontendSettingsStore();
+  const { updateSetting } = frontendSettingsStore;
+  const { enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
+
+  const shouldConfirmPassword = (): boolean => {
+    if (!get(enablePasswordConfirmation))
+      return false;
+
+    const now = dayjs().unix();
+    return (now - get(lastPasswordConfirmed)) > get(passwordConfirmationInterval);
+  };
+
+  const confirmPassword = async (password: string): Promise<boolean> => {
+    // Verify password by comparing with stored password
+    const storedPassword = await getPassword(get(username));
+
+    if (password === storedPassword) {
+      // Password correct - close dialog and update timestamp
+      set(needsPasswordConfirmation, false);
+      const now = dayjs().unix();
+      await updateSetting({ lastPasswordConfirmed: now });
+
+      return true;
+    }
+
+    // Password incorrect - dialog stays open
+    return false;
+  };
 
   watch(connected, async (connected) => {
     if (!connected)
@@ -123,21 +162,52 @@ export function useAutoLogin(): UseAutoLoginReturn {
 
     await resetSessionBackend();
 
+    const savedUsername = lastLogin();
+    if (!savedUsername) {
+      // No saved credentials, can't auto-login
+      return;
+    }
+
+    // Mark that we're starting an auto-login flow
+    set(isAutoLoginFlow, true);
     set(autolog, true);
 
+    // Try to login with empty password (auto-login)
     await login({ password: '', username: '' });
-
-    if (get(logged)) {
-      showGetPremiumButton();
-      set(checkForAssetUpdate, true);
-      set(canRequestData, true);
-    }
 
     set(autolog, false);
   });
 
+  // Watch for successful auto-login and check if password confirmation is needed
+  watch(logged, (isLogged) => {
+    // Only proceed if this is an auto-login flow
+    if (!get(isAutoLoginFlow))
+      return;
+
+    if (!isLogged)
+      return;
+
+    // Reset the auto-login flow flag
+    set(isAutoLoginFlow, false);
+
+    const savedUsername = lastLogin();
+    if (!savedUsername)
+      return;
+
+    // Check if password confirmation is needed AFTER successful auto-login
+    if (shouldConfirmPassword())
+      set(needsPasswordConfirmation, true);
+
+    showGetPremiumButton();
+    set(checkForAssetUpdate, true);
+    set(canRequestData, true);
+  });
+
   return {
     autolog,
+    confirmPassword,
+    needsPasswordConfirmation,
+    username,
   };
 }
 

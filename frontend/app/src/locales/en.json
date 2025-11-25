@@ -3875,6 +3875,31 @@
     "back": "Back to dashboard",
     "title": "Oops, the page could not be found."
   },
+  "password_confirmation_dialog": {
+    "description": "To ensure you remember your password for {username}, please confirm it now. This is required periodically when using auto-login.",
+    "hint_prefix": "Password hint:",
+    "password_label": "Password",
+    "title": "Confirm Your Password",
+    "validation": {
+      "incorrect_password": "Incorrect password. Please try again.",
+      "non_empty_password": "Please provide a password"
+    }
+  },
+  "password_confirmation_setting": {
+    "disable_warning": {
+      "confirm": "I understand, disable it",
+      "message": "Your auto-login password is stored only on this device. Please ensure you remember your password or have it stored securely elsewhere before disabling periodic confirmation. If you forget your password, you will lose access to your account.",
+      "title": "Disable Password Confirmation?"
+    },
+    "enable_label": "Enable periodic password confirmation",
+    "hint": "Enter a value between 1 and 14 days",
+    "label": "Password confirmation interval (days)",
+    "subtitle": "Configure how often you need to confirm your password when using auto-login. This helps ensure you remember your password.",
+    "title": "Password Confirmation",
+    "validation": {
+      "range": "Value must be between 1 and 14 days"
+    }
+  },
   "percentage_display": {
     "symbol": "%"
   },

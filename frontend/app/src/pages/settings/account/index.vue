@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 import ChangePassword from '@/components/settings/data-security/ChangePassword.vue';
+import PasswordConfirmationSetting from '@/components/settings/data-security/PasswordConfirmationSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { NoteLocation } from '@/types/notes';
 
@@ -34,6 +35,7 @@ const navigation = [
       </template>
 
       <ChangePassword />
+      <PasswordConfirmationSetting />
     </SettingCategory>
   </SettingsPage>
 </template>
