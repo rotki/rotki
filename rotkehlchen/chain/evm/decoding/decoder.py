@@ -498,6 +498,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         # Sort post decoding rules by priority (which is the first element of the tuple)
         rules.sort(key=operator.itemgetter(0))
         for _, rule in rules:
+            original_len = len(decoded_events)
             result_events, is_err = decode_safely(
                 handled_exceptions=self.possible_decoding_exceptions,
                 msg_aggregator=self.msg_aggregator,
@@ -511,7 +512,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             if not is_err:  # post decoding appends and returns to decoded events if successful
                 maybe_modified = True
                 decoded_events = result_events
-                if len(result_events) > len(decoded_events):
+                if len(decoded_events) > original_len:
                     break  # an event was added, so let's break out of post decoding
 
         return decoded_events, maybe_modified

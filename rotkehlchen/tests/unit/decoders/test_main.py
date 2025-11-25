@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -1042,3 +1042,71 @@ def test_onchain_message_failed_call(
         notes=f'Burn {gas} ETH for gas of a failed transaction',
         counterparty=CPT_GAS,
     )]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+def test_post_decoding_rules_break_on_new_event(
+        ethereum_accounts,
+        ethereum_transaction_decoder,
+):
+    """Regression test for https://github.com/rotki/rotki/pull/10982"""
+    tx_hash = deserialize_evm_tx_hash('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef')  # noqa: E501
+    user_address = ethereum_accounts[0]
+    transaction = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1000000),
+        block_number=1,
+        from_address=user_address,
+        to_address=user_address,
+        value=0,
+        gas=21000,
+        gas_price=1000000000,
+        gas_used=21000,
+        input_data=b'',
+        nonce=0,
+    )
+    initial_events = [
+        make_ethereum_event(index=0, location_label=user_address),
+    ]
+
+    def rule_that_adds_event(transaction, decoded_events, all_logs):
+        """Post-decoding rule that adds a new event to the list."""
+        new_event = make_ethereum_event(index=99, location_label='added_by_rule_1')
+        decoded_events.append(new_event)
+        return decoded_events
+
+    def rule_that_does_nothing(transaction, decoded_events, all_logs):
+        """Post-decoding rule that should NOT be called if break works correctly."""
+        return decoded_events
+
+    # Create mock wrappers to track call counts
+    mock_rule_1 = MagicMock(side_effect=rule_that_adds_event)
+    mock_rule_2 = MagicMock(side_effect=rule_that_does_nothing)
+
+    # Use a unique counterparty that doesn't exist to avoid conflicts
+    test_counterparty = '_test_regression_10982_'
+
+    # Add test rules to the existing dict (modify in-place, don't reassign)
+    ethereum_transaction_decoder.rules.post_decoding_rules[test_counterparty] = [
+        (0, mock_rule_1),
+        (1, mock_rule_2),
+    ]
+
+    result_events, maybe_modified = ethereum_transaction_decoder.run_all_post_decoding_rules(
+        transaction=transaction,
+        decoded_events=initial_events.copy(),
+        all_logs=[],
+        counterparties={test_counterparty},
+    )
+
+    # Rule 1 should have been called exactly once
+    assert mock_rule_1.call_count == 1, 'First rule should be called once'
+    # Rule 2 should NOT have been called because rule 1 added an event and break triggered
+    assert mock_rule_2.call_count == 0, (
+        'Second rule should not be called after first rule added an event. '
+        'This indicates the break logic in run_all_post_decoding_rules is broken.'
+    )
+    # Verify that an event was added
+    assert len(result_events) == 2, 'Should have 2 events (original + added by rule 1)'
+    assert maybe_modified is True, 'maybe_modified should be True'
