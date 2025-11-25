@@ -25,6 +25,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.routescan import Routescan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -37,6 +38,7 @@ class OptimismInquirer(DSProxyL2WithL1FeesInquirerWithCacheData):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.OPTIMISM]](chain_id=ChainID.OPTIMISM)
@@ -44,6 +46,7 @@ class OptimismInquirer(DSProxyL2WithL1FeesInquirerWithCacheData):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=SupportedBlockchain.OPTIMISM,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

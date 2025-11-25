@@ -13,7 +13,8 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.etherscan import Etherscan, HasChainActivity
+from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (

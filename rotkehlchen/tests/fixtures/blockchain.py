@@ -48,6 +48,7 @@ from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.opensea import Opensea
+from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
@@ -108,6 +109,10 @@ def _initialize_and_yield_evm_inquirer_fixture(
                 database=database,
                 msg_aggregator=database.msg_aggregator,
             )),
+            routescan=Routescan(
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+            ),
         )
 
     if mock_other_web3:  # this allows only to match on ethereum only. To allow other chains we need to improve the logic since etherscan is the same object for all the chains  # noqa: E501

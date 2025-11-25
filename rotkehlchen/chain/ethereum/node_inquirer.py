@@ -44,6 +44,7 @@ from .constants import ETH2_DEPOSIT_ADDRESS, WeightedNode
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.routescan import Routescan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -58,6 +59,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)
@@ -65,6 +67,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=SupportedBlockchain.ETHEREUM,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

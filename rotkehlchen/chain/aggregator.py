@@ -81,7 +81,7 @@ from rotkehlchen.errors.misc import (
     ModuleInitializationFailure,
     RemoteError,
 )
-from rotkehlchen.externalapis.etherscan import HasChainActivity
+from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -1041,7 +1041,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     evm_manager = cast('EvmManager', chain_manager)
                     if (blockscout := evm_manager.node_inquirer.blockscout) is not None:
                         try:
-                            chain_activity = blockscout.has_activity(address)
+                            chain_activity = blockscout.has_activity(chain_id=chain.to_chain_id(), account=address)  # noqa: E501
                         except RemoteError as e:
                             log.debug(
                                 'Failed to check activity using blockscout '

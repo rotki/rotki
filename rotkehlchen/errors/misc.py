@@ -106,5 +106,9 @@ class AddressNotSupported(Exception):
     """Used when we detect an address with a unknown format for the addressbook"""
 
 
+class ChainNotSupported(Exception):
+    """Raised when a chain is not supported by a service/api/etc"""
+
+
 class MissingAPIKey(Exception):
     """Raised when an API key is missing for a service"""

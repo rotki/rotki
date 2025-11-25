@@ -18,7 +18,8 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
-from rotkehlchen.externalapis.etherscan import Etherscan, HasChainActivity
+from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -684,16 +685,15 @@ def setup_evm_addresses_activity_mock(
             side_effect=mock_is_safe_or_eoa,
         ))
 
-        stack.enter_context(patch.object(
-            manager.node_inquirer.etherscan,
-            'has_activity',
-            side_effect=lambda chain_id, account: mock_chain_has_activity(chain_id, account),  # noqa: PLW0108
-        ))
+        indexers = [manager.node_inquirer.etherscan, manager.node_inquirer.routescan]
         if manager.node_inquirer.blockscout is not None:
+            indexers.append(manager.node_inquirer.blockscout)
+
+        for indexer in indexers:
             stack.enter_context(patch.object(
-                manager.node_inquirer.blockscout,
-                'has_activity',
-                side_effect=lambda account, i_chain=chain: mock_chain_has_activity(i_chain, account),  # noqa: E501
+                target=indexer,
+                attribute='has_activity',
+                side_effect=lambda chain_id, account: mock_chain_has_activity(chain_id, account),  # noqa: PLW0108
             ))
 
     return stack

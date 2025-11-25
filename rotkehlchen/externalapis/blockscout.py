@@ -9,11 +9,9 @@ import requests
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.etherscan import HasChainActivity
-from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
-from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -22,6 +20,7 @@ from rotkehlchen.types import (
     BLOCKSCOUT_TO_CHAINID,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
+    ApiKey,
     ChainID,
     ChecksumEvmAddress,
     Timestamp,
@@ -42,7 +41,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
+class Blockscout(EtherscanLikeApi):
     """Blockscout API handler https://eth.blockscout.com/api-docs"""
 
     def __init__(
@@ -52,23 +51,20 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.chain_id = blockchain.to_chain_id()
-        ExternalServiceWithApiKey.__init__(
-            self,
-            database=database,
-            service_name={v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}[self.chain_id],
-        )
         EtherscanLikeApi.__init__(
             self,
             database=database,
             msg_aggregator=msg_aggregator,
+            service_name={v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}[self.chain_id],
             pagination_limit=BLOCKSCOUT_PAGINATION_LIMIT,
-            name='Blockscout',
+            default_api_key=ApiKey(''),  # no default api key used for blockscout
         )
         self.session = create_session()
         set_user_agent(self.session)
         self.url = self._get_url(self.chain_id)
 
-    def _get_url(self, chain_id: ChainID) -> str:
+    @staticmethod
+    def _get_url(chain_id: ChainID) -> str:
         match chain_id:
             case ChainID.ETHEREUM:
                 return 'https://eth.blockscout.com/api'
@@ -85,7 +81,17 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             case ChainID.SCROLL:
                 return 'https://scroll.blockscout.com/api'
             case _:
-                raise NotImplementedError(f'Blockscout is not implemented for {chain_id.name}')
+                raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
+
+    @staticmethod
+    def _build_query_params(
+            module: str,
+            action: str,
+            api_key: ApiKey,
+            chain_id: SUPPORTED_CHAIN_IDS,
+    ) -> dict[str, str]:
+        """No-op for blockscout as the entire _query function is overridden."""
+        return {}
 
     def _query_and_process(
             self,
@@ -393,7 +399,11 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
                 f'Failed to deserialize blocknumber from blockscout response {response}',
             ) from e
 
-    def has_activity(self, account: ChecksumEvmAddress) -> HasChainActivity:
+    def has_activity(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress,
+    ) -> HasChainActivity:
         """Queries native asset balance, transactions, internal_txs and tokentx for an address
         just to quickly determine if the account has had any activity in the chain.
         We make a distinction between transactions and ERC20 transfers since ERC20
@@ -403,15 +413,15 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         May raise: RemoteError
         """
         options = {'address': str(account), 'page': 1}
-        result = self._query(chain_id=self.chain_id, module='account', action='txlist', options=options)  # noqa: E501
+        result = self._query(chain_id=chain_id, module='account', action='txlist', options=options)
         if len(result) != 0:
             return HasChainActivity.TRANSACTIONS
 
-        result = self._query(chain_id=self.chain_id, module='account', action='txlistinternal', options=options)  # noqa: E501
+        result = self._query(chain_id=chain_id, module='account', action='txlistinternal', options=options)  # noqa: E501
         if len(result) != 0:
             return HasChainActivity.TRANSACTIONS
 
-        result = self._query(chain_id=self.chain_id, module='account', action='tokentx', options=options)  # noqa: E501
+        result = self._query(chain_id=chain_id, module='account', action='tokentx', options=options)  # noqa: E501
         if len(result) != 0:
             return HasChainActivity.TOKENS
 

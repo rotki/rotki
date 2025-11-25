@@ -41,6 +41,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
+    ChainNotSupported,
     EventNotInABI,
     NotERC20Conformant,
     NotERC721Conformant,
@@ -50,6 +51,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
+from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -209,6 +211,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
@@ -221,6 +224,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
+        self.routescan = routescan
         self.contracts = contracts
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()
@@ -1380,7 +1384,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """
         errors = []
         # TODO: Make indexer order configurable: https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141661235  # noqa: E501
-        for indexer in indexers or (self.etherscan, self.blockscout):
+        for indexer in indexers or (self.etherscan, self.blockscout, self.routescan):
             if indexer is None:
                 # TODO: remove this after blockscout is refactored to only have a single instance
                 # for all chains https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141630657  # noqa: E501
@@ -1388,7 +1392,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
             try:
                 return func(indexer)
-            except (RemoteError, NotImplementedError) as e:
+            except (RemoteError, ChainNotSupported) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))
 
@@ -1420,6 +1424,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
@@ -1433,6 +1438,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
             contract_scan=contract_scan,
@@ -1457,6 +1463,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
@@ -1470,6 +1477,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
             contract_scan=contract_scan,
