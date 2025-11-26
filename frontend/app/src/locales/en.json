@@ -4138,7 +4138,8 @@
       "delete": "Delete Key",
       "replace": "Replace Key",
       "setup": "Setup",
-      "sync": "Allow data sync with rotki Server"
+      "sync": "Allow data sync with rotki Server",
+      "sync_hint": "Your data is encrypted before being synced to the rotki server and cannot be read by anyone except you."
     },
     "chart_limit": {
       "description": "Experience the full potential of rotki with a Premium subscription.",
