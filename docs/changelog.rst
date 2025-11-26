@@ -5,6 +5,7 @@ Changelog
 * :feature:`9230` rotki will now provide quick options for the date time picker.
 * :bug:`10960` rotki will now support swaps with fees in multiple different assets.
 * :bug: `10964` Fix an issue where the zoom state in the net value graph resets when the price is being queried.
+* :bug: `-` Curve vote escrow lock CRV extension transactions without any further CRV depositing will now be properly understood and taken into account for calendar reminders.
 
 * :release:`1.41.1 <2025-11-14>`
 * :bug:`-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.

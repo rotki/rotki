@@ -172,6 +172,24 @@ class CurveDecoder(CurveCommonDecoder):
 
     def _decode_voting_escrow_deposit(self, context: DecoderContext, amount: FVal, suffix: str) -> EvmDecodingOutput:  # noqa: E501
         locktime = Timestamp(int.from_bytes(context.tx_log.topics[2]))
+        value = int.from_bytes(context.tx_log.data[0:32])
+
+        if value == 0:
+            event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.UPDATE,
+                asset=A_CRV,
+                amount=ZERO,
+                location_label=context.transaction.from_address,
+                notes=f'Extend CRV vote escrow lock until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}{suffix}',  # noqa: E501
+                address=context.tx_log.address,
+                counterparty=CPT_CURVE,
+                extra_data={'locktime': locktime},
+            )
+            return EvmDecodingOutput(events=[event], refresh_balances=False)
+
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
