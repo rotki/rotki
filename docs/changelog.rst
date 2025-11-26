@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`9230` rotki will now provide quick options for the date time picker.
+* :bug:`10984` Fix Binance CSV import crash when multiple trades with different pairs occur at the same time.
 * :bug:`10960` rotki will now support swaps with fees in multiple different assets.
 * :bug: `10964` Fix an issue where the zoom state in the net value graph resets when the price is being queried.
 * :bug: `-` Curve vote escrow lock CRV extension transactions without any further CRV depositing will now be properly understood and taken into account for calendar reminders.

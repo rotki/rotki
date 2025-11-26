@@ -216,8 +216,22 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         Change is amount, Coin is asset
         If amount is negative then this asset is sold, otherwise it's bought
         """
-        # First, aggregate all amounts by operation and coin
-        # for Transaction Buy/Spend/Fee operations
+        # First, check if we have multiple Transaction Buy operations with different coins
+        # and multiple Transaction Spend operations. If so, we shouldn't aggregate either
+        # as they need to be individually paired
+        transaction_buy_coins = set()
+        transaction_spend_operations = []
+        for row in data:
+            if row['Operation'] == 'Transaction Buy':
+                transaction_buy_coins.add(row['Coin'])
+            elif row['Operation'] == 'Transaction Spend':
+                transaction_spend_operations.append(row)
+
+        # Only aggregate if we don't have multiple different buy coins AND multiple spends
+        # This ensures we can still properly pair individual transactions
+        should_not_aggregate = len(transaction_buy_coins) > 1 and len(transaction_spend_operations) > 1  # noqa: E501
+
+        # Aggregate amounts by operation and coin for Transaction Buy/Spend/Fee operations
         aggregated_data, other_data = {}, []
         for row in data:
             operation = row['Operation']
@@ -226,6 +240,11 @@ class BinanceTradeEntry(BinanceMultipleEntry):
 
             # Check if this is a Transaction Buy/Spend/Fee operation that should be aggregated
             if operation in {'Transaction Buy', 'Transaction Spend', 'Transaction Fee'}:
+                # Don't aggregate if we have multiple different buys AND multiple spends
+                if should_not_aggregate and operation in {'Transaction Buy', 'Transaction Spend'}:
+                    other_data.append(row)
+                    continue
+
                 key = (operation, coin)
                 if key not in aggregated_data:
                     aggregated_data[key] = row
@@ -293,7 +312,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         # Grouping by combining the highest sold with the highest bought and the highest fee
         # Using fee only we were provided with fee (checking by "True in rows_by_operation")
         grouped_trade_rows = []
-        while len(rows_grouped_by_fee[False]) > 0:
+        while len(rows_grouped_by_fee[False]) >= 2:
             cur_batch = [rows_grouped_by_fee[False].pop(), rows_grouped_by_fee[False].pop(0)]
             if True in rows_grouped_by_fee and len(rows_grouped_by_fee[True]) > 0:
                 cur_batch.append(rows_grouped_by_fee[True].pop())

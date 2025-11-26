@@ -2706,6 +2706,65 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             asset=A_USDT,
             amount=FVal('1234'),
             identifier=83,
+        ), SwapEvent(
+            event_identifier='BNC_4ccd4d5cb305cfdf798d75742393ea7ec22c897be73799bacd535783c2abaff3',
+            timestamp=TimestampMS(1761762960000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_EUR,
+            amount=FVal('6.64663860'),
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+            identifier=84,
+        ), SwapEvent(
+            event_identifier='BNC_4ccd4d5cb305cfdf798d75742393ea7ec22c897be73799bacd535783c2abaff3',
+            timestamp=TimestampMS(1761762960000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_BTC,
+            amount=FVal('0.00007000'),
+            identifier=85,
+        ), SwapEvent(
+            event_identifier='BNC_4ccd4d5cb305cfdf798d75742393ea7ec22c897be73799bacd535783c2abaff3',
+            timestamp=TimestampMS(1761762960000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BNB,
+            amount=FVal('0.00001334'),
+            identifier=86,
+        ), SwapEvent(
+            event_identifier='BNC_2ccf1553641bd51089c3cb34403d8ba5839394640b43b1bec62be901be272115',
+            timestamp=TimestampMS(1761762960000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_EUR,
+            amount=FVal('5.03829000'),
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+            identifier=87,
+        ), SwapEvent(
+            event_identifier='BNC_2ccf1553641bd51089c3cb34403d8ba5839394640b43b1bec62be901be272115',
+            timestamp=TimestampMS(1761762960000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('0.00150000'),
+            identifier=88,
+        ), SwapEvent(
+            event_identifier='BNC_8500a93437be3948bce8d797fa8ffc5f9a84143e67d2de17b5fadb7e6507f41a',
+            timestamp=TimestampMS(1761762960000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_EUR,
+            amount=FVal('5.03209500'),
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+            identifier=89,
+        ), SwapEvent(
+            event_identifier='BNC_8500a93437be3948bce8d797fa8ffc5f9a84143e67d2de17b5fadb7e6507f41a',
+            timestamp=TimestampMS(1761762960000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('0.00150000'),
+            identifier=90,
         ),
     ]
 
@@ -2713,7 +2772,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
         events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
-                    )
+        )
 
     assert expected_events == events
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
@@ -2722,8 +2781,8 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
         'data': {
             'subtype': 'csv_import_result',
             'source_name': 'Binance',
-            'total': 184,
-            'processed': 178,
+            'total': 193,
+            'processed': 187,
             'messages': [
                 {'msg': 'Failed to deserialize a timestamp from a null entry in binance', 'rows': [4], 'is_error': True},  # noqa: E501
                 {'msg': 'Unknown asset "" provided.', 'rows': [5], 'is_error': True},
