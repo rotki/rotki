@@ -37,6 +37,7 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="sync"
       data-cy="premium-should-sync"
       :label="t('premium_settings.actions.sync')"
+      :hint="t('premium_settings.actions.sync_hint')"
       :success-messages="success"
       :error-messages="error"
       :disabled="disabled"
