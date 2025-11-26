@@ -278,7 +278,6 @@ defineExpose({
         :label="t('common.datetime')"
         persistent-hint
         max-date="now"
-        color="primary"
         variant="outlined"
         accuracy="millisecond"
         data-cy="datetime"

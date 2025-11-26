@@ -117,7 +117,6 @@ defineExpose({
         v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
-        color="primary"
         variant="outlined"
         data-cy="datetime"
         type="epoch"

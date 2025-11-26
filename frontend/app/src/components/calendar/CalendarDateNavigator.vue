@@ -90,7 +90,6 @@ watch(usedAnyFocused, (curr, prev) => {
       >
         <DateTimePicker
           v-model="datetime"
-          color="primary"
           variant="outlined"
           class="w-[16rem] [&_fieldset]:!rounded-r-none"
           type="epoch"

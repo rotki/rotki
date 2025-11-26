@@ -8,8 +8,8 @@ interface QuickOption {
   value: number;
 }
 
-const start = defineModel<number>('start', { required: true });
-const end = defineModel<number>('end', { required: true });
+const start = defineModel<number | undefined>('start', { required: true });
+const end = defineModel<number | undefined>('end', { required: true });
 
 const props = withDefaults(
   defineProps<{
@@ -79,21 +79,20 @@ function applyQuickOption(option: QuickOption): void {
 </script>
 
 <template>
-  <DefineQuickOptions>
-    <div class="border-t border-default flex flex-col pt-2">
-      <RuiButton
-        v-for="option in quickOptions"
-        :key="`${option.value}-${option.unit}`"
-        variant="list"
-        size="sm"
-        @click="applyQuickOption(option)"
-      >
-        {{ option.label }}
-      </RuiButton>
-    </div>
-  </DefineQuickOptions>
-
   <div class="grid md:grid-cols-2 gap-4">
+    <DefineQuickOptions>
+      <div class="border-t border-default flex flex-col pt-2">
+        <RuiButton
+          v-for="option in quickOptions"
+          :key="`${option.value}-${option.unit}`"
+          variant="list"
+          size="sm"
+          @click="applyQuickOption(option)"
+        >
+          {{ option.label }}
+        </RuiButton>
+      </div>
+    </DefineQuickOptions>
     <RuiDateTimePicker
       v-model="start"
       :label="startLabelComputed"
@@ -102,7 +101,6 @@ function applyQuickOption(option: QuickOption): void {
       :dense="dense"
       :allow-empty="allowEmpty"
       type="epoch"
-      color="primary"
       variant="outlined"
       :error-messages="startErrorMessagesComputed"
     >
@@ -119,7 +117,6 @@ function applyQuickOption(option: QuickOption): void {
       :dense="dense"
       :allow-empty="allowEmpty"
       type="epoch"
-      color="primary"
       variant="outlined"
       :error-messages="endErrorMessagesComputed"
     >

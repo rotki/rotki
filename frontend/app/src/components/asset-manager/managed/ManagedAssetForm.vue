@@ -525,7 +525,6 @@ defineExpose({
             <div class="p-4">
               <DateTimePicker
                 v-model="startedModel"
-                color="primary"
                 variant="outlined"
                 :label="t('asset_form.labels.started')"
                 :error-messages="toMessages(v$.started)"

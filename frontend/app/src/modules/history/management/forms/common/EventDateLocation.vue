@@ -33,7 +33,6 @@ const { t } = useI18n({ useScope: 'global' });
       :label="t('common.datetime')"
       persistent-hint
       max-date="now"
-      color="primary"
       variant="outlined"
       accuracy="millisecond"
       :disabled="dateDisabled"

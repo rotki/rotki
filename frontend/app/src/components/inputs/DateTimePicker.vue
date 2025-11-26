@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { RuiDateTimePickerProps } from '@rotki/ui-library/components';
 import dayjs, { type ManipulateType } from 'dayjs';
-import { omit } from 'es-toolkit/compat';
 
 interface QuickOption {
   label: string;
@@ -8,14 +8,9 @@ interface QuickOption {
   value: number;
 }
 
-defineOptions({
-  inheritAttrs: false,
-});
-
 const modelValue = defineModel<number>({ required: true });
 
-const attrs = useAttrs();
-const filteredAttrs = computed(() => omit(attrs, ['modelValue', 'onUpdate:modelValue']));
+const props = defineProps<RuiDateTimePickerProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -28,7 +23,7 @@ const quickOptions: QuickOption[] = [
   { label: t('date_time_picker.year_before'), unit: 'year', value: 1 },
 ];
 
-const useMilliseconds = computed<boolean>(() => attrs.accuracy === 'millisecond');
+const useMilliseconds = computed<boolean>(() => props.accuracy === 'millisecond');
 
 function applyQuickOption(option: QuickOption): void {
   const date = dayjs().subtract(option.value, option.unit);
@@ -39,7 +34,7 @@ function applyQuickOption(option: QuickOption): void {
 <template>
   <RuiDateTimePicker
     v-model="modelValue"
-    v-bind="filteredAttrs"
+    v-bind="props"
   >
     <template #menu-content>
       <div class="border-t border-default flex flex-col pt-2">

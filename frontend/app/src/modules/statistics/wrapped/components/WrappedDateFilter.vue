@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 
-const start = defineModel<number>('start', { required: true });
+const start = defineModel<number | undefined>('start', {
+  get(value: number | undefined) {
+    return value || undefined;
+  },
+  required: true,
+  set(value: number | undefined) {
+    return value || 0;
+  },
+});
+
 const end = defineModel<number>('end', { required: true });
 
 defineProps<{

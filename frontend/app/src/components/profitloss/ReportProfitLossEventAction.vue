@@ -144,7 +144,6 @@ async function updatePrice() {
           <DateTimePicker
             :model-value="timestamp"
             disabled
-            color="primary"
             type="epoch"
             variant="outlined"
             hide-details
