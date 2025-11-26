@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `-` Fix MakerDAO DSR proxy balances showing wrong labels for non-DAI tokens.
 * :bug: `10964` Fix an issue where the zoom state in the net value graph resets when the price is being queried.
 
 * :release:`1.41.1 <2025-11-14>`

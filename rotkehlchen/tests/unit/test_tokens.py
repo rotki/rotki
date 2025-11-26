@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, get_args
 from unittest.mock import MagicMock, call, patch
@@ -6,14 +7,16 @@ from unittest.mock import MagicMock, call, patch
 import gevent
 import pytest
 
+from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
 from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies, generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_ETH, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
@@ -32,6 +35,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Location,
+    Price,
     SupportedBlockchain,
     TimestampMS,
     TokenKind,
@@ -678,3 +682,32 @@ def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
             exceptions=(exceptions := manager.tokens._per_chain_token_exceptions()),
         )
         assert all(i.address not in exceptions for i in erc721_tokens)
+
+
+def test_dsr_proxy_dai_filtering(blockchain: 'ChainsAggregator') -> None:
+    """Test that DSR proxy balances only apply CPT_VAULT label to DAI tokens"""
+    address = make_evm_address()
+    balance_result = {
+        address: {
+            (a_dai := A_DAI.resolve_to_evm_token()): FVal('100.0'),
+            (a_weth := A_WETH.resolve_to_evm_token()): FVal('50.0'),
+        },
+    }
+    token_usd_price = {
+        a_dai: Price(FVal('1.0')),
+        a_weth: Price(FVal('2000.0')),
+    }
+    balances: defaultdict = defaultdict(BalanceSheet)
+    blockchain.ethereum.update_balances_after_token_query(
+        dsr_proxy_append=True,
+        balance_result=balance_result,
+        token_usd_price=token_usd_price,
+        balance_label=CPT_VAULT,
+        balances=balances,
+    )
+    dai_balance = balances[address].assets[a_dai]
+    assert CPT_VAULT in dai_balance
+
+    weth_balance = balances[address].assets[a_weth]
+    assert CPT_VAULT not in weth_balance
+    assert DEFAULT_BALANCE_LABEL in weth_balance

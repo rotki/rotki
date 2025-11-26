@@ -19,6 +19,7 @@ from rotkehlchen.chain.manager import (
     ChainWithEoA,
 )
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -126,6 +127,9 @@ class EvmManager(
                 protocol = token.protocol or balance_label
                 assets_or_liabilities = balances[account].liabilities if token.is_liability() else balances[account].assets  # noqa: E501
                 if dsr_proxy_append:
+                    # dsr proxies only handle dai, so any other tokens there are spam
+                    # https://docs.makerdao.com/smart-contract-modules/proxy-module/dsr-manager-detailed-documentation
+                    protocol = balance_label if token == A_DAI else (token.protocol or DEFAULT_BALANCE_LABEL)  # noqa: E501
                     assets_or_liabilities[token][protocol] += balance
                 else:
                     assets_or_liabilities[token][protocol] = balance
