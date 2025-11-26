@@ -53,7 +53,7 @@ def fixture_user_data_dir(data_dir, username) -> Path:
 @pytest.fixture(name='include_cryptocompare_key')
 def fixture_include_cryptocompare_key() -> bool:
     """By default use a cryptocompare API key only in the OSX CI"""
-    return 'CI' in os.environ and sys.platform == 'darwin'
+    return False
 
 
 @pytest.fixture(name='include_etherscan_key')

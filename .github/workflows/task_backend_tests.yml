@@ -130,7 +130,7 @@ jobs:
         run: |
           if [ "${{ runner.os }}" == 'macOS' ];
           then
-            COVERAGE_ARGS='--cov=./'
+            COVERAGE_ARGS=''
           else
             COVERAGE_ARGS='--cov=./'
           fi

@@ -290,7 +290,7 @@ jobs:
     needs: [ 'lint-backend', 'check-changes' ]
     uses: ./.github/workflows/task_backend_tests.yml
     with:
-      os: windows-latest
+      os: macos-latest
       test_environment: ${{needs.check-changes.outputs.test_environment}}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
