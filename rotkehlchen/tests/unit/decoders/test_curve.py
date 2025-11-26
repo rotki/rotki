@@ -2195,7 +2195,7 @@ def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Lock {amount} CRV in vote escrow until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_CURVE,
             address=VOTING_ESCROW,
-            extra_data={'locktime': 1778112000},
+            extra_data={'locktime': locktime},
         ),
     ]
     assert events == expected_events
@@ -2236,6 +2236,47 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Withdraw {amount} CRV from vote escrow',
             counterparty=CPT_CURVE,
             address=VOTING_ESCROW,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x5bfF1A68663ff91b0650327D83D4230Cd00023Ad']])
+def test_vote_escrow_extend(ethereum_transaction_decoder, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xa5e0ac08412a932f9f8547834bc8c0bce26eff1b78442367716e4a2ea8951c87')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas, locktime = ethereum_accounts[0], TimestampMS(1764169943000), '0.000019398914753065', Timestamp(1879718400)  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas),
+            location_label=user_address,
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=663,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_CRV,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Extend CRV vote escrow lock until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=VOTING_ESCROW,
+            extra_data={'locktime': locktime},
         ),
     ]
     assert events == expected_events
