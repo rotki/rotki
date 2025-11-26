@@ -1,100 +1,53 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers } from '@vuelidate/validators';
-import dayjs, { type Dayjs } from 'dayjs';
-import { millisecondsToSeconds } from '@/utils/date';
-import { toMessages } from '@/utils/validation';
+import type { RuiDateTimePickerProps } from '@rotki/ui-library/components';
+import dayjs, { type ManipulateType } from 'dayjs';
 
-interface DateTimePickerProps {
-  limitNow?: boolean;
-  milliseconds?: boolean;
-  minValue?: number;
-  maxValue?: number;
-  errorMessages?: string[] | string;
+interface QuickOption {
+  label: string;
+  unit: ManipulateType;
+  value: number;
 }
 
 const modelValue = defineModel<number>({ required: true });
 
-const props = withDefaults(defineProps<DateTimePickerProps>(), {
-  errorMessages: () => [],
-  limitNow: false,
-  milliseconds: false,
-});
+const props = defineProps<RuiDateTimePickerProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { errorMessages, limitNow, maxValue, milliseconds, minValue } = toRefs(props);
+const quickOptions: QuickOption[] = [
+  { label: t('date_time_picker.yesterday'), unit: 'day', value: 1 },
+  { label: t('date_time_picker.week_before'), unit: 'week', value: 1 },
+  { label: t('date_time_picker.month_before'), unit: 'month', value: 1 },
+  { label: t('date_time_picker.days_before', { days: 90 }), unit: 'day', value: 90 },
+  { label: t('date_time_picker.months_before', { months: 6 }), unit: 'month', value: 6 },
+  { label: t('date_time_picker.year_before'), unit: 'year', value: 1 },
+];
 
-const now = ref<Dayjs>(dayjs());
+const useMilliseconds = computed<boolean>(() => props.accuracy === 'millisecond');
 
-function normalizeTimestamp(timestamp: number, multiply = false) {
-  const ms = get(milliseconds);
-  if (ms) {
-    return timestamp;
-  }
-  if (multiply) {
-    return timestamp * 1000;
-  }
-  return millisecondsToSeconds(timestamp);
+function applyQuickOption(option: QuickOption): void {
+  const date = dayjs().subtract(option.value, option.unit);
+  set(modelValue, get(useMilliseconds) ? date.valueOf() : date.unix());
 }
-
-const maxDate = computed(() => {
-  const nowVal = get(now);
-  const propMaxValue = get(maxValue);
-  const max = propMaxValue ? normalizeTimestamp(propMaxValue, true) : Infinity;
-  const nowValue = get(limitNow) && nowVal ? nowVal.valueOf() : Infinity;
-
-  const compared = Math.min(max, nowValue);
-  return compared === Infinity ? undefined : compared;
-});
-
-const minDate = computed(() => {
-  const min = get(minValue);
-  if (min) {
-    return normalizeTimestamp(min, true);
-  }
-  return undefined;
-});
-
-function passLimitNowFilter(value: number) {
-  const max = get(maxDate);
-  if (!get(limitNow) || !max) {
-    return true;
-  }
-
-  return value <= max;
-}
-
-const rules = {
-  date: {
-    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: number): boolean => passLimitNowFilter(v)),
-  },
-};
-
-const v$ = useVuelidate(rules, {
-  date: modelValue,
-}, {
-  $autoDirty: true,
-  $externalResults: computed(() => ({ date: get(errorMessages) })),
-  $stopPropagation: true,
-});
-
-watchImmediate([modelValue, limitNow], ([_, limitNow]) => {
-  if (limitNow) {
-    set(now, dayjs());
-  }
-});
 </script>
 
 <template>
   <RuiDateTimePicker
     v-model="modelValue"
-    color="primary"
-    variant="outlined"
-    :type="milliseconds ? 'epoch-ms' : 'epoch'"
-    :accuracy="milliseconds ? 'millisecond' : 'second'"
-    :max-date="maxDate"
-    :min-date="minDate"
-    :error-messages="toMessages(v$.date)"
-  />
+    v-bind="props"
+  >
+    <template #menu-content>
+      <div class="border-t border-default flex flex-col pt-2">
+        <RuiButton
+          v-for="option in quickOptions"
+          :key="`${option.value}-${option.unit}`"
+          variant="list"
+          size="sm"
+          @click="applyQuickOption(option)"
+        >
+          {{ option.label }}
+        </RuiButton>
+      </div>
+    </template>
+  </RuiDateTimePicker>
 </template>

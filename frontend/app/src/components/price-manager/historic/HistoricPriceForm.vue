@@ -6,6 +6,7 @@ import { helpers, required } from '@vuelidate/validators';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -92,11 +93,10 @@ defineExpose({
         :error-messages="toMessages(v$.toAsset)"
       />
     </div>
-    <RuiDateTimePicker
+    <DateTimePicker
       v-model="timestamp"
       :label="t('common.datetime')"
       :disabled="editMode"
-      color="primary"
       type="epoch"
       variant="outlined"
       :error-messages="toMessages(v$.timestamp)"

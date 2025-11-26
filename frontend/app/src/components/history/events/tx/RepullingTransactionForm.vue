@@ -8,6 +8,7 @@ import { required } from '@vuelidate/validators';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -276,32 +277,14 @@ defineExpose({
         </template>
       </RuiAutoComplete>
 
-      <div class="w-full flex gap-2">
-        <div class="flex-1">
-          <RuiDateTimePicker
-            v-model="fromTimestamp"
-            :label="t('generate.labels.start_date')"
-            :max-date="toTimestamp"
-            type="epoch"
-            allow-empty
-            color="primary"
-            variant="outlined"
-            :error-messages="toMessages(v$.fromTimestamp)"
-          />
-        </div>
-        <div class="flex-1">
-          <RuiDateTimePicker
-            v-model="toTimestamp"
-            :label="t('generate.labels.end_date')"
-            :min-date="fromTimestamp"
-            type="epoch"
-            max-date="now"
-            color="primary"
-            variant="outlined"
-            :error-messages="toMessages(v$.toTimestamp)"
-          />
-        </div>
-      </div>
+      <DateTimeRangePicker
+        v-model:start="fromTimestamp"
+        v-model:end="toTimestamp"
+        allow-empty
+        max-end-date="now"
+        :start-error-messages="toMessages(v$.fromTimestamp)"
+        :end-error-messages="toMessages(v$.toTimestamp)"
+      />
     </template>
   </form>
 </template>

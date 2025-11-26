@@ -9,6 +9,7 @@ import CalendarColorInput from '@/components/calendar/CalendarColorInput.vue';
 import CalendarReminder from '@/components/calendar/CalendarReminder.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -112,11 +113,10 @@ defineExpose({
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <RuiDateTimePicker
+      <DateTimePicker
         v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
-        color="primary"
         variant="outlined"
         data-cy="datetime"
         type="epoch"
