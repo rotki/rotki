@@ -1,5 +1,3 @@
-import os
-import sys
 from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
