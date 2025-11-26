@@ -1804,7 +1804,7 @@ Changelog
 
   - `Energi (NRG) <https://www.coingecko.com/en/coins/energi>`__
   - `Exeedme (XED) <https://www.coingecko.com/en/coins/exeedme>`__
-  - `Terra Virtua Kolect (TVK) <https://www.coingecko.com/en/coins/terra-virtua-kolect>`__
+  - `Terra Virtua Kolect (TVK) <https://www.coingecko.com/en/coins/terra-virtua-kolect>`__  # spellchecker:disable-line
   - `Celsius network token (CEL) <https://www.coingecko.com/en/coins/celsius-network-token>`__
   - `BTC Standard Hashrate Token (BTCST) <https://www.coingecko.com/en/coins/btc-standard-hashrate-token>`__
   - `Stakenet (XSN) <https://www.coingecko.com/en/coins/stakenet>`__
