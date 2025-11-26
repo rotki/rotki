@@ -1,6 +1,8 @@
 import abc
 import csv
+import hashlib
 import logging
+import operator
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -216,20 +218,18 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         Change is amount, Coin is asset
         If amount is negative then this asset is sold, otherwise it's bought
         """
-        # First, check if we have multiple Transaction Buy operations with different coins
-        # and multiple Transaction Spend operations. If so, we shouldn't aggregate either
-        # as they need to be individually paired
-        transaction_buy_coins = set()
-        transaction_spend_operations = []
+        # Check if we have multiple different coins in both Transaction Buy and Transaction Spend
+        # operations. If so, we shouldn't aggregate as they need to be individually paired
+        transaction_buy_coins, transaction_spend_coins = set(), set()
         for row in data:
             if row['Operation'] == 'Transaction Buy':
                 transaction_buy_coins.add(row['Coin'])
             elif row['Operation'] == 'Transaction Spend':
-                transaction_spend_operations.append(row)
+                transaction_spend_coins.add(row['Coin'])
 
-        # Only aggregate if we don't have multiple different buy coins AND multiple spends
+        # Only aggregate if we don't have multiple different coins in both directions
         # This ensures we can still properly pair individual transactions
-        should_not_aggregate = len(transaction_buy_coins) > 1 and len(transaction_spend_operations) > 1  # noqa: E501
+        should_not_aggregate = len(transaction_buy_coins) > 1 or len(transaction_spend_coins) > 1
 
         # Aggregate amounts by operation and coin for Transaction Buy/Spend/Fee operations
         aggregated_data, other_data = {}, []
@@ -312,7 +312,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         # Grouping by combining the highest sold with the highest bought and the highest fee
         # Using fee only we were provided with fee (checking by "True in rows_by_operation")
         grouped_trade_rows = []
-        while len(rows_grouped_by_fee[False]) >= 2:
+        while len(rows_grouped_by_fee[False]) > 0:
             cur_batch = [rows_grouped_by_fee[False].pop(), rows_grouped_by_fee[False].pop(0)]
             if True in rows_grouped_by_fee and len(rows_grouped_by_fee[True]) > 0:
                 cur_batch.append(rows_grouped_by_fee[True].pop())
@@ -357,13 +357,16 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     )
                 continue
 
+            # Create unique event identifier from all rows in this trade batch
+            # This ensures identical trades at the same timestamp get different identifiers
+            combined_hash = hashlib.sha256('_'.join(hash_binance_csv_row(row) for row in sorted(trade_rows, key=operator.itemgetter(INDEX))).encode()).hexdigest()  # noqa: E501
             swap_events.extend(create_swap_events(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
                 spend=AssetAmount(asset=from_asset, amount=from_amount),
                 receive=AssetAmount(asset=to_asset, amount=to_amount),
                 fee=fee,
-                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(trade_rows[0])}',  # any row works, just using the first to create the event identifier  # noqa: E501
+                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{combined_hash}',
                 spend_notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             ))
 
