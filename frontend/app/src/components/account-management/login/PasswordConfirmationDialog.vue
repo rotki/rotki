@@ -48,14 +48,6 @@ const passwordErrors = computed<string[]>(() => {
   return errors;
 });
 
-const passwordHint = computed<string>(() => {
-  const stored = get(storedPassword);
-  if (!stored)
-    return '';
-
-  return '*'.repeat(stored.length);
-});
-
 async function confirmPassword(): Promise<void> {
   if (!await get(v$).$validate())
     return;
@@ -113,10 +105,10 @@ watchImmediate(display, async (isDisplayed) => {
       <template #footer>
         <div class="w-full flex gap-2 justify-between items-center">
           <div
-            v-if="passwordHint"
+            v-if="storedPassword"
             class="text-sm text-rui-text-secondary font-mono"
           >
-            {{ t('password_confirmation_dialog.hint_prefix') }} {{ passwordHint }}
+            {{ t('password_confirmation_dialog.hint_prefix') }} {{ storedPassword.length }}
           </div>
           <div v-else />
           <RuiButton

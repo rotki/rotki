@@ -3877,7 +3877,7 @@
   },
   "password_confirmation_dialog": {
     "description": "To ensure you remember your password for {username}, please confirm it now. This is required periodically when using auto-login.",
-    "hint_prefix": "Password hint:",
+    "hint_prefix": "(Hint) Password length: ",
     "password_label": "Password",
     "title": "Confirm Your Password",
     "validation": {

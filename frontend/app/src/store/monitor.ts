@@ -1,7 +1,7 @@
 import { startPromise } from '@shared/utils';
-import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import { useBalances } from '@/composables/balances';
+import { useAutoLogin } from '@/composables/user/account';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -29,7 +29,8 @@ export const useMonitorStore = defineStore('monitor', () => {
   const monitors = ref<Record<string, any>>({});
 
   const authStore = useSessionAuthStore();
-  const { canRequestData, logged, needsPasswordConfirmation } = storeToRefs(authStore);
+  const { canRequestData, logged, username } = storeToRefs(authStore);
+  const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { monitor } = useTaskStore();
@@ -43,7 +44,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
-  const { balanceUsdValueThreshold, enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
+  const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
 
   const ws = useWebsocketStore();
   const { connected } = storeToRefs(ws);
@@ -115,15 +116,17 @@ export const useMonitorStore = defineStore('monitor', () => {
 
   const startPasswordConfirmationMonitoring = (): void => {
     const activeMonitors = get(monitors);
-    const period = 60 * 60 * 1000; // fetch every 1 hour
+    const period = 60 * 60 * 1000; // check every 1 hour
     if (!activeMonitors[PASSWORD_CONFIRMATION]) {
       activeMonitors[PASSWORD_CONFIRMATION] = setInterval(() => {
-        if (get(logged) && get(enablePasswordConfirmation)) {
-          const now = dayjs().unix();
-          const shouldConfirm = (now - get(lastPasswordConfirmed)) > get(passwordConfirmationInterval);
-          if (shouldConfirm)
-            set(needsPasswordConfirmation, true);
-        }
+        if (!get(logged))
+          return;
+
+        const currentUsername = get(username);
+        if (!currentUsername)
+          return;
+
+        startPromise(checkIfPasswordConfirmationNeeded(currentUsername));
       }, period);
       set(monitors, activeMonitors);
     }
