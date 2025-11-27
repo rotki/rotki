@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_get_historical_assets_price(
         rotkehlchen_api_server: APIServer,

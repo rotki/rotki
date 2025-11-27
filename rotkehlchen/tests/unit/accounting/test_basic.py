@@ -324,7 +324,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_asset_and_price_not_found_in_history_processing(accountant):

@@ -70,7 +70,6 @@ def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bo
         '5159ca00f2579ef634b7f210ad725550572afbfb44e409460dd8a908d1c6416a',
         '6781b638eca6c3ca51a87efcdf0b9032397379a0810c5f8198a25493161c318d',
     ]
-    # Add the tests only etherscan API key
     with db.user_write() as write_cursor:
         db.add_external_service_credentials(
             write_cursor=write_cursor,

@@ -82,7 +82,7 @@ def check_cc_result(result: list, forward: bool):
             raise AssertionError(f'Unexpected time entry {entry.time}')
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_forward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
@@ -135,7 +135,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
     assert data_range[1] == 1289174400  # that's the closest ts to now_ts cc returns
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_backward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
@@ -317,7 +317,7 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
     assert price is not None
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_starknet_historical_price_after_ticker_change(cryptocompare: 'Cryptocompare') -> None:
     """Check that Starknet token price query after Cryptocompare ticker change is accurate.
@@ -333,7 +333,7 @@ def test_starknet_historical_price_after_ticker_change(cryptocompare: 'Cryptocom
     assert price == Price(FVal('1.75404934188528'))
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_special_cases(cryptocompare: 'Cryptocompare') -> None:
     a_eur, a_dpi = A_EUR.resolve_to_asset_with_oracles(), A_DPI.resolve_to_asset_with_oracles()
     current_price = cryptocompare._special_case_handling(
@@ -360,7 +360,7 @@ def test_special_cases(cryptocompare: 'Cryptocompare') -> None:
     assert historical_data[0]['TIMESTAMP'] == 1732694400
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_query_multiple_current_prices(cryptocompare: 'Cryptocompare'):
     assert cryptocompare.query_multiple_current_prices(
         from_assets=[
@@ -372,7 +372,7 @@ def test_query_multiple_current_prices(cryptocompare: 'Cryptocompare'):
     ) == {A_BTC: FVal(40.48), A_DAI: FVal(0.0004486), A_BSC_BNB: FVal(0.2673)}
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_query_multiple_current_prices_handles_exceptions(cryptocompare: 'Cryptocompare'):
     """
     Regression test for query_multiple_current_prices to ensure it properly handles
@@ -409,7 +409,7 @@ def test_query_multiple_current_prices_handles_exceptions(cryptocompare: 'Crypto
         )) == 3
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocompare: 'Cryptocompare'):  # noqa: E501
     """Regression test for special case handling in query_multiple_current_prices."""
     # Include a special case asset that might fail

@@ -44,4 +44,4 @@ def network_mocking(request):
     Once the --no-network-mocking argument is passed all tests that use this fixture
     switch to using the network instead.
     """
-    return request.config.option.no_network_mocking is False
+    return not request.config.getoption('--no-network-mocking', default=False)
