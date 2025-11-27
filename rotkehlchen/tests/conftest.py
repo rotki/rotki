@@ -13,6 +13,7 @@ from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output  # noqa: S404
 from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qs, urlparse
 
 import py
 import pytest
@@ -216,7 +217,7 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         if r1.uri.startswith('https://beaconcha.in/api/v1/validator/') and r2.uri.startswith('https://beaconcha.in/api/v1/validator/') and r1.uri[38:42] != 'eth1':  # noqa: E501
             return set(r1.uri[38:].split(',')) == set(r2.uri[38:].split(','))
 
-        return r1.uri == r2.uri and r1.method == r2.method  # normal check
+        return etherscan_matcher(r1, r2)  # other queries in these tests may also be etherscan
 
     def alchemy_api_matcher(r1, r2):
         """Match Alchemy price API paths, ignoring API key."""
@@ -252,10 +253,37 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
 
         return r1.uri == r2.uri and b1 == b2
 
+    def etherscan_matcher(r1, r2):
+        """Match Etherscan API calls with case-insensitive query parameters.
+        This allows old VCR cassettes to still work after refactoring some of the etherscan
+        code into the EtherscanLikeApi class, which uses lowercase query parameters to work
+        properly with Blockscout.
+        """
+        if 'etherscan.io' not in r1.uri:
+            return r1.uri == r2.uri and r1.method == r2.method
+
+        # Check base URL (scheme + netloc + path) matches
+        parsed1, parsed2 = urlparse(r1.uri), urlparse(r2.uri)
+        if (
+            parsed1.scheme != parsed2.scheme or
+            parsed1.netloc != parsed2.netloc or
+            parsed1.path != parsed2.path or
+            r1.method != r2.method
+        ):
+            return False
+
+        # Parse and normalize query parameters (lowercase keys)
+        return {
+            k.lower(): v for k, v in parse_qs(parsed1.query).items()
+        } == {
+            k.lower(): v for k, v in parse_qs(parsed2.query).items()
+        }
+
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
     vcr.register_matcher('github_branch_matcher', github_branch_matcher)
     vcr.register_matcher('match_rpc_calls', match_rpc_calls)
+    vcr.register_matcher('etherscan_matcher', etherscan_matcher)
     return vcr
 
 
@@ -266,6 +294,7 @@ def vcr_config() -> dict[str, Any]:
     - record_mode: allow rewriting multiple cassettes using CASSETTE_REWRITE_PATH env variable
     - decode_compressed_response: True to correctly inspect the responses
     - ignore_localhost: Don't record queries made to localhost
+    - match_on: Use custom matcher for etherscan APIs with case-insensitive query parameters
     # pytest-deadfixtures ignore
     ^^^ this allows our fork of pytest-deadfixtures to ignore this fixture for usage detection
     since it cannot detect dynamic usage (request.getfixturevalue) in pytest-recording
@@ -279,6 +308,7 @@ def vcr_config() -> dict[str, Any]:
         'record_mode': record_mode,
         'decode_compressed_response': True,
         'ignore_localhost': True,
+        'match_on': ['etherscan_matcher'],
     }
 
 

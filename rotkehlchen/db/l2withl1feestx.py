@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import (
@@ -81,3 +83,35 @@ class DBL2WithL1FeesTx(DBEvmTx):
                 for entry in authorization_list_result
             ],
         )
+
+    def add_or_ignore_receipt_data(
+            self,
+            write_cursor: 'DBCursor',
+            chain_id: ChainID,
+            data: dict[str, Any],
+    ) -> int:
+        """Adds L2WithL1Fees tx receipt data to the database, and also saves the L1 fee data
+        from the receipt if its not zero. Updates any existing l1 fee value since it may have
+        already been added with a value of 0 if it wasn't present in the indexer's txlist data.
+        Returns the db identifier of the transaction corresponding to this receipt.
+        """
+        tx_id = super().add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=chain_id,
+            data=data,
+        )
+
+        try:
+            l1_fee = maybe_read_integer(data, 'l1Fee')
+        except DeserializationError as e:
+            log.warning(f'Failed to get L1 fee from receipt while adding receipt to the DB due to {e!s}.')  # noqa: E501
+            return tx_id
+
+        if l1_fee != 0:
+            write_cursor.execute(  # Ensure l1_fee is in the db. Updates any existing entry using `excluded` to reference the incoming row which was excluded from the insert due to conflict  # noqa: E501
+                'INSERT INTO optimism_transactions(tx_id, l1_fee) VALUES (?, ?)'
+                ' ON CONFLICT(tx_id) DO UPDATE SET l1_fee=excluded.l1_fee',
+                (tx_id, l1_fee),
+            )
+
+        return tx_id

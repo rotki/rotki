@@ -307,7 +307,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             write_cursor: 'DBCursor',
             chain_id: ChainID,
             data: dict[str, Any],
-    ) -> None:
+    ) -> int:
         """Add tx receipt data as they are returned by the chain to the DB
 
         Also need to provide the chain id.
@@ -315,6 +315,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         This assumes the transaction is already in the DB. If the receipt data
         is already in the DB do nothing.
 
+        Returns the db identifier of the transaction corresponding to this receipt.
         May raise:
         - Key Error if any of the expected fields are missing
         - DeserializationError if there is a problem deserializing a value
@@ -344,7 +345,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             if 'UNIQUE constraint failed: evmtx_receipts.tx_id' not in str(e):
                 log.error(f'Failed to insert transaction {tx_id} receipt to the DB due to {e!s}')
                 raise
-            return  # otherwise something else added the receipt so we continue
+            return tx_id  # otherwise something else added the receipt so we continue
 
         for log_entry in data['logs']:
             write_cursor.execute(
@@ -371,6 +372,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                     'VALUES(? ,? ,?)',
                     topic_tuples,
                 )
+
+        return tx_id
 
     def get_receipt(
             self,

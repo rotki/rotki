@@ -1206,7 +1206,7 @@ def test_ignored_assets(
         },
         expected_num_with_grouping=3,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=1000,
     )
     expected = generate_events_response([event4, event1, event2, event3])
     assert returned_events == expected
@@ -1216,7 +1216,7 @@ def test_ignored_assets(
         json={'location': 'ethereum'},
         expected_num_with_grouping=2,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=1000,
     )
     expected = generate_events_response([event1, event3])
     assert returned_events == expected

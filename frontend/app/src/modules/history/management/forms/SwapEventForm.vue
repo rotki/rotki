@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events/schemas';
+import type { AddSwapEventPayload, FeeEntry, SwapEvent, SwapEventUserNotes } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
-import { omit, pick } from 'es-toolkit';
+import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import SimpleFeeList from '@/modules/history/management/forms/common/SimpleFeeList.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
@@ -18,7 +19,18 @@ import { useMessageStore } from '@/store/message';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
-type FormData = Required<AddSwapEventPayload>;
+interface FormData {
+  entryType: typeof HistoryEventEntryType.SWAP_EVENT;
+  fees: FeeEntry[];
+  location: string;
+  receiveAmount: string;
+  receiveAsset: string;
+  spendAmount: string;
+  spendAsset: string;
+  timestamp: number;
+  uniqueId: string;
+  userNotes: SwapEventUserNotes;
+}
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
@@ -27,8 +39,7 @@ const props = defineProps<{ data: GroupEventData<SwapEvent> }>();
 function emptyEvent(): FormData {
   return {
     entryType: HistoryEventEntryType.SWAP_EVENT,
-    feeAmount: '',
-    feeAsset: '',
+    fees: [],
     location: '',
     receiveAmount: '0',
     receiveAsset: '',
@@ -42,11 +53,10 @@ function emptyEvent(): FormData {
 
 const states = ref<FormData>(emptyEvent());
 const hasFee = ref<boolean>(false);
-const identifiers = ref<{ groupIdentifier: string; identifier: number }>();
+const identifiers = ref<number[]>();
 const errorMessages = ref<Record<string, string[]>>({});
 const spendAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('spendAssetPriceForm');
 const receiveAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('receiveAssetPriceForm');
-const feeAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('feeAssetPriceForm');
 
 const timestamp = useRefPropVModel(states, 'timestamp');
 
@@ -56,8 +66,7 @@ const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
 const rules = {
-  feeAmount: commonRules.createExternalValidationRule(),
-  feeAsset: commonRules.createExternalValidationRule(),
+  fees: commonRules.createExternalValidationRule(),
   location: commonRules.createRequiredLocationRule(),
   receiveAmount: commonRules.createRequiredAmountRule(),
   receiveAsset: commonRules.createRequiredAssetRule(),
@@ -97,7 +106,6 @@ async function submitAllPrices(): Promise<boolean> {
   const lists = [
     get(spendAssetPriceForm),
     get(receiveAssetPriceForm),
-    get(feeAssetPriceForm),
   ].filter(Boolean);
 
   for (const list of lists) {
@@ -132,19 +140,17 @@ async function save(): Promise<boolean> {
   }
 
   const model = get(states);
-  let payload: AddSwapEventPayload;
-  if (get(hasFee)) {
-    payload = model;
-  }
-  else {
-    payload = omit(model, ['feeAmount', 'feeAsset']);
-    payload.userNotes = [model.userNotes[0], model.userNotes[1]];
-  }
+  const fees = get(hasFee) ? model.fees.filter(fee => fee.amount && fee.asset) : undefined;
+  const payload: AddSwapEventPayload = {
+    ...omit(model, ['fees']),
+    fees,
+  };
 
+  const eventIdentifiers = get(identifiers);
   const result = isEditMode
     ? await editHistoryEvent({
         ...omit(payload, ['uniqueId']),
-        ...get(identifiers),
+        identifiers: eventIdentifiers!,
       })
     : await addHistoryEvent(payload);
 
@@ -176,28 +182,35 @@ watchImmediate(() => props.data, (data) => {
 
   const spend = data.eventsInGroup.find(item => item.eventSubtype === 'spend');
   const receive = data.eventsInGroup.find(item => item.eventSubtype === 'receive');
-  const fee = data.eventsInGroup.find(item => item.eventSubtype === 'fee');
+  const feeEvents = data.eventsInGroup.filter(item => item.eventSubtype === 'fee');
 
   assert(spend);
   assert(receive);
 
-  set(hasFee, fee !== undefined);
-  set(identifiers, pick(spend, ['groupIdentifier', 'identifier']));
+  const hasFeeEvents = feeEvents.length > 0;
+  set(hasFee, hasFeeEvents);
+  // Collect all identifiers: [spendId, receiveId, ...feeIds]
+  const allIdentifiers = [
+    spend.identifier,
+    receive.identifier,
+    ...feeEvents.map(fee => fee.identifier),
+  ];
+  set(identifiers, allIdentifiers);
 
-  const userNotes: [string, string, string] | [string, string] = fee !== undefined
-    ? [
-        getNotes(spend),
-        getNotes(receive),
-        getNotes(fee),
-      ]
-    : [
-        getNotes(spend),
-        getNotes(receive),
-      ];
+  const fees: FeeEntry[] = feeEvents.map(fee => ({
+    amount: fee.amount.toString(),
+    asset: fee.asset,
+  }));
+
+  const userNotes: SwapEventUserNotes = [
+    getNotes(spend),
+    getNotes(receive),
+    hasFeeEvents ? getNotes(feeEvents[0]) : '',
+  ];
+
   set(states, {
     entryType: HistoryEventEntryType.SWAP_EVENT,
-    feeAmount: fee?.amount?.toString() ?? '',
-    feeAsset: fee?.asset ?? '',
+    fees,
     location: spend.location,
     receiveAmount: receive.amount.toString(),
     receiveAsset: receive.asset,
@@ -212,15 +225,21 @@ watchImmediate(() => props.data, (data) => {
 });
 
 watch(hasFee, (hasFee) => {
+  const oldStates = get(states);
   if (hasFee) {
+    // When enabling fees, ensure there's at least one empty fee entry
+    if (oldStates.fees.length === 0) {
+      set(states, {
+        ...oldStates,
+        fees: [{ amount: '', asset: '' }],
+      });
+    }
     return;
   }
-  const oldStates = get(states);
   set(states, {
     ...oldStates,
-    feeAmount: '',
-    feeAsset: '',
-    userNotes: [oldStates.userNotes[0], oldStates.userNotes[1]],
+    fees: [],
+    userNotes: [oldStates.userNotes[0], oldStates.userNotes[1], ''],
   });
 });
 
@@ -299,20 +318,10 @@ defineExpose({
       color="primary"
     />
 
-    <HistoryEventAssetPriceForm
-      ref="feeAssetPriceForm"
-      v-model:amount="states.feeAmount"
-      v-model:asset="states.feeAsset"
-      hide-price-fields
-      :timestamp="timestamp"
+    <SimpleFeeList
+      v-model="states.fees"
       :disabled="!hasFee"
-      :v$="{
-        ...v$,
-        asset: v$.feeAsset,
-        amount: v$.feeAmount,
-      }"
       :location="states.location"
-      type="fee"
     />
 
     <SwapEventNotes

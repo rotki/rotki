@@ -22,9 +22,13 @@ from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
-from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.history.events.structures.swap import (
+    create_swap_events,
+    create_swap_events_multi_fee,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
@@ -1052,7 +1056,7 @@ def test_swaps_taxability(
             event_subtype=HistoryEventSubType.RECEIVE,
             counterparty=CPT_UNISWAP_V2,
         ),
-        fee_event=None,
+        fee_events=[],
         event_settings=BaseEventSettings(
             taxable=taxable,
             count_entire_amount_spend=False,
@@ -1257,6 +1261,53 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
         accountant=accountant,
         start_ts=Timestamp(0),
         end_ts=Timestamp(1677593077),
+        history_list=history,
+    )
+    for event, expected_pnl in zip(accountant.pots[0].processed_events, expected_pnls, strict=True):  # noqa: E501
+        assert event.pnl.taxable == expected_pnl
+
+
+@pytest.mark.parametrize('mocked_price_queries', [{A_ETH: {A_EUR: {1600000000: FVal(10)}}}])
+@pytest.mark.parametrize(('db_settings', 'expected_pnls'), [(
+    {'include_fees_in_cost_basis': False},
+    [FVal(10), ZERO, FVal(-10), ZERO, FVal(-10), ZERO, ZERO],
+), (
+    {'include_fees_in_cost_basis': True},
+    [FVal(10), ZERO, ZERO, ZERO, ZERO, FVal(-20), ZERO],
+)])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_swaps_with_multiple_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
+    """Check that a swap with multiple fees is handled properly."""
+    history = [HistoryEvent(
+        group_identifier='1xyz',
+        sequence_index=0,
+        timestamp=TimestampMS(1600000000000),
+        location=Location.EXTERNAL,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,  # Acquire the ETH that will be paid in the fee
+    ), *create_swap_events_multi_fee(
+        timestamp=TimestampMS(1600000000000),
+        location=Location.EXTERNAL,
+        group_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal(100)),
+        receive=AssetAmount(asset=A_ETH, amount=FVal(10)),
+        fees=[
+            (AssetAmount(asset=A_EUR, amount=FVal(10)), None, None),
+            (AssetAmount(asset=A_ETH, amount=FVal(1)), None, None),
+        ],
+    ), *create_swap_events(
+        timestamp=TimestampMS(1600000000000),
+        location=Location.EXTERNAL,
+        group_identifier='2xyz',
+        spend=AssetAmount(asset=A_ETH, amount=FVal(10)),
+        receive=AssetAmount(asset=A_EUR, amount=FVal(100)),
+    )]
+    accounting_history_process(
+        accountant=accountant,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1670000000),
         history_list=history,
     )
     for event, expected_pnl in zip(accountant.pots[0].processed_events, expected_pnls, strict=True):  # noqa: E501

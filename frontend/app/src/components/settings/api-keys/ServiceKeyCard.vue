@@ -83,6 +83,7 @@ defineExpose({
   <RuiCard
     no-padding
     class="h-full"
+    :class="{ '!border-rui-success/50 bg-rui-success/5 dark:bg-rui-success/5': keySet }"
     content-class="h-full flex flex-col"
   >
     <div class="grow">
@@ -112,6 +113,7 @@ defineExpose({
     <div
       v-else
       class="px-6 py-4 border-t border-default"
+      :class="{ '!border-rui-success/20': keySet }"
     >
       <RuiButton
         variant="outlined"

@@ -7,9 +7,15 @@ Changelog
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+* :feature:`9230` rotki will now provide quick options for the date time picker.
+* :bug:`10979` Binance CSV import will now properly handle multiple trades with identical amounts at the same timestamp.
+* :bug:`10984` Fix Binance CSV import crash when multiple trades with different pairs occur at the same time.
+* :bug:`10960` rotki will now support swaps with fees in multiple different assets.
+* :bug: `10964` Fix an issue where the zoom state in the net value graph resets when the price is being queried.
+* :bug: `-` Curve vote escrow lock CRV extension transactions without any further CRV depositing will now be properly understood and taken into account for calendar reminders.
 
 * :release:`1.41.1 <2025-11-14>`
-* :bug: `-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.
+* :bug:`-` Fix an issue where the warning to add a beaconcha.in API key keeps showing even if the user already added it.
 * :feature:`10734` Users will now be able to specify the collectible ID of an ERC721 token in the asset manager.
 * :bug:`10901` Users will now be able to change the log level without restarting the app, in the "Settings > General" menu.
 * :bug:`10862` rotki will now show a warning when a Gnosis Pay or Monerium transaction is manually redecoded but credentials are missing.
@@ -1805,7 +1811,7 @@ Changelog
 
   - `Energi (NRG) <https://www.coingecko.com/en/coins/energi>`__
   - `Exeedme (XED) <https://www.coingecko.com/en/coins/exeedme>`__
-  - `Terra Virtua Kolect (TVK) <https://www.coingecko.com/en/coins/terra-virtua-kolect>`__
+  - `Terra Virtua Kolect (TVK) <https://www.coingecko.com/en/coins/terra-virtua-kolect>`__  # spellchecker:disable-line
   - `Celsius network token (CEL) <https://www.coingecko.com/en/coins/celsius-network-token>`__
   - `BTC Standard Hashrate Token (BTCST) <https://www.coingecko.com/en/coins/btc-standard-hashrate-token>`__
   - `Stakenet (XSN) <https://www.coingecko.com/en/coins/stakenet>`__

@@ -126,6 +126,13 @@ export const HistoryEvent = z.union([
 
 export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent | SolanaSwapEvent;
 
+export interface FeeEntry {
+  amount: string;
+  asset: string;
+}
+
+export type SwapEventUserNotes = [string, string, string];
+
 export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | SolanaEvent;
 
 export type HistoryEvent = StandaloneEditableEvents | GroupEditableHistoryEvents;
@@ -140,10 +147,9 @@ export interface SwapSubEventModel {
 
 export interface AddSwapEventPayload {
   entryType: typeof HistoryEventEntryType.SWAP_EVENT;
-  feeAmount?: string;
-  feeAsset?: string;
+  fees?: FeeEntry[];
   location: string;
-  userNotes: [string, string, string] | [string, string];
+  userNotes: SwapEventUserNotes;
   receiveAmount: string;
   receiveAsset: string;
   spendAmount: string;
@@ -153,8 +159,7 @@ export interface AddSwapEventPayload {
 }
 
 export interface EditSwapEventPayload extends Omit<AddSwapEventPayload, 'uniqueId'> {
-  groupIdentifier: string;
-  identifier: number;
+  identifiers: number[];
 }
 
 export interface AddEvmSwapEventPayload {

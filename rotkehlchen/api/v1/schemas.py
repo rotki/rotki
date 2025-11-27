@@ -4,6 +4,7 @@ import tempfile
 import typing
 from collections.abc import Callable
 from contextvars import ContextVar
+from itertools import zip_longest
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 
@@ -102,7 +103,10 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
-from rotkehlchen.history.events.structures.swap import SwapEventExtraData, create_swap_events
+from rotkehlchen.history.events.structures.swap import (
+    SwapEventExtraData,
+    create_swap_events_multi_fee,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import (
     create_group_identifier_from_swap,
@@ -800,6 +804,11 @@ class HistoryEventSchema(
         return {'aggregate_by_group_ids': data['aggregate_by_group_ids']}
 
 
+class AssetAmountSchema(Schema):
+    asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+    amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))
+
+
 class CreateHistoryEventSchema(Schema):
     """Schema used when adding a new event in the EVM transactions view"""
     include_identifier: bool = False
@@ -1124,39 +1133,34 @@ class CreateHistoryEventSchema(Schema):
             return {'events': events}
 
     class CreateSwapEventSchema(Schema):
-        identifier = fields.Integer(required=True)
+        identifiers = fields.List(fields.Integer(), required=True)
         timestamp = TimestampMSField(required=True)
         location = LocationField(required=True)
         spend_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         spend_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
         receive_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         receive_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        fee_amount = AmountField(required=False, load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
-        fee_asset = AssetField(required=False, load_default=None, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
+        fees = fields.List(fields.Nested(AssetAmountSchema), required=False, load_default=[])
         location_label = EmptyAsNoneStringField(required=False, load_default=None)
         unique_id = EmptyAsNoneStringField(required=False, load_default=None)
-        user_notes = fields.List(EmptyAsNoneStringField(), required=False, load_default=[], validate=validate.Length(min=2, max=3))  # noqa: E501
+        user_notes = fields.List(EmptyAsNoneStringField(), required=False, load_default=[], validate=validate.Length(min=2))  # noqa: E501
         group_identifier = EmptyAsNoneStringField(required=False, load_default=None)
 
         @post_load
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
-            if ((fee_amount := data['fee_amount']) is None) ^ (data['fee_asset'] is None):
-                raise ValidationError(
-                    message='fee_amount and fee_asset must be provided together',
-                    field_name='fee_amount',
-                )
-            elif fee_amount is None and len(data['user_notes']) == 3:
-                raise ValidationError(
-                    message='fee_notes may only be provided when fee_amount is present',
-                    field_name='fee_notes',
-                )
-
-            spend_notes, receive_notes, fee_notes = None, None, None
+            spend_notes, receive_notes, fee_notes = None, None, []
             if len(notes := data['user_notes']) != 0:
                 if len(notes) == 2:
                     spend_notes, receive_notes = notes
-                else:  # len == 3, enforced by validate.Length above
-                    spend_notes, receive_notes, fee_notes = notes
+                else:  # len > 2, enforced by validate.Length above
+                    spend_notes, receive_notes = notes[:2]
+                    fee_notes = notes[2:]
+
+            if (fee_count := len(fees := data['fees'])) < len(fee_notes):
+                raise ValidationError(
+                    message='Too many user notes were provided',
+                    field_name='user_notes',
+                )
 
             extra_data: SwapEventExtraData = {}
             if (unique_id := data['unique_id']) is not None:
@@ -1175,32 +1179,41 @@ class CreateHistoryEventSchema(Schema):
                 if unique_id is not None:
                     extra_data['reference'] = unique_id
 
-            context_schema = CreateHistoryEventSchema.history_event_context.get()['schema']
-            events = create_swap_events(
+            # Use .get() here since identifiers may have been excluded from the schema in the
+            # post load of CreateHistoryEventSchema.
+            if (
+                (identifiers := data.get('identifiers')) is not None and
+                (id_count := len(identifiers)) > 0
+            ):
+                spend_identifier = identifiers[0]
+                receive_identifier = identifiers[1] if id_count > 1 else None
+                fee_identifiers = identifiers[2:] if id_count > 2 else []
+            else:
+                spend_identifier, receive_identifier, fee_identifiers = None, None, []
+
+            events = create_swap_events_multi_fee(
                 timestamp=data['timestamp'],
                 location=data['location'],
                 spend=spend,
                 receive=receive,
-                fee=AssetAmount(asset=data['fee_asset'], amount=data['fee_amount']) if data['fee_asset'] is not None else None,  # noqa: E501
+                fees=None if fee_count == 0 else [(
+                    AssetAmount(asset=fee_entry['asset'], amount=fee_entry['amount']),  # type: ignore[index]  # fee_entry will not be None since fees is checked above to be longer than fee_notes
+                    notes,
+                    fee_identifiers[idx] if idx < len(fee_identifiers) else None,
+                ) for idx, (fee_entry, notes) in enumerate(zip_longest(fees, fee_notes, fillvalue=None))],  # noqa: E501
                 location_label=data['location_label'],
                 spend_notes=spend_notes,
                 receive_notes=receive_notes,
-                fee_notes=fee_notes,
-                identifier=data.get('identifier'),
+                identifier=spend_identifier,
                 group_identifier=group_identifier,
-                receive_identifier=context_schema.get_grouped_event_identifier(
-                    data=data,
-                    subtype=HistoryEventSubType.RECEIVE,
-                    sequence_index_offset=1,
-                ),
-                fee_identifier=context_schema.get_grouped_event_identifier(
-                    data=data,
-                    subtype=HistoryEventSubType.FEE,
-                    sequence_index_offset=2,
-                ),
+                receive_identifier=receive_identifier,
                 extra_data=extra_data,
             )
-            return {'events': events}
+            return (
+                {'events': events}
+                if identifiers is None else
+                {'events': events, 'identifiers': identifiers}
+            )
 
     class CreateEvmSwapEventSchema(BaseOnchainSwapEventSchema, BaseEvmEventSchema):
 
@@ -1255,11 +1268,11 @@ class CreateHistoryEventSchema(Schema):
     ) -> dict[str, Any]:
         entry_type = data.pop('entry_type')  # already used to decide schema
         # Exclude the identifier field unless `include_identifier` is True. Most event types
-        # have the same field name of `identifier` but for swap events (EVM and Solana) it is
-        # plural since this field is a list containing multiple identifiers in that case.
+        # have the same field name of `identifier` but for swap events it is plural since
+        # this field is a list containing multiple identifiers in that case.
         exclude = () if self.include_identifier else (
             ('identifiers',)
-            if entry_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT) else  # noqa: E501
+            if entry_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT, HistoryBaseEntryType.SWAP_EVENT) else  # noqa: E501
             ('identifier',)
         )
         self.history_event_context.set({'schema': self})

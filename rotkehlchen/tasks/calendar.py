@@ -343,7 +343,10 @@ class CalendarReminderCreator(CustomizableDateMixin):
     def maybe_create_locked_crv_reminders(self) -> None:
         """Check for lock CRV in vote escrow history events and create reminders if needed."""
         if len(crv_events := self.get_history_events(
-            event_types=[(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)],
+            event_types=[
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.INFORMATIONAL, HistoryEventSubType.UPDATE),
+            ],
             counterparties=[CPT_CURVE],
         )) == 0:
             return

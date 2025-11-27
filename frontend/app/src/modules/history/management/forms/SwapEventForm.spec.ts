@@ -152,8 +152,7 @@ describe('forms/SwapEventForm', () => {
 
     expect(wrapper.find('[data-cy=has-fee]').exists()).toBe(true);
     expect((wrapper.find('[data-cy=has-fee]').element as HTMLInputElement).checked).toBeUndefined();
-    expect(wrapper.find('[data-cy=fee-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=fee-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=fee-add]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=advanced-accordion]').exists()).toBe(true);
 
     expect(wrapper.find('[data-cy=spend-notes]').exists()).toBe(true);
@@ -193,6 +192,7 @@ describe('forms/SwapEventForm', () => {
     expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
     expect(addHistoryEventMock).toHaveBeenCalledWith({
       entryType: HistoryEventEntryType.SWAP_EVENT,
+      fees: undefined,
       location: 'kraken',
       receiveAmount: '0.05',
       receiveAsset: 'BTC',
@@ -200,7 +200,7 @@ describe('forms/SwapEventForm', () => {
       spendAsset: 'ETH',
       timestamp: nowInMs,
       uniqueId: 'abcd',
-      userNotes: ['', ''],
+      userNotes: ['', '', ''],
     } satisfies AddSwapEventPayload);
     vi.useRealTimers();
   });
@@ -220,18 +220,15 @@ describe('forms/SwapEventForm', () => {
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
     wrapper = createWrapper();
 
-    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
-    const feeAsset = wrapper.find('[data-cy=fee-asset] input');
+    const feeAddButton = wrapper.find('[data-cy=fee-add]');
     const feeToggle = wrapper.find('[data-cy=has-fee] input');
 
-    expect(feeAmount.attributes('disabled')).toBe('');
-    expect(feeAsset.attributes('disabled')).toBe('');
+    expect(feeAddButton.attributes('disabled')).toBe('');
 
     await feeToggle.setValue(true);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(feeAmount.attributes('disabled')).toBeUndefined();
-    expect(feeAsset.attributes('disabled')).toBeUndefined();
+    expect(feeAddButton.attributes('disabled')).toBeUndefined();
     expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
   });
 
@@ -244,8 +241,10 @@ describe('forms/SwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
-    await feeAmount.setValue('2');
+    // Edit the fee amount in SimpleFeeEntry (existing fee from data)
+    const feeAmountInputs = wrapper.findAll('[data-cy=fee-amount] input');
+    expect(feeAmountInputs.length).toBeGreaterThan(0);
+    await feeAmountInputs[0].setValue('2');
 
     const receiveNotes = wrapper.find('[data-cy=receive-notes] textarea:not([aria-hidden="true"])');
     const feeNotes = wrapper.find('[data-cy=fee-notes] textarea:not([aria-hidden="true"])');
@@ -264,10 +263,8 @@ describe('forms/SwapEventForm', () => {
     expect(editHistoryEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
         entryType: 'swap event',
-        feeAmount: '2',
-        feeAsset: 'USD',
-        groupIdentifier: '24bf5c3b2031b1224d7f0e642fde058ac8316039969762b67981372229fe1a7f',
-        identifier: 2737,
+        fees: [{ amount: '2', asset: 'USD' }],
+        identifiers: [2737, 2738, 2739],
         location: 'binance',
         receiveAmount: '20',
         receiveAsset: 'USD',

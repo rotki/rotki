@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
@@ -390,8 +391,8 @@ def test_add_edit_delete_entries(
 
         # now let's try to edit group_identifier for all possible events.
         for idx, group in enumerate(grouped_entries):
-            if group[0].identifier in {2, 4}:
-                continue  # we deleted those
+            if group[0].identifier in {2, 4, 12}:
+                continue  # we deleted 2 & 4, and 12 is a swap, which requires a list of identifiers is tested in test_add_edit_swap_events  # noqa: E501
             for entry in group:
                 entry.group_identifier = f'new_eventid{idx}'
             json_data = entries_to_input_dict(group, include_identifier=True)
@@ -561,7 +562,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 14
-    assert result['entries_limit'] == 100
+    assert result['entries_limit'] == 1000
     assert result['entries_total'] == 14
     for event in result['entries']:
         assert event['entry'] in expected_entries
@@ -585,7 +586,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 8
-    assert result['entries_limit'] == 100
+    assert result['entries_limit'] == 1000
     assert result['entries_total'] == 8
     assert len(result['entries']) == 8
 
@@ -603,7 +604,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 8
-    assert result['entries_limit'] == 100
+    assert result['entries_limit'] == 1000
     assert result['entries_total'] == 8
 
     # now with grouping, pagination and a filter
@@ -617,7 +618,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 6
-    assert result['entries_limit'] == 100
+    assert result['entries_limit'] == 1000
     assert result['entries_total'] == 8
 
     # filter by location using kraken and ethereum
@@ -631,7 +632,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
-    assert result['entries_limit'] == 100
+    assert result['entries_limit'] == 1000
     assert result['entries_total'] == 14
 
     response = requests.post(
@@ -644,7 +645,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 8
     assert result['entries_found'] == 8
-    assert result['entries_limit'] == 100
+    assert result['entries_limit'] == 1000
     assert result['entries_total'] == 14
 
     # test pagination and exclude_ignored_assets and group by event ids works
@@ -660,7 +661,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         result = assert_proper_sync_response_with_result(response)
         assert len(result['entries']) == min(found, 5)
         assert result['entries_found'] == found
-        assert result['entries_limit'] == 100
+        assert result['entries_limit'] == 1000
         assert result['entries_total'] == 8
 
     # test pagination and exclude_ignored_assets without group by event ids works
@@ -675,7 +676,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         result = assert_proper_sync_response_with_result(response)
         assert len(result['entries']) == min(sub_events_found, 5)
         assert result['entries_found'] == events_found
-        assert result['entries_limit'] == 100
+        assert result['entries_limit'] == 1000
         assert result['entries_total'] == 14
 
     # test pagination works fine with/without exclude_ignored_assets filter with/without premium
@@ -977,13 +978,14 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         assert cursor.execute(*query_for_events).fetchone()[0] == 1
 
 
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = [
         {
             'entry_type': 'swap event',
-            'timestamp': 1569924575000,
+            'timestamp': (swap1_timestamp := 1569924575000),
             'location': 'bitfinex',
             'spend_amount': '50',
             'spend_asset': 'USD',
@@ -998,8 +1000,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             'spend_asset': 'ETH',
             'receive_amount': '20',
             'receive_asset': 'USD',
-            'fee_amount': '0.000004',
-            'fee_asset': 'ETH',
+            'fees': [{'asset': 'ETH', 'amount': '0.000004'}],
             'unique_id': 'TRADE2',
             'user_notes': ['Example note', '', ''],
         }, {
@@ -1010,10 +1011,12 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             'spend_asset': 'ETH',
             'receive_amount': '200',
             'receive_asset': 'USD',
-            'fee_amount': '0.000044',
-            'fee_asset': 'ETH',
+            'fees': [
+                {'asset': 'ETH', 'amount': '0.000044'},
+                {'asset': 'USD', 'amount': '0.5'},
+            ],
             'unique_id': 'TRADE3',
-            'user_notes': ['Example note', 'Second note'],
+            'user_notes': ['Example note', 'Second note', 'Third note', 'Fourth note'],
         },
     ]
     for entry in entries:
@@ -1026,16 +1029,24 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         entry['identifier'] = result['identifier']
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events_internal(
+        assert len(events := db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             aggregate_by_group_ids=False,
-        )) == 8  # spend/receive (2) from first swap, and spend/receive/fee (3) from the second and third  # noqa: E501
+        )) == 9  # spend/receive (2) from first swap, spend/receive/fee (3) from the second and spend/receive/fee/fee (4) from the third  # noqa: E501
 
     # Edit the group identifier of the first entry and add a fee
     entry = entries[0].copy()
-    entry['fee_amount'], entry['fee_asset'], entry['group_identifier'], entry['user_notes'] = '0.1', 'USD', 'test_id', ['Note1', 'Note2', 'Note3']  # noqa: E501
-    requests.patch(api_url_for(rotkehlchen_api_server, 'historyeventresource'), json=entry)
+    entry.pop('identifier')
+    entry['identifiers'] = [
+        event.identifier for event in events
+        if event.timestamp == swap1_timestamp
+    ]
+    entry['fees'], entry['group_identifier'], entry['user_notes'] = [{'amount': '0.1', 'asset': 'USD'}, {'amount': '0.01', 'asset': 'ETH'}], 'test_id', ['Note1', 'Note2', 'Note3', 'Note4']  # noqa: E501
+    assert_proper_sync_response_with_result(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    ))
     with rotki.data.db.conn.read_ctx() as cursor:
         assert (events := db.get_history_events_internal(
             cursor=cursor,
@@ -1061,7 +1072,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             notes='Note2',
             group_identifier='test_id',
         ), SwapEvent(
-            identifier=9,  # highest id since it was added during edit
+            identifier=10,  # higher id since it was added during edit
             timestamp=TimestampMS(1569924575000),
             location=Location.BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
@@ -1069,6 +1080,16 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             amount=FVal('0.1'),
             notes='Note3',
             group_identifier='test_id',
+        ), SwapEvent(
+            identifier=11,  # higher id since it was added during edit
+            timestamp=TimestampMS(1569924575000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.01'),
+            notes='Note4',
+            group_identifier='test_id',
+            sequence_index=3,
         ), SwapEvent(
             identifier=3,
             timestamp=TimestampMS(1569924576000),
@@ -1106,44 +1127,49 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             ),
         ), SwapEvent(
             identifier=6,
-            timestamp=TimestampMS(1569954576000),
+            timestamp=(trade3_timestamp := TimestampMS(1569954576000)),
             location=Location.COINBASE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.02'),
             notes='Example note',
             extra_data={'reference': 'TRADE3'},
-            group_identifier=create_group_identifier_from_unique_id(
+            group_identifier=(trade3_identifier := create_group_identifier_from_unique_id(
                 location=Location.COINBASE,
                 unique_id='TRADE3',
-            ),
+            )),
         ), SwapEvent(
             identifier=7,
-            timestamp=TimestampMS(1569954576000),
+            timestamp=trade3_timestamp,
             location=Location.COINBASE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('200'),
             notes='Second note',
-            group_identifier=create_group_identifier_from_unique_id(
-                location=Location.COINBASE,
-                unique_id='TRADE3',
-            ),
+            group_identifier=trade3_identifier,
         ), SwapEvent(
             identifier=8,
-            timestamp=TimestampMS(1569954576000),
+            timestamp=trade3_timestamp,
             location=Location.COINBASE,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.000044'),
-            group_identifier=create_group_identifier_from_unique_id(
-                location=Location.COINBASE,
-                unique_id='TRADE3',
-            ),
+            notes='Third note',
+            group_identifier=trade3_identifier,
+        ), SwapEvent(
+            identifier=9,
+            timestamp=trade3_timestamp,
+            location=Location.COINBASE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('0.5'),
+            notes='Fourth note',
+            sequence_index=3,
+            group_identifier=trade3_identifier,
         )]
 
     # Check event serialization.
-    assert generate_events_response(data=[events[3]])[0]['entry'] == {
+    assert generate_events_response(data=[events[4]])[0]['entry'] == {
         'timestamp': 1569924576000,
         'event_type': 'trade',
         'event_subtype': 'spend',
@@ -1159,6 +1185,19 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'extra_data': {'reference': 'TRADE2'},
         'auto_notes': 'Swap 0.01 ETH in Bitfinex',
     }
+
+    # Check that a swap with multiple fees has the accounting rule status set properly,
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'group_identifiers': ['test_id']},
+    ))
+    assert len(result['entries']) == 4
+    assert all(
+        entry['event_accounting_rule_status'] in (
+            EventAccountingRuleStatus.HAS_RULE.serialize(),
+            EventAccountingRuleStatus.PROCESSED.serialize(),
+        ) for entry in result['entries']
+    )
 
 
 def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:

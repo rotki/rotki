@@ -1719,9 +1719,6 @@
     "subtitle": "Ce sont les options de formatage de date prises en charge",
     "title": "Format de date"
   },
-  "date_time_picker": {
-    "limit_now": "Impossible d'utiliser une date future"
-  },
   "docker_warning": {
     "action": "Oui, je comprends",
     "documentation": "documentation",

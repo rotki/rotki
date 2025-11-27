@@ -11,6 +11,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -557,7 +558,7 @@ def mock_history_processing(
 
         # TODO: terrible way to check. Figure out something better
         limited_range_test = False
-        expected_swap_events_num = 21
+        expected_swap_events_num = 22
         expected_margin_num = 1
         expected_asset_movements_num = 21
         if not limited_range_test:
@@ -719,7 +720,10 @@ def mock_history_processing(
     )
 
 
-def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: bool):
+def mock_etherscan_like_transaction_response(
+        etherscan_like_api: Etherscan | Blockscout,
+        remote_errors: bool,
+) -> _patch:
     def mocked_request_dict(url, params, *_args, **_kwargs):
         if remote_errors:
             return MockResponse(200, '[{')
@@ -772,7 +776,7 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
 
         return MockResponse(200, payload)
 
-    return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)
+    return patch.object(etherscan_like_api.session, 'get', wraps=mocked_request_dict)
 
 
 class TradesTestSetup(NamedTuple):
@@ -781,6 +785,7 @@ class TradesTestSetup(NamedTuple):
     bitmex_patch: _patch
     accountant_patch: _patch
     etherscan_patch: _patch
+    blockscout_patch: _patch
 
 
 def mock_history_processing_and_exchanges(
@@ -809,16 +814,20 @@ def mock_history_processing_and_exchanges(
         rotki,
         remote_errors,
     )
-    etherscan_patch = mock_etherscan_transaction_response(
-        etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
-        remote_errors=remote_errors,
-    )
+    assert rotki.chains_aggregator.ethereum.node_inquirer.blockscout is not None
     return TradesTestSetup(
         polo_patch=polo_patch,
         binance_patch=binance_patch,
         bitmex_patch=bitmex_patch,
         accountant_patch=accountant_patch,
-        etherscan_patch=etherscan_patch,
+        etherscan_patch=mock_etherscan_like_transaction_response(
+            etherscan_like_api=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,
+            remote_errors=remote_errors,
+        ),
+        blockscout_patch=mock_etherscan_like_transaction_response(
+            etherscan_like_api=rotki.chains_aggregator.ethereum.node_inquirer.blockscout,
+            remote_errors=remote_errors,
+        ),
     )
 
 

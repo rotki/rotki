@@ -878,7 +878,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 ranges.update_used_query_range(
                     write_cursor=write_cursor,
                     location_string=range_query_name,
-                    queried_ranges=[(start_ts, end_ts)],
+                    queried_ranges=[(query_start_ts, query_end_ts)],
                 )
 
         return False

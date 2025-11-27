@@ -1514,9 +1514,6 @@
     "subtitle": "These are the supported date formatting options",
     "title": "Date Format"
   },
-  "date_time_picker": {
-    "limit_now": "Cannot use future date"
-  },
   "ens_names": {
     "task": {
       "title": "Querying ENS names"

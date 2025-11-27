@@ -113,8 +113,10 @@ def entries_to_input_dict(
         serialized['receive_amount'] = (receive_entry := entries[1].serialize())['amount']
         serialized['receive_asset'] = receive_entry['asset']
         if len(entries) == 3:
-            serialized['fee_amount'] = (fee_entry := entries[2].serialize())['amount']
-            serialized['fee_asset'] = fee_entry['asset']
+            serialized['fees'] = [{
+                'amount': (fee_entry := entries[2].serialize())['amount'],
+                'asset': fee_entry['asset'],
+            }]
 
     return serialized
 

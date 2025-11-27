@@ -43,7 +43,11 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    create_swap_events_multi_fee,
+)
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -558,7 +562,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         event_id = trade_parts[0].group_identifier
         is_spend_receive = False
         trade_assets = []
-        spend_part, receive_part, fee_part, kfee_part = None, None, None, None
+        spend_part, receive_part, fee_parts, kfee_part = None, None, [], None
 
         for trade_part in trade_parts:
             if trade_part.event_type == HistoryEventType.RECEIVE:
@@ -566,13 +570,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 receive_part = trade_part
             elif trade_part.event_type == HistoryEventType.SPEND:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
-                    fee_part = trade_part
+                    fee_parts.append(trade_part)
                 else:
                     is_spend_receive = True
                     spend_part = trade_part
             elif trade_part.event_type == HistoryEventType.TRADE:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
-                    fee_part = trade_part
+                    fee_parts.append(trade_part)
                 elif trade_part.event_subtype == HistoryEventSubType.SPEND:
                     spend_part = trade_part
                 elif trade_part.asset == A_KFEE:
@@ -643,19 +647,19 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             )
             return []
 
-        # If kfee was found we use it as the fee for the trade
-        fee = None
-        if kfee_part is not None and fee_part is None:
-            fee = AssetAmount(asset=A_KFEE, amount=kfee_part.amount)
-        elif fee_part is not None:
-            fee = AssetAmount(asset=fee_part.asset, amount=fee_part.amount)
+        fees = [
+            (AssetAmount(asset=fee_part.asset, amount=fee_part.amount), None, None)
+            for fee_part in fee_parts
+        ]
+        if kfee_part is not None:
+            fees.append((AssetAmount(asset=A_KFEE, amount=kfee_part.amount), None, None))
 
-        return create_swap_events(
+        return create_swap_events_multi_fee(
             timestamp=timestamp,
             location=Location.KRAKEN,
             spend=AssetAmount(asset=spend_part.asset, amount=spend_part.amount),
             receive=AssetAmount(asset=receive_part.asset, amount=receive_part.amount),
-            fee=fee,
+            fees=fees,
             group_identifier=create_group_identifier_from_unique_id(
                 location=self.location,
                 unique_id=exchange_uuid,

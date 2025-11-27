@@ -1,6 +1,8 @@
 import abc
 import csv
+import hashlib
 import logging
+import operator
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -216,8 +218,20 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         Change is amount, Coin is asset
         If amount is negative then this asset is sold, otherwise it's bought
         """
-        # First, aggregate all amounts by operation and coin
-        # for Transaction Buy/Spend/Fee operations
+        # Check if we have multiple different coins in both Transaction Buy and Transaction Spend
+        # operations. If so, we shouldn't aggregate as they need to be individually paired
+        transaction_buy_coins, transaction_spend_coins = set(), set()
+        for row in data:
+            if row['Operation'] == 'Transaction Buy':
+                transaction_buy_coins.add(row['Coin'])
+            elif row['Operation'] == 'Transaction Spend':
+                transaction_spend_coins.add(row['Coin'])
+
+        # Only aggregate if we don't have multiple different coins in both directions
+        # This ensures we can still properly pair individual transactions
+        should_not_aggregate = len(transaction_buy_coins) > 1 or len(transaction_spend_coins) > 1
+
+        # Aggregate amounts by operation and coin for Transaction Buy/Spend/Fee operations
         aggregated_data, other_data = {}, []
         for row in data:
             operation = row['Operation']
@@ -226,6 +240,11 @@ class BinanceTradeEntry(BinanceMultipleEntry):
 
             # Check if this is a Transaction Buy/Spend/Fee operation that should be aggregated
             if operation in {'Transaction Buy', 'Transaction Spend', 'Transaction Fee'}:
+                # Don't aggregate if we have multiple different buys AND multiple spends
+                if should_not_aggregate and operation in {'Transaction Buy', 'Transaction Spend'}:
+                    other_data.append(row)
+                    continue
+
                 key = (operation, coin)
                 if key not in aggregated_data:
                     aggregated_data[key] = row
@@ -338,13 +357,16 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     )
                 continue
 
+            # Create unique event identifier from all rows in this trade batch
+            # This ensures identical trades at the same timestamp get different identifiers
+            combined_hash = hashlib.sha256('_'.join(hash_binance_csv_row(row) for row in sorted(trade_rows, key=operator.itemgetter(INDEX))).encode()).hexdigest()  # noqa: E501
             swap_events.extend(create_swap_events(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
                 spend=AssetAmount(asset=from_asset, amount=from_amount),
                 receive=AssetAmount(asset=to_asset, amount=to_amount),
                 fee=fee,
-                group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{hash_binance_csv_row(trade_rows[0])}',  # any row works, just using the first to create the group identifier  # noqa: E501
+                group_identifier=f'{GROUP_IDENTIFIER_PREFIX}{combined_hash}',
                 spend_notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             ))
 

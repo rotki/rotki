@@ -22,8 +22,9 @@ def edit_grouped_events_with_optional_fee(
     - Create fee entry if it wasn't present before
     - Update existing events when modifications occur
 
-    Chain swaps are more complex and must rely on the identifiers specified. This is handled
-    in edit_grouped_chain_swap_events.
+    Swaps are more complex and must rely on the identifiers specified, since they can have
+    multiple fees or even multiple spends and receives in multi trades. This is handled
+    in edit_grouped_swap_events.
 
     May raise:
     - InputError
@@ -36,12 +37,12 @@ def edit_grouped_events_with_optional_fee(
     else:
         raise InputError(f'Tried to edit event with id {events[0].identifier} but could not find it in the DB')  # noqa: E501
 
-    if events_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT):  # noqa: E501
-        edit_grouped_chain_swap_events(  # Chain swaps must be handled differently.
+    if events_type in (HistoryBaseEntryType.EVM_SWAP_EVENT, HistoryBaseEntryType.SOLANA_SWAP_EVENT, HistoryBaseEntryType.SWAP_EVENT):  # noqa: E501
+        edit_grouped_swap_events(  # Swaps must be handled differently.
             events_db=events_db,
             write_cursor=write_cursor,
             events=events,
-            identifiers=identifiers,  # type: ignore[arg-type]  # will not be none for evm swaps
+            identifiers=identifiers,  # type: ignore[arg-type]  # will not be none for swaps
             group_identifier=group_identifier,
         )
         return
@@ -50,9 +51,7 @@ def edit_grouped_events_with_optional_fee(
         'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
         (group_identifier,),
     ).fetchone()[0]
-    no_fee_num = 1 if events_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else 2
-    with_fee_num = no_fee_num + 1
-
+    no_fee_num, with_fee_num = 1, 2
     if (new_event_count := len(events)) == no_fee_num and existing_event_count == with_fee_num:
         # in the db we had a fee entry and now we have removed it
         events_to_edit = events[:new_event_count]
@@ -76,14 +75,14 @@ def edit_grouped_events_with_optional_fee(
         events_db.edit_history_event(write_cursor=write_cursor, event=event)
 
 
-def edit_grouped_chain_swap_events(
+def edit_grouped_swap_events(
         events_db: 'DBHistoryEvents',
         write_cursor: 'DBCursor',
         events: list[HistoryBaseEntry],
         identifiers: list[int],
         group_identifier: str,
 ) -> None:
-    """Handle editing of grouped chain swap events.
+    """Handle editing of grouped swap events.
     Determines which events to add, edit, or remove using the `identifiers`
     and `events` lists as follows:
     - Inserts events that have no identifier.

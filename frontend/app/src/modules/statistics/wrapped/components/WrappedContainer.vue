@@ -27,7 +27,6 @@ const {
   end,
   getYearRange,
   initializeEndDate,
-  invalidRange,
   start,
 } = useWrappedDateRange();
 
@@ -84,7 +83,6 @@ defineExpose({
       v-model:end="end"
       :loading="loading"
       :refreshing="refreshing"
-      :invalid-range="invalidRange"
       @fetch="fetchData()"
     />
 
