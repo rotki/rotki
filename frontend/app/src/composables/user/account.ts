@@ -113,6 +113,7 @@ interface UseAutoLoginReturn {
   autolog: Ref<boolean>;
   needsPasswordConfirmation: Ref<boolean>;
   confirmPassword: (password: string) => Promise<boolean>;
+  shouldConfirmPassword: () => boolean;
   username: Ref<string>;
 }
 
@@ -207,6 +208,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
     autolog,
     confirmPassword,
     needsPasswordConfirmation,
+    shouldConfirmPassword,
     username,
   };
 }
