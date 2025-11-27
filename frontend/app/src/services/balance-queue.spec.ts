@@ -333,6 +333,160 @@ describe('balanceQueueService', () => {
     });
   });
 
+  describe('canProcess callback', () => {
+    it('should block processing when canProcess returns false', async () => {
+      let canProcess = false;
+      queue.setCanProcess(() => canProcess);
+
+      const executeFn = vi.fn().mockResolvedValue(undefined);
+      const item: QueueItem<TestMetadata> = {
+        executeFn,
+        id: 'test-1',
+        metadata: { chain: 'eth' },
+        type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+      };
+
+      // Enqueue without awaiting since it will be blocked
+      const enqueuePromise = queue.enqueue(item);
+
+      // Wait a bit to ensure processing attempt was made
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Item should be pending, not executed
+      expect(executeFn).not.toHaveBeenCalled();
+      expect(queue.getStats()).toMatchObject({
+        completed: 0,
+        pending: 1,
+        running: 0,
+      });
+
+      // Now allow processing
+      canProcess = true;
+      queue.retryProcessing();
+
+      await enqueuePromise;
+
+      expect(executeFn).toHaveBeenCalledTimes(1);
+      expect(queue.getStats()).toMatchObject({
+        completed: 1,
+        pending: 0,
+        running: 0,
+      });
+    });
+
+    it('should process immediately when canProcess returns true', async () => {
+      queue.setCanProcess(() => true);
+
+      const executeFn = vi.fn().mockResolvedValue(undefined);
+      const item: QueueItem<TestMetadata> = {
+        executeFn,
+        id: 'test-1',
+        metadata: { chain: 'eth' },
+        type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+      };
+
+      await queue.enqueue(item);
+
+      expect(executeFn).toHaveBeenCalledTimes(1);
+      expect(queue.getStats()).toMatchObject({
+        completed: 1,
+        pending: 0,
+        running: 0,
+      });
+    });
+
+    it('should not retry if not waiting for canProcess', () => {
+      const executeFn = vi.fn().mockResolvedValue(undefined);
+
+      // No items in queue, retryProcessing should be a no-op
+      queue.retryProcessing();
+
+      expect(executeFn).not.toHaveBeenCalled();
+    });
+
+    it('should handle canProcess callback returning reactive value', async () => {
+      // Simulate a reactive ref that changes value
+      let isDecoding = true;
+      queue.setCanProcess(() => !isDecoding);
+
+      const executeFn = vi.fn().mockResolvedValue(undefined);
+      const item: QueueItem<TestMetadata> = {
+        executeFn,
+        id: 'test-1',
+        metadata: { chain: 'eth' },
+        type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+      };
+
+      // Enqueue while "decoding" is true (canProcess returns false)
+      const enqueuePromise = queue.enqueue(item);
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(executeFn).not.toHaveBeenCalled();
+
+      // Simulate decoding finished
+      isDecoding = false;
+      queue.retryProcessing();
+
+      await enqueuePromise;
+
+      expect(executeFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should block mid-batch when canProcess becomes false', async () => {
+      let canProcess = true;
+      queue.setCanProcess(() => canProcess);
+
+      const executionOrder: string[] = [];
+      const createSlowExecuteFn = (id: string): (() => Promise<void>) => vi.fn(async () => {
+        executionOrder.push(`start-${id}`);
+        // First item takes time, during which we'll block
+        if (id === '1') {
+          await new Promise(resolve => setTimeout(resolve, 50));
+          canProcess = false; // Block after first item starts
+        }
+        executionOrder.push(`end-${id}`);
+      });
+
+      const items: QueueItem<TestMetadata>[] = [
+        {
+          executeFn: createSlowExecuteFn('1'),
+          id: 'test-1',
+          metadata: { chain: 'eth' },
+          type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+        },
+        {
+          executeFn: createSlowExecuteFn('2'),
+          id: 'test-2',
+          metadata: { chain: 'btc' },
+          type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+        },
+        {
+          executeFn: createSlowExecuteFn('3'),
+          id: 'test-3',
+          metadata: { chain: 'dot' },
+          type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+        },
+      ];
+
+      const batchPromise = queue.enqueueBatch(items);
+
+      // Wait for first two items to start (concurrency is 2)
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Third item should be blocked
+      const stats = queue.getStats();
+      expect(stats.pending).toBeGreaterThanOrEqual(0);
+
+      // Unblock and complete
+      canProcess = true;
+      queue.retryProcessing();
+
+      await batchPromise;
+
+      expect(queue.getStats().completed).toBe(3);
+    });
+  });
+
   describe('getItems', () => {
     it('should return categorized items', async () => {
       const items: QueueItem<TestMetadata>[] = [

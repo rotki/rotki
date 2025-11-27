@@ -48,6 +48,8 @@ export class BalanceQueueService<T extends QueueItemMetadata = QueueItemMetadata
 
   private onCompletionCallback?: () => void;
   private onProgressCallback?: (stats: QueueStats) => void;
+  private canProcessCallback?: () => boolean;
+  private waitingForCanProcess = false;
 
   constructor(maxConcurrency = 2) {
     this.maxConcurrency = maxConcurrency;
@@ -73,6 +75,17 @@ export class BalanceQueueService<T extends QueueItemMetadata = QueueItemMetadata
 
   setOnProgress(callback: ((stats: QueueStats) => void) | undefined): void {
     this.onProgressCallback = callback;
+  }
+
+  setCanProcess(callback: (() => boolean) | undefined): void {
+    this.canProcessCallback = callback;
+  }
+
+  retryProcessing(): void {
+    if (this.waitingForCanProcess && this.queue.length > 0) {
+      this.waitingForCanProcess = false;
+      startPromise(this.processNext());
+    }
   }
 
   async enqueue(item: QueueItem<T>): Promise<void> {
@@ -130,7 +143,19 @@ export class BalanceQueueService<T extends QueueItemMetadata = QueueItemMetadata
   }
 
   private async processNext(): Promise<void> {
+    // Check if we can process (e.g., not blocked by decoding)
+    if (this.canProcessCallback && !this.canProcessCallback()) {
+      this.waitingForCanProcess = true;
+      return;
+    }
+
     while (this.runningItems.size < this.maxConcurrency && this.queue.length > 0) {
+      // Re-check on each iteration in case condition changed
+      if (this.canProcessCallback && !this.canProcessCallback()) {
+        this.waitingForCanProcess = true;
+        return;
+      }
+
       const item = this.queue.shift();
       if (!item)
         break;
