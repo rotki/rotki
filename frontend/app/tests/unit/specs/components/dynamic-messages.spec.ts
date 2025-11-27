@@ -1,9 +1,11 @@
+import type { Pinia } from 'pinia';
 import type { DashboardMessage, WelcomeMessage } from '@/types/dynamic-messages';
 import dayjs from 'dayjs';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { camelCaseTransformer } from '@/services/axios-transformers';
+import { usePremiumStore } from '@/store/session/premium';
 import { server } from '../../setup-files/server';
 
 const period = {
@@ -32,6 +34,28 @@ const testWelcome: WelcomeMessage = {
 };
 
 describe('useDynamicMessages', () => {
+  let pinia: Pinia;
+  let store: ReturnType<typeof usePremiumStore>;
+
+  beforeEach(() => {
+    if (!pinia) {
+      pinia = createPinia();
+      setActivePinia(pinia);
+      store = usePremiumStore();
+    }
+
+    // Clear session storage
+    sessionStorage.clear();
+
+    // Reset premium to false for each test
+    const { premium } = storeToRefs(store);
+    set(premium, false);
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
   it('show valid period dashboard message', async () => {
     const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
 
@@ -121,5 +145,152 @@ describe('useDynamicMessages', () => {
 
     await fetchMessages();
     expect(get(welcomeHeader)).toBeNull();
+  });
+
+  it('should show target free message to free users', async () => {
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
+
+    const freeUserMessage: DashboardMessage = {
+      ...testDash,
+      target: 'free',
+    };
+
+    server.use(
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([freeUserMessage], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
+    );
+    vi.setSystemTime(dayjs('2023/10/12').toDate());
+    await fetchMessages();
+
+    expect(get(activeDashboardMessages)).toHaveLength(1);
+    expect(get(activeDashboardMessages)[0]).toMatchObject(camelCaseTransformer(freeUserMessage));
+  });
+
+  it('should not show target free message to premium users', async () => {
+    const store = usePremiumStore();
+    const { premium } = storeToRefs(store);
+    set(premium, true);
+
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
+
+    const freeUserMessage: DashboardMessage = {
+      ...testDash,
+      target: 'free',
+    };
+
+    server.use(
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([freeUserMessage], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
+    );
+    vi.setSystemTime(dayjs('2023/10/12').toDate());
+    await fetchMessages();
+
+    // Verify premium status is correctly set
+    expect(get(premium)).toBe(true);
+    expect(get(activeDashboardMessages)).toHaveLength(0);
+  });
+
+  it('should show target premium message to premium users', async () => {
+    const store = usePremiumStore();
+    const { premium } = storeToRefs(store);
+    set(premium, true);
+
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
+
+    const premiumUserMessage: DashboardMessage = {
+      ...testDash,
+      target: 'premium',
+    };
+
+    server.use(
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([premiumUserMessage], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
+    );
+    vi.setSystemTime(dayjs('2023/10/12').toDate());
+    await fetchMessages();
+
+    expect(get(activeDashboardMessages)).toHaveLength(1);
+    expect(get(activeDashboardMessages)[0]).toMatchObject(camelCaseTransformer(premiumUserMessage));
+  });
+
+  it('should not show target premium message to free users', async () => {
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
+
+    const premiumUserMessage: DashboardMessage = {
+      ...testDash,
+      target: 'premium',
+    };
+
+    server.use(
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([premiumUserMessage], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
+    );
+    vi.setSystemTime(dayjs('2023/10/12').toDate());
+    await fetchMessages();
+
+    expect(get(activeDashboardMessages)).toHaveLength(0);
+  });
+
+  it('should show message without target to all users', async () => {
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
+
+    server.use(
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([testDash], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
+    );
+    vi.setSystemTime(dayjs('2023/10/12').toDate());
+    await fetchMessages();
+
+    expect(get(activeDashboardMessages)).toHaveLength(1);
+    expect(get(activeDashboardMessages)[0]).toMatchObject(camelCaseTransformer(testDash));
+  });
+
+  it('should filter multiple messages based on target', async () => {
+    const store = usePremiumStore();
+    const { premium } = storeToRefs(store);
+    set(premium, true);
+
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
+
+    const freeUserMessage: DashboardMessage = {
+      ...testDash,
+      message: 'free user message',
+      target: 'free',
+    };
+
+    const premiumUserMessage: DashboardMessage = {
+      ...testDash,
+      message: 'premium user message',
+      target: 'premium',
+    };
+
+    const generalMessage: DashboardMessage = {
+      ...testDash,
+      message: 'general message',
+    };
+
+    server.use(
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/dashboard.json', () =>
+        HttpResponse.json([freeUserMessage, premiumUserMessage, generalMessage], { status: 200 })),
+      http.get('https://raw.githubusercontent.com/rotki/data/develop/messages/welcome.json', () =>
+        HttpResponse.json({}, { status: 404 })),
+    );
+    vi.setSystemTime(dayjs('2023/10/12').toDate());
+    await fetchMessages();
+
+    const messages = get(activeDashboardMessages);
+    expect(messages).toHaveLength(2);
+    expect(messages[0]).toMatchObject(camelCaseTransformer(premiumUserMessage));
+    expect(messages[1]).toMatchObject(camelCaseTransformer(generalMessage));
   });
 });

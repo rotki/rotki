@@ -35,6 +35,7 @@ const DashboardMessage = z.object({
   message: z.string(),
   messageHighlight: z.string().optional(),
   period: VisibilityPeriod,
+  target: z.enum(['free', 'premium']).optional(),
 });
 
 export type DashboardMessage = z.infer<typeof DashboardMessage>;
