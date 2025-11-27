@@ -8,6 +8,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
 )
 
+PROXY_BALANCE_PROTOCOL_TEMPLATE: Final = 'proxy:{type}:{address}'
 DEFAULT_RPC_TIMEOUT = 10
 NON_BITCOIN_CHAINS = [
     SupportedBlockchain.AVALANCHE,

@@ -44,7 +44,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBal
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
-from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_DSR, CPT_VAULT
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_DSR
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
@@ -136,6 +136,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.manager import (
         ChainManager,
@@ -802,13 +803,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # If any of the related modules is on (TODO: switch to counting events activity)
         if (liquity_module := self.get_module('liquity')) is not None or vaults_module is not None or dsr_module is not None:  # noqa: E501
             proxy_mappings = self.ethereum.node_inquirer.proxies_inquirer.get_accounts_having_proxy()  # noqa: E501
-            for single_proxy_mappings in proxy_mappings.values():
-                proxy_to_address = {}
+            for proxy_type, single_proxy_mappings in proxy_mappings.items():
+                proxy_to_type_and_owner: dict[ChecksumEvmAddress, tuple[ProxyType, ChecksumEvmAddress]] = {}  # noqa: E501
                 proxy_addresses: list[ChecksumEvmAddress] = []
                 for user_address, single_proxy_addresses in single_proxy_mappings.items():
                     proxy_addresses.extend(single_proxy_addresses)
                     for proxy_address in single_proxy_addresses:
-                        proxy_to_address[proxy_address] = user_address
+                        proxy_to_type_and_owner[proxy_address] = (proxy_type, user_address)
 
                 eth_manager = self.get_chain_manager(SupportedBlockchain.ETHEREUM)
                 try:
@@ -825,13 +826,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         'token balances but the chain is not synced.',
                     ) from e
 
-                new_result = {proxy_to_address[x]: v for x, v in balance_result.items()}
                 eth_manager.update_balances_after_token_query(
-                    dsr_proxy_append=True,
-                    balance_result=new_result,
+                    balance_result=balance_result,
                     token_usd_price=token_usd_price,
-                    balance_label=CPT_VAULT,
                     balances=eth_balances,
+                    proxies_information=proxy_to_type_and_owner,
                 )
 
         if (pickle_module := self.get_module('pickle_finance')) is not None:
