@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import { useBalances } from '@/composables/balances';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
@@ -22,11 +23,13 @@ const PERIODIC = 'periodic';
 const TASK = 'task';
 const BALANCES = 'balances';
 const EVM_EVENTS_STATUS = 'evm_events_status';
+const PASSWORD_CONFIRMATION = 'password_confirmation';
 
 export const useMonitorStore = defineStore('monitor', () => {
   const monitors = ref<Record<string, any>>({});
 
-  const { canRequestData } = storeToRefs(useSessionAuthStore());
+  const authStore = useSessionAuthStore();
+  const { canRequestData, logged, needsPasswordConfirmation } = storeToRefs(authStore);
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { monitor } = useTaskStore();
@@ -40,7 +43,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
-  const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
+  const { balanceUsdValueThreshold, enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
 
   const ws = useWebsocketStore();
   const { connected } = storeToRefs(ws);
@@ -110,6 +113,22 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   };
 
+  const startPasswordConfirmationMonitoring = (): void => {
+    const activeMonitors = get(monitors);
+    const period = 60 * 60 * 1000; // fetch every 1 hour
+    if (!activeMonitors[PASSWORD_CONFIRMATION]) {
+      activeMonitors[PASSWORD_CONFIRMATION] = setInterval(() => {
+        if (get(logged) && get(enablePasswordConfirmation)) {
+          const now = dayjs().unix();
+          const shouldConfirm = (now - get(lastPasswordConfirmed)) > get(passwordConfirmationInterval);
+          if (shouldConfirm)
+            set(needsPasswordConfirmation, true);
+        }
+      }, period);
+      set(monitors, activeMonitors);
+    }
+  };
+
   /**
    * This function is called periodically, queries some data from the
    * client and updates the UI with the response.
@@ -119,6 +138,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     startTaskMonitoring(restarting);
     startBalanceRefresh();
     startEvmStatusMonitoring();
+    startPasswordConfirmationMonitoring();
   };
 
   const stop = (): void => {
