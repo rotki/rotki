@@ -3,6 +3,7 @@ import type {
   BalanceQueryQueueItem,
 } from '@/modules/dashboard/progress/types';
 import { get, set, watchDebounced } from '@vueuse/shared';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { BalanceQueueService, type QueueItem, type QueueItemMetadata, type QueueStats } from '@/services/balance-queue';
 import { TaskType } from '@/types/task-type';
 
@@ -118,6 +119,17 @@ function startPolling(): void {
 
 export function useBalanceQueue(): UseBalanceQueueReturn {
   const queue = getBalanceQueue();
+  const { anyEventsDecoding } = useHistoryEventsStatus();
+
+  // Set up the canProcess callback to block queue processing while decoding
+  queue.setCanProcess(() => !get(anyEventsDecoding));
+
+  // Watch for decoding status changes and retry processing when decoding finishes
+  watch(anyEventsDecoding, (isDecoding) => {
+    if (!isDecoding) {
+      queue.retryProcessing();
+    }
+  });
 
   const queueItems = computed<BalanceQueryQueueItem[]>(() => Array.from(get(sharedItems).values()));
 
