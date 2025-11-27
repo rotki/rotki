@@ -73,7 +73,7 @@ onMounted(async () => {
         >
           {{ activeItem.header }}
         </div>
-        <div class="text-body-1 text-rui-text-secondary">
+        <div class="text-body-1 text-rui-text-secondary whitespace-break-spaces">
           {{ activeItem.text }}
         </div>
       </div>
