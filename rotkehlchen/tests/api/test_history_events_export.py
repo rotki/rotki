@@ -169,7 +169,7 @@ def test_history_export_download_csv(
     assert_csv_export_response(response, temp_csv_file, is_download=True)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('db_settings', [{'csv_export_delimiter': ';'}])
 @pytest.mark.freeze_time('2025-04-30')
 def test_history_export_csv_custom_delimiter(

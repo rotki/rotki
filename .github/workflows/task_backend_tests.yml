@@ -24,7 +24,7 @@ jobs:
       SOURCE_BRANCH: ${{ github.head_ref }}
     runs-on: ${{ inputs.os }}
     name: 'Backend tests'
-    timeout-minutes: 50
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -51,7 +51,7 @@ jobs:
         env:
           AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          cd "$HOME/work/rotki/rotki/test-caching" || exit
+          cd "test-caching" || exit
           git fetch origin
           if [[ $(git branch --all | grep "remotes/origin/$SOURCE_BRANCH") ]]; then
             echo "Branch $SOURCE_BRANCH exists on origin. Checking it out..."
@@ -86,7 +86,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -140,7 +139,7 @@ jobs:
             COVERAGE_ARGS='--cov=./'
           fi
 
-          export CASSETTES_DIR="$HOME/work/rotki/rotki/test-caching"
+          export CASSETTES_DIR="$(pwd)/test-caching"
 
           if [ "${{ matrix.test-group }}" == 'api' ]
           then

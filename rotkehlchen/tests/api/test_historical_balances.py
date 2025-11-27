@@ -103,7 +103,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
         )
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_get_historical_balance(
@@ -146,7 +146,7 @@ def test_get_historical_balance(
     assert outcome['result']['ETH']['amount'] == '10'
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_get_historical_asset_balance(
@@ -670,7 +670,7 @@ def test_get_historical_netvalue_with_negative_amount(
     ))
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.freeze_time('2025-03-06 00:00:00 GMT')
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_get_historical_prices_per_asset(

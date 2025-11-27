@@ -27,7 +27,7 @@ def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection)
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     string_len = 27000 if platform.system() == 'Darwin' else 100000
-    with gevent.Timeout(10):
+    with gevent.Timeout(20):  # This runs a bit slowly on Windows and needs a generous timeout.
         g1 = gevent.spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
         _send_stuff(rotki.msg_aggregator, websocket_connection, string_len)
         g2 = gevent.spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)

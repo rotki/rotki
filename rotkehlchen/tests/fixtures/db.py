@@ -1,5 +1,3 @@
-import os
-import sys
 from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
@@ -52,8 +50,8 @@ def fixture_user_data_dir(data_dir, username) -> Path:
 
 @pytest.fixture(name='include_cryptocompare_key')
 def fixture_include_cryptocompare_key() -> bool:
-    """By default use a cryptocompare API key only in the OSX CI"""
-    return 'CI' in os.environ and sys.platform == 'darwin'
+    """By default use a cryptocompare API key in all tests."""
+    return True
 
 
 @pytest.fixture(name='include_etherscan_key')
