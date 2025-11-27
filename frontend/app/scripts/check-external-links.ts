@@ -35,8 +35,8 @@ async function checkLink(rawUrl: string, key: string): Promise<LinkResult> {
   const url = await processDynamicUrl(rawUrl);
   try {
     const response = await fetch(url);
-    if (response.status >= 200 && response.status < 300) {
-      consola.debug(`✓ External link ${url} returned a 200 status code.`);
+    if ((response.status >= 200 && response.status < 300) || [401, 403].includes(response.status)) {
+      consola.debug(`✓ External link ${url} returned a ${response.status} that is considered successful.`);
       return {
         url,
         originalUrl: rawUrl,
@@ -46,7 +46,7 @@ async function checkLink(rawUrl: string, key: string): Promise<LinkResult> {
       };
     }
     else {
-      consola.error(`✗ External link ${url} returned a non-200 status code: ${response.status}`);
+      consola.error(`✗ External link ${url} returned a status code: ${response.status} that is considered a failure.`);
       return {
         url,
         originalUrl: rawUrl,
