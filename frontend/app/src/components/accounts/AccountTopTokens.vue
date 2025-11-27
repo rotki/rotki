@@ -23,8 +23,8 @@ const address = computed<string>(() => getAccountAddress(props.row));
 const balances = useBlockchainBalances(chains, address);
 
 const topTokens = computed<AssetBalance[]>(() => get(balances)
-  .map(balance => pick(balance, ['asset', 'usdValue', 'amount']))
-  .sort((a, b) => sortDesc(a.usdValue, b.usdValue)));
+  .map(balance => pick(balance, ['asset', 'usdValue', 'amount', 'value']))
+  .sort((a, b) => sortDesc(a.value, b.value)));
 
 const assets = computed<AssetBalance[]>(() => {
   const row = props.row;
@@ -33,6 +33,7 @@ const assets = computed<AssetBalance[]>(() => {
       amount: row.amount || Zero,
       asset: row.nativeAsset,
       usdValue: row.usdValue,
+      value: row.value ?? row.usdValue,
     }];
   }
   return get(topTokens);

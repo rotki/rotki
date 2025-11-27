@@ -13,7 +13,7 @@ defineProps<{
 }>();
 
 const sort = ref<DataTableSortData<ProtocolBalanceWithChains>>({
-  column: 'usdValue',
+  column: 'value',
   direction: 'desc',
 });
 
@@ -35,7 +35,7 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
 }, {
   align: 'end',
   class: 'text-no-wrap',
-  key: 'usdValue',
+  key: 'value',
   label: t('common.value_in_symbol', {
     symbol: get(currencySymbol),
   }),
@@ -91,11 +91,11 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
       />
     </template>
 
-    <template #item.usdValue="{ row }">
+    <template #item.value="{ row }">
       <AmountDisplay
         :asset-padding="0.1"
-        fiat-currency="USD"
-        :value="row.usdValue"
+        force-currency
+        :value="row.value"
         show-currency="symbol"
       />
     </template>

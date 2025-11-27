@@ -268,6 +268,7 @@ describe('composables/api/balances/manual', () => {
                   location: 'blockchain',
                   tags: null,
                   usd_value: '2000.00',
+                  value: '2000.00',
                 },
               ],
             },

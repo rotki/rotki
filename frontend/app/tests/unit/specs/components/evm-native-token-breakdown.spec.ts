@@ -95,6 +95,7 @@ const testManualBalances: ManualBalanceWithValue[] = [{
   location: 'external',
   tags: [],
   usdValue: bigNumberify(500),
+  value: bigNumberify(500),
 }, {
   amount: bigNumberify(500),
   asset: 'ETH',
@@ -104,6 +105,7 @@ const testManualBalances: ManualBalanceWithValue[] = [{
   location: 'kraken',
   tags: [],
   usdValue: bigNumberify(500),
+  value: bigNumberify(500),
 }];
 
 const testExchangeBalances: ExchangeData = {
@@ -111,6 +113,7 @@ const testExchangeBalances: ExchangeData = {
     ETH: {
       amount: bigNumberify(1000),
       usdValue: bigNumberify(1000),
+      value: bigNumberify(1000),
     },
   },
 };
@@ -140,6 +143,7 @@ const testEthereumBalances: BlockchainBalances = {
             address: {
               amount: bigNumberify(400),
               usdValue: bigNumberify(400),
+              value: bigNumberify(400),
             },
           },
         },
@@ -151,6 +155,7 @@ const testEthereumBalances: BlockchainBalances = {
             address: {
               amount: bigNumberify(800),
               usdValue: bigNumberify(800),
+              value: bigNumberify(800),
             },
 
           },
@@ -183,6 +188,7 @@ const testOptimismBalances: BlockchainBalances = {
             address: {
               amount: bigNumberify(123),
               usdValue: bigNumberify(123),
+              value: bigNumberify(123),
             },
           },
         },
@@ -235,18 +241,22 @@ describe('evmNativeTokenBreakdown.vue', () => {
       location: 'kraken',
       amount: bigNumberify(1500),
       usdValue: bigNumberify(1500),
+      value: bigNumberify(1500),
     }, {
       location: 'ethereum',
       amount: bigNumberify(1200),
       usdValue: bigNumberify(1200),
+      value: bigNumberify(1200),
     }, {
       location: 'external',
       amount: bigNumberify(500),
       usdValue: bigNumberify(500),
+      value: bigNumberify(500),
     }, {
       location: 'optimism',
       amount: bigNumberify(123),
       usdValue: bigNumberify(123),
+      value: bigNumberify(123),
     }];
 
     expectedResult.forEach((result, index) => {
@@ -266,10 +276,12 @@ describe('evmNativeTokenBreakdown.vue', () => {
       location: 'ethereum',
       amount: bigNumberify(1200),
       usdValue: bigNumberify(1200),
+      value: bigNumberify(1200),
     }, {
       location: 'optimism',
       amount: bigNumberify(123),
       usdValue: bigNumberify(123),
+      value: bigNumberify(123),
     }];
 
     expectedResult.forEach((result, index) => {

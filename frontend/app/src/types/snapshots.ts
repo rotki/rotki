@@ -8,6 +8,7 @@ export const BalanceSnapshot = z.object({
   category: z.enum(BalanceType),
   timestamp: z.number(),
   usdValue: NumericString,
+  value: NumericString.optional(),
 });
 
 export type BalanceSnapshot = z.infer<typeof BalanceSnapshot>;

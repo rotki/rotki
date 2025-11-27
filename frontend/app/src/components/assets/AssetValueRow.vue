@@ -158,8 +158,8 @@ const pricesLoading = computed(() => {
         :amount="info.amount"
         :price-asset="identifier"
         :price-of-asset="info.usdPrice"
-        fiat-currency="USD"
-        :value="info.usdValue"
+        force-currency
+        :value="info.value"
       />
     </RuiCard>
   </div>

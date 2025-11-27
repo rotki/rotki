@@ -56,10 +56,11 @@ export function groupAssetBreakdown(
     const balance = balanceSum(acc[key], breakdown);
     acc[key].amount = balance.amount;
     acc[key].usdValue = balance.usdValue;
+    acc[key].value = balance.value;
     return acc;
   }, initial);
 
-  return Object.values(grouped).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+  return Object.values(grouped).sort((a, b) => sortDesc(a.value, b.value));
 }
 
 export function appendAssetBalance(
@@ -75,8 +76,8 @@ export function appendAssetBalance(
     assets[identifier] = { ...balanceSum(ownedAsset, value) };
 }
 
-export function sum(balances: { usdValue: BigNumber }[]): BigNumber {
-  return bigNumberSum(balances.map(account => account.usdValue));
+export function sum(balances: { value?: BigNumber; usdValue: BigNumber }[]): BigNumber {
+  return bigNumberSum(balances.map(account => account.value ?? account.usdValue));
 }
 
 export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithPrice>(data: T[], sort: DataTableSortData<T>, assetInfo: AssetInfoReturn): T[] {

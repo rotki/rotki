@@ -76,7 +76,7 @@ watch(route, () => {
 
 function exchangeBalance(exchange: string): BigNumber {
   const balances = get(useExchangeBalances(exchange));
-  return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue), Zero);
+  return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.value), Zero);
 }
 
 const sortedExchanges = computed(() =>
@@ -212,7 +212,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
               <AmountDisplay
                 class="mt-1 text-xl"
                 show-currency="symbol"
-                fiat-currency="USD"
+                force-currency
                 :value="exchangeBalance(usedExchange)"
               />
             </RuiTab>

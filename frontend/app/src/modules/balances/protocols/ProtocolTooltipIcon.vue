@@ -91,9 +91,9 @@ const name = computed<string>(() => {
       />
       <AmountDisplay
         :asset-padding="0.1"
-        fiat-currency="USD"
+        force-currency
         :loading="loading"
-        :value="protocolBalance.usdValue"
+        :value="protocolBalance.value"
         show-currency="symbol"
         data-cy="top-protocol-value"
       />

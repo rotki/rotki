@@ -36,7 +36,7 @@ const name = computed<string>(() => {
       <AmountDisplay
         class="text-rui-text-secondary text-xs"
         show-currency="symbol"
-        fiat-currency="USD"
+        force-currency
         :value="balance"
       />
     </div>

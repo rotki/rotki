@@ -177,13 +177,14 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
         tags: tags.length > 0 ? tags : undefined,
         type: 'group',
         usdValue,
+        value: usdValue,
       } satisfies BlockchainAccountGroupWithBalance;
     });
 
     const preGrouped = Object.values(accountData)
       .flatMap(accounts => accounts.filter(account => account.groupHeader))
       .map((account) => {
-        const balance: Balance = { amount: Zero, usdValue: Zero };
+        const balance: Balance = { amount: Zero, usdValue: Zero, value: Zero };
         const chainBalances = balanceData[account.chain];
         const accounts = accountData[account.chain];
         const groupAccounts = accounts.filter(acc => !acc.groupHeader && acc.groupId === account.groupId);
@@ -193,6 +194,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
             balance.amount = balance.amount.plus(subBalance.amount);
 
           balance.usdValue = balance.usdValue.plus(subBalance.usdValue);
+          balance.value = balance.value.plus(subBalance.value);
         }
         return {
           ...omit(account, ['chain', 'groupId', 'groupHeader']),

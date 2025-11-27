@@ -51,8 +51,8 @@ const navTarget = computed<RouteLocationRaw>(() => ({
 
             <AmountDisplay
               show-currency="symbol"
-              fiat-currency="USD"
-              :value="total.usdValue"
+              force-currency
+              :value="total.value"
               :loading="total.loading"
               class="font-medium"
             />

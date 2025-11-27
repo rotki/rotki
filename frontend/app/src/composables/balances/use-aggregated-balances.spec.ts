@@ -116,6 +116,7 @@ describe('useAggregatedBalances', () => {
       ],
       usdPrice: bigNumberify(1),
       usdValue: bigNumberify(50),
+      value: bigNumberify(50),
     }, {
       amount: bigNumberify(220),
       asset: 'DAI',
@@ -127,6 +128,7 @@ describe('useAggregatedBalances', () => {
       ],
       usdPrice: bigNumberify(1),
       usdValue: bigNumberify(220),
+      value: bigNumberify(220),
     }, {
       amount: bigNumberify(150),
       asset: 'BTC',
@@ -136,6 +138,7 @@ describe('useAggregatedBalances', () => {
       ],
       usdPrice: bigNumberify(40000),
       usdValue: bigNumberify(150),
+      value: bigNumberify(150),
     }, {
       amount: bigNumberify(150),
       asset: 'ETH',
@@ -145,6 +148,7 @@ describe('useAggregatedBalances', () => {
       ],
       usdPrice: bigNumberify(3000),
       usdValue: bigNumberify(150),
+      value: bigNumberify(150),
     }, {
       amount: bigNumberify(100),
       asset: 'SAI',
@@ -153,6 +157,7 @@ describe('useAggregatedBalances', () => {
       ],
       usdPrice: bigNumberify(1),
       usdValue: bigNumberify(100),
+      value: bigNumberify(100),
     }] satisfies AssetBalanceWithPrice[], ['asset']);
 
     expect(actualResult).toMatchObject(expectedResult);
@@ -241,6 +246,7 @@ describe('useAggregatedBalances', () => {
         ],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(100),
+        value: bigNumberify(100),
       }]);
     });
   });
@@ -295,6 +301,7 @@ describe('useAggregatedBalances', () => {
         amount: Zero,
         usdPrice: Zero,
         usdValue: Zero,
+        value: Zero,
       });
     });
 
@@ -502,6 +509,7 @@ describe('useAggregatedBalances', () => {
         location: 'external',
         tags: [],
         usdValue: bigNumberify(50),
+        value: bigNumberify(50),
       }, {
         amount: bigNumberify(100),
         asset: 'ETH2',
@@ -511,6 +519,7 @@ describe('useAggregatedBalances', () => {
         location: 'external',
         tags: [],
         usdValue: bigNumberify(100),
+        value: bigNumberify(100),
       }];
 
       set(manualBalances, ethAndEth2Balances);
@@ -527,9 +536,11 @@ describe('useAggregatedBalances', () => {
           containsManual: true,
           protocol: 'external',
           usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         }],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(50),
+        value: bigNumberify(50),
       }, {
         amount: bigNumberify(100),
         asset: 'ETH2',
@@ -538,9 +549,11 @@ describe('useAggregatedBalances', () => {
           containsManual: true,
           protocol: 'external',
           usdValue: bigNumberify(100),
+          value: bigNumberify(100),
         }],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(100),
+        value: bigNumberify(100),
       }]);
 
       updateGeneralSettings({ treatEth2AsEth: true });
@@ -550,6 +563,7 @@ describe('useAggregatedBalances', () => {
         asset: 'ETH',
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(150),
+        value: bigNumberify(150),
       }]);
     });
 
@@ -596,9 +610,11 @@ describe('useAggregatedBalances', () => {
             containsManual: true,
             protocol: 'kraken',
             usdValue: bigNumberify(2500),
+            value: bigNumberify(2500),
           }],
           usdPrice: bigNumberify(-1),
           usdValue: bigNumberify(2500),
+          value: bigNumberify(2500),
         }, {
           amount: bigNumberify(1000),
           asset: 'cUSDC',
@@ -606,9 +622,11 @@ describe('useAggregatedBalances', () => {
             amount: bigNumberify(1000),
             protocol: 'kraken',
             usdValue: bigNumberify(1000),
+            value: bigNumberify(1000),
           }],
           usdPrice: bigNumberify(-1),
           usdValue: bigNumberify(1000),
+          value: bigNumberify(1000),
         }, {
           amount: bigNumberify(500),
           asset: 'bUSDC',
@@ -617,18 +635,22 @@ describe('useAggregatedBalances', () => {
             containsManual: true,
             protocol: 'kraken',
             usdValue: bigNumberify(500),
+            value: bigNumberify(500),
           }],
           usdPrice: bigNumberify(-1),
           usdValue: bigNumberify(500),
+          value: bigNumberify(500),
         }],
         perProtocol: [{
           amount: bigNumberify(4000),
           containsManual: true,
           protocol: 'kraken',
           usdValue: bigNumberify(4000),
+          value: bigNumberify(4000),
         }],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(4000),
+        value: bigNumberify(4000),
       }, {
         amount: bigNumberify(2000),
         asset: 'GNO',
@@ -637,9 +659,11 @@ describe('useAggregatedBalances', () => {
           containsManual: true,
           protocol: 'kraken',
           usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
         }],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       }];
       expect(get(locationBreakdown)).toStrictEqual(expectedResult);
     });
@@ -674,6 +698,7 @@ describe('useAggregatedBalances', () => {
         ],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(1000),
+        value: bigNumberify(1000),
       }, {
         amount: bigNumberify(1000),
         asset: 'ETH2',
@@ -682,6 +707,7 @@ describe('useAggregatedBalances', () => {
         ],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(1000),
+        value: bigNumberify(1000),
       }]);
 
       updateGeneralSettings({ treatEth2AsEth: true });
@@ -696,6 +722,7 @@ describe('useAggregatedBalances', () => {
         ],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       }]);
     });
 
@@ -726,6 +753,7 @@ describe('useAggregatedBalances', () => {
         ],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(1000),
+        value: bigNumberify(1000),
       }, {
         amount: bigNumberify(1000),
         asset: 'ETH2',
@@ -734,6 +762,7 @@ describe('useAggregatedBalances', () => {
         ],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(1000),
+        value: bigNumberify(1000),
       }]);
 
       updateGeneralSettings({ treatEth2AsEth: true });
@@ -748,6 +777,7 @@ describe('useAggregatedBalances', () => {
         ],
         usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       }]);
     });
   });

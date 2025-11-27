@@ -26,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { balances, tableType, title } = toRefs(props);
 
 // Stores
-const { currencySymbol, totalNetWorth } = useDashboardStores();
+const { totalNetWorth } = useDashboardStores();
 
 // Use composables - sort needs to be defined first for the computed dependency
 const { pagination, setPage, setTablePagination, sort, tableHeaders } = useDashboardTableConfig(
@@ -76,7 +76,7 @@ watch(search, () => setPage(1));
     </template>
     <template #shortDetails>
       <AmountDisplay
-        :fiat-currency="currencySymbol"
+        force-currency
         :value="total"
         show-currency="symbol"
         class="text-h6 font-bold"
@@ -135,14 +135,14 @@ watch(search, () => setPage(1));
       <template #item.amount="{ row }">
         <AmountDisplay :value="row.amount" />
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
           :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
-          :value="row.usdValue"
+          force-currency
+          :value="row.value"
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
@@ -176,7 +176,7 @@ watch(search, () => setPage(1));
           :class-name="$style['dashboard-asset-table__body-append']"
         >
           <AmountDisplay
-            :fiat-currency="currencySymbol"
+            force-currency
             :value="total"
             show-currency="symbol"
           />

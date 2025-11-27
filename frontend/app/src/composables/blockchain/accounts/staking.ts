@@ -195,6 +195,7 @@ export function useEthStaking(): UseEthStakingReturn {
             address: {
               amount: newAmount,
               usdValue: newValue,
+              value: newValue,
             },
           },
         },

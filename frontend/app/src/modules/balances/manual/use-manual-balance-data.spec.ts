@@ -8,6 +8,7 @@ import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balan
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { BalanceType } from '@/types/balances';
 
@@ -26,9 +27,10 @@ vi.mock('@/store/tasks', () => ({
   }),
 }));
 
-interface ManualBalance extends Omit<ManualBalanceWithValue, 'usdValue' | 'amount'> {
+interface ManualBalance extends Omit<ManualBalanceWithValue, 'usdValue' | 'amount' | 'value'> {
   usdValue: string;
   amount: string;
+  value: string;
 }
 
 function toParsed(balance: ManualBalance): ManualBalanceWithValue {
@@ -36,6 +38,7 @@ function toParsed(balance: ManualBalance): ManualBalanceWithValue {
     ...balance,
     amount: bigNumberify(balance.amount),
     usdValue: bigNumberify(balance.usdValue),
+    value: bigNumberify(balance.value),
   };
 }
 
@@ -48,6 +51,7 @@ const balances: ManualBalance[] = [{
   location: TRADE_LOCATION_BLOCKCHAIN,
   tags: [],
   usdValue: '50',
+  value: '50',
 }, {
   amount: '30',
   asset: 'BTC',
@@ -57,6 +61,7 @@ const balances: ManualBalance[] = [{
   location: TRADE_LOCATION_BLOCKCHAIN,
   tags: [],
   usdValue: '30',
+  value: '30',
 }, {
   amount: '60',
   asset: 'EUR',
@@ -66,6 +71,7 @@ const balances: ManualBalance[] = [{
   location: TRADE_LOCATION_BANKS,
   tags: [],
   usdValue: '60',
+  value: '60',
 }];
 
 async function updateBalances(balances: ManualBalance[]): Promise<void> {
@@ -92,6 +98,8 @@ describe('store::balances/manual', () => {
     setActivePinia(createPinia());
     store = useBalancesStore();
     const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
+    const { currency } = storeToRefs(useGeneralSettingsStore());
+    set(currency, { name: 'United States Dollar', tickerSymbol: 'USD', unicodeSymbol: '$', crypto: false });
     set(exchangeRates, { USD: bigNumberify(1) });
     set(prices, {
       ETH: ethPrice,
@@ -123,7 +131,7 @@ describe('store::balances/manual', () => {
     it('should show the total balance of a location', () => {
       const { manualBalanceByLocation } = useManualBalanceData();
       expect(get(manualBalanceByLocation)).toMatchObject([
-        { location: TRADE_LOCATION_BLOCKCHAIN, usdValue: bigNumberify(80) },
+        { location: TRADE_LOCATION_BLOCKCHAIN, value: bigNumberify(80) },
       ]);
     });
   });

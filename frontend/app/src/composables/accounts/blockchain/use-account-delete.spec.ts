@@ -31,6 +31,7 @@ describe('useAccountDelete', () => {
             address: {
               amount: bigNumberify(1),
               usdValue: bigNumberify(2501),
+              value: bigNumberify(2501),
             },
           },
         },
@@ -50,6 +51,7 @@ describe('useAccountDelete', () => {
             address: {
               amount: bigNumberify(1),
               usdValue: bigNumberify(2501),
+              value: bigNumberify(2501),
             },
           },
         },

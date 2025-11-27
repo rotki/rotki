@@ -51,8 +51,8 @@ const dot = '•';
         </span>
         <AmountDisplay
           :asset-padding="0.1"
-          fiat-currency="USD"
-          :value="protocolBalance.usdValue"
+          force-currency
+          :value="protocolBalance.value"
           :loading="loading"
           show-currency="symbol"
           data-cy="protocol-menu-value"

@@ -14,6 +14,7 @@ function createTestBalance(amount: number, usdValue: number): Balance {
   return {
     amount: bigNumberify(amount),
     usdValue: bigNumberify(usdValue),
+    value: bigNumberify(usdValue),
   };
 }
 
@@ -98,6 +99,7 @@ describe('useBlockchainAccountData', () => {
         tags: undefined,
         type: 'account',
         usdValue: bigNumberify(10),
+        value: bigNumberify(10),
       }, {
         amount: bigNumberify(10),
         chain: Blockchain.BTC,
@@ -112,6 +114,7 @@ describe('useBlockchainAccountData', () => {
         tags: undefined,
         type: 'account',
         usdValue: bigNumberify(10),
+        value: bigNumberify(10),
       }]);
 
       // Test fetchAccounts functionality
@@ -129,6 +132,7 @@ describe('useBlockchainAccountData', () => {
         tags: undefined,
         type: 'group',
         usdValue: bigNumberify(10),
+        value: bigNumberify(10),
       }, {
         amount: bigNumberify(10),
         chains: [chain],
@@ -143,6 +147,7 @@ describe('useBlockchainAccountData', () => {
         tags: undefined,
         type: 'group',
         usdValue: bigNumberify(10),
+        value: bigNumberify(10),
       }, {
         amount: Zero,
         chains: [chain],
@@ -156,6 +161,7 @@ describe('useBlockchainAccountData', () => {
         tags: ['a'],
         type: 'group',
         usdValue: Zero,
+        value: Zero,
       }];
 
       expect(knownGroups.data).toEqual(expectedGroups);

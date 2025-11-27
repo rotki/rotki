@@ -23,7 +23,7 @@ export function useDashboardTableConfig(
   const { t } = useI18n({ useScope: 'global' });
 
   const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-    column: 'usdValue',
+    column: 'value',
     direction: 'desc' as const,
   });
 
@@ -88,7 +88,7 @@ export function useDashboardTableConfig(
       align: 'end',
       cellClass: 'py-0',
       class: 'text-no-wrap',
-      key: 'usdValue',
+      key: 'value',
       label: t('common.value_in_symbol', {
         symbol: get(currencySymbol),
       }),

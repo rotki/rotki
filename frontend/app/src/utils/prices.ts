@@ -1,11 +1,21 @@
+import type { Balance, BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 import type { AssetBalances } from '@/types/balances';
 import type {
   AssetProtocolBalances,
   BlockchainAssetBalances,
 } from '@/types/blockchain/balances';
+import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
 
-export function updateBalancesPrices(balances: AssetProtocolBalances, prices: AssetPrices): AssetProtocolBalances {
+type AssetPriceGetter = (asset: string) => BigNumber | undefined;
+
+export function updateBalancesPrices(
+  balances: AssetProtocolBalances,
+  prices: AssetPrices,
+  getAssetPriceInCurrentCurrency?: AssetPriceGetter,
+): AssetProtocolBalances {
   // Early return for empty objects
   const balanceKeys = Object.keys(balances);
   if (balanceKeys.length === 0)
@@ -30,20 +40,27 @@ export function updateBalancesPrices(balances: AssetProtocolBalances, prices: As
 
     const protocolResult: typeof protocols = {};
     const priceMultiplier = assetPrice.usdPrice ?? assetPrice.value;
+    const currentCurrencyPrice = getAssetPriceInCurrentCurrency?.(asset);
 
     for (const protocol of protocolKeys) {
       const balance = protocols[protocol];
-      protocolResult[protocol] = {
+      const newBalance: Balance = {
         amount: balance.amount,
         usdValue: balance.amount.times(priceMultiplier),
+        value: currentCurrencyPrice ? balance.amount.times(currentCurrencyPrice) : balance.value,
       };
+      protocolResult[protocol] = newBalance;
     }
     result[asset] = protocolResult;
   }
   return result;
 }
 
-export function updateExchangeBalancesPrices(balances: AssetBalances, prices: AssetPrices): AssetBalances {
+export function updateExchangeBalancesPrices(
+  balances: AssetBalances,
+  prices: AssetPrices,
+  getAssetPriceInCurrentCurrency?: AssetPriceGetter,
+): AssetBalances {
   // Early return for empty objects
   const balanceKeys = Object.keys(balances);
   if (balanceKeys.length === 0)
@@ -60,9 +77,11 @@ export function updateExchangeBalancesPrices(balances: AssetBalances, prices: As
       continue;
     }
 
+    const currentCurrencyPrice = getAssetPriceInCurrentCurrency?.(asset);
     result[asset] = {
       amount: assetInfo.amount,
       usdValue: assetInfo.amount.times(assetPrice.usdPrice ?? assetPrice.value),
+      value: currentCurrencyPrice ? assetInfo.amount.times(currentCurrencyPrice) : assetInfo.value,
     };
   }
   return result;
@@ -71,6 +90,7 @@ export function updateExchangeBalancesPrices(balances: AssetBalances, prices: As
 export function updateBlockchainAssetBalances(
   balances: Record<string, BlockchainAssetBalances>,
   prices: AssetPrices,
+  getAssetPriceInCurrentCurrency?: AssetPriceGetter,
 ): Record<string, BlockchainAssetBalances> {
   // Early return for empty objects
   const chainKeys = Object.keys(balances);
@@ -93,11 +113,25 @@ export function updateBlockchainAssetBalances(
     for (const address of addressKeys) {
       const { assets, liabilities } = chainBalances[address];
       chainResult[address] = {
-        assets: updateBalancesPrices(assets, prices),
-        liabilities: updateBalancesPrices(liabilities, prices),
+        assets: updateBalancesPrices(assets, prices, getAssetPriceInCurrentCurrency),
+        liabilities: updateBalancesPrices(liabilities, prices, getAssetPriceInCurrentCurrency),
       };
     }
     result[chain] = chainResult;
   }
   return result;
+}
+
+export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices: AssetPrices, assetPriceInCurrentCurrency: (asset: MaybeRef<string>) => ComputedRef<BigNumber>): ManualBalanceWithValue[] {
+  return data.map((item) => {
+    const assetPrice = prices[item.asset];
+    if (!assetPrice)
+      return item;
+
+    return {
+      ...item,
+      usdValue: item.amount.times(assetPrice.usdPrice ?? assetPrice.value),
+      value: item.amount.times(get(assetPriceInCurrentCurrency(item.asset))),
+    };
+  });
 }
