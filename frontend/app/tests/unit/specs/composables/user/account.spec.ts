@@ -145,9 +145,14 @@ describe('composables::user/account', () => {
       mockGetPassword = vi.mocked(getPassword);
     });
 
-    describe('shouldConfirmPassword', () => {
-      it('should return false when password confirmation is disabled', async () => {
+    describe('checkIfPasswordConfirmationNeeded', () => {
+      it('should not set needsPasswordConfirmation when password confirmation is disabled', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: false,
@@ -155,14 +160,39 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(false);
+        expect(get(needsPasswordConfirmation)).toBe(false);
       });
 
-      it('should return false when interval has not elapsed', async () => {
+      it('should not set needsPasswordConfirmation when no stored password exists', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue(undefined);
+
+        await frontendStore.updateSetting({
+          enablePasswordConfirmation: true,
+          lastPasswordConfirmed: 0,
+          passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
+        });
+
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
+
+        expect(get(needsPasswordConfirmation)).toBe(false);
+      });
+
+      it('should not set needsPasswordConfirmation when interval has not elapsed', async () => {
+        const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
@@ -170,15 +200,20 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(false);
+        expect(get(needsPasswordConfirmation)).toBe(false);
       });
 
-      it('should return true when interval has elapsed', async () => {
+      it('should set needsPasswordConfirmation when interval has elapsed', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
         const now = dayjs().unix();
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
@@ -186,16 +221,21 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(true);
+        expect(get(needsPasswordConfirmation)).toBe(true);
       });
 
-      it('should return true when exactly at the boundary (interval + 1 second)', async () => {
+      it('should set needsPasswordConfirmation when exactly at the boundary (interval + 1 second)', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
         const now = dayjs().unix();
         const interval = Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS;
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
@@ -203,16 +243,21 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: interval,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(true);
+        expect(get(needsPasswordConfirmation)).toBe(true);
       });
 
-      it('should return false when exactly at the interval boundary', async () => {
+      it('should not set needsPasswordConfirmation when exactly at the interval boundary', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
         const now = dayjs().unix();
         const interval = Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS;
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
@@ -220,16 +265,21 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: interval,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(false);
+        expect(get(needsPasswordConfirmation)).toBe(false);
       });
 
       it('should handle 7 days interval correctly', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
         const now = dayjs().unix();
         const sevenDaysInSeconds = 7 * Constraints.SECONDS_PER_DAY;
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
@@ -237,15 +287,20 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: sevenDaysInSeconds,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(true);
+        expect(get(needsPasswordConfirmation)).toBe(true);
       });
 
       it('should handle maximum interval (14 days) correctly', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
         const now = dayjs().unix();
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
@@ -253,15 +308,20 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(true);
+        expect(get(needsPasswordConfirmation)).toBe(true);
       });
 
-      it('should return false even when interval elapsed if confirmation is disabled', async () => {
+      it('should not set needsPasswordConfirmation even when interval elapsed if confirmation is disabled', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
         const now = dayjs().unix();
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: false, // Disabled
@@ -269,25 +329,37 @@ describe('composables::user/account', () => {
           passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
 
-        expect(result).toBe(false);
+        expect(get(needsPasswordConfirmation)).toBe(false);
       });
 
-      it('should return true when lastPasswordConfirmed is 0 (never confirmed)', async () => {
+      it('should initialize lastPasswordConfirmed when it is 0 (first time use)', async () => {
         const frontendStore = useFrontendSettingsStore();
+        const authStore = useSessionAuthStore();
+        const { needsPasswordConfirmation } = storeToRefs(authStore);
+
+        set(needsPasswordConfirmation, false);
+        mockGetPassword.mockResolvedValue('storedPassword');
+
+        const beforeTime = dayjs().unix();
 
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
-          lastPasswordConfirmed: 0, // Never confirmed
+          lastPasswordConfirmed: 0, // First time use
           passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
         });
 
-        const { shouldConfirmPassword } = useAutoLogin();
-        const result = shouldConfirmPassword();
+        const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+        await checkIfPasswordConfirmationNeeded('testUser');
+        const afterTime = dayjs().unix();
 
-        expect(result).toBe(true);
+        // Should not show dialog on first use
+        expect(get(needsPasswordConfirmation)).toBe(false);
+        // Should have initialized the timestamp
+        expect(frontendStore.lastPasswordConfirmed).toBeGreaterThanOrEqual(beforeTime);
+        expect(frontendStore.lastPasswordConfirmed).toBeLessThanOrEqual(afterTime);
       });
     });
 

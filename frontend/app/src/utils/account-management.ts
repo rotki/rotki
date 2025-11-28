@@ -29,12 +29,4 @@ export function getBackendUrl(): BackendSettings {
   };
 }
 
-export function lastLogin(): string {
-  return localStorage.getItem(KEY_LAST_LOGIN) ?? '';
-}
-
-export function setLastLogin(username: string): void {
-  if (!username)
-    localStorage.removeItem(KEY_LAST_LOGIN);
-  else localStorage.setItem(KEY_LAST_LOGIN, username);
-}
+export const lastLogin = useLocalStorage<string>(KEY_LAST_LOGIN, '');
