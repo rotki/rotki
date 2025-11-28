@@ -68,6 +68,7 @@ watch(locationName, (locationName) => {
     width="460px"
     temporary
     :stateless="openDialog"
+    class="flex flex-col"
     position="right"
   >
     <div class="flex items-center justify-between gap-2 w-full border-b border-default">
