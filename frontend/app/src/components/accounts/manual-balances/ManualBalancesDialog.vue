@@ -24,7 +24,7 @@ const stateUpdated = ref(false);
 const { setMessage } = useMessageStore();
 const { save: saveBalance } = useManualBalances();
 
-const { refreshPrices } = usePriceRefresh();
+const { refreshPrice, refreshPrices } = usePriceRefresh();
 
 const isEdit = computed<boolean>(() => isDefined(modelValue) && 'identifier' in get(modelValue));
 
@@ -51,12 +51,16 @@ async function save(): Promise<boolean> {
 
   set(loading, true);
 
-  await get(form)?.savePrice();
+  const newPricesSaved = await get(form)?.savePrice();
+
+  if (newPricesSaved) {
+    const asset = get(modelValue).asset;
+    startPromise(refreshPrice(asset));
+    startPromise(refreshPrices());
+  }
 
   const payload = get(modelValue);
   const status = await saveBalance(payload);
-
-  startPromise(refreshPrices(true));
 
   if (status.success) {
     set(modelValue, undefined);
