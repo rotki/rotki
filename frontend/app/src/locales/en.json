@@ -4429,7 +4429,8 @@
     "progress": "{progress} %"
   },
   "protocol_icon": {
-    "contains_manual": "Includes manual balance"
+    "contains_manual": "Includes manual balance",
+    "ds_proxy": "DS Proxy:"
   },
   "purge_selector": {
     "centralized_exchange_to_clear": {
