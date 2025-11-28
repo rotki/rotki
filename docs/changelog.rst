@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11005` Fix an issue where adding a new manual balance with a custom asset/price unnecessarily fetches prices for all assets.
 * :bug:`10997` Binance CSV import will now properly handle trades with different counts of spend versus buy entries.
 * :feature:`9230` rotki will now provide quick options for the date time picker.
 * :bug:`10979` Binance CSV import will now properly handle multiple trades with identical amounts at the same timestamp.

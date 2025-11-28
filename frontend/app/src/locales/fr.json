@@ -2531,7 +2531,6 @@
       "create_a_custom_asset": "Créer un actif personnalisé",
       "input_manual_price": "Ajouter et utiliser un prix manuel",
       "label": "Étiquette",
-      "price_asset": "Prix de l'actif",
       "tags": "Étiquettes"
     },
     "type": {

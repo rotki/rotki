@@ -113,8 +113,8 @@ async function validate(): Promise<boolean> {
   return await get(v$).$validate();
 }
 
-async function savePrice() {
-  await get(priceForm)?.savePrice(get(asset));
+async function savePrice(): Promise<boolean> {
+  return await get(priceForm)?.savePrice(get(asset)) || false;
 }
 
 watch(asset, (asset) => {

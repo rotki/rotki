@@ -103,14 +103,16 @@ async function searchAssetPrice() {
   setPriceAndPriceAsset();
 }
 
-async function savePrice(asset: string) {
+async function savePrice(asset: string): Promise<boolean> {
   if (get(isCustomPrice) && get(price) && get(priceAsset)) {
-    await addLatestPrice({
+    return await addLatestPrice({
       fromAsset: asset,
       price: get(price),
       toAsset: get(priceAsset),
     });
   }
+
+  return false;
 }
 
 watch(isCustomPrice, (isCustomPrice) => {
@@ -124,11 +126,7 @@ watch(isCustomPrice, (isCustomPrice) => {
   }
 });
 
-onMounted(() => {
-  searchAssetPrice();
-});
-
-watch(asset, () => {
+watchImmediate(asset, () => {
   searchAssetPrice();
 });
 
@@ -141,12 +139,37 @@ defineExpose({
 
 <template>
   <div>
-    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+    <div
+      v-if="fetchedPrice"
+      class="flex items-center gap-2 mb-8 justify-center"
+    >
+      <div
+        class="text-sm"
+        :class="{ 'text-rui-text-secondary': isCustomPrice }"
+      >
+        {{ t('manual_balances_form.fields.use_fetched_price') }}
+      </div>
+      <RuiSwitch
+        v-model="isCustomPrice"
+        hide-details
+        color="primary"
+        class="-my-2"
+        :disabled="pending || fetchingPrice"
+      />
+      <div
+        class="text-sm"
+        :class="{ 'text-rui-text-secondary': !isCustomPrice }"
+      >
+        {{ t('manual_balances_form.fields.input_manual_price') }}
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-y-2">
       <AmountInput
         v-model="price"
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
         variant="outlined"
+        class="[&_fieldset]:!rounded-r-none"
         :label="t('common.price')"
       />
       <AssetSelect
@@ -154,6 +177,8 @@ defineExpose({
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
         outlined
+        class="[&_fieldset]:!rounded-l-none"
+        :hint="t('manual_balances_form.fields.price_asset_hint')"
         :label="t('manual_balances_form.fields.price_asset')"
       />
     </div>
@@ -172,14 +197,5 @@ defineExpose({
         :fiat-currency="currencySymbol"
       />
     </div>
-
-    <RuiCheckbox
-      v-if="fetchedPrice"
-      v-model="isCustomPrice"
-      color="primary"
-      class="-my-2"
-      :disabled="pending"
-      :label="t('manual_balances_form.fields.input_manual_price')"
-    />
   </div>
 </template>

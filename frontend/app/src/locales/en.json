@@ -3461,8 +3461,10 @@
       "create_a_custom_asset": "Create a custom asset",
       "input_manual_price": "Add and use manual price",
       "label": "Label",
-      "price_asset": "Asset Price",
-      "tags": "Tags"
+      "price_asset": "in currency",
+      "price_asset_hint": "(e.g. USD, EUR, ETH)",
+      "tags": "Tags",
+      "use_fetched_price": "Use fetched price"
     },
     "type": {
       "liability": "Liability"
