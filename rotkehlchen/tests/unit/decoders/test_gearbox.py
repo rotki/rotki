@@ -2,16 +2,21 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_STAKING_CONTRACT
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import compute_cache_key
+from rotkehlchen.globaldb.cache import (
+    compute_cache_key,
+    globaldb_set_general_cache_values,
+    globaldb_set_unique_cache_value,
+)
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -20,6 +25,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -28,6 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
 @pytest.fixture(name='setup_gearbox_cache')
@@ -55,6 +62,97 @@ def _setup_gearbox_cache(globaldb):
             'INSERT OR REPLACE INTO general_cache(key, value, last_queried_ts) VALUES(?, ?, ?)',
             (compute_cache_key((CacheType.GEARBOX_POOL_LP_TOKENS, pool_address, str_chain_id, lp_token_address)), lp_token_address, now),  # noqa: E501
         )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
+@pytest.mark.parametrize('ethereum_accounts', [['0xfAebCbFbB35935e45afBD6b7EAfA93aB9c4fEc05']])
+def test_gearbox_deposit_non_farming_pool(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+        globaldb: 'GlobalDBHandler',
+):
+    """Test a deposit to a pool that doesn't have any farming/lp tokens."""
+    pool_token = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0x31426271449F60d37Cc5C9AEf7bD12aF3BdC7A94'),
+        chain_id=ethereum_inquirer.chain_id,
+        symbol='dDOLAV3',
+        name='Trade DOLA v3',
+        protocol=CPT_GEARBOX,
+        underlying_tokens=[UnderlyingToken(
+            (underlying_token := get_or_create_evm_token(
+                userdb=ethereum_inquirer.database,
+                evm_address=string_to_evm_address('0x865377367054516e17014CcdED1e7d814EDC9ce4'),
+                chain_id=ethereum_inquirer.chain_id,
+                symbol='DOLA',
+                name='Dola USD Stablecoin',
+            )).evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(
+                CacheType.GEARBOX_POOL_ADDRESS,
+                (chain_id_str := str(ethereum_inquirer.chain_id.serialize_for_db())),
+            ),
+            values=(pool_token.evm_address,),
+        )
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.GEARBOX_POOL_NAME, pool_token.evm_address, chain_id_str),
+            value='Trade DOLA v3',
+        )
+
+    tx_hash = deserialize_evm_tx_hash('0x20a0e17d547a76f797bab8c60c2aa65a6cdbceecb1f50f92a4de4408a461c963')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1754383247000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas := '0.000026282468494372'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=693,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=underlying_token,
+        amount=FVal(deposit_amount := '3162.315537981174820203'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} DOLA to Gearbox',
+        counterparty=CPT_GEARBOX,
+        address=pool_token.evm_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=694,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=pool_token,
+        amount=FVal(lp_amount := '3128.937248998913842767'),
+        location_label=user_address,
+        notes=f'Receive {lp_amount} dDOLAV3 after depositing in Gearbox',
+        counterparty=CPT_GEARBOX,
+        address=ZERO_ADDRESS,
+    )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

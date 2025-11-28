@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.gearbox.constants import (
     CHAIN_ID_TO_DATA_COMPRESSOR,
@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.utils import (
     maybe_notify_cache_query_status,
     maybe_notify_new_pools_status,
 )
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     InputError,
@@ -55,7 +55,7 @@ class GearboxPoolData:
     """
     pool_address: ChecksumEvmAddress
     pool_name: str
-    farming_pool_token: str
+    farming_pool_token: str | None
     lp_tokens: set[str]
     underlying_token: ChecksumEvmAddress | None = None
 
@@ -92,11 +92,12 @@ def save_gearbox_data_to_cache(
                 key_parts=(CacheType.GEARBOX_POOL_NAME, pool.pool_address, str_chain_id),
                 value=pool.pool_name,
             )
-            globaldb_set_unique_cache_value(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.GEARBOX_POOL_FARMING_TOKEN, pool.pool_address, str_chain_id),
-                value=pool.farming_pool_token,
-            )
+            if pool.farming_pool_token is not None:
+                globaldb_set_unique_cache_value(
+                    write_cursor=write_cursor,
+                    key_parts=(CacheType.GEARBOX_POOL_FARMING_TOKEN, pool.pool_address, str_chain_id),  # noqa: E501
+                    value=pool.farming_pool_token,
+                )
             if pool.lp_tokens is not None:
                 for idx, lp_token in enumerate(pool.lp_tokens):
                     globaldb_set_general_cache_values(
@@ -124,16 +125,14 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
                 key_parts=(CacheType.GEARBOX_POOL_NAME, pool_address, str_chain_id),
             )) is None:
                 continue
-            if (farming_pool_token := globaldb_get_unique_cache_value(
+            farming_pool_token = globaldb_get_unique_cache_value(
                 cursor=cursor,
                 key_parts=(CacheType.GEARBOX_POOL_FARMING_TOKEN, pool_address, str_chain_id),
-            )) is None:
-                continue
-            if len(token_lp_addresses := globaldb_get_general_cache_keys_and_values_like(
+            )
+            token_lp_addresses = globaldb_get_general_cache_keys_and_values_like(
                 cursor=cursor,
                 key_parts=(CacheType.GEARBOX_POOL_LP_TOKENS, pool_address, str_chain_id),
-            )) == ZERO:
-                continue
+            )
             pools[pool_address] = GearboxPoolData(
                 pool_address=pool_address,
                 pool_name=pool_name,
@@ -201,6 +200,17 @@ def ensure_gearbox_tokens_existence(
                 log.error(f'Skipping pool {pool} because {pool.underlying_token} is not a valid ERC20 token. {e}')  # noqa: E501
                 continue
 
+        try:  # Ensure the pool token itself is present
+            register_token(
+                evm_inquirer=evm_inquirer,
+                token_address=pool.pool_address,
+                pool=pool,
+                encounter=encounter,
+            )
+        except NotERC20Conformant as e:
+            log.error(f'Skipping pool {pool} because {pool.pool_address} is not a valid ERC20 token. {e}')  # noqa: E501
+            continue
+
         # ensure the lp tokens exist in the db
         lp_tokens_from_db = set()
         for token_address in pool.lp_tokens:
@@ -220,12 +230,13 @@ def ensure_gearbox_tokens_existence(
                 continue
 
         # ensure the farm token exist in the db and get the identifier
-        pool.farming_pool_token = register_token(
-            evm_inquirer=evm_inquirer,
-            token_address=pool.farming_pool_token,
-            pool=pool,
-            encounter=encounter,
-        ).identifier
+        if pool.farming_pool_token is not None:
+            pool.farming_pool_token = register_token(
+                evm_inquirer=evm_inquirer,
+                token_address=pool.farming_pool_token,
+                pool=pool,
+                encounter=encounter,
+            ).identifier
         pool.lp_tokens = lp_tokens_from_db
         verified_pools.append(pool)
     return verified_pools
@@ -315,6 +326,11 @@ def query_gearbox_data_from_chain(
     ).call(node_inquirer=evm_inquirer, method_name='getPoolsV3List')
     new_pools: list[GearboxPoolData] = []
     last_notified_ts = Timestamp(0)
+    staking_token_encoded = EvmContract(
+        address=ZERO_ADDRESS,
+        abi=evm_inquirer.contracts.abi('GEARBOX_FARMING_POOL'),
+        deployed_block=0,  # is not used here
+    ).encode(method_name='stakingToken')
     for pool_data in pools_data:
         last_notified_ts = maybe_notify_new_pools_status(
             msg_aggregator=msg_aggregator,
@@ -340,33 +356,27 @@ def query_gearbox_data_from_chain(
             log.error(f'Could not deserialize evm address while decoding gearbox pool {pool_address} information from data_compressor: {e}')  # noqa: E501
             continue
 
-        if (gearbox_pool_tokens := get_gearbox_pool_tokens(evm_inquirer, pool_data, underlying_token_address)) is None:  # noqa: E501
-            log.error(f'Could not get lp and farming tokens for gearbox pool {pool_address} on {evm_inquirer.chain_name}')  # noqa: E501
-            continue
-
-        calls = [
-            (
-                (_contract := EvmContract(
-                    address=address,
-                    abi=evm_inquirer.contracts.abi('GEARBOX_FARMING_POOL'),
-                    deployed_block=0,  # is not used here
-                )).address,
-                _contract.encode(method_name='stakingToken'),
-            )
-            for address in gearbox_pool_tokens
-        ]
-        output = evm_inquirer.multicall_2(require_success=False, calls=calls)
+        # Optionally process the farming pool token and other lp tokens
+        # (some pools only use the pool token and underlying token).
         farming_pool_token = None
         lp_token_ids: set[str] = set()
-        for token_address, (is_farming_pool, _), in zip(gearbox_pool_tokens, output, strict=True):
-            if is_farming_pool:
-                farming_pool_token = token_address
-            else:
-                lp_token_ids.add(token_address)
-
-        if farming_pool_token is None:
-            log.error(f'Gearbox pool {pool_address} on {evm_inquirer.chain_name} has no farming tokens. Expected 1')  # noqa: E501
-            continue
+        if (
+            (gearbox_pool_tokens := get_gearbox_pool_tokens(
+                inquirer=evm_inquirer,
+                pool_data=pool_data,
+                underlying_token_address=underlying_token_address,
+            )) is not None and
+            len(gearbox_pool_tokens) != 0
+        ):
+            output = evm_inquirer.multicall_2(require_success=False, calls=[
+                (address, staking_token_encoded)
+                for address in gearbox_pool_tokens
+            ])
+            for token_address, (is_farming_pool, _), in zip(gearbox_pool_tokens, output, strict=True):  # noqa: E501
+                if is_farming_pool:
+                    farming_pool_token = token_address
+                else:
+                    lp_token_ids.add(token_address)
 
         new_pools.append(GearboxPoolData(
             pool_address=pool_address,

@@ -33,6 +33,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.constants.assets import A_WETH, A_WETH_ARB, A_WETH_OPT
+from rotkehlchen.constants.resolver import identifier_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -115,7 +116,14 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
             log.error(f'Could not find {self.node_inquirer.chain_name} Gearbox pool info for {context.tx_log.address}')  # noqa: E501
             return None
 
-        token = EvmToken(pool_info.farming_pool_token)
+        if (
+            pool_info.farming_pool_token is None or
+            (farming_token_address := identifier_to_evm_address(pool_info.farming_pool_token)) is None or  # noqa: E501
+            (token := self.base.get_evm_token(address=farming_token_address)) is None
+        ) and (token := self.base.get_evm_token(address=pool_info.pool_address)) is None:
+            log.error(f'Could not find {self.node_inquirer.chain_name} Gearbox pool token for {context.tx_log.address}')  # noqa: E501
+            return None
+
         if address_offset is None:
             try:
                 address_offset = 0 if self._is_weth_pool(token) is True else 32
@@ -191,7 +199,10 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                     to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
                     to_notes=self._get_note_by_pool(pool_info, asset, shares),
                     to_counterparty=CPT_GEARBOX,
-                ) for asset_id in pool_info.lp_tokens.union({pool_info.farming_pool_token})
+                ) for asset_id in (
+                    pool_info.lp_tokens if pool_info.farming_pool_token is None
+                    else pool_info.lp_tokens.union({pool_info.farming_pool_token})
+                )
             ]
 
         return EvmDecodingOutput(action_items=action_items)
