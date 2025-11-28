@@ -42,11 +42,6 @@ export default rotki({
     enableNoUnusedKeys: 'ci',
   },
 }, {
-  files: ['**/src/**/*.@(ts|vue|js)'],
-  rules: {
-    'perfectionist/sort-objects': 'error',
-  },
-}, {
   files: ['**/src/**/*.ts'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',

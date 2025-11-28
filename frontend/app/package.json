@@ -104,6 +104,7 @@
     "electron-store": "10.1.0",
     "fake-indexeddb": "6.1.0",
     "flush-promises": "1.0.2",
+    "happy-dom": "20.0.10",
     "jsdom": "26.1.0",
     "msw": "2.10.5",
     "npm-run-all2": "8.0.4",
