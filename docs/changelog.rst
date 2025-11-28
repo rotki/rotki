@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Users can now click a location in the manual balance summary on the dashboard to filter by that location.
 * :bug:`-` rotki will now shows the protocol icon from DS Proxy correctly.
 * :bug:`11005` Fix an issue where adding a new manual balance with a custom asset/price unnecessarily fetches prices for all assets.
 * :bug:`10997` Binance CSV import will now properly handle trades with different counts of spend versus buy entries.
