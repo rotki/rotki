@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 import { type BigNumber, toCapitalCase } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -12,9 +13,12 @@ const props = defineProps<{
   amount: BigNumber;
 }>();
 
-const manualBalancesRoute = Routes.BALANCES_MANUAL;
-
 const { name } = toRefs(props);
+
+const manualBalancesRoute = computed<RouteLocationRaw>(() => ({
+  path: `${Routes.BALANCES_MANUAL}/assets`,
+  query: { location: get(name) },
+}));
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { locationData } = useLocations();
