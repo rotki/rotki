@@ -1,3 +1,4 @@
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import (
     EVM_TOKEN_KINDS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
@@ -24,6 +25,14 @@ def evm_address_to_identifier(
     if collectible_id is not None:
         return ident + f'/{collectible_id}'
     return ident
+
+
+def identifier_to_evm_address(identifier: str) -> ChecksumEvmAddress | None:
+    """Parse CAIPs identifier format and return the EVM address or None on error."""
+    if len(parts := identifier.split(':')) < 3 or parts[0] != EVM_CHAIN_DIRECTIVE:
+        return None
+
+    return string_to_evm_address(parts[2].split('/')[0])  # Don't include the token id for erc721
 
 
 def tokenid_to_collectible_id(identifier: str) -> str | None:
