@@ -5,11 +5,9 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   paramsSerializer,
-  validStatus,
   validWithParamsSessionAndExternalService,
 } from '@/services/utils';
 import {
-  NonFungibleBalance,
   NonFungibleBalancesCollectionResponse,
   type NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
@@ -17,7 +15,6 @@ import {
 interface UseNftBalancesApiReturn {
   fetchNfBalancesTask: (payload: NonFungibleBalancesRequestPayload) => Promise<PendingTask>;
   fetchNfBalances: (payload: NonFungibleBalancesRequestPayload) => Promise<NonFungibleBalancesCollectionResponse>;
-  getNftBalanceById: (identifier: string) => Promise<NonFungibleBalance>;
 }
 
 export function useNftBalancesApi(): UseNftBalancesApiReturn {
@@ -48,23 +45,8 @@ export function useNftBalancesApi(): UseNftBalancesApiReturn {
     return NonFungibleBalancesCollectionResponse.parse(response);
   };
 
-  const getNftBalanceById = async (identifier: string): Promise<NonFungibleBalance> => {
-    const response = await api.instance.post<ActionResult<NonFungibleBalance>>(
-      '/nfts',
-      {
-        nftId: identifier,
-      },
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    return NonFungibleBalance.parse(response);
-  };
-
   return {
     fetchNfBalances,
     fetchNfBalancesTask,
-    getNftBalanceById,
   };
 }

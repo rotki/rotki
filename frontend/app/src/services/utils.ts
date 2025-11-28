@@ -3,6 +3,7 @@ import type { AxiosInstance, AxiosResponse, ParamsSerializerOptions } from 'axio
 import type { PendingTask } from '@/types/task';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { ApiValidationError } from '@/types/api/errors';
+import { HTTPStatus } from '@/types/api/http';
 
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 
@@ -14,7 +15,7 @@ export function handleResponse<T>(
   if (result)
     return result;
 
-  if (response.status === 400)
+  if (response.status === HTTPStatus.BAD_REQUEST)
     throw new ApiValidationError(message);
 
   throw new Error(message);
@@ -75,7 +76,13 @@ function isValid(validStatuses: number[], status: number): boolean {
  * @return The validity of the status code
  */
 export function validWithParamsSessionAndExternalService(status: number): boolean {
-  return isValid([200, 400, 401, 409, 502], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.CONFLICT,
+    HTTPStatus.BAD_GATEWAY,
+  ], status);
 }
 
 /**
@@ -90,7 +97,14 @@ export function validWithParamsSessionAndExternalService(status: number): boolea
  * @return The validity of the status code
  */
 export function validWithSessionAndExternalService(status: number): boolean {
-  return isValid([200, 400, 401, 403, 409, 502], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.FORBIDDEN,
+    HTTPStatus.CONFLICT,
+    HTTPStatus.BAD_GATEWAY,
+  ], status);
 }
 
 /**
@@ -104,7 +118,12 @@ export function validWithSessionAndExternalService(status: number): boolean {
  * @return The validity of the status code
  */
 export function validStatus(status: number): boolean {
-  return isValid([200, 400, 401, 409], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.CONFLICT,
+  ], status);
 }
 
 /**
@@ -116,7 +135,12 @@ export function validStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validFileOperationStatus(status: number): boolean {
-  return isValid([200, 400, 401, 507], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.INSUFFICIENT_STORAGE,
+  ], status);
 }
 
 /**
@@ -131,7 +155,10 @@ export function validFileOperationStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validWithoutSessionStatus(status: number): boolean {
-  return isValid([200, 400], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.BAD_REQUEST,
+  ], status);
 }
 
 /**
@@ -145,7 +172,11 @@ export function validWithoutSessionStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validWithSessionStatus(status: number): boolean {
-  return isValid([200, 401, 409], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.CONFLICT,
+  ], status);
 }
 
 /**
@@ -158,7 +189,14 @@ export function validWithSessionStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validAccountOperationStatus(status: number): boolean {
-  return isValid([200, 300, 400, 401, 409, 542], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.MULTIPLE_CHOICES,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.CONFLICT,
+    HTTPStatus.DB_UPGRADE_ERROR,
+  ], status);
 }
 
 /**
@@ -171,7 +209,12 @@ export function validAccountOperationStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validAuthorizedStatus(status: number): boolean {
-  return isValid([200, 400, 401, 409], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.CONFLICT,
+  ], status);
 }
 
 /**
@@ -188,5 +231,11 @@ export function validAuthorizedStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validTaskStatus(status: number): boolean {
-  return isValid([200, 400, 401, 404, 502], status);
+  return isValid([
+    HTTPStatus.OK,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.NOT_FOUND,
+    HTTPStatus.BAD_GATEWAY,
+  ], status);
 }

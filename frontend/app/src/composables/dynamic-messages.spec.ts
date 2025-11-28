@@ -1,12 +1,12 @@
 import type { Pinia } from 'pinia';
 import type { DashboardMessage, WelcomeMessage } from '@/types/dynamic-messages';
+import { server } from '@test/setup-files/server';
 import dayjs from 'dayjs';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useDynamicMessages } from '@/composables/dynamic-messages';
+import { serializer, useDynamicMessages } from '@/composables/dynamic-messages';
 import { camelCaseTransformer } from '@/services/axios-transformers';
 import { usePremiumStore } from '@/store/session/premium';
-import { server } from '../../setup-files/server';
 
 const period = {
   start: dayjs('2023/10/11').unix(),
@@ -292,5 +292,23 @@ describe('useDynamicMessages', () => {
     expect(messages).toHaveLength(2);
     expect(messages[0]).toMatchObject(camelCaseTransformer(premiumUserMessage));
     expect(messages[1]).toMatchObject(camelCaseTransformer(generalMessage));
+  });
+});
+
+describe('serializer', () => {
+  it('serializes and deserializes correctly', () => {
+    const data = { key: 'value', number: 42 };
+
+    const serialized = serializer.write(data);
+    expect(serialized).toBe('{"key":"value","number":42}');
+
+    const deserialized = serializer.read(serialized);
+    expect(deserialized).toEqual(data);
+  });
+
+  it('handles null/empty values', () => {
+    expect(serializer.read(null)).toBeNull();
+    expect(serializer.read('')).toBeNull();
+    expect(serializer.read(undefined)).toBeNull();
   });
 });

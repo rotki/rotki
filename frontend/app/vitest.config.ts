@@ -15,7 +15,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       globals: true,
-      environment: 'jsdom',
+      environment: 'happy-dom',
       testTimeout: 15_000,
       env: {
         TZ: 'UTC',

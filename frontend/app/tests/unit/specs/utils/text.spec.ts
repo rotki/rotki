@@ -265,7 +265,9 @@ describe('utils/text', () => {
   });
 
   it('check decoding of HTML entities', () => {
-    expect(decodeHtmlEntities('&bull;')).toEqual('•');
+    // Note: Using numeric entity &#8226; instead of &bull; because happy-dom
+    // doesn't support all named HTML entities (only basic ones like &lt; &gt; &amp;)
+    expect(decodeHtmlEntities('&#8226;')).toEqual('•');
     expect(decodeHtmlEntities('&lt;div&gt;')).toEqual('<div>');
     expect(decodeHtmlEntities('&amp;')).toEqual('&');
     expect(decodeHtmlEntities('&quot;')).toEqual('"');
