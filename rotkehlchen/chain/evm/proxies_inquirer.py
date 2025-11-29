@@ -1,4 +1,3 @@
-
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
@@ -205,13 +204,13 @@ class EvmProxiesInquirer:
         with self.node_inquirer.database.conn.read_ctx() as cursor:
             accounts = self.node_inquirer.database.get_blockchain_accounts(cursor)
 
-        for _type in ProxyType:
-            if proxy_type is None or proxy_type == _type:
-                mapping = getattr(self, f'get_or_query_{_type}_proxy')(
+        for i_type in ProxyType:
+            if proxy_type is None or proxy_type == i_type:
+                mapping = getattr(self, f'get_or_query_{i_type}_proxy')(
                     addresses=accounts.get(self.node_inquirer.blockchain),
                 )
-                self.address_to_proxies[_type] = mapping
-                self.proxy_to_address[_type] = {proxy: addr for addr, proxies in mapping.items() for proxy in proxies}  # noqa: E501
+                self.address_to_proxies[i_type] = mapping
+                self.proxy_to_address[i_type] = {proxy: addr for addr, proxies in mapping.items() for proxy in proxies}  # noqa: E501
 
         self.last_proxy_mapping_query_ts = ts_now()
         if proxy_type is not None:  # return a copy to avoid "dictionary modified during iteration errors"  # noqa: E501

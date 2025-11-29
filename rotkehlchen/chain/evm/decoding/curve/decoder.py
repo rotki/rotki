@@ -240,12 +240,12 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         if return_event is not None:  # find withdrawn assets through the logs
             withdrawn_assets = [event.asset for event in withdrawal_events] + [
                 withdrawn_asset
-                for _log in all_logs[all_logs.index(tx_log) + 1:] if (
-                    (_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
-                    (bytes_to_address(_log.topics[1]) == return_event.address) and
-                    self.base.is_tracked(bytes_to_address(_log.topics[2])) and
+                for i_log in all_logs[all_logs.index(tx_log) + 1:] if (
+                    (i_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
+                    (bytes_to_address(i_log.topics[1]) == return_event.address) and
+                    self.base.is_tracked(bytes_to_address(i_log.topics[2])) and
                     (withdrawn_asset := self._read_curve_asset(
-                        asset_address=_log.address,
+                        asset_address=i_log.address,
                         encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
                     )) is not None
                 )
@@ -336,8 +336,8 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 event.event_subtype == HistoryEventSubType.NONE
             ):
                 is_deposit_and_stake = any(  # check if this is a deposit-and-stake operation
-                    _log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE
-                    for _log in all_logs
+                    i_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE
+                    for i_log in all_logs
                 )
 
                 if (
@@ -378,14 +378,14 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                     # we need to check if there is a transfer targeting the same contract address
                     # (should not be the user address) and if so save the address of the pool
                     # example: https://gnosisscan.io/tx/0xcbeaaee59405d5f7fd456dc510f1b841cc1329cd9624255ce64c894ac6643bd7  # noqa: E501
-                    for _log in all_logs:
+                    for i_log in all_logs:
                         if (
-                            _log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                            bytes_to_address(_log.topics[1]) == ZERO_ADDRESS and
-                            bytes_to_address(_log.topics[2]) == user_or_contract_address and
-                            _log.log_index < tx_log.log_index
+                            i_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                            bytes_to_address(i_log.topics[1]) == ZERO_ADDRESS and
+                            bytes_to_address(i_log.topics[2]) == user_or_contract_address and
+                            i_log.log_index < tx_log.log_index
                         ):
-                            event.extra_data = {'address_pool_tokens_received': _log.address}
+                            event.extra_data = {'address_pool_tokens_received': i_log.address}
                             break
             elif (
                 event.event_type == HistoryEventType.DEPOSIT and
@@ -403,24 +403,24 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
         if received_asset is None:  # find lp_tokens through the logs
             lp_and_gauge_token_addresses = None
-            for _log in all_logs:
+            for x_log in all_logs:
                 # first search for the pool address, because it may come after the receive event
-                if _log.topics[0] in ADD_LIQUIDITY_EVENTS:
+                if x_log.topics[0] in ADD_LIQUIDITY_EVENTS:
                     lp_and_gauge_token_addresses = get_lp_and_gauge_token_addresses(
-                        pool_address=_log.address,
+                        pool_address=x_log.address,
                         chain_id=self.node_inquirer.chain_id,
                     )
 
             if lp_and_gauge_token_addresses is not None:
                 deposit_addresses = {event.address for event in deposit_events} | {ZERO_ADDRESS}
-                for _log in all_logs[all_logs.index(tx_log) + 1:]:
+                for i_log in all_logs[all_logs.index(tx_log) + 1:]:
                     if (  # find the first log after deposit, where user receives the token from a deposit address  # noqa: E501
-                        (_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
-                        (bytes_to_address(_log.topics[1]) in deposit_addresses) and
-                        self.base.is_tracked(bytes_to_address(_log.topics[2])) and
-                        _log.address in lp_and_gauge_token_addresses and
+                        (i_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
+                        (bytes_to_address(i_log.topics[1]) in deposit_addresses) and
+                        self.base.is_tracked(bytes_to_address(i_log.topics[2])) and
+                        i_log.address in lp_and_gauge_token_addresses and
                         (received_asset := self._read_curve_asset(
-                            asset_address=_log.address,
+                            asset_address=i_log.address,
                             encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
                         )) is not None
                     ):

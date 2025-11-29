@@ -238,12 +238,12 @@ class Liquity(EthereumModule):
             # make sure that variables always have a value set. It is guaranteed that the response
             # will have the desired format because we include and process failed queries.
             key, asset, gain_info = keys[0], assets[0], 0
-            for method_idx, (method, _asset, _key) in enumerate(zip(methods, assets, keys, strict=True)):  # noqa: E501
+            for method_idx, (method, i_asset, i_key) in enumerate(zip(methods, assets, keys, strict=True)):  # noqa: E501
                 # get the asset, key used in the response and the amount based on the index
                 # for this address
                 if idx % 3 == method_idx:
-                    asset = _asset
-                    key = _key
+                    asset = i_asset
+                    key = i_key
                     gain_info = contract.decode(result, method, arguments=[current_address])[0]
                     break
 

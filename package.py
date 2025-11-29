@@ -347,7 +347,7 @@ class WindowsPackaging:
         dll_file = build_dir / dll_filename
 
         url = f'https://github.com/rotki/rotki-build/raw/main/miniupnpc/dll/2.2.6/{dll_filename}'
-        urllib.request.urlretrieve(url, dll_file)  # noqa: S310
+        urllib.request.urlretrieve(url, dll_file)
 
         logger.info(f'moving {dll_file} to {python_dir}')
 

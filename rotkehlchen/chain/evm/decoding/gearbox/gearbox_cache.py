@@ -346,12 +346,12 @@ def query_gearbox_data_from_chain(
 
         calls = [
             (
-                (_contract := EvmContract(
+                (s_contract := EvmContract(
                     address=address,
                     abi=evm_inquirer.contracts.abi('GEARBOX_FARMING_POOL'),
                     deployed_block=0,  # is not used here
                 )).address,
-                _contract.encode(method_name='stakingToken'),
+                s_contract.encode(method_name='stakingToken'),
             )
             for address in gearbox_pool_tokens
         ]

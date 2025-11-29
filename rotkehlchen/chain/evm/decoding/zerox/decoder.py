@@ -199,14 +199,14 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
                     receive_event=receive_address_to_events[zero_x_address],
                 )
 
-        for _log in all_logs:
-            send_event = send_address_to_events.get(_log.address)
-            receive_event = receive_address_to_events.get(_log.address)
+        for i_log in all_logs:
+            send_event = send_address_to_events.get(i_log.address)
+            receive_event = receive_address_to_events.get(i_log.address)
             if (
-                _log.topics[0] in UNISWAP_SIGNATURES and
+                i_log.topics[0] in UNISWAP_SIGNATURES and
                 len(used_router_address := self.router_addresses_set & {
-                    bytes_to_address(_log.topics[1]),  # 0x is sender
-                    bytes_to_address(_log.topics[2]),  # 0x is receiver
+                    bytes_to_address(i_log.topics[1]),  # 0x is sender
+                    bytes_to_address(i_log.topics[2]),  # 0x is receiver
                 }) > 0
             ):
                 # Some events are already being decoded as a swap through uniswap,
@@ -223,10 +223,10 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
             if (  # sent_token is transferred from tracked sender to 0x
                 send_event is not None and
                 send_event.asset.is_evm_token() and
-                _log.address == send_event.asset.evm_address and  # type: ignore[attr-defined]  # is EVM token
-                _log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                bytes_to_address(_log.topics[1]) == send_event.location_label and
-                bytes_to_address(_log.topics[2]) == self.flash_wallet_address
+                i_log.address == send_event.asset.evm_address and  # type: ignore[attr-defined]  # is EVM token
+                i_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                bytes_to_address(i_log.topics[1]) == send_event.location_label and
+                bytes_to_address(i_log.topics[2]) == self.flash_wallet_address
             ):
                 self._update_send_receive_fee_events(send_event=send_event)
 

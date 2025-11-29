@@ -703,14 +703,14 @@ class HistoryEventSchema(
         if (raw_tx_refs := data['tx_refs']) is not None:
             tx_refs = []
             for tx_ref in raw_tx_refs:
-                for _type, deserializer in (
+                for i_type, deserializer in (
                     (ChainType.BITCOIN, deserialize_btc_tx_id),
                     (ChainType.EVM, EVMTransactionHashField.deserialize_string_value),
                     (ChainType.SOLANA, SolanaSignatureField.deserialize_string_value),
                 ):
                     try:
                         tx_refs.append(deserializer(tx_ref))
-                        tx_ref_types.add(_type)
+                        tx_ref_types.add(i_type)
                         break
                     except (ValidationError, DeserializationError):
                         continue
