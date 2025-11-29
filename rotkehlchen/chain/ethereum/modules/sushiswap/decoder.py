@@ -129,9 +129,9 @@ class SushiswapDecoder(EvmDecoderInterface):
         See: https://docs.sushi.com/contracts/red-snwapper
         """
         tx_log = None
-        for _tx_log in all_logs:
-            if _tx_log.topics[0] == REDSNWAP_ROUTE_PROCESSOR_TOPIC:
-                tx_log = _tx_log
+        for i_tx_log in all_logs:
+            if i_tx_log.topics[0] == REDSNWAP_ROUTE_PROCESSOR_TOPIC:
+                tx_log = i_tx_log
                 break
         else:
             log.error(f'Failed to find REDSNWAP_ROUTE_PROCESSOR_TOPIC in transaction {transaction}. This should not happen')  # noqa: E501

@@ -255,21 +255,21 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         user_address = token_events[0].location_label  # cannot be empty here.
         wrapped_events_assets = {evt.asset for evt in wrapped_events}
         earned_event = None
-        for _log in all_logs:
+        for i_log in all_logs:
             if (  # find the mint or burn event of aToken
-                _log.topics[0] in (MINT, BURN) and (
+                i_log.topics[0] in (MINT, BURN) and (
                     # topics[2] is on_behalf_of, should be equal to the value we got above
-                    bytes_to_address(_log.topics[2]) == user_address
+                    bytes_to_address(i_log.topics[2]) == user_address
                 ) and (
                     balance_increase := asset_normalized_value(
-                        amount=int.from_bytes(_log.data[32:64]),
+                        amount=int.from_bytes(i_log.data[32:64]),
                         asset=(earned_token := self.base.get_or_create_evm_token(
-                            address=_log.address,
+                            address=i_log.address,
                         )),
                     )
                 ) > 0
             ):  # parse the mint amount and balance_increase
-                if _log.topics[0] == BURN and (earned_token := get_single_underlying_token(earned_token)) is None:  # type: ignore[assignment]  # we ignore if None  # noqa: E501
+                if i_log.topics[0] == BURN and (earned_token := get_single_underlying_token(earned_token)) is None:  # type: ignore[assignment]  # we ignore if None  # noqa: E501
                     log.error(f'Failed to find underlying token for Aave v3 token {earned_token}. Skipping')  # noqa: E501
                     continue
 
@@ -281,7 +281,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 ):
                     decoded_events.append(earned_event := self.base.make_event_from_transaction(
                         transaction=transaction,
-                        tx_log=_log,
+                        tx_log=i_log,
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.INTEREST,
                         asset=earned_token,

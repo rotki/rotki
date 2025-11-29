@@ -1533,7 +1533,7 @@ def test_find_uniswap_v4_position_price(database: 'DBHandler', inquirer_defi: 'I
 def test_fiat_to_fiat(inquirer):
     """Test that fiat to fiat works for current prices and goes through the fiat oracle path"""
     inquirer.set_oracles_order([CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])
-    with patch.object(Inquirer, '_query_fiat_pair', wraps=Inquirer._query_fiat_pair) as _query_fiat_pair:  # noqa: E501
+    with patch.object(Inquirer, '_query_fiat_pair', wraps=Inquirer._query_fiat_pair) as _query_fiat_pair:  # noqa: E501, RUF052
         price = inquirer.find_price(A_USD, A_EUR)
         assert price == FVal('0.924303')
         _query_fiat_pair.assert_called_once_with(

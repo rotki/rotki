@@ -107,9 +107,9 @@ dev = [
 lint = [
     "mypy==1.18.2",
     "mypy-extensions==1.1.0",
-    "pylint==4.0.2",
-    "astroid==4.0.1",  # engine of pylint, upgrade them together
-    "ruff==0.14.3",
+    "pylint==4.0.3",
+    "astroid==4.0.2",  # engine of pylint, upgrade them together
+    "ruff==0.14.7",
     "double-indent-rotki==0.1.7",  # our fork of double indent
     "pyright==1.1.407",
     # type packages used by mypy

@@ -2890,7 +2890,7 @@ class RestAPI:
                 )
             else:
                 chains = [chain] if chain is not None else CHAINS_WITH_TRANSACTIONS
-                for chain_location in [Location.from_chain(_chain) for _chain in chains]:
+                for chain_location in [Location.from_chain(i_chain) for i_chain in chains]:
                     dbevents.reset_events_for_redecode(
                         write_cursor=write_cursor,
                         location=chain_location,

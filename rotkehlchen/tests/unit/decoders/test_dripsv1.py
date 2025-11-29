@@ -48,8 +48,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
     ]
     assert events[:2] == expected_events
     assert len(events) == 10
-    idx = 2
-    for event, (amount, target) in zip(
+    for idx, (event, (amount, target)) in enumerate(zip(
             events[2:],
             [
                 ('115.835582561728293714', '0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa'),
@@ -61,7 +60,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
                 ('115.835582561728293714', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
                 ('23.167116512345658743', '0xf503017D7baF7FBC0fff7492b751025c6A78179b'),
             ], strict=False,
-    ):
+    ), 2):
         assert event == EvmEvent(
             tx_ref=tx_hash,
             sequence_index=idx,
@@ -76,7 +75,6 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_DRIPS,
             address=string_to_evm_address('0x73043143e0A6418cc45d82D4505B096b802FD365'),
         )
-        idx += 1
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
