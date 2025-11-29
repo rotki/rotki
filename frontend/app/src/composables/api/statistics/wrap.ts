@@ -1,8 +1,6 @@
-import { type ActionResult, NumericString } from '@rotki/common';
+import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { nonEmptyProperties } from '@/utils/data';
+import { api } from '@/modules/api/rotki-api';
 
 export const WrapStatisticsSchema = z.object({
   ethOnGas: NumericString,
@@ -38,19 +36,18 @@ interface WrapStatisticsApi {
 
 export function useWrapStatisticsApi(): WrapStatisticsApi {
   const fetchWrapStatistics = async ({ end, start }: { end: number; start: number }): Promise<WrapStatisticsResult> => {
-    const response = await api.instance.post<ActionResult<WrapStatisticsResult>>(
+    const response = await api.post<WrapStatisticsResult>(
       '/statistics/events',
-      snakeCaseTransformer(nonEmptyProperties({
-        from_timestamp: start,
-        to_timestamp: end,
-      })),
+      {
+        fromTimestamp: start,
+        toTimestamp: end,
+      },
+      {
+        filterEmptyProperties: true,
+      },
     );
 
-    if (!response?.data?.result) {
-      throw new Error('Invalid response format');
-    }
-
-    return WrapStatisticsSchema.parse(response.data.result);
+    return WrapStatisticsSchema.parse(response);
   };
 
   return {

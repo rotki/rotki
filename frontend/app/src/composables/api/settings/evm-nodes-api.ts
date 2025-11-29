@@ -1,8 +1,6 @@
 import type { Ref } from 'vue';
-import { type ActionResult, Blockchain } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { Blockchain } from '@rotki/common';
+import { api } from '@/modules/api/rotki-api';
 import { type BlockchainRpcNode, BlockchainRpcNodeList } from '@/types/settings/rpc';
 
 interface UseEvmNodesApiReturn {
@@ -17,38 +15,19 @@ export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)): Us
   const url = computed<string>(() => `/blockchains/${get(chain)}/nodes`);
 
   const fetchEvmNodes = async (): Promise<BlockchainRpcNodeList> => {
-    const response = await api.instance.get<ActionResult<BlockchainRpcNodeList>>(get(url));
-    return BlockchainRpcNodeList.parse(handleResponse(response));
+    const response = await api.get<BlockchainRpcNodeList>(get(url));
+    return BlockchainRpcNodeList.parse(response);
   };
 
-  const addEvmNode = async (node: Omit<BlockchainRpcNode, 'identifier'>): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(get(url), snakeCaseTransformer(node), {
-      validateStatus: validStatus,
-    });
-    return handleResponse(response);
-  };
+  const addEvmNode = async (node: Omit<BlockchainRpcNode, 'identifier'>): Promise<boolean> => api.put<boolean>(get(url), node);
 
-  const editEvmNode = async (node: BlockchainRpcNode): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(get(url), snakeCaseTransformer(node), {
-      validateStatus: validStatus,
-    });
-    return handleResponse(response);
-  };
+  const editEvmNode = async (node: BlockchainRpcNode): Promise<boolean> => api.patch<boolean>(get(url), node);
 
-  const deleteEvmNode = async (identifier: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(get(url), {
-      data: snakeCaseTransformer({ identifier }),
-      validateStatus: validStatus,
-    });
-    return handleResponse(response);
-  };
+  const deleteEvmNode = async (identifier: number): Promise<boolean> => api.delete<boolean>(get(url), {
+    body: { identifier },
+  });
 
-  const reConnectNode = async (identifier?: number): Promise<boolean> => {
-    const response = await api.instance.post<ActionResult<boolean>>(get(url), snakeCaseTransformer({ identifier }), {
-      validateStatus: validStatus,
-    });
-    return handleResponse(response);
-  };
+  const reConnectNode = async (identifier?: number): Promise<boolean> => api.post<boolean>(get(url), { identifier });
 
   return {
     addEvmNode,

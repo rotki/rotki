@@ -1,6 +1,6 @@
 import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { snakeCaseTransformer } from '@/modules/api/transformers';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { PrivacyMode } from '@/types/session';

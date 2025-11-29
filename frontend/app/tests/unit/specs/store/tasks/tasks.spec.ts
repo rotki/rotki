@@ -1,7 +1,6 @@
 import type { ActionResult } from '@rotki/common';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { api } from '@/services/rotkehlchen-api';
 import { useTaskStore } from '@/store/tasks';
 import { BackendCancelledTaskError, type TaskMeta, type TaskResultResponse, type TaskStatus } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -143,17 +142,16 @@ describe('store:tasks', () => {
 
   it('monitor consumes an unknown task', async () => {
     vi.useFakeTimers();
+    const requestedUrls: string[] = [];
+
     server.use(
-      ...mockTasks({
-        status: {
-          completed: [1, 2],
-          pending: [],
-        },
-        tasks: [getTaskResult(1, true), getTaskResult(2, true)],
+      http.get(`${backendUrl}/api/1/tasks`, () => HttpResponse.json(getResult({ completed: [1, 2], pending: [] }), { status: 200 })),
+      http.get(`${backendUrl}/api/1/tasks/:id`, ({ request, params }) => {
+        requestedUrls.push(new URL(request.url).pathname);
+        const id = Number(params.id);
+        return HttpResponse.json(getResult(getTaskResult(id, true).body), { status: 200 });
       }),
     );
-
-    const get = vi.spyOn(api.instance, 'get');
 
     const [response] = await Promise.all([
       store.awaitTask<boolean, TaskMeta>(2, TaskType.IMPORT_CSV, getMeta()),
@@ -164,25 +162,23 @@ describe('store:tasks', () => {
     await store.monitor();
 
     expect(response.result).toBe(true);
-    expect(get).toHaveBeenCalledTimes(4);
-    expect(get).toHaveBeenCalledWith('/tasks/1', expect.anything());
-    expect(get).toHaveBeenCalledWith('/tasks/2', expect.anything());
+    expect(requestedUrls).toContain('/api/1/tasks/1');
+    expect(requestedUrls).toContain('/api/1/tasks/2');
     vi.useRealTimers();
   });
 
   it('handles race condition delay', async () => {
     vi.useFakeTimers();
+    const requestedUrls: string[] = [];
+
     server.use(
-      ...mockTasks({
-        status: {
-          completed: [1, 2],
-          pending: [],
-        },
-        tasks: [getTaskResult(1, true), getTaskResult(2, true)],
+      http.get(`${backendUrl}/api/1/tasks`, () => HttpResponse.json(getResult({ completed: [1, 2], pending: [] }), { status: 200 })),
+      http.get(`${backendUrl}/api/1/tasks/:id`, ({ request, params }) => {
+        requestedUrls.push(new URL(request.url).pathname);
+        const id = Number(params.id);
+        return HttpResponse.json(getResult(getTaskResult(id, true).body), { status: 200 });
       }),
     );
-
-    const get = vi.spyOn(api.instance, 'get');
 
     await Promise.all([store.awaitTask<boolean, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta()), store.monitor()]);
     await vi.advanceTimersByTimeAsync(10000);
@@ -192,9 +188,8 @@ describe('store:tasks', () => {
     ]);
 
     expect(response.result).toBe(true);
-    expect(get).toHaveBeenCalledTimes(4);
-    expect(get).toHaveBeenCalledWith('/tasks/1', expect.anything());
-    expect(get).toHaveBeenCalledWith('/tasks/2', expect.anything());
+    expect(requestedUrls).toContain('/api/1/tasks/1');
+    expect(requestedUrls).toContain('/api/1/tasks/2');
     vi.useRealTimers();
   });
 

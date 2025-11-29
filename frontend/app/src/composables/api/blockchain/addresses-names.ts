@@ -1,19 +1,19 @@
-import type { ActionResult } from '@rotki/common';
 import type { Collection, CollectionResponse } from '@/types/collection';
-import type { PendingTask } from '@/types/task';
 import { omit } from 'es-toolkit';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validTaskStatus, validWithSessionAndExternalService } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_TASK_STATUS, VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
 import {
   AddressBookCollectionResponse,
   type AddressBookEntries,
+  AddressBookEntriesSchema,
   type AddressBookEntry,
   type AddressBookLocation,
   type AddressBookRequestPayload,
   type AddressBookSimplePayload,
-  EthNames,
+  type EthNames,
+  EthNamesSchema,
 } from '@/types/eth-names';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseAddressesNamesApiReturn {
@@ -30,44 +30,36 @@ interface UseAddressesNamesApiReturn {
 }
 
 export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
-  const internalEnsNames = async <T>(ethereumAddresses: string[], asyncQuery = false): Promise<T> => {
-    const response = await api.instance.post<ActionResult<T>>(
-      '/names/ens/reverse',
-      snakeCaseTransformer({
-        asyncQuery,
-        ethereumAddresses,
-        ignoreCache: asyncQuery,
-      }),
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+  const internalEnsNames = async <T>(ethereumAddresses: string[], asyncQuery = false): Promise<T> => api.post<T>(
+    '/names/ens/reverse',
+    {
+      asyncQuery,
+      ethereumAddresses,
+      ignoreCache: asyncQuery,
+    },
+    {
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+    },
+  );
 
-    return handleResponse(response);
+  const getEnsNamesTask = async (ethAddresses: string[]): Promise<PendingTask> => {
+    const response = await internalEnsNames<PendingTask>(ethAddresses, true);
+    return PendingTaskSchema.parse(response);
   };
-
-  const getEnsNamesTask = async (ethAddresses: string[]): Promise<PendingTask> =>
-    internalEnsNames<PendingTask>(ethAddresses, true);
 
   const getEnsNames = async (ethAddresses: string[]): Promise<EthNames> => {
     const response = await internalEnsNames<EthNames>(ethAddresses);
-
-    return EthNames.parse(response);
+    return EthNamesSchema.parse(response);
   };
 
-  const resolveEnsNames = async (name: string): Promise<string> => {
-    const response = await api.instance.post<ActionResult<string>>(
-      `/names/ens/resolve`,
-      snakeCaseTransformer({
-        name,
-      }),
-      {
-        validateStatus: validTaskStatus,
-      },
-    );
-
-    return response.data.result || '';
-  };
+  const resolveEnsNames = async (name: string): Promise<string> => api.post<string>(
+    `/names/ens/resolve`,
+    { name },
+    {
+      validStatuses: VALID_TASK_STATUS,
+      defaultValue: '',
+    },
+  );
 
   const fetchAddressBook = async (
     location: AddressBookLocation,
@@ -75,91 +67,65 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
   ): Promise<Collection<AddressBookEntry>> => {
     const payloadVal = get(payload);
     const filteredPayload = omit(payloadVal, ['address']);
-    const response = await api.instance.post<ActionResult<CollectionResponse<AddressBookEntry>>>(
+    const response = await api.post<CollectionResponse<AddressBookEntry>>(
       `/names/addressbook/${location}`,
-      snakeCaseTransformer({
+      {
         ...filteredPayload,
         addresses: payloadVal.address?.map(address => ({ address })),
-      }),
+      },
       {
-        validateStatus: validWithSessionAndExternalService,
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
 
-    return mapCollectionResponse(AddressBookCollectionResponse.parse(handleResponse(response)));
+    return mapCollectionResponse(AddressBookCollectionResponse.parse(response));
   };
 
-  const addAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries, updateExisting = false): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      `/names/addressbook/${location}`,
-      snakeCaseTransformer({
-        entries,
-        updateExisting,
-      }),
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+  const addAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries, updateExisting = false): Promise<boolean> => api.put<boolean>(
+    `/names/addressbook/${location}`,
+    {
+      entries,
+      updateExisting,
+    },
+    {
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+    },
+  );
 
-    return handleResponse(response);
-  };
-
-  const updateAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      `/names/addressbook/${location}`,
-      { entries },
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
-
-    return handleResponse(response);
-  };
+  const updateAddressBook = async (location: AddressBookLocation, entries: AddressBookEntries): Promise<boolean> => api.patch<boolean>(
+    `/names/addressbook/${location}`,
+    { entries },
+    {
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+    },
+  );
 
   const deleteAddressBook = async (
     location: AddressBookLocation,
     addresses: AddressBookSimplePayload[],
-  ): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(`/names/addressbook/${location}`, {
-      data: snakeCaseTransformer({ addresses }),
-      validateStatus: validWithSessionAndExternalService,
-    });
-
-    return handleResponse(response);
-  };
+  ): Promise<boolean> => api.delete<boolean>(`/names/addressbook/${location}`, {
+    body: { addresses },
+    validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+  });
 
   const getAddressesNames = async (addresses: AddressBookSimplePayload[]): Promise<AddressBookEntries> => {
-    const response = await api.instance.post<ActionResult<AddressBookEntries>>(
+    const response = await api.post<AddressBookEntries>(
       '/names',
       { addresses },
       {
-        validateStatus: validWithSessionAndExternalService,
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-
-    return handleResponse(response);
+    return AddressBookEntriesSchema.parse(response);
   };
 
-  const ensAvatarUrl = (ens: string, timestamp?: number): string => {
-    let url = `${api.instance.defaults.baseURL}avatars/ens/${ens}`;
+  const ensAvatarUrl = (ens: string, timestamp?: number): string =>
+    api.buildUrl(`avatars/ens/${ens}`, timestamp ? { timestamp } : undefined);
 
-    if (timestamp)
-      url += `?timestamp=${timestamp}`;
-
-    return url;
-  };
-
-  const clearEnsAvatarCache = async (listEns: string[] | null): Promise<boolean> => {
-    const response = await api.instance.post<ActionResult<boolean>>(
-      '/cache/avatars/clear',
-      { entries: listEns },
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
+  const clearEnsAvatarCache = async (listEns: string[] | null): Promise<boolean> => api.post<boolean>(
+    '/cache/avatars/clear',
+    { entries: listEns },
+  );
 
   return {
     addAddressBook,

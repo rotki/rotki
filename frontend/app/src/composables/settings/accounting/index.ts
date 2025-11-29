@@ -12,7 +12,6 @@ import type {
 import type { TaskMeta } from '@/types/task';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useInterop } from '@/composables/electron-interop';
-import { jsonTransformer } from '@/services/axios-transformers';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
@@ -139,7 +138,6 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       const { taskId } = await exportAccountingRules(directoryPath);
       const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.EXPORT_ACCOUNTING_RULES, {
         title: t('actions.accounting_rules.export.title'),
-        transformer: [jsonTransformer],
       });
 
       return {

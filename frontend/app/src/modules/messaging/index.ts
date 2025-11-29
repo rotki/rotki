@@ -1,6 +1,6 @@
 import { backoff } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
-import { camelCaseTransformer } from '@/services/axios-transformers';
+import { camelCaseTransformer } from '@/modules/api/transformers';
 import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';

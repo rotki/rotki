@@ -1,11 +1,9 @@
-import type { ActionResult } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import {
   type AddCalendarEventResponse,
+  AddCalendarEventResponseSchema,
   type CalendarEvent,
   CalendarEventCollectionResponse,
   type CalendarEventPayload,
@@ -24,39 +22,27 @@ export function useCalendarApi(): UseCalendarApiReturn {
   const fetchCalendarEvents = async (
     filter: MaybeRef<CalendarEventRequestPayload>,
   ): Promise<Collection<CalendarEvent>> => {
-    const response = await api.instance.post<ActionResult<Collection<CalendarEvent>>>(
+    const response = await api.post<Collection<CalendarEvent>>(
       '/calendar',
-      snakeCaseTransformer(get(filter)),
+      get(filter),
     );
 
-    return mapCollectionResponse(CalendarEventCollectionResponse.parse(handleResponse(response)));
+    return mapCollectionResponse(CalendarEventCollectionResponse.parse(response));
   };
 
   const addCalendarEvent = async (payload: CalendarEventPayload): Promise<AddCalendarEventResponse> => {
-    const response = await api.instance.put<ActionResult<AddCalendarEventResponse>>(
-      '/calendar',
-      snakeCaseTransformer(payload),
-    );
-
-    return handleResponse(response);
+    const response = await api.put<AddCalendarEventResponse>('/calendar', payload);
+    return AddCalendarEventResponseSchema.parse(response);
   };
 
   const editCalendarEvent = async (payload: CalendarEvent): Promise<AddCalendarEventResponse> => {
-    const response = await api.instance.patch<ActionResult<AddCalendarEventResponse>>(
-      '/calendar',
-      snakeCaseTransformer(payload),
-    );
-
-    return handleResponse(response);
+    const response = await api.patch<AddCalendarEventResponse>('/calendar', payload);
+    return AddCalendarEventResponseSchema.parse(response);
   };
 
-  const deleteCalendarEvent = async (identifier: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/calendar', {
-      data: snakeCaseTransformer({ identifier }),
-    });
-
-    return handleResponse(response);
-  };
+  const deleteCalendarEvent = async (identifier: number): Promise<boolean> => api.delete<boolean>('/calendar', {
+    body: { identifier },
+  });
 
   return {
     addCalendarEvent,

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { WelcomeMessage } from '@/types/dynamic-messages';
 import { checkIfDevelopment } from '@shared/utils';
+import { ofetch } from 'ofetch';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FadeTransition from '@/components/helper/FadeTransition.vue';
 import { useRandomStepper } from '@/composables/random-stepper';
-import { api } from '@/services/rotkehlchen-api';
 import { logger } from '@/utils/logging';
 
 const props = defineProps<{
@@ -17,15 +17,14 @@ const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(props.me
 
 const activeItem = computed(() => props.messages[get(step) - 1]);
 
-async function fetchSvg() {
+async function fetchSvg(): Promise<string | null> {
   const url = get(activeItem).icon;
 
   if (!url || !(checkIfDevelopment() || url.startsWith(`https://raw.githubusercontent.com/rotki/data`)))
-    return;
+    return null;
 
   try {
-    const response = await api.instance.get(url);
-    return response.data;
+    return await ofetch(url, { responseType: 'text' });
   }
   catch (error: any) {
     logger.error(error);

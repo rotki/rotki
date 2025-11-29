@@ -89,3 +89,7 @@ export type AccountingRuleConflictResolution =
   | { conflicts: AccountingRuleConflictManualResolution[] };
 
 export type AccountingRuleAction = 'add-general' | 'add-event-specific' | 'edit-general' | 'edit-event-specific';
+
+export const AccountingRuleLinkedMappingSchema = z.record(z.string(), z.array(z.string()));
+
+export type AccountingRuleLinkedMapping = z.infer<typeof AccountingRuleLinkedMappingSchema>;

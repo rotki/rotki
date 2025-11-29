@@ -52,8 +52,6 @@ describe('composables/api/staking/eth2', () => {
       });
 
       expect(capturedBody).toEqual({
-        async_query: false,
-        ignore_cache: false,
         limit: 10,
         offset: 0,
         from_timestamp: 1700000000,
@@ -95,8 +93,6 @@ describe('composables/api/staking/eth2', () => {
       });
 
       expect(capturedBody).toEqual({
-        async_query: false,
-        ignore_cache: false,
         limit: 20,
         offset: 10,
         validator_indices: [12345, 12346],

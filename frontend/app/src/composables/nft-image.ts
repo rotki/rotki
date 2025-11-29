@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
+import { ofetch } from 'ofetch';
 import { useNfts } from '@/composables/assets/nft';
-import { api } from '@/services/rotkehlchen-api';
 import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 interface UseNftImageReturnType {
@@ -14,9 +14,9 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
 
   const isMediaVideo = async (url: string): Promise<boolean> => {
     try {
-      const response = await api.instance.head(url);
-      const contentType = response.headers['content-type'];
-      return contentType.startsWith('video');
+      const response = await ofetch.raw(url, { method: 'HEAD' });
+      const contentType = response.headers.get('content-type');
+      return contentType?.startsWith('video') ?? false;
     }
     catch {
       return false;

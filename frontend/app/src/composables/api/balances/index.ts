@@ -1,22 +1,18 @@
-import type { ActionResult } from '@rotki/common';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseBalancesApiReturn { queryBalancesAsync: (payload: Partial<AllBalancePayload>) => Promise<PendingTask> }
 
 export function useBalancesApi(): UseBalancesApiReturn {
   const queryBalancesAsync = async (payload: Partial<AllBalancePayload>): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>('/balances', {
-      params: snakeCaseTransformer({
+    const response = await api.get<PendingTask>('/balances', {
+      query: {
         asyncQuery: true,
         ...payload,
-      }),
-      validateStatus: validStatus,
+      },
     });
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

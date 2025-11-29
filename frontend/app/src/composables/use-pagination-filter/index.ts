@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
-import type { AxiosError } from 'axios';
+import type { FetchError } from 'ofetch';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
 import type { TableId } from '@/modules/table/use-remember-table-sorting';
@@ -240,14 +240,10 @@ export function usePaginationFilters<
       delay: 0,
       immediate: false,
       onError(e) {
-        const error = e as AxiosError<{ message: string }>;
-        const path = error.config?.url;
-        let { code, message } = error;
-
-        if (error.response) {
-          message = error.response.data.message;
-          code = error.response.status.toString();
-        }
+        const error = e as FetchError<{ message: string }>;
+        const path = error.request?.toString() ?? '';
+        const code = error.statusCode?.toString() ?? '';
+        const message = (error.data as { message?: string } | undefined)?.message ?? error.message ?? '';
 
         logger.error(error);
         if (Number(code) >= 400) {

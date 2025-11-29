@@ -1,23 +1,21 @@
-import type { ActionResult } from '@rotki/common';
 import type { SyncAction } from '@/types/session/sync';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithParamsSessionAndExternalService } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseSyncApiReturn { forceSync: (action: SyncAction) => Promise<PendingTask> }
 
 export function useSyncApi(): UseSyncApiReturn {
   const forceSync = async (action: SyncAction): Promise<PendingTask> => {
-    const response = await api.instance.put<ActionResult<PendingTask>>(
+    const response = await api.put<PendingTask>(
       '/premium/sync',
-      snakeCaseTransformer({ action, asyncQuery: true }),
+      { action, asyncQuery: true },
       {
-        validateStatus: validWithParamsSessionAndExternalService,
+        validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

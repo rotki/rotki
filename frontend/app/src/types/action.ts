@@ -1,5 +1,6 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 import type { Section, Status } from '@/types/status';
+import { z } from 'zod/v4';
 
 interface ActionFailure<T = string> {
   readonly message: T;
@@ -34,3 +35,15 @@ export interface ActionDataEntry<T = string> {
   readonly matcher?: (identifier: string) => boolean | null;
   readonly detailPath?: string;
 }
+
+export const ActionDataEntrySchema = z.object({
+  identifier: z.string(),
+  label: z.string(),
+  icon: z.string().optional(),
+  image: z.string().optional(),
+  darkmodeImage: z.string().optional(),
+  color: z.string().optional(),
+  detailPath: z.string().optional(),
+});
+
+export const ActionDataEntryArraySchema = z.array(ActionDataEntrySchema);

@@ -24,16 +24,16 @@ const UserDb = z.object({
   info: UserDbInfo,
 });
 
-const DatabaseInfo = z.object({
+export const DatabaseInfoSchema = z.object({
   globaldb: GlobalDbVersion,
   userdb: UserDb,
 });
 
-export type DatabaseInfo = z.infer<typeof DatabaseInfo>;
+export type DatabaseInfo = z.infer<typeof DatabaseInfoSchema>;
 
 export const DatabaseInfoResponse = z.object({
   message: z.string(),
-  result: DatabaseInfo,
+  result: DatabaseInfoSchema,
 });
 
 export type DatabaseInfoResponse = z.infer<typeof DatabaseInfoResponse>;

@@ -108,16 +108,14 @@ describe('composables/api/info/index', () => {
   });
 
   describe('ping', () => {
-    it('sends ping request and returns pending task', async () => {
+    it('sends ping request and returns success', async () => {
       let requestMethod = '';
 
       server.use(
         http.get(`${backendUrl}/api/1/ping`, ({ request }) => {
           requestMethod = request.method;
           return HttpResponse.json({
-            result: {
-              task_id: 123,
-            },
+            result: true,
             message: '',
           });
         }),
@@ -127,7 +125,7 @@ describe('composables/api/info/index', () => {
       const result = await ping();
 
       expect(requestMethod).toBe('GET');
-      expect(result.taskId).toBe(123);
+      expect(result).toBe(true);
     });
 
     it('throws error on failure', async () => {

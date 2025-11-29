@@ -1,10 +1,6 @@
-import type { ActionResult } from '@rotki/common';
 import type { CollectionResponse } from '@/types/collection';
-import type { PendingTask } from '@/types/task';
 import { omit } from 'es-toolkit';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import {
   type AccountingRule,
   type AccountingRuleConflict,
@@ -13,8 +9,11 @@ import {
   type AccountingRuleConflictResolution,
   type AccountingRuleEntry,
   AccountingRuleEntryCollectionResponse,
+  type AccountingRuleLinkedMapping,
+  AccountingRuleLinkedMappingSchema,
   type AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseAccountingApiReturn {
   fetchAccountingRule: (payload: AccountingRuleRequestPayload, counterparty: string | null) => Promise<AccountingRuleEntry | null>;
@@ -22,7 +21,7 @@ interface UseAccountingApiReturn {
   addAccountingRule: (payload: AccountingRule) => Promise<boolean>;
   editAccountingRule: (payload: AccountingRuleEntry) => Promise<boolean>;
   deleteAccountingRule: (identifier: number) => Promise<boolean>;
-  getAccountingRuleLinkedMapping: () => Promise<Record<string, string[]>>;
+  getAccountingRuleLinkedMapping: () => Promise<AccountingRuleLinkedMapping>;
   fetchAccountingRuleConflicts: (payload: AccountingRuleConflictRequestPayload) => Promise<CollectionResponse<AccountingRuleConflict>>;
   resolveAccountingRuleConflicts: (payload: AccountingRuleConflictResolution) => Promise<boolean>;
   exportAccountingRules: (directoryPath?: string) => Promise<PendingTask>;
@@ -39,15 +38,12 @@ export function useAccountingApi(): UseAccountingApiReturn {
       ...omit(payload, ['orderByAttributes', 'ascending']),
       counterparties: counterparty ? [counterparty, null] : [null],
     };
-    const response = await api.instance.post<ActionResult<CollectionResponse<AccountingRuleEntry>>>(
+    const response = await api.post<CollectionResponse<AccountingRuleEntry>>(
       '/accounting/rules',
-      snakeCaseTransformer(newPayload),
-      {
-        validateStatus: validStatus,
-      },
+      newPayload,
     );
 
-    const data = AccountingRuleEntryCollectionResponse.parse(handleResponse(response));
+    const data = AccountingRuleEntryCollectionResponse.parse(response);
 
     if (data.entries.length === 0)
       return null;
@@ -60,123 +56,72 @@ export function useAccountingApi(): UseAccountingApiReturn {
 
     return null;
   };
+
   const fetchAccountingRules = async (
     payload: AccountingRuleRequestPayload,
   ): Promise<CollectionResponse<AccountingRuleEntry>> => {
-    const response = await api.instance.post<ActionResult<CollectionResponse<AccountingRuleEntry>>>(
+    const response = await api.post<CollectionResponse<AccountingRuleEntry>>(
       '/accounting/rules',
-      snakeCaseTransformer(omit(payload, ['orderByAttributes', 'ascending'])),
-      {
-        validateStatus: validStatus,
-      },
+      omit(payload, ['orderByAttributes', 'ascending']),
     );
 
-    return AccountingRuleEntryCollectionResponse.parse(handleResponse(response));
+    return AccountingRuleEntryCollectionResponse.parse(response);
   };
 
-  const addAccountingRule = async (payload: AccountingRule): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>('/accounting/rules', snakeCaseTransformer(payload), {
-      validateStatus: validStatus,
-    });
+  const addAccountingRule = async (payload: AccountingRule): Promise<boolean> => api.put<boolean>('/accounting/rules', payload);
 
-    return handleResponse(response);
-  };
+  const editAccountingRule = async (payload: AccountingRuleEntry): Promise<boolean> => api.patch<boolean>('/accounting/rules', payload);
 
-  const editAccountingRule = async (payload: AccountingRuleEntry): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      '/accounting/rules',
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const deleteAccountingRule = async (identifier: number): Promise<boolean> => api.delete<boolean>('/accounting/rules', {
+    body: { identifier },
+  });
 
-    return handleResponse(response);
-  };
-
-  const deleteAccountingRule = async (identifier: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/accounting/rules', {
-      data: snakeCaseTransformer({ identifier }),
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
-
-  const getAccountingRuleLinkedMapping = async (): Promise<Record<string, string[]>> => {
-    const response = await api.instance.get<ActionResult<Record<string, string[]>>>('/accounting/rules/info', {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
+  const getAccountingRuleLinkedMapping = async (): Promise<AccountingRuleLinkedMapping> => {
+    const response = await api.get<AccountingRuleLinkedMapping>('/accounting/rules/info');
+    return AccountingRuleLinkedMappingSchema.parse(response);
   };
 
   const fetchAccountingRuleConflicts = async (
     payload: AccountingRuleConflictRequestPayload,
   ): Promise<CollectionResponse<AccountingRuleConflict>> => {
-    const response = await api.instance.post<ActionResult<any>>(
+    const response = await api.post<CollectionResponse<AccountingRuleConflict>>(
       '/accounting/rules/conflicts',
-      snakeCaseTransformer(omit(payload, ['orderByAttributes', 'ascending'])),
-      {
-        validateStatus: validStatus,
-      },
+      omit(payload, ['orderByAttributes', 'ascending']),
     );
 
-    return AccountingRuleConflictCollectionResponse.parse(handleResponse(response));
+    return AccountingRuleConflictCollectionResponse.parse(response);
   };
 
-  const resolveAccountingRuleConflicts = async (payload: AccountingRuleConflictResolution): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<any>>(
-      '/accounting/rules/conflicts',
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
+  const resolveAccountingRuleConflicts = async (payload: AccountingRuleConflictResolution): Promise<boolean> => api.patch<boolean>('/accounting/rules/conflicts', payload);
 
   const exportAccountingRules = async (directoryPath?: string): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.post<PendingTask>(
       '/accounting/rules/export',
-      snakeCaseTransformer({
+      {
         asyncQuery: true,
         directoryPath,
-      }),
-      {
-        validateStatus: validStatus,
       },
     );
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const importAccountingRulesData = async (filepath: string): Promise<PendingTask> => {
-    const response = await api.instance.put<ActionResult<PendingTask>>(
+    const response = await api.put<PendingTask>(
       '/accounting/rules/import',
-      snakeCaseTransformer({
+      {
         asyncQuery: true,
         filepath,
-      }),
-      {
-        validateStatus: validStatus,
       },
     );
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const uploadAccountingRulesData = async (filepath: File): Promise<PendingTask> => {
     const data = new FormData();
     data.append('filepath', filepath);
     data.append('async_query', 'true');
-    const response = await api.instance.patch<ActionResult<PendingTask>>('/accounting/rules/import', data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return handleResponse(response);
+    const response = await api.patch<PendingTask>('/accounting/rules/import', data);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

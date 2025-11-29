@@ -1,8 +1,5 @@
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseImportDataApiReturn {
   importDataFrom: (source: string, file: string, timestampFormat: string | null) => Promise<PendingTask>;
@@ -11,31 +8,27 @@ interface UseImportDataApiReturn {
 
 export function useImportDataApi(): UseImportDataApiReturn {
   const importDataFrom = async (source: string, file: string, timestampFormat: string | null): Promise<PendingTask> => {
-    const response = await api.instance.put<ActionResult<PendingTask>>(
+    const response = await api.put<PendingTask>(
       '/import',
-      snakeCaseTransformer({
+      {
         asyncQuery: true,
         file,
         source,
         timestampFormat,
-      }),
-      {
-        validateStatus: validStatus,
       },
     );
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const importFile = async (data: FormData): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>('/import', data, {
+    const response = await api.post<PendingTask>('/import', data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      validateStatus: validStatus,
     });
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

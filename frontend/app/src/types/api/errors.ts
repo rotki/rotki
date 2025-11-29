@@ -1,5 +1,5 @@
 import { isEmpty } from 'es-toolkit/compat';
-import { camelCaseTransformer } from '@/services/axios-transformers';
+import { camelCaseTransformer } from '@/modules/api/transformers';
 
 /**
  * Converts a stringified JSON returned from the API to JSON.

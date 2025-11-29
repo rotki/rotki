@@ -1,11 +1,6 @@
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithSessionStatus } from '@/services/utils';
-import {
-  CreateDatabaseResponse,
-  type DatabaseInfo,
-  DatabaseInfoResponse,
-  DeleteDatabaseResponse,
-} from '@/types/backup';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
+import { type DatabaseInfo, DatabaseInfoSchema } from '@/types/backup';
 
 interface UseBackupApiReturn {
   info: () => Promise<DatabaseInfo>;
@@ -16,35 +11,28 @@ interface UseBackupApiReturn {
 
 export function useBackupApi(): UseBackupApiReturn {
   const info = async (): Promise<DatabaseInfo> => {
-    const response = await api.instance.get<DatabaseInfoResponse>('/database/info', {
-      validateStatus: validWithSessionStatus,
+    const response = await api.get<DatabaseInfo>('/database/info', {
+      validStatuses: VALID_WITH_SESSION_STATUS,
     });
 
-    return handleResponse(response, response => DatabaseInfoResponse.parse(response.data));
+    return DatabaseInfoSchema.parse(response);
   };
 
-  const createBackup = async (): Promise<string> => {
-    const response = await api.instance.put<CreateDatabaseResponse>('/database/backups', {
-      validateStatus: validWithSessionStatus,
-    });
+  const createBackup = async (): Promise<string> => api.put<string>('/database/backups', null, {
+    validStatuses: VALID_WITH_SESSION_STATUS,
+  });
 
-    return handleResponse(response, response => CreateDatabaseResponse.parse(response.data));
-  };
-
-  const deleteBackup = async (files: string[]): Promise<boolean> => {
-    const response = await api.instance.delete<DeleteDatabaseResponse>('/database/backups', {
-      data: {
-        files,
-      },
-      validateStatus: validWithSessionStatus,
-    });
-
-    return handleResponse(response, response => DeleteDatabaseResponse.parse(response.data));
-  };
+  const deleteBackup = async (files: string[]): Promise<boolean> => api.delete<boolean>('/database/backups', {
+    body: {
+      files,
+    },
+    validStatuses: VALID_WITH_SESSION_STATUS,
+  });
 
   function fileUrl(file: string): string {
-    return `${api.instance.defaults.baseURL}/database/backups?file=${file}`;
+    return api.buildUrl('database/backups', { file });
   }
+
   return {
     createBackup,
     deleteBackup,

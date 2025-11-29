@@ -60,6 +60,7 @@ describe('modules/external-services/monerium/use-monerium-api', () => {
             return HttpResponse.json({
               result: {
                 success: true,
+                message: 'OAuth completed successfully',
               },
               message: '',
             });

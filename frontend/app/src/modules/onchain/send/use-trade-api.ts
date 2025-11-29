@@ -1,4 +1,5 @@
-import { type ActionResult, type BigNumber, NumericString, Zero } from '@rotki/common';
+import { type BigNumber, NumericString, Zero } from '@rotki/common';
+import { api } from '@/modules/api/rotki-api';
 import {
   type GetAssetBalancePayload,
   type PrepareERC20TransferPayload,
@@ -6,9 +7,6 @@ import {
   type PrepareNativeTransferPayload,
   PrepareNativeTransferResponse,
 } from '@/modules/onchain/types';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
 
 interface UseTradeApiReturn {
   prepareERC20Transfer: (payload: PrepareERC20TransferPayload) => Promise<PrepareERC20TransferResponse>;
@@ -19,54 +17,26 @@ interface UseTradeApiReturn {
 
 export function useTradeApi(): UseTradeApiReturn {
   const prepareERC20Transfer = async (payload: PrepareERC20TransferPayload): Promise<PrepareERC20TransferResponse> => {
-    const response = await api.instance.post<ActionResult<PrepareERC20TransferResponse>>(
-      `/wallet/transfer/token`,
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
-    return PrepareERC20TransferResponse.parse(handleResponse(response));
+    const response = await api.post<PrepareERC20TransferResponse>('/wallet/transfer/token', payload);
+    return PrepareERC20TransferResponse.parse(response);
   };
 
   const prepareNativeTransfer = async (payload: PrepareNativeTransferPayload): Promise<PrepareNativeTransferResponse> => {
-    const response = await api.instance.post<ActionResult<PrepareNativeTransferResponse>>(
-      `/wallet/transfer/native`,
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
-    return PrepareNativeTransferResponse.parse(handleResponse(response));
+    const response = await api.post<PrepareNativeTransferResponse>('/wallet/transfer/native', payload);
+    return PrepareNativeTransferResponse.parse(response);
   };
 
-  const getIsInteractedBefore = async (fromAddress: string, toAddress: string): Promise<boolean> => {
-    const response = await api.instance.post<ActionResult<boolean>>(
-      `/wallet/interacted`,
-      snakeCaseTransformer({
-        fromAddress,
-        toAddress,
-      }),
-      {
-        validateStatus: validStatus,
-      },
-    );
-    return response.data.result;
-  };
+  const getIsInteractedBefore = async (fromAddress: string, toAddress: string): Promise<boolean> => api.post<boolean>('/wallet/interacted', {
+    fromAddress,
+    toAddress,
+  });
 
   const getAssetBalance = async (payload: GetAssetBalancePayload): Promise<BigNumber> => {
-    const response = await api.instance.post<ActionResult<BigNumber>>(
-      `/wallet/balance`,
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    if (response.data.result) {
-      return NumericString.parse(response.data.result);
+    try {
+      const response = await api.post<string>('/wallet/balance', payload);
+      return NumericString.parse(response);
     }
-    else {
+    catch {
       return Zero;
     }
   };

@@ -1,11 +1,7 @@
-import type { ActionResult } from '@rotki/common';
 import type { ActionStatus } from '@/types/action';
 import type { CollectionResponse } from '@/types/collection';
-import type { PendingTask } from '@/types/task';
 import { omit } from 'es-toolkit';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import {
   type ProfitLossEvent,
   ProfitLossEventsCollectionResponse,
@@ -17,7 +13,8 @@ import {
   ReportActionableItem,
   Reports,
 } from '@/types/reports';
-import { downloadFileByBlobResponse } from '@/utils/download';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { downloadFileByUrl } from '@/utils/download';
 
 interface UseReportsApi {
   generateReport: ({ end, start }: ProfitLossReportPeriod) => Promise<PendingTask>;
@@ -35,44 +32,29 @@ interface UseReportsApi {
 
 export function useReportsApi(): UseReportsApi {
   const generateReport = async ({ end, start }: ProfitLossReportPeriod): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>('/history', {
-      params: snakeCaseTransformer({
+    const response = await api.get<PendingTask>('/history', {
+      query: {
         asyncQuery: true,
         fromTimestamp: start,
         toTimestamp: end,
-      }),
-      validateStatus: validStatus,
+      },
     });
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
-  const exportReportCSV = async (directoryPath: string): Promise<boolean> => {
-    const response = await api.instance.get<ActionResult<boolean>>('/history/export', {
-      params: snakeCaseTransformer({
-        directoryPath,
-      }),
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const exportReportCSV = async (directoryPath: string): Promise<boolean> => api.get<boolean>('/history/export', {
+    query: { directoryPath },
+  });
 
   const downloadReportCSV = async (): Promise<ActionStatus> => {
     try {
-      const response = await api.instance.get('/history/download', {
-        responseType: 'blob',
-        validateStatus: validTaskStatus,
+      const blob = await api.fetchBlob('/history/download', {
+        method: 'GET',
       });
 
-      if (response.status === 200) {
-        downloadFileByBlobResponse(response, 'reports.zip');
-        return { success: true };
-      }
-
-      const body = await (response.data as Blob).text();
-      const result: ActionResult<null> = JSON.parse(body);
-
-      return { message: result.message, success: false };
+      const url = window.URL.createObjectURL(blob);
+      downloadFileByUrl(url, 'reports.zip');
+      return { success: true };
     }
     catch (error: any) {
       return { message: error.message, success: false };
@@ -80,93 +62,67 @@ export function useReportsApi(): UseReportsApi {
   };
 
   const exportReportData = async (payload: ProfitLossReportDebugPayload): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.post<PendingTask>(
       '/history/debug',
-      snakeCaseTransformer({
+      {
         asyncQuery: true,
         ...payload,
-      }),
-      {
-        validateStatus: validStatus,
       },
     );
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const importReportData = async (filepath: string): Promise<PendingTask> => {
-    const response = await api.instance.put<ActionResult<PendingTask>>(
+    const response = await api.put<PendingTask>(
       '/history/debug',
-      snakeCaseTransformer({
+      {
         asyncQuery: true,
         filepath,
-      }),
-      {
-        validateStatus: validStatus,
       },
     );
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const uploadReportData = async (filepath: File): Promise<PendingTask> => {
     const data = new FormData();
     data.append('filepath', filepath);
     data.append('async_query', 'true');
-    const response = await api.instance.patch<ActionResult<PendingTask>>('/history/debug', data, {
+    const response = await api.patch<PendingTask>('/history/debug', data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const fetchActionableItems = async (): Promise<ReportActionableItem> => {
-    const response = await api.instance.get<ActionResult<ReportActionableItem>>('/history/actionable_items', {
-      validateStatus: validStatus,
-    });
-
-    const data = handleResponse(response);
-    return ReportActionableItem.parse(data);
+    const response = await api.get<ReportActionableItem>('/history/actionable_items');
+    return ReportActionableItem.parse(response);
   };
 
   const fetchReports = async (): Promise<Reports> => {
-    const response = await api.instance.get<ActionResult<Reports>>('/reports', {
-      validateStatus: validStatus,
-    });
-    const data = handleResponse(response);
-    return Reports.parse(data);
+    const response = await api.get<Reports>('/reports');
+    return Reports.parse(response);
   };
 
   const fetchReport = async (reportId: number): Promise<ProfitLossOverview> => {
-    const response = await api.instance.get<ActionResult<ProfitLossReportOverview>>(`/reports/${reportId}`, {
-      validateStatus: validStatus,
-    });
-    const data = handleResponse(response);
-    const overview = ProfitLossReportOverview.parse(data);
+    const response = await api.get<ProfitLossReportOverview>(`/reports/${reportId}`);
+    const overview = ProfitLossReportOverview.parse(response);
     return overview.entries[0];
   };
 
   const fetchReportEvents = async (
     payload: ProfitLossEventsPayload,
   ): Promise<CollectionResponse<ProfitLossEvent>> => {
-    const response = await api.instance.post<ActionResult<CollectionResponse<ProfitLossEvent>>>(
+    const response = await api.post<CollectionResponse<ProfitLossEvent>>(
       `/reports/${payload.reportId}/data`,
-      snakeCaseTransformer(omit(payload, ['reportId'])),
-      {
-        validateStatus: validStatus,
-      },
+      omit(payload, ['reportId']),
     );
-    const data = handleResponse(response);
-    return ProfitLossEventsCollectionResponse.parse(data);
+    return ProfitLossEventsCollectionResponse.parse(response);
   };
 
-  const deleteReport = async (reportId: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(`/reports/${reportId}`, {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const deleteReport = async (reportId: number): Promise<boolean> => api.delete<boolean>(`/reports/${reportId}`);
 
   return {
     deleteReport,

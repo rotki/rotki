@@ -1,6 +1,5 @@
-import type { ActionResult } from '@rotki/common';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithoutSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 
 interface UseAssetSpamApiReturn {
   markAssetsAsSpam: (tokens: string[]) => Promise<boolean>;
@@ -8,28 +7,20 @@ interface UseAssetSpamApiReturn {
 }
 
 export function useAssetSpamApi(): UseAssetSpamApiReturn {
-  const markAssetsAsSpam = async (tokens: string[]): Promise<boolean> => {
-    const response = await api.instance.post<ActionResult<boolean>>(
-      '/assets/evm/spam/',
-      {
-        tokens,
-      },
-      {
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+  const markAssetsAsSpam = async (tokens: string[]): Promise<boolean> => api.post<boolean>(
+    '/assets/evm/spam/',
+    {
+      tokens,
+    },
+    {
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
+    },
+  );
 
-    return handleResponse(response);
-  };
-
-  const removeAssetFromSpamList = async (token: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/assets/evm/spam/', {
-      data: { token },
-      validateStatus: validWithoutSessionStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const removeAssetFromSpamList = async (token: string): Promise<boolean> => api.delete<boolean>('/assets/evm/spam/', {
+    body: { token },
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
   return {
     markAssetsAsSpam,

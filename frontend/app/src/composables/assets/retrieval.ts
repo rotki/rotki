@@ -12,7 +12,6 @@ import {
   NotificationGroup,
   Severity,
 } from '@rotki/common';
-import { isCancel } from 'axios';
 import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
 import { getAssociatedAssetIdentifier, processAssetInfo, useAssetAssociationMap } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -21,7 +20,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
+import { isAbortError, isTaskCancelled } from '@/utils';
 
 export interface AssetResolutionOptions {
   associate?: boolean;
@@ -204,7 +203,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       return await assetSearchCaller({ ...params, evmChain });
     }
     catch (error: any) {
-      if (isCancel(error))
+      if (isAbortError(error))
         return [];
 
       notify({

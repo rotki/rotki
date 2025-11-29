@@ -1,10 +1,7 @@
-import type { ActionResult } from '@rotki/common';
 import type { ActionStatus } from '@/types/action';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import { ProcessSkippedHistoryEventsResponse, SkippedHistoryEventsSummary } from '@/types/history/events';
-import { downloadFileByBlobResponse } from '@/utils/download';
+import { downloadFileByUrl } from '@/utils/download';
 
 interface UseSkippedHistoryEventsApiReturn {
   getSkippedEventsSummary: () => Promise<SkippedHistoryEventsSummary>;
@@ -15,51 +12,35 @@ interface UseSkippedHistoryEventsApiReturn {
 
 export function useSkippedHistoryEventsApi(): UseSkippedHistoryEventsApiReturn {
   const getSkippedEventsSummary = async (): Promise<SkippedHistoryEventsSummary> => {
-    const response = await api.instance.get<ActionResult<SkippedHistoryEventsSummary>>(
+    const response = await api.get<SkippedHistoryEventsSummary>(
       '/history/skipped_external_events',
     );
 
-    return SkippedHistoryEventsSummary.parse(handleResponse(response));
+    return SkippedHistoryEventsSummary.parse(response);
   };
 
   const reProcessSkippedEvents = async (): Promise<ProcessSkippedHistoryEventsResponse> => {
-    const response = await api.instance.post<ActionResult<ProcessSkippedHistoryEventsResponse>>(
+    const response = await api.post<ProcessSkippedHistoryEventsResponse>(
       '/history/skipped_external_events',
     );
 
-    return ProcessSkippedHistoryEventsResponse.parse(handleResponse(response));
+    return ProcessSkippedHistoryEventsResponse.parse(response);
   };
 
-  const exportSkippedEventsCSV = async (directoryPath: string): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      '/history/skipped_external_events',
-      snakeCaseTransformer({
-        directoryPath,
-      }),
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
+  const exportSkippedEventsCSV = async (directoryPath: string): Promise<boolean> => api.put<boolean>(
+    '/history/skipped_external_events',
+    { directoryPath },
+  );
 
   const downloadSkippedEventsCSV = async (): Promise<ActionStatus> => {
     try {
-      const response = await api.instance.patch('/history/skipped_external_events', null, {
-        responseType: 'blob',
-        validateStatus: validStatus,
+      const blob = await api.fetchBlob('/history/skipped_external_events', {
+        method: 'PATCH',
       });
 
-      if (response.status === 200) {
-        downloadFileByBlobResponse(response, 'skipped_external_events.csv');
-        return { success: true };
-      }
-
-      const body = await (response.data as Blob).text();
-      const result: ActionResult<null> = JSON.parse(body);
-
-      return { message: result.message, success: false };
+      const url = window.URL.createObjectURL(blob);
+      downloadFileByUrl(url, 'skipped_external_events.csv');
+      return { success: true };
     }
     catch (error: any) {
       return { message: error.message, success: false };

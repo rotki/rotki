@@ -1,9 +1,6 @@
-import type { ActionResult } from '@rotki/common';
-import type { GnosisPayAdminsMapping } from '@/modules/external-services/gnosis-pay/types';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { type GnosisPayAdminsMapping, GnosisPayAdminsMappingSchema } from '@/modules/external-services/gnosis-pay/types';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface GnosisPaySiweApiReturn {
   fetchGnosisPayAdmins: () => Promise<GnosisPayAdminsMapping>;
@@ -13,41 +10,34 @@ interface GnosisPaySiweApiReturn {
 
 export function useGnosisPaySiweApi(): GnosisPaySiweApiReturn {
   const fetchGnosisPayAdmins = async (): Promise<GnosisPayAdminsMapping> => {
-    const response = await api.instance.get<ActionResult<GnosisPayAdminsMapping>>(
-      '/services/gnosispay/admins',
-    );
-
-    return handleResponse(response);
+    const response = await api.get<GnosisPayAdminsMapping>('/services/gnosispay/admins');
+    return GnosisPayAdminsMappingSchema.parse(response);
   };
 
   const fetchNonce = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
+    const response = await api.get<PendingTask>(
       '/services/gnosispay/nonce',
       {
-        params: snakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validStatus,
+        query: { asyncQuery: true },
       },
     );
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const verifySiweSignature = async (
     message: string,
     signature: string,
   ): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.post<PendingTask>(
       '/services/gnosispay/token',
-      snakeCaseTransformer({
+      {
         asyncQuery: true,
         message,
         signature,
-      }),
-      {
-        validateStatus: validStatus,
       },
     );
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

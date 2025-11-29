@@ -1,12 +1,6 @@
-import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  paramsSerializer,
-  validWithParamsSessionAndExternalService,
-} from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
 import {
   NonFungibleBalancesCollectionResponse,
   type NonFungibleBalancesRequestPayload,
@@ -18,18 +12,13 @@ interface UseNftBalancesApiReturn {
 }
 
 export function useNftBalancesApi(): UseNftBalancesApiReturn {
-  const internalNfBalances = async <T>(payload: NonFungibleBalancesRequestPayload, asyncQuery: boolean): Promise<T> => {
-    const response = await api.instance.get<ActionResult<T>>('/nfts/balances', {
-      params: snakeCaseTransformer({
-        asyncQuery,
-        ...payload,
-      }),
-      paramsSerializer,
-      validateStatus: validWithParamsSessionAndExternalService,
-    });
-
-    return handleResponse(response);
-  };
+  const internalNfBalances = async <T>(payload: NonFungibleBalancesRequestPayload, asyncQuery: boolean): Promise<T> => api.get<T>('/nfts/balances', {
+    query: {
+      asyncQuery,
+      ...payload,
+    },
+    validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
+  });
 
   const fetchNfBalancesTask = async (payload: NonFungibleBalancesRequestPayload): Promise<PendingTask> =>
     internalNfBalances<PendingTask>(payload, true);
@@ -38,7 +27,7 @@ export function useNftBalancesApi(): UseNftBalancesApiReturn {
     payload: NonFungibleBalancesRequestPayload,
   ): Promise<NonFungibleBalancesCollectionResponse> => {
     const response = await internalNfBalances<NonFungibleBalancesCollectionResponse>(
-      snakeCaseTransformer(payload),
+      payload,
       false,
     );
 

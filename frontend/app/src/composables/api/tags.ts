@@ -1,7 +1,5 @@
-import type { ActionResult } from '@rotki/common';
-import { noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
 import { type Tag, Tags } from '@/types/tags';
 
 interface UseTagsApiReturn {
@@ -13,42 +11,39 @@ interface UseTagsApiReturn {
 
 export function useTagsApi(): UseTagsApiReturn {
   const queryTags = async (): Promise<Tags> => {
-    const response = await api.instance.get<ActionResult<Tags>>('/tags', {
-      validateStatus: validWithSessionStatus,
+    const data = await api.get<Tags>('/tags', {
+      validStatuses: VALID_WITH_SESSION_STATUS,
+      skipRootCamelCase: true,
     });
 
-    const data = handleResponse(response);
-    return Tags.parse(noRootCamelCaseTransformer(data));
+    return Tags.parse(data);
   };
 
   const queryAddTag = async (tag: Tag): Promise<Tags> => {
-    const response = await api.instance.put<ActionResult<Tags>>('/tags', snakeCaseTransformer(tag), {
-      validateStatus: validStatus,
+    const data = await api.put<Tags>('/tags', tag, {
+      skipRootCamelCase: true,
     });
 
-    const data = handleResponse(response);
-    return Tags.parse(noRootCamelCaseTransformer(data));
+    return Tags.parse(data);
   };
 
   const queryEditTag = async (tag: Tag): Promise<Tags> => {
-    const response = await api.instance.patch<ActionResult<Tags>>('/tags', snakeCaseTransformer(tag), {
-      validateStatus: validStatus,
+    const data = await api.patch<Tags>('/tags', tag, {
+      skipRootCamelCase: true,
     });
 
-    const data = handleResponse(response);
-    return Tags.parse(noRootCamelCaseTransformer(data));
+    return Tags.parse(data);
   };
 
   const queryDeleteTag = async (tagName: string): Promise<Tags> => {
-    const response = await api.instance.delete<ActionResult<Tags>>('/tags', {
-      data: {
+    const data = await api.delete<Tags>('/tags', {
+      body: {
         name: tagName,
       },
-      validateStatus: validStatus,
+      skipRootCamelCase: true,
     });
 
-    const data = handleResponse(response);
-    return Tags.parse(noRootCamelCaseTransformer(data));
+    return Tags.parse(data);
   };
 
   return {

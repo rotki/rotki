@@ -3,10 +3,6 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';
 
-vi.mock('@/utils/download', () => ({
-  downloadFileByBlobResponse: vi.fn(),
-}));
-
 const backendUrl = process.env.VITE_BACKEND_URL;
 
 describe('composables/api/history/events/skipped', () => {
@@ -156,21 +152,18 @@ describe('composables/api/history/events/skipped', () => {
     });
 
     it('returns error message on non-200 response', async () => {
-      // TODO: Remove spy and use MSW when migrating to ofetch.
-      // axios with responseType: 'blob' doesn't work properly with MSW in test env,
-      // so we mock the api.instance.patch to simulate the real behavior where
-      // Flask returns JSON error and axios wraps it in a Blob.
-      // Native fetch works correctly with MSW blob responses.
-      const { api } = await import('@/services/rotkehlchen-api');
-      const errorBlob = new Blob(
-        [JSON.stringify({ result: null, message: 'No skipped events to export' })],
-        { type: 'application/json' },
+      // With ofetch, MSW properly intercepts blob responses and we can test
+      // the real error handling behavior where Flask returns JSON error
+      server.use(
+        http.patch(`${backendUrl}/api/1/history/skipped_external_events`, () =>
+          HttpResponse.json(
+            { result: null, message: 'No skipped events to export' },
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          )),
       );
-
-      vi.spyOn(api.instance, 'patch').mockResolvedValueOnce({
-        status: 400,
-        data: errorBlob,
-      });
 
       const { downloadSkippedEventsCSV } = useSkippedHistoryEventsApi();
       const result = await downloadSkippedEventsCSV();

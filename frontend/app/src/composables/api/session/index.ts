@@ -1,9 +1,12 @@
-import type { ActionResult } from '@rotki/common';
-import type { Messages, PeriodicClientQueryResult } from '@/types/session';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
+import {
+  type Messages,
+  MessagesSchema,
+  type PeriodicClientQueryResult,
+  PeriodicClientQueryResultSchema,
+} from '@/types/session';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseSessionApiReturn {
   consumeMessages: () => Promise<Messages>;
@@ -14,39 +17,32 @@ interface UseSessionApiReturn {
 
 export function useSessionApi(): UseSessionApiReturn {
   const consumeMessages = async (): Promise<Messages> => {
-    const response = await api.instance.get<ActionResult<Messages>>('/messages');
-
-    return handleResponse(response);
+    const response = await api.get<Messages>('/messages');
+    return MessagesSchema.parse(response);
   };
 
   const fetchPeriodicData = async (): Promise<PeriodicClientQueryResult> => {
-    const response = await api.instance.get<ActionResult<PeriodicClientQueryResult>>('/periodic', {
-      validateStatus: validWithSessionStatus,
+    const response = await api.get<PeriodicClientQueryResult>('/periodic', {
+      validStatuses: VALID_WITH_SESSION_STATUS,
     });
-
-    return handleResponse(response);
+    return PeriodicClientQueryResultSchema.parse(response);
   };
 
   const refreshGeneralCacheTask = async (cacheProtocol: string): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.post<PendingTask>(
       '/protocols/data/refresh',
-      snakeCaseTransformer({ asyncQuery: true, cacheProtocol }),
+      { asyncQuery: true, cacheProtocol },
       {
-        validateStatus: validWithSessionStatus,
+        validStatuses: VALID_WITH_SESSION_STATUS,
       },
     );
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
-  const getRefreshableGeneralCaches = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      '/protocols/data/refresh',
-      snakeCaseTransformer({ asyncQuery: true }),
-    );
-
-    return handleResponse(response);
-  };
+  const getRefreshableGeneralCaches = async (): Promise<string[]> => api.get<string[]>('/protocols/data/refresh', {
+    query: { asyncQuery: true },
+  });
 
   return {
     consumeMessages,

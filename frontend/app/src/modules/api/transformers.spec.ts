@@ -1,8 +1,8 @@
 import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { camelCaseTransformer, noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
+import { camelCaseTransformer, noRootCamelCaseTransformer, snakeCaseTransformer } from '@/modules/api/transformers';
 
-describe('axios transformers', () => {
+describe('transformers', () => {
   it('transform json to camelCase', () => {
     const json = '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
     const parsed = JSON.parse(json);

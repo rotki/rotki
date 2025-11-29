@@ -1,9 +1,9 @@
 import { type ActionResult, assert } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
-import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { find, toArray } from 'es-toolkit/compat';
 import { useTaskApi } from '@/composables/api/task';
+import { isTimeoutError } from '@/modules/api/with-retry';
 import {
   BackendCancelledTaskError,
   type Task,
@@ -273,7 +273,7 @@ export const useTaskStore = defineStore('tasks', () => {
     removeFromUnknownTasks(task.id);
 
     try {
-      const result = await api.queryTaskResult(task.id, task.meta.transformer);
+      const result = await api.queryTaskResult(task.id);
       assert(result !== null);
       handleResult(result, task);
     }
@@ -283,7 +283,7 @@ export const useTaskStore = defineStore('tasks', () => {
         handleResult(error(task, error_.message), task);
       }
       else {
-        if (error_ instanceof AxiosError && error_.code === 'ECONNABORTED' && error_.message.includes('timeout')) {
+        if (isTimeoutError(error_)) {
           const totalTimeouts = (get(timeouts)[task.id] ?? 0) + 1;
           if (totalTimeouts >= TIMEOUT_THRESHOLD) {
             remove(task.id);

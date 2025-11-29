@@ -36,10 +36,7 @@ export function useNftBalances(): NftBalancesReturn {
     payload: MaybeRef<NonFungibleBalancesRequestPayload>,
   ): Promise<Collection<NonFungibleBalance>> => {
     const payloadVal = get(payload);
-    const result = await fetchNfBalances({
-      ...get(payloadVal),
-      ignoreCache: false,
-    });
+    const result = await fetchNfBalances(get(payloadVal));
 
     if (!payloadVal.ignoredAssetsHandling || payloadVal.ignoredAssetsHandling === 'exclude')
       set(nonFungibleTotalValue, result.totalUsdValue);

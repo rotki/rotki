@@ -1,5 +1,5 @@
-import type { AxiosResponseTransformer } from 'axios';
 import type { TaskType } from '@/types/task-type';
+import { z } from 'zod/v4';
 
 export interface Task<T extends TaskMeta> {
   readonly id: number;
@@ -12,7 +12,6 @@ export interface TaskMeta {
   readonly title: string;
   readonly description?: string;
   readonly ignoreResult?: boolean;
-  readonly transformer?: AxiosResponseTransformer[];
 }
 
 export interface ExchangeMeta extends TaskMeta {
@@ -57,6 +56,8 @@ export class UserCancelledTaskError extends Error {
   }
 }
 
-export interface PendingTask {
-  readonly taskId: number;
-}
+export const PendingTaskSchema = z.object({
+  taskId: z.number(),
+});
+
+export type PendingTask = z.infer<typeof PendingTaskSchema>;

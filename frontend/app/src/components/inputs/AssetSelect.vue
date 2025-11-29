@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
 import { assert, type AssetInfoWithId, getValidSelectorFromEvmAddress, transformCase } from '@rotki/common';
-import { CanceledError } from 'axios';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
+import { isAbortError } from '@/utils';
 import { uniqueObjects } from '@/utils/data';
 
 defineOptions({
@@ -120,7 +120,7 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
     set(loading, false);
   }
   catch (error_: any) {
-    if (!(error_ instanceof CanceledError)) {
+    if (!isAbortError(error_)) {
       set(loading, false);
       set(error, error_.message);
     }

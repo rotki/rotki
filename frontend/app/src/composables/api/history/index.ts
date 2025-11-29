@@ -1,7 +1,6 @@
-import type { ActionResult } from '@rotki/common';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
-import { type AllLocationResponse, type LocationLabel, LocationLabels } from '@/types/location';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
+import { type AllLocationResponse, AllLocationResponseSchema, type LocationLabel, LocationLabelsSchema } from '@/types/location';
 import { ReportProgress } from '@/types/reports';
 
 interface UseHistoryApiReturn {
@@ -13,35 +12,23 @@ interface UseHistoryApiReturn {
 
 export function useHistoryApi(): UseHistoryApiReturn {
   const getProgress = async (): Promise<ReportProgress> => {
-    const response = await api.instance.get<ActionResult<ReportProgress>>(`/history/status`, {
-      validateStatus: validWithSessionStatus,
+    const response = await api.get<ReportProgress>(`/history/status`, {
+      validStatuses: VALID_WITH_SESSION_STATUS,
     });
-    const data = handleResponse(response);
-    return ReportProgress.parse(data);
+    return ReportProgress.parse(response);
   };
 
-  const fetchAssociatedLocations = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>('/locations/associated', {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const fetchAssociatedLocations = async (): Promise<string[]> => api.get<string[]>('/locations/associated');
 
   const fetchAllLocations = async (): Promise<AllLocationResponse> => {
-    const response = await api.instance.get<ActionResult<AllLocationResponse>>('/locations/all', {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
+    const response = await api.get<AllLocationResponse>('/locations/all');
+    return AllLocationResponseSchema.parse(response);
   };
 
   const fetchLocationLabels = async (): Promise<LocationLabel[]> => {
-    const response = await api.instance.get<ActionResult<LocationLabel[]>>('/locations/labels', {
-      validateStatus: validStatus,
-    });
+    const response = await api.get<LocationLabel[]>('/locations/labels');
 
-    return LocationLabels.parse(handleResponse(response).filter(item => item.locationLabel));
+    return LocationLabelsSchema.parse(response.filter(item => item.locationLabel));
   };
 
   return {

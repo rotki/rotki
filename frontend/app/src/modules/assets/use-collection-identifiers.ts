@@ -1,18 +1,16 @@
-import type { ActionResult } from '@rotki/common';
-import { apiUrls } from '@/services/api-urls';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse } from '@/services/utils';
+import { apiUrls } from '@/modules/api/api-urls';
+import { api } from '@/modules/api/rotki-api';
+import { HTTPStatus } from '@/types/api/http';
 
 interface UseCollectionIdentifiersReturn { getCollectionAssets: (collectionId: string) => Promise<string[]> }
 
 export function useCollectionIdentifiers(): UseCollectionIdentifiersReturn {
   async function getCollectionAssets(collectionId: string): Promise<string[]> {
-    const url = `/assets/collections?collection_id=${encodeURIComponent(collectionId)}`;
-    const response = await api.instance.get<ActionResult<string[]>>(url, {
+    return api.get<string[]>('/assets/collections', {
+      query: { collectionId },
       baseURL: apiUrls.colibriApiUrl,
-      validateStatus: code => [200].includes(code),
+      validStatuses: [HTTPStatus.OK],
     });
-    return handleResponse(response);
   }
   return {
     getCollectionAssets,

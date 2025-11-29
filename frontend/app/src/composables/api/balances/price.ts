@@ -1,17 +1,12 @@
-import type { ActionResult } from '@rotki/common';
 import type { SupportedCurrency } from '@/types/currencies';
 import type { PriceOracle } from '@/types/settings/price-oracle';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
+import { api } from '@/modules/api/rotki-api';
 import {
-  handleResponse,
-  paramsSerializer,
-  validStatus,
-  validWithoutSessionStatus,
-  validWithSessionAndExternalService,
-} from '@/services/utils';
+  VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+  VALID_WITHOUT_SESSION_STATUS,
+} from '@/modules/api/utils';
 import { AssetPriceResponse, HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/types/prices';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UsePriceApiReturn {
   queryPrices: (assets: string[], targetAsset: string, ignoreCache: boolean) => Promise<PendingTask>;
@@ -32,127 +27,112 @@ export function usePriceApi(): UsePriceApiReturn {
     toAsset: string,
     purgeOld = false,
   ): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.post<PendingTask>(
       `/oracles/${source}/cache`,
-      snakeCaseTransformer({
+      {
         asyncQuery: true,
         fromAsset,
         purgeOld: purgeOld || undefined,
         toAsset,
-      }),
+      },
       {
-        validateStatus: validWithSessionAndExternalService,
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
-  const deletePriceCache = async (source: PriceOracle, fromAsset: string, toAsset: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(`/oracles/${source}/cache`, {
-      data: snakeCaseTransformer({
-        fromAsset,
-        toAsset,
-      }),
-      validateStatus: validStatus,
-    });
+  const deletePriceCache = async (source: PriceOracle, fromAsset: string, toAsset: string): Promise<boolean> => api.delete<boolean>(`/oracles/${source}/cache`, {
+    body: {
+      fromAsset,
+      toAsset,
+    },
+  });
 
-    return handleResponse(response);
-  };
-
-  const getPriceCache = async (source: PriceOracle): Promise<OracleCacheMeta[]> => {
-    const response = await api.instance.get<ActionResult<OracleCacheMeta[]>>(`/oracles/${source}/cache`, {
-      validateStatus: validWithSessionAndExternalService,
-    });
-
-    return handleResponse(response);
-  };
+  const getPriceCache = async (source: PriceOracle): Promise<OracleCacheMeta[]> => api.get<OracleCacheMeta[]>(`/oracles/${source}/cache`, {
+    validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+  });
 
   const queryHistoricalRate = async (fromAsset: string, toAsset: string, timestamp: number): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.post<PendingTask>(
       '/assets/prices/historical',
-      snakeCaseTransformer({
+      {
         assetsTimestamp: [[fromAsset, timestamp]],
         asyncQuery: true,
         targetAsset: toAsset,
-      }),
+      },
       {
-        validateStatus: validWithSessionAndExternalService,
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
-  const internalQueryHistoricalRates = async <T>(
-    payload: HistoricPricesPayload,
-  ): Promise<T> => {
-    const response = await api.instance.post<ActionResult<T>>(
+  const queryHistoricalRates = async (payload: HistoricPricesPayload): Promise<PendingTask> => {
+    const response = await api.post<PendingTask>(
       '/assets/prices/historical',
-      snakeCaseTransformer({
-        asyncQuery: !payload.onlyCachePeriod,
-        ...payload,
-      }),
       {
-        validateStatus: validWithSessionAndExternalService,
+        asyncQuery: true,
+        ...payload,
+      },
+      {
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
-
-  const queryHistoricalRates = async (payload: HistoricPricesPayload): Promise<PendingTask> => internalQueryHistoricalRates<PendingTask>(payload);
 
   const queryOnlyCacheHistoricalRates = async (payload: Required<HistoricPricesPayload>): Promise<HistoricPrices> => {
-    const response = await internalQueryHistoricalRates<HistoricPrices>(payload);
+    const response = await api.post<HistoricPrices>(
+      '/assets/prices/historical',
+      payload,
+      {
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+      },
+    );
     return HistoricPrices.parse(response);
   };
 
   const queryPrices = async (assets: string[], targetAsset: string, ignoreCache: boolean): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.post<PendingTask>(
       '/assets/prices/latest',
-      snakeCaseTransformer({
+      {
         assets,
         asyncQuery: true,
         ignoreCache: ignoreCache || undefined,
         targetAsset,
-      }),
+      },
       {
-        validateStatus: validWithSessionAndExternalService,
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const queryCachedPrices = async (assets: string[], targetAsset: string): Promise<AssetPriceResponse> => {
-    const response = await api.instance.post<ActionResult<AssetPriceResponse>>(
+    const response = await api.post<AssetPriceResponse>(
       '/assets/prices/latest',
-      snakeCaseTransformer({
-        assets,
-        asyncQuery: false,
-        ignoreCache: false,
-        targetAsset,
-      }),
       {
-        validateStatus: validWithSessionAndExternalService,
+        assets,
+        targetAsset,
+      },
+      {
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
 
-    return AssetPriceResponse.parse(handleResponse(response));
+    return AssetPriceResponse.parse(response);
   };
 
   const queryFiatExchangeRates = async (currencies: SupportedCurrency[]): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>('/exchange_rates', {
-      params: {
-        async_query: true,
+    const response = await api.get<PendingTask>('/exchange_rates', {
+      query: {
+        asyncQuery: true,
         currencies,
       },
-      paramsSerializer,
-      validateStatus: validWithoutSessionStatus,
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
     });
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

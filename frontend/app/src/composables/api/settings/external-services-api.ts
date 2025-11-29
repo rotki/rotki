@@ -1,7 +1,5 @@
-import type { ActionResult } from '@rotki/common';
-import { setupTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
 import { type ExternalServiceKey, ExternalServiceKeys } from '@/types/user';
 
 interface UseExternalServicesApiReturn {
@@ -12,42 +10,33 @@ interface UseExternalServicesApiReturn {
 
 export function useExternalServicesApi(): UseExternalServicesApiReturn {
   const queryExternalServices = async (): Promise<ExternalServiceKeys> => {
-    const response = await api.instance.get<ActionResult<ExternalServiceKeys>>('/external_services', {
-      transformResponse: setupTransformer(true),
-      validateStatus: validWithSessionStatus,
+    const response = await api.get<ExternalServiceKeys>('/external_services', {
+      skipRootCamelCase: true,
+      validStatuses: VALID_WITH_SESSION_STATUS,
     });
 
-    const data = handleResponse(response);
-    return ExternalServiceKeys.parse(data);
+    return ExternalServiceKeys.parse(response);
   };
 
   const setExternalServices = async (keys: ExternalServiceKey[]): Promise<ExternalServiceKeys> => {
-    const response = await api.instance.put<ActionResult<ExternalServiceKeys>>(
+    const response = await api.put<ExternalServiceKeys>(
       '/external_services',
-      snakeCaseTransformer({
-        services: keys,
-      }),
+      { services: keys },
       {
-        transformResponse: setupTransformer(true),
-        validateStatus: validStatus,
+        skipRootCamelCase: true,
       },
     );
 
-    const data = handleResponse(response);
-    return ExternalServiceKeys.parse(data);
+    return ExternalServiceKeys.parse(response);
   };
 
   const deleteExternalServices = async (serviceToDelete: string): Promise<ExternalServiceKeys> => {
-    const response = await api.instance.delete<ActionResult<ExternalServiceKeys>>('/external_services', {
-      data: {
-        services: [serviceToDelete],
-      },
-      transformResponse: setupTransformer(true),
-      validateStatus: validStatus,
+    const response = await api.delete<ExternalServiceKeys>('/external_services', {
+      body: { services: [serviceToDelete] },
+      skipRootCamelCase: true,
     });
 
-    const data = handleResponse(response);
-    return ExternalServiceKeys.parse(data);
+    return ExternalServiceKeys.parse(response);
   };
 
   return {

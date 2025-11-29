@@ -115,8 +115,6 @@ describe('composables/api/balances/price', () => {
 
       expect(capturedBody).toEqual({
         assets: ['ETH', 'BTC'],
-        async_query: false,
-        ignore_cache: false,
         target_asset: 'USD',
       });
       expect(result.ETH.value).toBeInstanceOf(BigNumber);
@@ -330,7 +328,6 @@ describe('composables/api/balances/price', () => {
 
       expect(capturedBody).toEqual({
         assets_timestamp: [['ETH', '1700000000'], ['ETH', '1700100000']],
-        async_query: false,
         only_cache_period: 3600,
         target_asset: 'USD',
       });

@@ -1,6 +1,4 @@
-import type { PendingTask } from '@/types/task';
 import {
-  type ActionResult,
   type HistoricalAssetPricePayload,
   LocationData,
   NetValue,
@@ -8,9 +6,8 @@ import {
   TimedAssetHistoricalBalances,
   TimedBalances,
 } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseStatisticsApiReturn {
   queryNetValueData: (includeNfts: boolean) => Promise<NetValue>;
@@ -24,14 +21,11 @@ interface UseStatisticsApiReturn {
 
 export function useStatisticsApi(): UseStatisticsApiReturn {
   const queryNetValueData = async (includeNfts: boolean): Promise<NetValue> => {
-    const response = await api.instance.get<ActionResult<NetValue>>('/statistics/netvalue', {
-      params: snakeCaseTransformer({
-        includeNfts,
-      }),
-      validateStatus: validStatus,
+    const response = await api.get<NetValue>('/statistics/netvalue', {
+      query: { includeNfts },
     });
 
-    return NetValue.parse(handleResponse(response));
+    return NetValue.parse(response);
   };
 
   const queryTimedBalancesData = async (
@@ -45,15 +39,9 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
       toTimestamp,
       ...(isDefined(collectionId) ? { collectionId } : { asset }),
     };
-    const balances = await api.instance.post<ActionResult<TimedBalances>>(
-      `/statistics/balance`,
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.post<TimedBalances>('/statistics/balance', payload);
 
-    return TimedBalances.parse(handleResponse(balances));
+    return TimedBalances.parse(response);
   };
 
   const queryTimedHistoricalBalancesData = async (
@@ -67,50 +55,34 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
       toTimestamp,
       ...(isDefined(collectionId) ? { collectionId } : { asset }),
     };
-    const balances = await api.instance.post<ActionResult<TimedAssetHistoricalBalances>>(
-      `/balances/historical/asset`,
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const response = await api.post<TimedAssetHistoricalBalances>('/balances/historical/asset', payload);
 
-    return TimedAssetHistoricalBalances.parse(handleResponse(balances));
+    return TimedAssetHistoricalBalances.parse(response);
   };
 
   const queryLatestLocationValueDistribution = async (): Promise<LocationData> => {
-    const statistics = await api.instance.get<ActionResult<LocationData>>('/statistics/value_distribution', {
-      params: snakeCaseTransformer({ distributionBy: 'location' }),
-      validateStatus: validStatus,
+    const response = await api.get<LocationData>('/statistics/value_distribution', {
+      query: { distributionBy: 'location' },
     });
-    return LocationData.parse(handleResponse(statistics));
+    return LocationData.parse(response);
   };
 
   const queryLatestAssetValueDistribution = async (): Promise<TimedAssetBalances> => {
-    const statistics = await api.instance.get<ActionResult<TimedAssetBalances>>('/statistics/value_distribution', {
-      params: snakeCaseTransformer({ distributionBy: 'asset' }),
-      validateStatus: validStatus,
+    const response = await api.get<TimedAssetBalances>('/statistics/value_distribution', {
+      query: { distributionBy: 'asset' },
     });
-    return TimedAssetBalances.parse(handleResponse(statistics));
+    return TimedAssetBalances.parse(response);
   };
 
-  const queryStatisticsRenderer = async (): Promise<string> => {
-    const response = await api.instance.get<ActionResult<string>>('/statistics/renderer', {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const queryStatisticsRenderer = async (): Promise<string> => api.get<string>('/statistics/renderer');
 
   const queryHistoricalAssetPrices = async (payload: HistoricalAssetPricePayload): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>('/balances/historical/asset/prices', snakeCaseTransformer({
+    const response = await api.post<PendingTask>('/balances/historical/asset/prices', {
       ...payload,
       asyncQuery: true,
-    }), {
-      validateStatus: validStatus,
     });
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

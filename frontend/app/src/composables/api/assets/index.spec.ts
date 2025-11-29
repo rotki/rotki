@@ -288,6 +288,30 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('exportCustom', () => {
+    it('exports as blob download when no directory provided', async () => {
+      let capturedBody: Record<string, unknown> | null = null;
+
+      server.use(
+        http.put(`${backendUrl}/api/1/assets/user`, async ({ request }) => {
+          capturedBody = await request.json() as Record<string, unknown>;
+          return new HttpResponse('test file content', {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/octet-stream',
+            },
+          });
+        }),
+      );
+
+      const { exportCustom } = useAssetsApi();
+      const result = await exportCustom();
+
+      expect(capturedBody).toEqual({
+        action: 'download',
+      });
+      expect(result.success).toBe(true);
+    });
+
     it('exports to directory path', async () => {
       let capturedBody: Record<string, unknown> | null = null;
 
@@ -311,7 +335,7 @@ describe('composables/api/assets/index', () => {
       expect(result.success).toBe(true);
     });
 
-    it('returns error status on failure', async () => {
+    it('returns error status on directory export failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, () =>
           HttpResponse.json({
@@ -326,6 +350,23 @@ describe('composables/api/assets/index', () => {
       expect(result.success).toBe(false);
       if (!result.success)
         expect(result.message).toBe('Export failed');
+    });
+
+    it('returns error status on blob export failure', async () => {
+      server.use(
+        http.put(`${backendUrl}/api/1/assets/user`, () =>
+          HttpResponse.json({
+            result: null,
+            message: 'Blob export failed',
+          })),
+      );
+
+      const { exportCustom } = useAssetsApi();
+      const result = await exportCustom();
+
+      expect(result.success).toBe(false);
+      if (!result.success)
+        expect(result.message).toBe('Blob export failed');
     });
   });
 
