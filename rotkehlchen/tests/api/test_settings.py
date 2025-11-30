@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.db.settings import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_QUERY_RETRY_LIMIT,
@@ -21,6 +22,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
+    assert_proper_response_with_result,
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
@@ -29,6 +31,7 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockWeb3
 from rotkehlchen.types import (
     ApiKey,
+    ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
     ExchangeLocationID,
@@ -184,7 +187,7 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
     for setting, raw_value in original_settings.items():
         if setting in unmodifiable_settings:
             continue
-        value: str | list[str | dict] | int | None = None
+        value: str | list[str | dict] | dict[str, list[str]] | int | None = None
         if setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
         elif setting == 'main_currency':
@@ -209,6 +212,10 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
             value = ['coingecko', 'cryptocompare', 'uniswapv2', 'uniswapv3']
         elif setting == 'historical_price_oracles':
             value = ['coingecko', 'cryptocompare']
+        elif setting == 'evm_indexers_order':
+            value = {'ethereum': ['routescan', 'blockscout', 'etherscan'], 'optimism': ['etherscan', 'blockscout', 'routescan'], 'polygon_pos': ['etherscan', 'blockscout', 'routescan'], 'arbitrum_one': ['etherscan', 'blockscout', 'routescan'], 'base': ['etherscan', 'blockscout', 'routescan'], 'gnosis': ['etherscan', 'blockscout', 'routescan'], 'scroll': ['etherscan', 'blockscout', 'routescan'], 'binance_sc': ['etherscan', 'blockscout', 'routescan']}  # noqa: E501
+        elif setting == 'default_evm_indexer_order':
+            value = ['etherscan', 'blockscout', 'routescan']
         elif setting == 'non_syncing_exchanges':
             value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
         elif setting == 'evmchains_to_skip_detection':
@@ -540,6 +547,79 @@ def test_set_settings_errors(rotkehlchen_api_server: 'APIServer') -> None:
             contained_in_msg=f'"current_price_oracles": ["Invalid current price oracles given: {oracle!s}. ',  # noqa: E501
             status_code=HTTPStatus.BAD_REQUEST,
         )
+
+    for order in (['etherscan', 'etherscan'], []):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+            json={'settings': {'evm_indexers_order': {'ethereum': order}}},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='"evm_indexers_order": ["EVM indexers order should not be empty and should have no repeated entries"]',  # noqa: E501
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+    for order in (['etherscan', 'etherscan'], []):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+            json={'settings': {'default_evm_indexer_order': order}},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='List of indexers has to contain unique elements and be non empty',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+    data = {
+        'settings': {'evm_indexers_order': {'unknown': ['etherscan', 'etherscan']}},
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='"evm_indexers_order": ["Failed to deserialize evm chain value unknown"]',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def test_set_evm_indexers_order(rotkehlchen_api_server: 'APIServer') -> None:
+    settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
+    settings = assert_proper_response_with_result(
+        response=requests.get(settings_url),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert settings['evm_indexers_order'][ChainID.ARBITRUM_ONE.to_name()] == ['etherscan', 'blockscout', 'routescan']  # noqa: E501
+    assert settings['evm_indexers_order'][ChainID.OPTIMISM.to_name()] == ['etherscan', 'blockscout', 'routescan']  # noqa: E501
+
+    # try editing the order of ethereum
+    assert_proper_response(
+        response=requests.put(
+            url=settings_url,
+            json={
+                'settings': {'evm_indexers_order': {'ethereum': ['blockscout', 'etherscan']}},
+            },
+        ),
+    )
+
+    # cached settings should be updated
+    indexers = CachedSettings().get_evm_indexers_order_for_chain(ChainID.ETHEREUM)
+    assert indexers == [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]
+    # and also settings endpoint
+    settings = assert_proper_response_with_result(
+        response=requests.get(settings_url),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert settings['evm_indexers_order'][ChainID.ETHEREUM.to_name()] == ['blockscout', 'etherscan']  # noqa: E501
+
+    # try editing an unsupported chain
+    assert_error_response(
+        response=requests.put(
+            url=settings_url,
+            json={
+                'settings': {'evm_indexers_order': {'celo': ['blockscout', 'etherscan']}},
+            },
+        ),
+        contained_in_msg='celo does not use indexers to query transactions',
+    )
 
 
 def assert_queried_addresses_match(

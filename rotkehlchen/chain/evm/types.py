@@ -1,7 +1,8 @@
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 
@@ -9,12 +10,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     CHAINS_WITH_NODES_TYPE,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
     ChecksumEvmAddress,
     SupportedBlockchain,
 )
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 
 def string_to_evm_address(value: str) -> ChecksumEvmAddress:
@@ -131,3 +134,37 @@ class RemoteDataQueryStatus(Enum):
     FAILED = auto()
     NEW_DATA = auto()
     NO_UPDATE = auto()
+
+
+class EvmIndexer(SerializableEnumNameMixin):
+    ETHERSCAN = auto()
+    BLOCKSCOUT = auto()
+    ROUTESCAN = auto()
+
+
+class SerializableChainIndexerOrder(NamedTuple):
+    order: Mapping[ChainID, Sequence[EvmIndexer]]
+
+    def get(self, key: ChainID, default: Any) -> Sequence[EvmIndexer] | None:
+        return self.order.get(key, default)
+
+    def serialize(self) -> dict[str, list[str]]:
+        return {
+            chain.to_name(): [indexer.serialize() for indexer in indexers]
+            for chain, indexers in self.order.items()
+        }
+
+
+DEFAULT_EVM_INDEXER_ORDER: Final = (
+    EvmIndexer.ETHERSCAN,
+    EvmIndexer.BLOCKSCOUT,
+    EvmIndexer.ROUTESCAN,
+)
+# list based on https://info.etherscan.com/whats-changing-in-the-free-api-tier-coverage-and-why/
+# might need adjustment in the future.
+CHAINS_WITH_PAID_ETHERSCAN: Final = {ChainID.BASE, ChainID.OPTIMISM, ChainID.BINANCE_SC}
+PAID_ETHERSCAN_EVM_INDEXER_ORDER: Final = DEFAULT_EVM_INDEXER_ORDER  # TODO: give priority to blockscout to avoid forcing users to change the order manually if they don't have paid api keys https://github.com/rotki/rotki/pull/11031  # noqa: E501
+DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(order={
+    chain: DEFAULT_EVM_INDEXER_ORDER if chain not in CHAINS_WITH_PAID_ETHERSCAN else PAID_ETHERSCAN_EVM_INDEXER_ORDER  # noqa: E501
+    for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+})

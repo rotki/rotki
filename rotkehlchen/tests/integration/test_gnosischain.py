@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-@pytest.mark.freeze_time('2024-11-28 10:44:55 GMT')
+@pytest.mark.freeze_time('2025-12-01 15:17:30 GMT')
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x2449fE0bEA58e027f374e90b296e72Dfd7bCcBaE']])  # noqa: E501
 def test_gnosischain_specific_chain_data(

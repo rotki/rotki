@@ -1,10 +1,16 @@
 import json
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.chain.evm.types import (
+    DEFAULT_EVM_INDEXER_ORDER,
+    DEFAULT_INDEXERS_ORDER,
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+)
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
@@ -18,8 +24,10 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     DEFAULT_OFF_MODULES,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressNameSource,
+    ChainID,
     CostBasisMethod,
     ExchangeLocationID,
     ModuleName,
@@ -70,12 +78,14 @@ DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
 DEFAULT_AUTO_DETECT_TOKENS = True
 DEFAULT_CSV_EXPORT_DELIMITER = ','
 
-JSON_KEYS = (
+LIST_KEYS = (
     'current_price_oracles',
     'historical_price_oracles',
     'non_syncing_exchanges',
     'evmchains_to_skip_detection',
+    'default_evm_indexer_order',
 )
+JSON_KEYS = ('evm_indexers_order',)
 BOOLEAN_KEYS = (
     'have_premium',
     'include_crypto2crypto',
@@ -141,6 +151,8 @@ CachedDBSettingsFieldNames = Literal[
     'display_date_in_localtime',
     'current_price_oracles',
     'historical_price_oracles',
+    'evm_indexers_order',
+    'default_evm_indexer_order',
     'pnl_csv_with_formulas',
     'pnl_csv_have_summary',
     'ssf_graph_multiplier',
@@ -171,6 +183,7 @@ DBSettingsFieldTypes = (
     Sequence[ModuleName] |
     Sequence[CurrentPriceOracle] |
     Sequence[HistoricalPriceOracle] |
+    dict[ChainID, Sequence[EvmIndexer]] |
     Sequence[ExchangeLocationID] |
     CostBasisMethod |
     Sequence[AddressNameSource]
@@ -201,6 +214,8 @@ class DBSettings:
     display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
     current_price_oracles: Sequence[CurrentPriceOracle] = field(default=DEFAULT_CURRENT_PRICE_ORACLES)  # noqa: E501
     historical_price_oracles: Sequence[HistoricalPriceOracle] = field(default=DEFAULT_HISTORICAL_PRICE_ORACLES)  # noqa: E501
+    evm_indexers_order: SerializableChainIndexerOrder = field(default=DEFAULT_INDEXERS_ORDER)
+    default_evm_indexer_order: Sequence[EvmIndexer] = field(default=DEFAULT_EVM_INDEXER_ORDER)
     pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
@@ -262,6 +277,8 @@ class ModifiableDBSettings(NamedTuple):
     display_date_in_localtime: bool | None = None
     current_price_oracles: list[CurrentPriceOracle] | None = None
     historical_price_oracles: list[HistoricalPriceOracle] | None = None
+    evm_indexers_order: SerializableChainIndexerOrder | None = None
+    default_evm_indexer_order: list[EvmIndexer] | None = None
     pnl_csv_with_formulas: bool | None = None
     pnl_csv_have_summary: bool | None = None
     ssf_graph_multiplier: int | None = None
@@ -309,6 +326,28 @@ def read_boolean(value: str | bool) -> bool:
     )
 
 
+def _deserialize_evm_indexers_order(value: str) -> SerializableChainIndexerOrder:
+    """Deserialize per-chain indexer order mapping."""
+    result: dict[ChainID, Sequence[EvmIndexer]] = {}
+    try:
+        indexers = json.loads(value)
+    except json.JSONDecodeError as e:
+        log.error(f'Failed to load indexers settings due to {e}. Skipping')
+        return SerializableChainIndexerOrder(result)
+
+    for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+        if (order := indexers.get(chain.to_name())) is not None:
+            try:
+                result[chain] = [EvmIndexer.deserialize(idx) for idx in order]
+            except DeserializationError as e:
+                log.error(
+                    f'Found unexpected indexer for chain {chain.to_name()} in '
+                    f'{order} with {e}. Skipping',
+                )
+
+    return SerializableChainIndexerOrder(result)
+
+
 def db_settings_from_dict(
         settings_dict: dict[str, Any],
         msg_aggregator: 'MessagesAggregator',
@@ -350,6 +389,8 @@ def db_settings_from_dict(
         elif key == 'historical_price_oracles':
             oracles = json.loads(value)
             specified_args[key] = [HistoricalPriceOracle.deserialize(oracle) for oracle in oracles]
+        elif key == 'evm_indexers_order':
+            specified_args[key] = _deserialize_evm_indexers_order(value=value)
         elif key == 'non_syncing_exchanges':
             values = json.loads(value)
             specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
@@ -377,23 +418,29 @@ def serialize_db_setting(
     """Utility function to serialize a db setting.
     `is_modifiable` represents `ModifiableDBSettings` specific flag.
     """
-    # We need to save booleans as strings in the DB
-    if isinstance(value, bool) and is_modifiable is True:
-        value = str(value)
-    # taxfree_after_period of -1 by the user means disable the setting
-    elif setting == 'taxfree_after_period' and value == -1 and is_modifiable is True:
-        value = None
-    elif setting == 'active_modules' and is_modifiable is True:
-        value = json.dumps(value)
-    elif setting in {'main_currency', 'cost_basis_method'}:
-        value = value.serialize()  # pylint: disable=no-member
-    elif setting == 'address_name_priority' and is_modifiable is True:
-        value = json.dumps(value)
-    elif setting in JSON_KEYS:
-        if is_modifiable is True:
-            value = json.dumps([x.serialize() for x in value])
-        else:
-            value = [x.serialize() for x in value]
+    # Handle settings that serialize regardless of is_modifiable
+    if setting in {'main_currency', 'cost_basis_method'}:
+        return value.serialize()  # pylint: disable=no-member
+
+    if is_modifiable:
+        if isinstance(value, bool):
+            # We need to save booleans as strings in the DB
+            return str(value)
+        if setting == 'taxfree_after_period' and value == -1:
+            # taxfree_after_period of -1 by the user means disable the setting
+            return None
+        if setting in {'active_modules', 'address_name_priority'}:
+            return json.dumps(value)
+        if setting in LIST_KEYS:
+            return json.dumps([x.serialize() for x in value])
+        if setting in JSON_KEYS:
+            return json.dumps(value.serialize())
+    else:
+        if setting in LIST_KEYS:
+            return [x.serialize() for x in value]
+        if setting in JSON_KEYS:
+            return value.serialize()
+
     return value
 
 
@@ -417,25 +464,42 @@ class CachedSettings:
     """
     __instance: Optional['CachedSettings'] = None
     _settings: DBSettings = DBSettings()  # the default settings values
+    _evm_indexers_order_per_chain: ClassVar[Mapping[ChainID, tuple[EvmIndexer, ...]]] = {}
 
     def __new__(cls) -> 'CachedSettings':
         if CachedSettings.__instance is not None:
             return CachedSettings.__instance
 
         CachedSettings.__instance = super().__new__(cls)
+        CachedSettings.__instance._refresh_indexers_cache()
         return CachedSettings.__instance
+
+    def _refresh_indexers_cache(self) -> None:
+        """Normalize indexer order once for quick lookups."""
+        chain_to_indexers = {}
+        for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+            chain_to_indexers[chain] = self._settings.evm_indexers_order.get(
+                chain,
+                self._settings.default_evm_indexer_order,
+            )
+
+        self.__class__._evm_indexers_order_per_chain = chain_to_indexers  # type: ignore
 
     def initialize(self, settings: DBSettings) -> None:
         """Initialize with saved DB settings
 
         This overwrites the default db settings set at class instantiation"""
         self._settings = settings
+        self._refresh_indexers_cache()
 
     def reset(self) -> None:
         self._settings = DBSettings()
+        self._refresh_indexers_cache()
 
     def update_entry(self, attr: str, value: DBSettingsFieldTypes) -> None:
         setattr(self._settings, attr, value)
+        if attr == 'evm_indexers_order':
+            self._refresh_indexers_cache()
 
     def update_entries(self, settings: ModifiableDBSettings) -> None:
         for attr in settings._fields:
@@ -457,6 +521,10 @@ class CachedSettings:
 
     def get_query_retry_limit(self) -> int:
         return self.get_entry('query_retry_limit')  # type: ignore
+
+    def get_evm_indexers_order_for_chain(self, chain_id: ChainID) -> tuple[EvmIndexer, ...]:
+        """Return chain-specific indexer order falling back to defaults."""
+        return self._evm_indexers_order_per_chain[chain_id]
 
     @property
     def oracle_penalty_duration(self) -> int:
