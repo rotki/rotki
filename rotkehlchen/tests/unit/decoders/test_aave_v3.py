@@ -1119,7 +1119,7 @@ def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None
     assert events == expected_events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
     """Test that claim rewards for incentives works"""

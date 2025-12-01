@@ -822,7 +822,7 @@ Getting or modifying settings
    :resjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :resjson object evm_indexers_order: Mapping of EVM chain names to the ordered list of indexers to query per chain. Example: ``{"ethereum": ["etherscan", "blockscout", "routescan"]}``.
-   :resjson list default_evm_indexer_order: Default order to use with EVM indexers.
+   :resjson list default_evm_indexer_order: Default order to use for chains where no specific indexer order has been given.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson string cost_basis_method: Defines which method to use during the cost basis calculation. Currently supported: fifo, lifo.
    :resjson string address_name_priority: Defines the priority to search for address names. From first to last location in this array, the first name found will be displayed.
@@ -874,7 +874,7 @@ Getting or modifying settings
    :reqjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :reqjson object[optional] evm_indexers_order: Mapping of EVM chain names to the ordered list of indexers to query per chain. Each list must contain the available indexers without duplicates.
-   :resjson list[optional] default_evm_indexer_order: Default order to use with EVM indexers.
+   :resjson list[optional] default_evm_indexer_order: Default order to use for chains where no specific indexer order has been given.
    :reqjson list non_syncing_exchanges: A list of objects with the keys ``name`` and ``location`` of the exchange. These exchanges will be ignored when querying the trades. Example: ``[{"name": "my_exchange", "location": "binance"}]``.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson bool infer_zero_timed_balances: A boolean denoting whether to infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.
