@@ -5,7 +5,7 @@ import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
-import '../../../i18n';
+import '@test/i18n';
 
 describe('prioritizedList.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof PrioritizedList>>;

@@ -1,3 +1,5 @@
+import { setModules } from '@test/utils/general-settings';
+import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
@@ -6,8 +8,6 @@ import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
-import { setModules } from '../../../../utils/general-settings';
-import { libraryDefaults } from '../../../../utils/provide-defaults';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({

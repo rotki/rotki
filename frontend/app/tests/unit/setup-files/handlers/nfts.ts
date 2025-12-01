@@ -1,6 +1,6 @@
 import process from 'node:process';
+import nfts from '@test/fixtures/nfts.json';
 import { http, HttpResponse } from 'msw';
-import nfts from '../../fixtures/nfts.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

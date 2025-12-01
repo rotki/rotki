@@ -1,6 +1,6 @@
 import process from 'node:process';
+import historyTypeMappings from '@test/fixtures/history-type-mappings.json';
 import { http, HttpResponse } from 'msw';
-import historyTypeMappings from '../../fixtures/history-type-mappings.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

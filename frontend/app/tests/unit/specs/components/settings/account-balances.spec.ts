@@ -1,4 +1,6 @@
 import { Blockchain } from '@rotki/common';
+import { createCustomPinia } from '@test/utils/create-pinia';
+import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
@@ -10,8 +12,6 @@ import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { createCustomPinia } from '../../../utils/create-pinia';
-import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockImplementation(() =>

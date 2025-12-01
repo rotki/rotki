@@ -1,6 +1,6 @@
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/store/confirm';
-import { createCustomPinia } from '../../utils/create-pinia';
 
 describe('store:confirm', () => {
   let store: ReturnType<typeof useConfirmStore>;

@@ -1,6 +1,6 @@
 import process from 'node:process';
+import historyEvents from '@test/fixtures/history-events.json';
 import { http, HttpResponse } from 'msw';
-import historyEvents from '../../fixtures/history-events.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

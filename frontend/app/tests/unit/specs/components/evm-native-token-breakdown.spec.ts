@@ -5,6 +5,7 @@ import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import { bigNumberify, type Blockchain } from '@rotki/common';
+import { libraryDefaults } from '@test/utils/provide-defaults';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,7 +13,6 @@ import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { BalanceType } from '@/types/balances';
-import { libraryDefaults } from '../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
