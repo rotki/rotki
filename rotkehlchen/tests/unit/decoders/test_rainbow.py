@@ -17,6 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     EvmInternalTransaction,
@@ -272,6 +273,7 @@ def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accoun
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x4C855204c4EeD411a03D20acE673d08837A8F5ee']])
 def test_rainbow_swap_on_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xa8ba1828b24608d3c3405a211bca5fcb57c5f4cdfde93d6a55b7f3b16f8f78f1')  # noqa: E501
@@ -431,6 +433,7 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x158E5aE870c64C0B48Dd062c62D160aBF13391b6']])
 def test_rainbow_swap_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc670f3c5efbeaf47e1c14349be3dc0f6df136b69d651b26e3a2cf371b6a63f6f')  # noqa: E501

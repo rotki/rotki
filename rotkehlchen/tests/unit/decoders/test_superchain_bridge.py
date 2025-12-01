@@ -13,6 +13,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -95,7 +96,8 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_receive_erc20_on_optimism_legacy(optimism_inquirer, optimism_accounts):
     """Legacy bridge deposit to optimism. Where l1fee exists in receipt data"""
@@ -120,7 +122,8 @@ def test_receive_erc20_on_optimism_legacy(optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_receive_erc20_on_optimism(optimism_inquirer, optimism_accounts):
     """Newer bridge deposit to optimism. Where l1fee is 0 and missing from receipt data"""
@@ -145,7 +148,8 @@ def test_receive_erc20_on_optimism(optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xfc399B17D1Ddf01a518DcaeE557ef776bf288f63']])
 def test_receive_eth_on_optimism(optimism_inquirer, optimism_accounts):
     """Data is taken from
@@ -172,7 +176,8 @@ def test_receive_eth_on_optimism(optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x261FD12AF4c4bAbb30F44c1B0FE20a718A39b04C']])
 def test_withdraw_erc20(optimism_inquirer, optimism_accounts):
     """Data is taken from
@@ -211,7 +216,8 @@ def test_withdraw_erc20(optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xE232E72983E329757F02292322296f5B96dAfC8F']])
 def test_withdraw_eth(optimism_inquirer, optimism_accounts):
     """Data is taken from
@@ -370,6 +376,7 @@ def test_prove_withdrawal(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_deposit_dai_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd566bc86bdc88cf811fee5bbf5f233cb8add71642fdf547866f4054c4362a922')  # noqa: E501
@@ -406,6 +413,7 @@ def test_deposit_dai_on_optimism(optimism_inquirer, optimism_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x301605C95acbED7A1fD9C2c0DeEe964e2AFBd0C3']])
 def test_withdraw_dai_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x785d75b9a5c93b2ad47b662f8f98f9c63d31cd629497bcbd846c57a70f76366e')  # noqa: E501
@@ -500,6 +508,7 @@ def test_deposit_erc20_ethereum_to_base_bridge(ethereum_inquirer, ethereum_accou
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xd34Ec2202b56261b6d7586a752E37a36818c0538']])
 def test_receive_eth_ethereum_to_base_bridge(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x924167064e29ecb68ea9586811b63799b6154158a6607ac9fcf9530667446a5c')  # noqa: E501
@@ -523,6 +532,7 @@ def test_receive_eth_ethereum_to_base_bridge(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x1218d6396dC67eC0FFBEBDF049C865B83636EddA']])
 def test_receive_erc20_ethereum_to_base_bridge(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xf731b5c5dc53117413b880d0c65501cebe50c78ba3621eca9344747c95b83357')  # noqa: E501
@@ -546,6 +556,7 @@ def test_receive_erc20_ethereum_to_base_bridge(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x6730b1Df17E50217777EeE475E34815964e3BFb2']])
 def test_withdraw_eth_base_to_ethereum_bridge(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe451ca095dd9d48f6558a226fc6cc9b28d19f39080545db63b8ba9410fe3df3e')  # noqa: E501
@@ -581,6 +592,7 @@ def test_withdraw_eth_base_to_ethereum_bridge(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x779e4b47c3Dea5689233821dFcf429E0485eF116']])
 def test_withdraw_erc20_base_to_ethereum_bridge(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xbe4e54e77cb700f2755b236d7823295129c4d5e22fdc87df8058274bc0fefab1')  # noqa: E501
@@ -615,7 +627,8 @@ def test_withdraw_erc20_base_to_ethereum_bridge(base_inquirer, base_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 def test_new_eth_bridge(
         optimism_inquirer: OptimismInquirer,

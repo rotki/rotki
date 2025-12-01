@@ -13,6 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x9ba704115F0ed3a431A025ffa0525fDD1D507C3c']])
 def test_swap(
         base_inquirer: 'BaseInquirer',
@@ -71,6 +73,7 @@ def test_swap(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x6D2e91D1Ca448825909205aC1F60808999CdA5c1']])
 def test_create_lp_position(
         base_inquirer: 'BaseInquirer',
@@ -133,6 +136,7 @@ def test_create_lp_position(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x63aefe505c6F12e4D9EB8F404f4f4d19533dE681']])
 def test_increase_liquidity(
         base_inquirer: 'BaseInquirer',
@@ -182,6 +186,7 @@ def test_increase_liquidity(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xF60De76791c2F09995df52Aa1c6e2E7DcF1E75d7']])
 def test_decrease_liquidity(
         base_inquirer: 'BaseInquirer',

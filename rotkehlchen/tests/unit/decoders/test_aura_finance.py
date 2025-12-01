@@ -9,6 +9,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -76,6 +77,7 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x4936f33b7B060c7336fD0e4c61316EA248DA6827']])
 def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xffbc4716efdb4dbd7671c969599827313166fc507e2564ff1222a317d47e7a70')  # noqa: E501
@@ -126,6 +128,7 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
 def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe0a6fd1bd40451d4b42c520b41a39ab569bf4aae43b741efbe228da40fed91ad')  # noqa: E501
@@ -350,6 +353,7 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
 def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc54f5bc1b45b151dd7e106a45fea82a0bbb0dd1a48b5e71be2d8b9f36fbcb704')  # noqa: E501

@@ -16,11 +16,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xbF79b07d1311DF96CdDC53C71397271Ae8a2B0E9']])
 def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xa6271df026c97691148b0bcd53096cdbec91394b74f93e6e86ab046852f4a115')  # noqa: E501
@@ -68,6 +70,7 @@ def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_account
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xa521E425f37aCC731651565B41Ce3E5022274F4F']])
 def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6caae7d1a32abecf9dcc23c89e11fecfb9fccd2b21e718c0f62c6f001eb7a626')  # noqa: E501
@@ -115,6 +118,7 @@ def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_account
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x1D84C9Ab259372Ab07BEE9549a6aCF28DC111001']])
 def test_llamazip_optimism_swap_token_to_token(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x92e9af072a20b74d730037b80a96bf7ab02168679624bc87de8b3427e88882fd')  # noqa: E501

@@ -12,7 +12,7 @@ from enum import auto
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output  # noqa: S404
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from urllib.parse import parse_qs, urlparse
 
 import py
@@ -34,8 +34,9 @@ os.environ['POLARS_ALLOW_FORKING_THREAD'] = '1'
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-TESTS_ROOT_DIR = Path(__file__).parent
-SUBPROCESS_TIMEOUT = 30
+TESTS_ROOT_DIR: Final = Path(__file__).parent
+SUBPROCESS_TIMEOUT: Final = 30
+DB_SETTINGS_REGEX: Final = re.compile(r'-db_settings[^]]*|\[db_settings[^]]*\]')
 
 
 class TestEnvironment(SerializableEnumNameMixin):
@@ -188,6 +189,25 @@ def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
             'rate limit reached' in body_result
         )
     return rate_limited
+
+
+@pytest.fixture
+def vcr_cassette_name(request: pytest.FixtureRequest) -> str:
+    """
+    When adding more indexers to certain chains we use this fixture to avoid encoding
+    the settings fixture into the name of the cassette so we don't have to rename
+    all the VCR files.
+
+    Fixture is used indirectly by pytest-vcr
+    # pytest-deadfixtures ignore
+    """
+    callspec = getattr(request.node, 'callspec', None)
+    db_settings = getattr(callspec, 'params', {}).get('db_settings', None) if callspec else None
+    if isinstance(db_settings, dict) and 'evm_indexers_order' in db_settings:
+        # drop any `[db_settings...` segment, keep the rest (e.g., optimism_accounts)
+        return DB_SETTINGS_REGEX.sub('', request.node.name)
+
+    return request.node.name
 
 
 @pytest.fixture(scope='module', name='vcr')

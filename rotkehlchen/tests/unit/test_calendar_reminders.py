@@ -23,6 +23,7 @@ from rotkehlchen.tasks.calendar import (
     CalendarReminderCreator,
 )
 from rotkehlchen.tests.unit.test_ethereum_airdrops import prepare_airdrop_mock_response
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -377,6 +378,7 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.freeze_time('2025-03-05 00:00:00 GMT')
 @pytest.mark.parametrize('optimism_accounts', [['0xD4dd9a1FAc6D7bBe327c2b4A5Dc3197D0B10874b']])
 def test_locked_velo_calendar_reminders(

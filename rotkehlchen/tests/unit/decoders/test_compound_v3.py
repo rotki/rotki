@@ -21,6 +21,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_BRIDGED_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -367,6 +368,7 @@ def test_arbitrum_one_borrow(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xBD1eefb658C2B80c297493A0D4298B16941eff85']])
 def test_base_repay(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x455761ce3e1076eb03a3af1a90b935b42a703336e08aacf218afe76102d8d171')  # noqa: E501
@@ -461,6 +463,7 @@ def test_scroll_withdraw(scroll_inquirer, scroll_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xBf02910A77281F3c279ee45dA17c3BE8163b108f']])
 def test_optimism_supply_eth_with_wrapping(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6b4320c7965cfeb3263cdeb13469e49881ae66c2cfef68c94af1c210d7da8be7')  # noqa: E501

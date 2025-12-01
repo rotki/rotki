@@ -13,7 +13,13 @@ from rotkehlchen.chain.ethereum.oracles.constants import (
     A_OPTIMISM_USDT,
     A_POLYGON_USDC,
 )
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -114,6 +120,11 @@ def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylin
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder(
+        order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]},
+    ),
+}])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='base mainnet', endpoint='https://mainnet.base.org', owned=False, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
