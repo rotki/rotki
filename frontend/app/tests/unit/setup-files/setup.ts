@@ -2,6 +2,7 @@ import type { DatabaseInfo } from '@/types/backup';
 import { config } from '@vue/test-utils';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { mockT } from '../i18n';
+import { RuiAlertStub } from '../specs/stubs/RuiAlert';
 import { RuiAutoCompleteStub } from '../specs/stubs/RuiAutoComplete';
 import { RuiIconStub } from '../specs/stubs/RuiIcon';
 import { RuiTooltipStub } from '../specs/stubs/RuiTooltip';
@@ -112,7 +113,8 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 // Global stub components
+config.global.stubs.RuiAlert = RuiAlertStub;
+config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.RuiIcon = RuiIconStub;
 config.global.stubs.RuiTooltip = RuiTooltipStub;
-config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.I18nT = true;

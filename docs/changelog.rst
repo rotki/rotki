@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`10896` Users will be able to track the progress of repulling transactions.
+* :feature:`11014` Users will now be able to paste multiple market pairs to the binance market pairs input.
 * :bug:`11007` rotki will now show the proper balance of locked Pendle for vePendle positions.
 * :bug:`-` rotki will now properly decode Gearbox pool transactions for pools with no farming token or lp tokens beyond the pool token and underlying asset.
 * :feature:`-` rotki will now support blockscout and routescan as fallback indexers for retrieving transactions when etherscan fails or does not support a given chain.
