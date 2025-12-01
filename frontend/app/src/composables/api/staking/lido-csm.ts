@@ -1,13 +1,10 @@
 import type { ActionResult } from '@rotki/common';
-import type { AxiosResponse } from 'axios';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
+import { api } from '@/modules/api';
 import {
-  handleResponse,
-  validStatus,
-  validWithSessionAndExternalService,
-  validWithSessionStatus,
-} from '@/services/utils';
+  VALID_STATUS_CODES,
+  VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+  VALID_WITH_SESSION_STATUS,
+} from '@/modules/api/utils';
 import {
   type LidoCsmNodeOperator,
   LidoCsmNodeOperatorListSchema,
@@ -30,59 +27,52 @@ interface UseLidoCsmApiReturn {
 const BASE_PATH = '/lido-csm/node-operators';
 const METRICS_PATH = '/lido-csm/metrics';
 
-function toApiPayload(payload: LidoCsmNodeOperatorPayload): Record<string, unknown> {
-  const validated = LidoCsmNodeOperatorPayloadSchema.parse(payload);
-  return snakeCaseTransformer(validated);
+function toApiPayload(payload: LidoCsmNodeOperatorPayload): LidoCsmNodeOperatorPayload {
+  return LidoCsmNodeOperatorPayloadSchema.parse(payload);
 }
 
 export function useLidoCsmApi(): UseLidoCsmApiReturn {
-  const parseResponse = (
-    response: AxiosResponse<ActionResult<LidoCsmNodeOperator[]>>,
-  ): LidoCsmApiResult => {
-    const entries = LidoCsmNodeOperatorListSchema.parse(handleResponse(response));
+  const parseResponse = (data: ActionResult<LidoCsmNodeOperator[]>): LidoCsmApiResult => {
+    const entries = LidoCsmNodeOperatorListSchema.parse(data.result);
     return {
       entries,
-      message: response.data.message ?? '',
+      message: data.message ?? '',
     };
   };
 
   const listNodeOperators = async (): Promise<LidoCsmApiResult> => {
-    const response = await api.instance.get<ActionResult<LidoCsmNodeOperator[]>>(BASE_PATH, {
-      validateStatus: validWithSessionStatus,
+    const response = await api.get<ActionResult<LidoCsmNodeOperator[]>>(BASE_PATH, {
+      validStatuses: VALID_WITH_SESSION_STATUS,
+      skipResultUnwrap: true,
     });
 
     return parseResponse(response);
   };
 
   const addNodeOperator = async (payload: LidoCsmNodeOperatorPayload): Promise<LidoCsmApiResult> => {
-    const response = await api.instance.put<ActionResult<LidoCsmNodeOperator[]>>(
-      BASE_PATH,
-      toApiPayload(payload),
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+    const response = await api.put<ActionResult<LidoCsmNodeOperator[]>>(BASE_PATH, toApiPayload(payload), {
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+      skipResultUnwrap: true,
+    });
 
     return parseResponse(response);
   };
 
   const deleteNodeOperator = async (payload: LidoCsmNodeOperatorPayload): Promise<LidoCsmApiResult> => {
-    const response = await api.instance.delete<ActionResult<LidoCsmNodeOperator[]>>(BASE_PATH, {
-      data: toApiPayload(payload),
-      validateStatus: validStatus,
+    const response = await api.delete<ActionResult<LidoCsmNodeOperator[]>>(BASE_PATH, {
+      body: toApiPayload(payload),
+      validStatuses: VALID_STATUS_CODES,
+      skipResultUnwrap: true,
     });
 
     return parseResponse(response);
   };
 
   const refreshMetrics = async (): Promise<LidoCsmApiResult> => {
-    const response = await api.instance.post<ActionResult<LidoCsmNodeOperator[]>>(
-      METRICS_PATH,
-      undefined,
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
+    const response = await api.post<ActionResult<LidoCsmNodeOperator[]>>(METRICS_PATH, undefined, {
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+      skipResultUnwrap: true,
+    });
 
     return parseResponse(response);
   };
