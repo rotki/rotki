@@ -44,6 +44,7 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -1837,7 +1838,8 @@ def test_curve_deposit_polygon(polygon_pos_inquirer, polygon_pos_accounts, load_
     assert expected_events == events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('optimism_accounts', [['0x1CD90D091C5c13Bb7e7612a90485C6F38B826Fdd']])
 def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, load_global_caches):  # noqa: E501
@@ -1963,7 +1965,8 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
     assert expected_events == events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x4113a3CB9004E193E9906131B632e280F5f9B61e']])
 def test_curve_swap_router_base(base_inquirer, base_accounts):
     """Test that transactions made via the new curve swap router are decoded correctly"""
@@ -3018,6 +3021,7 @@ def test_mint_crv_arb(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x77BDF564A1f9cE5A5785a36Fc77cC4fFbEcD3a19']])
 def test_curve_router_v1_2(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x72e4c09bd07884df800dea65063b5a2cff22ec697f5644bb17dea14db5cb99e1')  # noqa: E501

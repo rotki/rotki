@@ -607,8 +607,7 @@ def test_set_evm_indexers_order(rotkehlchen_api_server: 'APIServer') -> None:
         response=requests.get(settings_url),
         rotkehlchen_api_server=rotkehlchen_api_server,
     )
-    assert settings['evm_indexers_order'][ChainID.ARBITRUM_ONE.to_name()] == ['etherscan', 'blockscout', 'routescan']  # noqa: E501
-    assert settings['evm_indexers_order'][ChainID.OPTIMISM.to_name()] == ['etherscan', 'blockscout', 'routescan']  # noqa: E501
+    assert settings['evm_indexers_order'][ChainID.OPTIMISM.to_name()] == ['blockscout', 'etherscan', 'routescan']  # noqa: E501
 
     # try editing the order of ethereum
     assert_proper_response(

@@ -11,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -128,6 +129,7 @@ def test_swap_eth_for_erc20_token(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc15534EA729972fc21AEDE69cB7Ca16D60E8D342']])
 def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc19f8f547c49c3f35dae993b713d95cce79aa425563fd28aeaca2510ebb95059')  # noqa: E501

@@ -10,7 +10,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     CHAINS_WITH_NODES_TYPE,
-    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
@@ -163,9 +162,11 @@ DEFAULT_EVM_INDEXER_ORDER: Final = (
 # list based on https://info.etherscan.com/whats-changing-in-the-free-api-tier-coverage-and-why/
 # might need adjustment in the future.
 CHAINS_WITH_PAID_ETHERSCAN: Final = {ChainID.BASE, ChainID.OPTIMISM, ChainID.BINANCE_SC}
-BLOCKSCOUT_PRIORITY_ORDER: Final = DEFAULT_EVM_INDEXER_ORDER
-# TODO: give priority to blockscout to avoid forcing users to change the order manually if they don't have paid api keys https://github.com/rotki/rotki/pull/11031  # noqa: E501
-DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(order={
-    chain: DEFAULT_EVM_INDEXER_ORDER if chain not in CHAINS_WITH_PAID_ETHERSCAN else BLOCKSCOUT_PRIORITY_ORDER  # noqa: E501
-    for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-})
+BLOCKSCOUT_PRIORITY_ORDER: Final = (
+    EvmIndexer.BLOCKSCOUT,
+    EvmIndexer.ETHERSCAN,
+    EvmIndexer.ROUTESCAN,
+)
+DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
+    order=dict.fromkeys(CHAINS_WITH_PAID_ETHERSCAN, BLOCKSCOUT_PRIORITY_ORDER),
+)

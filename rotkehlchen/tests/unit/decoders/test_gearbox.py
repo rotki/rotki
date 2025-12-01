@@ -19,6 +19,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CacheType,
@@ -605,6 +606,7 @@ def test_gearbox_deposit_usdc_arbitrum(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_optimism(
@@ -664,6 +666,7 @@ def test_gearbox_deposit_optimism(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_usdc_optimism(
@@ -735,6 +738,7 @@ def test_gearbox_deposit_usdc_optimism(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0x42ccF4f456D7c7fEBF274242CACcD74AAa0a53d7']])
 def test_gearbox_withdraw_optimism_usdc(

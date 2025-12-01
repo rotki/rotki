@@ -4,7 +4,13 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -14,6 +20,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
+    ChainID,
     EvmInternalTransaction,
     EvmTransaction,
     Location,
@@ -115,6 +122,9 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(
+    order={ChainID.OPTIMISM: [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN]},
+)}])
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='mainnet-optimism', endpoint='https://mainnet.optimism.io', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('optimism_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('tested_indexer', ['blockscout', 'routescan'])

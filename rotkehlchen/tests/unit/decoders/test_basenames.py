@@ -17,6 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_basenames_register(
         base_inquirer: 'BaseInquirer',
@@ -142,6 +144,7 @@ def test_basenames_register(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_basenames_register_with_discount(
         base_inquirer: 'BaseInquirer',
@@ -258,6 +261,7 @@ def test_basenames_register_with_discount(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_basenames_set_attribute(
         base_inquirer: 'BaseInquirer',
@@ -297,6 +301,7 @@ def test_basenames_set_attribute(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x1208a26FAa0F4AC65B42098419EB4dAA5e580AC6']])
 def test_basenames_content_hash_changed(
         base_inquirer: 'BaseInquirer',
@@ -336,6 +341,7 @@ def test_basenames_content_hash_changed(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize(('action', 'base_accounts'), [
     ('Transfer', ['0x2B97eb170a57fa2B5ea499b9f0176Ef587c6F54d', '0x6722d0fED54f02C60e9Cb6948aA18130eAc627c7']),  # noqa: E501
     ('Send', ['0x2B97eb170a57fa2B5ea499b9f0176Ef587c6F54d']),
@@ -406,6 +412,7 @@ def test_basenames_transfer_name(database, base_inquirer, action, base_accounts,
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x5C68b865B73271A9A1a3ee3792d396DacDe85702']])
 def test_basenames_new_owner(
         base_inquirer: 'BaseInquirer',

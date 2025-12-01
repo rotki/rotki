@@ -23,6 +23,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -101,6 +102,7 @@ def test_openocean_swap_token_to_token(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x9fC0784d90bcac115129366AcD2acB1EFa575009']])
 def test_openocean_swap_eth_to_token(
         base_inquirer: 'BaseInquirer',
@@ -151,6 +153,7 @@ def test_openocean_swap_eth_to_token(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB3cbefF0336BaA4863Cb51238bD6C35BDAaB3D84']])
 def test_openocean_swap_token_to_eth(
         optimism_inquirer: 'OptimismInquirer',

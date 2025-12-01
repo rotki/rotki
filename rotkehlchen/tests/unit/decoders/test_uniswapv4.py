@@ -20,6 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChecksumEvmAddress,
@@ -157,6 +158,7 @@ def test_swap_token_to_eth(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x09ae5e9e7E64F68fB9085EA4Cda20Dfb8428Ba46']])
 def test_swap_token_to_token(
         optimism_inquirer: 'OptimismInquirer',
@@ -289,6 +291,7 @@ def test_swap_token_to_bnb(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [[
     '0x66C1158AE808bF4f7Da691616edb1dFAC1ddb58d',
     '0x070143e489aa791C10b3b39c7CAdf45c36BA9e60',
@@ -494,6 +497,7 @@ def test_create_lp_position_with_native_refund(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x8605355cA4E07C1B2cEB548a052876A18028d7Fd']])
 def test_increase_liquidity(
         optimism_inquirer: 'OptimismInquirer',

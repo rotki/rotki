@@ -18,6 +18,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4ba257EC214BA1e6a3b4E46Bd7C4654b9E81CED3']])
 def test_extrafi_deposit_and_stake(
         optimism_inquirer: 'OptimismInquirer',
@@ -80,6 +82,7 @@ def test_extrafi_deposit_and_stake(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x92c90a4eA6F205dEe545ac348bBF005C4a019c78']])
 def test_extrafi_unstake_and_withdraw(
         optimism_inquirer: 'OptimismInquirer',
@@ -119,6 +122,7 @@ def test_extrafi_unstake_and_withdraw(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x7C16C022048b25142482CF06AC98064527395290']])
 def test_extrafi_claim_from_pool(
         optimism_inquirer: 'OptimismInquirer',
@@ -171,6 +175,7 @@ def test_extrafi_claim_from_pool(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xfE9182CD69F9fEb2A22C8bB88D03dCBBDfF77f11']])
 def test_extrafi_lock_token(
         optimism_inquirer: 'OptimismInquirer',
@@ -222,6 +227,7 @@ def test_extrafi_lock_token(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E']])
 def test_extrafi_repay(
         optimism_inquirer: 'OptimismInquirer',
@@ -274,6 +280,7 @@ def test_extrafi_repay(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x225170393fCD06F3295aDa2bF33002C8ec94b8E4']])
 def test_extrafi_repay_with_token(
         optimism_inquirer: 'OptimismInquirer',
@@ -338,6 +345,7 @@ def test_extrafi_repay_with_token(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E']])
 def test_close_position(
         optimism_inquirer: 'OptimismInquirer',
@@ -377,6 +385,7 @@ def test_close_position(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E']])
 def test_farm_investment(
         optimism_inquirer: 'OptimismInquirer',
@@ -455,6 +464,7 @@ def test_farm_investment(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x007183900fBbe3e7815b278074a49B8C7319EDba']])
 def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xb9479f2e21100ddbba10395d76abb2fb4e151b2142ba90c91151a10fcb5cfbc7')  # noqa: E501
@@ -504,6 +514,7 @@ def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x007183900fBbe3e7815b278074a49B8C7319EDba']])
 def test_new_farm_position_on_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xf0458b2c208fa7362669b6430277808a2bda527fcbe5dd3514a5879c445311cc')  # noqa: E501
@@ -541,6 +552,7 @@ def test_new_farm_position_on_base(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xDbA7bB7Ee25d259e0a14880Ef107A7c5106A716d']])
 def test_vested_extra_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x560a5e279a7f1b9c89dca3d7f93da11c9418037c0362f01b443d50967a719d5d')  # noqa: E501
@@ -589,6 +601,7 @@ def test_vested_extra_base(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_EXTRAFI]])
 @pytest.mark.parametrize('optimism_accounts', [['0x35d527C6aF6621DFc46f7CcCE92948d49CF1Fe27']])
 def test_extrafi_claim_lending(
@@ -647,6 +660,7 @@ def test_extrafi_claim_lending(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_EXTRAFI]])
 @pytest.mark.parametrize('base_accounts', [['0x8887a050A8c6873c9cA7553e3F7Bfb0e9b36AEE1']])
 def test_extrafi_claim_lending_base(
@@ -692,6 +706,7 @@ def test_extrafi_claim_lending_base(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x0EdB39ada48BDF162C09983e0005825c4ce3E5B4']])
 def test_op_incentive_rewards(
         optimism_inquirer: 'OptimismInquirer',

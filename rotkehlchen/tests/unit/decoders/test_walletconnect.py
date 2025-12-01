@@ -16,6 +16,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4C0F41D710395D0e4d1afcA4207F8C72C0667140']])
 def test_airdrop_claim(
         optimism_inquirer: 'OptimismInquirer',
@@ -66,6 +68,7 @@ def test_airdrop_claim(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc0d5dBe750bb5c001Ba8C499385143f566611679']])
 def test_stake(
         optimism_inquirer: 'OptimismInquirer',
@@ -106,6 +109,7 @@ def test_stake(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xd14D32F30b184983d3360c6F4b6593d41eD834F4']])
 def test_unstake(
         optimism_inquirer: 'OptimismInquirer',
@@ -145,6 +149,7 @@ def test_unstake(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4Bf0B0ed0c9520b24F7E30Ad51Fcd89781dAEc8d']])
 def test_increase_lock(
         optimism_inquirer: 'OptimismInquirer',
@@ -192,6 +197,7 @@ def test_increase_lock(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x595a053dD045f7b803Dd29d965a5397FEfA9a5d5']])
 def test_update_lock(
         optimism_inquirer: 'OptimismInquirer',

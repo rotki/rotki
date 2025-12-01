@@ -12,6 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -237,6 +238,7 @@ def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x8a8162b86A3179a9F7A2F46FFd7029B669876B75']])
 def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x27b040b725caa995343f98ca16fabebfbd2116063488761cbbdc1f99a2bf8619')  # noqa: E501
@@ -300,6 +302,7 @@ def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x1961425eB7467330380ea268d4b909C7975f79c6']])
 def test_kyber_aggregator_swap_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc50282f437bacfbeef00baf4dae0785a259f87294089b96f7a6363ad4928570e')  # noqa: E501

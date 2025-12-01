@@ -11,11 +11,13 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, TokenKind, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
 def test_deposit_usdc_into_savings(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc63747c31bc5ac9d62e9217a44681463724bd36c74ea2b6ffe90cbeafbcf91a8')  # noqa: E501
@@ -66,6 +68,7 @@ def test_deposit_usdc_into_savings(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
 def test_withdraw_usdc_from_savings(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x46d434c03ff6721fff43cbc1b1570ee3739dbd32f84d4531c5ca0a556a0dc433')  # noqa: E501

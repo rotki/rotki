@@ -14,6 +14,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.morpho import (
     create_base_morpho_ionic_weth_vault_token,
@@ -50,6 +51,7 @@ def _add_morpho_reward_distributor(chain_id: ChainID, address: str):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_base(
@@ -117,6 +119,7 @@ def test_morpho_deposit_base(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xCa17262d6b9B1F5e1995dAdB35d63f9f53896387']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_base_bundler(
@@ -225,6 +228,7 @@ def test_morpho_deposit_base_bundler(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x315178907fE88C7B8CC09D51F03ffb60A55e11e5']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_withdraw_base(
@@ -279,6 +283,7 @@ def test_morpho_withdraw_base(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x7f2A099EEdE569438584790d2126202B39036831']])
 def test_morpho_claim_reward_base(
         base_inquirer: 'BaseInquirer',
@@ -480,6 +485,7 @@ def test_morpho_claim_reward_ethereum(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_eth_and_weth_base(
@@ -547,6 +553,7 @@ def test_morpho_deposit_eth_and_weth_base(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x21f2a9b5F420245d86E8Faa753022dA01946B13F']])
 def test_vault_withdrawal_deposit_with_wallet_tokens(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
     """Regression test for morpho transaction where a user withdraws from one vault and

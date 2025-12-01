@@ -25,6 +25,7 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_aerodrome import A_AERO
 from rotkehlchen.tests.unit.decoders.test_metamask import A_OPTIMISM_USDC
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -867,7 +868,8 @@ def test_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4Ea754349AcE5303c82f0d1D491041e042f2ad22']])
 def test_swap_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6b2b2d8c0cf2e27bb9e6c8309fd9887a066f9b72139acfe13d7ca5c29ae6c0ff')  # noqa: E501
@@ -914,7 +916,8 @@ def test_swap_optimism(optimism_inquirer, optimism_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xF68D2BfCecd7895BBa05a7451Dd09A1749026454']])
 def test_swap_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4a5eb8fac7ef1d6637ff1d54e67791e4a5a49effb141f30e5af90f5aba5d48a5')  # noqa: E501
@@ -1153,6 +1156,7 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
     """Check that a swap with an amount returned is decoded correctly.
@@ -1449,6 +1453,7 @@ def test_swap_via_settler_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_ac
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xD72029dD66179cE316dAbd42E9DfCA63725dcE92']])
 def test_swap_via_settler_on_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xdcb2ea00e5c31a2c6a9ac8cd507e07ff9a76c0b42652c5c550bee69f7425bea3')   # noqa: E501
@@ -1539,6 +1544,7 @@ def test_swap_via_settler_on_binance_sc(binance_sc_inquirer, binance_sc_accounts
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xBa41b0e948d681e4dDE13e4B153d89b611e33163']])
 def test_swap_via_settler_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8b5e0f8a9fa216fad3687ec221c2044a7f6755f299e185e5655c762ce9689ddb')   # noqa: E501
@@ -1629,6 +1635,7 @@ def test_swap_via_settler_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accou
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x602CB34cE1B1d3133219D8a79c773fe9FAe3656e']])
 def test_swap_via_another_settler_on_base(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x78a911888adf24a8e321eb4f068e53d9562daad75ed2652e9fa5bb50a355f6e0')  # noqa: E501
@@ -1673,6 +1680,7 @@ def test_swap_via_another_settler_on_base(base_inquirer, base_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x602CB34cE1B1d3133219D8a79c773fe9FAe3656e']])
 def test_farcaster_zerox_swap(base_inquirer, base_accounts):
     """It uses a new version of the zerox settler contract"""

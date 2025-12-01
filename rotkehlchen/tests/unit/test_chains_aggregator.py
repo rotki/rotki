@@ -10,7 +10,13 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
 from rotkehlchen.chain.evm.constants import LAST_SPAM_TXS_CACHE
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -324,6 +330,11 @@ def test_detect_evm_accounts_spam_tx_gnosis(gnosis_manager: 'GnosisManager') -> 
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder(
+        order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]},
+    ),
+}])
 @pytest.mark.freeze_time(datetime.datetime.fromtimestamp(1717416305, tz=datetime.UTC))
 @pytest.mark.parametrize('base_accounts', [['0xeA2B3D309bC480Fe385BBF8aEF6D45D81825A784']])
 def test_detect_spammed_transaction_new_token(
