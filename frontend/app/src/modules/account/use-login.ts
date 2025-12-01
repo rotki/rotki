@@ -6,7 +6,7 @@ import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useSessionSettings } from '@/composables/session/settings';
-import { api } from '@/services/rotkehlchen-api';
+import { api } from '@/modules/api/rotki-api';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useTaskStore } from '@/store/tasks';

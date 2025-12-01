@@ -115,21 +115,16 @@ describe('composables/api/reports/index', () => {
     });
 
     it('returns failure with message on error response', async () => {
-      // TODO: Remove spy and use MSW when migrating to ofetch.
-      // axios with responseType: 'blob' doesn't work properly with MSW in test env,
-      // so we mock the api.instance.get to simulate the real behavior where
-      // Flask returns JSON error and axios wraps it in a Blob.
-      // Native fetch works correctly with MSW blob responses.
-      const { api } = await import('@/services/rotkehlchen-api');
-      const errorBlob = new Blob(
-        [JSON.stringify({ result: null, message: 'No report available' })],
-        { type: 'application/json' },
+      server.use(
+        http.get(`${backendUrl}/api/1/history/download`, () =>
+          HttpResponse.json({
+            result: null,
+            message: 'No report available',
+          }, {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          })),
       );
-
-      vi.spyOn(api.instance, 'get').mockResolvedValueOnce({
-        status: 400,
-        data: errorBlob,
-      });
 
       const { downloadReportCSV } = useReportsApi();
       const result = await downloadReportCSV();

@@ -250,7 +250,6 @@ describe('composables/api/balances/blockchain', () => {
 
       expect(capturedBody).toEqual({
         addresses: ['0x1234'],
-        async_query: false,
         only_cache: true,
       });
       expect(result['0x1234'].tokens).toEqual(['0xtoken1', '0xtoken2']);
@@ -274,7 +273,6 @@ describe('composables/api/balances/blockchain', () => {
 
       expect(capturedBody).toEqual({
         addresses: null,
-        async_query: false,
         only_cache: true,
       });
     });
@@ -318,7 +316,6 @@ describe('composables/api/balances/blockchain', () => {
       expect(capturedBody).toEqual({
         addresses: ['0x1234', '0x5678'],
         async_query: true,
-        only_cache: false,
       });
       expect(result.taskId).toBe(400);
     });

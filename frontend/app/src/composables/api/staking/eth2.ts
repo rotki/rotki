@@ -1,9 +1,7 @@
-import type { PendingTask } from '@/types/task';
-import { type ActionResult, type EthStakingPayload, EthStakingPerformanceResponse } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
-import { nonEmptyProperties } from '@/utils/data';
+import { type EthStakingPayload, EthStakingPerformanceResponse } from '@rotki/common';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseEth2ApiReturn {
   fetchStakingPerformance: (payload: EthStakingPayload) => Promise<EthStakingPerformanceResponse>;
@@ -11,30 +9,33 @@ interface UseEth2ApiReturn {
 }
 
 export function useEth2Api(): UseEth2ApiReturn {
-  const stakingPerformanceQuery = async <T extends EthStakingPerformanceResponse | PendingTask>(
-    payload: EthStakingPayload & { ignoreCache: boolean },
-    asyncQuery: boolean = false,
-  ): Promise<T> => {
-    const response = await api.instance.put<ActionResult<T>>(
+  const fetchStakingPerformance = async (payload: EthStakingPayload): Promise<EthStakingPerformanceResponse> => {
+    const response = await api.put<EthStakingPerformanceResponse>(
       '/blockchains/eth2/stake/performance',
-      snakeCaseTransformer({
-        asyncQuery,
-        ...nonEmptyProperties(payload),
-      }),
+      payload,
       {
-        validateStatus: validWithSessionAndExternalService,
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+        filterEmptyProperties: true,
       },
     );
-    return handleResponse(response);
+    return EthStakingPerformanceResponse.parse(response);
   };
 
-  const fetchStakingPerformance = async (payload: EthStakingPayload): Promise<EthStakingPerformanceResponse> => {
-    const data = await stakingPerformanceQuery({ ...payload, ignoreCache: false });
-    return EthStakingPerformanceResponse.parse(data);
+  const refreshStakingPerformance = async (payload: EthStakingPayload): Promise<PendingTask> => {
+    const response = await api.put<PendingTask>(
+      '/blockchains/eth2/stake/performance',
+      {
+        ...payload,
+        asyncQuery: true,
+        ignoreCache: true,
+      },
+      {
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+        filterEmptyProperties: true,
+      },
+    );
+    return PendingTaskSchema.parse(response);
   };
-
-  const refreshStakingPerformance = async (payload: EthStakingPayload): Promise<PendingTask> =>
-    stakingPerformanceQuery({ ...payload, ignoreCache: true }, true);
 
   return {
     fetchStakingPerformance,

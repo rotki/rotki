@@ -1,5 +1,3 @@
-import type { AxiosResponse } from 'axios';
-
 export function downloadFileByUrl(url: string, fileName: string): void {
   const link = document.createElement('a');
   link.setAttribute('href', url);
@@ -14,8 +12,8 @@ export function downloadFileByUrl(url: string, fileName: string): void {
   }
 }
 
-export function downloadFileByBlobResponse(response: AxiosResponse, filename: string): void {
-  const url = window.URL.createObjectURL(response.request.response);
+export function downloadFileByBlob(blob: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(blob);
   downloadFileByUrl(url, filename);
 }
 

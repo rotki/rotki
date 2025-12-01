@@ -177,7 +177,7 @@ export interface XpubAccountPayload extends Omit<AccountPayload, 'address'> {
 
 export interface ExchangeBalancePayload {
   readonly location: string;
-  readonly ignoreCache: boolean;
+  readonly ignoreCache?: boolean;
 }
 
 export interface AllBalancePayload {

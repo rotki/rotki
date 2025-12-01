@@ -1,10 +1,7 @@
-import type { ActionResult } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import { omit } from 'es-toolkit';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import {
   type CexMapping,
   CexMappingCollectionResponse,
@@ -22,55 +19,33 @@ interface UseAssetCexMappingApiReturn {
 
 export function useAssetCexMappingApi(): UseAssetCexMappingApiReturn {
   const fetchAllCexMapping = async (payload: MaybeRef<CexMappingRequestPayload>): Promise<Collection<CexMapping>> => {
-    const response = await api.instance.post<ActionResult<Collection<CexMapping>>>(
+    const response = await api.post<Collection<CexMapping>>(
       '/assets/locationmappings',
-      snakeCaseTransformer(omit(get(payload), ['orderByAttributes', 'ascending'])),
-      {
-        validateStatus: validStatus,
-      },
+      omit(get(payload), ['orderByAttributes', 'ascending']),
     );
 
-    return mapCollectionResponse(CexMappingCollectionResponse.parse(handleResponse(response)));
+    return mapCollectionResponse(CexMappingCollectionResponse.parse(response));
   };
 
-  const addCexMapping = async (payload: CexMapping): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      '/assets/locationmappings',
-      snakeCaseTransformer({
-        entries: [payload],
-      }),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const addCexMapping = async (payload: CexMapping): Promise<boolean> => api.put<boolean>(
+    '/assets/locationmappings',
+    {
+      entries: [payload],
+    },
+  );
 
-    return handleResponse(response);
-  };
+  const editCexMapping = async (payload: CexMapping): Promise<boolean> => api.patch<boolean>(
+    '/assets/locationmappings',
+    {
+      entries: [payload],
+    },
+  );
 
-  const editCexMapping = async (payload: CexMapping): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      '/assets/locationmappings',
-      snakeCaseTransformer({
-        entries: [payload],
-      }),
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
-
-  const deleteCexMapping = async (payload: CexMappingDeletePayload): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/assets/locationmappings', {
-      data: snakeCaseTransformer({
-        entries: [payload],
-      }),
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const deleteCexMapping = async (payload: CexMappingDeletePayload): Promise<boolean> => api.delete<boolean>('/assets/locationmappings', {
+    body: {
+      entries: [payload],
+    },
+  });
 
   return {
     addCexMapping,

@@ -1,8 +1,6 @@
-import type { ActionResult } from '@rotki/common';
-import { apiUrls } from '@/services/api-urls';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
+import { defaultApiUrls } from '@/modules/api/api-urls';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 import { IgnoredAssetResponse } from '@/types/asset';
 
 interface UseAssetIgnoreApiReturn {
@@ -12,38 +10,30 @@ interface UseAssetIgnoreApiReturn {
 }
 
 export function useAssetIgnoreApi(): UseAssetIgnoreApiReturn {
-  const getIgnoredAssets = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>('/assets/ignored', {
-      baseURL: apiUrls.colibriApiUrl,
-      validateStatus: validWithoutSessionStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const getIgnoredAssets = async (): Promise<string[]> => api.get<string[]>('/assets/ignored', {
+    baseURL: defaultApiUrls.colibriApiUrl,
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
   const addIgnoredAssets = async (assets: string[]): Promise<IgnoredAssetResponse> => {
-    const response = await api.instance.put<ActionResult<IgnoredAssetResponse>>(
+    const response = await api.put<IgnoredAssetResponse>(
       '/assets/ignored',
-      snakeCaseTransformer({
-        assets,
-      }),
       {
-        validateStatus: validStatus,
+        assets,
       },
     );
 
-    return IgnoredAssetResponse.parse(handleResponse(response));
+    return IgnoredAssetResponse.parse(response);
   };
 
   const removeIgnoredAssets = async (assets: string[]): Promise<IgnoredAssetResponse> => {
-    const response = await api.instance.delete<ActionResult<IgnoredAssetResponse>>('/assets/ignored', {
-      data: {
+    const response = await api.delete<IgnoredAssetResponse>('/assets/ignored', {
+      body: {
         assets,
       },
-      validateStatus: validStatus,
     });
 
-    return IgnoredAssetResponse.parse(handleResponse(response));
+    return IgnoredAssetResponse.parse(response);
   };
 
   return {

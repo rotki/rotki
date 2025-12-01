@@ -1,9 +1,6 @@
-import type { ActionResult } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import { type UserNote, UserNoteCollectionResponse, type UserNotesRequestPayload } from '@/types/notes';
 import { mapCollectionResponse } from '@/utils/collection';
 
@@ -16,35 +13,23 @@ interface UseUserNotesApiReturn {
 
 export function useUserNotesApi(): UseUserNotesApiReturn {
   const fetchUserNotes = async (filter: MaybeRef<UserNotesRequestPayload>): Promise<Collection<UserNote>> => {
-    const response = await api.instance.post<ActionResult<Collection<UserNote>>>(
+    const response = await api.post<Collection<UserNote>>(
       '/notes',
-      snakeCaseTransformer(get(filter)),
+      get(filter),
     );
 
-    return mapCollectionResponse(UserNoteCollectionResponse.parse(handleResponse(response)));
+    return mapCollectionResponse(UserNoteCollectionResponse.parse(response));
   };
 
-  const addUserNote = async (payload: Partial<UserNote>): Promise<number> => {
-    const response = await api.instance.put<ActionResult<number>>('/notes', snakeCaseTransformer(payload));
+  const addUserNote = async (payload: Partial<UserNote>): Promise<number> => api.put<number>('/notes', payload);
 
-    return handleResponse(response);
-  };
+  const updateUserNote = async (payload: Partial<UserNote>): Promise<boolean> => api.patch<boolean>('/notes', payload);
 
-  const updateUserNote = async (payload: Partial<UserNote>): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>('/notes', snakeCaseTransformer(payload));
-
-    return handleResponse(response);
-  };
-
-  const deleteUserNote = async (identifier: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/notes', {
-      data: {
-        identifier,
-      },
-    });
-
-    return handleResponse(response);
-  };
+  const deleteUserNote = async (identifier: number): Promise<boolean> => api.delete<boolean>('/notes', {
+    body: {
+      identifier,
+    },
+  });
 
   return {
     addUserNote,

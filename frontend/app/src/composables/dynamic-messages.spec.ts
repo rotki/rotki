@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { serializer, useDynamicMessages } from '@/composables/dynamic-messages';
-import { camelCaseTransformer } from '@/services/axios-transformers';
+import { camelCaseTransformer } from '@/modules/api/transformers';
 import { usePremiumStore } from '@/store/session/premium';
 
 const period = {

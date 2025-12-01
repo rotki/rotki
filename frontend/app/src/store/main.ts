@@ -4,8 +4,8 @@ import type { Version } from '@/types/action';
 import type { DefaultBackendArguments } from '@/types/backend';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useInfoApi } from '@/composables/api/info';
-import { apiUrls, defaultApiUrls } from '@/services/api-urls';
-import { api } from '@/services/rotkehlchen-api';
+import { apiUrls, defaultApiUrls } from '@/modules/api/api-urls';
+import { api } from '@/modules/api/rotki-api';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 
 let intervalId: any = null;

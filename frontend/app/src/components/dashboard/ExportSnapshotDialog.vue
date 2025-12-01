@@ -10,7 +10,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { downloadFileByBlobResponse } from '@/utils/download';
+import { downloadFileByBlob } from '@/utils/download';
 
 const display = defineModel<boolean>({ default: false, required: true });
 
@@ -40,7 +40,7 @@ async function downloadSnapshot() {
   const date = dayjs(get(timestamp) * 1000).format('YYYYDDMMHHmmss');
   const fileName = `${date}-snapshot.zip`;
 
-  downloadFileByBlobResponse(response, fileName);
+  downloadFileByBlob(response, fileName);
 
   set(display, false);
 }

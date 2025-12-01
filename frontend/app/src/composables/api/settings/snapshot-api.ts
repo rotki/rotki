@@ -1,19 +1,12 @@
-import type { ActionResult } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import {
-  handleResponse,
-  validStatus,
-  validWithoutSessionStatus,
-  validWithSessionAndExternalService,
-} from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE, VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 import { Snapshot, type SnapshotPayload } from '@/types/snapshots';
 
 interface UseSnapshotApiReturn {
   getSnapshotData: (timestamp: number) => Promise<Snapshot>;
   updateSnapshotData: (timestamp: number, payload: SnapshotPayload) => Promise<boolean>;
   exportSnapshotCSV: ({ path, timestamp }: { path: string; timestamp: number }) => Promise<boolean>;
-  downloadSnapshot: (timestamp: number) => Promise<any>;
+  downloadSnapshot: (timestamp: number) => Promise<Blob>;
   deleteSnapshot: (payload: { timestamp: number }) => Promise<boolean>;
   importBalancesSnapshot: (balancesSnapshotFile: string, locationDataSnapshotFile: string) => Promise<boolean>;
   uploadBalancesSnapshot: (balancesSnapshotFile: File, locationDataSnapshotFile: File) => Promise<boolean>;
@@ -21,69 +14,47 @@ interface UseSnapshotApiReturn {
 
 export function useSnapshotApi(): UseSnapshotApiReturn {
   const getSnapshotData = async (timestamp: number): Promise<Snapshot> => {
-    const response = await api.instance.get<ActionResult<Snapshot>>(`/snapshots/${timestamp}`, {
-      validateStatus: validWithoutSessionStatus,
+    const response = await api.get<Snapshot>(`/snapshots/${timestamp}`, {
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
     });
 
-    return Snapshot.parse(handleResponse(response));
+    return Snapshot.parse(response);
   };
 
-  const updateSnapshotData = async (timestamp: number, payload: SnapshotPayload): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      `/snapshots/${timestamp}`,
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const updateSnapshotData = async (timestamp: number, payload: SnapshotPayload): Promise<boolean> => api.patch<boolean>(`/snapshots/${timestamp}`, payload);
 
-    return handleResponse(response);
-  };
+  const exportSnapshotCSV = async ({ path, timestamp }: { path: string; timestamp: number }): Promise<boolean> => api.get<boolean>(`/snapshots/${timestamp}`, {
+    query: {
+      action: 'export',
+      path,
+    },
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
-  const exportSnapshotCSV = async ({ path, timestamp }: { path: string; timestamp: number }): Promise<boolean> => {
-    const response = await api.instance.get<ActionResult<boolean>>(`/snapshots/${timestamp}`, {
-      params: snakeCaseTransformer({
-        action: 'export',
-        path,
-      }),
-      validateStatus: validWithoutSessionStatus,
-    });
+  const downloadSnapshot = async (timestamp: number): Promise<Blob> => api.fetchBlob(`/snapshots/${timestamp}`, {
+    method: 'GET',
+    query: { action: 'download' },
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
-    return handleResponse(response);
-  };
-
-  const downloadSnapshot = async (timestamp: number): Promise<any> =>
-    api.instance.get<any>(`/snapshots/${timestamp}`, {
-      params: snakeCaseTransformer({ action: 'download' }),
-      responseType: 'blob',
-      validateStatus: validWithoutSessionStatus,
-    });
-
-  const deleteSnapshot = async (payload: { timestamp: number }): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/snapshots', {
-      data: snakeCaseTransformer(payload),
-      validateStatus: validWithoutSessionStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const deleteSnapshot = async (payload: { timestamp: number }): Promise<boolean> => api.delete<boolean>('/snapshots', {
+    body: payload,
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
   const importBalancesSnapshot = async (
     balancesSnapshotFile: string,
     locationDataSnapshotFile: string,
-  ): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      '/snapshots',
-      snakeCaseTransformer({
-        balancesSnapshotFile,
-        locationDataSnapshotFile,
-      }),
-      {
-        validateStatus: validWithSessionAndExternalService,
-      },
-    );
-    return handleResponse(response);
-  };
+  ): Promise<boolean> => api.put<boolean>(
+    '/snapshots',
+    {
+      balancesSnapshotFile,
+      locationDataSnapshotFile,
+    },
+    {
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+    },
+  );
 
   const uploadBalancesSnapshot = async (
     balancesSnapshotFile: File,
@@ -92,13 +63,7 @@ export function useSnapshotApi(): UseSnapshotApiReturn {
     const data = new FormData();
     data.append('balances_snapshot_file', balancesSnapshotFile);
     data.append('location_data_snapshot_file', locationDataSnapshotFile);
-    const response = await api.instance.post<ActionResult<boolean>>('/snapshots', data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return handleResponse(response);
+    return api.post<boolean>('/snapshots', data);
   };
 
   return {

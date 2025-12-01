@@ -1,8 +1,13 @@
-import type { ActionResult } from '@rotki/common';
-import type { MoneriumAuthResult, MoneriumStatus } from './types';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
+import {
+  type MoneriumAuthResult,
+  MoneriumAuthResultSchema,
+  type MoneriumDisconnectResult,
+  MoneriumDisconnectResultSchema,
+  type MoneriumStatus,
+  MoneriumStatusSchema,
+} from './types';
 
 interface UseMoneriumOAuthApiReturn {
   completeOAuth: (
@@ -10,7 +15,7 @@ interface UseMoneriumOAuthApiReturn {
     refreshToken: string,
     expiresIn: number,
   ) => Promise<MoneriumAuthResult>;
-  disconnect: () => Promise<{ success: boolean }>;
+  disconnect: () => Promise<MoneriumDisconnectResult>;
   getStatus: () => Promise<MoneriumStatus>;
 }
 
@@ -18,11 +23,10 @@ const basePath = '/services/monerium';
 
 export function useMoneriumOAuthApi(): UseMoneriumOAuthApiReturn {
   const getStatus = async (): Promise<MoneriumStatus> => {
-    const response = await api.instance.get<ActionResult<MoneriumStatus>>(
-      basePath,
-      { validateStatus: validWithSessionStatus },
-    );
-    return handleResponse(response);
+    const response = await api.get<MoneriumStatus>(basePath, {
+      validStatuses: VALID_WITH_SESSION_STATUS,
+    });
+    return MoneriumStatusSchema.parse(response);
   };
 
   const completeOAuth = async (
@@ -30,24 +34,23 @@ export function useMoneriumOAuthApi(): UseMoneriumOAuthApiReturn {
     refreshToken: string,
     expiresIn: number,
   ): Promise<MoneriumAuthResult> => {
-    const response = await api.instance.put<ActionResult<MoneriumAuthResult>>(
+    const response = await api.put<MoneriumAuthResult>(
       basePath,
-      snakeCaseTransformer({
+      {
         accessToken,
         expiresIn,
         refreshToken,
-      }),
-      { validateStatus: validWithSessionStatus },
+      },
+      { validStatuses: VALID_WITH_SESSION_STATUS },
     );
-    return handleResponse(response);
+    return MoneriumAuthResultSchema.parse(response);
   };
 
-  const disconnect = async (): Promise<{ success: boolean }> => {
-    const response = await api.instance.delete<ActionResult<{ success: boolean }>>(
-      basePath,
-      { validateStatus: validWithSessionStatus },
-    );
-    return handleResponse(response);
+  const disconnect = async (): Promise<MoneriumDisconnectResult> => {
+    const response = await api.delete<MoneriumDisconnectResult>(basePath, {
+      validStatuses: VALID_WITH_SESSION_STATUS,
+    });
+    return MoneriumDisconnectResultSchema.parse(response);
   };
 
   return {

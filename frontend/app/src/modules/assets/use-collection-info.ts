@@ -4,7 +4,6 @@ import type { AssetMap } from '@/types/asset';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
-import { withRetry } from '@/services/with-retry';
 import { chunkArray } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
@@ -29,7 +28,7 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
 
   async function getAssetMapping(identifiers: string[]): Promise<AssetMap | undefined> {
     try {
-      return await withRetry(async () => assetMapping(identifiers));
+      return await assetMapping(identifiers);
     }
     catch (error: any) {
       logger.error(error);

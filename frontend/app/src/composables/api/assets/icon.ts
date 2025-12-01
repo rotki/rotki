@@ -1,7 +1,6 @@
-import type { ActionResult } from '@rotki/common';
-import { apiUrls } from '@/services/api-urls';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { defaultApiUrls } from '@/modules/api/api-urls';
+import { api } from '@/modules/api/rotki-api';
+import { HTTPStatus } from '@/types/api/http';
 
 interface CheckAssetOptions {
   abortController?: AbortController;
@@ -18,7 +17,7 @@ interface UseAssetIconApiReturn {
 
 export function useAssetIconApi(): UseAssetIconApiReturn {
   const assetImageUrl = (identifier: string, randomString?: string | number): string => {
-    let url = `${apiUrls.colibriApiUrl}/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
+    let url = `${defaultApiUrls.colibriApiUrl}/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
 
     if (randomString)
       url += `&t=${randomString}`;
@@ -28,52 +27,37 @@ export function useAssetIconApi(): UseAssetIconApiReturn {
 
   const checkAsset = async (identifier: string, options: CheckAssetOptions): Promise<number> => {
     const url = `/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
-    const response = await api.instance.head<never>(url, {
-      baseURL: apiUrls.colibriApiUrl,
+    return api.headStatus(url, {
+      baseURL: defaultApiUrls.colibriApiUrl,
       signal: options.abortController?.signal,
-      validateStatus: code => [200, 202, 404].includes(code),
+      validStatuses: [HTTPStatus.OK, HTTPStatus.ACCEPTED, HTTPStatus.NOT_FOUND],
     });
-    return response.status;
   };
 
   const uploadIcon = async (identifier: string, file: File): Promise<boolean> => {
     const data = new FormData();
     data.append('file', file);
     data.append('asset', identifier);
-    const response = await api.instance.post<ActionResult<boolean>>(`/assets/icon/modify`, data, {
+    return api.post<boolean>(`/assets/icon/modify`, data, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return handleResponse(response);
   };
 
-  const setIcon = async (asset: string, file: string): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(`/assets/icon/modify`, {
-      asset,
-      file,
-    });
-    return handleResponse(response);
-  };
+  const setIcon = async (asset: string, file: string): Promise<boolean> => api.put<boolean>(`/assets/icon/modify`, {
+    asset,
+    file,
+  });
 
-  const refreshIcon = async (asset: string): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(`/assets/icon/modify`, {
-      asset,
-    });
-    return handleResponse(response);
-  };
+  const refreshIcon = async (asset: string): Promise<boolean> => api.patch<boolean>(`/assets/icon/modify`, {
+    asset,
+  });
 
-  const clearIconCache = async (assets: string[] | null): Promise<boolean> => {
-    const response = await api.instance.post<ActionResult<boolean>>(
-      '/cache/icons/clear',
-      { entries: assets },
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
+  const clearIconCache = async (assets: string[] | null): Promise<boolean> => api.post<boolean>(
+    '/cache/icons/clear',
+    { entries: assets },
+  );
 
   return {
     assetImageUrl,

@@ -14,7 +14,6 @@ import { Blockchain, type Message } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryApi } from '@/composables/api/history';
 import { useReportsApi } from '@/composables/api/reports';
-import { jsonTransformer } from '@/services/axios-transformers';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
@@ -261,7 +260,6 @@ export const useReportsStore = defineStore('reports', () => {
       const { taskId } = await exportReportDataCaller(payload);
       const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.TRADE_HISTORY, {
         title: t('actions.reports.generate.task.title'),
-        transformer: [jsonTransformer],
       });
 
       return result;

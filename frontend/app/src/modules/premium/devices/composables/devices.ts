@@ -1,7 +1,4 @@
-import type { ActionResult } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import { type PremiumDevicePayload, PremiumDevicesResponse } from './premium';
 
 interface UsePremiumDevicesApiReturn {
@@ -12,35 +9,15 @@ interface UsePremiumDevicesApiReturn {
 
 export function usePremiumDevicesApi(): UsePremiumDevicesApiReturn {
   const fetchPremiumDevices = async (): Promise<PremiumDevicesResponse> => {
-    const response = await api.instance.get<ActionResult<PremiumDevicesResponse>>(
-      '/premium/devices',
-      { validateStatus: validStatus },
-    );
-
-    return PremiumDevicesResponse.parse(handleResponse(response));
+    const response = await api.get<PremiumDevicesResponse>('/premium/devices');
+    return PremiumDevicesResponse.parse(response);
   };
 
-  const updatePremiumDevice = async (payload: PremiumDevicePayload): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      '/premium/devices',
-      snakeCaseTransformer(payload),
-      { validateStatus: validStatus },
-    );
+  const updatePremiumDevice = async (payload: PremiumDevicePayload): Promise<boolean> => api.patch<boolean>('/premium/devices', payload);
 
-    return handleResponse(response);
-  };
-
-  const deletePremiumDevice = async (deviceIdentifier: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/premium/devices',
-      {
-        data: snakeCaseTransformer({ deviceIdentifier }),
-        validateStatus: validStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
+  const deletePremiumDevice = async (deviceIdentifier: string): Promise<boolean> => api.delete<boolean>('/premium/devices', {
+    body: { deviceIdentifier },
+  });
 
   return {
     deletePremiumDevice,

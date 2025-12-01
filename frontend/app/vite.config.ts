@@ -186,7 +186,7 @@ export default defineConfig({
             '@vueuse/shared',
             '@vuelidate/core',
             '@vuelidate/validators',
-            'axios',
+            'ofetch',
             'es-toolkit',
             'imask',
             'dayjs',

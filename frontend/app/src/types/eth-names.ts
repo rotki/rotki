@@ -3,9 +3,9 @@ import { Blockchain } from '@rotki/common';
 import { z } from 'zod/v4';
 import { CollectionCommonFields } from '@/types/collection';
 
-export const EthNames = z.record(z.string(), z.string().nullable());
+export const EthNamesSchema = z.record(z.string(), z.string().nullable());
 
-export type EthNames = z.infer<typeof EthNames>;
+export type EthNames = z.infer<typeof EthNamesSchema>;
 
 const BlockchainEnum = z.enum(Blockchain);
 
@@ -34,9 +34,9 @@ export const AddressBookEntry = z.object({
 
 export type AddressBookEntry = z.infer<typeof AddressBookEntry>;
 
-export const AddressBookEntries = z.array(AddressBookEntry);
+export const AddressBookEntriesSchema = z.array(AddressBookEntry);
 
-export type AddressBookEntries = z.infer<typeof AddressBookEntries>;
+export type AddressBookEntries = z.infer<typeof AddressBookEntriesSchema>;
 
 export const AddressBookCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(AddressBookEntry),

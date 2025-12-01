@@ -1,5 +1,5 @@
 import { wait } from '@shared/utils';
-import { AxiosError } from 'axios';
+import { FetchError } from 'ofetch';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { withRetry } from './with-retry';
 
@@ -7,8 +7,13 @@ vi.mock('@shared/utils', () => ({
   wait: vi.fn(async () => Promise.resolve()),
 }));
 
-function createTimeoutError(): AxiosError {
-  return new AxiosError('timeout of 30000ms exceeded', 'ECONNABORTED');
+function createTimeoutError(): FetchError {
+  const error = new FetchError('timeout of 30000ms exceeded');
+  return error;
+}
+
+function createAbortError(): DOMException {
+  return new DOMException('The operation was aborted', 'AbortError');
 }
 
 describe('withRetry', () => {
@@ -23,10 +28,22 @@ describe('withRetry', () => {
     expect(requestFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should retry and resolve if the request succeeds after retries', async () => {
+  it('should retry and resolve if the request succeeds after retries (FetchError timeout)', async () => {
     const requestFn = vi
       .fn()
       .mockRejectedValueOnce(createTimeoutError())
+      .mockResolvedValue('success');
+
+    const result = await withRetry(requestFn, { maxRetries: 2, retryDelay: 1000 });
+    expect(result).toBe('success');
+    expect(requestFn).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledWith(1000);
+  });
+
+  it('should retry and resolve if the request succeeds after retries (AbortError)', async () => {
+    const requestFn = vi
+      .fn()
+      .mockRejectedValueOnce(createAbortError())
       .mockResolvedValue('success');
 
     const result = await withRetry(requestFn, { maxRetries: 2, retryDelay: 1000 });

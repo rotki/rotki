@@ -1,9 +1,7 @@
-import type { ActionResult } from '@rotki/common';
-import type { ProtocolMetadata } from '@/types/defi';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
+import { type ProtocolMetadata, ProtocolMetadataArraySchema } from '@/types/defi';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseDefiApiReturn {
   fetchAirdrops: () => Promise<PendingTask>;
@@ -13,25 +11,22 @@ interface UseDefiApiReturn {
 
 export function useDefiApi(): UseDefiApiReturn {
   const fetchAirdrops = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>('/blockchains/eth/airdrops', {
-      params: snakeCaseTransformer({
-        asyncQuery: true,
-      }),
-      validateStatus: validWithSessionAndExternalService,
+    const response = await api.get<PendingTask>('/blockchains/eth/airdrops', {
+      query: { asyncQuery: true },
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
     });
 
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const fetchAirdropsMetadata = async (): Promise<ProtocolMetadata[]> => {
-    const response = await api.instance.get<ActionResult<ProtocolMetadata[]>>('/airdrops/metadata');
-
-    return handleResponse(response);
+    const response = await api.get<ProtocolMetadata[]>('/airdrops/metadata');
+    return ProtocolMetadataArraySchema.parse(response);
   };
 
   const fetchDefiMetadata = async (): Promise<ProtocolMetadata[]> => {
-    const response = await api.instance.get<ActionResult<ProtocolMetadata[]>>('/defi/metadata');
-    return handleResponse(response);
+    const response = await api.get<ProtocolMetadata[]>('/defi/metadata');
+    return ProtocolMetadataArraySchema.parse(response);
   };
 
   return {

@@ -30,7 +30,9 @@ export interface CalendarReminderTemporaryPayload {
   secsBefore: number;
 }
 
-export interface CalendarReminderAddResponse {
-  success?: number[];
-  failed?: number[];
-}
+export const CalendarReminderAddResponseSchema = z.object({
+  success: z.array(z.number()).optional(),
+  failed: z.array(z.number()).optional(),
+});
+
+export type CalendarReminderAddResponse = z.infer<typeof CalendarReminderAddResponseSchema>;

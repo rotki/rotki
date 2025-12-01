@@ -129,13 +129,16 @@ describe('composables/api/statistics/wrap', () => {
         end: 1700100000,
       }))
         .rejects
-        .toThrow('Invalid response format');
+        .toThrow('Failed to fetch wrap statistics');
     });
 
     it('throws error on invalid response format', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/statistics/events`, () =>
-          HttpResponse.json({})),
+          HttpResponse.json({
+            result: { invalid: 'format' },
+            message: '',
+          })),
       );
 
       const { fetchWrapStatistics } = useWrapStatisticsApi();
@@ -145,7 +148,7 @@ describe('composables/api/statistics/wrap', () => {
         end: 1700100000,
       }))
         .rejects
-        .toThrow('Invalid response format');
+        .toThrow(); // Zod validation error
     });
   });
 });

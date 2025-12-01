@@ -2,7 +2,7 @@
 import { LogLevel } from '@shared/log-level';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
-import { api } from '@/services/rotkehlchen-api';
+import { api } from '@/modules/api/rotki-api';
 import { useMainStore } from '@/store/main';
 
 const restarting = ref(false);

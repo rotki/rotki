@@ -156,7 +156,6 @@ export function useExchanges(): UseExchangesReturn {
         // if multiple keys exist for the deleted exchange, re-fetch and update the balances for the location
         if (exchanges.some(exch => exch.location === exchange.location)) {
           await fetchExchangeBalances({
-            ignoreCache: false,
             location: exchange.location,
           });
         }
@@ -202,7 +201,6 @@ export function useExchanges(): UseExchangesReturn {
 
     startPromise(
       fetchExchangeBalances({
-        ignoreCache: false,
         location,
       }),
     );

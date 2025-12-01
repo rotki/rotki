@@ -1,7 +1,5 @@
-import type { ActionResult } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
 import { BackendConfiguration } from '@/types/backend';
 import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
 
@@ -15,53 +13,36 @@ interface UseSettingApiReturn {
 
 export function useSettingsApi(): UseSettingApiReturn {
   const setSettings = async (settings: SettingsUpdate): Promise<UserSettingsModel> => {
-    const response = await api.instance.put<ActionResult<UserSettingsModel>>(
+    const response = await api.put<UserSettingsModel>(
       '/settings',
-      snakeCaseTransformer({
-        settings,
-      }),
-      {
-        validateStatus: validStatus,
-      },
+      { settings },
     );
-    const data = handleResponse(response);
-    return UserSettingsModel.parse(data);
+    return UserSettingsModel.parse(response);
   };
 
   const getSettings = async (): Promise<UserSettingsModel> => {
-    const response = await api.instance.get<ActionResult<UserSettingsModel>>('/settings', {
-      validateStatus: validWithSessionStatus,
+    const response = await api.get<UserSettingsModel>('/settings', {
+      validStatuses: VALID_WITH_SESSION_STATUS,
     });
 
-    const data = handleResponse(response);
-    return UserSettingsModel.parse(data);
+    return UserSettingsModel.parse(response);
   };
 
-  const getRawSettings = async (): Promise<SettingsUpdate> => {
-    const response = await api.instance.get<ActionResult<SettingsUpdate>>('/settings', {
-      validateStatus: validWithSessionStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const getRawSettings = async (): Promise<SettingsUpdate> => api.get<SettingsUpdate>('/settings', {
+    validStatuses: VALID_WITH_SESSION_STATUS,
+  });
 
   const backendSettings = async (): Promise<BackendConfiguration> => {
-    const response = await api.instance.get<ActionResult<BackendConfiguration>>('/settings/configuration');
-    return BackendConfiguration.parse(handleResponse(response));
+    const response = await api.get<BackendConfiguration>('/settings/configuration');
+    return BackendConfiguration.parse(response);
   };
 
   const updateBackendConfiguration = async (loglevel: string): Promise<BackendConfiguration> => {
-    const response = await api.instance.put<ActionResult<BackendConfiguration>>(
+    const response = await api.put<BackendConfiguration>(
       '/settings/configuration',
-      snakeCaseTransformer({
-        loglevel: loglevel.toUpperCase(),
-      }),
-      {
-        validateStatus: validStatus,
-      },
+      { loglevel: loglevel.toUpperCase() },
     );
-    const data = handleResponse(response);
-    return BackendConfiguration.parse(data);
+    return BackendConfiguration.parse(response);
   };
 
   return {

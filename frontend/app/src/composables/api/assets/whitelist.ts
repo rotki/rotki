@@ -1,6 +1,5 @@
-import type { ActionResult } from '@rotki/common';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validWithoutSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 
 interface UseAssetWhitelistApiReturn {
   getWhitelistedAssets: () => Promise<string[]>;
@@ -9,36 +8,24 @@ interface UseAssetWhitelistApiReturn {
 }
 
 export function useAssetWhitelistApi(): UseAssetWhitelistApiReturn {
-  const getWhitelistedAssets = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>('/assets/ignored/whitelist', {
-      validateStatus: validWithoutSessionStatus,
-    });
+  const getWhitelistedAssets = async (): Promise<string[]> => api.get<string[]>('/assets/ignored/whitelist', {
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
-    return handleResponse(response);
-  };
+  const addAssetToWhitelist = async (token: string): Promise<boolean> => api.post<boolean>(
+    '/assets/ignored/whitelist',
+    {
+      token,
+    },
+    {
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
+    },
+  );
 
-  const addAssetToWhitelist = async (token: string): Promise<boolean> => {
-    const response = await api.instance.post<ActionResult<boolean>>(
-      '/assets/ignored/whitelist',
-      {
-        token,
-      },
-      {
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
-
-  const removeAssetFromWhitelist = async (token: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/assets/ignored/whitelist', {
-      data: { token },
-      validateStatus: validWithoutSessionStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const removeAssetFromWhitelist = async (token: string): Promise<boolean> => api.delete<boolean>('/assets/ignored/whitelist', {
+    body: { token },
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
   return {
     addAssetToWhitelist,

@@ -1,23 +1,22 @@
 import type { TimeFramePeriod } from '@rotki/common';
-import type { CamelCase } from '@/types/common';
 import type { Module } from '@/types/modules';
 import { z } from 'zod/v4';
 
-export const PeriodicClientQueryResult = z.object({
+export const PeriodicClientQueryResultSchema = z.object({
   connectedNodes: z.record(z.string(), z.array(z.string())),
   failedToConnect: z.record(z.string(), z.array(z.string())).optional(),
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
 });
 
-export type PeriodicClientQueryResult = z.infer<typeof PeriodicClientQueryResult>;
+export type PeriodicClientQueryResult = z.infer<typeof PeriodicClientQueryResultSchema>;
 
-export const Messages = z.object({
+export const MessagesSchema = z.object({
   errors: z.array(z.string()),
   warnings: z.array(z.string()),
 });
 
-export type Messages = z.infer<typeof Messages>;
+export type Messages = z.infer<typeof MessagesSchema>;
 
 export enum PrivacyMode {
   NORMAL = 0,
@@ -46,9 +45,9 @@ export interface SessionSettings {
   animationsEnabled: boolean;
 }
 
-export type QueriedAddresses = {
-  readonly [module in CamelCase<Module>]?: string[];
-};
+export const QueriedAddressesSchema = z.record(z.string(), z.array(z.string()));
+
+export type QueriedAddresses = z.infer<typeof QueriedAddressesSchema>;
 
 export interface QueriedAddressPayload {
   readonly module: Module;

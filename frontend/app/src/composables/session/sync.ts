@@ -3,7 +3,7 @@ import type { TaskMeta } from '@/types/task';
 import { Severity } from '@rotki/common';
 import { useSyncApi } from '@/composables/api/session/sync';
 import { serializer } from '@/composables/dynamic-messages';
-import { api } from '@/services/rotkehlchen-api';
+import { api } from '@/modules/api/rotki-api';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';

@@ -443,7 +443,6 @@ describe('composables/api/balances/exchanges', () => {
       const result = await getExchangeSavings(payload);
 
       expect(capturedBody).toMatchObject({
-        async_query: false,
         location: 'kraken',
       });
       expect(result.entries).toHaveLength(1);

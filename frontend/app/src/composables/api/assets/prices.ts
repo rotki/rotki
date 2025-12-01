@@ -1,7 +1,5 @@
-import type { ActionResult } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 import {
   type HistoricalPrice,
   type HistoricalPriceDeletePayload,
@@ -13,7 +11,6 @@ import {
   ManualPrices,
   NftPriceArray,
 } from '@/types/prices';
-import { nonEmptyProperties } from '@/utils/data';
 
 interface UseAssetPriceApiReturn {
   fetchHistoricalPrices: (payload?: Partial<ManualPricePayload>) => Promise<HistoricalPrice[]>;
@@ -28,96 +25,63 @@ interface UseAssetPriceApiReturn {
 
 export function useAssetPricesApi(): UseAssetPriceApiReturn {
   const fetchHistoricalPrices = async (payload?: Partial<ManualPricePayload>): Promise<HistoricalPrice[]> => {
-    const response = await api.instance.get<ActionResult<HistoricalPrice[]>>('/assets/prices/historical', {
-      params: payload
-        ? snakeCaseTransformer(nonEmptyProperties(payload, {
-            removeEmptyString: true,
-          }))
-        : null,
-      validateStatus: validWithoutSessionStatus,
+    const response = await api.get<HistoricalPrice[]>('/assets/prices/historical', {
+      filterEmptyProperties: { removeEmptyString: true },
+      query: payload,
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
     });
 
-    return HistoricalPrices.parse(handleResponse(response));
+    return HistoricalPrices.parse(response);
   };
 
-  const addHistoricalPrice = async (price: HistoricalPriceFormPayload): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      '/assets/prices/historical',
-      snakeCaseTransformer(price),
-      {
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
+  const addHistoricalPrice = async (price: HistoricalPriceFormPayload): Promise<boolean> => api.put<boolean>(
+    '/assets/prices/historical',
+    price,
+    {
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
+    },
+  );
 
-    return handleResponse(response);
-  };
+  const editHistoricalPrice = async (price: HistoricalPriceFormPayload): Promise<boolean> => api.patch<boolean>(
+    '/assets/prices/historical',
+    price,
+    {
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
+    },
+  );
 
-  const editHistoricalPrice = async (price: HistoricalPriceFormPayload): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      '/assets/prices/historical',
-      snakeCaseTransformer(price),
-      {
-        validateStatus: validWithoutSessionStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
-
-  const deleteHistoricalPrice = async (payload: HistoricalPriceDeletePayload): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/assets/prices/historical', {
-      data: snakeCaseTransformer(payload),
-      validateStatus: validWithoutSessionStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const deleteHistoricalPrice = async (payload: HistoricalPriceDeletePayload): Promise<boolean> => api.delete<boolean>('/assets/prices/historical', {
+    body: payload,
+    validStatuses: VALID_WITHOUT_SESSION_STATUS,
+  });
 
   const fetchLatestPrices = async (payload?: Partial<ManualPricePayload>): Promise<ManualPrice[]> => {
-    const response = await api.instance.post<ActionResult<ManualPrice[]>>(
+    const response = await api.post<ManualPrice[]>(
       '/assets/prices/latest/all',
-      payload
-        ? snakeCaseTransformer(nonEmptyProperties(payload, {
-            removeEmptyString: true,
-          }))
-        : null,
+      payload ?? null,
       {
-        validateStatus: validStatus,
+        filterEmptyProperties: { removeEmptyString: true },
       },
     );
 
-    return ManualPrices.parse(handleResponse(response));
+    return ManualPrices.parse(response);
   };
 
-  const addLatestPrice = async (payload: ManualPriceFormPayload): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      '/assets/prices/latest',
-      snakeCaseTransformer(payload),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const addLatestPrice = async (payload: ManualPriceFormPayload): Promise<boolean> => api.put<boolean>(
+    '/assets/prices/latest',
+    payload,
+  );
 
-    return handleResponse(response);
-  };
-
-  const deleteLatestPrice = async (asset: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/assets/prices/latest', {
-      data: {
-        asset,
-      },
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const deleteLatestPrice = async (asset: string): Promise<boolean> => api.delete<boolean>('/assets/prices/latest', {
+    body: {
+      asset,
+    },
+  });
 
   const fetchNftsPrices = async (): Promise<NftPriceArray> => {
-    const response = await api.instance.post<ActionResult<NftPriceArray>>('/nfts/prices', null, {
-      validateStatus: validStatus,
-    });
+    const response = await api.post<NftPriceArray>('/nfts/prices', null);
 
-    return NftPriceArray.parse(handleResponse(response));
+    return NftPriceArray.parse(response);
   };
 
   return {

@@ -1,7 +1,6 @@
-import type { ActionResult } from '@rotki/common';
-import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
+import { type QueriedAddresses, QueriedAddressesSchema, type QueriedAddressPayload } from '@/types/session';
 
 interface UseQueriedAddressApiReturn {
   queriedAddresses: () => Promise<QueriedAddresses>;
@@ -11,28 +10,22 @@ interface UseQueriedAddressApiReturn {
 
 export function useQueriedAddressApi(): UseQueriedAddressApiReturn {
   const queriedAddresses = async (): Promise<QueriedAddresses> => {
-    const response = await api.instance.get<ActionResult<QueriedAddresses>>('/queried_addresses', {
-      validateStatus: validWithSessionStatus,
+    const response = await api.get<QueriedAddresses>('/queried_addresses', {
+      validStatuses: VALID_WITH_SESSION_STATUS,
     });
-
-    return handleResponse(response);
+    return QueriedAddressesSchema.parse(response);
   };
 
   const addQueriedAddress = async (payload: QueriedAddressPayload): Promise<QueriedAddresses> => {
-    const response = await api.instance.put<ActionResult<QueriedAddresses>>('/queried_addresses', payload, {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
+    const response = await api.put<QueriedAddresses>('/queried_addresses', payload);
+    return QueriedAddressesSchema.parse(response);
   };
 
   const deleteQueriedAddress = async (payload: QueriedAddressPayload): Promise<QueriedAddresses> => {
-    const response = await api.instance.delete<ActionResult<QueriedAddresses>>('/queried_addresses', {
-      data: payload,
-      validateStatus: validStatus,
+    const response = await api.delete<QueriedAddresses>('/queried_addresses', {
+      body: payload,
     });
-
-    return handleResponse(response);
+    return QueriedAddressesSchema.parse(response);
   };
 
   return {

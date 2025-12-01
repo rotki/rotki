@@ -1,14 +1,10 @@
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
+import { api } from '@/modules/api/rotki-api';
 import {
-  handleResponse,
-  validWithParamsSessionAndExternalService,
-  validWithSessionAndExternalService,
-} from '@/services/utils';
+  VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
+  VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+} from '@/modules/api/utils';
 import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/types/manual-balances';
-import { nonEmptyProperties } from '@/utils/data';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseManualBalancesApiReturn {
   addManualBalances: (balances: RawManualBalance[]) => Promise<PendingTask>;
@@ -19,44 +15,46 @@ interface UseManualBalancesApiReturn {
 
 export function useManualBalancesApi(): UseManualBalancesApiReturn {
   const queryManualBalances = async (usdValueThreshold?: string): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>('balances/manual', {
-      params: snakeCaseTransformer({
+    const response = await api.get<PendingTask>('balances/manual', {
+      query: {
         asyncQuery: true,
         usdValueThreshold,
-      }),
-      validateStatus: validWithSessionAndExternalService,
+      },
+      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
     });
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const addManualBalances = async (balances: RawManualBalance[]): Promise<PendingTask> => {
-    const response = await api.instance.put<ActionResult<PendingTask>>(
+    const response = await api.put<PendingTask>(
       'balances/manual',
-      snakeCaseTransformer(nonEmptyProperties({ asyncQuery: true, balances })),
+      { asyncQuery: true, balances },
       {
-        validateStatus: validWithParamsSessionAndExternalService,
+        filterEmptyProperties: true,
+        validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const editManualBalances = async (balances: ManualBalance[]): Promise<PendingTask> => {
-    const response = await api.instance.patch<ActionResult<PendingTask>>(
+    const response = await api.patch<PendingTask>(
       'balances/manual',
-      snakeCaseTransformer(nonEmptyProperties({ asyncQuery: true, balances })),
+      { asyncQuery: true, balances },
       {
-        validateStatus: validWithParamsSessionAndExternalService,
+        filterEmptyProperties: true,
+        validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const deleteManualBalances = async (ids: number[]): Promise<ManualBalances> => {
-    const response = await api.instance.delete<ActionResult<ManualBalances>>('balances/manual', {
-      data: { ids },
-      validateStatus: validWithParamsSessionAndExternalService,
+    const response = await api.delete<ManualBalances>('balances/manual', {
+      body: { ids },
+      validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
     });
-    return ManualBalances.parse(handleResponse(response));
+    return ManualBalances.parse(response);
   };
 
   return {

@@ -1,29 +1,20 @@
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
 import { BackendInfo } from '@/types/backend';
 
 interface UseInfoApiReturn {
   info: (checkForUpdates?: boolean) => Promise<BackendInfo>;
-  ping: () => Promise<PendingTask>;
+  ping: () => Promise<boolean>;
 }
 
 export function useInfoApi(): UseInfoApiReturn {
   const info = async (checkForUpdates = false): Promise<BackendInfo> => {
-    const response = await api.instance.get<ActionResult<BackendInfo>>('/info', {
-      params: snakeCaseTransformer({
-        checkForUpdates,
-      }),
+    const response = await api.get<BackendInfo>('/info', {
+      query: { checkForUpdates },
     });
-    return BackendInfo.parse(handleResponse(response));
+    return BackendInfo.parse(response);
   };
 
-  const ping = async (): Promise<PendingTask> => {
-    const ping = await api.instance.get<ActionResult<PendingTask>>('/ping'); // no validate status here since defaults work
-    return handleResponse(ping);
-  };
+  const ping = async (): Promise<boolean> => api.get<boolean>('/ping');
 
   return {
     info,

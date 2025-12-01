@@ -1,11 +1,14 @@
 import type { ActionStatus } from '@/types/action';
 import type { ConflictResolution } from '@/types/asset';
-import type { PendingTask } from '@/types/task';
-import { type ActionResult, assert } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validFileOperationStatus, validStatus, validWithoutSessionStatus } from '@/services/utils';
-import { downloadFileByBlobResponse } from '@/utils/download';
+import { assert } from '@rotki/common';
+import { api } from '@/modules/api/rotki-api';
+import { VALID_FILE_OPERATION_STATUS, VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { downloadFileByBlob } from '@/utils/download';
+
+interface ExportFileResponse {
+  file: string;
+}
 
 interface UseAssetApiReturn {
   checkForAssetUpdate: () => Promise<PendingTask>;
@@ -19,50 +22,36 @@ interface UseAssetApiReturn {
 
 export function useAssetsApi(): UseAssetApiReturn {
   const checkForAssetUpdate = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>('/assets/updates', {
-      params: snakeCaseTransformer({ asyncQuery: true }),
-      validateStatus: validWithoutSessionStatus,
+    const response = await api.get<PendingTask>('/assets/updates', {
+      query: { asyncQuery: true },
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
     });
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const performUpdate = async (version: number, conflicts?: ConflictResolution): Promise<PendingTask> => {
-    const data = {
-      async_query: true,
+    const response = await api.post<PendingTask>('/assets/updates', {
+      asyncQuery: true,
       conflicts,
-      up_to_version: version,
-    };
-
-    const response = await api.instance.post<ActionResult<PendingTask>>('/assets/updates', data, {
-      validateStatus: validStatus,
+      upToVersion: version,
     });
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
-  const mergeAssets = async (sourceIdentifier: string, targetAsset: string): Promise<true> => {
-    const data = snakeCaseTransformer({
-      sourceIdentifier,
-      targetAsset,
-    });
-    const response = await api.instance.put<ActionResult<true>>('/assets/replace', data, {
-      validateStatus: validStatus,
-    });
-    return handleResponse(response);
-  };
+  const mergeAssets = async (sourceIdentifier: string, targetAsset: string): Promise<true> => api.put<true>('/assets/replace', {
+    sourceIdentifier,
+    targetAsset,
+  });
 
   const restoreAssetsDatabase = async (reset: 'hard' | 'soft', ignoreWarnings: boolean): Promise<PendingTask> => {
-    const response = await api.instance.delete<ActionResult<PendingTask>>('/assets/updates', {
-      data: snakeCaseTransformer({
+    const response = await api.delete<PendingTask>('/assets/updates', {
+      body: {
         asyncQuery: true,
         ignoreWarnings,
         reset,
-      }),
-      validateStatus: validStatus,
+      },
     });
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const importCustom = async (file: File | string): Promise<PendingTask> => {
@@ -71,61 +60,49 @@ export function useAssetsApi(): UseAssetApiReturn {
       data.append('file', file);
       data.append('async_query', 'true');
 
-      const response = await api.instance.post('/assets/user', data, {
+      const response = await api.post<PendingTask>('/assets/user', data, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        validateStatus: validFileOperationStatus,
+        validStatuses: VALID_FILE_OPERATION_STATUS,
       });
-      return handleResponse(response);
+      return PendingTaskSchema.parse(response);
     }
 
-    const response = await api.instance.put(
+    const response = await api.put<PendingTask>(
       '/assets/user',
-      snakeCaseTransformer({
+      {
         action: 'upload',
         asyncQuery: true,
         file,
-      }),
+      },
       {
-        validateStatus: validFileOperationStatus,
+        validStatuses: VALID_FILE_OPERATION_STATUS,
       },
     );
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const exportCustom = async (directory?: string): Promise<ActionStatus> => {
     try {
       if (!directory) {
-        const response = await api.instance.put(
-          '/assets/user',
-          { action: 'download' },
-          {
-            responseType: 'blob',
-            validateStatus: validFileOperationStatus,
-          },
-        );
-        if (response.status === 200) {
-          downloadFileByBlobResponse(response, 'assets.zip');
-          return { success: true };
-        }
-        const body = await (response.data as Blob).text();
-        const result: ActionResult<null> = JSON.parse(body);
-
-        return { message: result.message, success: false };
+        const blob = await api.fetchBlob('/assets/user', {
+          method: 'PUT',
+          body: { action: 'download' },
+          validStatuses: VALID_FILE_OPERATION_STATUS,
+        });
+        downloadFileByBlob(blob, 'assets.zip');
+        return { success: true };
       }
-      const response = await api.instance.put<ActionResult<{ file: string }>>(
+      const response = await api.put<ExportFileResponse>(
         '/assets/user',
         { action: 'download', destination: directory },
         {
-          validateStatus: validFileOperationStatus,
+          validStatuses: VALID_FILE_OPERATION_STATUS,
         },
       );
-      const data = handleResponse(response);
-      assert(data.file);
-      return {
-        success: true,
-      };
+      assert(response.file);
+      return { success: true };
     }
     catch (error: any) {
       return { message: error.message, success: false };
@@ -139,12 +116,11 @@ export function useAssetsApi(): UseAssetApiReturn {
       },
       ignoreCache ? { ignoreCache } : {},
     );
-    const response = await api.instance.get<ActionResult<PendingTask>>('/nfts', {
-      params: snakeCaseTransformer(params),
-      validateStatus: validWithoutSessionStatus,
+    const response = await api.get<PendingTask>('/nfts', {
+      query: params,
+      validStatuses: VALID_WITHOUT_SESSION_STATUS,
     });
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   return {

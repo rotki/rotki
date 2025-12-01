@@ -1,15 +1,9 @@
-import type { AxiosResponse } from 'axios';
-import type { PendingTask } from '@/types/task';
-import { type ActionResult, transformCase } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
+import { transformCase } from '@rotki/common';
+import { api } from '@/modules/api/rotki-api';
 import {
-  handleResponse,
-  paramsSerializer,
-  validStatus,
-  validWithParamsSessionAndExternalService,
-  validWithSessionStatus,
-} from '@/services/utils';
+  VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
+  VALID_WITH_SESSION_STATUS,
+} from '@/modules/api/utils';
 import {
   type Exchange,
   type ExchangeFormData,
@@ -17,7 +11,7 @@ import {
   ExchangeSavingsCollectionResponse,
   type ExchangeSavingsRequestPayload,
 } from '@/types/exchanges';
-import { nonEmptyProperties } from '@/utils/data';
+import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseExchangeApiReturn {
   queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;
@@ -32,132 +26,103 @@ interface UseExchangeApiReturn {
 }
 
 export function useExchangeApi(): UseExchangeApiReturn {
-  const queryRemoveExchange = async ({ location, name }: Exchange): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/exchanges', {
-      data: {
-        location,
-        name,
-      },
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const queryRemoveExchange = async ({ location, name }: Exchange): Promise<boolean> => api.delete<boolean>('/exchanges', {
+    body: {
+      location,
+      name,
+    },
+  });
 
   const queryExchangeBalances = async (location: string, ignoreCache = false, usdValueThreshold?: string): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(`/exchanges/balances/${location}`, {
-      params: snakeCaseTransformer({
+    const response = await api.get<PendingTask>(`/exchanges/balances/${location}`, {
+      query: {
         asyncQuery: true,
         ignoreCache: ignoreCache ? true : undefined,
         usdValueThreshold,
-      }),
-      validateStatus: validStatus,
+      },
     });
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const callSetupExchange = async ({ mode, ...payload }: ExchangeFormData): Promise<boolean> => {
-    let response: AxiosResponse<ActionResult<boolean>>;
-
     if (mode === 'edit') {
-      response = await api.instance.patch<ActionResult<boolean>>(
+      return api.patch<boolean>(
         '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(payload, {
-          alwaysPickKeys: ['binanceMarkets'],
-          removeEmptyString: true,
-        })),
+        payload,
         {
-          validateStatus: validStatus,
-        },
-      );
-    }
-    else {
-      response = await api.instance.put<ActionResult<boolean>>(
-        '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(payload, {
-          removeEmptyString: true,
-        })),
-        {
-          validateStatus: validStatus,
+          filterEmptyProperties: {
+            alwaysPickKeys: ['binanceMarkets'],
+            removeEmptyString: true,
+          },
         },
       );
     }
 
-    return handleResponse(response);
+    return api.put<boolean>(
+      '/exchanges',
+      payload,
+      {
+        filterEmptyProperties: {
+          removeEmptyString: true,
+        },
+      },
+    );
   };
 
   const getExchanges = async (): Promise<Exchanges> => {
-    const response = await api.instance.get<ActionResult<Exchanges>>('/exchanges', {
-      validateStatus: validWithSessionStatus,
+    const data = await api.get<Exchanges>('/exchanges', {
+      validStatuses: VALID_WITH_SESSION_STATUS,
     });
 
-    const data = handleResponse(response);
     return Exchanges.parse(data);
   };
 
-  const queryBinanceMarkets = async (location: string): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>('/exchanges/binance/pairs', {
-      params: snakeCaseTransformer({
-        location,
-      }),
-    });
+  const queryBinanceMarkets = async (location: string): Promise<string[]> => api.get<string[]>('/exchanges/binance/pairs', {
+    query: { location },
+  });
 
-    return handleResponse(response);
-  };
-
-  const queryBinanceUserMarkets = async (name: string, location: string): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(`/exchanges/binance/pairs/${name}`, {
-      params: snakeCaseTransformer({
-        location,
-      }),
-    });
-
-    return handleResponse(response);
-  };
+  const queryBinanceUserMarkets = async (name: string, location: string): Promise<string[]> => api.get<string[]>(`/exchanges/binance/pairs/${name}`, {
+    query: { location },
+  });
 
   const deleteExchangeData = async (name?: string): Promise<boolean> => {
     let url = `/exchanges/data`;
     if (name)
       url += `/${name}`;
 
-    const response = await api.instance.delete<ActionResult<boolean>>(url, {
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
+    return api.delete<boolean>(url);
   };
 
-  const internalExchangeSavings = async <T>(
-    payload: ExchangeSavingsRequestPayload,
-    asyncQuery: boolean,
-  ): Promise<T> => {
-    const response = await api.instance.post<ActionResult<T>>(
+  const getExchangeSavingsTask = async (payload: ExchangeSavingsRequestPayload): Promise<PendingTask> => {
+    const response = await api.post<PendingTask>(
       `/exchanges/${payload.location}/savings`,
-      snakeCaseTransformer(
-        nonEmptyProperties({
-          asyncQuery,
-          ...payload,
-          orderByAttributes: payload.orderByAttributes?.map(item => transformCase(item)) ?? [],
-        }),
-      ),
       {
-        paramsSerializer,
-        validateStatus: validWithParamsSessionAndExternalService,
+        asyncQuery: true,
+        ...payload,
+        orderByAttributes: payload.orderByAttributes?.map(item => transformCase(item)) ?? [],
+      },
+      {
+        filterEmptyProperties: true,
+        validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
-
-    return handleResponse(response);
+    return PendingTaskSchema.parse(response);
   };
-
-  const getExchangeSavingsTask = async (payload: ExchangeSavingsRequestPayload): Promise<PendingTask> =>
-    internalExchangeSavings<PendingTask>(payload, true);
 
   const getExchangeSavings = async (
     payload: ExchangeSavingsRequestPayload,
   ): Promise<ExchangeSavingsCollectionResponse> => {
-    const response = await internalExchangeSavings<ExchangeSavingsCollectionResponse>(payload, false);
-
+    const response = await api.post<ExchangeSavingsCollectionResponse>(
+      `/exchanges/${payload.location}/savings`,
+      {
+        ...payload,
+        orderByAttributes: payload.orderByAttributes?.map(item => transformCase(item)) ?? [],
+      },
+      {
+        filterEmptyProperties: true,
+        validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
+      },
+    );
     return ExchangeSavingsCollectionResponse.parse(response);
   };
 

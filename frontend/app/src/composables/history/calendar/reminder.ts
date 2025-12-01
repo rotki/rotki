@@ -1,10 +1,8 @@
-import type { ActionResult } from '@rotki/common';
-import type { AddCalendarEventResponse } from '@/types/history/calendar';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse } from '@/services/utils';
+import { api } from '@/modules/api/rotki-api';
+import { type AddCalendarEventResponse, AddCalendarEventResponseSchema } from '@/types/history/calendar';
 import {
   type CalendarReminderAddResponse,
+  CalendarReminderAddResponseSchema,
   CalendarReminderEntries,
   type CalendarReminderEntry,
   type CalendarReminderRequestPayload,
@@ -20,41 +18,27 @@ interface UseCalendarReminderApi {
 
 export function useCalendarReminderApi(): UseCalendarReminderApi {
   const fetchCalendarReminders = async (filter: CalendarReminderRequestPayload): Promise<CalendarReminderEntry[]> => {
-    const response = await api.instance.post<ActionResult<CalendarReminderEntries>>(
+    const response = await api.post<CalendarReminderEntries>(
       '/calendar/reminders',
-      snakeCaseTransformer(filter),
+      filter,
     );
 
-    return CalendarReminderEntries.parse(handleResponse(response)).entries;
+    return CalendarReminderEntries.parse(response).entries;
   };
 
   const addCalendarReminder = async (reminders: CalenderReminderPayload[]): Promise<CalendarReminderAddResponse> => {
-    const response = await api.instance.put<ActionResult<CalendarReminderAddResponse>>(
-      '/calendar/reminders',
-      snakeCaseTransformer({
-        reminders,
-      }),
-    );
-
-    return handleResponse(response);
+    const response = await api.put<CalendarReminderAddResponse>('/calendar/reminders', { reminders });
+    return CalendarReminderAddResponseSchema.parse(response);
   };
 
   const editCalendarReminder = async (payload: CalendarReminderEntry): Promise<AddCalendarEventResponse> => {
-    const response = await api.instance.patch<ActionResult<AddCalendarEventResponse>>(
-      '/calendar/reminders',
-      snakeCaseTransformer(payload),
-    );
-
-    return handleResponse(response);
+    const response = await api.patch<AddCalendarEventResponse>('/calendar/reminders', payload);
+    return AddCalendarEventResponseSchema.parse(response);
   };
 
-  const deleteCalendarReminder = async (identifier: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/calendar/reminders', {
-      data: snakeCaseTransformer({ identifier }),
-    });
-
-    return handleResponse(response);
-  };
+  const deleteCalendarReminder = async (identifier: number): Promise<boolean> => api.delete<boolean>('/calendar/reminders', {
+    body: { identifier },
+  });
 
   return {
     addCalendarReminder,

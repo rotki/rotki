@@ -4,8 +4,8 @@ import * as fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { assert, toHumanReadable, toSentenceCase } from '@rotki/common';
-import axios from 'axios';
 import consola from 'consola';
+import { ofetch } from 'ofetch';
 
 interface Chain {
   id: string;
@@ -109,8 +109,8 @@ const password = '123456789';
  */
 async function isBackendRunning(): Promise<boolean> {
   try {
-    const response = await axios.get(PING_URL, { timeout: 1000 });
-    return response.status === 200;
+    await ofetch(PING_URL, { timeout: 1000 });
+    return true;
   }
   catch {
     return false;
@@ -192,21 +192,19 @@ async function waitForBackend(): Promise<void> {
 async function createUser(): Promise<boolean> {
   try {
     consola.info(`Creating user ${username}...`);
-    const response = await axios.put(`${API_URL}/users`, {
-      name: username,
-      password,
-      initial_settings: {
-        submit_usage_analytics: false,
+    await ofetch(`${API_URL}/users`, {
+      method: 'PUT',
+      body: {
+        name: username,
+        password,
+        initial_settings: {
+          submit_usage_analytics: false,
+        },
       },
     });
 
-    if (response.status === 200) {
-      consola.success(`User ${username} created successfully!`);
-      return true;
-    }
-
-    consola.error(`Failed to create user ${username}: ${response.data}`);
-    return false;
+    consola.success(`User ${username} created successfully!`);
+    return true;
   }
   catch (error) {
     consola.error(`Error creating user ${username}:`, error);
@@ -221,8 +219,8 @@ async function createUser(): Promise<boolean> {
  */
 async function fetchFromApi(endpoint: string): Promise<any> {
   try {
-    const response = await axios.get(`${API_URL}/${endpoint}`);
-    return response.data.result;
+    const response = await ofetch<{ result: any }>(`${API_URL}/${endpoint}`);
+    return response.result;
   }
   catch (error) {
     consola.error(`Error fetching from ${endpoint}:`, error);

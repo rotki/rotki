@@ -4,7 +4,7 @@ import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { getBnFormat } from '@/data/amount-formatter';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { snakeCaseTransformer } from '@/modules/api/transformers';
 import { PrivacyMode } from '@/types/session';
 import {
   type FrontendSettings,

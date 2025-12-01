@@ -39,9 +39,11 @@ export const CalendarEventCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(CalendarEvent),
 });
 
-export interface AddCalendarEventResponse {
-  entryId: number;
-}
+export const AddCalendarEventResponseSchema = z.object({
+  entryId: z.number(),
+});
+
+export type AddCalendarEventResponse = z.infer<typeof AddCalendarEventResponseSchema>;
 
 export const CalendarEventWithReminder = CalendarEvent.extend({
   reminder: z.object({

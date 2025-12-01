@@ -1,16 +1,13 @@
-import type { ActionResult } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import { omit } from 'es-toolkit';
+import { api } from '@/modules/api/rotki-api';
 import {
   type CounterpartyMapping,
   CounterpartyMappingCollectionResponse,
   type CounterpartyMappingDeletePayload,
   type CounterpartyMappingRequestPayload,
 } from '@/modules/asset-manager/counterparty-mapping/schema';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
 import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseCounterpartyMappingApiReturn {
@@ -22,55 +19,27 @@ interface UseCounterpartyMappingApiReturn {
 
 export function useCounterpartyMappingApi(): UseCounterpartyMappingApiReturn {
   const fetchAllCounterpartyMapping = async (payload: MaybeRef<CounterpartyMappingRequestPayload>): Promise<Collection<CounterpartyMapping>> => {
-    const response = await api.instance.post<ActionResult<Collection<CounterpartyMapping>>>(
+    const response = await api.post<Collection<CounterpartyMapping>>(
       '/assets/counterpartymappings',
-      snakeCaseTransformer(omit(get(payload), ['orderByAttributes', 'ascending'])),
-      {
-        validateStatus: validStatus,
-      },
+      omit(get(payload), ['orderByAttributes', 'ascending']),
     );
 
-    return mapCollectionResponse(CounterpartyMappingCollectionResponse.parse(handleResponse(response)));
+    return mapCollectionResponse(CounterpartyMappingCollectionResponse.parse(response));
   };
 
-  const addCounterpartyMapping = async (payload: CounterpartyMapping): Promise<boolean> => {
-    const response = await api.instance.put<ActionResult<boolean>>(
-      '/assets/counterpartymappings',
-      snakeCaseTransformer({
-        entries: [payload],
-      }),
-      {
-        validateStatus: validStatus,
-      },
-    );
+  const addCounterpartyMapping = async (payload: CounterpartyMapping): Promise<boolean> => api.put<boolean>(
+    '/assets/counterpartymappings',
+    { entries: [payload] },
+  );
 
-    return handleResponse(response);
-  };
+  const editCounterpartyMapping = async (payload: CounterpartyMapping): Promise<boolean> => api.patch<boolean>(
+    '/assets/counterpartymappings',
+    { entries: [payload] },
+  );
 
-  const editCounterpartyMapping = async (payload: CounterpartyMapping): Promise<boolean> => {
-    const response = await api.instance.patch<ActionResult<boolean>>(
-      '/assets/counterpartymappings',
-      snakeCaseTransformer({
-        entries: [payload],
-      }),
-      {
-        validateStatus: validStatus,
-      },
-    );
-
-    return handleResponse(response);
-  };
-
-  const deleteCounterpartyMapping = async (payload: CounterpartyMappingDeletePayload): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/assets/counterpartymappings', {
-      data: snakeCaseTransformer({
-        entries: [payload],
-      }),
-      validateStatus: validStatus,
-    });
-
-    return handleResponse(response);
-  };
+  const deleteCounterpartyMapping = async (payload: CounterpartyMappingDeletePayload): Promise<boolean> => api.delete<boolean>('/assets/counterpartymappings', {
+    body: { entries: [payload] },
+  });
 
   return {
     addCounterpartyMapping,

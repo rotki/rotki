@@ -48,7 +48,6 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
       limit: 0,
       location,
       offset: 0,
-      onlyCache: false,
       orderByAttributes: ['timestamp'],
     };
 

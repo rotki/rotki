@@ -1,3 +1,5 @@
+import { z } from 'zod/v4';
+
 export enum GnosisPayError {
   NO_REGISTERED_ACCOUNTS = 'NO_REGISTERED_ACCOUNTS',
   NO_WALLET_CONNECTED = 'NO_WALLET_CONNECTED',
@@ -20,6 +22,6 @@ export interface GnosisPayErrorContext {
   message?: string;
 }
 
-export interface GnosisPayAdminsMapping {
-  [safeAddress: string]: string[];
-}
+export const GnosisPayAdminsMappingSchema = z.record(z.string(), z.array(z.string()));
+
+export type GnosisPayAdminsMapping = z.infer<typeof GnosisPayAdminsMappingSchema>;

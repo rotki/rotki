@@ -4,7 +4,6 @@ import type { ComputedRef } from 'vue';
 import type { AssetMap } from '@/types/asset';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { getAssociatedAssetIdentifier, processAssetInfo, useAssetAssociationMap } from '@/composables/assets/common';
-import { withRetry } from '@/services/with-retry';
 import { chunkArray } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
@@ -29,7 +28,7 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
 
   async function getAssetMapping(identifiers: string[]): Promise<AssetMap | undefined> {
     try {
-      return await withRetry(async () => assetMapping(identifiers));
+      return await assetMapping(identifiers);
     }
     catch (error: any) {
       logger.error(error);
