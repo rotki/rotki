@@ -9,6 +9,7 @@ export const RuiAutoCompleteStub = defineComponent({
               class="input-value"
               type="text"
               @input="handleInput($event)"
+              @paste="handlePaste($event)"
               :disabled="disabled">
         </div>
         <div class="selections">
@@ -30,7 +31,7 @@ export const RuiAutoCompleteStub = defineComponent({
     dataCy: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
   },
-  emits: ['update:model-value'],
+  emits: ['update:model-value', 'paste'],
   setup(props, { emit }) {
     const message = computed<string>(() => {
       const m: string | string[] = props.successMessages;
@@ -52,10 +53,15 @@ export const RuiAutoCompleteStub = defineComponent({
       }
     };
 
+    const handlePaste = (event: ClipboardEvent): void => {
+      emit('paste', event);
+    };
+
     return {
       message,
       error,
       handleInput,
+      handlePaste,
     };
   },
 });

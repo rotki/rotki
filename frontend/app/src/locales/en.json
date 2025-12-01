@@ -1492,6 +1492,10 @@
   },
   "binance_market_selector": {
     "default_label": "Filter market pair(s)",
+    "paste_result": {
+      "invalid": "{count} invalid pair not found in available markets | {count} invalid pairs not found in available markets",
+      "valid": "{count} pair selected successfully | {count} pairs selected successfully"
+    },
     "query_all": {
       "error": "Couldn't get the list of markets for binance.",
       "title": "Query Binance markets"
