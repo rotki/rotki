@@ -13,11 +13,14 @@ from hexbytes import HexBytes
 from packaging.version import Version
 
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
+from rotkehlchen.constants.assets import A_USDC
+from rotkehlchen.constants.resolver import identifier_to_evm_address
 from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
 from rotkehlchen.serialization.serialize import process_result
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import (
     combine_dicts,
@@ -472,3 +475,25 @@ def test_combine_nested_dicts_inplace():
         op=operator.add,
     )
     assert result_6 == {'A': {'X': 10, 'Z': 50}}
+
+
+def test_identifier_to_evm_address():
+    """Test various identifier_to_evm_address conversions.
+    Checks that valid erc20 and erc721 identifiers get the correct address and also
+    that a number of invalid identifiers return None without raising exceptions.
+    """
+    assert identifier_to_evm_address(
+        identifier=A_USDC.identifier,
+    ) == A_USDC.resolve_to_evm_token().evm_address
+    assert identifier_to_evm_address(
+        identifier=f'eip155:1/erc721:{(erc721_address := make_evm_address())}/1234',
+    ) == erc721_address
+
+    # check various invalid identifiers to ensure they return None without raising exceptions.
+    assert identifier_to_evm_address(identifier='') is None
+    assert identifier_to_evm_address(identifier='xyz:1/erc20:0x1B073382E63411E3BcfFE90aC1B9A43feFa1Ec6F') is None  # noqa: E501
+    assert identifier_to_evm_address(identifier='1/erc20:0x1B073382E63411E3BcfFE90aC1B9A43feFa1Ec6F') is None  # noqa: E501
+    assert identifier_to_evm_address(identifier='eip155:1:erc20:0x1B073382E63411E3BcfFE90aC1B9A43feFa1Ec6F') is None  # noqa: E501
+    assert identifier_to_evm_address(identifier='eip155:/:') is None
+    assert identifier_to_evm_address(identifier='eip155:1/erc20:') is None
+    assert identifier_to_evm_address(identifier='eip155:1/erc20:xyz') is None
