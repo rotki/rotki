@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki will now properly decode Yearn staking deposit, withdrawal, and reward claim transactions.
 * :feature:`11030` rotki will now support cowswap transactions on Polygon PoS.
 * :bug:`10896` Users will be able to track the progress of repulling transactions.
 * :feature:`11014` Users will now be able to paste multiple market pairs to the binance market pairs input.
