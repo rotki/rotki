@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11007` rotki will now show the proper balance of locked Pendle for vePendle positions.
 * :bug:`-` rotki will now properly decode Gearbox pool transactions for pools with no farming token or lp tokens beyond the pool token and underlying asset.
 * :feature:`-` rotki will now support blockscout and routescan as fallback indexers for retrieving transactions when etherscan fails or does not support a given chain.
 * :bug:`-` Users can now click a location in the manual balance summary on the dashboard to filter by that location.
