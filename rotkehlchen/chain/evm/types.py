@@ -163,8 +163,9 @@ DEFAULT_EVM_INDEXER_ORDER: Final = (
 # list based on https://info.etherscan.com/whats-changing-in-the-free-api-tier-coverage-and-why/
 # might need adjustment in the future.
 CHAINS_WITH_PAID_ETHERSCAN: Final = {ChainID.BASE, ChainID.OPTIMISM, ChainID.BINANCE_SC}
-PAID_ETHERSCAN_EVM_INDEXER_ORDER: Final = DEFAULT_EVM_INDEXER_ORDER  # TODO: give priority to blockscout to avoid forcing users to change the order manually if they don't have paid api keys https://github.com/rotki/rotki/pull/11031  # noqa: E501
+BLOCKSCOUT_PRIORITY_ORDER: Final = DEFAULT_EVM_INDEXER_ORDER
+# TODO: give priority to blockscout to avoid forcing users to change the order manually if they don't have paid api keys https://github.com/rotki/rotki/pull/11031  # noqa: E501
 DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(order={
-    chain: DEFAULT_EVM_INDEXER_ORDER if chain not in CHAINS_WITH_PAID_ETHERSCAN else PAID_ETHERSCAN_EVM_INDEXER_ORDER  # noqa: E501
+    chain: DEFAULT_EVM_INDEXER_ORDER if chain not in CHAINS_WITH_PAID_ETHERSCAN else BLOCKSCOUT_PRIORITY_ORDER  # noqa: E501
     for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS
 })

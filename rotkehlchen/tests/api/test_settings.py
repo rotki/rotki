@@ -297,6 +297,26 @@ def test_set_rpc_endpoint_fail_not_set_others(
     assert result[rpc_setting] != rpc_endpoint
 
 
+def test_default_evm_indexers_orders(rotkehlchen_api_server: 'APIServer') -> None:
+    settings = assert_proper_response_with_result(
+        response=requests.get(settings_url := api_url_for(rotkehlchen_api_server, 'settingsresource')),  # noqa: E501
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert settings['default_evm_indexer_order'] == ['etherscan', 'blockscout', 'routescan']
+
+    assert_proper_response_with_result(
+        requests.put(settings_url, json={
+            'settings': {'default_evm_indexer_order': ['blockscout', 'routescan']},
+        }),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    settings = assert_proper_response_with_result(
+        response=requests.get(settings_url),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert settings['default_evm_indexer_order'] == ['blockscout', 'routescan']
+
+
 @pytest.mark.parametrize('rpc_setting', ['ksm_rpc_endpoint'])
 def test_unset_rpc_endpoint(rotkehlchen_api_server: 'APIServer', rpc_setting: list[str]) -> None:
     """Test the rpc endpoint can be unset"""
@@ -555,7 +575,7 @@ def test_set_settings_errors(rotkehlchen_api_server: 'APIServer') -> None:
         )
         assert_error_response(
             response=response,
-            contained_in_msg='"evm_indexers_order": ["EVM indexers order should not be empty and should have no repeated entries"]',  # noqa: E501
+            contained_in_msg='"evm_indexers_order": ["List of indexers has to contain unique elements and be non empty"]',  # noqa: E501
             status_code=HTTPStatus.BAD_REQUEST,
         )
 

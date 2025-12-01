@@ -391,6 +391,8 @@ def db_settings_from_dict(
             specified_args[key] = [HistoricalPriceOracle.deserialize(oracle) for oracle in oracles]
         elif key == 'evm_indexers_order':
             specified_args[key] = _deserialize_evm_indexers_order(value=value)
+        elif key == 'default_evm_indexer_order':
+            specified_args[key] = [EvmIndexer.deserialize(entry) for entry in json.loads(value)]
         elif key == 'non_syncing_exchanges':
             values = json.loads(value)
             specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
@@ -498,7 +500,7 @@ class CachedSettings:
 
     def update_entry(self, attr: str, value: DBSettingsFieldTypes) -> None:
         setattr(self._settings, attr, value)
-        if attr == 'evm_indexers_order':
+        if attr in ('evm_indexers_order', 'default_evm_indexer_order'):
             self._refresh_indexers_cache()
 
     def update_entries(self, settings: ModifiableDBSettings) -> None:

@@ -1479,8 +1479,7 @@ class EvmIndexerOrderField(fields.Field):
             }
 
             for chain, order in deserialized_map.items():
-                if len(order) == 0 or len(order) != len(set(order)):
-                    raise ValidationError('EVM indexers order should not be empty and should have no repeated entries')  # noqa: E501
+                _validate_default_indexers(order)
                 if chain not in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
                     raise ValidationError(f'{chain} does not use indexers to query transactions')
 
@@ -1676,6 +1675,7 @@ class ModifiableSettingsSchema(Schema):
             display_date_in_localtime=data['display_date_in_localtime'],
             historical_price_oracles=data['historical_price_oracles'],
             evm_indexers_order=data['evm_indexers_order'],
+            default_evm_indexer_order=data['default_evm_indexer_order'],
             current_price_oracles=data['current_price_oracles'],
             pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
