@@ -167,6 +167,17 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   return headers;
 });
 
+const rowAppendLabelColspan = computed(() => {
+  let colspan = 3;
+
+  if (props.selectionMode)
+    colspan++;
+  if (props.showPerProtocol)
+    colspan++;
+
+  return colspan;
+});
+
 useRememberTableSorting<AssetBalanceWithPrice>(TableId.ASSET_BALANCES, sort, tableHeaders);
 
 const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), assetInfo));
@@ -243,7 +254,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       #body.append
     >
       <RowAppend
-        :label-colspan="selectionMode ? 5 : 4"
+        :label-colspan="rowAppendLabelColspan"
         :label="t('common.total')"
         :is-mobile="false"
         :right-patch-colspan="2"
