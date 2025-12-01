@@ -14,7 +14,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-from .constants import PENDLE_TOKEN, VE_PENDLE_CONTRACT_ADDRESS
+from .constants import PENDLE_TOKEN, VE_PENDLE_ABI, VE_PENDLE_CONTRACT_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding import EthereumTransactionDecoder
@@ -40,7 +40,7 @@ class PendleBalances(ProtocolWithBalance):
         )
         self.ve_pendle_contract = EvmContract(
             address=VE_PENDLE_CONTRACT_ADDRESS,
-            abi=self.evm_inquirer.contracts.erc20_abi,
+            abi=VE_PENDLE_ABI,
             deployed_block=16032087,
         )
 
@@ -57,7 +57,7 @@ class PendleBalances(ProtocolWithBalance):
                     (
                         self.ve_pendle_contract.address,
                         self.ve_pendle_contract.encode(
-                            method_name='balanceOf',
+                            method_name='positionData',
                             arguments=[addy],
                         ),
                     ) for addy in addresses_with_deposits
@@ -76,7 +76,7 @@ class PendleBalances(ProtocolWithBalance):
         for user_address, result in zip(addresses_with_deposits, results, strict=False):
             if (balance := self.ve_pendle_contract.decode(
                 result=result,
-                method_name='balanceOf',
+                method_name='positionData',
                 arguments=[user_address],
             )[0]) == 0:
                 continue
