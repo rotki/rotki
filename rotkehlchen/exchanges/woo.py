@@ -204,6 +204,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Return deposits/withdrawals history on Woo in a range of time."""
         events: list[AssetMovement | SwapEvent] = []

@@ -265,6 +265,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> list['HistoryBaseEntry']:
         """Return the account asset movements on Bitstamp.
 
@@ -279,7 +280,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             'sort': USER_TRANSACTION_SORTING_MODE,
             'offset': 0,
         }
-        if start_ts != Timestamp(0):
+        if start_ts != Timestamp(0) and not force_refresh:
             options.update(self._get_since_id_option(
                 start_ts=start_ts,
                 entry_type=HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
@@ -293,9 +294,9 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         )
 
         # also query crypto transactions, to get address and transaction id (but no fee)
+        offset = 0
         with self.db.conn.read_ctx() as cursor:
-            offset = 0
-            if (result := self.db.get_dynamic_cache(
+            if not force_refresh and (result := self.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.LAST_CRYPTOTX_OFFSET,
                 location=self.location.serialize(),
@@ -303,7 +304,10 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             )) is not None:
                 offset = result
 
-        crypto_asset_movements = self._query_crypto_transactions(offset)
+        crypto_asset_movements = self._query_crypto_transactions(
+            offset=offset,
+            force_refresh=force_refresh,
+        )
 
         # now the fun part. Figure out which asset movements from user transactions
         # they correspond to so we can also have the fee taken into account
@@ -364,7 +368,11 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         log.debug(f'Remaining Bitstamp unmatched {crypto_asset_movements=}')
         return asset_movements
 
-    def _query_crypto_transactions(self, offset: int) -> list['HistoryBaseEntry']:
+    def _query_crypto_transactions(
+            self,
+            offset: int,
+            force_refresh: bool,
+    ) -> list['HistoryBaseEntry']:
         """Query crypto transactions to get address and transaction id.
 
         Pagination here is unfortunately primitive. Can only use offset, so we rememmber the
@@ -418,7 +426,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             if len(asset_movements) < API_MAX_LIMIT:
                 break
 
-        if options['offset'] != offset:
+        if not force_refresh and options['offset'] != offset:
             # write the new offset
             with self.db.user_write() as write_cursor:
                 self.db.set_dynamic_cache(
@@ -465,10 +473,12 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         events = self._query_asset_movements(
             start_ts=start_ts,
             end_ts=end_ts,
+            force_refresh=force_refresh,
         )
         events.extend(self._query_trades(
             start_ts=start_ts,

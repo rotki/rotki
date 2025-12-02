@@ -501,6 +501,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[list['HistoryBaseEntry'], Timestamp]:
         """Return the Crypto.com asset movements and swap events"""
         self.first_connection()

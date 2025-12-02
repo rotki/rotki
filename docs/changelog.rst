@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11032` Deleted or missed Binance, Bitstamp, and Coinbase events are now properly restored when re-pulling exchange history data.
 * :feature:`` Users will now be able to change the order of used indexers for EVM chains.
 * :bug:`-` Curve pool native asset withdrawals will now include the pool in the event notes like withdrawals of other tokens.
 * :feature:`-` rotki will now properly decode Yearn staking deposit, withdrawal, and reward claim transactions.

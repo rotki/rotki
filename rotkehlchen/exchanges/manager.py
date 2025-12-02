@@ -373,6 +373,7 @@ class ExchangeManager:
         events_list, actual_end_ts = exchange.query_online_history_events(
             start_ts=start_ts,
             end_ts=end_ts,
+            force_refresh=True,
         )
         exchange.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
         if (total_events := len(events_list)) == 0:

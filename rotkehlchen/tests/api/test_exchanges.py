@@ -8,12 +8,14 @@ import pytest
 import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.exchanges.binance import BinancePair
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -1181,6 +1183,134 @@ def test_exchange_events_range_query(
 
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == initial_events + 2  # noqa: E501
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
+def test_binance_events_repull_after_deletion(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
+    """Test that re-pulling Binance events after manual deletion restores the deleted events
+    by properly bypassing the cache when force_refresh is used.
+
+    This is a regression test for issue https://github.com/rotki/rotki/issues/11032.
+    """
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = server.rest_api.rotkehlchen
+    exchange = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    assert exchange is not None
+
+    # Set up exchange with a test market pair
+    test_symbol = 'ETHUSDT'
+    exchange.selected_pairs = [test_symbol]
+    exchange._symbols_to_pair = {
+        test_symbol: BinancePair(
+            symbol=test_symbol,
+            base_asset=A_ETH.resolve_to_asset_with_oracles(),
+            quote_asset=A_USDT.resolve_to_asset_with_oracles(),
+            location=Location.BINANCE,
+        ),
+    }
+
+    def mock_api_trades_response(last_id: int) -> list[dict[str, Any]]:
+        if last_id == 0:
+            return [{
+                'id': 1,
+                'symbol': test_symbol,
+                'orderId': 1001,
+                'orderListId': -1,
+                'price': '2000.0',
+                'qty': '1.0',
+                'quoteQty': '2000.0',
+                'commission': '0.001',
+                'commissionAsset': 'ETH',
+                'time': 1609459200000,  # 2021-01-01
+                'isBuyer': True,
+                'isMaker': False,
+                'isBestMatch': True,
+            }, {
+                'id': 2,
+                'symbol': test_symbol,
+                'orderId': 1002,
+                'orderListId': -1,
+                'price': '2100.0',
+                'qty': '0.5',
+                'quoteQty': '1050.0',
+                'commission': '0.0005',
+                'commissionAsset': 'ETH',
+                'time': 1609545600000,  # 2021-01-02
+                'isBuyer': False,
+                'isMaker': True,
+                'isBestMatch': True,
+            }]
+        else:
+            return []
+
+    # first query should fetch and store all trades
+    with patch.object(exchange, 'api_query_list') as mock_api:
+        mock_api.side_effect = lambda api_type, method, options=None: (
+            mock_api_trades_response(options.get('fromId', 0))
+            if method == 'myTrades'
+            else []
+        )
+
+        response = requests.post(
+            api_url_for(server, 'exchangeeventsqueryresource'),
+            json={
+                'location': Location.BINANCE.serialize(),
+                'name': exchange.name,
+            },
+        )
+        assert assert_proper_sync_response_with_result(response)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.BINANCE.serialize_for_db(),)).fetchone()[0] == (expected_num_of_events := 6)  # noqa: E501
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+            location=Location.BINANCE.serialize(),
+            location_name=exchange.name,
+            queried_pair=test_symbol,
+        ) == 2
+
+    # Delete all Binance events to see the repulling works
+    db_history = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        if len(event_ids := cursor.execute(
+            'SELECT identifier FROM history_events WHERE location = ?',
+            (Location.BINANCE.serialize_for_db(),),
+        ).fetchall()) > 0:
+            db_history.delete_history_events_by_identifier([row[0] for row in event_ids])
+
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.BINANCE.serialize_for_db(),)).fetchone()[0] == 0  # noqa: E501
+
+    with patch.object(exchange, 'api_query_list') as mock_api:
+        mock_api.side_effect = lambda api_type, method, options=None: (
+            mock_api_trades_response(options.get('fromId', 0))
+            if method == 'myTrades'
+            else []
+        )
+
+        response = requests.post(
+            api_url_for(server, 'exchangeeventsrangequeryresource'),
+            json={
+                'location': Location.BINANCE.serialize(),
+                'name': exchange.name,
+                'from_timestamp': 0,
+                'to_timestamp': 1640000000,
+            },
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result['queried_events'] == expected_num_of_events
+        assert result['stored_events'] == expected_num_of_events  # Events should be re-stored
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.BINANCE.serialize_for_db(),)).fetchone()[0] == expected_num_of_events  # noqa: E501
+            assert rotki.data.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                location=Location.BINANCE.serialize(),
+                location_name=exchange.name,
+                queried_pair=test_symbol,
+            ) == 2  # Should still be 2, not updated due to force_refresh
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
