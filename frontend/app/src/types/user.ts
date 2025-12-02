@@ -6,6 +6,7 @@ import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { ModuleEnum } from '@/types/modules';
 import { AddressNamePriorityEnum } from '@/types/settings/address-name-priorities';
+import { EvmIndexerEnum } from '@/types/settings/evm-indexer';
 import { parseFrontendSettings } from '@/types/settings/frontend-settings';
 import { PriceOracleEnum } from '@/types/settings/price-oracle';
 
@@ -35,9 +36,11 @@ const GeneralSettings = z.object({
   csvExportDelimiter: z.string().max(1),
   currentPriceOracles: z.array(PriceOracleEnum),
   dateDisplayFormat: z.string(),
+  defaultEvmIndexerOrder: z.array(EvmIndexerEnum),
   displayDateInLocaltime: z.boolean(),
   dotRpcEndpoint: z.string(),
   evmchainsToSkipDetection: z.array(z.string()),
+  evmIndexersOrder: z.record(z.string(), z.array(EvmIndexerEnum)),
   historicalPriceOracles: z.array(PriceOracleEnum),
   inferZeroTimedBalances: z.boolean(),
   ksmRpcEndpoint: z.string(),
@@ -148,9 +151,11 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     csvExportDelimiter: settings.csvExportDelimiter,
     currentPriceOracles: settings.currentPriceOracles,
     dateDisplayFormat: settings.dateDisplayFormat,
+    defaultEvmIndexerOrder: settings.defaultEvmIndexerOrder,
     displayDateInLocaltime: settings.displayDateInLocaltime,
     dotRpcEndpoint: settings.dotRpcEndpoint,
     evmchainsToSkipDetection: settings.evmchainsToSkipDetection,
+    evmIndexersOrder: settings.evmIndexersOrder,
     historicalPriceOracles: settings.historicalPriceOracles,
     inferZeroTimedBalances: settings.inferZeroTimedBalances,
     ksmRpcEndpoint: settings.ksmRpcEndpoint,

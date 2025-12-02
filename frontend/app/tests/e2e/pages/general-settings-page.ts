@@ -30,20 +30,6 @@ export class GeneralSettingsPage {
     cy.get(`#currency__${value.toLocaleLowerCase()}`).click();
   }
 
-  selectChainToIgnore(value: string) {
-    cy.get('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
-    cy.get('[data-cy=chains-to-skip-detection] input').should('not.be.disabled');
-    cy.get('[data-cy=chains-to-skip-detection] input').type(value);
-    cy.get('[role=menu-content] button').should('have.length', 1);
-    cy.get('[data-cy=chains-to-skip-detection] input').type('{enter}');
-    cy.get('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
-    this.confirmInlineSuccess(
-      '[data-cy=chains-to-skip-detection] .details',
-      'EVM Chains for which to skip automatic token detection saved successfully',
-    );
-    cy.get('[data-cy=chains-to-skip-detection] .details').should('be.empty');
-  }
-
   setBalanceSaveFrequency(value: string) {
     this.setInputFieldValue('[data-cy=balance-save-frequency-input]', value);
   }
@@ -62,7 +48,6 @@ export class GeneralSettingsPage {
     dateDisplayFormat: string;
     thousandSeparator: string;
     decimalSeparator: string;
-    evmchainsToSkipDetection: string[];
     currencyLocation: 'after' | 'before';
     currency: string;
     balanceSaveFrequency: string;
@@ -74,20 +59,12 @@ export class GeneralSettingsPage {
     cy.get('[data-cy=currency-selector] input').should('have.value', settings.currency);
     cy.get('[data-cy=balance-save-frequency-input] input').should('have.value', settings.balanceSaveFrequency);
 
-    this.verifySkipped(settings.evmchainsToSkipDetection);
-
     cy.get('[data-cy=date-display-format-input] input').should('have.value', settings.dateDisplayFormat);
     cy.get('[data-cy=thousand-separator-input] input').should('have.value', settings.thousandSeparator);
     cy.get('[data-cy=decimal-separator-input] input').should('have.value', settings.decimalSeparator);
 
     cy.get('[data-cy=currency-location-input] input').should('have.length', 2);
     cy.get('[data-cy=currency-location-input] input:checked').should('have.value', settings.currencyLocation);
-  }
-
-  verifySkipped(entries: string[]): void {
-    entries.forEach((item) => {
-      cy.get(`[data-cy=chains-to-skip-detection] [data-value=${item}]`).should('exist');
-    });
   }
 
   navigateAway() {

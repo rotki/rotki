@@ -18,6 +18,7 @@ const tabs = computed<TabContent[]>(() => {
     Routes.SETTINGS_GENERAL,
     Routes.SETTINGS_DATABASE,
     Routes.SETTINGS_ACCOUNTING,
+    Routes.SETTINGS_EVM,
     Routes.SETTINGS_ORACLE,
     Routes.SETTINGS_RPC,
     Routes.SETTINGS_MODULES,

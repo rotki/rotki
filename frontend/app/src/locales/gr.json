@@ -1809,7 +1809,6 @@
     },
     "labels": {
       "btc_derivation_gap": "BTC derivation gap limit",
-      "chains_to_skip_detection": "Αλυσίδες EVM για τις οποίες πρέπει να παραλειφθεί η αυτόματη ανίχνευση",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH"

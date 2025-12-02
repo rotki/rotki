@@ -76,7 +76,7 @@ const { t } = useI18n({ useScope: 'global' });
     >
       {{ t('price_oracle_selection.hint') }}
     </RuiAlert>
-    <div class="grid grid-flow-col gap-4 grid-rows-[repeat(4,auto)] lg:grid-rows-[repeat(2,auto)] lg:grid-cols-2">
+    <div class="grid gap-4 lg:grid-cols-2">
       <SettingsOption
         #default="{ error, success, updateImmediate }"
         setting="currentPriceOracles"

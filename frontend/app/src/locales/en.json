@@ -2335,6 +2335,32 @@
     },
     "weight": "{weight}%"
   },
+  "evm_settings": {
+    "general": {
+      "chains_to_skip_detection": {
+        "subtitle": "Select EVM chains where automatic token detection should be disabled.",
+        "title": "Skip Token Detection"
+      },
+      "title": "EVM General Setting",
+      "treat_eth2_as_eth": {
+        "subtitle": "When enabled, staked ETH (ETH2) will be displayed and counted as regular ETH.",
+        "title": "Treat ETH2 as ETH"
+      }
+    },
+    "indexer": {
+      "add_chain": "Add specific chain setting",
+      "chain_order": "{chain} Indexer Order",
+      "chain_updated": "{chain} indexer order updated",
+      "data_name": "indexer",
+      "default_order": "Default Indexer Order",
+      "default_tab": "Default",
+      "default_updated": "Default indexer order updated",
+      "no_indexers_warning": "At least one indexer must be selected. The list cannot be empty.",
+      "remove_chain": "Remove chain specific setting",
+      "subtitle": "Configure the priority order of indexers for each EVM chain. If the first indexer fails, the next one will be tried, and so on.",
+      "title": "Indexer Order"
+    }
+  },
   "exchange_balances": {
     "add_exchange": "Add exchange",
     "click_here": "Click here",
@@ -2807,8 +2833,7 @@
     },
     "evm_chains": {
       "deselect": "Deselect all chains",
-      "select": "Select all chains",
-      "title": "EVM Chains"
+      "select": "Select all chains"
     },
     "external_service_setting": {
       "label": {
@@ -2838,7 +2863,6 @@
     },
     "labels": {
       "btc_derivation_gap": "BTC derivation gap limit",
-      "chains_to_skip_detection": "EVM Chains for which to skip automatic detection",
       "csv_delimiter": "CSV export delimiter",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
@@ -3628,6 +3652,7 @@
       "account": "Account",
       "accounting": "Accounting",
       "database": "Database",
+      "evm": "EVM",
       "general": "General",
       "interface": "Interface-only",
       "modules": "Modules",
