@@ -162,7 +162,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_CURVE
-                event.notes = f'Remove {event.amount} {crypto_asset.symbol} from the curve pool'
+                event.notes = f'Remove {event.amount} {crypto_asset.symbol} from {tx_log.address} curve pool'  # noqa: E501
                 withdrawal_events.append(event)
             elif (  # Withdraw send wrapped
                 event.event_type == HistoryEventType.SPEND and
