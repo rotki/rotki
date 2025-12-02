@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Curve pool native asset withdrawals will now include the pool in the event notes like withdrawals of other tokens.
 * :feature:`-` rotki will now properly decode Yearn staking deposit, withdrawal, and reward claim transactions.
 * :feature:`11030` rotki will now support cowswap transactions on Polygon PoS.
 * :bug:`10896` Users will be able to track the progress of repulling transactions.

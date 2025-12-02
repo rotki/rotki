@@ -608,7 +608,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             asset=A_ETH,
             amount=FVal('1.02930131799766041'),
             location_label=location_label,
-            notes='Remove 1.02930131799766041 ETH from the curve pool',
+            notes='Remove 1.02930131799766041 ETH from 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 curve pool',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         )]
