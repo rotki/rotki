@@ -1,13 +1,21 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY, LIQUITY_V2_WRAPPER
 from rotkehlchen.constants.assets import A_ETH, A_LQTY
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import LIQUITY_STAKING_DETAILS, EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -143,3 +151,48 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xf3c672522Ce50e704A342ECa4a9b78321dcb20A9']])
+def test_lqty_v2_deploy_proxy(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test Liquity V2 proxy deployment decoding and proxy detection logic."""
+    tx_hash = deserialize_evm_tx_hash('0x9dd36606541403f5c3da6445d2caacec92b3f9d74e82c7add837f5f5ad5a7381')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1764392783000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000368349229435'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=457,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.CREATE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f"Deploy Liquity proxy for {user_address} at {(proxy_address := '0xBD3aBF78f701fE830F145DAf97A53C58329E9a3E')}",  # noqa: E501
+        counterparty=CPT_LIQUITY,
+        address=LIQUITY_V2_WRAPPER,
+        extra_data={'proxy_address': proxy_address},
+    )]
+
+    # Also check that the proxy detection works correctly (relies on the tx decoded above).
+    proxies = ethereum_inquirer.proxies_inquirer.get_or_query_liquity_proxy(
+        addresses=[user_address, (other_address := make_evm_address())],
+    )
+    assert proxies[user_address] == {proxy_address}
+    assert other_address not in proxies

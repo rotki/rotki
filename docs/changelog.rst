@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11002` Liquity V2 proxy detection will now work correctly and proxy deployment transactions will be decoded properly.
 * :feature:`-` StakeDAO V2 Curve strategy transactions will be correctly decoded with vault balances properly detected.
 * :feature:`-` Morpho support is now extended to all chains rotki supports in which it is deployed including Arbitrum One, Polygon PoS, Optimism, etc.
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.

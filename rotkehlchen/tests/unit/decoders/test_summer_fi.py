@@ -11,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
@@ -51,5 +52,12 @@ def test_create_account(
         notes='Create Summer.fi smart account 0x32C50edBF3ffEC14Fc345A399d1e52B2A9eFAAb3 with id 3757',  # noqa: E501
         counterparty=CPT_SUMMER_FI,
         address=string_to_evm_address('0xF7B75183A2829843dB06266c114297dfbFaeE2b6'),
-        extra_data={'proxy_address': '0x32C50edBF3ffEC14Fc345A399d1e52B2A9eFAAb3', 'vault_id': 3757},  # noqa: E501
+        extra_data={'proxy_address': (proxy_address := '0x32C50edBF3ffEC14Fc345A399d1e52B2A9eFAAb3'), 'vault_id': 3757},  # noqa: E501
     )]
+
+    # Also check that the proxy detection works correctly (relies on the tx decoded above).
+    proxies = ethereum_inquirer.proxies_inquirer.get_or_query_summer_fi_proxy(
+        addresses=[user_address, (other_address := make_evm_address())],
+    )
+    assert proxies[user_address] == {proxy_address}
+    assert other_address not in proxies

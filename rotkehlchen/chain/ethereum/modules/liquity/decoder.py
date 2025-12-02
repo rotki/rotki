@@ -25,6 +25,7 @@ from .constants import (
     BALANCE_UPDATE,
     BORROWER_OPERATIONS,
     CPT_LIQUITY,
+    DEPLOY_USER_PROXY_LQTY_V2,
     DEPOSIT_LQTY_V2,
     LIQUITY_STAKING,
     LIQUITY_V2_WRAPPER,
@@ -274,9 +275,9 @@ class LiquityDecoder(EvmDecoderInterface):
         if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
             return EvmDecodingOutput(matched_counterparty=CPT_LIQUITY)
 
-        user, lqty_amount = None, ZERO
+        proxy_or_user_address, lqty_amount = None, ZERO
         if context.tx_log.topics[0] == STAKING_LQTY_CHANGE:
-            user = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
+            proxy_or_user_address = bytes_to_address(context.tx_log.topics[1])
             lqty_amount = asset_normalized_value(
                 amount=int.from_bytes(context.tx_log.data[0:32]),
                 asset=self.lqty,
@@ -286,7 +287,8 @@ class LiquityDecoder(EvmDecoderInterface):
         for event in context.decoded_events:
             if (
                 context.tx_log.topics[0] == STAKING_LQTY_CHANGE and
-                event.asset == A_LQTY
+                event.asset == A_LQTY and
+                proxy_or_user_address in (event.address, event.location_label)
             ):
                 extra_data = {
                     LIQUITY_STAKING_DETAILS: {
@@ -294,14 +296,14 @@ class LiquityDecoder(EvmDecoderInterface):
                         'asset': self.lqty.identifier,
                     },
                 }
-                if event.location_label == user and event.event_type == HistoryEventType.SPEND:
+                if event.event_type == HistoryEventType.SPEND:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_LIQUITY
                     event.notes = f'Stake {event.amount} {self.lqty.symbol} in the Liquity protocol'  # noqa: E501
                     event.extra_data = extra_data
                     deposit_withdraw_event = event
-                elif event.location_label == user and event.event_type == HistoryEventType.RECEIVE:
+                elif event.event_type == HistoryEventType.RECEIVE:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_LIQUITY
@@ -435,12 +437,34 @@ class LiquityDecoder(EvmDecoderInterface):
         )
         return EvmDecodingOutput(events=new_events)
 
+    def _decode_v2_deploy_proxy(self, context: DecoderContext) -> EvmDecodingOutput:
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return EvmDecodingOutput(
+            events=[self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.CREATE,
+                asset=self.node_inquirer.native_token,
+                amount=ZERO,
+                location_label=user_address,
+                counterparty=CPT_LIQUITY,
+                address=LIQUITY_V2_WRAPPER,
+                notes=f'Deploy Liquity proxy for {user_address} at {(proxy_address := bytes_to_address(context.tx_log.topics[2]))}',  # noqa: E501
+                extra_data={'proxy_address': proxy_address},
+            )],
+        )
+
     def _decode_liquity_v2_wrapper(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode Liquity V2 wrapper transactions"""
         if context.tx_log.topics[0] == DEPOSIT_LQTY_V2:
             return self._decode_deposit_v2_staking(context, is_deposit=True)
         elif context.tx_log.topics[0] == WITHDRAW_LQTY_V2:
             return self._decode_deposit_v2_staking(context, is_deposit=False)
+        elif context.tx_log.topics[0] == DEPLOY_USER_PROXY_LQTY_V2:
+            return self._decode_v2_deploy_proxy(context)
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
