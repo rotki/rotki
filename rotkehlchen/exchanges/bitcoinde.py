@@ -258,6 +258,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
 
         page = 1

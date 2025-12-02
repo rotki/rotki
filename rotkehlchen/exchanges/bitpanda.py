@@ -507,6 +507,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         self.first_connection()
         # Should probably also query wallets/transactions for crypto deposits/withdrawals

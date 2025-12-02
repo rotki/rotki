@@ -479,7 +479,7 @@ class Coinbase(ExchangeInterface):
         return dict(returned_balances), ''
 
     @protect_with_lock()
-    def _query_transactions(self) -> None:
+    def _query_transactions(self, force_refresh: bool = False) -> None:
         """Queries transactions for all active accounts of this coinbase instance
 
         If an account has been queried within X seconds it's not queried again.
@@ -492,34 +492,38 @@ class Coinbase(ExchangeInterface):
         self.staking_events = set()
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
         for account_id, last_update_timestamp in account_info:
-            with self.db.conn.read_ctx() as cursor:
-                last_query = 0
-                if (result := self.db.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_QUERY_TS,
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    account_id=account_id,
-                )) is not None:
-                    last_query = result
+            if force_refresh:
+                last_id = None  # Bypass cache when force_refresh is True
+            else:
+                with self.db.conn.read_ctx() as cursor:
+                    last_query = 0
+                    if (result := self.db.get_dynamic_cache(
+                        cursor=cursor,
+                        name=DBCacheDynamic.LAST_QUERY_TS,
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        account_id=account_id,
+                    )) is not None:
+                        last_query = result
 
-                if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
-                    continue  # if no update since last query or last query recent stop
+                    if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
+                        continue  # if no update since last query or last query is recent, then stop  # noqa: E501
 
-                last_id = None
-                if (result_id := self.db.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_QUERY_ID,
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    account_id=account_id,
-                )) is not None:
-                    last_id = str(result_id)
+                    last_id = None
+                    if (result_id := self.db.get_dynamic_cache(
+                        cursor=cursor,
+                        name=DBCacheDynamic.LAST_QUERY_ID,
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        account_id=account_id,
+                    )) is not None:
+                        last_id = str(result_id)
 
             history_events, conversions = self._query_single_account_transactions(
                 account_id=account_id,
                 account_last_id_name=f'{self.location}_{self.name}_{account_id}_last_query_id',
                 last_tx_id=last_id,
+                force_refresh=force_refresh,
             )
             if len(conversion_pairs := combine_dicts(conversion_pairs, conversions)) != 0:
                 history_events.extend(self._process_trades_from_conversion(
@@ -534,20 +538,23 @@ class Coinbase(ExchangeInterface):
                 if len(history_events) != 0:
                     db = DBHistoryEvents(self.db)
                     db.add_history_events(write_cursor=write_cursor, history=history_events)
-                self.db.set_dynamic_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheDynamic.LAST_QUERY_TS,
-                    value=ts_now(),
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    account_id=account_id,
-                )
+
+                if not force_refresh:
+                    self.db.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.LAST_QUERY_TS,
+                        value=ts_now(),
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        account_id=account_id,
+                    )
 
     def _query_single_account_transactions(
             self,
             account_id: str,
             account_last_id_name: str,
             last_tx_id: str | None,
+            force_refresh: bool = False,
     ) -> tuple[
             list[HistoryEvent | AssetMovement | SwapEvent],
             defaultdict[str, list[dict]],
@@ -616,11 +623,12 @@ class Coinbase(ExchangeInterface):
             ):
                 log.warning(f'Found unknown coinbase transaction type: {transaction}')
 
-        with self.db.user_write() as write_cursor:  # Remember last transaction id for account
-            write_cursor.execute(
-                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
-                (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
-            )
+        if not force_refresh:  # Only update cache when not forcing refresh
+            with self.db.user_write() as write_cursor:  # Remember last transaction id for account
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
+                    (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
+                )
 
         return history_events, transaction_pairs
 
@@ -1071,9 +1079,10 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as another exchanges"""  # noqa: E501
-        self._query_transactions()
+        self._query_transactions(force_refresh=force_refresh)
         return [], end_ts
 
     def _deserialize_history_event(self, raw_data: dict[str, Any]) -> HistoryEvent | None:

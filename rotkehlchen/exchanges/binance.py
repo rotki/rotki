@@ -1137,6 +1137,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> list[SwapEvent]:
         """
         For trades coming from api/myTrades this function won't respect the provided range and
@@ -1164,14 +1165,17 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
         for symbol in iter_markets:
-            with self.db.conn.read_ctx() as cursor:
-                last_trade_id = self.db.get_dynamic_cache(  # api returns trades with id >= last_trade_id  # noqa: E501
-                    cursor=cursor,
-                    name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    queried_pair=symbol,
-                ) or 0
+            if force_refresh:
+                last_trade_id = 0  # Bypass cache when force_refresh is True
+            else:
+                with self.db.conn.read_ctx() as cursor:
+                    last_trade_id = self.db.get_dynamic_cache(  # api returns trades with id >= last_trade_id  # noqa: E501
+                        cursor=cursor,
+                        name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        queried_pair=symbol,
+                    ) or 0
 
             log.debug(
                 f'Will query binance trades on {self.name} for {symbol=} after {last_trade_id=}',
@@ -1247,16 +1251,17 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             last_pair_to_tradeid[trade_pair] = unique_id
             events.extend(swap_events)
 
-        with self.db.conn.write_ctx() as write_cursor:
-            for symbol, unique_id in last_pair_to_tradeid.items():
-                self.db.set_dynamic_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                    value=int(unique_id),
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    queried_pair=symbol,
-                )
+        if not force_refresh:  # Only update cache when not forcing refresh
+            with self.db.conn.write_ctx() as write_cursor:
+                for symbol, unique_id in last_pair_to_tradeid.items():
+                    self.db.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                        value=int(unique_id),
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        queried_pair=symbol,
+                    )
 
         fiat_payments = self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)
         if fiat_payments:
@@ -1563,6 +1568,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         events: list[HistoryBaseEntry] = []
         for query_func in (
@@ -1570,7 +1576,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self._query_online_trade_history,
         ):
             try:
-                events.extend(query_func(start_ts=start_ts, end_ts=end_ts))
+                events.extend(query_func(start_ts=start_ts, end_ts=end_ts, force_refresh=force_refresh))  # noqa: E501
             except (RemoteError, BinancePermissionError) as e:
                 log.error(
                     f'Failed to call {self.name} {query_func.__name__} '
@@ -1584,6 +1590,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,  # no-op for asset movements.
     ) -> Sequence[HistoryBaseEntry]:
         """
         Be aware of:

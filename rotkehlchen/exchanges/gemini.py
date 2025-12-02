@@ -594,6 +594,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
         events: list[AssetMovement | SwapEvent] = []
         for query_func in (
