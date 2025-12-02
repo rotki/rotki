@@ -1,6 +1,6 @@
 import process from 'node:process';
+import chains from '@test/fixtures/supported-chains.json';
 import { http, HttpResponse } from 'msw';
-import chains from '../../fixtures/supported-chains.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

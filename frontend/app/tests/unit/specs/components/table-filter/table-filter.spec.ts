@@ -1,9 +1,9 @@
 import type { StringSuggestionMatcher } from '@/types/filtering';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { createCustomPinia } from '../../../utils/create-pinia';
 
 describe('table-filter/TableFilter.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof TableFilter>>;

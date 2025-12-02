@@ -1,8 +1,8 @@
+import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountSettings from '@/pages/settings/account/index.vue';
 import { usePremiumStore } from '@/store/session/premium';
-import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockImplementation(() => ref({})),

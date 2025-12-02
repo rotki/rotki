@@ -25,7 +25,7 @@ vi.mock('@/store/tasks', async () => {
 
 vi.mock('@/composables/api/history/events', async () => {
   const { camelCaseTransformer } = await import('@/modules/api/transformers');
-  const historyEvents = await import('../../../fixtures/history-events.json');
+  const historyEvents = await import('@test/fixtures/history-events.json');
   return {
     useHistoryEventsApi: vi.fn().mockReturnValue({
       addTransactionHash: vi.fn(),

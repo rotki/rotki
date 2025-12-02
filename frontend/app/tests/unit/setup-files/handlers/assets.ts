@@ -1,6 +1,6 @@
 import process from 'node:process';
+import assets from '@test/fixtures/assets.json';
 import { http, HttpResponse } from 'msw';
-import assets from '../../fixtures/assets.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

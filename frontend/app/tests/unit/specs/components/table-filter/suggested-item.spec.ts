@@ -1,11 +1,11 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
 import type { Suggestion } from '@/types/filtering';
 import { toSentenceCase } from '@rotki/common';
+import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
-import { createCustomPinia } from '../../../utils/create-pinia';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({

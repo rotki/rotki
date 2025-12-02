@@ -1,6 +1,6 @@
 import process from 'node:process';
+import stakingPerformance from '@test/fixtures/staking-performance.json';
 import { http, HttpResponse } from 'msw';
-import stakingPerformance from '../../fixtures/staking-performance.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 
