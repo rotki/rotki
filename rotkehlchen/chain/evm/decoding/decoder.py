@@ -21,6 +21,8 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
 from rotkehlchen.chain.evm.decoding.balancer.v3.decoder import Balancerv3CommonDecoder
 from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCommonDecoder
+from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
+from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
@@ -283,6 +285,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self._add_single_decoder(
                 class_name='Balancerv3',
                 decoder_class=Balancerv3CommonDecoder,
+                rules=rules,
+            )
+
+        if self.evm_inquirer.chain_id in COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW:
+            self._add_single_decoder(
+                class_name='Cowswap',
+                decoder_class=CowswapCommonDecoder,
                 rules=rules,
             )
 
