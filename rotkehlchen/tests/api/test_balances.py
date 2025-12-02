@@ -32,6 +32,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.tests.api.test_liquity import make_liquity_proxy_patch
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -1181,18 +1182,26 @@ def test_query_balances_with_threshold(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x136f6A2b398eaeED4a33a58B26E52FA7056FD4e7']])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
-def test_query_liquity_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts: list[str]) -> None:  # noqa: E501
+def test_query_liquity_balances(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test querying Liquity balances works correctly.
     Regression test to ensure Liquity liabilities are shown in dashboard balances.
     """
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'named_blockchain_balances_resource',
-            blockchain=(eth_chain_key := SupportedBlockchain.ETHEREUM.serialize()),
-        ),
-        json={'async_query': True},
-    )
+    with make_liquity_proxy_patch(
+        user_address=ethereum_accounts[0],
+        proxy_address=string_to_evm_address('0x7F7A44b2cA9db79D4b295687A596ee88961007e9'),
+    ):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'named_blockchain_balances_resource',
+                blockchain=(eth_chain_key := SupportedBlockchain.ETHEREUM.serialize()),
+            ),
+            json={'async_query': True},
+        )
+
     task_id = assert_ok_async_response(response)
     result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
 

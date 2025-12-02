@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from enum import StrEnum
 from typing import TYPE_CHECKING, overload
 
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
@@ -112,29 +113,25 @@ class EvmProxiesInquirer:
             self,
             addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
-        """Return liquity v2 proxies if they exist for the list of addresses
-        This should only be called if the chain is ethereum and lqtyv2_router is set.
+        """Return liquity v2 proxies if they exist for the list of addresses.
+        Finds proxy addresses by inspecting the decoded history events.
         """
-        assert self.lqtyv2_router, 'get_liquity_proxy should only be called for ethereum'
-        calls = [(
-            self.lqtyv2_router.address,
-            self.lqtyv2_router.encode(method_name='deriveUserProxyAddress', arguments=[address]),
-        ) for address in addresses]
-        output = self.node_inquirer.multicall(calls=calls)
-        mapping = {}
-        for idx, result_encoded in enumerate(output):
-            address = addresses[idx]
-            result = self.lqtyv2_router.decode(
-                result_encoded,
-                'deriveUserProxyAddress',
-                arguments=[address],
-            )[0]
-            try:
-                if (proxy_address := deserialize_evm_address(result)) != ZERO_ADDRESS:
-                    mapping[address] = {proxy_address}
-            except DeserializationError as e:
-                msg = f'Failed to deserialize {result} liquity proxy for address {address}. {e!s}'
-                log.error(msg)
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            events = DBHistoryEvents(self.node_inquirer.database).get_history_events_internal(
+                cursor=cursor,
+                filter_query=EvmEventFilterQuery.make(
+                    event_types=[HistoryEventType.STAKING],
+                    event_subtypes=[HistoryEventSubType.DEPOSIT_ASSET],
+                    counterparties=[CPT_LIQUITY],
+                    location_labels=list(addresses),
+                    notes_substring='Liquity V2',
+                ),
+            )
+
+        mapping: defaultdict[ChecksumEvmAddress, set[ChecksumEvmAddress]] = defaultdict(set)
+        for event in events:
+            mapping[event.location_label].add(event.address)  # type: ignore  # location_label should be a valid address
+
         return mapping
 
     def get_or_query_summer_fi_proxy(
