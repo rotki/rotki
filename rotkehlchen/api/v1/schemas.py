@@ -2,7 +2,7 @@ import logging
 import operator
 import tempfile
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from contextvars import ContextVar
 from itertools import zip_longest
 from pathlib import Path
@@ -41,6 +41,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_potential_ens_name
+from rotkehlchen.chain.evm.types import EvmIndexer, SerializableChainIndexerOrder
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
@@ -137,6 +138,7 @@ from rotkehlchen.types import (
     AssetAmount,
     BlockchainAddress,
     BTCAddress,
+    ChainID,
     ChainType,
     ChecksumEvmAddress,
     CostBasisMethod,
@@ -179,6 +181,7 @@ from .fields import (
     EvmChainLikeNameField,
     EvmChainNameField,
     EvmCounterpartyField,
+    EvmIndexerField,
     EVMTransactionHashField,
     FileField,
     FloatingPercentageField,
@@ -1401,18 +1404,23 @@ class NameDeleteSchema(Schema):
     name = NonEmptyStringField(required=True)
 
 
+def _settings_list_is_valid(lst: Sequence[Any]) -> bool:
+    """Validate that a list of elements for settings is correct.
+    Checks that the length is not zero and entries are unique.
+    """
+    return len(lst) > 0 and len(lst) == len(set(lst))
+
+
 def _validate_current_price_oracles(
         current_price_oracles: list[CurrentPriceOracle],
 ) -> None:
     """Prevents repeated oracle names, empty list and illegal values"""
-    if (
-        len(current_price_oracles) == 0 or
-        len(current_price_oracles) != len(given_set := set(current_price_oracles))):
+    if not _settings_list_is_valid(current_price_oracles):
         raise ValidationError(
             'Current price oracles list should not be empty and should have no repeated entries',
         )
 
-    if (invalid_oracles := given_set - SETTABLE_CURRENT_PRICE_ORACLES) != set():
+    if (invalid_oracles := set(current_price_oracles) - SETTABLE_CURRENT_PRICE_ORACLES) != set():
         raise ValidationError(
             f'Invalid current price oracles given: {", ".join([str(x) for x in invalid_oracles])}. ',  # noqa: E501
 
@@ -1423,10 +1431,7 @@ def _validate_historical_price_oracles(
         historical_price_oracles: list[HistoricalPriceOracle],
 ) -> None:
     """Prevents repeated oracle names and empty list"""
-    if (
-        len(historical_price_oracles) == 0 or
-        len(historical_price_oracles) != len(set(historical_price_oracles))
-    ):
+    if not _settings_list_is_valid(historical_price_oracles):
         oracle_names = [str(oracle) for oracle in historical_price_oracles]
         supported_oracle_names = [str(oracle) for oracle in HistoricalPriceOracle]
         raise ValidationError(
@@ -1434,6 +1439,55 @@ def _validate_historical_price_oracles(
             f'Supported oracles are: {", ".join(supported_oracle_names)}. '
             f'Check there are no repeated ones.',
         )
+
+
+def _validate_default_indexers(indexers: list[EvmIndexer]) -> None:
+    if not _settings_list_is_valid(indexers):
+        raise ValidationError('List of indexers has to contain unique elements and be non empty')
+
+
+class EvmIndexerOrderField(fields.Field):
+    @staticmethod
+    def _serialize(
+            value: dict[ChainID, list[EvmIndexer]] | None,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> dict[str, list[str]] | None:
+        if value is None:
+            return None
+
+        return {
+            chain.to_name(): [indexer.serialize() for indexer in order]
+            for chain, order in value.items()
+        }
+
+    def _deserialize(
+            self,
+            value: Any,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **kwargs: Any,
+    ) -> SerializableChainIndexerOrder:
+        if not isinstance(value, dict):
+            raise ValidationError('EVM indexers order must be a mapping per chain')
+
+        try:
+            deserialized_map = {
+                ChainID.deserialize_from_name(chain): [EvmIndexer.deserialize(indexer) for indexer in order]  # noqa: E501
+                for chain, order in value.items()
+            }
+
+            for chain, order in deserialized_map.items():
+                if len(order) == 0 or len(order) != len(set(order)):
+                    raise ValidationError('EVM indexers order should not be empty and should have no repeated entries')  # noqa: E501
+                if chain not in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+                    raise ValidationError(f'{chain} does not use indexers to query transactions')
+
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return SerializableChainIndexerOrder(order=deserialized_map)
 
 
 class ExchangeLocationIDSchema(Schema):
@@ -1504,6 +1558,12 @@ class ModifiableSettingsSchema(Schema):
     historical_price_oracles = fields.List(
         HistoricalPriceOracleField,
         validate=_validate_historical_price_oracles,
+        load_default=None,
+    )
+    evm_indexers_order = EvmIndexerOrderField(load_default=None)
+    default_evm_indexer_order = fields.List(
+        EvmIndexerField,
+        validate=_validate_default_indexers,
         load_default=None,
     )
     pnl_csv_with_formulas = fields.Bool(load_default=None)
@@ -1615,6 +1675,7 @@ class ModifiableSettingsSchema(Schema):
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
             display_date_in_localtime=data['display_date_in_localtime'],
             historical_price_oracles=data['historical_price_oracles'],
+            evm_indexers_order=data['evm_indexers_order'],
             current_price_oracles=data['current_price_oracles'],
             pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
             pnl_csv_have_summary=data['pnl_csv_have_summary'],

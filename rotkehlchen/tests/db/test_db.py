@@ -13,7 +13,11 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    DEFAULT_EVM_INDEXER_ORDER,
+    DEFAULT_INDEXERS_ORDER,
+    string_to_evm_address,
+)
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -506,6 +510,8 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'display_date_in_localtime': DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
         'current_price_oracles': DEFAULT_CURRENT_PRICE_ORACLES,
         'historical_price_oracles': DEFAULT_HISTORICAL_PRICE_ORACLES,
+        'evm_indexers_order': DEFAULT_INDEXERS_ORDER,
+        'default_evm_indexer_order': DEFAULT_EVM_INDEXER_ORDER,
         'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
         'ssf_graph_multiplier': DEFAULT_SSF_GRAPH_MULTIPLIER,

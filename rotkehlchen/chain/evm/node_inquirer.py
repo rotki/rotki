@@ -35,10 +35,11 @@ from rotkehlchen.chain.evm.constants import (
 )
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.types import RemoteDataQueryStatus, WeightedNode
+from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     ChainNotSupported,
@@ -225,6 +226,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.blockchain = blockchain
         self.etherscan = etherscan
         self.routescan = routescan
+        self.blockscout = blockscout
+        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | None] = {
+            EvmIndexer.ETHERSCAN: self.etherscan,
+            EvmIndexer.BLOCKSCOUT: self.blockscout,
+            EvmIndexer.ROUTESCAN: self.routescan,
+        }
         self.contracts = contracts
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()
@@ -235,7 +242,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.contract_scan = contract_scan
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
         self.contract_multicall = contract_multicall
-        self.blockscout = blockscout
         # keep a cache per chain id of timestamp to block to avoid querying multiple times
         # the same information. Remove from here with
         # https://github.com/rotki/rotki/issues/9998
@@ -1225,7 +1231,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 ts=ts,
                 closest=closest,
             ),
-            indexers=(self.blockscout, self.etherscan),
         )
         self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
         return block_number
@@ -1374,22 +1379,23 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             to_block=to_block,
         ))
 
-    def _try_indexers(
-            self,
-            func: Callable[[EtherscanLikeApi], T],
-            indexers: tuple[Blockscout | Etherscan | None, ...] | None = None,
-    ) -> T:
+    def _get_indexers_in_order(self) -> list[EtherscanLikeApi]:
+        """Return available indexers respecting user-defined order and optional subset."""
+        return [
+            indexer
+            for indexer_name in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id)  # noqa: E501
+            if (indexer := self.available_indexers.get(indexer_name)) is not None
+        ]
+
+    def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
         Raises RemoteError if all fail.
         """
-        errors = []
-        # TODO: Make indexer order configurable: https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141661235  # noqa: E501
-        for indexer in indexers or (self.etherscan, self.blockscout, self.routescan):
-            if indexer is None:
-                # TODO: remove this after blockscout is refactored to only have a single instance
-                # for all chains https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141630657  # noqa: E501
-                continue
+        if len(ordered_indexers := self._get_indexers_in_order()) == 0:
+            raise RemoteError('Failed to query any indexer. No indexers are enabled.')
 
+        errors = []
+        for indexer in ordered_indexers:
             try:
                 return func(indexer)
             except (RemoteError, ChainNotSupported) as e:
