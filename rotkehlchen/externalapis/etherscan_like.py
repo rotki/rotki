@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import gevent
 import requests
+from requests import Response
 
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -110,6 +111,30 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
             chain_id: SUPPORTED_CHAIN_IDS,
     ) -> dict[str, str]:
         """Build parameters for API requests. Override in subclasses for different formats."""
+
+    def _handle_rate_limit(
+            self,
+            response: Response,
+            current_backoff: int,
+            backoff_limit: int,
+            chain_id: ChainID,
+    ) -> int:
+        """Handles rate limiting errors from etherscan-like services. May be overridden in
+        subclasses to handle anything special from a given service. Returns the new backoff time.
+        May raise RemoteError if the rate limit is exceeded even after backing off.
+        """
+        if current_backoff >= backoff_limit:
+            raise RemoteError(
+                f'Getting {self.name} too many requests error '
+                f'even after we incrementally backed off while querying {chain_id}',
+            )
+
+        log.debug(
+            f'Got too many requests error from {chain_id} {self.name}. Will '
+            f'backoff for {current_backoff} seconds.',
+        )
+        gevent.sleep(current_backoff)
+        return current_backoff * 2
 
     @overload
     def _query(
@@ -245,21 +270,14 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
                 raise RemoteError(f'{self.name} API request failed due to {e!s}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if backoff >= backoff_limit:
-                    raise RemoteError(
-                        f'Getting {self.name} too many requests error '
-                        f'even after we incrementally backed off while querying {chain_id}',
-                    )
-
-                log.debug(
-                    f'Got too many requests error from {chain_id} {self.name}. Will '
-                    f'backoff for {backoff} seconds.',
+                backoff = self._handle_rate_limit(
+                    response=response,
+                    current_backoff=backoff,
+                    backoff_limit=backoff_limit,
+                    chain_id=chain_id,
                 )
-                gevent.sleep(backoff)
-                backoff *= 2
                 continue
-
-            if response.status_code != 200:
+            elif response.status_code != 200:
                 raise RemoteError(
                     f'{self.name} API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
@@ -335,8 +353,8 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
         # will only run if we get out of the loop due to backoff limit
         assert response is not None, 'This loop always runs at least once and response is not None'
         msg = (
-            f'{chain_id} {self.name} API request to {response.url} failed due to backing'
-            ' off for more than the backoff limit'
+            f'{chain_id.name.capitalize()} {self.name} API request to {response.url} failed '
+            f'due to backing off longer than the max backoff of {backoff_limit} seconds.'
         )
         log.error(msg)
         raise RemoteError(msg)
