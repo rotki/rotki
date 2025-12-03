@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11039` rotki will now support Coinbase's new ED25519 API key format.
 * :bug:`11032` Deleted or missed Binance, Bitstamp, and Coinbase events are now properly restored when re-pulling exchange history data.
 * :feature:`` Users will now be able to change the order of used indexers for EVM chains.
 * :bug:`-` Curve pool native asset withdrawals will now include the pool in the event notes like withdrawals of other tokens.

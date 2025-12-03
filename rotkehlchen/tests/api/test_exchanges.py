@@ -450,7 +450,7 @@ def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     data = {
         'location': 'coinbase',
         'name': 'Coinbase 1',
-        'api_key': 'ddddd',
+        'api_key': 'c11d1dd5-a460-4693-bbb0-9bba8e611e82',
         'api_secret': 'ZmZmZmZmZg==',
     }
     with mock_validate_api_key_success(Location.COINBASE):
@@ -939,13 +939,16 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
         elif location == Location.OKX:
             data['okx_location'] = OkxLocation.EEA.serialize()
 
-        with mock_validate_api_key_success(location):
+        with (
+            mock_validate_api_key_success(location),
+            patch('rotkehlchen.exchanges.coinbase.CoinbaseKeyType.detect_type'),
+        ):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_simple_ok_response(response)
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM, Location.COINBASE):
                 continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
@@ -966,7 +969,10 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
         if location in (Location.BINANCE, Location.BINANCEUS):
             data['binance_markets'] = ['ETHBTC']
 
-        with mock_validate_api_key_failure(location):
+        with (
+            mock_validate_api_key_failure(location),
+            patch('rotkehlchen.exchanges.coinbase.CoinbaseKeyType.detect_type'),
+        ):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_error_response(
                 response=response,
@@ -977,13 +983,16 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM, Location.COINBASE):
                 continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
             assert any(new_key in value for value in exchange.session.headers.values())
 
-        with rotki.data.db.conn.read_ctx() as cursor:  # reinitialize the exchanges, to see the edited credentials are loaded from the DB  # noqa: E501
+        with (
+            rotki.data.db.conn.read_ctx() as cursor,
+            patch('rotkehlchen.exchanges.coinbase.CoinbaseKeyType.detect_type'),
+        ):  # reinitialize the exchanges, to see the edited credentials are loaded from the DB  # noqa: E501
             rotki.exchange_manager.delete_all_exchanges()
             exchange_credentials = rotki.data.db.get_exchange_credentials(cursor)
             rotki.exchange_manager.initialize_exchanges(
