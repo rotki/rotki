@@ -1,3 +1,5 @@
+import base64
+import uuid
 import warnings as test_warnings
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -21,6 +23,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
+from rotkehlchen.tests.utils.factories import make_random_bytes
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TimestampMS
 
@@ -30,7 +33,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name='mock_coinbase')
 def fixture_mock_coinbase(messages_aggregator) -> Coinbase:
-    return Coinbase('coinbase1', 'a', b'a', object(), messages_aggregator)  # type: ignore
+    return Coinbase('coinbase1', str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)), object(), messages_aggregator)  # type: ignore  # noqa: E501
 
 
 def test_name(mock_coinbase):

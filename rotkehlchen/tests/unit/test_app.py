@@ -1,3 +1,5 @@
+import base64
+import uuid
 from unittest import mock
 
 import pytest
@@ -8,7 +10,7 @@ from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
-from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, make_random_bytes
 from rotkehlchen.types import Location
 
 
@@ -34,9 +36,14 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
         passphrase = None
         if location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = 'supersecretpassphrase'
-        credentials.append(
-            (str(location), location.serialize_for_db(), make_api_key(), make_api_secret().decode(), passphrase),  # noqa: E501  # pylint: disable=no-member
-        )
+        if location == Location.COINBASE:
+            credentials.append(
+                (str(location), location.serialize_for_db(), str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)).decode(), passphrase),  # noqa: E501
+            )
+        else:
+            credentials.append(
+                (str(location), location.serialize_for_db(), make_api_key(), make_api_secret().decode(), passphrase),  # noqa: E501  # pylint: disable=no-member
+            )
     credentials.append(
         ('rotkehlchen', Location.EXTERNAL.serialize_for_db(), make_api_key(), make_api_secret().decode(), None),  # noqa: E501  # pylint: disable=no-member
     )
