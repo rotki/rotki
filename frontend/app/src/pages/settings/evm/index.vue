@@ -31,7 +31,7 @@ const navigation = [
     class="evm-settings"
     :navigation="navigation"
   >
-    <SettingCategory>
+    <SettingCategory :id="Category.CHAINS">
       <template #title>
         {{ t('evm_settings.general.title') }}
       </template>

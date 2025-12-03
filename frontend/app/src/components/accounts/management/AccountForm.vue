@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import { assert, Blockchain } from '@rotki/common';
+import { camelCase } from 'es-toolkit';
 import AccountFormApiKeyAlert from '@/components/accounts/management/AccountFormApiKeyAlert.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
@@ -19,6 +20,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { XpubKeyType } from '@/types/blockchain/accounts';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
+import { EvmIndexer } from '@/types/settings/evm-indexer';
 import { logger } from '@/utils/logging';
 import { useRefPropVModel } from '@/utils/model';
 
@@ -41,11 +43,39 @@ const form = ref<
 
 const chain = useRefPropVModel(modelValue, 'chain');
 
-const { isEvm, isSolanaChains } = useSupportedChains();
+const { isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { apiKey } = useExternalApiKeys(t);
 
-const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
+const { beaconRpcEndpoint, defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
+
+/**
+ * Checks if etherscan is the top priority indexer for a given chain.
+ */
+function isEtherscanTopPriority(chainId: string): boolean {
+  const chainOrders = get(evmIndexersOrder);
+  const evmChainName = camelCase(get(txEvmChains).find(c => c.id === chainId)?.evmChainName || '');
+  const indexerOrder = evmChainName && chainOrders[evmChainName]
+    ? chainOrders[evmChainName]
+    : get(defaultEvmIndexerOrder);
+
+  return indexerOrder[0] === EvmIndexer.ETHERSCAN;
+}
+
+/**
+ * Checks if etherscan is the top priority for the selected chain(s).
+ * For 'all', returns true if etherscan is top priority for any EVM chain.
+ */
+function shouldShowEtherscanWarning(selectedChain: string): boolean {
+  if (selectedChain === 'all') {
+    return get(txEvmChains).some(chain => isEtherscanTopPriority(chain.id));
+  }
+
+  if (!get(isEvm(selectedChain)))
+    return false;
+
+  return isEtherscanTopPriority(selectedChain);
+}
 
 const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | undefined>(() => {
   const selectedChain = get(chain);
@@ -62,7 +92,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
     return 'beaconchain';
   }
 
-  if ((selectedChain === 'all' || get(isEvm(selectedChain))) && !get(apiKey('etherscan')))
+  if (!get(apiKey('etherscan')) && shouldShowEtherscanWarning(selectedChain))
     return 'etherscan';
 
   if (get(isSolanaChains(selectedChain)) && !get(apiKey('helius')))
