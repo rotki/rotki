@@ -22,7 +22,10 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const { isXlAndDown } = useBreakpoint();
   const isMini = logicAnd(logicNot(isXlAndDown), logicNot(showDrawer));
 
+  const expanded = logicAnd(logicNot(isXlAndDown), showDrawer);
+
   return {
+    expanded,
     isMini,
     pinned,
     showAbout,
