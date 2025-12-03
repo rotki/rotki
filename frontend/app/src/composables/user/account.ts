@@ -131,13 +131,13 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { canRequestData, checkForAssetUpdate, logged, needsPasswordConfirmation, username } = storeToRefs(authStore);
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumHelper();
-  const { getPassword } = useInterop();
+  const { getPassword, isPackaged } = useInterop();
   const frontendSettingsStore = useFrontendSettingsStore();
   const { updateSetting } = frontendSettingsStore;
   const { enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
 
   const checkIfPasswordConfirmationNeeded = async (usernameToCheck: string): Promise<void> => {
-    if (!get(enablePasswordConfirmation))
+    if (!get(enablePasswordConfirmation) || !isPackaged)
       return;
 
     // Check if user has stored password (remember password enabled)
