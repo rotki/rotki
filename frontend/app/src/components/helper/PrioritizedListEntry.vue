@@ -4,6 +4,7 @@ import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import { toSentenceCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
+import { EvmIndexer } from '@/types/settings/evm-indexer';
 import { PriceOracle } from '@/types/settings/price-oracle';
 
 const props = withDefaults(
@@ -28,6 +29,9 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [AddressNamePriority.HARDCODED_MAPPINGS]: t('address_book.hint.priority.list.hardcoded_mappings'),
   [AddressNamePriority.PRIVATE_ADDRESSBOOK]: t('address_book.hint.priority.list.private_address_book'),
   empty_list_id: '',
+  [EvmIndexer.BLOCKSCOUT]: '',
+  [EvmIndexer.ETHERSCAN]: '',
+  [EvmIndexer.ROUTESCAN]: '',
   [PriceOracle.ALCHEMY]: '',
   [PriceOracle.BLOCKCHAIN]: '',
   [PriceOracle.COINGECKO]: '',

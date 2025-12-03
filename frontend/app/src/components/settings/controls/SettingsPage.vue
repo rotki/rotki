@@ -43,10 +43,16 @@ function isElementInViewport(el: Element): boolean {
 
 function checkVisibility() {
   const parent = get(parentScroller);
-  if (parent && parent.scrollTop + parent.clientHeight >= parent.scrollHeight - 10) {
-    // If scrolled to the bottom (with a small tolerance), set to the last navigation item's id
-    set(currentId, props.navigation.at(-1)?.id ?? '');
-    return;
+  if (parent) {
+    if (parent.scrollTop === 0) {
+      set(currentId, props.navigation.at(0)?.id ?? '');
+      return;
+    }
+    if (parent.scrollTop + parent.clientHeight >= parent.scrollHeight - 10) {
+      // If scrolled to the bottom (with a small tolerance), set to the last navigation item's id
+      set(currentId, props.navigation.at(-1)?.id ?? '');
+      return;
+    }
   }
 
   for (const nav of props.navigation) {

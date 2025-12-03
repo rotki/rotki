@@ -1848,7 +1848,6 @@
     },
     "labels": {
       "btc_derivation_gap": "BTC衍生差距限制",
-      "chains_to_skip_detection": "跳过自动检测的 EVM 链",
       "date_display_format": "日期显示格式",
       "date_input_format": "日期输入格式",
       "treat_eth2_as_eth": "应将 ETH2 (Staked ETH) 视为 ETH"

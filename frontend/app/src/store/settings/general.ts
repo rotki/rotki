@@ -24,6 +24,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const inferZeroTimedBalances = useComputedRef(settings, 'inferZeroTimedBalances');
   const nonSyncingExchanges = useComputedRef(settings, 'nonSyncingExchanges');
   const evmchainsToSkipDetection = useComputedRef(settings, 'evmchainsToSkipDetection');
+  const evmIndexersOrder = useComputedRef(settings, 'evmIndexersOrder');
+  const defaultEvmIndexerOrder = useComputedRef(settings, 'defaultEvmIndexerOrder');
   const treatEth2AsEth = useComputedRef(settings, 'treatEth2AsEth');
   const addressNamePriority = useComputedRef(settings, 'addressNamePriority');
   const queryRetryLimit = useComputedRef(settings, 'queryRetryLimit');
@@ -65,9 +67,11 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     currencySymbol,
     currentPriceOracles,
     dateDisplayFormat,
+    defaultEvmIndexerOrder,
     displayDateInLocaltime,
     dotRpcEndpoint,
     evmchainsToSkipDetection,
+    evmIndexersOrder,
     floatingPrecision: uiFloatingPrecision,
     historicalPriceOracles,
     inferZeroTimedBalances,
