@@ -32,8 +32,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
   const { refreshTransactions } = useRefreshTransactions();
 
-  const formatTimestamp = (seconds: number): string =>
-    displayDateFormatter.format(new Date(seconds * 1000), get(dateDisplayFormat));
+  const formatTimestamp = (seconds: number | undefined): string | undefined => {
+    if (seconds === undefined)
+      return undefined;
+
+    return displayDateFormatter.format(new Date(seconds * 1000), get(dateDisplayFormat));
+  };
 
   const addTransactionHash = async (payload: AddTransactionHashPayload): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
@@ -52,15 +56,27 @@ export const useHistoryTransactions = createSharedComposable(() => {
     return { message, success };
   };
 
+  const buildDateRange = (fromTimestamp?: number, toTimestamp?: number): string => {
+    const from = formatTimestamp(fromTimestamp);
+    const to = formatTimestamp(toTimestamp);
+
+    if (!to && !from)
+      return '';
+
+    // 0 = only from, 1 = only to, 2 = both
+    const choice = from && to ? 2 : (from ? 0 : 1);
+    return t('actions.date_range', { from, to }, choice);
+  };
+
   const repullingTransactions = async (payload: RepullingTransactionPayload): Promise<boolean> => {
     const taskType = TaskType.REPULLING_TXS;
     const { taskId } = await repullingTransactionsCaller(payload);
 
+    const dateRange = buildDateRange(payload.fromTimestamp, payload.toTimestamp);
     const messagePayload = {
       address: payload.address,
       chain: payload.chain ? toHumanReadable(payload.chain) : undefined,
-      from: formatTimestamp(payload.fromTimestamp),
-      to: formatTimestamp(payload.toTimestamp),
+      dateRange,
     };
 
     const isAddressSpecified = payload.address && payload.chain;
@@ -104,10 +120,10 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const taskType = TaskType.REPULLING_TXS;
     const { taskId } = await repullingExchangeEventsCaller(payload);
 
+    const dateRange = buildDateRange(payload.fromTimestamp, payload.toTimestamp);
     const messagePayload = {
+      dateRange,
       exchange: `${payload.name} (${payload.location})`,
-      from: formatTimestamp(payload.fromTimestamp),
-      to: formatTimestamp(payload.toTimestamp),
     };
 
     const taskMeta = {

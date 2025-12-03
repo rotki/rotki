@@ -73,8 +73,10 @@ const endErrorMessagesComputed = computed<string[]>(() => {
 
 function applyQuickOption(option: QuickOption): void {
   const now = dayjs();
-  set(end, now.unix());
   set(start, now.subtract(option.value, option.unit).unix());
+  nextTick(() => {
+    set(end, now.unix());
+  });
 }
 </script>
 
