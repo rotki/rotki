@@ -73,6 +73,9 @@ const interop: UseInteropReturn = {
     (await window.interop?.downloadUpdate(progress)) ?? false,
 
   getPassword: async (username: string): Promise<string | undefined> => {
+    if (!electronApp) {
+      return undefined;
+    }
     assert(window.interop);
     return window.interop.getPassword(username);
   },
