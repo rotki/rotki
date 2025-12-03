@@ -477,6 +477,7 @@
         }
       }
     },
+    "date_range": " from {from}| to {to}| from {from} to {to}",
     "defi": {
       "airdrops": {
         "error": {
@@ -745,7 +746,7 @@
         "no_events_description": "No events re-pulled"
       },
       "task": {
-        "description": "Re-pulling events for {exchange} from {from} to {to}",
+        "description": "Re-pulling events for {exchange} {dateRange}",
         "title": "Re-pulling exchange events"
       }
     },
@@ -759,8 +760,8 @@
         "no_tx_description": "No transactions re-pulled"
       },
       "task": {
-        "description": "Re-pulling transactions for {address} ({chain}) from {from} to {to}.",
-        "no_address_or_chain_transaction": "Re-pulling transactions from {from} to {to}",
+        "description": "Re-pulling transactions for {address} ({chain}) {dateRange}.",
+        "no_address_or_chain_transaction": "Re-pulling transactions {dateRange}",
         "title": "Re-pulling transactions"
       }
     },
