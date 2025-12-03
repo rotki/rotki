@@ -65,6 +65,14 @@ function updateMenuVisibility(value: boolean) {
   }
 }
 
+function openMenuHandler(attrs: Record<string, any>) {
+  return (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    attrs.onClick(event);
+  };
+}
+
 function useContextMenu(attrs: Record<string, any>) {
   return {
     ...omit(attrs, ['onClick']),
@@ -73,10 +81,7 @@ function useContextMenu(attrs: Record<string, any>) {
         navigateToDetails();
       }
     },
-    oncontextmenu: (event: MouseEvent) => {
-      event.preventDefault();
-      attrs.onClick(event);
-    },
+    oncontextmenu: openMenuHandler(attrs),
   };
 }
 </script>
@@ -104,7 +109,6 @@ function useContextMenu(attrs: Record<string, any>) {
     class="flex"
     :disabled="hideMenu"
     menu-class="w-[16rem] max-w-[90%]"
-    :open-delay="400"
     :popper="{ placement: 'bottom-start' }"
     @update:model-value="updateMenuVisibility($event)"
   >
@@ -113,21 +117,38 @@ function useContextMenu(attrs: Record<string, any>) {
         v-if="iconOnly"
         v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
       />
-      <ListItem
+      <div
         v-else
-        no-padding
-        no-hover
-        class="max-w-[20rem] cursor-pointer"
-        v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
-        :size="dense ? 'sm' : 'md'"
-        :loading="loading"
-        :title="asset.isCustomAsset ? name : symbol"
-        :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+        class="w-max flex items-center gap-3 cursor-pointer hover:ring-1 ring-rui-grey-300 dark:ring-rui-grey-800 hover:shadow-md transition-all rounded-md group -ml-1 pl-1"
       >
-        <template #avatar>
-          <ReuseImage />
-        </template>
-      </ListItem>
+        <ListItem
+          no-padding
+          no-hover
+          class="max-w-[20rem]"
+          v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
+          :size="dense ? 'sm' : 'md'"
+          :loading="loading"
+          :title="asset.isCustomAsset ? name : symbol"
+          :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+        >
+          <template #avatar>
+            <ReuseImage />
+          </template>
+        </ListItem>
+
+        <RuiButton
+          variant="text"
+          icon
+          class="opacity-0 group-hover:opacity-100 mr-2 !p-2"
+          v-bind="attrs"
+          @click.stop="openMenuHandler(attrs)($event)"
+        >
+          <RuiIcon
+            name="lu-ellipsis-vertical"
+            size="20"
+          />
+        </RuiButton>
+      </div>
     </template>
 
     <AssetDetailsMenuContent
