@@ -14,6 +14,12 @@ watch(route, () => {
   if (get(showDrawer) && get(isXlAndDown))
     set(showDrawer, false);
 });
+
+watchImmediate(isXlAndDown, (isXlAndDown) => {
+  if (!isXlAndDown) {
+    set(showDrawer, true);
+  }
+});
 </script>
 
 <template>
