@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` More StakeDAO withdrawals are now decoded properly.
+* :bug:`-` Transaction decoding will no longer crash when a remote error occurs.
 * :bug:`-` Proper status notifications will be shown while the StakeDAO decoder cache is being queried.
 * :feature:`11039` rotki will now support Coinbase's new ED25519 API key format.
 * :bug:`11032` Deleted or missed Binance, Bitstamp, and Coinbase events are now properly restored when re-pulling exchange history data.

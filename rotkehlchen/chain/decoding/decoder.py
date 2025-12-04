@@ -13,7 +13,7 @@ from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
 from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -91,6 +91,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
             IndexError,
             ValueError,
             ConversionError,
+            RemoteError,
         )
         if possible_decoding_exceptions is not None:
             self.possible_decoding_exceptions += possible_decoding_exceptions

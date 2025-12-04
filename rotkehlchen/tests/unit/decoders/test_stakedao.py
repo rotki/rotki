@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.modules.stakedao.constants import (
     STAKEDAO_CLAIMER2,
     STAKEDAO_CLAIMER_OLD,
 )
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -22,7 +23,9 @@ from rotkehlchen.types import CacheType, Location, TimestampMS, deserialize_evm_
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.fixture(name='stakedao_gauges')
@@ -34,6 +37,7 @@ def _stakedao_gauges(globaldb: 'GlobalDBHandler') -> None:
             values=[
                 '0x41639ABcA04c22e80326A96C8fE2882C97BaEb6e',
                 '0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3',
+                '0x5AdF559f5D24aaCbE4FA3A3a4f44Fdc7431E6b52',
             ],
         )
         globaldb_set_general_cache_values(
@@ -511,3 +515,59 @@ def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
         address=string_to_evm_address('0x7D0F747eb583D43D41897994c983F13eF7459e1f'),
     )]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xFa4Ebcb83902Bb1106b85Bb3D4916Dfd72E06721']])
+def test_withdraw_ethereum(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        stakedao_gauges: None,
+) -> None:
+    """Regression test for StakeDAO withdrawal on Ethereum.
+
+    Checks a case where the user address directly burns gauge tokens rather than
+    the `staking_token` contract burning them.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xc846db1b0666e6de9c633f2079389e0a0a3721cf166bbfd782ca2ae2951bd069')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1732227851000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.0031003225'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        address=None,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x5AdF559f5D24aaCbE4FA3A3a4f44Fdc7431E6b52'),
+        amount=FVal(gauge_amount := '19.079627344170865934'),
+        location_label=user_address,
+        notes=f'Return {gauge_amount} sdYFI-gauge to StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x97983236bE88107Cc8998733Ef73D8d969c52E37'),
+        amount=FVal(received_amount := '19.079627344170865934'),
+        location_label=user_address,
+        notes=f'Withdraw {received_amount} sdYFI from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0x5AdF559f5D24aaCbE4FA3A3a4f44Fdc7431E6b52'),
+    )]
