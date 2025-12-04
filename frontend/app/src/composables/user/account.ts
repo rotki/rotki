@@ -7,6 +7,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumHelper } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogin } from '@/modules/account/use-login';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useHistoryStore } from '@/store/history';
@@ -136,13 +137,15 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { updateSetting } = frontendSettingsStore;
   const { enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
 
+  // Check if rememberPassword is enabled in localStorage
+  const { savedRememberPassword } = useRememberSettings();
+
   const checkIfPasswordConfirmationNeeded = async (usernameToCheck: string): Promise<void> => {
     if (!get(enablePasswordConfirmation) || !isPackaged)
       return;
 
-    // Check if user has stored password (remember password enabled)
-    const storedPassword = await getPassword(usernameToCheck);
-    if (!storedPassword)
+    // Check if rememberPassword setting is enabled
+    if (!get(savedRememberPassword))
       return;
 
     const lastConfirmed = get(lastPasswordConfirmed);
@@ -156,8 +159,15 @@ export function useAutoLogin(): UseAutoLoginReturn {
       return;
     }
 
-    if ((now - lastConfirmed) > get(passwordConfirmationInterval))
-      set(needsPasswordConfirmation, true);
+    if ((now - lastConfirmed) <= get(passwordConfirmationInterval))
+      return;
+
+    // Check if user has stored password (remember password enabled)
+    const storedPassword = await getPassword(usernameToCheck);
+    if (!storedPassword)
+      return;
+
+    set(needsPasswordConfirmation, true);
   };
 
   const confirmPassword = async (password: string): Promise<boolean> => {

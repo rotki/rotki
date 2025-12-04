@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManagement, useAutoLogin } from '@/composables/user/account';
 import { Constraints } from '@/data/constraints';
 import { useLogin } from '@/modules/account/use-login';
@@ -30,6 +30,8 @@ const mockInterop = vi.hoisted(() => ({
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue(mockInterop),
 }));
+
+const REMEMBER_PASSWORD_KEY = 'rotki.remember_password';
 
 describe('composables::user/account', () => {
   beforeAll(() => {
@@ -146,9 +148,46 @@ describe('composables::user/account', () => {
     });
 
     describe('checkIfPasswordConfirmationNeeded', () => {
+      beforeEach(() => {
+        // Set rememberPassword to true in localStorage for tests
+        localStorage.setItem(REMEMBER_PASSWORD_KEY, 'true');
+      });
+
+      afterEach(() => {
+        localStorage.removeItem(REMEMBER_PASSWORD_KEY);
+      });
+
       describe('when isPackaged is false', () => {
         beforeEach(() => {
           mockInterop.isPackaged = false;
+        });
+
+        it('should not set needsPasswordConfirmation even when interval has elapsed', async () => {
+          vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
+
+          const frontendStore = useFrontendSettingsStore();
+          const authStore = useSessionAuthStore();
+          const { needsPasswordConfirmation } = storeToRefs(authStore);
+          const now = dayjs().unix();
+
+          set(needsPasswordConfirmation, false);
+
+          await frontendStore.updateSetting({
+            enablePasswordConfirmation: true,
+            lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
+            passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
+          });
+
+          const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+          await checkIfPasswordConfirmationNeeded('testUser');
+
+          expect(get(needsPasswordConfirmation)).toBe(false);
+        });
+      });
+
+      describe('when rememberPassword is not enabled', () => {
+        beforeEach(() => {
+          localStorage.removeItem(REMEMBER_PASSWORD_KEY);
         });
 
         it('should not set needsPasswordConfirmation even when interval has elapsed', async () => {
@@ -231,15 +270,18 @@ describe('composables::user/account', () => {
         set(needsPasswordConfirmation, false);
         vi.mocked(mockInterop.getPassword).mockResolvedValue(undefined);
 
+        // Set lastPasswordConfirmed to an old timestamp so interval has elapsed
+        const oldTimestamp = dayjs().unix() - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 1;
         await frontendStore.updateSetting({
           enablePasswordConfirmation: true,
-          lastPasswordConfirmed: 0,
+          lastPasswordConfirmed: oldTimestamp,
           passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
         });
 
         const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
         await checkIfPasswordConfirmationNeeded('testUser');
 
+        // Should not set needsPasswordConfirmation because no stored password
         expect(get(needsPasswordConfirmation)).toBe(false);
       });
 
@@ -261,6 +303,8 @@ describe('composables::user/account', () => {
         await checkIfPasswordConfirmationNeeded('testUser');
 
         expect(get(needsPasswordConfirmation)).toBe(false);
+        // getPassword should not be called when interval hasn't elapsed (optimization)
+        expect(mockInterop.getPassword).not.toHaveBeenCalled();
       });
 
       it('should set needsPasswordConfirmation when interval has elapsed', async () => {

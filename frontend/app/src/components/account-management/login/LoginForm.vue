@@ -11,6 +11,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useInterop } from '@/composables/electron-interop';
+import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogout } from '@/modules/account/use-logout';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account-management';
@@ -65,9 +66,7 @@ const dynamicMessageDialog = ref<boolean>(false);
 const usernameRef: Ref = ref();
 const passwordRef: Ref = ref();
 
-const savedRememberUsername = useLocalStorage('rotki.remember_username', null);
-const savedRememberPassword = useLocalStorage('rotki.remember_password', null);
-const savedUsername = useLocalStorage('rotki.username', '');
+const { savedRememberPassword, savedRememberUsername, savedUsername } = useRememberSettings();
 const { activeWelcomeMessages, welcomeMessage } = useDynamicMessages();
 
 const rules = {
