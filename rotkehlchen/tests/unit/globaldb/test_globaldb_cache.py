@@ -25,6 +25,8 @@ from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     read_balancer_pools_and_gauges_from_cache,
 )
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
+from rotkehlchen.chain.evm.decoding.beefy_finance.utils import query_beefy_vaults
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
     CURVE_ADDRESS_PROVIDER,
@@ -642,3 +644,32 @@ def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer):
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute('SELECT protocol FROM evm_tokens WHERE address=?', (pool_address,)).fetchone()[0] == 'balancer-v2'  # noqa: E501
+
+
+@pytest.mark.vcr
+def test_query_beefy_legacy_boosts(ethereum_inquirer: 'EthereumInquirer') -> None:
+    """Test that query_beefy_vaults correctly creates legacy boost tokens."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM evm_tokens WHERE protocol=?', (CPT_BEEFY_FINANCE,)).fetchone()[0] == 0  # noqa: E501
+
+    def mock_request_get(url: str, *args, **kwargs):
+        if 'vaults/all/1' in url:
+            return []
+        elif 'boosts/ethereum' in url:
+            return [{'version': 1, 'poolId': 'curve-shezeth-eth', 'earnContractAddress': '0xbd313b13ed794B86Bd161885F8e170769E0e68b2', 'tokenAddress': '0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'}, {'version': 1, 'poolId': 'silo-weeth-eth', 'earnContractAddress': '0xC0dD9F05511Eec7f3C9C755816E4A25caECde47a', 'tokenAddress': '0x0E5F3a47122901D3eE047d2C7e1B36b419Ede5FE'}]  # noqa: E501
+        raise ValueError(f'Unexpected URL: {url}')
+
+    with patch('rotkehlchen.chain.evm.decoding.beefy_finance.utils.request_get', side_effect=mock_request_get):  # noqa: E501
+        query_beefy_vaults(evm_inquirer=ethereum_inquirer)
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT a.name, cad.symbol, et.decimals FROM evm_tokens et '
+            'JOIN assets a ON et.identifier = a.identifier '
+            'JOIN common_asset_details cad ON a.identifier = cad.identifier '
+            'WHERE et.protocol = ?',
+            (CPT_BEEFY_FINANCE,),
+        ).fetchall() == [
+            ('Reward Moo Curve ShezETH-ETH', 'rmooCurveShezETH-ETH', 18),
+            ('Reward Moo Silo WETH (weETH Market)', 'rmooSiloWETH', 18),
+        ]
