@@ -13,6 +13,7 @@ import requests
 from requests import Response
 
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -111,6 +112,18 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
             chain_id: SUPPORTED_CHAIN_IDS,
     ) -> dict[str, str]:
         """Build parameters for API requests. Override in subclasses for different formats."""
+
+    @abc.abstractmethod
+    def get_l1_fee(
+            self,
+            chain_id: L2ChainIdsWithL1FeesType,
+            account: ChecksumEvmAddress,
+            tx_hash: EVMTxHash,
+            block_number: int,
+    ) -> int:
+        """Attempt to get the L1 fee for the given transaction.
+        Returns the L1 fee or raises RemoteError if the fee cannot be retrieved.
+        """
 
     def _handle_rate_limit(
             self,

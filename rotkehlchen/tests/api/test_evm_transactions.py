@@ -1,4 +1,3 @@
-import os
 import random
 from http import HTTPStatus
 from typing import TYPE_CHECKING
@@ -84,12 +83,6 @@ def _assert_evm_transaction_status(
     assert count[0] == 1 if transaction_should_exist else count[0] == 0
 
 
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason=('This test does a lot of remote queries and fails to VCR properly, '
-    'although it works fine when run without VCR. '
-    'See https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141626655'),
-)
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xb8553D9ee35dd23BB96fbd679E651B929821969B',
 ]])
@@ -101,6 +94,7 @@ def _assert_evm_transaction_status(
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.freeze_time('2022-12-29 10:10:00 GMT')
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that querying the evm transactions endpoint for an address with
     transactions in multiple chains works fine.

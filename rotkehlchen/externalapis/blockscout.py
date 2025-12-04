@@ -6,13 +6,14 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 import gevent
 import requests
 
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
-from rotkehlchen.externalapis.utils import get_earliest_ts
+from rotkehlchen.externalapis.utils import get_earliest_ts, maybe_read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_int
@@ -23,6 +24,7 @@ from rotkehlchen.types import (
     ApiKey,
     ChainID,
     ChecksumEvmAddress,
+    EVMTxHash,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -240,11 +242,31 @@ class Blockscout(EtherscanLikeApi):
 
         return result
 
+    @overload
     def _query_v2(
             self,
             module: Literal['addresses'],
-            endpoint: Literal['withdrawals'],
             encoded_args: str,
+            endpoint: Literal['withdrawals'],
+            extra_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    def _query_v2(
+            self,
+            module: Literal['transactions'],
+            encoded_args: str,
+            endpoint: None = None,
+            extra_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        ...
+
+    def _query_v2(
+            self,
+            module: Literal['addresses', 'transactions'],
+            encoded_args: str,
+            endpoint: Literal['withdrawals'] | None = None,
             extra_args: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Query blockscout v2 endpoints
@@ -253,7 +275,9 @@ class Blockscout(EtherscanLikeApi):
         - RemoteError due to problems querying blockscout
         """
         extra_args = {} if extra_args is None else extra_args
-        query_str = f'{self.url}/v2/{module}/{encoded_args}/{endpoint}'
+        query_str = f'{self.url}/v2/{module}/{encoded_args}'
+        if endpoint is not None:
+            query_str += f'/{endpoint}'
         if (api_key := self._get_api_key()) is not None:
             extra_args['apikey'] = api_key
 
@@ -439,3 +463,23 @@ class Blockscout(EtherscanLikeApi):
                 return HasChainActivity.BALANCE
 
         return HasChainActivity.NONE
+
+    def get_l1_fee(
+            self,
+            chain_id: L2ChainIdsWithL1FeesType,
+            account: ChecksumEvmAddress,
+            tx_hash: EVMTxHash,
+            block_number: int,
+    ) -> int:
+        """Query the L1 fee for the given tx hash from the v2 transactions endpoint.
+        May raise:
+        - RemoteError if unable to get the L1 fee amount or query fails.
+        """
+        response = self._query_v2(
+            module='transactions',
+            encoded_args=str(tx_hash),
+        )
+        try:
+            return maybe_read_integer(data=response, key='l1_fee', api=self.name)
+        except DeserializationError as e:
+            raise RemoteError(f'Failed to get L1 fee from {self.name} due to {e!s}') from e
