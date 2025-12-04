@@ -94,14 +94,21 @@ def _process_beefy_vault(
     if (vault_type := vault.get('type')) is None or vault_type in ('standard', 'gov'):
         # in boost (no type key), standard, and gov vaults the `tokenAddress` is the vault address,
         # so add it as the earned token's underlying token to be used when querying the price.
-        underlying_tokens = [UnderlyingToken(
-            address=get_or_create_evm_token(
+        if (raw_token_address := vault.get('tokenAddress')) is not None:
+            token_address = get_or_create_evm_token(
                 userdb=database,
                 evm_inquirer=evm_inquirer,
-                evm_address=deserialize_evm_address(vault['tokenAddress']),
+                evm_address=deserialize_evm_address(raw_token_address),
                 chain_id=evm_inquirer.chain_id,
                 encounter=encounter,
-            ).evm_address,
+            ).evm_address
+        else:
+            # For vaults without tokenAddress field (native token vaults like ETH, BNB, MATIC),
+            # use the chain's wrapped native token as the underlying asset
+            token_address = evm_inquirer.wrapped_native_token.evm_address
+
+        underlying_tokens = [UnderlyingToken(
+            address=token_address,
             token_kind=TokenKind.ERC20,
             weight=ONE,
         )]
