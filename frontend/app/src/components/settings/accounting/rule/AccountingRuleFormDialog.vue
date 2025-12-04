@@ -109,7 +109,7 @@ async function save() {
     @cancel="modelValue = undefined"
   >
     <template
-      v-if="eventIds && eventIds.length > 0 "
+      v-if="eventIds && eventIds.length > 0"
       #subtitle
     >
       {{ t('accounting_settings.rule.custom_events_info', { count: eventIds.length }) }}

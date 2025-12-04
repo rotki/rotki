@@ -108,7 +108,7 @@ defineExpose({
 </script>
 
 <template>
-  <form class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     <RuiMenuSelect
       v-model="location"
       :label="t('common.location')"
@@ -164,5 +164,5 @@ defineExpose({
       :label="t('common.name')"
       :error-messages="toMessages(v$.name)"
     />
-  </form>
+  </div>
 </template>

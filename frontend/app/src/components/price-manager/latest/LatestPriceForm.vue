@@ -72,7 +72,7 @@ defineExpose({
 </script>
 
 <template>
-  <form class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2">
     <div class="grid md:grid-cols-2 gap-x-4">
       <AssetSelect
         v-model="fromAsset"
@@ -121,5 +121,5 @@ defineExpose({
         </strong>
       </template>
     </i18n-t>
-  </form>
+  </div>
 </template>

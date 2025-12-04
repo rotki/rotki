@@ -184,7 +184,7 @@ defineExpose({
 </script>
 
 <template>
-  <form class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     <RuiTabs
       v-model="accountType"
       class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-5"
@@ -317,5 +317,5 @@ defineExpose({
         :end-error-messages="toMessages(v$.toTimestamp)"
       />
     </template>
-  </form>
+  </div>
 </template>

@@ -99,36 +99,34 @@ defineExpose({
 </script>
 
 <template>
-  <form class="history-event-form">
-    <RuiMenuSelect
-      v-model="entryType"
-      data-cy="entry-type"
-      :options="historyEventEntryTypes"
-      :disabled="data.type !== 'add' && !isGroupAdd"
-      :label="t('common.entry_type')"
-      hide-details
-      variant="outlined"
-    >
-      <template #selection="{ item }">
-        <span class="capitalize">
-          {{ item }}
-        </span>
-      </template>
-      <template #item="{ item }">
-        <span class="capitalize">
-          {{ item }}
-        </span>
-      </template>
-    </RuiMenuSelect>
+  <RuiMenuSelect
+    v-model="entryType"
+    data-cy="entry-type"
+    :options="historyEventEntryTypes"
+    :disabled="data.type !== 'add' && !isGroupAdd"
+    :label="t('common.entry_type')"
+    hide-details
+    variant="outlined"
+  >
+    <template #selection="{ item }">
+      <span class="capitalize">
+        {{ item }}
+      </span>
+    </template>
+    <template #item="{ item }">
+      <span class="capitalize">
+        {{ item }}
+      </span>
+    </template>
+  </RuiMenuSelect>
 
-    <RuiDivider class="my-8" />
+  <RuiDivider class="my-8" />
 
-    <Component
-      :is="formComponents[entryType]"
-      ref="form"
-      v-model:state-updated="stateUpdated"
-      :data-cy="`${kebabCase(entryType)}-form`"
-      :data="data"
-    />
-  </form>
+  <Component
+    :is="formComponents[entryType]"
+    ref="form"
+    v-model:state-updated="stateUpdated"
+    :data-cy="`${kebabCase(entryType)}-form`"
+    :data="data"
+  />
 </template>

@@ -87,7 +87,7 @@ defineExpose({
 </script>
 
 <template>
-  <form class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2">
     <RuiTextField
       v-model="name"
       variant="outlined"
@@ -153,5 +153,5 @@ defineExpose({
       :disabled="isEtherscan"
       :hint="t('rpc_node_form.active_hint')"
     />
-  </form>
+  </div>
 </template>

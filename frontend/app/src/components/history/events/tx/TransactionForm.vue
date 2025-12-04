@@ -141,7 +141,7 @@ defineExpose({
   >
     {{ t('transactions.form.no_accounts') }}
   </div>
-  <form
+  <div
     v-else
     class="flex flex-col gap-4"
   >
@@ -175,5 +175,5 @@ defineExpose({
       color="primary"
       :error-messages="toMessages(v$.txRef)"
     />
-  </form>
+  </div>
 </template>
