@@ -227,7 +227,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             premium=premium,
             base_tools=base_tools,
             misc_counterparties=misc_counterparties,
-            possible_decoding_exceptions=(NotERC721Conformant, NotERC20Conformant, Web3Exception),
+            possible_decoding_exceptions=(NotERC721Conformant, NotERC20Conformant, Web3Exception, RemoteError),
         )
 
     def _add_builtin_decoders(self, rules: EvmDecodingRules) -> None:
