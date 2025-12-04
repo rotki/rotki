@@ -25,6 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
     :model-value="count > 0"
     color="primary"
     placement="top"
+    size="sm"
     offset-y="14"
     offset-x="-12"
   >

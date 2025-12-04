@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now see an indicator at the top if page-specific notes exist for that page.
 * :bug:`` Users will be given address options when filtering by address in the accounts table.
 * :bug:`-` More StakeDAO withdrawals are now decoded properly.
 * :bug:`-` Transaction decoding will no longer crash when a remote error occurs.
