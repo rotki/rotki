@@ -3,8 +3,10 @@ import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import { z } from 'zod/v4';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
 import { arrayify } from '@/utils/array';
+import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
 
 enum BlockchainAccountFilterKeys {
   ADDRESS = 'address',
@@ -38,13 +40,17 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
     ];
   });
 
+  const { getAccountsByCategory } = useBlockchainAccountData();
+
+  const accounts = get(getAccountsByCategory(category));
+
   const matchers = computed<Matcher[]>(() => [
     {
       description: t('common.address'),
       key: BlockchainAccountFilterKeys.ADDRESS,
       keyValue: BlockchainAccountFilterValueKeys.ADDRESS,
       string: true,
-      suggestions: (): string[] => [],
+      suggestions: (): string[] => accounts.map(item => getAccountAddress(item)),
       validate: (): true => true,
     },
     {
@@ -61,7 +67,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
       key: BlockchainAccountFilterKeys.LABEL,
       keyValue: BlockchainAccountFilterValueKeys.LABEL,
       string: true,
-      suggestions: (): string[] => [],
+      suggestions: (): string[] => accounts.map(item => getAccountLabel(item)),
       validate: (): boolean => true,
     },
   ]);

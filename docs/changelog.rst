@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`` Users will be given address options when filtering by address in the accounts table.
 * :bug:`-` More StakeDAO withdrawals are now decoded properly.
 * :bug:`-` Transaction decoding will no longer crash when a remote error occurs.
 * :bug:`-` Proper status notifications will be shown while the StakeDAO decoder cache is being queried.

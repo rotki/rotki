@@ -2420,6 +2420,7 @@
       "api_key_name": "API Key Name",
       "api_secret": "API Secret",
       "experimental": "The integration for this exchange is experimental, and you may find some imperfections. Please let us know if you encounter any issues.",
+      "format": "Format",
       "id": "ID",
       "kraken_account": "Select the type of your Kraken account",
       "passphrase": "Passphrase",
