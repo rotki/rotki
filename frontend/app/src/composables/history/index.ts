@@ -6,6 +6,7 @@ import type {
 import type { EntryMeta } from '@/types/history/meta';
 import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
 import { useMessageStore } from '@/store/message';
+import { uniqueStrings } from '@/utils/data';
 
 interface CommonIgnoreAction<T extends EntryMeta> {
   toData: (t: T) => string;
@@ -76,7 +77,7 @@ export function useIgnore<T extends EntryMeta>(
     });
 
     const payload: IgnorePayload = {
-      data: data.map(toData),
+      data: data.map(toData).filter(uniqueStrings),
     };
 
     let status: ActionStatus;

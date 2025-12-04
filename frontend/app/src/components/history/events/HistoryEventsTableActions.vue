@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
+import type { IgnoreStatus } from '@/modules/history/events/composables/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
@@ -17,22 +18,24 @@ const locationLabels = defineModel<string[]>('locationLabels', { required: true 
 
 const toggles = defineModel<HistoryEventsToggles>('toggles', { required: true });
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   matchers: SearchMatcher<any, any>[];
   exportParams: HistoryEventRequestPayload;
   hideAccountSelector?: boolean;
   hideRedecodeButtons?: boolean;
+  ignoreStatus?: IgnoreStatus;
   processing?: boolean;
   selection: SelectionState;
 }>(), {
   hideAccountSelector: false,
   hideRedecodeButtons: false,
+  ignoreStatus: undefined,
   processing: false,
 });
 
 const emit = defineEmits<{
   'redecode': [payload: 'all' | 'page' | string[]];
-  'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all' | 'create-rule'];
+  'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all' | 'create-rule' | 'ignore' | 'unignore'];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -41,12 +44,30 @@ const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
+const canIgnore = computed<boolean>(() => {
+  const status = props.ignoreStatus;
+  return status ? status.notIgnoredCount > 0 : false;
+});
+
+const canUnignore = computed<boolean>(() => {
+  const status = props.ignoreStatus;
+  return status ? status.ignoredCount > 0 : false;
+});
+
 function handleDelete(): void {
   emit('selection:action', 'delete');
 }
 
 function handleCreateRule(): void {
   emit('selection:action', 'create-rule');
+}
+
+function handleIgnore(): void {
+  emit('selection:action', 'ignore');
+}
+
+function handleUnignore(): void {
+  emit('selection:action', 'unignore');
 }
 
 function handleExit(): void {
@@ -130,6 +151,36 @@ function handleToggleAll(): void {
         </template>
         {{ t('transactions.events.selection_mode.delete_selected') }}
       </RuiButton>
+      <div class="flex">
+        <RuiButton
+          variant="outlined"
+          class="h-10 !rounded-r-none"
+          :disabled="selection.selectedCount === 0 || !canIgnore"
+          @click="handleIgnore()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-eye-off"
+              size="20"
+            />
+          </template>
+          {{ t('transactions.events.selection_mode.ignore') }}
+        </RuiButton>
+        <RuiButton
+          variant="outlined"
+          class="h-10 !rounded-l-none -ml-[1px]"
+          :disabled="selection.selectedCount === 0 || !canUnignore"
+          @click="handleUnignore()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-eye"
+              size="20"
+            />
+          </template>
+          {{ t('transactions.events.selection_mode.unignore') }}
+        </RuiButton>
+      </div>
       <RuiButton
         color="primary"
         variant="outlined"
