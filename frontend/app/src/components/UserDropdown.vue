@@ -2,6 +2,7 @@
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { usePrivacyMode } from '@/composables/privacy';
+import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogout } from '@/modules/account/use-logout';
 import ThemeControl from '@/modules/theme/ThemeControl.vue';
 import { useConfirmStore } from '@/store/confirm';
@@ -9,15 +10,13 @@ import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
-
 const { logout } = useLogout();
 const { username } = storeToRefs(useSessionAuthStore());
 const { clearPassword, isPackaged } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 const { isXs } = useBreakpoint();
 
-const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
+const { savedRememberPassword } = useRememberSettings();
 
 const { show } = useConfirmStore();
 
