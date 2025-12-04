@@ -67,6 +67,14 @@ const selectedMatcher = computed(() => {
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
 
 const suggestionBeingEdited = ref<Suggestion>();
+const shaking = ref<boolean>(false);
+
+function triggerShake(): void {
+  set(shaking, true);
+  setTimeout(() => {
+    set(shaking, false);
+  }, 500);
+}
 
 function isSuggestionBeingEdited(suggestion: Suggestion) {
   const edited = get(suggestionBeingEdited);
@@ -237,7 +245,7 @@ const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
   return [...filteredByKey, ...filteredByDescription];
 });
 
-async function applySuggestion() {
+async function applySuggestion(): Promise<void> {
   const selectedIndex = get(selectedSuggestion);
   if (!get(selectedMatcher)) {
     const filteredMatchersVal = get(filteredMatchers);
@@ -251,44 +259,74 @@ async function applySuggestion() {
   const filter = get(suggestedFilter);
   if (filter.value) {
     await nextTick(() => applyFilter(filter));
+    set(selectedSuggestion, 0);
+    set(search, '');
+    return;
   }
-  else {
-    const { exclude, key, value: keyword } = splitSearch(get(search));
 
-    const matcher = matcherForKey(key);
-    let asset = false;
-    if (matcher) {
-      let suggestedItems: (AssetInfo | string)[] = [];
-      if ('string' in matcher) {
-        suggestedItems = matcher.suggestions();
-      }
-      else if ('asset' in matcher) {
-        suggestedItems = await matcher.suggestions(keyword);
-        asset = true;
-      }
-      else if (!('boolean' in matcher)) {
-        logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
-      }
+  const searchVal = get(search);
+  const { exclude, key, value: keyword } = splitSearch(searchVal);
 
-      if (suggestedItems.length === 0 && 'validate' in matcher && matcher.validate(keyword)) {
-        await nextTick(() =>
-          applyFilter({
-            asset,
-            exclude,
-            index: 0,
-            key,
-            total: 1,
-            value: keyword,
-          }),
-        );
-      }
-      else {
-        set(suggestionBeingEdited, undefined);
-      }
+  if (!key) {
+    get(input).blur();
+    set(selectedSuggestion, 0);
+    set(search, '');
+    return;
+  }
+
+  const matcher = matcherForKey(key);
+  if (!matcher) {
+    set(selectedSuggestion, 0);
+    set(search, '');
+    return;
+  }
+
+  let asset = false;
+  let suggestedItems: (AssetInfo | string)[] = [];
+  if ('string' in matcher) {
+    suggestedItems = matcher.suggestions();
+  }
+  else if ('asset' in matcher) {
+    suggestedItems = await matcher.suggestions(keyword);
+    asset = true;
+  }
+  else if (!('boolean' in matcher)) {
+    logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
+  }
+
+  // If there are no suggestions and the matcher has a validate function
+  if (suggestedItems.length === 0 && 'validate' in matcher) {
+    if (matcher.validate(keyword)) {
+      await nextTick(() =>
+        applyFilter({
+          asset,
+          exclude,
+          index: 0,
+          key,
+          total: 1,
+          value: keyword,
+        }),
+      );
+      set(selectedSuggestion, 0);
+      set(search, '');
     }
-    if (!key)
-      get(input).blur();
+    else {
+      // Validation failed - keep search and shake
+      triggerShake();
+      const valueStart = key.length + (exclude ? 2 : 1);
+      await nextTick(async () => {
+        set(search, searchVal);
+        await nextTick(() => {
+          const inputEl = get(input)?.$el?.querySelector('input');
+          inputEl?.setSelectionRange(valueStart, searchVal.length);
+        });
+      });
+    }
+    return;
   }
+
+  // Has suggestions or no validate function - clear editing state and search
+  set(suggestionBeingEdited, undefined);
   set(selectedSuggestion, 0);
   set(search, '');
 }
@@ -425,6 +463,7 @@ const { t } = useI18n({ useScope: 'global' });
           :model-value="selection"
           :class="{
             '[&_input:not(.edit-input)]:hidden': !!suggestionBeingEdited,
+            [$style.shake]: shaking,
           }"
           variant="outlined"
           dense
@@ -489,3 +528,26 @@ const { t } = useI18n({ useScope: 'global' });
     <slot name="tooltip" />
   </RuiTooltip>
 </template>
+
+<style module lang="scss">
+.shake {
+  @apply animate-[shake_0.5s_ease-in-out];
+}
+
+@keyframes shake {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+</style>
