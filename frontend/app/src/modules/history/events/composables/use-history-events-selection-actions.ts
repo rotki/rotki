@@ -1,8 +1,9 @@
-import type { Ref } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
-import type { HistoryEventRow } from '@/types/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { get, set } from '@vueuse/shared';
+import { useIgnore } from '@/composables/history';
 import { useConfirmStore } from '@/store/confirm';
 
 interface UseHistoryEventsSelectionActionsOptions {
@@ -10,13 +11,20 @@ interface UseHistoryEventsSelectionActionsOptions {
     deleteSelected: () => Promise<void>;
   };
   originalGroups: Ref<HistoryEventRow[]>;
+  refreshCallback: () => Promise<void>;
   selectionMode: UseHistoryEventsSelectionModeReturn;
+}
+
+export interface IgnoreStatus {
+  ignoredCount: number;
+  notIgnoredCount: number;
 }
 
 export interface HistoryEventsSelectionActions {
   accountingRuleToEdit: Ref<AccountingRuleEntry | undefined>;
   handleAccountingRuleRefresh: () => void;
   handleSelectionAction: (action: string) => Promise<void>;
+  ignoreStatus: ComputedRef<IgnoreStatus>;
   selectedEventIds: Ref<number[]>;
 }
 
@@ -26,10 +34,35 @@ export function useHistoryEventsSelectionActions(
   const { t } = useI18n({ useScope: 'global' });
   const { show: showConfirm } = useConfirmStore();
 
-  const { deletion, originalGroups, selectionMode } = options;
+  const { deletion, originalGroups, refreshCallback, selectionMode } = options;
 
   const accountingRuleToEdit = ref<AccountingRuleEntry | undefined>();
   const selectedEventIds = ref<number[]>([]);
+  const selectedEventsForIgnore = ref<HistoryEventEntry[]>([]);
+
+  const { ignore } = useIgnore<HistoryEventEntry>(
+    { toData: item => item.groupIdentifier },
+    selectedEventsForIgnore,
+    async () => {
+      selectionMode.actions.exit();
+      await refreshCallback();
+    },
+  );
+
+  function getSelectedEvents(): HistoryEventEntry[] {
+    const selectedIds = Array.from(get(selectionMode.state).selectedIds);
+    const allEvents = get(originalGroups).flat();
+    return allEvents.filter(
+      (event): event is HistoryEventEntry => !Array.isArray(event) && selectedIds.includes(event.identifier),
+    );
+  }
+
+  const ignoreStatus = computed<IgnoreStatus>(() => {
+    const selectedEvents = getSelectedEvents();
+    const ignoredCount = selectedEvents.filter(event => event.ignoredInAccounting).length;
+    const notIgnoredCount = selectedEvents.length - ignoredCount;
+    return { ignoredCount, notIgnoredCount };
+  });
 
   function handleAccountingRuleRefresh(): void {
     // Exit selection mode after successfully creating a rule
@@ -101,6 +134,18 @@ export function useHistoryEventsSelectionActions(
         });
         break;
       }
+      case 'ignore': {
+        const selectedEvents = getSelectedEvents();
+        set(selectedEventsForIgnore, selectedEvents);
+        await ignore(true);
+        break;
+      }
+      case 'unignore': {
+        const selectedEvents = getSelectedEvents();
+        set(selectedEventsForIgnore, selectedEvents);
+        await ignore(false);
+        break;
+      }
       case 'toggle-mode':
         selectionMode.actions.toggle();
         break;
@@ -117,6 +162,7 @@ export function useHistoryEventsSelectionActions(
     accountingRuleToEdit,
     handleAccountingRuleRefresh,
     handleSelectionAction,
+    ignoreStatus,
     selectedEventIds,
   };
 }

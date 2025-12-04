@@ -5094,9 +5094,11 @@
       "selection_mode": {
         "create_rule": "Set custom accounting rule",
         "delete_selected": "Delete selected events",
+        "ignore": "Ignore in accounting",
         "no_events": "There is no event to select",
         "selected_count": "{count} selected",
-        "tooltip": "Select multiple events"
+        "tooltip": "Select multiple events",
+        "unignore": "Unignore in accounting"
       },
       "show_missing_acquisition": "Showing event for missing acquisition",
       "show_negative_balance": "Showing event that cause negative balance",

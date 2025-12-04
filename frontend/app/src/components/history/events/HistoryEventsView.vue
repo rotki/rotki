@@ -148,10 +148,12 @@ const {
   accountingRuleToEdit,
   handleAccountingRuleRefresh,
   handleSelectionAction,
+  ignoreStatus,
   selectedEventIds,
 } = useHistoryEventsSelectionActions({
   deletion,
   originalGroups,
+  refreshCallback: () => actions.fetch.dataAndLocations(),
   selectionMode,
 });
 
@@ -229,6 +231,7 @@ watchDebounced(route, async () => {
           :hide-redecode-buttons="!mainPage"
           :hide-account-selector="useExternalAccountFilter"
           :selection="selectionMode.state.value"
+          :ignore-status="ignoreStatus"
           @update:location-labels="onLocationLabelsChanged($event)"
           @redecode="actions.redecode.by($event)"
           @selection:action="handleSelectionAction($event)"
