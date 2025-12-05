@@ -79,6 +79,42 @@ def fixture_yearn_yfi_eth_gauge(database: 'DBHandler') -> 'EvmToken':
     )
 
 
+@pytest.fixture(name='yearn_yvcurve_upyfi_gauge')
+def fixture_yearn_yvcurve_upyfi_gauge(database: 'DBHandler') -> 'EvmToken':
+    return get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xf719B2d3925CC445D2Bb67FA12963265E224Fa11'),
+        chain_id=ChainID.ETHEREUM,
+        symbol='yG-yvCurve-upYFI-f',
+        name='yGauge Curve upYFI Factory yVault',
+        protocol=CPT_YEARN_STAKING,
+        underlying_tokens=[UnderlyingToken(
+            address=get_or_create_evm_token(
+                userdb=database,
+                evm_address=string_to_evm_address('0xFCa9Ab2996e7b010516adCC575eB63de4f4fa47A'),
+                chain_id=ChainID.ETHEREUM,
+                symbol='yvCurve-upYFI-f',
+                name='Curve upYFI Factory yVault',
+                protocol=CPT_YEARN_V2,
+                underlying_tokens=[UnderlyingToken(
+                    address=get_or_create_evm_token(
+                        userdb=database,
+                        evm_address=string_to_evm_address('0x13120b7599DdF33782c748A847cc1d3c96387Ecd'),
+                        chain_id=ChainID.ETHEREUM,
+                        symbol='upYFI',
+                        name='YFI/upYFI',
+                        protocol=CPT_YEARN_V2,
+                    ).evm_address,
+                    token_kind=TokenKind.ERC20,
+                    weight=ONE,
+                )],
+            ).evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd0002c648CCa8DeE2f2b8D70D542Ccde8ad6EC03']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1041,6 +1077,68 @@ def test_yearn_staking_deposit(
         amount=deposit_amount,
         location_label=user_address,
         notes=f'Receive {deposit_amount} yG-yvCurve-YFIETH after deposit in a Yearn Staking gauge',
+        counterparty=CPT_YEARN_STAKING,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xFa4Ebcb83902Bb1106b85Bb3D4916Dfd72E06721']])
+def test_yearn_staking_deposit_zap(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        yearn_yvcurve_upyfi_gauge: 'EvmToken',
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x0d2868d59f5d0088d6e71838e2b6a76b5c0d3c4ad11a718fe5600184255dc4a1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1753464215000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000122339162')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=414,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:1/erc20:0x13120b7599DdF33782c748A847cc1d3c96387Ecd'),
+        amount=FVal('2160000'),
+        location_label=user_address,
+        notes='Set upYFI spending approval of 0xFa4Ebcb83902Bb1106b85Bb3D4916Dfd72E06721 by 0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC to 2160000',  # noqa: E501
+        address=string_to_evm_address('0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=415,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x13120b7599DdF33782c748A847cc1d3c96387Ecd'),
+        amount=(deposit_amount := FVal('240573.900589001185320181')),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} upYFI in Yearn Staking gauge yGauge Curve upYFI Factory yVault',  # noqa: E501
+        counterparty=CPT_YEARN_STAKING,
+        address=string_to_evm_address('0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=416,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xf719B2d3925CC445D2Bb67FA12963265E224Fa11'),
+        amount=(receive_amount := FVal('238918.86777749203798664')),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} yG-yvCurve-upYFI-f after deposit in a Yearn Staking gauge',  # noqa: E501
         counterparty=CPT_YEARN_STAKING,
         address=ZERO_ADDRESS,
     )]

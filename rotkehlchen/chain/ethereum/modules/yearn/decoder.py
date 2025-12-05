@@ -3,6 +3,7 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, cast
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import get_single_underlying_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_STAKING,
@@ -419,18 +420,15 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         if (
             gauge_token.underlying_tokens is None or
             len(gauge_token.underlying_tokens) == 0 or
-            (vault_token := self.base.get_evm_token(address=gauge_token.underlying_tokens[0].address)) is None  # noqa: E501
+            (vault_token := get_single_underlying_token(gauge_token)) is None or
+            (yield_token := get_single_underlying_token(vault_token)) is None
         ):
             log.error(
-                f'Failed to find underlying vault token for yearn staking gauge token '
+                f'Failed to find underlying vault/yield token for yearn staking gauge token '
                 f'{gauge_token} in staking withdrawal {context.transaction}',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        assets_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token=vault_token,
-        )
         shares_amount = token_normalized_value(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token=gauge_token,
@@ -455,16 +453,17 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             elif (
                 event.event_type == expected_assets_event_type and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.address == gauge_token.evm_address and
-                event.asset == vault_token and
-                event.amount == assets_amount
+                (
+                    event.asset == yield_token or  # deposit via zap
+                    (event.asset == vault_token and event.address == gauge_token.evm_address)
+                )
             ):
                 event.counterparty = CPT_YEARN_STAKING
                 event.event_type = assets_event_type
                 event.event_subtype = assets_event_subtype
                 event.notes = assets_notes_template.format(
-                    amount=assets_amount,
-                    asset=vault_token.symbol,
+                    amount=event.amount,
+                    asset=event.asset.resolve_to_evm_token().symbol,
                     gauge_name=_get_vault_token_name(gauge_token.evm_address),
                 )
                 assets_event = event
