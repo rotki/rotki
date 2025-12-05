@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.
 * :bug:`-` Fix the issue that prevented pressing Enter from submitting most forms.
 * :feature:`-` Users will now see an indicator at the top if page-specific notes exist for that page.
 * :bug:`` Users will be given address options when filtering by address in the accounts table.

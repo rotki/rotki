@@ -53,7 +53,8 @@ function isStartAfterNow(selection: Quarter) {
 }
 
 const start = computed<number>(() => startDateTime(get(quarter)));
-const isCustom = computed(() => get(year) === 'custom');
+const isCustom = computed<boolean>(() => get(year) === 'custom');
+const isAllTime = computed<boolean>(() => get(year) === 'all-time');
 const end = computed<number>(() => {
   const endDate = QUARTER_ENDS[get(quarter)];
   return convertToTimestamp(`${endDate}/${get(year)} 23:59:59`);
@@ -69,16 +70,43 @@ onMounted(() => {
 });
 
 watch([year, quarter], () => {
-  updatePeriod(get(isCustom) ? null : get(periodEventPayload));
+  if (get(isCustom))
+    updatePeriod(null);
+  else if (get(isAllTime))
+    updatePeriod({ end: dayjs().unix(), start: 0 });
+  else
+    updatePeriod(get(periodEventPayload));
 });
 
-const periods = computed(() => {
+const MIN_YEAR = 2016;
+
+const periods = computed<string[]>(() => {
   const periods: string[] = [];
   const fullYear = new Date().getFullYear();
-  for (let year = fullYear; year > fullYear - 5; year--) periods.push(year.toString());
+  for (let year = fullYear; year > fullYear - 5; year--)
+    periods.push(year.toString());
 
   return periods;
 });
+
+const olderPeriods = computed<string[]>(() => {
+  const periods: string[] = [];
+  const fullYear = new Date().getFullYear();
+  for (let year = fullYear - 5; year >= MIN_YEAR; year--)
+    periods.push(year.toString());
+
+  return periods;
+});
+
+const isOlderYearSelected = computed<boolean>(() => get(olderPeriods).includes(get(year)));
+
+function selectAllTime(): void {
+  updateSelection({ quarter: Quarter.ALL, year: 'all-time' });
+  updatePeriod({
+    end: dayjs().unix(),
+    start: 0,
+  });
+}
 
 const subPeriods = [
   {
@@ -138,33 +166,73 @@ const quarterModel = computed({
       <div class="text-subtitle-1 font-bold mb-2">
         {{ t('generate.period') }}
       </div>
-      <RuiButtonGroup
-        v-model="yearModel"
-        required
-        gap="md"
-        class="flex-wrap justify-center"
-        active-color="primary"
-      >
+      <div class="flex gap-4">
+        <RuiMenu :popper="{ placement: 'bottom-end' }">
+          <template #activator="{ attrs }">
+            <RuiButtonGroup
+              v-model="yearModel"
+              required
+              class="flex-wrap justify-center"
+              active-color="primary"
+            >
+              <RuiButton
+                v-for="period in periods"
+                :key="period"
+                :color="year === period ? 'primary' : undefined"
+                class="px-4"
+                :model-value="period"
+              >
+                {{ period }}
+              </RuiButton>
+              <RuiButton
+                v-bind="attrs"
+                :color="isOlderYearSelected ? 'primary' : undefined"
+              >
+                <div class="flex items-center gap-2">
+                  <template v-if="isOlderYearSelected">
+                    {{ year }}
+                  </template>
+                  <RuiIcon
+                    name="lu-chevron-down"
+                    size="16"
+                  />
+                </div>
+              </RuiButton>
+            </RuiButtonGroup>
+          </template>
+
+          <div class="flex flex-col py-2">
+            <RuiButton
+              v-for="period in olderPeriods"
+              :key="period"
+              class="!px-6"
+              variant="list"
+              @click="yearModel = period"
+            >
+              {{ period }}
+            </RuiButton>
+          </div>
+        </RuiMenu>
+
         <RuiButton
-          v-for="period in periods"
-          :key="period"
-          :color="year === period ? 'primary' : undefined"
           class="px-4"
-          :model-value="period"
+          :color="isAllTime ? 'primary' : undefined"
+          @click="selectAllTime()"
         >
-          {{ period }}
+          {{ t('generate.all_time') }}
         </RuiButton>
+
         <RuiButton
-          model-value="custom"
           class="px-4"
           :color="isCustom ? 'primary' : undefined"
+          @click="yearModel = 'custom'"
         >
           {{ t('generate.custom_selection') }}
         </RuiButton>
-      </RuiButtonGroup>
+      </div>
     </div>
     <div
-      v-if="year !== 'custom'"
+      v-if="year !== 'custom' && year !== 'all-time'"
       class="pt-3.5"
     >
       <div class="text-subtitle-1 font-bold mb-2">
@@ -173,7 +241,6 @@ const quarterModel = computed({
       <RuiButtonGroup
         v-model="quarterModel"
         required
-        gap="md"
         class="flex-wrap justify-center"
         active-color="primary"
       >

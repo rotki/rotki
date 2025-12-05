@@ -3015,6 +3015,7 @@
     }
   },
   "generate": {
+    "all_time": "All Time",
     "custom_selection": "Custom",
     "labels": {
       "end_date": "End Date",
