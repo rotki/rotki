@@ -2,7 +2,7 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import { assert, Blockchain } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
-import AccountFormApiKeyAlert from '@/components/accounts/management/AccountFormApiKeyAlert.vue';
+import AccountFormApiKeyAlertContent from '@/components/accounts/management/AccountFormApiKeyAlertContent.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
 import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
@@ -115,6 +115,41 @@ const showBinanceEtherscanWarning = computed<boolean>(() => {
   return currentModelValue.mode === 'add' && selectedChain === 'all';
 });
 
+const warningExpanded = ref<boolean>(false);
+
+type WarningType = 'solana' | 'apiKey' | 'binance';
+
+interface WarningItem {
+  type: WarningType;
+  service?: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc';
+}
+
+const warnings = computed<WarningItem[]>(() => {
+  const result: WarningItem[] = [];
+  if (get(missingApiKeyService))
+    result.push({ service: get(missingApiKeyService), type: 'apiKey' });
+  if (get(showSolanaInitialAlert))
+    result.push({ type: 'solana' });
+  if (get(showBinanceEtherscanWarning))
+    result.push({ type: 'binance' });
+  return result;
+});
+
+const hasMultipleWarnings = computed<boolean>(() => get(warnings).length > 1);
+
+const visibleWarnings = computed<WarningItem[]>(() => {
+  const all = get(warnings);
+  if (all.length <= 1 || get(warningExpanded))
+    return all;
+  return all.slice(0, 1);
+});
+
+const hiddenWarningCount = computed<number>(() => get(warnings).length - get(visibleWarnings).length);
+
+function toggleWarningExpanded(): void {
+  set(warningExpanded, !get(warningExpanded));
+}
+
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
   assert(selectedForm);
@@ -199,17 +234,44 @@ defineExpose({
 <template>
   <div data-cy="blockchain-balance-form">
     <RuiAlert
-      v-if="showSolanaInitialAlert"
+      v-if="warnings.length > 0"
       type="warning"
       class="mb-6 -mt-2"
     >
-      {{ t('blockchain_balances.solana_warning') }}
-    </RuiAlert>
+      <ul :class="hasMultipleWarnings ? 'list-disc pl-4 space-y-1' : 'list-none pl-0'">
+        <li
+          v-for="warning in visibleWarnings"
+          :key="warning.type"
+        >
+          <template v-if="warning.type === 'apiKey' && warning.service">
+            <AccountFormApiKeyAlertContent :service="warning.service" />
+          </template>
+          <template v-else-if="warning.type === 'solana'">
+            {{ t('blockchain_balances.solana_warning') }}
+          </template>
+          <template v-else-if="warning.type === 'binance'">
+            {{ t('blockchain_balances.binance_warning') }}
+          </template>
+        </li>
+      </ul>
 
-    <AccountFormApiKeyAlert
-      v-if="missingApiKeyService"
-      :service="missingApiKeyService"
-    />
+      <RuiButton
+        v-if="hasMultipleWarnings"
+        variant="text"
+        color="warning"
+        size="sm"
+        class="mt-1 -mb-1 ml-2.5"
+        @click="toggleWarningExpanded()"
+      >
+        {{ warningExpanded ? t('common.actions.show_less') : t('common.actions.show_more_num', { count: hiddenWarningCount }) }}
+        <template #append>
+          <RuiIcon
+            :name="warningExpanded ? 'lu-chevron-up' : 'lu-chevron-down'"
+            size="16"
+          />
+        </template>
+      </RuiButton>
+    </RuiAlert>
 
     <AccountSelector
       v-if="chain"
@@ -218,14 +280,6 @@ defineExpose({
       :chain-ids="chainIds"
       :edit-mode="modelValue.mode === 'edit'"
     />
-
-    <RuiAlert
-      v-if="showBinanceEtherscanWarning"
-      type="warning"
-      class="mb-6 -mt-2"
-    >
-      {{ t('blockchain_balances.binance_warning') }}
-    </RuiAlert>
 
     <ValidatorAccountForm
       v-if="modelValue.type === 'validator'"
