@@ -1515,6 +1515,7 @@
   },
   "blockchain_balances": {
     "add_account": "Add Account",
+    "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
     "evm_detection": {
       "title": "Detect EVM accounts",
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
@@ -2358,7 +2359,7 @@
       "default_updated": "Default indexer order updated",
       "no_indexers_warning": "At least one indexer must be selected. The list cannot be empty.",
       "remove_chain": "Remove chain specific setting",
-      "subtitle": "Configure the priority order of indexers for each EVM chain. If the first indexer fails, the next one will be tried, and so on.",
+      "subtitle": "Indexers are used to query history events. Configure the priority order of indexers for each EVM chain. If the first indexer fails, the next one will be tried, and so on.",
       "title": "Indexer Order"
     }
   },
