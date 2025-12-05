@@ -53,6 +53,7 @@ from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalance
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
@@ -91,6 +92,7 @@ from rotkehlchen.types import (
     CHAINS_WITH_NODES,
     CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS_TYPE,
+    EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
@@ -992,6 +994,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def get_evm_manager(self, chain_id: SUPPORTED_CHAIN_IDS) -> 'EvmManager':
         return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[call-overload]  # SUPPORTED_CHAIN_IDS only includes chains with chain managers.
+
+    def renable_etherscan_indixer(self) -> None:
+        """Make sure that etherscan is among the indexers for a chain.
+        It is used when a new api key is added and we need to ensure that it will
+        be queried again.
+        """
+        for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+            chain_manager = self.get_chain_manager(chain)
+            if EvmIndexer.ETHERSCAN not in chain_manager.node_inquirer.available_indexers:
+                chain_manager.node_inquirer.available_indexers[EvmIndexer.ETHERSCAN] = chain_manager.node_inquirer.etherscan  # noqa: E501
 
     def check_single_address_activity(
             self,

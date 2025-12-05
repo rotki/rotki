@@ -665,6 +665,7 @@ class RestAPI:
         return self._return_external_services_response()
 
     def add_external_services(self, services: list[ExternalServiceApiCredentials]) -> Response:
+        should_renable_etherscan = False
         for x in services:
             if x.service.premium_only() and not has_premium_check(self.rotkehlchen.premium):
                 return api_response(
@@ -676,12 +677,17 @@ class RestAPI:
                     wrap_in_fail_result('GnosisPay credentials are set using /services/gnosispay/token'),  # noqa: E501
                     status_code=HTTPStatus.FORBIDDEN,
                 )
+            if x.service == ExternalService.ETHERSCAN:
+                should_renable_etherscan = True
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             self.rotkehlchen.data.db.add_external_service_credentials(
                 write_cursor=write_cursor,
                 credentials=services,
             )
+
+        if should_renable_etherscan:
+            self.rotkehlchen.chains_aggregator.renable_etherscan_indixer()
 
         return self._return_external_services_response()
 
