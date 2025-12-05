@@ -19,7 +19,7 @@ const { isOutOfSync, navigateToHistory, processing } = useTransactionStatusCheck
 const { queryBinanceUserMarkets } = useExchangeApi();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
-const range = ref<ProfitLossReportPeriod>({ end: 0, start: 0 });
+const range = ref<{ start: number | undefined; end: number }>({ end: 0, start: 0 });
 const valid = ref<boolean>(false);
 const binanceExchangesWithoutMarkets = ref<string[]>([]);
 
@@ -50,12 +50,17 @@ async function checkBinanceMarketPairs(): Promise<void> {
   set(binanceExchangesWithoutMarkets, exchangesWithoutMarkets);
 }
 
+function toReportPeriod(): ProfitLossReportPeriod {
+  const { end, start } = get(range);
+  return { end, start: start ?? 0 };
+}
+
 function generate(): void {
-  emit('generate', get(range));
+  emit('generate', toReportPeriod());
 }
 
 function exportReportData(): void {
-  emit('export-data', get(range));
+  emit('export-data', toReportPeriod());
 }
 
 function importReportData(): void {
@@ -71,7 +76,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard content-class="!pt-0">
     <template #custom-header>
       <div class="flex justify-between px-4 py-2">
         <CardTitle>

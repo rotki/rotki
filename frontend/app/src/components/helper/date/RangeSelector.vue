@@ -10,7 +10,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
-const modelValue = defineModel<{ start: number; end: number }>({ required: true });
+const modelValue = defineModel<{ start: number | undefined; end: number }>({ required: true });
 
 const emit = defineEmits<{
   (e: 'update:valid', valid: boolean): void;
@@ -26,7 +26,7 @@ const custom = computed<boolean>(() => get(year) === 'custom');
 const start = useRefPropVModel(modelValue, 'start');
 const end = useRefPropVModel(modelValue, 'end');
 
-function input(data: { start: number; end: number }): void {
+function input(data: { start: number | undefined; end: number }): void {
   set(modelValue, data);
 }
 
@@ -35,12 +35,14 @@ function updateValid(valid: boolean): void {
 }
 
 async function onChanged(event: SelectionChangedEvent): Promise<void> {
-  if (event.year === 'custom')
-    input({ end: dayjs().unix(), start: 0 });
-
   await store.updateSetting({
     profitLossReportPeriod: event,
   });
+
+  if (event.year === 'custom') {
+    await nextTick();
+    input({ end: dayjs().unix(), start: undefined });
+  }
 }
 
 function onPeriodChange(period: PeriodChangedEvent | null): void {
