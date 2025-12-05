@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
-
-import { getNftAssetIdDetail, isEvmIdentifierWithNftId } from '@rotki/common/lib';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
@@ -30,11 +28,6 @@ const name = useRefMap(asset, asset => asset.name ?? '');
 const identifier = useRefMap(asset, asset => asset.identifier);
 
 const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
-
-const [DefineNftDetails, ReuseNftDetails] = createReusableTemplate<{
-  contractAddress: string;
-  nftId: string;
-}>();
 
 type ConfirmType = 'ignore' | 'mark_as_spam';
 const confirm = ref(false);
@@ -214,49 +207,36 @@ defineExpose({
         </div>
       </Transition>
     </div>
-    <div
-      v-if="contractInfo"
-      class="pt-2 pb-1 px-1 border-t border-default"
-    >
-      <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
-        {{ t('transactions.events.form.contract_address.label') }}
-      </div>
-
-      <HashLink
-        :text="contractInfo.address"
-        :location="contractInfo.location"
-        type="token"
-        class="text-[11px]"
-        :truncate-length="9"
-      />
-    </div>
-    <DefineNftDetails #default="{ contractAddress, nftId }">
-      <div class="pt-2 pb-1 px-1 border-t border-default">
+    <template v-if="contractInfo">
+      <div
+        class="pt-2 pb-1 px-1 border-t border-default"
+      >
         <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
           {{ t('transactions.events.form.contract_address.label') }}
         </div>
+
         <HashLink
-          :text="contractAddress"
-          :location="asset?.evmChain ?? undefined"
+          :text="contractInfo.address"
+          :location="contractInfo.location"
           type="token"
           class="text-[11px]"
           :truncate-length="9"
         />
       </div>
-      <div class="pt-2 pb-1 px-1 border-t border-default">
+
+      <div
+        v-if="contractInfo.nftId"
+        class="pt-2 pb-1 px-1 border-t border-default"
+      >
         <div class="!text-[10px] !leading-[1] text-caption text-rui-text-secondary uppercase">
           {{ t('nft_balance_table.token_id') }}
         </div>
 
         <div class="text-xs py-1">
-          #{{ nftId }}
+          #{{ contractInfo.nftId }}
         </div>
       </div>
-    </DefineNftDetails>
-    <ReuseNftDetails
-      v-if="isEvmIdentifierWithNftId(asset.identifier)"
-      v-bind="getNftAssetIdDetail(asset.identifier)!"
-    />
+    </template>
     <div
       v-if="iconOnly"
       class="pt-2 pb-1 px-1 border-t border-default"

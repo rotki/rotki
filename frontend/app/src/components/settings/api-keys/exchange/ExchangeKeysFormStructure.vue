@@ -23,6 +23,11 @@ type LocationConfig = Partial<Record<LocationKey, SlotProps>>;
 
 const { t } = useI18n({ useScope: 'global' });
 
+const COINBASE_FORMATS = {
+  apiKeyNameFormat: 'organizations/{org_id}/apiKeys/{key_id}',
+  privateKeyFormat: '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----END EC PRIVATE KEY-----\\n',
+};
+
 const customLabel: Record<string, LocationConfig> = {
   bitmex: {
     apiKey: {
@@ -34,9 +39,11 @@ const customLabel: Record<string, LocationConfig> = {
   },
   coinbase: {
     apiKey: {
+      hint: `${t('exchange_settings.inputs.format')}: ${COINBASE_FORMATS.apiKeyNameFormat}`,
       label: t('exchange_settings.inputs.api_key_name'),
     },
     apiSecret: {
+      hint: `${t('exchange_settings.inputs.format')}: ${COINBASE_FORMATS.privateKeyFormat}`,
       label: t('exchange_settings.inputs.private_key'),
     },
   },

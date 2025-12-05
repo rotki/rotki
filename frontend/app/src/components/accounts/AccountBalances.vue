@@ -22,7 +22,9 @@ import { useBlockchains } from '@/composables/blockchain';
 import { AccountExternalFilterSchema, type Filters, type Matcher, useBlockchainAccountFilter } from '@/composables/filters/blockchain-account';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AccountBalancesTable } from '@/modules/accounts/table';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useConfirmStore } from '@/store/confirm';
 import { SavedFilterLocation } from '@/types/filtering';
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
@@ -50,6 +52,9 @@ const query = ref<LocationQuery>({});
 const { fetchAccounts: fetchAccountsPage } = useBlockchainAccountData();
 const { handleBlockchainRefresh, refreshBlockchainBalances } = useRefresh();
 const { fetchAccounts } = useBlockchains();
+
+const { balances } = storeToRefs(useBalancesStore());
+const { accounts: accountsState } = storeToRefs(useBlockchainAccountsStore());
 
 const {
   fetchData,
@@ -146,8 +151,8 @@ watchDebounced(
   },
 );
 
-onMounted(async () => {
-  await fetchData();
+watchImmediate([accountsState, balances], () => {
+  fetchData();
 });
 
 defineExpose({

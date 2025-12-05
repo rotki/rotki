@@ -47,6 +47,8 @@ const emit = defineEmits<{
 
 const { asset, hideMenu, isCollectionParent } = toRefs(props);
 
+const menuOpened = ref<boolean>(false);
+
 const symbol = useRefMap(asset, asset => asset.symbol ?? '');
 const name = useRefMap(asset, asset => asset.name ?? '');
 
@@ -59,18 +61,16 @@ const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuConten
 
 const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
 
-function updateMenuVisibility(value: boolean) {
-  if (!value) {
+watch(menuOpened, (menuOpened) => {
+  if (!menuOpened) {
     get(menuContentRef)?.setConfirm(false);
   }
-}
+});
 
-function openMenuHandler(attrs: Record<string, any>) {
-  return (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    attrs.onClick(event);
-  };
+function openMenuHandler(event: MouseEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+  set(menuOpened, !get(menuOpened));
 }
 
 function useContextMenu(attrs: Record<string, any>) {
@@ -81,7 +81,7 @@ function useContextMenu(attrs: Record<string, any>) {
         navigateToDetails();
       }
     },
-    oncontextmenu: openMenuHandler(attrs),
+    oncontextmenu: openMenuHandler,
   };
 }
 </script>
@@ -106,11 +106,11 @@ function useContextMenu(attrs: Record<string, any>) {
   </DefineImage>
   <RuiMenu
     :key="identifier"
+    v-model="menuOpened"
     class="flex"
     :disabled="hideMenu"
     menu-class="w-[16rem] max-w-[90%]"
     :popper="{ placement: 'bottom-start' }"
-    @update:model-value="updateMenuVisibility($event)"
   >
     <template #activator="{ attrs }">
       <ReuseImage
@@ -141,7 +141,7 @@ function useContextMenu(attrs: Record<string, any>) {
           icon
           class="opacity-0 group-hover:opacity-100 mr-2 !p-2"
           v-bind="attrs"
-          @click.stop="openMenuHandler(attrs)($event)"
+          @click.stop="openMenuHandler($event)"
         >
           <RuiIcon
             name="lu-ellipsis-vertical"
