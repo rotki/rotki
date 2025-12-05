@@ -108,6 +108,13 @@ const showSolanaInitialAlert = computed<boolean>(() => {
   return currentModelValue.mode === 'add' && !!selectedChain && isSolanaChains(selectedChain);
 });
 
+const showBinanceEtherscanWarning = computed<boolean>(() => {
+  const selectedChain = get(chain);
+  const currentModelValue = get(modelValue);
+
+  return currentModelValue.mode === 'add' && selectedChain === 'all';
+});
+
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
   assert(selectedForm);
@@ -211,6 +218,14 @@ defineExpose({
       :chain-ids="chainIds"
       :edit-mode="modelValue.mode === 'edit'"
     />
+
+    <RuiAlert
+      v-if="showBinanceEtherscanWarning"
+      type="warning"
+      class="mb-6 -mt-2"
+    >
+      {{ t('blockchain_balances.binance_warning') }}
+    </RuiAlert>
 
     <ValidatorAccountForm
       v-if="modelValue.type === 'validator'"
