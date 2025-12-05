@@ -131,19 +131,22 @@ watch(display, (isDisplayed) => {
     v-model="display"
     max-width="500"
   >
-    <RuiCard>
-      <template #header>
-        {{ t('merge_dialog.title') }}
-      </template>
-      <template #subheader>
-        {{ t('merge_dialog.subtitle') }}
-      </template>
-      <div class="mb-4 text-body-2 text-rui-text-secondary">
-        {{ t('merge_dialog.hint') }}
-      </div>
+    <form
+      novalidate
+      @submit.stop.prevent="merge()"
+    >
+      <RuiCard>
+        <template #header>
+          {{ t('merge_dialog.title') }}
+        </template>
+        <template #subheader>
+          {{ t('merge_dialog.subtitle') }}
+        </template>
+        <div class="mb-4 text-body-2 text-rui-text-secondary">
+          {{ t('merge_dialog.hint') }}
+        </div>
 
-      <form>
-        <!-- We use `v-text-field` here instead `asset-select` -->
+        <!-- We use `RuiTextField` here instead `asset-select` -->
         <!-- because the source can be filled with unknown identifier -->
         <RuiTextField
           v-model="sourceIdentifier"
@@ -171,33 +174,33 @@ watch(display, (isDisplayed) => {
           @focus="clearErrors()"
           @blur="v$.targetIdentifier.$touch()"
         />
-      </form>
 
-      <RuiAlert
-        v-if="done"
-        class="mt-4"
-        type="success"
-      >
-        {{ t('merge_dialog.done') }}
-      </RuiAlert>
-      <template #footer>
-        <div class="grow" />
-        <RuiButton
-          variant="text"
-          color="primary"
-          @click="input(false)"
+        <RuiAlert
+          v-if="done"
+          class="mt-4"
+          type="success"
         >
-          {{ t('common.actions.close') }}
-        </RuiButton>
-        <RuiButton
-          color="primary"
-          :disabled="v$.$invalid || pending"
-          :loading="pending"
-          @click="merge()"
-        >
-          {{ t('merge_dialog.merge') }}
-        </RuiButton>
-      </template>
-    </RuiCard>
+          {{ t('merge_dialog.done') }}
+        </RuiAlert>
+        <template #footer>
+          <div class="grow" />
+          <RuiButton
+            variant="text"
+            color="primary"
+            @click="input(false)"
+          >
+            {{ t('common.actions.close') }}
+          </RuiButton>
+          <RuiButton
+            color="primary"
+            :disabled="v$.$invalid || pending"
+            :loading="pending"
+            type="submit"
+          >
+            {{ t('merge_dialog.merge') }}
+          </RuiButton>
+        </template>
+      </RuiCard>
+    </form>
   </RuiDialog>
 </template>

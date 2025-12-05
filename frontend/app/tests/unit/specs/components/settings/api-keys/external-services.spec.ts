@@ -120,7 +120,7 @@ describe('/settings/api-keys/external-services', () => {
         .find('[data-cy="bottom-dialog"] [data-cy=etherscan] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
-      await wrapper.find('[data-cy="bottom-dialog"] [data-cy="confirm"]').trigger('click');
+      await wrapper.find('form').trigger('submit');
       await flushPromises();
       const message = wrapper
         .find('[data-cy="bottom-dialog"] [data-cy=etherscan] [data-cy=service-key__content] .details')
@@ -141,7 +141,7 @@ describe('/settings/api-keys/external-services', () => {
         .find('[data-cy="bottom-dialog"] [data-cy=cryptocompare] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
-      await wrapper.find('[data-cy="bottom-dialog"] [data-cy="confirm"]').trigger('click');
+      await wrapper.find('form').trigger('submit');
       await flushPromises();
       const message = wrapper
         .find('[data-cy="bottom-dialog"] [data-cy=cryptocompare] [data-cy=service-key__content] .details')
@@ -162,7 +162,7 @@ describe('/settings/api-keys/external-services', () => {
         .find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
-      await wrapper.find('[data-cy="bottom-dialog"] [data-cy="confirm"]').trigger('click');
+      await wrapper.find('form').trigger('submit');
       await flushPromises();
       const message = wrapper
         .find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__content] .details')

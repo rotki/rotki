@@ -99,67 +99,72 @@ function promptClose() {
     @click:esc="promptClose()"
     @click:outside="promptClose()"
   >
-    <RuiCard
-      :divide="divide"
-      data-cy="bottom-dialog"
-      class="!rounded-b-none"
+    <form
+      novalidate
+      @submit.stop.prevent="confirm()"
     >
-      <template #custom-header>
-        <div class="m-4">
-          <slot
-            name="header"
-            :title="title"
-          >
-            <h5 class="font-medium text-xl text-black dark:text-white mb-1">
-              {{ title }}
-            </h5>
-          </slot>
-          <div
-            v-if="subtitle || $slots.subtitle"
-            class="text-sm text-rui-text-secondary"
-          >
-            <slot name="subtitle">
-              {{ subtitle }}
-            </slot>
-          </div>
-        </div>
-      </template>
-      <div
-        v-if="display"
-        ref="wrapper"
-        class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4"
-        :class="[$style.card, { [$style['auto-height']]: autoHeight }]"
+      <RuiCard
+        :divide="divide"
+        data-cy="bottom-dialog"
+        class="!rounded-b-none"
       >
-        <slot :wrapper="wrapper" />
-      </div>
-
-      <RuiDivider class="mb-4 -mx-4" />
-
-      <slot name="footer">
-        <div class="flex flex-row gap-2 w-full">
-          <slot name="left-buttons" />
-          <div class="grow" />
-          <RuiButton
-            color="primary"
-            variant="outlined"
-            data-cy="cancel"
-            @click="cancel()"
-          >
-            {{ secondary }}
-          </RuiButton>
-          <RuiButton
-            v-if="!actionHidden"
-            data-cy="confirm"
-            color="primary"
-            :disabled="actionDisabled || loading"
-            :loading="loading"
-            @click="confirm()"
-          >
-            {{ primary }}
-          </RuiButton>
+        <template #custom-header>
+          <div class="m-4">
+            <slot
+              name="header"
+              :title="title"
+            >
+              <h5 class="font-medium text-xl text-black dark:text-white mb-1">
+                {{ title }}
+              </h5>
+            </slot>
+            <div
+              v-if="subtitle || $slots.subtitle"
+              class="text-sm text-rui-text-secondary"
+            >
+              <slot name="subtitle">
+                {{ subtitle }}
+              </slot>
+            </div>
+          </div>
+        </template>
+        <div
+          v-if="display"
+          ref="wrapper"
+          class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4"
+          :class="[$style.card, { [$style['auto-height']]: autoHeight }]"
+        >
+          <slot :wrapper="wrapper" />
         </div>
-      </slot>
-    </RuiCard>
+
+        <RuiDivider class="mb-4 -mx-4" />
+
+        <slot name="footer">
+          <div class="flex flex-row gap-2 w-full">
+            <slot name="left-buttons" />
+            <div class="grow" />
+            <RuiButton
+              color="primary"
+              variant="outlined"
+              data-cy="cancel"
+              @click="cancel()"
+            >
+              {{ secondary }}
+            </RuiButton>
+            <RuiButton
+              v-if="!actionHidden"
+              data-cy="confirm"
+              color="primary"
+              :disabled="actionDisabled || loading"
+              :loading="loading"
+              type="submit"
+            >
+              {{ primary }}
+            </RuiButton>
+          </div>
+        </slot>
+      </RuiCard>
+    </form>
   </RuiBottomSheet>
 </template>
 

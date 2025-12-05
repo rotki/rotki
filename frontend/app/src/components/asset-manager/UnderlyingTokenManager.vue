@@ -78,12 +78,16 @@ function resetForm() {
 </script>
 
 <template>
-  <form class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     <div class="text-h6">
       {{ t('underlying_token_manager.labels.tokens') }}
     </div>
 
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 my-2">
+    <form
+      novalidate
+      class="grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 my-2"
+      @submit.stop.prevent="addToken()"
+    >
       <div class="md:col-span-2">
         <RuiTextField
           v-model="underlyingAddress"
@@ -144,14 +148,14 @@ function resetForm() {
         color="primary"
         class="col-span-2 lg:col-span-4"
         :disabled="v$.$invalid"
-        @click="addToken()"
+        type="submit"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
         {{ t('common.actions.add') }}
       </RuiButton>
-    </div>
+    </form>
 
     <SimpleTable class="underlying-tokens min-h-24">
       <thead>
@@ -197,5 +201,5 @@ function resetForm() {
         </tr>
       </tbody>
     </SimpleTable>
-  </form>
+  </div>
 </template>
