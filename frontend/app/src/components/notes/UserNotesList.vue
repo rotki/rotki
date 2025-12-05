@@ -3,6 +3,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 import { useUserNotesApi } from '@/composables/api/session/user-notes';
+import { useNotesCount } from '@/composables/notes/use-notes-count';
 import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -37,6 +38,8 @@ const titleSubstring = ref<string>('');
 
 const { deleteUserNote, fetchUserNotes, updateUserNote } = useUserNotesApi();
 
+const { refresh: refreshNotesCount } = useNotesCount();
+
 const extraParams = computed(() => ({
   location: get(location),
   titleSubstring: get(titleSubstring),
@@ -61,12 +64,17 @@ const { data, limit } = getCollectionData(notes);
 
 const { t } = useI18n({ useScope: 'global' });
 
-async function fetchNotes(loadingIndicator = false) {
+async function fetchNotes(loadingIndicator = false): Promise<void> {
   if (loadingIndicator)
     set(loading, true);
 
   await fetchData();
   set(loading, false);
+}
+
+async function refreshNotes(): Promise<void> {
+  await fetchNotes();
+  await refreshNotesCount();
 }
 
 const { found, limit: itemsPerPage, total } = getCollectionData<UserNote>(notes);
@@ -111,9 +119,9 @@ function editNote(note: UserNote) {
   set(open, true);
 }
 
-async function callUpdateNote(payload: Partial<UserNote>) {
+async function callUpdateNote(payload: Partial<UserNote>): Promise<void> {
   await updateUserNote(payload);
-  await fetchNotes();
+  await refreshNotes();
 }
 
 function deleteNote(identifier: number) {
@@ -133,7 +141,7 @@ async function confirmDelete(): Promise<void> {
 
   await deleteUserNote(id);
   clearDeleteDialog();
-  await fetchNotes();
+  await refreshNotes();
 }
 
 function onBeforeLeave(el: Element): void {
@@ -383,7 +391,7 @@ watch(shouldIncreasePage, (increasePage) => {
     :edit-mode="editMode"
     :location="location"
     @reset="resetForm()"
-    @refresh="fetchNotes()"
+    @refresh="refreshNotes()"
   />
 </template>
 
