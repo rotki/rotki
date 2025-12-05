@@ -33,6 +33,7 @@ from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -1320,6 +1321,56 @@ def test_binance_events_repull_after_deletion(
                 location_name=exchange.name,
                 queried_pair=test_symbol,
             ) == 2  # Should still be 2, not updated due to force_refresh
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.COINBASE,)])
+def test_coinbase_events_repull_returns_events(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
+    """Test that Coinbase's requery_exchange_history_events returns events
+    from _query_transactions.
+
+    This is a regression test for the issue where query_online_history_events was returning
+    an empty list instead of the actual events queried.
+    """
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = server.rest_api.rotkehlchen
+    exchange = try_get_first_exchange(rotki.exchange_manager, Location.COINBASE)
+    assert exchange is not None
+
+    mock_events = [SwapEvent(
+        event_identifier='coinbase_test_1',
+        timestamp=TimestampMS(1609459200000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=exchange.name,
+    ), SwapEvent(
+        event_identifier='coinbase_test_2',
+        timestamp=TimestampMS(1609545600000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('0.5'),
+        location_label=exchange.name,
+    )]
+
+    with patch.object(exchange, '_query_transactions', return_value=mock_events):
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(server, 'exchangeeventsrangequeryresource'),
+            json={
+                'location': Location.COINBASE.serialize(),
+                'name': exchange.name,
+                'from_timestamp': 0,
+                'to_timestamp': 1640000000,
+            },
+        ))
+        assert result['queried_events'] == 2
+        assert result['stored_events'] == 2
+        assert result['skipped_events'] == 0
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.COINBASE.serialize_for_db(),)).fetchone()[0] == 2  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
