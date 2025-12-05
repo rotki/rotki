@@ -22,7 +22,6 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
@@ -420,11 +419,13 @@ class Coinbase(ExchangeInterface):
         return dict(returned_balances), ''
 
     @protect_with_lock()
-    def _query_transactions(self, force_refresh: bool = False) -> None:
+    def _query_transactions(self, force_refresh: bool = False) -> list['HistoryBaseEntry']:
         """Queries transactions for all active accounts of this coinbase instance
 
         If an account has been queried within X seconds it's not queried again.
         Accounts are only queried since last known queried event
+
+        Returns a list of all queried events
         """
         account_data = self._api_query('accounts')
         account_info = self._get_active_account_info(account_data)
@@ -432,6 +433,7 @@ class Coinbase(ExchangeInterface):
         now = ts_now()
         self.staking_events = set()
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
+        all_events: list[HistoryBaseEntry] = []
         for account_id, last_update_timestamp in account_info:
             if force_refresh:
                 last_id = None  # Bypass cache when force_refresh is True
@@ -471,16 +473,10 @@ class Coinbase(ExchangeInterface):
                     transaction_pairs=conversion_pairs,
                 ))
 
-            # The approach here does not follow the exchange interface querying with
-            # a different method per type of event. Instead similar to kraken we query
-            # all events with 1 api endpoint and save them here. So they are returned
-            # directly from the DB later.
-            with self.db.user_write() as write_cursor:
-                if len(history_events) != 0:
-                    db = DBHistoryEvents(self.db)
-                    db.add_history_events(write_cursor=write_cursor, history=history_events)
+            all_events.extend(history_events)
 
-                if not force_refresh:
+            if not force_refresh:
+                with self.db.user_write() as write_cursor:
                     self.db.set_dynamic_cache(
                         write_cursor=write_cursor,
                         name=DBCacheDynamic.LAST_QUERY_TS,
@@ -489,6 +485,8 @@ class Coinbase(ExchangeInterface):
                         location_name=self.name,
                         account_id=account_id,
                     )
+
+        return all_events
 
     def _query_single_account_transactions(
             self,
@@ -1022,9 +1020,8 @@ class Coinbase(ExchangeInterface):
             end_ts: Timestamp,
             force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
-        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as another exchanges"""  # noqa: E501
-        self._query_transactions(force_refresh=force_refresh)
-        return [], end_ts
+        events = self._query_transactions(force_refresh=force_refresh)
+        return events, end_ts
 
     def _deserialize_history_event(self, raw_data: dict[str, Any]) -> HistoryEvent | None:
         """Processes a single transaction from coinbase and deserializes it
