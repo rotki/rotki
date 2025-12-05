@@ -45,6 +45,7 @@ from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     ChainNotSupported,
     EventNotInABI,
+    NoAvailableIndexers,
     NotERC20Conformant,
     NotERC721Conformant,
     RemoteError,
@@ -1406,26 +1407,33 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             to_block=to_block,
         ))
 
-    def _get_indexers_in_order(self) -> list[EtherscanLikeApi]:
+    def _get_indexers_in_order(self) -> list[tuple[EvmIndexer, EtherscanLikeApi]]:
         """Return available indexers respecting user-defined order and optional subset."""
         return [
-            indexer
+            (indexer_name, indexer)
             for indexer_name in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id)  # noqa: E501
             if (indexer := self.available_indexers.get(indexer_name)) is not None
         ]
 
     def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
-        Raises RemoteError if all fail.
+        Raises RemoteError if all fail or NoAvailableIndexers if there are no indexers available.
         """
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
-            raise RemoteError('Failed to query any indexer. No indexers are enabled.')
+            raise NoAvailableIndexers(f'No indexers are available for {self.chain_name}')
 
-        errors = []
-        for indexer in ordered_indexers:
+        errors: list[tuple[str, Exception]] = []
+        for indexer_name, indexer in ordered_indexers:
             try:
                 return func(indexer)
-            except (RemoteError, ChainNotSupported) as e:
+            except ChainNotSupported as e:
+                log.warning(
+                    f'Indexer {indexer.name} does not support {self.chain_name} with the current '
+                    f'API key. {e!s} Removing it from the available indexers for this chain.',
+                )
+                self.available_indexers.pop(indexer_name)
+                errors.append((indexer.name, e))
+            except RemoteError as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))
 
