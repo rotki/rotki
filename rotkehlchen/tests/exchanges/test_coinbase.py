@@ -247,7 +247,9 @@ def query_coinbase_and_test(
     with coinbase.db.user_write() as write_cursor:  # clean saved ranges to try again
         coinbase.db.purge_exchange_data(write_cursor=write_cursor, location=Location.COINBASE)
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
-        coinbase._query_transactions()
+        if len(returned_events := coinbase._query_transactions()) != 0:
+            with coinbase.db.user_write() as write_cursor:
+                DBHistoryEvents(coinbase.db).add_history_events(write_cursor=write_cursor, history=returned_events)  # noqa: E501
 
     with coinbase.db.conn.read_ctx() as cursor:
         events = DBHistoryEvents(coinbase.db).get_history_events_internal(
