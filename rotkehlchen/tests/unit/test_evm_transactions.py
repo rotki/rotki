@@ -145,6 +145,15 @@ def test_indexers_fall_back_properly(
             (optimism_manager.node_inquirer.blockscout, 'blockscout'),
             (optimism_manager.node_inquirer.routescan, 'routescan'),
         ):
+            stack.enter_context(patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                wraps=indexer.get_blocknumber_by_time,
+            ) if name == tested_indexer else patch.object(
+                target=indexer,
+                attribute='get_blocknumber_by_time',
+                side_effect=RemoteError('FAIL'),
+            ))
             txs_mock = stack.enter_context(patch.object(
                 target=indexer,
                 attribute='get_transactions',

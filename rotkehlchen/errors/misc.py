@@ -43,6 +43,10 @@ class RemoteError(Exception):
         super().__init__(message)
 
 
+class NoAvailableIndexers(RemoteError):
+    """Raised when there are no available indexers for a given chain."""
+
+
 class XPUBError(Exception):
     """Error XPUB Parsing and address derivation"""
 
@@ -106,7 +110,7 @@ class AddressNotSupported(Exception):
     """Used when we detect an address with a unknown format for the addressbook"""
 
 
-class ChainNotSupported(Exception):
+class ChainNotSupported(RemoteError):
     """Raised when a chain is not supported by a service/api/etc"""
 
 

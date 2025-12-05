@@ -149,6 +149,27 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
         gevent.sleep(current_backoff)
         return current_backoff * 2
 
+    def _additional_json_response_handling(
+            self,
+            action: str,
+            chain_id: ChainID,
+            response: Response,
+            json_ret: dict[str, Any],
+            result: str,
+            current_backoff: int,
+    ) -> int | bool | list | None:
+        """Overridden in subclasses to handle any additional checks that need to be done on json
+        responses.
+
+        Possible return values and how they are handled:
+        - False: No special handling needed. The result is valid and can be returned.
+        - int: Rate limited response. Will retry.
+        - list or None: This value will be returned directly.
+
+        May raise RemoteError or ChainNotSupported if the result indicates an error.
+        """
+        return False  # no-op by default
+
     @overload
     def _query(
             self,
@@ -315,45 +336,21 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
                         f'Missing a result in response. Response was: {response.text}',
                     )
 
-                # successful proxy calls do not include a status
-                status = int(json_ret.get('status', 1))
+                handling_response = self._additional_json_response_handling(
+                    action=action,
+                    chain_id=chain_id,
+                    response=response,
+                    json_ret=json_ret,
+                    result=result,
+                    current_backoff=backoff,
+                )
+                if handling_response is not False:
+                    if isinstance(handling_response, int):  # rate limited response
+                        backoff = handling_response
+                        continue
 
-                if status != 1:
-                    if status == 0:
-                        if result == 'Contract source code not verified':
-                            return None
-                        if json_ret.get('message', '') == 'NOTOK':
-                            if result.startswith((
-                                'Max calls per sec rate',  # short-term rate limit (5 seconds)
-                                'Max rate limit reached',  # different variant of the message above
-                                'Free API access is temporarily unavailable',  # free tier apikey blocked during high load periods  # noqa: E501
-                            )):
-                                log.debug(
-                                    f'Got response: {response.text} from {self.name} while '
-                                    f'querying chain {chain_id}. Will backoff for {backoff} seconds.',  # noqa: E501
-                                )
-                                gevent.sleep(backoff)
-                                backoff *= 2
-                                continue
+                    return handling_response
 
-                            elif result.startswith('Max daily'):
-                                raise RemoteError(f'{self.name} max daily rate limit reached.')
-
-                    transaction_endpoint_and_none_found = (
-                        status == 0 and
-                        json_ret['message'] == 'No transactions found' and
-                        action in {'txlist', 'txlistinternal', 'tokentx', 'txsBeaconWithdrawal'}
-                    )
-                    logs_endpoint_and_none_found = (
-                        status == 0 and
-                        json_ret['message'] == 'No records found' and
-                        'getLogs' in action
-                    )
-                    if transaction_endpoint_and_none_found or logs_endpoint_and_none_found:
-                        return []
-
-                    # else
-                    raise RemoteError(f'{chain_id} {self.name} returned error response: {json_ret}')  # noqa: E501
             except KeyError as e:
                 raise RemoteError(
                     f'Unexpected format of {chain_id} {self.name} response for request {response.url}. '  # noqa: E501

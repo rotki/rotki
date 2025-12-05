@@ -2,14 +2,16 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
+import gevent
 from pysqlcipher3 import dbapi2 as sqlcipher
+from requests import Response
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
@@ -80,6 +82,61 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             'apikey': api_key,
             'chainid': str(chain_id.serialize()),
         }
+
+    def _additional_json_response_handling(
+            self,
+            action: str,
+            chain_id: ChainID,
+            response: Response,
+            json_ret: dict[str, Any],
+            result: str,
+            current_backoff: int,
+    ) -> int | bool | list | None:
+        """Handle etherscan specific error responses including rate limits, free tier limits, etc.
+        Returns False if no special handling is needed, the integer backoff time for rate limits,
+        or a list/None when that value is what needs to be returned from the query function.
+        May raise RemoteError or ChainNotSupported if the result indicates an error.
+        """
+        if (status := int(json_ret.get('status', 1))) == 1:  # use .get since successful proxy calls do not include a status  # noqa: E501
+            return False  # No special handling needed.
+        elif status == 0:
+            if result == 'Contract source code not verified':
+                return None
+
+            if json_ret.get('message', '') == 'NOTOK':
+                if result.startswith((
+                        'Max calls per sec rate',  # short-term rate limit (5 seconds)
+                        'Max rate limit reached',  # different variant of the message above
+                        'Free API access is temporarily unavailable',  # free tier apikey blocked during high load periods  # noqa: E501
+                )):
+                    log.debug(
+                        f'Got response: {response.text} from {self.name} while '
+                        f'querying chain {chain_id}. Will backoff for {current_backoff} seconds.',
+                    )
+                    gevent.sleep(current_backoff)
+                    return current_backoff * 2
+
+                elif result.startswith('Max daily'):
+                    raise RemoteError(f'{self.name} max daily rate limit reached.')
+
+                elif result.startswith('Free API access is not supported for this chain'):
+                    raise ChainNotSupported(result)
+
+        transaction_endpoint_and_none_found = (
+                status == 0 and
+                json_ret['message'] == 'No transactions found' and
+                action in {'txlist', 'txlistinternal', 'tokentx', 'txsBeaconWithdrawal'}
+        )
+        logs_endpoint_and_none_found = (
+                status == 0 and
+                json_ret['message'] == 'No records found' and
+                'getLogs' in action
+        )
+        if transaction_endpoint_and_none_found or logs_endpoint_and_none_found:
+            return []
+
+        # else
+        raise RemoteError(f'{chain_id} {self.name} returned error response: {json_ret}')
 
     def get_latest_block_number(self, chain_id: SUPPORTED_CHAIN_IDS) -> int:
         """Gets the latest block number
