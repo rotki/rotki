@@ -34,6 +34,7 @@ from rotkehlchen.chain.evm.constants import (
     GENESIS_HASH,
 )
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin
@@ -1234,6 +1235,32 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         )
         self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
         return block_number
+
+    def maybe_get_l1_fees(
+            self,
+            account: ChecksumEvmAddress,
+            tx_hash: EVMTxHash,
+            block_number: int,
+    ) -> int | None:
+        """Retrieve L1 fee data for L2 transactions from available indexers.
+
+        Returns L1 fee in wei if successful, None if chain unsupported or query fails.
+        """
+        if self.chain_id not in L2_CHAINIDS_WITH_L1_FEES:
+            return None
+
+        try:
+            return self._try_indexers(
+                func=lambda indexer: indexer.get_l1_fee(
+                    chain_id=self.chain_id,  # type: ignore[arg-type]  # mypy doesn't understand the check above
+                    account=account,
+                    tx_hash=tx_hash,
+                    block_number=block_number,
+                ),
+            )
+        except RemoteError as e:
+            log.error(f'Failed to get L1 fees for {account=} {tx_hash=} {block_number=} due to {e!s}')  # noqa: E501
+            return None
 
     # -- methods to be optionally implemented by child classes --
 

@@ -4,10 +4,20 @@ from typing import TYPE_CHECKING, Final
 import gevent
 from requests import Response
 
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
+from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ApiKey, ChainID, ExternalService
+from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
+    ApiKey,
+    ChainID,
+    ChecksumEvmAddress,
+    EVMTxHash,
+    ExternalService,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -97,3 +107,29 @@ class Routescan(EtherscanLikeApi):
             f'{response.headers}. Response body: {response.text}.',
         )
         raise RemoteError(f'{msg} Check logs for details.')
+
+    def get_l1_fee(
+            self,
+            chain_id: L2ChainIdsWithL1FeesType,
+            account: ChecksumEvmAddress,
+            tx_hash: EVMTxHash,
+            block_number: int,
+    ) -> int:
+        """Attempt to get the L1 fee for the given transaction.
+        Routescan has this available in its tx receipt data even when some RPCs do not.
+
+        May raise:
+        - RemoteError if unable to get the L1 fee amount or query fails.
+        """
+        if (raw_receipt_data := self._query(
+            chain_id=chain_id,
+            module='proxy',
+            action='eth_getTransactionReceipt',
+            options={'txhash': str(tx_hash)},
+        )) is None:
+            raise RemoteError(f'Failed to get receipt data from {self.name} for tx {tx_hash!s}')
+
+        try:
+            return maybe_read_integer(data=raw_receipt_data, key='l1Fee', api=self.name)
+        except DeserializationError as e:
+            raise RemoteError(f'Failed to get L1 fee from {self.name} due to {e!s}') from e

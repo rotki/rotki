@@ -13,6 +13,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
+from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
@@ -361,14 +362,17 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
         return touched_indices - tracked_indices
 
-    def maybe_get_l1_fees(
+    def get_l1_fee(
             self,
             chain_id: L2ChainIdsWithL1FeesType,
             account: ChecksumEvmAddress,
             tx_hash: EVMTxHash,
             block_number: int,
-    ) -> int | None:
-        """Attempt to retrieve L1 fees from etherscan for the given tx via the txlist endpoint."""
+    ) -> int:
+        """Attempt to retrieve L1 fees from etherscan for the given tx via the txlist endpoint.
+        May raise:
+        - RemoteError if unable to get the L1 fee amount or query fails.
+        """
         try:
             for raw_tx in self._query(
                 chain_id=chain_id,
@@ -387,13 +391,14 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 if raw_tx.get('hash') != str(tx_hash):
                     continue  # skip unrelated txs for this account in the same block
 
-                return int(raw_tx['L1FeesPaid'])
-        except (KeyError, ValueError, RemoteError) as e:
+                return maybe_read_integer(data=raw_tx, key='L1FeesPaid', api=self.name)
+        except (DeserializationError, RemoteError) as e:
             # If the query fails or L1FeesPaid is missing or invalid, log an error and return None.
-            msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
-            log.error(
-                f'Failed to retrieve L1 fees from {self.name} txlist for '
-                f'{chain_id.to_name()} tx {tx_hash!s} due to {msg}',
-            )
+            msg = str(e)
+        else:
+            msg = 'requested tx was not returned'
 
-        return None
+        raise RemoteError(
+            f'Failed to retrieve L1 fees from {self.name} txlist for '
+            f'{chain_id.to_name()} tx {tx_hash!s} due to {msg}',
+        )
