@@ -99,7 +99,7 @@ const autoCompleteHint = computed<string>(() => {
       num,
     });
   }
-  return t('prioritized_list.all_added');
+  return t('prioritized_list.all_added', get(itemNameTr));
 });
 </script>
 

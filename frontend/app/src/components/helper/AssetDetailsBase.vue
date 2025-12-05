@@ -119,7 +119,7 @@ function useContextMenu(attrs: Record<string, any>) {
       />
       <div
         v-else
-        class="w-max flex items-center gap-3 cursor-pointer hover:ring-1 ring-rui-grey-300 dark:ring-rui-grey-800 hover:shadow-md transition-all rounded-md group -ml-1 pl-1"
+        :class="{ 'w-max flex items-center gap-3 cursor-pointer hover:ring-1 ring-rui-grey-300 dark:ring-rui-grey-800 hover:shadow-md transition-all rounded-md group -ml-1 pl-1': !hideMenu }"
       >
         <ListItem
           no-padding
@@ -137,6 +137,7 @@ function useContextMenu(attrs: Record<string, any>) {
         </ListItem>
 
         <RuiButton
+          v-if="!hideMenu"
           variant="text"
           icon
           class="opacity-0 group-hover:opacity-100 mr-2 !p-2"
