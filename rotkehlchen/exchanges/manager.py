@@ -231,7 +231,7 @@ class ExchangeManager:
             api_secret=api_secret,
             passphrase=passphrase,
         )
-        exchange = self.initialize_exchange(
+        exchange: ExchangeInterface = self.initialize_exchange(
             module=self._get_exchange_module(location),
             credentials=api_credentials,
             database=database,

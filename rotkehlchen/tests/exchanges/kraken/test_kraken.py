@@ -206,8 +206,8 @@ def test_querying_rate_limit_exhaustion(kraken, database):
         raise AssertionError(f'Unexpected url in kraken query: {url}')
 
     patch_kraken = patch.object(kraken.session, 'post', side_effect=mock_response)
-    patch_retries = patch('rotkehlchen.exchanges.kraken.KRAKEN_QUERY_TRIES', new=2)
-    patch_dividend = patch('rotkehlchen.exchanges.kraken.KRAKEN_BACKOFF_DIVIDEND', new=1)
+    patch_retries = patch('rotkehlchen.exchanges.krakenbase.KRAKEN_QUERY_TRIES', new=2)
+    patch_dividend = patch('rotkehlchen.exchanges.krakenbase.KRAKEN_BACKOFF_DIVIDEND', new=1)
 
     with ExitStack() as stack:
         stack.enter_context(gevent.Timeout(8))

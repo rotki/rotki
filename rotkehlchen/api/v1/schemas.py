@@ -86,7 +86,7 @@ from rotkehlchen.exchanges.constants import (
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
-from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.exchanges.krakenbase import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,

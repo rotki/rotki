@@ -15,10 +15,10 @@ describe('api keys', () => {
   });
 
   it('add exchange key', () => {
-    const apiKey = Cypress.env('KRAKEN_API_KEY');
-    const apiSecret = Cypress.env('KRAKEN_API_SECRET');
+    const apiKey = Cypress.env('BITFINEX_API_KEY');
+    const apiSecret = Cypress.env('BITFINEX_API_SECRET');
     page.visit('api-keys-exchanges');
-    page.addExchange(apiKey, apiSecret, 'kraken', 'My Kraken');
-    page.exchangeIsAdded('Kraken', 'My Kraken');
+    page.addExchange(apiKey, apiSecret, 'bitfinex', 'My Bitfinex');
+    page.exchangeIsAdded('Bitfinex', 'My Bitfinex');
   });
 });

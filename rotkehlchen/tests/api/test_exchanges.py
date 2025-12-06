@@ -23,7 +23,7 @@ from rotkehlchen.exchanges.constants import (
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
-from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
+from rotkehlchen.exchanges.krakenbase import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
@@ -929,7 +929,8 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             'api_key': new_key,
         }
         if location not in EXCHANGES_WITHOUT_API_SECRET:
-            data['api_secret'] = new_secret_kraken if location == Location.KRAKEN else new_secret
+            data['api_secret'] = new_secret_kraken if location in (
+                Location.KRAKEN, Location.KRAKENFUTURES) else new_secret
         if location in (Location.BINANCE, Location.BINANCEUS):
             data['binance_markets'] = ['ETHBTC']
         elif location == Location.KRAKEN:
@@ -958,7 +959,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             'location': str(location),
             'new_name': f'my_{exchange.name}',
             'api_key': 'invalid',
-            'api_secret': 'aW52YWxpZA==' if location == Location.KRAKEN else 'invalid',  # base64 for 'invalid'  # noqa: E501
+            'api_secret': 'aW52YWxpZA==' if location in (Location.KRAKEN, Location.KRAKENFUTURES) else 'invalid',  # base64 for 'invalid'  # noqa: E501
         }
 
         if location in (Location.BINANCE, Location.BINANCEUS):

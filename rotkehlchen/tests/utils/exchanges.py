@@ -23,6 +23,7 @@ from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.independentreserve import Independentreserve
+from rotkehlchen.exchanges.krakenfutures import Krakenfutures
 from rotkehlchen.exchanges.kucoin import Kucoin
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.okx import Okx
@@ -800,6 +801,20 @@ def create_test_gemini(
     )
 
 
+def create_test_krakenfutures(
+        database,
+        msg_aggregator,
+        # base_uri,
+):
+    return Krakenfutures(
+        name='demo_kraken',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
 def create_test_kraken(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
@@ -1072,6 +1087,14 @@ def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Literal[Location.KRAKEN],
 ) -> 'Kraken | None':
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.KRAKENFUTURES],
+) -> 'Krakenfutures | None':
     ...
 
 

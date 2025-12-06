@@ -112,7 +112,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import MarginPosition
-from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.exchanges.krakenbase import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler

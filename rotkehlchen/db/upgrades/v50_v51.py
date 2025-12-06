@@ -75,4 +75,11 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );
         """)
 
+    @progress_step(description='Adding new locations to the DB.')
+    def _add_new_locations(write_cursor: 'DBCursor') -> None:
+        write_cursor.executescript("""
+        /* Kraken Futures */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
+        """)
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

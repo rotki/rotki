@@ -36,7 +36,7 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.db.calendar import CalendarEntry, ReminderEntry
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
-from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.exchanges.krakenbase import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import (

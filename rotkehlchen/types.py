@@ -797,6 +797,7 @@ class Location(DBCharEnumMixIn):
     COINBASEPRIME = 53
     BINANCE_SC = 54  # on-chain Binance Smart Chain events
     SOLANA = 55
+    KRAKENFUTURES = 56
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
