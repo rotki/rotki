@@ -1424,15 +1424,18 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
         errors: list[tuple[str, Exception]] = []
         for indexer_name, indexer in ordered_indexers:
+            if indexer_name not in self.available_indexers:
+                continue  # was removed while looping
+
             try:
                 return func(indexer)
             except ChainNotSupported as e:
-                log.warning(
-                    f'Indexer {indexer.name} does not support {self.chain_name} with the current '
-                    f'API key. {e!s} Removing it from the available indexers for this chain.',
-                )
-                self.available_indexers.pop(indexer_name)
-                errors.append((indexer.name, e))
+                if self.available_indexers.pop(indexer_name, None) is not None:
+                    log.warning(  # removed the indexer
+                        f'Indexer {indexer.name} doesnt support {self.chain_name} with the given '
+                        f'API key. {e!s} Removing it from the available indexers for this chain.',
+                    )
+                    errors.append((indexer.name, e))
             except RemoteError as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))

@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`11084` Indexer related backend query task will no longer randomly die.
+
 * :release:`1.41.2 <2025-12-05>`
 * :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.
 * :bug:`-` Fix the issue that prevented pressing Enter from submitting most forms.
