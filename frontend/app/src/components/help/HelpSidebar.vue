@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import { externalLinks, TWITTER_URL } from '@shared/external-links';
+import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useNotificationsStore } from '@/store/notifications';
 import { downloadFileByTextContent } from '@/utils/download';
@@ -13,6 +14,10 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const interop = useInterop();
+
+const showReportDialog = ref<boolean>(false);
 
 interface Entry {
   readonly icon: RuiIcons;
@@ -54,14 +59,12 @@ const entries: Entry[] = [
   },
 ];
 
-const interop = useInterop();
-
-function openAbout() {
+function openAbout(): void {
   set(display, false);
   emit('about');
 }
 
-async function downloadBrowserLog() {
+async function downloadBrowserLog(): Promise<void> {
   const loggerDb = new IndexedDb('db', 1, 'logs');
 
   await loggerDb.getAll((data: any) => {
@@ -100,6 +103,24 @@ async function downloadBrowserLog() {
       </RuiButton>
     </div>
     <div class="py-0">
+      <div
+        class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-y border-default cursor-pointer"
+        @click="showReportDialog = true"
+      >
+        <RuiIcon
+          class="text-rui-text-secondary"
+          name="lu-bug"
+        />
+
+        <div class="gap-1">
+          <div class="text-rui-text font-medium">
+            {{ t('help_sidebar.report_issue.title') }}
+          </div>
+          <div class="text-rui-text-secondary text-caption">
+            {{ t('help_sidebar.report_issue.subtitle') }}
+          </div>
+        </div>
+      </div>
       <a
         v-for="(item, index) in entries"
         :key="index"
@@ -115,7 +136,9 @@ async function downloadBrowserLog() {
         />
 
         <div class="gap-1">
-          <div class="text-rui-text font-medium">{{ item.title }}</div>
+          <div class="text-rui-text font-medium">
+            {{ item.title }}
+          </div>
           <div class="text-rui-text-secondary text-caption">
             {{ item.subtitle }}
           </div>
@@ -162,4 +185,6 @@ async function downloadBrowserLog() {
       </template>
     </div>
   </RuiNavigationDrawer>
+
+  <ReportIssueDialog v-model="showReportDialog" />
 </template>

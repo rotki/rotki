@@ -13,6 +13,7 @@ import type {
   SolanaSwapEvent,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
+import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import {
   type DecodableEventType,
@@ -130,6 +131,23 @@ function deleteTxAndEvents(params: LocationAndTxRef) {
 function hideAddAction(item: HistoryEvent): boolean {
   return isGroupEditableHistoryEvent(item);
 }
+
+const showReportDialog = ref<boolean>(false);
+
+const reportTitle = computed<string>(() => t('actions.history_events.report_issue.title'));
+
+const reportDescription = computed<string>(() => {
+  const txRef = get(eventWithTxRef)?.txRef;
+
+  return [
+    t('actions.history_events.report_issue.description_intro'),
+    txRef ? t('actions.history_events.report_issue.tx_hash', { hash: txRef }) : '',
+    t('actions.history_events.report_issue.location', { location: get(event).location }),
+    '',
+    t('actions.history_events.report_issue.more_detail'),
+    t('actions.history_events.report_issue.placeholder'),
+  ].filter(Boolean).join('\n');
+});
 </script>
 
 <template>
@@ -209,7 +227,23 @@ function hideAddAction(item: HistoryEvent): boolean {
           </template>
           {{ t('transactions.actions.delete_transaction') }}
         </RuiButton>
+        <RuiDivider class="my-2" />
+        <RuiButton
+          variant="list"
+          @click="showReportDialog = true"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-bug" />
+          </template>
+          {{ t('actions.history_events.report_issue.action') }}
+        </RuiButton>
       </div>
     </RuiMenu>
+
+    <ReportIssueDialog
+      v-model="showReportDialog"
+      :initial-title="reportTitle"
+      :initial-description="reportDescription"
+    />
   </div>
 </template>

@@ -4,11 +4,14 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useScrambleSetting } from '@/composables/scramble-settings';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const isDemo = import.meta.env.VITE_DEMO_MODE !== undefined;
+
+const { showPrivacyModeMenu } = storeToRefs(useAreaVisibilityStore());
 
 const labels = [
   {
@@ -52,6 +55,7 @@ watch(persistPrivacySettings, setData);
 <template>
   <div class="relative">
     <RuiMenu
+      v-model="showPrivacyModeMenu"
       data-cy="privacy-menu-content"
       menu-class="w-[22rem]"
       :popper="{ placement: 'bottom-end' }"
