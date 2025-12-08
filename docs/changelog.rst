@@ -33,7 +33,6 @@ Changelog
 * :bug:`-` rotki will now show the protocol icon from DS Proxy correctly.
 * :bug:`11005` Fix an issue where adding a new manual balance with a custom asset/price unnecessarily fetches prices for all assets.
 * :bug:`10997` Binance CSV import will now properly handle trades with different counts of spend versus buy entries.
->>>>>>> bugfixes
 * :feature:`9230` rotki will now provide quick options for the date time picker.
 * :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`10979` Binance CSV import will now properly handle multiple trades with identical amounts at the same timestamp.
