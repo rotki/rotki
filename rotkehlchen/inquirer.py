@@ -630,17 +630,14 @@ class Inquirer:
         return unpriced_assets, found_prices
 
     @staticmethod
-    def _get_special_usd_prices(
+    def _get_special_prices(
             from_assets: list[Asset],
             to_asset: Asset,
     ) -> tuple[list[Asset], dict[Asset, tuple[Price, CurrentPriceOracle]]]:
-        """Handle some special cases when finding usd prices.
+        """Handle some special cases when finding prices.
         Returns a tuple containing a list of assets without prices and a dict of found prices.
-        If to_asset is not USD, it will simply return from_assets and an empty dict.
+        For non-USD target currencies, converts the USD prices to the target currency.
         """
-        if to_asset != A_USD:
-            return from_assets, {}
-
         found_prices, assets_without_special_price = {}, []
         for from_asset in from_assets:
             if from_asset == A_BSQ:
@@ -655,6 +652,16 @@ class Inquirer:
                 found_prices[from_asset] = price_and_oracle
             else:
                 assets_without_special_price.append(from_asset)
+
+        if (
+                to_asset != A_USD and
+                len(found_prices) > 0 and
+                (rate_price := Inquirer.find_price(from_asset=A_USD, to_asset=to_asset)) != ZERO_PRICE  # noqa: E501
+        ):  # convert USD prices to target currency if needed
+            found_prices = {
+                asset: (Price(price * rate_price), oracle)
+                for asset, (price, oracle) in found_prices.items()
+            }
 
         return assets_without_special_price, found_prices
 
@@ -766,7 +773,7 @@ class Inquirer:
         """Returns a dict mapping from_assets to tuples containing the current price of the
         from_asset in to_asset valuation and the oracle that was used to get that price.
 
-        Note: For special assets, only USD prices are supported in _get_special_usd_prices.
+        Note: For special assets, only USD prices are supported in _get_special_prices.
 
         If all options for finding a price are unsuccessful the price will be set to ZERO_PRICE,
         and any errors will be logged in the logs.
@@ -780,7 +787,7 @@ class Inquirer:
             for func in (
                 Inquirer._get_manual_prices,
                 Inquirer._query_fiat_pairs,
-                Inquirer._get_special_usd_prices,
+                Inquirer._get_special_prices,
             ):
                 unpriced_assets, new_found_prices = func(
                     from_assets=unpriced_assets,
