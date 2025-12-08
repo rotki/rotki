@@ -64,6 +64,8 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       ask_user_upon_size_discrepancy: true,
       auto_detect_tokens: true,
       csv_export_delimiter: ',',
+      default_evm_indexer_order: [],
+      evm_indexers_order: {},
       ...overrides,
     },
     message: '',
