@@ -395,7 +395,7 @@ class EvmInternalTransaction(NamedTuple):
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['tx_hash'] = str(result['tx_hash'])
+        result['parent_tx_hash'] = str(result['parent_tx_hash'])
         result['chain_id'] = result['chain_id'].serialize()
         result['value'] = str(result['value'])
         result['gas'] = str(result['gas'])
