@@ -101,14 +101,6 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
     ]
     assert events == expected_events
 
-    # TODO: Remove this after we merge bugfixes->develop and proxy detection uses the contract deployment event instead.  # noqa: E501
-    # Also check that the proxy detection works correctly (relies on the tx decoded above).
-    proxies = ethereum_inquirer.proxies_inquirer.get_or_query_liquity_proxy(
-        addresses=[(user_address := ethereum_accounts[0]), (other_address := make_evm_address())],
-    )
-    assert proxies[user_address] == {proxy_address}
-    assert other_address not in proxies
-
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC71265fBEEdB11dfE583C1acE8A6be4de5ae2DB4']])
