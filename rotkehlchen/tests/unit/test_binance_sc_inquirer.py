@@ -2,6 +2,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.tests.utils.binance_sc import (
     ANKR_BINANCE_SC_NODE,
     BINANCE_SC_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
@@ -10,6 +12,7 @@ from rotkehlchen.tests.utils.binance_sc import (
     ONE_RPC_BINANCE_SC_NODE,
 )
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
@@ -48,3 +51,21 @@ def test_binance_sc_nodes_prune_and_archive_status(
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
     assert len(binance_sc_inquirer.rpc_mapping) == len(binance_sc_manager_connect_at_start)
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('binance_sc_manager_connect_at_start', [(WeightedNode(
+    node_info=NodeName(
+        name='zan',
+        endpoint='https://api.zan.top/bsc-mainnet',
+        owned=False,
+        blockchain=SupportedBlockchain.BINANCE_SC,
+    ),
+    active=True,
+    weight=ONE,
+),)])
+def test_get_block_by_number(binance_sc_inquirer: 'BinanceSCInquirer') -> None:
+    """Test that the block is queried correctly and no RemoteError is raised.
+    Regression test for Binance SC missing the Web3.py POA middleware.
+    """
+    binance_sc_inquirer.get_block_by_number(num=0x2dce49e)
