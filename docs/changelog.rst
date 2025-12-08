@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`11084` Indexer related backend query task will no longer randomly die.
+* :bug:`11094` rotki should now process correctly all the RPCs responses from Binance SC nodes.
 
 * :release:`1.41.2 <2025-12-05>`
 * :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.
