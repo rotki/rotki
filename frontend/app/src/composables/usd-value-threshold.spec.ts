@@ -38,11 +38,25 @@ describe('useUsdValueThreshold', () => {
     expect(get(result)).toBe('10');
   });
 
-  it('should convert the threshold value based on exchange rate when currency is not USD', () => {
+  it('should convert the threshold value based on exchange rate when currency is not USD for BLOCKCHAIN', () => {
+    const currencies = useCurrencies();
+    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('EUR');
+    const result = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
+    expect(result.value).toBe('11'); // 10 * 1.1
+  });
+
+  it('should NOT convert the threshold value for EXCHANGES even when currency is not USD', () => {
     const currencies = useCurrencies();
     useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('EUR');
     const result = useUsdValueThreshold(BalanceSource.EXCHANGES);
-    expect(result.value).toBe('11'); // 200 * 1.1
+    expect(result.value).toBe('10'); // No conversion
+  });
+
+  it('should NOT convert the threshold value for MANUAL even when currency is not USD', () => {
+    const currencies = useCurrencies();
+    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('EUR');
+    const result = useUsdValueThreshold(BalanceSource.MANUAL);
+    expect(result.value).toBe('10'); // No conversion
   });
 
   it('should return zero if the threshold is defined and is set to 0', () => {

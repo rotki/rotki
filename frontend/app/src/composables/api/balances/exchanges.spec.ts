@@ -77,7 +77,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes ignore_cache and usd_value_threshold when provided', async () => {
+    it('includes ignore_cache and value_threshold when provided', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -98,7 +98,7 @@ describe('composables/api/balances/exchanges', () => {
 
       expect(capturedParams!.get('async_query')).toBe('true');
       expect(capturedParams!.get('ignore_cache')).toBe('true');
-      expect(capturedParams!.get('usd_value_threshold')).toBe('1000');
+      expect(capturedParams!.get('value_threshold')).toBe('1000');
     });
 
     it('throws error on failure', async () => {

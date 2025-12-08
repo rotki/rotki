@@ -15,7 +15,7 @@ import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseExchangeApiReturn {
   queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;
-  queryExchangeBalances: (location: string, ignoreCache?: boolean, usdValueThreshold?: string) => Promise<PendingTask>;
+  queryExchangeBalances: (location: string, ignoreCache?: boolean, valueThreshold?: string) => Promise<PendingTask>;
   callSetupExchange: (payload: ExchangeFormData) => Promise<boolean>;
   getExchanges: () => Promise<Exchanges>;
   queryBinanceMarkets: (location: string) => Promise<string[]>;
@@ -33,12 +33,12 @@ export function useExchangeApi(): UseExchangeApiReturn {
     },
   });
 
-  const queryExchangeBalances = async (location: string, ignoreCache = false, usdValueThreshold?: string): Promise<PendingTask> => {
+  const queryExchangeBalances = async (location: string, ignoreCache = false, valueThreshold?: string): Promise<PendingTask> => {
     const response = await api.get<PendingTask>(`/exchanges/balances/${location}`, {
       query: {
         asyncQuery: true,
         ignoreCache: ignoreCache ? true : undefined,
-        usdValueThreshold,
+        valueThreshold,
       },
     });
     return PendingTaskSchema.parse(response);
