@@ -602,6 +602,24 @@ def test_find_kfee_price(inquirer):
     assert FVal(price) == FVal(0.01)
 
 
+@pytest.mark.vcr
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_kfee_price_non_usd(inquirer):
+    """Test that we can query KFEE price in non-USD currency"""
+    kfee_eur_price = inquirer.find_price(from_asset=A_KFEE, to_asset=A_EUR)
+    usd_eur_rate = inquirer.find_price(from_asset=A_USD, to_asset=A_EUR)
+    assert kfee_eur_price.is_close(FVal(0.01) * usd_eur_rate), 'kfee price in EUR should be 0.01 USD * USD/EUR rate'  # noqa: E501
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_bsq_price_non_usd(inquirer: 'Inquirer') -> None:
+    """Test that we can query BSQ price in non-USD currency"""
+    bsq_eur_price = Inquirer.find_price(from_asset=A_BSQ, to_asset=A_EUR)
+    btc_eur_price = Inquirer.find_price(from_asset=A_BTC, to_asset=A_EUR)
+    assert bsq_eur_price.is_close(btc_eur_price * BTC_PER_BSQ, max_diff='0.0001'), 'BSQ price in EUR should be close to BTC price in EUR * BTC_PER_BSQ'  # noqa: E501
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_asset_with_no_api_oracles(inquirer_defi):
