@@ -393,15 +393,6 @@ class EvmInternalTransaction(NamedTuple):
     gas: int
     gas_used: int
 
-    def serialize(self) -> dict[str, Any]:
-        result = self._asdict()  # pylint: disable=no-member
-        result['parent_tx_hash'] = str(result['parent_tx_hash'])
-        result['chain_id'] = result['chain_id'].serialize()
-        result['value'] = str(result['value'])
-        result['gas'] = str(result['gas'])
-        result['gas_used'] = str(result['gas_used'])
-        return result
-
     def __hash__(self) -> int:
         return hash(self.identifier)
 
