@@ -39,6 +39,8 @@
     "last_data_migration": 13,
     "non_syncing_exchanges": [],
     "evmchains_to_skip_detection": [],
+    "default_evm_indexer_order": [],
+    "evm_indexers_order": {},
     "cost_basis_method": "fifo",
     "treat_eth2_as_eth": true,
     "eth_staking_taxable_after_withdrawal_enabled": true,

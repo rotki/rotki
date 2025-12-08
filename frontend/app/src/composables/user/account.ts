@@ -7,6 +7,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumHelper } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogin } from '@/modules/account/use-login';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useHistoryStore } from '@/store/history';
@@ -14,7 +15,7 @@ import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useWebsocketStore } from '@/store/websocket';
-import { lastLogin, setLastLogin } from '@/utils/account-management';
+import { lastLogin } from '@/utils/account-management';
 
 interface UseAccountManagementReturn {
   loading: Ref<boolean>;
@@ -41,6 +42,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const loggedUserIdentifier = useLoggedUserIdentifier();
   const { disconnect: disconnectWallet } = useWalletStore();
   const { fetchTransactionStatusSummary } = useHistoryStore();
+  const { updateSetting } = useFrontendSettingsStore();
 
   const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
     set(loading, true);
@@ -60,6 +62,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
 
       if (get(logged)) {
         clearUpgradeMessages();
+        set(lastLogin, username);
         showGetPremiumButton();
         set(canRequestData, true);
         await fetchTransactionStatusSummary();
@@ -92,7 +95,9 @@ export function useAccountManagement(): UseAccountManagementReturn {
     set(loading, false);
     if (get(logged)) {
       clearUpgradeMessages();
-      setLastLogin(username);
+      set(lastLogin, username);
+      // Manual login counts as password confirmation
+      await updateSetting({ lastPasswordConfirmed: dayjs().unix() });
       showGetPremiumButton();
       set(checkForAssetUpdate, true);
       await fetchTransactionStatusSummary();
@@ -113,7 +118,7 @@ interface UseAutoLoginReturn {
   autolog: Ref<boolean>;
   needsPasswordConfirmation: Ref<boolean>;
   confirmPassword: (password: string) => Promise<boolean>;
-  shouldConfirmPassword: () => boolean;
+  checkIfPasswordConfirmationNeeded: (usernameToCheck: string) => Promise<void>;
   username: Ref<string>;
 }
 
@@ -127,17 +132,42 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { canRequestData, checkForAssetUpdate, logged, needsPasswordConfirmation, username } = storeToRefs(authStore);
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumHelper();
-  const { getPassword } = useInterop();
+  const { getPassword, isPackaged } = useInterop();
   const frontendSettingsStore = useFrontendSettingsStore();
   const { updateSetting } = frontendSettingsStore;
   const { enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
 
-  const shouldConfirmPassword = (): boolean => {
-    if (!get(enablePasswordConfirmation))
-      return false;
+  // Check if rememberPassword is enabled in localStorage
+  const { savedRememberPassword } = useRememberSettings();
 
+  const checkIfPasswordConfirmationNeeded = async (usernameToCheck: string): Promise<void> => {
+    if (!get(enablePasswordConfirmation) || !isPackaged)
+      return;
+
+    // Check if rememberPassword setting is enabled
+    if (!get(savedRememberPassword))
+      return;
+
+    const lastConfirmed = get(lastPasswordConfirmed);
+
+    // If lastPasswordConfirmed is 0, this is the first time using the feature
+    // (new account or existing user with new feature) - initialize the timer
     const now = dayjs().unix();
-    return (now - get(lastPasswordConfirmed)) > get(passwordConfirmationInterval);
+
+    if (lastConfirmed === 0) {
+      await updateSetting({ lastPasswordConfirmed: now });
+      return;
+    }
+
+    if ((now - lastConfirmed) <= get(passwordConfirmationInterval))
+      return;
+
+    // Check if user has stored password (remember password enabled)
+    const storedPassword = await getPassword(usernameToCheck);
+    if (!storedPassword)
+      return;
+
+    set(needsPasswordConfirmation, true);
   };
 
   const confirmPassword = async (password: string): Promise<boolean> => {
@@ -163,7 +193,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
 
     await resetSessionBackend();
 
-    const savedUsername = lastLogin();
+    const savedUsername = get(lastLogin);
     if (!savedUsername) {
       // No saved credentials, can't auto-login
       return;
@@ -180,7 +210,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
   });
 
   // Watch for successful auto-login and check if password confirmation is needed
-  watch(logged, (isLogged) => {
+  watch(logged, async (isLogged) => {
     // Only proceed if this is an auto-login flow
     if (!get(isAutoLoginFlow))
       return;
@@ -191,13 +221,12 @@ export function useAutoLogin(): UseAutoLoginReturn {
     // Reset the auto-login flow flag
     set(isAutoLoginFlow, false);
 
-    const savedUsername = lastLogin();
+    const savedUsername = get(lastLogin);
     if (!savedUsername)
       return;
 
     // Check if password confirmation is needed AFTER successful auto-login
-    if (shouldConfirmPassword())
-      set(needsPasswordConfirmation, true);
+    await checkIfPasswordConfirmationNeeded(savedUsername);
 
     showGetPremiumButton();
     set(checkForAssetUpdate, true);
@@ -206,9 +235,9 @@ export function useAutoLogin(): UseAutoLoginReturn {
 
   return {
     autolog,
+    checkIfPasswordConfirmationNeeded,
     confirmPassword,
     needsPasswordConfirmation,
-    shouldConfirmPassword,
     username,
   };
 }

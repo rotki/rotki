@@ -1,3 +1,5 @@
+import base64
+import uuid
 import warnings as test_warnings
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -21,6 +23,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
+from rotkehlchen.tests.utils.factories import make_random_bytes
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TimestampMS
 
@@ -30,7 +33,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name='mock_coinbase')
 def fixture_mock_coinbase(messages_aggregator) -> Coinbase:
-    return Coinbase('coinbase1', 'a', b'a', object(), messages_aggregator)  # type: ignore
+    return Coinbase('coinbase1', str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)), object(), messages_aggregator)  # type: ignore  # noqa: E501
 
 
 def test_name(mock_coinbase):
@@ -244,7 +247,9 @@ def query_coinbase_and_test(
     with coinbase.db.user_write() as write_cursor:  # clean saved ranges to try again
         coinbase.db.purge_exchange_data(write_cursor=write_cursor, location=Location.COINBASE)
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
-        coinbase._query_transactions()
+        if len(returned_events := coinbase._query_transactions()) != 0:
+            with coinbase.db.user_write() as write_cursor:
+                DBHistoryEvents(coinbase.db).add_history_events(write_cursor=write_cursor, history=returned_events)  # noqa: E501
 
     with coinbase.db.conn.read_ctx() as cursor:
         events = DBHistoryEvents(coinbase.db).get_history_events_internal(

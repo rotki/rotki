@@ -15,6 +15,7 @@ from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CacheType,
@@ -150,6 +151,7 @@ def test_add_liquidity_proportionally(arbitrum_one_inquirer: 'ArbitrumOneInquire
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xDDA0E94955C637E30052CB28e73ce04C265f328b']])
 def test_remove_liquidity_imbalanced(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x8c6721fe24583cc69a64aa656e2c2235c3a8631ae6d4573807e24cb7ed7ec342')  # noqa: E501
@@ -316,6 +318,7 @@ def test_remove_liquidity_proportionally(gnosis_inquirer: 'GnosisInquirer', gnos
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x5aA57B34DaaDB76ea486157B3D4472C4DF536C82']])
 def test_swap_via_batch_router(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xbffb6bd2994f90676be45db667203317f0f70afb4eaa3832271e02e8dffb8101')  # noqa: E501
@@ -471,6 +474,7 @@ def test_gauge_deposit(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V3]])
 @pytest.mark.parametrize('base_accounts', [['0x9EE4d24dB1104bDF818391efCB8CCBa8Ff206159']])
 def test_gauge_withdrawal(

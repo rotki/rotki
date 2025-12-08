@@ -534,6 +534,7 @@ class Coinbaseprime(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         events: list[HistoryEvent | AssetMovement | SwapEvent] = []
         for portfolio_id in self._get_portfolio_ids():

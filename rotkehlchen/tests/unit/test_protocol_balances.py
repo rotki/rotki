@@ -1363,7 +1363,7 @@ def test_hyperliquid(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('ethereum_accounts', [['0xFd83CCCecef02a334e6A86e7eA8D0aa0F61f1Faf']])
+@pytest.mark.parametrize('ethereum_accounts', [['0x94F567bf71A4A7a88114aB679336522120EE3788']])
 def test_pendle_locked_balances(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -1371,7 +1371,7 @@ def test_pendle_locked_balances(
 ) -> None:
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0xc8b252de1a62daa57d4fe294f371e67550e087fdeffe972261e1acc890d84bd5'),
+        tx_hash=deserialize_evm_tx_hash('0x2f133fe4ecabcfb1279198d70e4a1fbaf593a9e72ee5c6a03179147eb97311d5'),
     )
     protocol_balances_inquirer = PendleBalances(
         evm_inquirer=ethereum_inquirer,
@@ -1380,8 +1380,8 @@ def test_pendle_locked_balances(
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[PENDLE_TOKEN][CPT_PENDLE] == Balance(
-        amount=FVal('135.60210839446895642'),
-        usd_value=FVal('329.5131233985595641006'),
+        amount=FVal('367.772672118320474345'),
+        usd_value=FVal('901.04304668988516214525'),
     )
 
 

@@ -44,14 +44,14 @@ describe('table-filter/TableFilter.vue', () => {
     TYPE = 'type',
   }
 
-  const matchers: StringSuggestionMatcher<FilterKeys, FilterKeyValues>[] = [
+  const createMatchers = (startValidate: (value: string) => boolean = () => true): StringSuggestionMatcher<FilterKeys, FilterKeyValues>[] => [
     {
       key: FilterKeys.START,
       keyValue: FilterKeyValues.START,
       description: 'filter by start date',
       string: true,
       suggestions: () => [],
-      validate: () => true,
+      validate: startValidate,
     },
     {
       key: FilterKeys.TYPE,
@@ -64,6 +64,8 @@ describe('table-filter/TableFilter.vue', () => {
       validate: () => true,
     },
   ];
+
+  const matchers = createMatchers();
 
   it('filter matchers', async () => {
     wrapper = createWrapper({
@@ -219,5 +221,75 @@ describe('table-filter/TableFilter.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > span').text()).toBe('type!=type 1');
+  });
+
+  it('shakes and keeps search when validation fails', async () => {
+    const matchersWithValidation = createMatchers(value => value === 'valid');
+
+    wrapper = createWrapper({
+      props: {
+        matchers: matchersWithValidation,
+        matches: {},
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-id=activator]').trigger('click');
+    await vi.advanceTimersToNextTimerAsync();
+
+    // Set matcher to `start` with invalid value
+    await wrapper.find('input').setValue('start=invalid_value');
+    await vi.advanceTimersToNextTimerAsync();
+
+    const autocomplete = wrapper.findComponent({ name: 'RuiAutoComplete' });
+
+    // Press enter to apply the filter
+    await wrapper.find('input').trigger('keydown.enter');
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The search should be kept because validation failed
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('start=invalid_value');
+
+    // The shake class should be applied (CSS module creates hashed class name containing 'shake')
+    expect(autocomplete.classes().some(c => c.includes('shake'))).toBe(true);
+
+    // Advance timers to clear the shake animation (500ms timeout)
+    await vi.advanceTimersByTimeAsync(500);
+
+    // The shake class should be removed after timeout
+    expect(autocomplete.classes().some(c => c.includes('shake'))).toBe(false);
+
+    // The filter should not contain 'start' because validation failed
+    const lastEmit = wrapper.emitted('update:matches')?.at(-1)?.[0] as Record<string, unknown> | undefined;
+    expect(lastEmit?.start).toBeUndefined();
+  });
+
+  it('applies filter when validation passes', async () => {
+    const matchersWithValidation = createMatchers(value => value === 'valid');
+
+    wrapper = createWrapper({
+      props: {
+        matchers: matchersWithValidation,
+        matches: {},
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-id=activator]').trigger('click');
+    await vi.advanceTimersToNextTimerAsync();
+
+    // Set matcher to `start` with valid value
+    await wrapper.find('input').setValue('start=valid');
+    await vi.advanceTimersToNextTimerAsync();
+
+    // Press enter to apply the filter
+    await wrapper.find('input').trigger('keydown.enter');
+    await vi.advanceTimersToNextTimerAsync();
+
+    // The search should be cleared because validation passed
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
+
+    // Filter should be emitted
+    expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ start: 'valid' }]);
   });
 });

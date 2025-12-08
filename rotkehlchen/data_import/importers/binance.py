@@ -174,6 +174,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
     def are_entries(self, requested_operations: list) -> bool:
         """This class supports several formats of Trade entries from the csv.
         Supports the following combinations of "Operation" column's values:
+            - Transaction Spend * N + Transaction Buy * M
             - Buy + Buy
             - Sell + Sell
             - Mixed data of (Buy + Buy) * N + (Sell + Sell) * M
@@ -192,7 +193,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         counted.pop('Transaction Fee', None)  # popped both fees to validate main trade components
         keys = set(counted.keys())
         return (
-            (keys == {'Transaction Buy', 'Transaction Spend'} and counted['Transaction Buy'] - counted['Transaction Spend'] == 0) or  # noqa: E501
+            keys == {'Transaction Buy', 'Transaction Spend'} or  # there can be different counts of spends versus buys that are aggregated later  # noqa: E501
             (keys == {'Transaction Revenue', 'Transaction Sold'} and counted['Transaction Revenue'] - counted['Transaction Sold'] == 0) or  # noqa: E501
             (keys == {'Buy', 'Sell'} and counted['Buy'] % 2 == 0 and counted['Sell'] % 2 == 0) or
             (keys == {'Buy'} and counted['Buy'] % 2 == 0) or  # deprecated, new CSVs use Buy/Sell

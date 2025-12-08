@@ -167,6 +167,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: 'APIServer', start
     assert result['report_id'] == 1
 
 
+@pytest.mark.vcr  # This test doesn't have any recorded cassette. VCR is used here to ensure that the mocking logic works properly with no external requests made, otherwise a cassette error would be raised.  # noqa: E501
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',

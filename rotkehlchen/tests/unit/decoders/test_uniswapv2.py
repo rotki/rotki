@@ -19,6 +19,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -722,6 +723,7 @@ def test_swap_on_polygon(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB9a10fa58625D8D51D9a049d8933545CE5Ff1F7F']])
 def test_add_liquidity_on_optimism(
         optimism_inquirer: 'OptimismInquirer',

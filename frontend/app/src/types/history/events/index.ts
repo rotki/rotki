@@ -75,8 +75,8 @@ export const BlockchainAddress = z.object({
 export type BlockchainAddress = z.infer<typeof BlockchainAddress>;
 
 interface TimeRange {
-  readonly fromTimestamp: number;
-  readonly toTimestamp: number;
+  readonly fromTimestamp?: number;
+  readonly toTimestamp?: number;
 }
 
 export interface RepullingTransactionPayload extends TimeRange {

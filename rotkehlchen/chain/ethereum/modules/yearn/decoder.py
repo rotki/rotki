@@ -3,10 +3,15 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, cast
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import token_normalized_value
+from rotkehlchen.assets.utils import (
+    asset_raw_value,
+    get_single_underlying_token,
+    token_normalized_value,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+    CPT_YEARN_STAKING,
     CPT_YEARN_V1,
     CPT_YEARN_V2,
     CPT_YEARN_V3,
@@ -15,11 +20,13 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_LABEL_V2,
     YEARN_LABEL_V3,
     YEARN_PARTNER_TRACKER,
+    YEARN_STAKING_LABEL,
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
     DEPOSIT_TOPIC,
+    REWARD_PAID_TOPIC_V2,
     STAKE_TOPIC,
     WITHDRAW_TOPIC_V3,
     ZERO_ADDRESS,
@@ -85,6 +92,7 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             CPT_YEARN_V1: set(),
             CPT_YEARN_V2: set(),
             CPT_YEARN_V3: set(),
+            CPT_YEARN_STAKING: set(),
         }
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
@@ -100,11 +108,12 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return None  # we didn't update the globaldb cache and we have the data already
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            query_body = 'FROM evm_tokens WHERE protocol IN (?, ?, ?) AND chain=?'
+            query_body = 'FROM evm_tokens WHERE protocol IN (?, ?, ?, ?) AND chain=?'
             bindings = (
                 CPT_YEARN_V1,
                 CPT_YEARN_V2,
                 CPT_YEARN_V3,
+                CPT_YEARN_STAKING,
                 ChainID.ETHEREUM.serialize_for_db(),
             )
             cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
@@ -388,6 +397,151 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         )
         return decoded_events
 
+    def _decode_staking_deposit_withdraw(
+            self,
+            context: DecoderContext,
+            expected_shares_event_type: HistoryEventType,
+            shares_event_type: HistoryEventType,
+            shares_event_subtype: HistoryEventSubType,
+            shares_notes_template: str,
+            expected_assets_event_type: HistoryEventType,
+            assets_event_type: HistoryEventType,
+            assets_event_subtype: HistoryEventSubType,
+            assets_notes_template: str,
+            is_deposit: bool,
+    ) -> EvmDecodingOutput:
+        """Decode yearn staking deposit and withdraw events, updating the events involving
+         the assets and shares of the gauge as specified by the parameters.
+         """
+        if (gauge_token := self.base.get_evm_token(address=context.tx_log.address)) is None:
+            log.error(f'Failed to find gauge token for yearn staking withdrawal {context.transaction}')  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if (
+            gauge_token.underlying_tokens is None or
+            len(gauge_token.underlying_tokens) == 0 or
+            (vault_token := get_single_underlying_token(gauge_token)) is None or
+            (yield_token := get_single_underlying_token(vault_token)) is None
+        ):
+            log.error(
+                f'Failed to find underlying vault/yield token for yearn staking gauge token '
+                f'{gauge_token} in staking withdrawal {context.transaction}',
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        shares_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
+            token=gauge_token,
+        )
+        assets_event = shares_event = reward_event = None
+        for event in context.decoded_events:
+            if (
+                event.event_type == expected_shares_event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.address == ZERO_ADDRESS and
+                event.asset == gauge_token and
+                event.amount == shares_amount
+            ):
+                event.counterparty = CPT_YEARN_STAKING
+                event.event_type = shares_event_type
+                event.event_subtype = shares_event_subtype
+                event.notes = shares_notes_template.format(
+                    amount=shares_amount,
+                    asset=gauge_token.symbol,
+                )
+                shares_event = event
+            elif (
+                event.event_type == expected_assets_event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                (
+                    event.asset == yield_token or  # deposit via zap
+                    (event.asset == vault_token and event.address == gauge_token.evm_address)
+                )
+            ):
+                event.counterparty = CPT_YEARN_STAKING
+                event.event_type = assets_event_type
+                event.event_subtype = assets_event_subtype
+                event.notes = assets_notes_template.format(
+                    amount=event.amount,
+                    asset=event.asset.resolve_to_evm_token().symbol,
+                    gauge_name=_get_vault_token_name(gauge_token.evm_address),
+                )
+                assets_event = event
+            elif (
+                event.counterparty == CPT_YEARN_STAKING and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.REWARD
+            ):
+                reward_event = event
+
+        if assets_event is None or shares_event is None:
+            log.error(f'Failed to find both assets and shares events for yearn staking transaction {context.transaction}')  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            ordered_events=(
+                [assets_event, shares_event] if is_deposit else [shares_event, assets_event] +
+                [reward_event] if reward_event is not None else []
+            ),  # Ensure any reward event included with a deposit/withdrawal comes at the end
+            events_list=context.decoded_events,
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_v2_staking_rewards(self, context: DecoderContext) -> EvmDecodingOutput:
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        raw_reward_amount = int.from_bytes(context.tx_log.data[0:32])
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.location_label == user_address and
+                event.address in self.vaults[CPT_YEARN_STAKING] and
+                raw_reward_amount == asset_raw_value(
+                    amount=event.amount,
+                    asset=(resolved_asset := event.asset.resolve_to_crypto_asset()),
+                )
+            ):
+                event.counterparty = CPT_YEARN_STAKING
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.notes = f'Claim {event.amount} {resolved_asset.symbol} from {YEARN_STAKING_LABEL} gauge {_get_vault_token_name(context.tx_log.address)}'  # noqa: E501
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_staking_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode yearn v2 staking events."""
+        if context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
+            return self._decode_staking_deposit_withdraw(
+                context=context,
+                expected_shares_event_type=HistoryEventType.SPEND,
+                shares_event_type=HistoryEventType.SPEND,
+                shares_event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+                shares_notes_template=f'Return {{amount}} {{asset}} to a {YEARN_STAKING_LABEL} gauge',  # noqa: E501
+                expected_assets_event_type=HistoryEventType.RECEIVE,
+                assets_event_type=HistoryEventType.WITHDRAWAL,
+                assets_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+                assets_notes_template=f'Withdraw {{amount}} {{asset}} from {YEARN_STAKING_LABEL} gauge {{gauge_name}}',  # noqa: E501
+                is_deposit=False,
+            )
+        elif context.tx_log.topics[0] == DEPOSIT_TOPIC:
+            return self._decode_staking_deposit_withdraw(
+                context=context,
+                expected_shares_event_type=HistoryEventType.RECEIVE,
+                shares_event_type=HistoryEventType.RECEIVE,
+                shares_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                shares_notes_template=f'Receive {{amount}} {{asset}} after deposit in a {YEARN_STAKING_LABEL} gauge',  # noqa: E501
+                expected_assets_event_type=HistoryEventType.SPEND,
+                assets_event_type=HistoryEventType.DEPOSIT,
+                assets_event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+                assets_notes_template=f'Deposit {{amount}} {{asset}} in {YEARN_STAKING_LABEL} gauge {{gauge_name}}',  # noqa: E501
+                is_deposit=True,
+            )
+        elif context.tx_log.topics[0] == REWARD_PAID_TOPIC_V2:
+            return self._decode_v2_staking_rewards(context=context)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
@@ -397,6 +551,9 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         ) | dict.fromkeys(
             self.vaults[CPT_YEARN_V3],
             (self._decode_v3_vault_event,),
+        ) | dict.fromkeys(
+            self.vaults[CPT_YEARN_STAKING],
+            (self._decode_staking_events,),
         ) | {YEARN_PARTNER_TRACKER: (self._decode_v2_increase_deposit,)}
 
     def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
@@ -417,4 +574,5 @@ class YearnDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             CounterpartyDetails(identifier=CPT_YEARN_V1, label=YEARN_LABEL_V1, image=YEARN_ICON),
             CounterpartyDetails(identifier=CPT_YEARN_V2, label=YEARN_LABEL_V2, image=YEARN_ICON),
             CounterpartyDetails(identifier=CPT_YEARN_V3, label=YEARN_LABEL_V3, image=YEARN_ICON),
+            CounterpartyDetails(identifier=CPT_YEARN_STAKING, label=YEARN_STAKING_LABEL, image=YEARN_ICON),  # noqa: E501
         )

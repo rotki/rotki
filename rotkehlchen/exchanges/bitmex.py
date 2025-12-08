@@ -343,6 +343,7 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         self.first_connection()
         resp = self._api_query('user/walletHistory', {'currency': 'all'})

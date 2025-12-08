@@ -13,11 +13,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x533D5EcCdd097DE447E4142788dE58f341a4D619']])
 def test_join_runmoney(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc1eb69ba80f10a7e45781f6da36f95c45300e7130db7988ac2e618659cb9a8a7')  # noqa: E501
@@ -64,6 +66,7 @@ def test_join_runmoney(base_inquirer, base_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x533D5EcCdd097DE447E4142788dE58f341a4D619']])
 def test_stake(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1d6b85ce1128d5f7b9d49480f6ee516dae0af1e7da7ee6baef03844c9ca76502')  # noqa: E501
@@ -97,6 +100,7 @@ def test_stake(base_inquirer, base_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xCB965C4e41Ac688cbf3387872c6DB24ba2547dbf']])
 def test_unstake(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x18353a471cc229f45b723e50d976187dd73f8fb9b39c5529e1a5cafc51f9b4ce')  # noqa: E501
@@ -130,6 +134,7 @@ def test_unstake(base_inquirer, base_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xfDe4Bef9B6060cE3a214FbC220677a13535CEb9A']])
 def test_claim_bonuses(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xed5e059672f5b2d7483e9fabb9239adfa5c8ae93605494a7e09e638ee8f1b13f')  # noqa: E501

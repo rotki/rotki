@@ -7,7 +7,9 @@ import {
   type AssetInfoWithId,
   getAddressFromEvmIdentifier,
   getAddressFromSolanaIdentifier,
+  getNftAssetIdDetail,
   isEvmIdentifier,
+  isEvmIdentifierWithNftId,
   isSolanaTokenIdentifier,
   NotificationGroup,
   Severity,
@@ -34,6 +36,7 @@ interface AssetWithResolutionStatus extends AssetInfoWithId {
 export interface AssetContractInfo {
   location: string;
   address: string;
+  nftId?: string;
 }
 
 export type AssetInfoReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
@@ -151,11 +154,26 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
 
     const { assetType, identifier: usedId } = asset;
 
-    if (isEvmIdentifier(usedId) && assetType === EVM_TOKEN) {
-      return {
-        address: getAddressFromEvmIdentifier(usedId),
-        location: asset.evmChain ?? undefined,
-      };
+    if (assetType === EVM_TOKEN) {
+      const location = asset.evmChain ?? undefined;
+      if (isEvmIdentifier(usedId)) {
+        return {
+          address: getAddressFromEvmIdentifier(usedId),
+          location,
+        };
+      }
+
+      if (isEvmIdentifierWithNftId(usedId)) {
+        const nftDetail = getNftAssetIdDetail(usedId);
+        if (!nftDetail) {
+          return undefined;
+        }
+        return {
+          address: nftDetail.contractAddress,
+          location,
+          nftId: nftDetail.nftId,
+        };
+      }
     }
 
     if (isSolanaTokenIdentifier(usedId) && assetType === SOLANA_TOKEN) {

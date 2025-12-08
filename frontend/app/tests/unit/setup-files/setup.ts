@@ -1,5 +1,6 @@
 import type { DatabaseInfo } from '@/types/backup';
 import { mockT } from '@test/i18n';
+import { RuiAlertStub } from '@test/specs/stubs/RuiAlert';
 import { RuiAutoCompleteStub } from '@test/specs/stubs/RuiAutoComplete';
 import { RuiIconStub } from '@test/specs/stubs/RuiIcon';
 import { RuiTooltipStub } from '@test/specs/stubs/RuiTooltip';
@@ -112,7 +113,8 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 // Global stub components
+config.global.stubs.RuiAlert = RuiAlertStub;
+config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.RuiIcon = RuiIconStub;
 config.global.stubs.RuiTooltip = RuiTooltipStub;
-config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
 config.global.stubs.I18nT = true;

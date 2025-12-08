@@ -25,6 +25,8 @@ from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     read_balancer_pools_and_gauges_from_cache,
 )
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
+from rotkehlchen.chain.evm.decoding.beefy_finance.utils import query_beefy_vaults
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
     CURVE_ADDRESS_PROVIDER,
@@ -32,8 +34,12 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     CURVE_CHAIN_ID,
 )
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import read_curve_pools_and_gauges
-from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
+from rotkehlchen.chain.evm.decoding.gearbox.constants import (
+    CHAIN_ID_TO_DATA_COMPRESSOR,
+    CPT_GEARBOX,
+)
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
+    GearboxPoolData,
     get_gearbox_pool_tokens,
     query_gearbox_data,
     read_gearbox_data_from_cache,
@@ -161,6 +167,7 @@ GEARBOX_SOME_EXPECTED_POOLS = {
     string_to_evm_address('0xda00010eDA646913F273E10E7A5d1F659242757d'),
     string_to_evm_address('0xda0002859B2d05F66a753d8241fCDE8623f26F4f'),
     string_to_evm_address('0x1DC0F3359a254f876B37906cFC1000A35Ce2d717'),
+    string_to_evm_address('0x31426271449F60d37Cc5C9AEf7bD12aF3BdC7A94'),
 }
 
 GEARBOX_SOME_EXPECTED_ASSETS = [
@@ -168,6 +175,8 @@ GEARBOX_SOME_EXPECTED_ASSETS = [
     'eip155:1/erc20:0xc411dB5f5Eb3f7d552F9B8454B2D74097ccdE6E3',
     'eip155:1/erc20:0xe753260F1955e8678DCeA8887759e07aa57E8c54',
     'eip155:1/erc20:0xda00010eDA646913F273E10E7A5d1F659242757d',
+    'eip155:1/erc20:0x31426271449F60d37Cc5C9AEf7bD12aF3BdC7A94',
+    'eip155:1/erc20:0x865377367054516e17014CcdED1e7d814EDC9ce4',
 ]
 
 VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES = [
@@ -482,7 +491,7 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
         # make sure that gearbox cache is clear of expected pools and gauges
         for pool in GEARBOX_SOME_EXPECTED_POOLS:
             write_cursor.execute(f"DELETE FROM general_cache WHERE value LIKE '%{pool}%'")
-            write_cursor.execute('DELETE FROM address_book WHERE address=?', (pool,))
+            write_cursor.execute(f"DELETE FROM unique_cache WHERE key LIKE '%{pool}%'")
 
         for asset in GEARBOX_SOME_EXPECTED_ASSETS:
             write_cursor.execute(f"DELETE FROM assets WHERE identifier LIKE '%{asset}%'")
@@ -505,13 +514,47 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
             cache_type=CacheType.GEARBOX_POOL_ADDRESS,
             query_method=query_gearbox_data,
             chain_id=ChainID.ETHEREUM,
-        )  # populates cache, addressbook and assets tables
+        )  # populates cache and assets tables
     pools, = read_gearbox_data_from_cache(ChainID.ETHEREUM)
     assert pools.keys() >= GEARBOX_SOME_EXPECTED_POOLS
 
+    # Check that the count of pools in the DB matches the total count of raw pool data from onchain
+    assert len(pools) == len(ethereum_inquirer.contracts.contract(
+        CHAIN_ID_TO_DATA_COMPRESSOR[ethereum_inquirer.chain_id],
+    ).call(node_inquirer=ethereum_inquirer, method_name='getPoolsV3List'))
+
+    # Check tokens and pool data for both a pool with farming/lp tokens and one without.
+    assert (usdc_pool := GlobalDBHandler.get_evm_token(
+        address=string_to_evm_address('0xda00000035fef4082F78dEF6A8903bee419FbF8E'),
+        chain_id=ChainID.ETHEREUM,
+    )) is not None
+    assert len(usdc_pool.underlying_tokens) == 1
+    assert usdc_pool.underlying_tokens[0].address == string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')  # noqa: E501
+    assert pools[usdc_pool.evm_address] == GearboxPoolData(
+        pool_address=usdc_pool.evm_address,
+        pool_name='Trade USDC v3',
+        farming_pool_token='eip155:1/erc20:0x9ef444a6d7F4A5adcd68FD5329aA5240C90E14d2',
+        lp_tokens={
+            'eip155:1/erc20:0xc411dB5f5Eb3f7d552F9B8454B2D74097ccdE6E3',
+            'eip155:1/erc20:0xda00000035fef4082F78dEF6A8903bee419FbF8E',
+        },
+    )
+    assert (dola_pool := GlobalDBHandler.get_evm_token(
+        address=string_to_evm_address('0x31426271449F60d37Cc5C9AEf7bD12aF3BdC7A94'),
+        chain_id=ChainID.ETHEREUM,
+    )) is not None
+    assert len(dola_pool.underlying_tokens) == 1
+    assert dola_pool.underlying_tokens[0].address == string_to_evm_address('0x865377367054516e17014CcdED1e7d814EDC9ce4')  # noqa: E501
+    assert pools[dola_pool.evm_address] == GearboxPoolData(
+        pool_address=dola_pool.evm_address,
+        pool_name='Trade DOLA v3',
+        farming_pool_token=None,
+        lp_tokens=set(),
+    )
+
     assert mock_notify.call_args_list == [
         make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=0, total=0),
-        make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=1, total=5),
+        make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=1, total=8),
     ]
 
 
@@ -601,3 +644,32 @@ def test_query_balancer_data_protocol_version_gnosis(gnosis_inquirer):
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute('SELECT protocol FROM evm_tokens WHERE address=?', (pool_address,)).fetchone()[0] == 'balancer-v2'  # noqa: E501
+
+
+@pytest.mark.vcr
+def test_query_beefy_legacy_boosts(ethereum_inquirer: 'EthereumInquirer') -> None:
+    """Test that query_beefy_vaults correctly creates legacy boost tokens."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM evm_tokens WHERE protocol=?', (CPT_BEEFY_FINANCE,)).fetchone()[0] == 0  # noqa: E501
+
+    def mock_request_get(url: str, *args, **kwargs):
+        if 'vaults/all/1' in url:
+            return []
+        elif 'boosts/ethereum' in url:
+            return [{'version': 1, 'poolId': 'curve-shezeth-eth', 'earnContractAddress': '0xbd313b13ed794B86Bd161885F8e170769E0e68b2', 'tokenAddress': '0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'}, {'version': 1, 'poolId': 'silo-weeth-eth', 'earnContractAddress': '0xC0dD9F05511Eec7f3C9C755816E4A25caECde47a', 'tokenAddress': '0x0E5F3a47122901D3eE047d2C7e1B36b419Ede5FE'}]  # noqa: E501
+        raise ValueError(f'Unexpected URL: {url}')
+
+    with patch('rotkehlchen.chain.evm.decoding.beefy_finance.utils.request_get', side_effect=mock_request_get):  # noqa: E501
+        query_beefy_vaults(evm_inquirer=ethereum_inquirer)
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT a.name, cad.symbol, et.decimals FROM evm_tokens et '
+            'JOIN assets a ON et.identifier = a.identifier '
+            'JOIN common_asset_details cad ON a.identifier = cad.identifier '
+            'WHERE et.protocol = ?',
+            (CPT_BEEFY_FINANCE,),
+        ).fetchall() == [
+            ('Reward Moo Curve ShezETH-ETH', 'rmooCurveShezETH-ETH', 18),
+            ('Reward Moo Silo WETH (weETH Market)', 'rmooSiloWETH', 18),
+        ]

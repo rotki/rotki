@@ -184,11 +184,16 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Queries the exchange's API for history events of the user
 
         Should be implemented in subclasses, unless query_history_events is reimplemented with
         custom logic.
+
+        If force_refresh is True, implementations should bypass any caching mechanisms
+        and re-fetch all data within the specified range.
+
         Returns a tuple of HistoryBaseEntry events (HistoryEvent, AssetMovement, etc.) and the
         last successfully queried timestamp. The timestamp should only differ from end_ts if
         an error occurred preventing the full range from being queried.

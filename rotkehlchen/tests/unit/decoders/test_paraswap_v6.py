@@ -27,6 +27,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_POLYGON_POS_USDC, A_PSP
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -223,6 +224,7 @@ def test_binance_sc_swap_amount_in(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xd0b97E7a82c45dEc8a8b1b30Dd46C95937725C71']])
 def test_swap_amount_in_on_balancer_v2(
         base_inquirer: 'BaseInquirer',
@@ -422,6 +424,7 @@ def test_swap_amount_in_on_curve_v2(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x80A215BbA4Cb2eb51fb937140557EEFF5be4D552']])
 def test_swap_amount_in_on_uniswap_v2(
         optimism_inquirer: 'OptimismInquirer',
@@ -471,6 +474,7 @@ def test_swap_amount_in_on_uniswap_v2(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4e6428489612D68e8fFe37e93eF147B413229d9D']])
 def test_swap_amount_in_on_uniswap_v3(
         optimism_inquirer: 'OptimismInquirer',

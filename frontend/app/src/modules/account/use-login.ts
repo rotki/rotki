@@ -123,7 +123,7 @@ export function useLogin(): UseLoginReturn {
 
   const login = async (credentials: LoginCredentials): Promise<ActionStatus> => {
     try {
-      const username = credentials.username ? credentials.username : lastLogin();
+      const username = credentials.username ? credentials.username : get(lastLogin);
       const isLogged = await checkIfLogged(username);
 
       let settings: UserSettingsModel;

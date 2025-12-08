@@ -907,6 +907,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Return the Bitfinex asset movements and swap events.
 

@@ -55,7 +55,7 @@ defineExpose({
 </script>
 
 <template>
-  <form class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2">
     <LocationSelector
       v-model="location"
       :excludes="excludedLocations"
@@ -72,5 +72,5 @@ defineExpose({
       "
       :error-messages="toMessages(v$.value)"
     />
-  </form>
+  </div>
 </template>

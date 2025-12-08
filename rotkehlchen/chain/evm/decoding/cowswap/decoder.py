@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+    from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
@@ -81,7 +82,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer | BinanceSCInquirer',  # noqa: E501
+            evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer | BinanceSCInquirer | PolygonPOSInquirer',  # noqa: E501
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:

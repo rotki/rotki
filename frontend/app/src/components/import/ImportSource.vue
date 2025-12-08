@@ -138,7 +138,10 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
     <div class="mb-2">
       <slot name="upload-title" />
     </div>
-    <form>
+    <form
+      novalidate
+      @submit.stop.prevent="uploadFile()"
+    >
       <FileUpload
         v-model="file"
         v-model:error-message="errorMessage"
@@ -194,8 +197,8 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           class="w-full"
           data-cy="button-import"
           size="lg"
+          type="submit"
           :disabled="v$.$invalid || !file || loading"
-          @click="uploadFile()"
         >
           <template #prepend>
             <RuiIcon

@@ -12,11 +12,13 @@ from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB9573982875b83aaDc1296726E2ae77D13D9B98F']])
 def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x875d69d471b2c31c5175848b11f68815e197fd609509cee420075685d21feccb')  # noqa: E501
@@ -79,6 +81,7 @@ def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB9573982875b83aaDc1296726E2ae77D13D9B98F']])
 def test_optimism_lock(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x160a78b4ce5001b407db9f5fca3e64fcc0619995d8888c66605f69525eed0270')  # noqa: E501
@@ -129,6 +132,7 @@ def test_optimism_lock(optimism_inquirer, optimism_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xAca2F322d69E07993E073C8730180FB139cA4446']])
 def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd687dcd65be8a2a9aea83123a9bdae775232af23e5846f01ade70f3f5280d392')  # noqa: E501
@@ -179,6 +183,7 @@ def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x8a0F0a09e622bc0677a404343129FB5dDA1E2d33']])
 def test_optimism_claim(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2144b2417404977fe2b4b4064b58cdaafc90e416e68a5ad16c04989cc025f3b1')  # noqa: E501

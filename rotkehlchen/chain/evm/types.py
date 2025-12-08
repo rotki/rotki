@@ -1,7 +1,8 @@
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 
@@ -15,6 +16,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     SupportedBlockchain,
 )
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 
 def string_to_evm_address(value: str) -> ChecksumEvmAddress:
@@ -131,3 +133,40 @@ class RemoteDataQueryStatus(Enum):
     FAILED = auto()
     NEW_DATA = auto()
     NO_UPDATE = auto()
+
+
+class EvmIndexer(SerializableEnumNameMixin):
+    ETHERSCAN = auto()
+    BLOCKSCOUT = auto()
+    ROUTESCAN = auto()
+
+
+class SerializableChainIndexerOrder(NamedTuple):
+    order: Mapping[ChainID, Sequence[EvmIndexer]]
+
+    def get(self, key: ChainID, default: Any) -> Sequence[EvmIndexer] | None:
+        return self.order.get(key, default)
+
+    def serialize(self) -> dict[str, list[str]]:
+        return {
+            chain.to_name(): [indexer.serialize() for indexer in indexers]
+            for chain, indexers in self.order.items()
+        }
+
+
+DEFAULT_EVM_INDEXER_ORDER: Final = (
+    EvmIndexer.ETHERSCAN,
+    EvmIndexer.BLOCKSCOUT,
+    EvmIndexer.ROUTESCAN,
+)
+# list based on https://info.etherscan.com/whats-changing-in-the-free-api-tier-coverage-and-why/
+# might need adjustment in the future.
+CHAINS_WITH_PAID_ETHERSCAN: Final = {ChainID.BASE, ChainID.OPTIMISM, ChainID.BINANCE_SC}
+BLOCKSCOUT_PRIORITY_ORDER: Final = (
+    EvmIndexer.BLOCKSCOUT,
+    EvmIndexer.ETHERSCAN,
+    EvmIndexer.ROUTESCAN,
+)
+DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
+    order=dict.fromkeys(CHAINS_WITH_PAID_ETHERSCAN, BLOCKSCOUT_PRIORITY_ORDER),
+)

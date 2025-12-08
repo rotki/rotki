@@ -34,14 +34,18 @@ from rotkehlchen.chain.evm.constants import (
     GENESIS_HASH,
 )
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.types import RemoteDataQueryStatus, WeightedNode
+from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
+    ChainNotSupported,
     EventNotInABI,
+    NoAvailableIndexers,
     NotERC20Conformant,
     NotERC721Conformant,
     RemoteError,
@@ -50,6 +54,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
+from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -209,6 +214,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
@@ -221,6 +227,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
+        self.routescan = routescan
+        self.blockscout = blockscout
+        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | None] = {
+            EvmIndexer.ETHERSCAN: self.etherscan,
+            EvmIndexer.BLOCKSCOUT: self.blockscout,
+            EvmIndexer.ROUTESCAN: self.routescan,
+        }
         self.contracts = contracts
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()
@@ -231,7 +244,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.contract_scan = contract_scan
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
         self.contract_multicall = contract_multicall
-        self.blockscout = blockscout
         # keep a cache per chain id of timestamp to block to avoid querying multiple times
         # the same information. Remove from here with
         # https://github.com/rotki/rotki/issues/9998
@@ -1221,10 +1233,35 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 ts=ts,
                 closest=closest,
             ),
-            indexers=(self.blockscout, self.etherscan),
         )
         self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
         return block_number
+
+    def maybe_get_l1_fees(
+            self,
+            account: ChecksumEvmAddress,
+            tx_hash: EVMTxHash,
+            block_number: int,
+    ) -> int | None:
+        """Retrieve L1 fee data for L2 transactions from available indexers.
+
+        Returns L1 fee in wei if successful, None if chain unsupported or query fails.
+        """
+        if self.chain_id not in L2_CHAINIDS_WITH_L1_FEES:
+            return None
+
+        try:
+            return self._try_indexers(
+                func=lambda indexer: indexer.get_l1_fee(
+                    chain_id=self.chain_id,  # type: ignore[arg-type]  # mypy doesn't understand the check above
+                    account=account,
+                    tx_hash=tx_hash,
+                    block_number=block_number,
+                ),
+            )
+        except RemoteError as e:
+            log.error(f'Failed to get L1 fees for {account=} {tx_hash=} {block_number=} due to {e!s}')  # noqa: E501
+            return None
 
     # -- methods to be optionally implemented by child classes --
 
@@ -1370,25 +1407,36 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             to_block=to_block,
         ))
 
-    def _try_indexers(
-            self,
-            func: Callable[[EtherscanLikeApi], T],
-            indexers: tuple[Blockscout | Etherscan | None, ...] | None = None,
-    ) -> T:
+    def _get_indexers_in_order(self) -> list[tuple[EvmIndexer, EtherscanLikeApi]]:
+        """Return available indexers respecting user-defined order and optional subset."""
+        return [
+            (indexer_name, indexer)
+            for indexer_name in CachedSettings().get_evm_indexers_order_for_chain(chain_id=self.chain_id)  # noqa: E501
+            if (indexer := self.available_indexers.get(indexer_name)) is not None
+        ]
+
+    def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
-        Raises RemoteError if all fail.
+        Raises RemoteError if all fail or NoAvailableIndexers if there are no indexers available.
         """
-        errors = []
-        # TODO: Make indexer order configurable: https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141661235  # noqa: E501
-        for indexer in indexers or (self.etherscan, self.blockscout):
-            if indexer is None:
-                # TODO: remove this after blockscout is refactored to only have a single instance
-                # for all chains https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=141630657  # noqa: E501
-                continue
+        if len(ordered_indexers := self._get_indexers_in_order()) == 0:
+            raise NoAvailableIndexers(f'No indexers are available for {self.chain_name}')
+
+        errors: list[tuple[str, Exception]] = []
+        for indexer_name, indexer in ordered_indexers:
+            if indexer_name not in self.available_indexers:
+                continue  # was removed while looping
 
             try:
                 return func(indexer)
-            except (RemoteError, NotImplementedError) as e:
+            except ChainNotSupported as e:
+                if self.available_indexers.pop(indexer_name, None) is not None:
+                    log.warning(  # removed the indexer
+                        f'Indexer {indexer.name} doesnt support {self.chain_name} with the given '
+                        f'API key. {e!s} Removing it from the available indexers for this chain.',
+                    )
+                    errors.append((indexer.name, e))
+            except RemoteError as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))
 
@@ -1420,6 +1468,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
@@ -1433,6 +1482,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
             contract_scan=contract_scan,
@@ -1457,6 +1507,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
@@ -1470,6 +1521,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
             contract_scan=contract_scan,

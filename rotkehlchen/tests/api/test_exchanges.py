@@ -8,12 +8,14 @@ import pytest
 import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.exchanges.binance import BinancePair
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -31,6 +33,7 @@ from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -448,7 +451,7 @@ def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     data = {
         'location': 'coinbase',
         'name': 'Coinbase 1',
-        'api_key': 'ddddd',
+        'api_key': 'c11d1dd5-a460-4693-bbb0-9bba8e611e82',
         'api_secret': 'ZmZmZmZmZg==',
     }
     with mock_validate_api_key_success(Location.COINBASE):
@@ -937,13 +940,16 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
         elif location == Location.OKX:
             data['okx_location'] = OkxLocation.EEA.serialize()
 
-        with mock_validate_api_key_success(location):
+        with (
+            mock_validate_api_key_success(location),
+            patch('rotkehlchen.exchanges.coinbase.CoinbaseKeyType.detect_type'),
+        ):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_simple_ok_response(response)
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM, Location.COINBASE):
                 continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
@@ -964,7 +970,10 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
         if location in (Location.BINANCE, Location.BINANCEUS):
             data['binance_markets'] = ['ETHBTC']
 
-        with mock_validate_api_key_failure(location):
+        with (
+            mock_validate_api_key_failure(location),
+            patch('rotkehlchen.exchanges.coinbase.CoinbaseKeyType.detect_type'),
+        ):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_error_response(
                 response=response,
@@ -975,13 +984,16 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM, Location.COINBASE):
                 continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
             assert any(new_key in value for value in exchange.session.headers.values())
 
-        with rotki.data.db.conn.read_ctx() as cursor:  # reinitialize the exchanges, to see the edited credentials are loaded from the DB  # noqa: E501
+        with (
+            rotki.data.db.conn.read_ctx() as cursor,
+            patch('rotkehlchen.exchanges.coinbase.CoinbaseKeyType.detect_type'),
+        ):  # reinitialize the exchanges, to see the edited credentials are loaded from the DB  # noqa: E501
             rotki.exchange_manager.delete_all_exchanges()
             exchange_credentials = rotki.data.db.get_exchange_credentials(cursor)
             rotki.exchange_manager.initialize_exchanges(
@@ -1181,6 +1193,184 @@ def test_exchange_events_range_query(
 
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == initial_events + 2  # noqa: E501
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
+def test_binance_events_repull_after_deletion(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
+    """Test that re-pulling Binance events after manual deletion restores the deleted events
+    by properly bypassing the cache when force_refresh is used.
+
+    This is a regression test for issue https://github.com/rotki/rotki/issues/11032.
+    """
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = server.rest_api.rotkehlchen
+    exchange = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    assert exchange is not None
+
+    # Set up exchange with a test market pair
+    test_symbol = 'ETHUSDT'
+    exchange.selected_pairs = [test_symbol]
+    exchange._symbols_to_pair = {
+        test_symbol: BinancePair(
+            symbol=test_symbol,
+            base_asset=A_ETH.resolve_to_asset_with_oracles(),
+            quote_asset=A_USDT.resolve_to_asset_with_oracles(),
+            location=Location.BINANCE,
+        ),
+    }
+
+    def mock_api_trades_response(last_id: int) -> list[dict[str, Any]]:
+        if last_id == 0:
+            return [{
+                'id': 1,
+                'symbol': test_symbol,
+                'orderId': 1001,
+                'orderListId': -1,
+                'price': '2000.0',
+                'qty': '1.0',
+                'quoteQty': '2000.0',
+                'commission': '0.001',
+                'commissionAsset': 'ETH',
+                'time': 1609459200000,  # 2021-01-01
+                'isBuyer': True,
+                'isMaker': False,
+                'isBestMatch': True,
+            }, {
+                'id': 2,
+                'symbol': test_symbol,
+                'orderId': 1002,
+                'orderListId': -1,
+                'price': '2100.0',
+                'qty': '0.5',
+                'quoteQty': '1050.0',
+                'commission': '0.0005',
+                'commissionAsset': 'ETH',
+                'time': 1609545600000,  # 2021-01-02
+                'isBuyer': False,
+                'isMaker': True,
+                'isBestMatch': True,
+            }]
+        else:
+            return []
+
+    # first query should fetch and store all trades
+    with patch.object(exchange, 'api_query_list') as mock_api:
+        mock_api.side_effect = lambda api_type, method, options=None: (
+            mock_api_trades_response(options.get('fromId', 0))
+            if method == 'myTrades'
+            else []
+        )
+
+        response = requests.post(
+            api_url_for(server, 'exchangeeventsqueryresource'),
+            json={
+                'location': Location.BINANCE.serialize(),
+                'name': exchange.name,
+            },
+        )
+        assert assert_proper_sync_response_with_result(response)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.BINANCE.serialize_for_db(),)).fetchone()[0] == (expected_num_of_events := 6)  # noqa: E501
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+            location=Location.BINANCE.serialize(),
+            location_name=exchange.name,
+            queried_pair=test_symbol,
+        ) == 2
+
+    # Delete all Binance events to see the repulling works
+    db_history = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        if len(event_ids := cursor.execute(
+            'SELECT identifier FROM history_events WHERE location = ?',
+            (Location.BINANCE.serialize_for_db(),),
+        ).fetchall()) > 0:
+            db_history.delete_history_events_by_identifier([row[0] for row in event_ids])
+
+        assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.BINANCE.serialize_for_db(),)).fetchone()[0] == 0  # noqa: E501
+
+    with patch.object(exchange, 'api_query_list') as mock_api:
+        mock_api.side_effect = lambda api_type, method, options=None: (
+            mock_api_trades_response(options.get('fromId', 0))
+            if method == 'myTrades'
+            else []
+        )
+
+        response = requests.post(
+            api_url_for(server, 'exchangeeventsrangequeryresource'),
+            json={
+                'location': Location.BINANCE.serialize(),
+                'name': exchange.name,
+                'from_timestamp': 0,
+                'to_timestamp': 1640000000,
+            },
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result['queried_events'] == expected_num_of_events
+        assert result['stored_events'] == expected_num_of_events  # Events should be re-stored
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.BINANCE.serialize_for_db(),)).fetchone()[0] == expected_num_of_events  # noqa: E501
+            assert rotki.data.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                location=Location.BINANCE.serialize(),
+                location_name=exchange.name,
+                queried_pair=test_symbol,
+            ) == 2  # Should still be 2, not updated due to force_refresh
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.COINBASE,)])
+def test_coinbase_events_repull_returns_events(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
+    """Test that Coinbase's requery_exchange_history_events returns events
+    from _query_transactions.
+
+    This is a regression test for the issue where query_online_history_events was returning
+    an empty list instead of the actual events queried.
+    """
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = server.rest_api.rotkehlchen
+    exchange = try_get_first_exchange(rotki.exchange_manager, Location.COINBASE)
+    assert exchange is not None
+
+    mock_events = [SwapEvent(
+        group_identifier='coinbase_test_1',
+        timestamp=TimestampMS(1609459200000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=exchange.name,
+    ), SwapEvent(
+        group_identifier='coinbase_test_2',
+        timestamp=TimestampMS(1609545600000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('0.5'),
+        location_label=exchange.name,
+    )]
+
+    with patch.object(exchange, '_query_transactions', return_value=mock_events):
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(server, 'exchangeeventsrangequeryresource'),
+            json={
+                'location': Location.COINBASE.serialize(),
+                'name': exchange.name,
+                'from_timestamp': 0,
+                'to_timestamp': 1640000000,
+            },
+        ))
+        assert result['queried_events'] == 2
+        assert result['stored_events'] == 2
+        assert result['skipped_events'] == 0
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = ?', (Location.COINBASE.serialize_for_db(),)).fetchone()[0] == 2  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

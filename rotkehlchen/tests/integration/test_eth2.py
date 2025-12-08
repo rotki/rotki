@@ -61,11 +61,11 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
         eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events_internal(
+        events = [event for event in dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EthWithdrawalFilterQuery.make(),
             aggregate_by_group_ids=False,
-        )
+        ) if event.get_timestamp() <= ts_now()]  # blockscout returns all the events since it doesn't filter by time range  # noqa: E501
 
     assert len(events) == 94
     account0_events, account1_events = 0, 0

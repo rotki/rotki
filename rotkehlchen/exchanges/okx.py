@@ -345,6 +345,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-deposit-history

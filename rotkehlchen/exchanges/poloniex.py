@@ -565,6 +565,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         result = self.api_query_dict(
             '/wallets/activity',

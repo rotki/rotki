@@ -2039,7 +2039,6 @@
     },
     "labels": {
       "btc_derivation_gap": "Limite d'écart de dérivation BTC",
-      "chains_to_skip_detection": "Réseaux EVM pour lesquels la détection automatique des jetons doit être ignorée",
       "date_display_format": "Format d'affichage de la date",
       "date_input_format": "Format d'entrée de la date",
       "treat_eth2_as_eth": "Faut-il traiter ETH2 (ETH en jeu) comme ETH"
@@ -2531,7 +2530,6 @@
       "create_a_custom_asset": "Créer un actif personnalisé",
       "input_manual_price": "Ajouter et utiliser un prix manuel",
       "label": "Étiquette",
-      "price_asset": "Prix de l'actif",
       "tags": "Étiquettes"
     },
     "type": {

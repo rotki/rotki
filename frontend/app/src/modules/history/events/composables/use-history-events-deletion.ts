@@ -1,13 +1,12 @@
 import type { Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import { Severity } from '@rotki/common';
 import { get, set } from '@vueuse/shared';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useConfirmStore } from '@/store/confirm';
-import { useNotificationsStore } from '@/store/notifications';
+import { useMessageStore } from '@/store/message';
 import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
 import { analyzeSelectedEvents, type TransactionGroup } from './use-event-analysis';
 
@@ -24,7 +23,7 @@ export function useHistoryEventsDeletion(
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { show: showConfirm } = useConfirmStore();
-  const { notify } = useNotificationsStore();
+  const { setMessage } = useMessageStore();
   const { deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
 
@@ -90,7 +89,7 @@ export function useHistoryEventsDeletion(
     }
   }
 
-  function notifyDeletionResult(
+  function showDeletionResult(
     success: boolean,
     count: number,
     type: 'delete' | 'ignore',
@@ -112,10 +111,9 @@ export function useHistoryEventsDeletion(
       ? message || t('transactions.events.delete.error.message')
       : message || t('transactions.events.ignore.error.message');
 
-    notify({
-      display: true,
-      message: success ? successMessage : errorMessage,
-      severity: success ? Severity.INFO : Severity.ERROR,
+    setMessage({
+      description: success ? successMessage : errorMessage,
+      success,
       title: success ? title : errorTitle,
     });
   }
@@ -173,7 +171,7 @@ export function useHistoryEventsDeletion(
 
           const success = txResult.success && eventsResult.success;
           const message = txResult.message || eventsResult.message;
-          notifyDeletionResult(success, totalCount, 'delete', message);
+          showDeletionResult(success, totalCount, 'delete', message);
 
           if (success) {
             selectionMode.actions.exit();
@@ -211,7 +209,7 @@ export function useHistoryEventsDeletion(
         confirmation,
         async () => {
           const result = await deletePartialEvents(eventIds);
-          notifyDeletionResult(result.success, displayCount, 'delete', result.message);
+          showDeletionResult(result.success, displayCount, 'delete', result.message);
 
           if (result.success) {
             selectionMode.actions.exit();
@@ -243,7 +241,7 @@ export function useHistoryEventsDeletion(
 
           const success = ignoreResult.success && deleteResult.success;
           const message = ignoreResult.message || deleteResult.message;
-          notifyDeletionResult(success, transactions.size, 'ignore', message);
+          showDeletionResult(success, transactions.size, 'ignore', message);
 
           if (success) {
             selectionMode.actions.exit();
@@ -289,7 +287,7 @@ export function useHistoryEventsDeletion(
 
           const success = txResult.success && eventsResult.success;
           const message = txResult.message || eventsResult.message;
-          notifyDeletionResult(success, allEventIds.length, 'delete', message);
+          showDeletionResult(success, allEventIds.length, 'delete', message);
 
           if (success) {
             selectionMode.actions.exit();

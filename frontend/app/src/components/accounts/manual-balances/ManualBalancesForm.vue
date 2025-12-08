@@ -6,7 +6,6 @@ import { helpers, required } from '@vuelidate/validators';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import RuiForm from '@/components/helper/RuiForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -113,8 +112,8 @@ async function validate(): Promise<boolean> {
   return await get(v$).$validate();
 }
 
-async function savePrice() {
-  await get(priceForm)?.savePrice(get(asset));
+async function savePrice(): Promise<boolean> {
+  return await get(priceForm)?.savePrice(get(asset)) || false;
 }
 
 watch(asset, (asset) => {
@@ -139,7 +138,7 @@ defineExpose({
 </script>
 
 <template>
-  <RuiForm
+  <div
     data-cy="manual-balance-form"
     class="flex flex-col gap-2"
   >
@@ -238,5 +237,5 @@ defineExpose({
       v-model:saved-asset-id="asset"
       :types="customAssetTypes"
     />
-  </RuiForm>
+  </div>
 </template>

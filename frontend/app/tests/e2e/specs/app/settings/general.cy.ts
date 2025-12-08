@@ -13,7 +13,6 @@ describe('settings::general', () => {
     currency: 'JPY',
     balanceSaveFrequency: '48',
     dateDisplayFormat: '%d-%m-%Y %H:%M:%S %z',
-    evmchainsToSkipDetection: ['eth', 'avax', 'optimism', 'polygon_pos', 'arbitrum_one', 'base', 'gnosis', 'scroll'],
     thousandSeparator: ',',
     decimalSeparator: '.',
     currencyLocation: 'after' as 'after' | 'before',
@@ -43,15 +42,6 @@ describe('settings::general', () => {
   it('change main currency and validate UI message', () => {
     pageGeneral.selectCurrency(settings.currency);
     pageGeneral.confirmInlineSuccess('[data-cy=currency-selector]', settings.currency);
-  });
-
-  it('change chains for which to exclude token detection and validate UI message', () => {
-    settings.evmchainsToSkipDetection.forEach((chain: string) => {
-      pageGeneral.selectChainToIgnore(chain);
-    });
-
-    cy.get('[data-cy=chains-to-skip-detection]').type('{esc}');
-    pageGeneral.verifySkipped(settings.evmchainsToSkipDetection);
   });
 
   it('change balance save frequency and validate UI message', () => {

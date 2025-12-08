@@ -8,7 +8,9 @@ import AccountBalanceDetails from '@/components/accounts/balances/AccountBalance
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AccountBalancesTable } from '@/modules/accounts/table';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
@@ -32,6 +34,9 @@ const { category } = toRefs(props);
 const expanded = ref<string[]>([]);
 
 const { fetchGroupAccounts } = useBlockchainAccountData();
+
+const { balances } = storeToRefs(useBalancesStore());
+const { accounts: accountsState } = storeToRefs(useBlockchainAccountsStore());
 
 const {
   fetchData,
@@ -58,11 +63,10 @@ const {
     tags: props.tags,
   })),
 });
-
 useBlockchainAccountLoading(category);
 
-onMounted(() => {
-  nextTick(() => fetchData());
+watchImmediate([accountsState, balances], () => {
+  fetchData();
 });
 
 defineExpose({

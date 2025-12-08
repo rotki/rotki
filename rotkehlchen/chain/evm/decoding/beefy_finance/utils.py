@@ -92,17 +92,25 @@ def _process_beefy_vault(
         description='Querying Beefy finance vaults',
         should_notify=False,
     )
+    name = symbol = decimals = token = None
     if (vault_type := vault.get('type')) is None or vault_type in ('standard', 'gov'):
         # in boost (no type key), standard, and gov vaults the `tokenAddress` is the vault address,
         # so add it as the earned token's underlying token to be used when querying the price.
-        underlying_tokens = [UnderlyingToken(
-            address=get_or_create_evm_token(
+        if (raw_token_address := vault.get('tokenAddress')) is not None:
+            token = get_or_create_evm_token(
                 userdb=database,
                 evm_inquirer=evm_inquirer,
-                evm_address=deserialize_evm_address(vault['tokenAddress']),
+                evm_address=deserialize_evm_address(raw_token_address),
                 chain_id=evm_inquirer.chain_id,
                 encounter=encounter,
-            ).evm_address,
+            )
+        else:
+            # For vaults without tokenAddress field (native token vaults like ETH, BNB, MATIC),
+            # use the chain's wrapped native token as the underlying asset
+            token = evm_inquirer.wrapped_native_token
+
+        underlying_tokens = [UnderlyingToken(
+            address=token.evm_address,
             token_kind=TokenKind.ERC20,
             weight=ONE,
         )]
@@ -112,9 +120,21 @@ def _process_beefy_vault(
         log.warning(f'Unknown Beefy vault type {vault_type} for vault {vault}')
         return
 
+    # Legacy beefy boost vaults are not standard ERC20 tokens but implement balanceOf,
+    # requiring manual token metadata creation using the underlying token's info.
+    if vault.get('version') == 1 and token is not None:
+        name = f'Reward {token.name}'
+        symbol = f'r{token.symbol}'
+        decimals = token.decimals
+
+    # For non-legacy vaults, name/symbol/decimals are intentionally left as None
+    # to let get_or_create_evm_token query these details on-chain
     get_or_create_evm_token(
         userdb=database,
         evm_address=deserialize_evm_address(vault['earnContractAddress']),  # this key is present for all vault types  # noqa: E501
+        name=name,
+        decimals=decimals,
+        symbol=symbol,
         chain_id=evm_inquirer.chain_id,
         evm_inquirer=evm_inquirer,
         protocol=CPT_BEEFY_FINANCE,

@@ -24,7 +24,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
+from rotkehlchen.errors.misc import AlreadyExists, InputError, NoAvailableIndexers, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -259,11 +259,16 @@ class EvmTransactions(ABC):  # noqa: B024
                     ),
                     location_string=location_string,
                 )
-
+            except NoAvailableIndexers as e:
+                log.warning(
+                    f'Skipping {self.evm_inquirer.chain_name} transactions query '
+                    f'for {address} due to {e!s}.',
+                )
+                return
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
-                    f'transactions from Etherscan. Some transactions not added to the DB '
+                    f'transactions from indexers. Some transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
@@ -380,10 +385,16 @@ class EvmTransactions(ABC):  # noqa: B024
                     ),
                     location_string=location_string,
                 )
+            except NoAvailableIndexers as e:
+                log.warning(
+                    f'Skipping {self.evm_inquirer.chain_name} internal transactions query '
+                    f'for {address} due to {e!s}.',
+                )
+                return
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying internal {self.evm_inquirer.chain_name} '
-                    f'transactions from Etherscan. Transactions not added to the DB '
+                    f'transactions from indexers. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
@@ -429,10 +440,16 @@ class EvmTransactions(ABC):  # noqa: B024
                     ),
                     location_string=location_string,
                 )
+            except NoAvailableIndexers as e:
+                log.warning(
+                    f'Skipping {self.evm_inquirer.chain_name} token transactions query '
+                    f'for {address} due to {e!s}.',
+                )
+                return
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
-                    f'token transactions from Etherscan. Transactions not added to the DB '
+                    f'token transactions from indexers. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',

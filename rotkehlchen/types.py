@@ -116,6 +116,7 @@ class ExternalService(SerializableEnumNameMixin):
     ALCHEMY = auto()
     SCROLL_BLOCKSCOUT = auto()
     HELIUS = auto()
+    ROUTESCAN = auto()
 
     def get_chain_for_blockscout(self) -> Optional['ChainID']:
         """If the service is a blockscout service return its chain"""

@@ -66,7 +66,10 @@ async function change() {
       {{ t('change_password.subtitle') }}
     </template>
 
-    <form>
+    <form
+      novalidate
+      @submit.stop.prevent="change()"
+    >
       <RuiRevealableTextField
         v-model="currentPassword"
         color="primary"
@@ -93,18 +96,17 @@ async function change() {
         :error-messages="toMessages(v$.newPasswordConfirm)"
         variant="outlined"
       />
+      <div class="flex justify-end">
+        <RuiButton
+          data-cy="change-password-button"
+          color="primary"
+          :loading="loading"
+          type="submit"
+          :disabled="v$.$invalid || loading"
+        >
+          {{ t('change_password.button') }}
+        </RuiButton>
+      </div>
     </form>
-
-    <div class="flex justify-end">
-      <RuiButton
-        data-cy="change-password-button"
-        color="primary"
-        :loading="loading"
-        :disabled="v$.$invalid || loading"
-        @click="change()"
-      >
-        {{ t('change_password.button') }}
-      </RuiButton>
-    </div>
   </SettingsItem>
 </template>

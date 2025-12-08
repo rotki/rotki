@@ -1,32 +1,20 @@
 <script setup lang="ts">
 import UserNotesList from '@/components/notes/UserNotesList.vue';
+import { useNotesCount } from '@/composables/notes/use-notes-count';
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 
 const display = defineModel<boolean>({ required: true });
 
+const [DefineCountBadge, ReuseCountBadge] = createReusableTemplate<{ count: number }>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const tab = ref<number>(0);
 
-const route = useRoute();
-
 const openDialog = ref<boolean>(false);
 
-const location = computed<string>(() => {
-  const meta = get(route).meta;
-
-  if (meta && meta.noteLocation)
-    return meta.noteLocation.toString();
-
-  let noteLocation = '';
-  get(route).matched.forEach((matched) => {
-    if (matched.meta.noteLocation)
-      noteLocation = matched.meta.noteLocation.toString();
-  });
-
-  return noteLocation;
-});
+const { globalNotesCount, location, notesCount } = useNotesCount();
 
 const { appRoutes } = useAppRoutes();
 
@@ -63,11 +51,21 @@ watch(locationName, (locationName) => {
 </script>
 
 <template>
+  <DefineCountBadge #default="{ count }">
+    <div
+      v-if="count"
+      class="size-5 flex items-center justify-center rounded-full bg-rui-primary text-white text-xs"
+    >
+      {{ count }}
+    </div>
+  </DefineCountBadge>
+
   <RuiNavigationDrawer
     v-model="display"
     width="460px"
     temporary
     :stateless="openDialog"
+    class="flex flex-col"
     position="right"
   >
     <div class="flex items-center justify-between gap-2 w-full border-b border-default">
@@ -77,9 +75,15 @@ watch(locationName, (locationName) => {
         color="primary"
       >
         <RuiTab>
+          <template #prepend>
+            <ReuseCountBadge :count="globalNotesCount" />
+          </template>
           {{ t('notes_menu.tabs.general') }}
         </RuiTab>
         <RuiTab v-if="locationName">
+          <template #prepend>
+            <ReuseCountBadge :count="notesCount" />
+          </template>
           <RuiTooltip
             :popper="{ placement: 'bottom' }"
             :open-delay="400"

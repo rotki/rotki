@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY, LIQUITY_V2_WRAPPER
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -50,7 +51,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             location_label=ethereum_accounts[0],
             notes='Revoke LQTY spending approval of 0xD77Eb80F38fEC10D87A192d07329415173307E93 by 0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',  # noqa: E501
             counterparty=None,
-            address='0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',
+            address=(proxy_address := string_to_evm_address('0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205')),  # noqa: E501
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=280,
@@ -63,7 +64,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             location_label=ethereum_accounts[0],
             notes='Stake 1742.012204302870975901 LQTY in the Liquity V2 protocol',
             counterparty=CPT_LIQUITY,
-            address='0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',
+            address=proxy_address,
             extra_data={
                 LIQUITY_STAKING_DETAILS: {
                     'staked_amount': '52907.46069202884604981',
@@ -99,6 +100,14 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
         ),
     ]
     assert events == expected_events
+
+    # TODO: Remove this after we merge bugfixes->develop and proxy detection uses the contract deployment event instead.  # noqa: E501
+    # Also check that the proxy detection works correctly (relies on the tx decoded above).
+    proxies = ethereum_inquirer.proxies_inquirer.get_or_query_liquity_proxy(
+        addresses=[(user_address := ethereum_accounts[0]), (other_address := make_evm_address())],
+    )
+    assert proxies[user_address] == {proxy_address}
+    assert other_address not in proxies
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

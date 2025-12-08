@@ -63,11 +63,11 @@ class ExternalServiceWithRecommendedApiKey(ExternalServiceWithApiKey):
     using an API key and warn the user if it's missing.
     """
     def __init__(self, database: 'DBHandler', service_name: ExternalService) -> None:
-        super().__init__(database=database, service_name=service_name)
+        ExternalServiceWithApiKey.__init__(self, database=database, service_name=service_name)
         self.warning_given = False
 
     def _get_api_key(self) -> ApiKey | None:
-        if (api_key := super()._get_api_key()) is not None:
+        if (api_key := ExternalServiceWithApiKey._get_api_key(self)) is not None:
             return api_key
 
         self.maybe_warn_missing_key()

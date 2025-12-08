@@ -1,11 +1,11 @@
-import hashlib
-import hmac
+import base64
 import logging
 import re
 import secrets
 import time
 from collections import defaultdict
 from collections.abc import Sequence
+from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -14,6 +14,7 @@ import gevent
 import jwt
 import requests
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
@@ -21,11 +22,9 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -77,15 +76,51 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 CB_EVENTS_PREFIX = 'CBE_'
-CB_VERSION = '2019-08-25'  # the latest api version we know rotki works fine for: https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/versioning  # noqa: E501
-LEGACY_RE: re.Pattern = re.compile(r'^[\w]+$')
-NEW_RE: re.Pattern = re.compile(r'^organizations/[\w-]+/apiKeys/[\w-]+$')
-PRIVATE_KEY_RE: re.Pattern = re.compile(
+ECDSA_KEY_RE: re.Pattern = re.compile(r'^organizations/[\w-]+/apiKeys/[\w-]+$')
+ECDSA_PRIVATE_KEY_RE: re.Pattern = re.compile(
     r'^-----BEGIN EC PRIVATE KEY-----\n'
     r'[\w+/=\n]+'
     r'-----END EC PRIVATE KEY-----\n?$',
     re.MULTILINE,
 )
+
+
+class CoinbaseKeyType(Enum):
+    """Coinbase API key types with their corresponding authentication algorithms"""
+    ECDSA = 'ES256'
+    ED25519 = 'EdDSA'
+
+    @classmethod
+    def detect_type(cls, api_key: str) -> 'CoinbaseKeyType':
+        """Detect API key type from format
+
+        May raise:
+        - InputError: if api_key format is invalid
+        """
+        if ECDSA_KEY_RE.match(api_key):
+            return cls.ECDSA
+
+        if len(api_key) == 36 and api_key.count('-') == 4:  # for ED25519, check uuid format
+            return cls.ED25519
+
+        raise InputError(f'Invalid API key format: {api_key}')
+
+    def validate_secret(self, secret: bytes) -> tuple[bool, str]:
+        """Validate secret format for this key type.
+
+        Returns a tuple indicating validation success and error message if any.
+        """
+        try:
+            if self == CoinbaseKeyType.ECDSA:
+                if ECDSA_PRIVATE_KEY_RE.match(secret.decode('utf-8', 'strict')):
+                    return True, ''
+                return False, 'Invalid ECDSA private key format'
+            else:  # can only be ED25519
+                if len(base64.b64decode(secret)) in (32, 64):
+                    return True, ''
+                return False, 'Invalid ED25519 key length (must be 32 or 64 bytes)'
+        except (UnicodeDecodeError, ValueError):
+            return False, f'Invalid {self.name} private key format'
 
 
 class CoinbasePermissionError(Exception):
@@ -102,6 +137,10 @@ class Coinbase(ExchangeInterface):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
+        """
+        May raise:
+        - InputError: if api_key format is invalid
+        """
         super().__init__(
             name=name,
             location=Location.COINBASE,
@@ -110,15 +149,7 @@ class Coinbase(ExchangeInterface):
             database=database,
             msg_aggregator=msg_aggregator,
         )
-        try:
-            self.is_legacy_api_key = self.is_legacy_key(api_key)
-        except AuthenticationError as e:
-            self.is_legacy_api_key = True
-            log.error(f'Error determining API key format: {e}. Defaulting to legacy key.')
-
-        if self.is_legacy_api_key:  # set headers for legacy
-            self.session.headers.update({'CB-ACCESS-KEY': self.api_key, 'CB-VERSION': CB_VERSION})
-
+        self.key_type = CoinbaseKeyType.detect_type(api_key)
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.host = 'api.coinbase.com'
@@ -126,16 +157,6 @@ class Coinbase(ExchangeInterface):
         # skipped when both the debit and credit part of the trade is present.
         self.advanced_orders_to_currency: dict[str, str] = {}
         self.staking_events: set[tuple[TimestampMS, Asset, FVal]] = set()
-
-    def is_legacy_key(self, api_key: str) -> bool:
-        if LEGACY_RE.match(api_key):
-            log.debug('Legacy Key format!')
-            return True
-        elif NEW_RE.match(api_key):
-            log.debug('New Key format!')
-            return False
-        else:
-            raise AuthenticationError(f'Invalid API key format: {api_key}')
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -150,7 +171,8 @@ class Coinbase(ExchangeInterface):
         - 'exp': The expiration timestamp, set to 2 minutes from the current time.
         - 'uri': The provided URI.
 
-        The token is signed using the ES256 algorithm and includes a unique 'nonce' in the headers.
+        The token is signed using the appropriate algorithm (ES256 or EdDSA)
+        and includes a unique 'nonce' in the headers.
 
         Args:
             uri (str): The URI for which the JWT token is being generated.
@@ -162,7 +184,11 @@ class Coinbase(ExchangeInterface):
             RemoteError: If there is an error during the JWT token generation process.
         """
         try:
-            private_key = serialization.load_pem_private_key(self.secret, password=None)
+            if self.key_type == CoinbaseKeyType.ECDSA:
+                private_key = serialization.load_pem_private_key(self.secret, password=None)
+            else:  # can only be ED25519
+                private_key = ed25519.Ed25519PrivateKey.from_private_bytes(base64.b64decode(self.secret)[:32])  # noqa: E501
+
             current_time = int(time.time())
             jwt_payload = {
                 'sub': self.api_key,
@@ -174,7 +200,7 @@ class Coinbase(ExchangeInterface):
             jwt_token = jwt.encode(
                 jwt_payload,
                 private_key,
-                algorithm='ES256',
+                algorithm=self.key_type.value,
                 headers={'kid': self.api_key, 'nonce': secrets.token_hex()},
             )
         except (jwt.PyJWTError, ValueError) as e:
@@ -184,99 +210,30 @@ class Coinbase(ExchangeInterface):
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Coinbase API key is good for usage in rotki.
-
-        For Legacy keys, make sure that the following permissions are given to the key:
-        wallet:accounts:read, wallet:transactions:read,
-        wallet:withdrawals:read, wallet:deposits:read
-
-        For CDP keys, make sure they are formatted properly
+        Checks that the API key format is correct and the secret is properly formatted.
         """
-        self.is_legacy_api_key = self.is_legacy_key(self.api_key)
-        if self.is_legacy_api_key:
-            self.session.headers.update({'CB-ACCESS-KEY': self.api_key, 'CB-VERSION': CB_VERSION})
-            result, msg = self._validate_single_api_key_action('accounts')
-            if result is None:
-                return False, msg
+        try:
+            self.key_type = CoinbaseKeyType.detect_type(self.api_key)
+        except InputError as e:
+            return False, str(e)
 
-            # now get the account ids
-            account_info = self._get_active_account_info(result)
-            if len(account_info) != 0:
-                # and now try to get all transactions of an account to see if that's possible
-                method = f'accounts/{account_info[0][0]}/transactions'
-                result, msg = self._validate_single_api_key_action(method)
-                if result is None:
-                    return False, msg
-
-        else:  # Validate new API key format
-            if not NEW_RE.match(self.api_key):
-                return False, 'Invalid Coinbase API key name format'
-
-            if not PRIVATE_KEY_RE.match(self.secret.decode('utf-8', 'strict')):
-                return False, 'Invalid Coinbase private key format'
+        is_valid, error_msg = self.key_type.validate_secret(self.secret)
+        if not is_valid:
+            return False, error_msg
 
         return True, ''
 
-    def _validate_single_api_key_action(
-            self,
-            method_str: str,
-            ignore_pagination: bool = False,
-    ) -> tuple[list[Any] | None, str]:
-        try:
-            result = self._api_query(method_str, ignore_pagination=ignore_pagination)
-
-        except CoinbasePermissionError as e:
-            error = str(e)
-            if 'transactions' in method_str:
-                permission = 'wallet:transactions:read'
-            elif 'deposits' in method_str:
-                permission = 'wallet:deposits:read'
-            elif 'withdrawals' in method_str:
-                permission = 'wallet:withdrawals:read'
-            elif 'trades' in method_str:
-                permission = 'wallet:trades:read'
-            # the accounts elif should be at the end since the word appears
-            # in other endpoints
-            elif 'accounts' in method_str:
-                permission = 'wallet:accounts:read'
-            else:
-                raise AssertionError(
-                    f'Unexpected coinbase method {method_str} at API key validation',
-                ) from e
-            msg = (
-                f'Provided Coinbase API key needs to have {permission} permission activated. '
-                f'Please log into your coinbase account and set all required permissions: '
-                f'wallet:accounts:read, wallet:transactions:read, '
-                f'wallet:withdrawals:read, wallet:deposits:read, wallet:trades:read'
-            )
-
-            return None, msg
-        except RemoteError as e:
-            error = str(e)
-            if 'invalid signature' in error:
-                return None, 'Failed to authenticate with the Provided API key/secret'
-            if 'invalid api key' in error:
-                return None, 'Provided API Key is invalid'
-            # else any other remote error
-            return None, error
-
-        return result, ''
-
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        """
+        May raise:
+        - InputError: if credentials.api_key format is invalid
+        """
         changed = super().edit_exchange_credentials(credentials)
-        if credentials.api_key is not None:
-            try:
-                new_is_legacy = self.is_legacy_key(credentials.api_key)
-            except AuthenticationError as e:
-                log.error(f'Invalid coinbase API key format: {e}')
-                new_is_legacy = True
-
-            if new_is_legacy != self.is_legacy_api_key:  # Key type has changed
-                self.is_legacy_api_key = new_is_legacy
-
-            if self.is_legacy_api_key:
-                self.session.headers.update({'CB-ACCESS-KEY': credentials.api_key})
-            else:
-                self.api_key = credentials.api_key
+        if (
+                credentials.api_key is not None and
+                (new_key_type := CoinbaseKeyType.detect_type(credentials.api_key)) != self.key_type
+        ):
+            self.key_type = new_key_type
 
         return changed
 
@@ -336,25 +293,8 @@ class Coinbase(ExchangeInterface):
         if options:
             next_uri += f'?{urlencode(options)}'
         while True:
-            if self.is_legacy_api_key:
-                timestamp = str(int(time.time()))
-                message = timestamp + request_verb + next_uri
-                signature = hmac.new(
-                    self.secret,
-                    message.encode(),
-                    hashlib.sha256,
-                ).hexdigest()
-                self.session.headers.update({
-                    'CB-ACCESS-SIGN': signature,
-                    'CB-ACCESS-TIMESTAMP': timestamp,
-                })
-
-            else:
-                uri = f'{request_verb} {self.host}/{self.apiversion}/{endpoint}'
-                token = self.build_jwt(uri)
-                self.session.headers.update({
-                    'Authorization': f'Bearer {token}',
-                })
+            token = self.build_jwt(uri=f'{request_verb} {self.host}/{self.apiversion}/{endpoint}')
+            self.session.headers.update({'Authorization': f'Bearer {token}'})
 
             full_url = self.base_uri + next_uri
             log.debug('Coinbase API query', request_url=full_url)
@@ -479,11 +419,13 @@ class Coinbase(ExchangeInterface):
         return dict(returned_balances), ''
 
     @protect_with_lock()
-    def _query_transactions(self) -> None:
+    def _query_transactions(self, force_refresh: bool = False) -> list['HistoryBaseEntry']:
         """Queries transactions for all active accounts of this coinbase instance
 
         If an account has been queried within X seconds it's not queried again.
         Accounts are only queried since last known queried event
+
+        Returns a list of all queried events
         """
         account_data = self._api_query('accounts')
         account_info = self._get_active_account_info(account_data)
@@ -491,63 +433,67 @@ class Coinbase(ExchangeInterface):
         now = ts_now()
         self.staking_events = set()
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
+        all_events: list[HistoryBaseEntry] = []
         for account_id, last_update_timestamp in account_info:
-            with self.db.conn.read_ctx() as cursor:
-                last_query = 0
-                if (result := self.db.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_QUERY_TS,
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    account_id=account_id,
-                )) is not None:
-                    last_query = result
+            if force_refresh:
+                last_id = None  # Bypass cache when force_refresh is True
+            else:
+                with self.db.conn.read_ctx() as cursor:
+                    last_query = 0
+                    if (result := self.db.get_dynamic_cache(
+                        cursor=cursor,
+                        name=DBCacheDynamic.LAST_QUERY_TS,
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        account_id=account_id,
+                    )) is not None:
+                        last_query = result
 
-                if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
-                    continue  # if no update since last query or last query recent stop
+                    if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
+                        continue  # if no update since last query or last query is recent, then stop  # noqa: E501
 
-                last_id = None
-                if (result_id := self.db.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_QUERY_ID,
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    account_id=account_id,
-                )) is not None:
-                    last_id = str(result_id)
+                    last_id = None
+                    if (result_id := self.db.get_dynamic_cache(
+                        cursor=cursor,
+                        name=DBCacheDynamic.LAST_QUERY_ID,
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        account_id=account_id,
+                    )) is not None:
+                        last_id = str(result_id)
 
             history_events, conversions = self._query_single_account_transactions(
                 account_id=account_id,
                 account_last_id_name=f'{self.location}_{self.name}_{account_id}_last_query_id',
                 last_tx_id=last_id,
+                force_refresh=force_refresh,
             )
             if len(conversion_pairs := combine_dicts(conversion_pairs, conversions)) != 0:
                 history_events.extend(self._process_trades_from_conversion(
                     transaction_pairs=conversion_pairs,
                 ))
 
-            # The approach here does not follow the exchange interface querying with
-            # a different method per type of event. Instead similar to kraken we query
-            # all events with 1 api endpoint and save them here. So they are returned
-            # directly from the DB later.
-            with self.db.user_write() as write_cursor:
-                if len(history_events) != 0:
-                    db = DBHistoryEvents(self.db)
-                    db.add_history_events(write_cursor=write_cursor, history=history_events)
-                self.db.set_dynamic_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheDynamic.LAST_QUERY_TS,
-                    value=ts_now(),
-                    location=self.location.serialize(),
-                    location_name=self.name,
-                    account_id=account_id,
-                )
+            all_events.extend(history_events)
+
+            if not force_refresh:
+                with self.db.user_write() as write_cursor:
+                    self.db.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.LAST_QUERY_TS,
+                        value=ts_now(),
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        account_id=account_id,
+                    )
+
+        return all_events
 
     def _query_single_account_transactions(
             self,
             account_id: str,
             account_last_id_name: str,
             last_tx_id: str | None,
+            force_refresh: bool = False,
     ) -> tuple[
             list[HistoryEvent | AssetMovement | SwapEvent],
             defaultdict[str, list[dict]],
@@ -616,11 +562,12 @@ class Coinbase(ExchangeInterface):
             ):
                 log.warning(f'Found unknown coinbase transaction type: {transaction}')
 
-        with self.db.user_write() as write_cursor:  # Remember last transaction id for account
-            write_cursor.execute(
-                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
-                (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
-            )
+        if not force_refresh:  # Only update cache when not forcing refresh
+            with self.db.user_write() as write_cursor:  # Remember last transaction id for account
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
+                    (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
+                )
 
         return history_events, transaction_pairs
 
@@ -1071,10 +1018,10 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
-        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as another exchanges"""  # noqa: E501
-        self._query_transactions()
-        return [], end_ts
+        events = self._query_transactions(force_refresh=force_refresh)
+        return events, end_ts
 
     def _deserialize_history_event(self, raw_data: dict[str, Any]) -> HistoryEvent | None:
         """Processes a single transaction from coinbase and deserializes it

@@ -27,6 +27,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
@@ -1069,6 +1070,21 @@ class HistoricalPriceOracleField(fields.Field):
             raise ValidationError(f'Invalid historical price oracle: {value}') from e
 
         return historical_price_oracle
+
+
+class EvmIndexerField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> EvmIndexer:
+        try:
+            return EvmIndexer.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(f'Invalid EVM indexer: {value}') from e
 
 
 class NonEmptyList(fields.List):

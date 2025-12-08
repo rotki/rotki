@@ -38,7 +38,7 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
   const refreshing = logicOr(sectionLoading, anyEventsDecoding, queryExchangeEventsLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
   const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
   const shouldFetchEventsRegularly = logicOr(querying, refreshing);
-  const processing = logicOr(isTransactionsLoading, isRepulling, querying, refreshing);
+  const processing = logicOr(isTransactionsLoading, isRepulling, refreshing);
 
   return {
     anyEventsDecoding,

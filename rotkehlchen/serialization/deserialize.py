@@ -678,9 +678,8 @@ def deserialize_evm_transaction(
                     try:
                         l1_fee = maybe_read_integer(raw_receipt_data, 'l1Fee', source)
                     except DeserializationError as e:  # Fall back to etherscan (via txlist)
-                        log.warning(f'Failed to get L1 fee from receipt due to {e!s}. Falling back to etherscan.')  # noqa: E501
-                        l1_fee = evm_inquirer.etherscan.maybe_get_l1_fees(
-                            chain_id=chain_id,  # type: ignore[arg-type]  # mypy doesn't understand that the if check above limits chain_id
+                        log.warning(f'Failed to get L1 fee from receipt due to {e!s}. Falling back to indexers.')  # noqa: E501
+                        l1_fee = evm_inquirer.maybe_get_l1_fees(
                             account=from_address,
                             tx_hash=tx_hash,
                             block_number=block_number,

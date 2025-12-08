@@ -47,6 +47,8 @@ const emit = defineEmits<{
 
 const { asset, hideMenu, isCollectionParent } = toRefs(props);
 
+const menuOpened = ref<boolean>(false);
+
 const symbol = useRefMap(asset, asset => asset.symbol ?? '');
 const name = useRefMap(asset, asset => asset.name ?? '');
 
@@ -59,10 +61,16 @@ const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuConten
 
 const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
 
-function updateMenuVisibility(value: boolean) {
-  if (!value) {
+watch(menuOpened, (menuOpened) => {
+  if (!menuOpened) {
     get(menuContentRef)?.setConfirm(false);
   }
+});
+
+function openMenuHandler(event: MouseEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+  set(menuOpened, !get(menuOpened));
 }
 
 function useContextMenu(attrs: Record<string, any>) {
@@ -73,10 +81,7 @@ function useContextMenu(attrs: Record<string, any>) {
         navigateToDetails();
       }
     },
-    oncontextmenu: (event: MouseEvent) => {
-      event.preventDefault();
-      attrs.onClick(event);
-    },
+    oncontextmenu: openMenuHandler,
   };
 }
 </script>
@@ -101,33 +106,50 @@ function useContextMenu(attrs: Record<string, any>) {
   </DefineImage>
   <RuiMenu
     :key="identifier"
+    v-model="menuOpened"
     class="flex"
     :disabled="hideMenu"
     menu-class="w-[16rem] max-w-[90%]"
-    :open-delay="400"
     :popper="{ placement: 'bottom-start' }"
-    @update:model-value="updateMenuVisibility($event)"
   >
     <template #activator="{ attrs }">
       <ReuseImage
         v-if="iconOnly"
         v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
       />
-      <ListItem
+      <div
         v-else
-        no-padding
-        no-hover
-        class="max-w-[20rem] cursor-pointer"
-        v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
-        :size="dense ? 'sm' : 'md'"
-        :loading="loading"
-        :title="asset.isCustomAsset ? name : symbol"
-        :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+        :class="{ 'w-max flex items-center gap-3 cursor-pointer hover:ring-1 ring-rui-grey-300 dark:ring-rui-grey-800 hover:shadow-md transition-all rounded-md group -ml-1 pl-1': !hideMenu }"
       >
-        <template #avatar>
-          <ReuseImage />
-        </template>
-      </ListItem>
+        <ListItem
+          no-padding
+          no-hover
+          class="max-w-[20rem]"
+          v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
+          :size="dense ? 'sm' : 'md'"
+          :loading="loading"
+          :title="asset.isCustomAsset ? name : symbol"
+          :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+        >
+          <template #avatar>
+            <ReuseImage />
+          </template>
+        </ListItem>
+
+        <RuiButton
+          v-if="!hideMenu"
+          variant="text"
+          icon
+          class="opacity-0 group-hover:opacity-100 mr-2 !p-2"
+          v-bind="attrs"
+          @click.stop="openMenuHandler($event)"
+        >
+          <RuiIcon
+            name="lu-ellipsis-vertical"
+            size="20"
+          />
+        </RuiButton>
+      </div>
     </template>
 
     <AssetDetailsMenuContent

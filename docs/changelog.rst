@@ -8,6 +8,32 @@ Changelog
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+* :bug:`11084` Indexer related backend query task will no longer randomly die.
+
+* :release:`1.41.2 <2025-12-05>`
+* :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.
+* :bug:`-` Fix the issue that prevented pressing Enter from submitting most forms.
+* :feature:`-` Users will now see an indicator at the top if page-specific notes exist for that page.
+* :bug:`` Users will be given address options when filtering by address in the accounts table.
+* :bug:`-` More StakeDAO withdrawals are now decoded properly.
+* :bug:`-` Transaction decoding will no longer crash when a remote error occurs.
+* :bug:`-` Proper status notifications will be shown while the StakeDAO decoder cache is being queried.
+* :feature:`11039` rotki will now support Coinbase's new ED25519 API key format.
+* :bug:`11032` Deleted or missed Binance, Bitstamp, and Coinbase events are now properly restored when re-pulling exchange history data.
+* :feature:`` Users will now be able to change the order of used indexers for EVM chains.
+* :bug:`-` Curve pool native asset withdrawals will now include the pool in the event notes like withdrawals of other tokens.
+* :feature:`-` rotki will now properly decode Yearn staking deposit, withdrawal, and reward claim transactions.
+* :feature:`11030` rotki will now support cowswap transactions on Polygon PoS.
+* :bug:`10896` Users will be able to track the progress of repulling transactions.
+* :feature:`11014` Users will now be able to paste multiple market pairs to the binance market pairs input.
+* :bug:`11007` rotki will now show the proper balance of locked Pendle for vePendle positions.
+* :bug:`-` rotki will now properly decode Gearbox pool transactions for pools with no farming token or lp tokens beyond the pool token and underlying asset.
+* :feature:`-` rotki will now support blockscout and routescan as fallback indexers for retrieving transactions when etherscan fails or does not support a given chain.
+* :bug:`-` Users can now click a location in the manual balance summary on the dashboard to filter by that location.
+* :bug:`-` rotki will now show the protocol icon from DS Proxy correctly.
+* :bug:`11005` Fix an issue where adding a new manual balance with a custom asset/price unnecessarily fetches prices for all assets.
+* :bug:`10997` Binance CSV import will now properly handle trades with different counts of spend versus buy entries.
+>>>>>>> bugfixes
 * :feature:`9230` rotki will now provide quick options for the date time picker.
 * :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`10979` Binance CSV import will now properly handle multiple trades with identical amounts at the same timestamp.

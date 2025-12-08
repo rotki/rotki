@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from unittest.mock import _patch, patch
@@ -37,6 +39,7 @@ from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
     make_api_secret,
+    make_random_bytes,
     make_random_uppercasenumeric_string,
 )
 from rotkehlchen.tests.utils.kraken import MockKraken
@@ -655,8 +658,8 @@ def create_test_coinbase(
 ) -> Coinbase:
     return Coinbase(
         name=name,
-        api_key=make_api_key(),
-        secret=make_api_secret(),
+        api_key=ApiKey(str(uuid.uuid4())),
+        secret=ApiSecret(base64.b64encode(make_random_bytes(32))),
         database=database,
         msg_aggregator=msg_aggregator,
     )

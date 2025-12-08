@@ -7,10 +7,10 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.externalapis.blockscout import Blockscout
-from rotkehlchen.externalapis.etherscan import HasChainActivity
+from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
-from rotkehlchen.types import SupportedBlockchain, TimestampMS
+from rotkehlchen.types import ChainID, SupportedBlockchain, TimestampMS
 
 
 @pytest.fixture(name='eth_blockscout')
@@ -82,28 +82,28 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
 
 
 @pytest.mark.vcr
-def test_hash_activity(database, messages_aggregator):
-    for blockchain in (
-        SupportedBlockchain.ETHEREUM,
-        SupportedBlockchain.OPTIMISM,
-        SupportedBlockchain.ARBITRUM_ONE,
-        SupportedBlockchain.GNOSIS,
-        SupportedBlockchain.BASE,
+def test_hash_activity(eth_blockscout):
+    for chain in (
+        ChainID.ETHEREUM,
+        ChainID.OPTIMISM,
+        ChainID.ARBITRUM_ONE,
+        ChainID.GNOSIS,
+        ChainID.BASE,
     ):
-        blocksocut = Blockscout(
-            blockchain=blockchain,
-            database=database,
-            msg_aggregator=messages_aggregator,
-        )
-        assert blocksocut.has_activity(  # yabir.eth
+        assert eth_blockscout.has_activity(  # yabir.eth
+            chain_id=chain,
             account=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
         ) == HasChainActivity.TRANSACTIONS
 
-    blocksocut = Blockscout(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        database=database,
-        msg_aggregator=messages_aggregator,
-    )
-    assert blocksocut.has_activity('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE') == HasChainActivity.BALANCE  # noqa: E501
-    assert blocksocut.has_activity('0x014cd0535b2Ea668150a681524392B7633c8681c') == HasChainActivity.TOKENS  # noqa: E501
-    assert blocksocut.has_activity('0x6c66149E65c517605e0a2e4F707550ca342f9c1B') == HasChainActivity.NONE  # noqa: E501
+    assert eth_blockscout.has_activity(
+        chain_id=ChainID.ETHEREUM,
+        account=string_to_evm_address('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE'),
+    ) == HasChainActivity.BALANCE
+    assert eth_blockscout.has_activity(
+        chain_id=ChainID.ETHEREUM,
+        account=string_to_evm_address('0x014cd0535b2Ea668150a681524392B7633c8681c'),
+    ) == HasChainActivity.TOKENS
+    assert eth_blockscout.has_activity(
+        chain_id=ChainID.ETHEREUM,
+        account=string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B'),
+    ) == HasChainActivity.NONE

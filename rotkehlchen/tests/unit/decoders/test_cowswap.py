@@ -14,6 +14,7 @@ from rotkehlchen.constants.assets import (
     A_BSC_BNB,
     A_ETH,
     A_GNOSIS_VCOW,
+    A_POL,
     A_USDC,
     A_USDT,
     A_VCOW,
@@ -1288,6 +1289,117 @@ def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts):
         amount=(fee_amount := FVal('0.022725682237174343')),
         location_label=user,
         notes=f'Spend {fee_amount} XDAI as a cowswap fee',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_cowswap_polygon_swap(polygon_pos_inquirer, polygon_pos_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xdbe490bbfa05c142328fb17e0a4b937aef6515319054684463ff55e6fd8ecb3b')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1764543520000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=(giv_token := Asset('eip155:137/erc20:0xc7B1807822160a8C5b6c9EaF5C584aAD0972deeC')),
+        amount=(approval_amount := FVal('57896044618658097711785492504343953926634992332820281964256.700836956564819967')),  # noqa: E501
+        location_label=(user := polygon_pos_accounts[0]),
+        notes=f'Set GIV spending approval of {user} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to {approval_amount}',  # noqa: E501
+        counterparty=None,
+        address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=giv_token,
+        amount=(spend_amount := FVal('52770.237862568357913595')),
+        location_label=user,
+        notes=f'Swap {spend_amount} GIV in a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
+        amount=(receive_amount := FVal('54.890715')),
+        location_label=user,
+        notes=f'Receive {receive_amount} USDC as the result of a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=giv_token,
+        amount=(fee_amount := FVal('17.477690431642086405')),
+        location_label=user,
+        notes=f'Spend {fee_amount} GIV as a cowswap fee',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
+def test_cowswap_polygon_swap_native(polygon_pos_inquirer, polygon_pos_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2c8cac577a6e4819fcc280e92645d9096d85f0941882079f54947c35af4f9d8f')),  # noqa: E501
+    )
+    assert events == [EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1764675286000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_POL,
+        amount=(spend_amount := FVal('907.096641046080134859')),
+        location_label=(user := polygon_pos_accounts[0]),
+        notes=f'Swap {spend_amount} POL in a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
+        amount=(receive_amount := FVal('109.978185')),
+        location_label=user,
+        notes=f'Receive {receive_amount} USDC as the result of a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POL,
+        amount=(fee_amount := FVal('0.247900950932050611')),
+        location_label=user,
+        notes=f'Spend {fee_amount} POL as a cowswap fee',
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     )]

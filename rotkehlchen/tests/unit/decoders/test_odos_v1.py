@@ -22,6 +22,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -174,6 +175,7 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x61c7953578576F56E369482cBbE545733798a3b7']])
 def test_swap_eth_to_token_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x82e41cedb2265288f4475d8c7137bcaa031e5969ecbfa21551a797f5a7a71e8f')  # noqa: E501

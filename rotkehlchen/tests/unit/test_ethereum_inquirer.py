@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 from unittest.mock import patch
 
 import pytest
@@ -14,8 +14,9 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.thegraph.constants import GRAPH_DELEGATION_TRANSFER_ABI
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import EvmIndexer, WeightedNode, string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EventNotInABI, RemoteError
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
@@ -355,26 +356,81 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         )
 
 
+BLOCKNUMBER_BY_TS: Final = 1577836800
+BLOCKNUMBER_BY_TS_BLOCK: Final = 9193265
+
+
 def _test_get_blocknumber_by_time(ethereum_inquirer):
-    result = ethereum_inquirer.get_blocknumber_by_time(1577836800)
-    assert result == 9193265
+    result = ethereum_inquirer.get_blocknumber_by_time(BLOCKNUMBER_BY_TS)
+    assert result == BLOCKNUMBER_BY_TS_BLOCK
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_get_blocknumber_by_time_blockscout(ethereum_inquirer):
-    """Queries blockscout api for known block times"""
-    _test_get_blocknumber_by_time(ethereum_inquirer)
+@pytest.mark.parametrize(
+    ('order', 'effects', 'expected_calls'),
+    [
+        (
+            (EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT),
+            {
+                'etherscan': BLOCKNUMBER_BY_TS_BLOCK,
+                'routescan': RemoteError('Routescan should not be queried'),
+                'blockscout': RemoteError('Blockscout should not be queried'),
+            },
+            ['etherscan'],
+        ),
+        (
+            (EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT),
+            {
+                'etherscan': RemoteError('Intentional etherscan error'),
+                'routescan': BLOCKNUMBER_BY_TS_BLOCK,
+                'blockscout': RemoteError('Blockscout should not be queried'),
+            },
+            ['etherscan', 'routescan'],
+        ),
+        (
+            (EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN),
+            {
+                'etherscan': RemoteError('Etherscan should not be queried'),
+                'routescan': RemoteError('Intentional routescan error'),
+                'blockscout': BLOCKNUMBER_BY_TS_BLOCK,
+            },
+            ['routescan', 'blockscout'],
+        ),
+    ],
+)
+def test_get_blocknumber_by_time(
+        ethereum_inquirer,
+        order,
+        effects,
+        expected_calls,
+):
+    cached_settings = CachedSettings()
+    previous_order = cached_settings.get_entry('evm_indexers_order')
+    cached_settings.update_entry('evm_indexers_order', {ChainID.ETHEREUM: order})
+    calls: list[str] = []
 
+    def _side_effect(indexer_name: str) -> Callable[..., int]:
+        def _effect(*args, **kwargs) -> int:
+            calls.append(indexer_name)
+            response = effects[indexer_name]
+            if isinstance(response, Exception):
+                raise response
+            return response
+        return _effect
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
-    """Queries etherscan for known block times"""
-    with patch.object(
-        ethereum_inquirer.blockscout,
-        'get_blocknumber_by_time',
-        side_effect=RemoteError('Intentional blockscout remote error to test etherscan'),
-    ):
-        _test_get_blocknumber_by_time(ethereum_inquirer)
+    try:
+        ethereum_inquirer.timestamp_to_block_cache[ChainID.ETHEREUM].remove(BLOCKNUMBER_BY_TS)
+        with (
+                patch.object(ethereum_inquirer.etherscan, 'get_blocknumber_by_time', side_effect=_side_effect('etherscan')),  # noqa: E501
+                patch.object(ethereum_inquirer.routescan, 'get_blocknumber_by_time', side_effect=_side_effect('routescan')),  # noqa: E501
+                patch.object(ethereum_inquirer.blockscout, 'get_blocknumber_by_time', side_effect=_side_effect('blockscout')),  # noqa: E501
+        ):
+            _test_get_blocknumber_by_time(ethereum_inquirer)
+    finally:
+        cached_settings.update_entry('evm_indexers_order', previous_order)
+        ethereum_inquirer.timestamp_to_block_cache[ChainID.ETHEREUM].remove(BLOCKNUMBER_BY_TS)
+
+    assert calls == expected_calls
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

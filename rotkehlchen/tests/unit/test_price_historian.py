@@ -364,7 +364,7 @@ def test_price_priority_order():
     assert priority_value == HistoricalPriceOracle.MANUAL.serialize_for_db()
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
@@ -384,7 +384,7 @@ def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
     assert price.is_close('3591639.375183')
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):

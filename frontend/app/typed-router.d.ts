@@ -336,6 +336,7 @@ declare module 'vue-router/auto-routes' {
       | '/settings/account/'
       | '/settings/accounting/'
       | '/settings/database/'
+      | '/settings/evm/'
       | '/settings/general/'
       | '/settings/interface/'
       | '/settings/modules/'
@@ -359,6 +360,13 @@ declare module 'vue-router/auto-routes' {
     '/settings/database/': RouteRecordInfo<
       '/settings/database/',
       '/settings/database',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/settings/evm/': RouteRecordInfo<
+      '/settings/evm/',
+      '/settings/evm',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -743,6 +751,7 @@ declare module 'vue-router/auto-routes' {
         | '/settings/account/'
         | '/settings/accounting/'
         | '/settings/database/'
+        | '/settings/evm/'
         | '/settings/general/'
         | '/settings/interface/'
         | '/settings/modules/'
@@ -766,6 +775,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/database/index.vue': {
       routes:
         | '/settings/database/'
+      views:
+        | never
+    }
+    'src/pages/settings/evm/index.vue': {
+      routes:
+        | '/settings/evm/'
       views:
         | never
     }

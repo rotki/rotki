@@ -1,13 +1,15 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
+from ens.ens import ChecksumAddress
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
+from rotkehlchen.chain.constants import PROXY_BALANCE_PROTOCOL_TEMPLATE
 from rotkehlchen.chain.evm.active_management.manager import ActiveManager
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
@@ -27,6 +29,7 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress, Price, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
+    from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 
     from .accounting.aggregator import EVMAccountingAggregator
     from .decoding.decoder import EVMTransactionDecoder
@@ -106,29 +109,45 @@ class EvmManager(
 
     @staticmethod
     def update_balances_after_token_query(
-            dsr_proxy_append: bool,
             balance_result: dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
             token_usd_price: dict[EvmToken, Price],
             balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
-            balance_label: Literal['address', 'makerdao vault'] = DEFAULT_BALANCE_LABEL,
+            proxies_information: dict[ChecksumAddress, tuple['ProxyType', ChecksumAddress]] | None = None,  # noqa: E501
     ) -> None:
-        """Updates the passed balances dict with the provided balances_result and token prices.
-        If dsr_proxy_append is True then the balances are appended to the existing ones, otherwise
-        existing balances are replaced.
         """
-        # Update the per account token balance and usd value
+        Update the per account token balance and usd value using the provided
+        balances dict with the provided balances_result and token prices.
+        proxies_information contains the mappings of proxy addresses to their type and
+        owner address. If provided balances are added instead of replaced in the balances
+        mapping.
+        """
         for account, token_balances in balance_result.items():
+            if (is_proxy_balances := proxies_information is not None):
+                proxy_type, proxy_owner_address = proxies_information[account]
+                protocol = PROXY_BALANCE_PROTOCOL_TEMPLATE.format(
+                    type=proxy_type,
+                    address=account,
+                )
+                owner = proxy_owner_address
+            else:
+                owner, protocol = account, DEFAULT_BALANCE_LABEL
+
             for token, token_balance in token_balances.items():
                 balance = Balance(
                     amount=token_balance,
                     usd_value=token_balance * token_usd_price[token],
                 )
-                protocol = token.protocol or balance_label
-                assets_or_liabilities = balances[account].liabilities if token.is_liability() else balances[account].assets  # noqa: E501
-                if dsr_proxy_append:
+
+                assets_or_liabilities = balances[owner].liabilities if token.is_liability() else balances[owner].assets  # noqa: E501
+                if is_proxy_balances:
+                    # Querying happens in two stages: wallet balances first, then proxy balances.
+                    # We append rather than assign to avoid overwriting a token balance when both
+                    # the wallet address and its proxy hold the same asset.
                     assets_or_liabilities[token][protocol] += balance
                 else:
-                    assets_or_liabilities[token][protocol] = balance
+                    # for the protocol check if it can be taken from the token itself
+                    # before assigning the default balance label
+                    assets_or_liabilities[token][token.protocol or protocol] = balance
 
     def query_evm_tokens(
             self,
@@ -161,7 +180,6 @@ class EvmManager(
             ) from e
 
         self.update_balances_after_token_query(
-            dsr_proxy_append=False,
             balance_result=balance_result,
             token_usd_price=token_usd_price,
             balances=balances,

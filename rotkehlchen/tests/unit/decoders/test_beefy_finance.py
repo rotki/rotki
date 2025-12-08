@@ -13,6 +13,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_GMX, A_USDC, A_WETH_ARB, A_WETH_BASE
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -275,6 +276,7 @@ def test_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xf5632CFcD668C10949bA06618D50928ce5841aE3']])
 def test_deposit_to_beefy_morpho_vault(
         base_inquirer: 'BaseInquirer',
@@ -601,6 +603,7 @@ def test_deposit_usdc_to_beefy_vault_with_harvest_call_reward(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB012F9199Ea0BbF86F99C2e1A572747fB7B5a953']])
 def test_withdrawal_from_beefy_receiving_eth(
         optimism_inquirer: 'OptimismInquirer',

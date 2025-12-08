@@ -25,6 +25,7 @@ CHAIN_MAPPING: Final = {
     SupportedBlockchain.ARBITRUM_ONE: 'arbitrum_one',
     SupportedBlockchain.BASE: 'base',
     SupportedBlockchain.BINANCE_SC: 'bnb',
+    SupportedBlockchain.POLYGON_POS: 'polygon',
 }
 SUPPORTED_COWSWAP_BLOCKCHAIN: TypeAlias = Literal[
     SupportedBlockchain.ETHEREUM,
@@ -32,6 +33,7 @@ SUPPORTED_COWSWAP_BLOCKCHAIN: TypeAlias = Literal[
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
     SupportedBlockchain.BINANCE_SC,
+    SupportedBlockchain.POLYGON_POS,
 ]
 
 

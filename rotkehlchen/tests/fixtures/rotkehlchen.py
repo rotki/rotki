@@ -44,6 +44,7 @@ from rotkehlchen.tests.utils.database import (
     run_no_db_upgrades,
 )
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
+from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
@@ -439,12 +440,12 @@ def initialize_mock_rotkehlchen_instance(
             (SupportedBlockchain.SCROLL, scroll_manager_connect_at_start, rotki.chains_aggregator.scroll),  # noqa: E501
             (SupportedBlockchain.BINANCE_SC, binance_sc_manager_connect_at_start, rotki.chains_aggregator.binance_sc),  # noqa: E501
     ):
-        maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
+        actual_nodes = maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
         # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501
         evm_manager.node_inquirer.maybe_connect_to_nodes(when_tracked_accounts=True)
         # Check if any connection tasks are pending to wait for
         if rotki.greenlet_manager.has_task(_connect_task_prefix(evm_manager.node_inquirer.chain_name)):  # noqa: E501
-            evm_nodes_wait.append((evm_manager.node_inquirer, connect_at_start))
+            evm_nodes_wait.append((evm_manager.node_inquirer, actual_nodes))
 
     if start_with_valid_premium:
         rotki.premium = rotki_premium_object
@@ -470,6 +471,12 @@ def initialize_mock_rotkehlchen_instance(
         mocked_price_queries=mocked_price_queries,
         default_mock_value=default_mock_price_value,
     )
+
+    for evm_inquirer, connect_at_start in evm_nodes_wait:
+        wait_until_all_nodes_connected(
+            evm_inquirer=evm_inquirer,
+            connect_at_start=connect_at_start,
+        )
 
     if len(rotki.chains_aggregator.accounts.ksm) != 0:
         wait_until_all_substrate_nodes_connected(  # no connection would have been attempted if there are no accounts  # noqa: E501

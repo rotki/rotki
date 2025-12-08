@@ -460,6 +460,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         events: list[AssetMovement | SwapEvent] = []
         for query_func in (self._query_asset_movements, self._query_trades):

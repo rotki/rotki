@@ -37,6 +37,7 @@ interface UseBlockchainAccountDataReturn {
   getAccountDetails: (chain: string, address: string) => AccountBalances;
   getBlockchainAccounts: (chain: string) => BlockchainAccountWithBalance[];
   useAccountTags: (address: MaybeRef<string>) => ComputedRef<string[]>;
+  getAccountsByCategory: (category: MaybeRef<string>) => ComputedRef<BlockchainAccountGroupWithBalance[]>;
   getAccountList: (accountData: Accounts, balanceData: Balances) => BlockchainAccountWithBalance[];
 }
 
@@ -220,6 +221,14 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     return entries;
   }
 
+  const getAccountsByCategory = (category: MaybeRef<string>): ComputedRef<BlockchainAccountGroupWithBalance[]> => computed(() => {
+    const accountData = get(accounts);
+    const balanceData = get(balances);
+    const groups = getGroups(accountData, balanceData);
+
+    return groups.filter(item => item.category === get(category));
+  });
+
   const fetchAccounts = async (
     payload: MaybeRef<BlockchainAccountRequestPayload>,
   ): Promise<Collection<BlockchainAccountGroupWithBalance>> => new Promise((resolve) => {
@@ -263,6 +272,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     getAccountDetails,
     getAccountList,
     getAccounts,
+    getAccountsByCategory,
     getBlockchainAccounts,
     useAccountTags,
   };

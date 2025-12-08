@@ -23,6 +23,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.routescan import Routescan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -35,6 +36,7 @@ class ScrollInquirer(L2WithL1FeesInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.SCROLL]](chain_id=ChainID.SCROLL)
@@ -42,6 +44,7 @@ class ScrollInquirer(L2WithL1FeesInquirer):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=SupportedBlockchain.SCROLL,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

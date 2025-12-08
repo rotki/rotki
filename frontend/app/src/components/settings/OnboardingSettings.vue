@@ -479,6 +479,7 @@ onBeforeMount(async () => {
           data-cy="onboarding-setting__submit-button"
           color="primary"
           :disabled="!anyValueChanged || !valid"
+          type="submit"
           @click="save()"
         >
           {{ t('common.actions.save') }}

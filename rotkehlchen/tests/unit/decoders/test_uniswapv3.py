@@ -35,6 +35,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -818,6 +819,7 @@ def test_swap_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x3A4E1e525FaE9001037936164fC440df6E71f412']])
 def test_swap_on_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2125ff35709009b9782f8351db3cb5a44a0bf088c3f38de08d92eb3906394635')  # noqa: E501
@@ -866,6 +868,7 @@ def test_swap_on_base(base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x8BAf1bBae7C3Cc1F9c5Bf20b3d13BBfe674B01B7']])
 def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xfbaacab45a9d788c993f08a65652e7a363a82ee2343152ffa41d07c5456d1fe7')  # noqa: E501
@@ -965,6 +968,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9A539f692cDE873D6B882fc326c8d62D4cEA8048']])
 def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x96bd0e37e1734b5e73f9abdf30b39c4e4a6879667c2d01a7be2d95a85cc0b0cc')  # noqa: E501

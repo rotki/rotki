@@ -795,6 +795,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Query Kraken's ledger to retrieve events and transform them to our
         internal representation of history events.

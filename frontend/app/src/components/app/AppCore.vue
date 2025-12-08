@@ -11,16 +11,13 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useStatisticsStore } from '@/store/statistics';
 
 const visibilityStore = useAreaVisibilityStore();
-const { isMini, showDrawer, showPinned } = storeToRefs(visibilityStore);
+const { expanded, isMini, showPinned } = storeToRefs(visibilityStore);
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
-const toggleDrawer = visibilityStore.toggleDrawer;
+const { toggleDrawer } = visibilityStore;
 
-const { isXlAndDown } = useBreakpoint();
 const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
-
-const expanded = logicAnd(showDrawer, logicNot(isXlAndDown));
 
 watch(overall, (overall) => {
   if (overall.percentage === '-')
@@ -31,10 +28,6 @@ watch(overall, (overall) => {
 
 onBeforeMount(() => {
   initGraph();
-});
-
-onMounted(() => {
-  set(showDrawer, !get(isXlAndDown));
 });
 </script>
 

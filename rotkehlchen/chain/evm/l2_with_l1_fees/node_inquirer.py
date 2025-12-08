@@ -15,6 +15,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.routescan import Routescan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,6 +31,7 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            routescan: 'Routescan',
             blockchain: SupportedL2WithL1FeesType,
             contracts: EvmContracts,
             rpc_timeout: int,
@@ -42,6 +44,7 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
@@ -69,6 +72,7 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            routescan: 'Routescan',
             blockchain: SupportedL2WithL1FeesType,
             contracts: EvmContracts,
             rpc_timeout: int,
@@ -82,6 +86,7 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

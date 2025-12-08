@@ -261,6 +261,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            force_refresh: bool = False,
     ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
         page, all_transactions, events = 0, [], []
         while True:

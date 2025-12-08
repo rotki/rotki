@@ -35,6 +35,13 @@ const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
 
 const exchange = ref<Exchange | undefined>(undefined);
 
+const EXCHANGES_WITHOUT_DATE_RANGE_FILTER: string[] = [
+  'coinbase',
+  'binance',
+  'binanceus',
+  'bitmex',
+];
+
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { decodableTxChainsInfo, getChain } = useSupportedChains();
@@ -99,6 +106,17 @@ const hasNoBlockchainAccounts = computed<boolean>(() => get(isBlockchainType) &&
 
 const hasNoExchanges = computed<boolean>(() => !get(isBlockchainType) && get(connectedExchanges).length === 0);
 
+const showDateRangePicker = computed<boolean>(() => {
+  if (get(isBlockchainType))
+    return true;
+
+  const selectedExchange = get(exchange);
+  if (!selectedExchange)
+    return true;
+
+  return !EXCHANGES_WITHOUT_DATE_RANGE_FILTER.includes(selectedExchange.location);
+});
+
 const rules = computed(() => {
   if (get(isBlockchainType)) {
     return {
@@ -109,12 +127,14 @@ const rules = computed(() => {
       toTimestamp: { required },
     };
   }
+
+  const timestampRules = get(showDateRangePicker) ? { required } : {};
   return {
     address: {},
     chain: {},
     exchange: { required },
-    fromTimestamp: { required },
-    toTimestamp: { required },
+    fromTimestamp: timestampRules,
+    toTimestamp: timestampRules,
   };
 });
 
@@ -147,6 +167,16 @@ watchImmediate(accountType, (type) => {
   }
 });
 
+watch(showDateRangePicker, (show) => {
+  if (!show) {
+    set(modelValue, {
+      ...get(modelValue),
+      fromTimestamp: undefined,
+      toTimestamp: undefined,
+    });
+  }
+});
+
 defineExpose({
   getExchangeData: () => get(exchange),
   validate: () => get(v$).$validate(),
@@ -154,7 +184,7 @@ defineExpose({
 </script>
 
 <template>
-  <form class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     <RuiTabs
       v-model="accountType"
       class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-5"
@@ -278,6 +308,7 @@ defineExpose({
       </RuiAutoComplete>
 
       <DateTimeRangePicker
+        v-if="showDateRangePicker"
         v-model:start="fromTimestamp"
         v-model:end="toTimestamp"
         allow-empty
@@ -286,5 +317,5 @@ defineExpose({
         :end-error-messages="toMessages(v$.toTimestamp)"
       />
     </template>
-  </form>
+  </div>
 </template>

@@ -24,6 +24,7 @@ from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_value
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CacheType,
@@ -121,6 +122,7 @@ def test_hop_l2_deposit_usdc(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [[ADDY]])
 def test_hop_optimism_eth_receive(optimism_inquirer):
     """Data taken from
@@ -147,6 +149,7 @@ def test_hop_optimism_eth_receive(optimism_inquirer):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_hop_optimism_eth_receive_no_event(optimism_inquirer, optimism_accounts):
     """Data taken from
@@ -202,6 +205,7 @@ def test_hop_usdc_bridge(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_hop_eth_bridge_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4f1e95506c10f061ddfe28a7437f3b651959ff17f1e2a7a148c8896147ee357e')  # noqa: E501
@@ -330,6 +334,7 @@ def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: 'PolygonPOSInquirer', 
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xC0b263b8315FAABC27BC0479a5A547281c049C1c']])
 def test_hop_eth_bridge_base(base_inquirer: 'BaseInquirer', base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd78eb0f79fa4af1e140641ef260499a6e138b6398d2c4cdcd2e7c488ee8cb20e')  # noqa: E501
@@ -619,6 +624,7 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('base_accounts', [['0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1']])
 def test_hop_add_liquidity(
@@ -781,6 +787,7 @@ def test_hop_add_liquidity_2(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xA38b8E0cA73916fD611Bbf9E854FDBB25865e42a']])
 def test_hop_remove_liquidity(
         base_inquirer: 'BaseInquirer',
@@ -846,6 +853,7 @@ def test_hop_remove_liquidity(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x8Df3480a31B5a32508Cd1E29A6Ff84fd03b96430']])
 def test_hop_remove_liquidity_2(
         base_inquirer: 'BaseInquirer',
@@ -1207,6 +1215,7 @@ def test_hop_claim_rewards_2(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xCA16fAf47686aCFEbD6CFC74419fcC9Cbf833067']])
 def test_hop_claim_merkle_rewards(
         optimism_inquirer: 'OptimismInquirer',
@@ -1487,6 +1496,7 @@ def test_vote_cast(ethereum_inquirer):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_hop_add_liquidity_optimism_usdc(
         optimism_inquirer: 'BaseInquirer',

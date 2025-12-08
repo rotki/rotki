@@ -1,10 +1,17 @@
+import logging
+import operator
+from itertools import pairwise
 from typing import TYPE_CHECKING
 
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class DBQueryRanges:
@@ -51,10 +58,22 @@ class DBQueryRanges:
 
         starts = [x[0] for x in queried_ranges]
         ends = [x[1] for x in queried_ranges]
-        saved_range = self.db.get_used_query_range(write_cursor, location_string)
-        if saved_range is not None:
+        all_ranges = queried_ranges.copy()
+        if (saved_range := self.db.get_used_query_range(write_cursor, location_string)) is not None:  # noqa: E501
+            all_ranges.append(saved_range)
             starts.append(saved_range[0])
             ends.append(saved_range[1])
+
+        # Check that queried ranges are consecutive with no unqueried gaps
+        for (_, current_end), (next_start, _) in pairwise(sorted_ranges := sorted(all_ranges, key=operator.itemgetter(0))):  # noqa: E501
+            if current_end < next_start - 1:  # `start - 1` to allow end 14, start 15 for instance
+                log.error(msg :=
+                    f'Gap detected in {location_string} queried ranges: {sorted_ranges}. '
+                    f'Range ending at {current_end} and next range starting at {next_start}. '
+                    'Cannot save ranges to the DB.',
+                )
+                assert False, msg  # hard fail in develop since range gaps are a programming error and should never happen.  # noqa: E501, PT015, B011
+                return  # type: ignore[unreachable]  # simply return without saving the range in production
 
         self.db.update_used_query_range(
             write_cursor=write_cursor,

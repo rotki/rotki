@@ -13,7 +13,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     SupportedBlockchain,
-    Timestamp,
 )
 
 from .constants import (
@@ -26,6 +25,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.routescan import Routescan
 
 
 class BinanceSCInquirer(EvmNodeInquirer):
@@ -35,12 +35,14 @@ class BinanceSCInquirer(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            routescan=routescan,
             blockchain=SupportedBlockchain.BINANCE_SC,
             contracts=(contracts := EvmContracts[Literal[ChainID.BINANCE_SC]](chain_id=ChainID.BINANCE_SC)),  # noqa: E501
             rpc_timeout=rpc_timeout,
@@ -59,20 +61,4 @@ class BinanceSCInquirer(EvmNodeInquirer):
             ARCHIVE_NODE_CHECK_ADDRESS,
             ARCHIVE_NODE_CHECK_BLOCK,
             ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
-        )
-
-    def get_blocknumber_by_time(
-            self,
-            ts: 'Timestamp',
-            closest: Literal['before', 'after'] = 'before',
-    ) -> int:
-        """Searches for the blocknumber of a specific timestamp.
-        Reimplemented because bsc doesn't have a blockscout api.
-
-        May raise RemoteError
-        """
-        return self.etherscan.get_blocknumber_by_time(
-            chain_id=self.chain_id,
-            ts=ts,
-            closest=closest,
         )

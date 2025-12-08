@@ -15,6 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_unique_cache_value
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CacheType,
@@ -217,6 +218,7 @@ def test_vault_deposit(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4D26f0e78C154f8FDA7AcF6646246Fa135507017']])
 def test_vault_withdraw(
         optimism_inquirer: 'OptimismInquirer',

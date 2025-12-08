@@ -2815,6 +2815,31 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             asset=Asset('eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498'),
             amount=FVal('0.03000000'),
             identifier=96,
+        ), SwapEvent(
+            group_identifier=dummy_event_id,
+            timestamp=TimestampMS(1763643255000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498'),
+            amount=FVal('25656.00000000'),
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+            identifier=97,
+        ), SwapEvent(
+            group_identifier=dummy_event_id,
+            timestamp=TimestampMS(1763643255000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('35.45074574'),
+            identifier=98,
+        ), SwapEvent(
+            group_identifier=dummy_event_id,
+            timestamp=TimestampMS(1763643255000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.03545075'),
+            identifier=99,
         ),
     ]
 
@@ -2832,8 +2857,8 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
         'data': {
             'subtype': 'csv_import_result',
             'source_name': 'Binance',
-            'total': 199,
-            'processed': 193,
+            'total': 230,
+            'processed': 224,
             'messages': [
                 {'msg': 'Failed to deserialize a timestamp from a null entry in binance', 'rows': [4], 'is_error': True},  # noqa: E501
                 {'msg': 'Unknown asset "" provided.', 'rows': [5], 'is_error': True},

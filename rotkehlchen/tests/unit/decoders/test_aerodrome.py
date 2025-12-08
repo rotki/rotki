@@ -13,6 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -48,7 +49,8 @@ WETH_BASE = Asset(evm_address_to_identifier(
 ))
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x514c4BA193c698100DdC998F17F24bDF59c7b6fB']])
 def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_caches):
@@ -132,7 +134,8 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
     assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x514c4BA193c698100DdC998F17F24bDF59c7b6fB']])
 def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_global_caches):
@@ -190,7 +193,8 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
     assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x61D90de4fa8cfbBD7A7650Ae01A39fD1B1863503']])
 def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_caches):
@@ -278,7 +282,8 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x123509D7e9e6576263B10100cf7EB016C64F73Ce']])
 def test_unlock_aero(base_accounts, base_transaction_decoder):
     user_address, tx_hash = base_accounts[0], deserialize_evm_tx_hash('0xb4166c9b0c6076197ab2c17bdef8a55b050880d7005d874152a9f23ce7626790')  # noqa: E501
@@ -330,7 +335,8 @@ def test_unlock_aero(base_accounts, base_transaction_decoder):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x1453Acb73B4c13BCE00496Ae00DdC7E4cF484C6c']])
 def test_lock_aero(base_accounts, base_transaction_decoder):
     user_address, tx_hash = base_accounts[0], deserialize_evm_tx_hash('0xe129665629d4df774f6dcad6170bddec73a9a45aed4fb3c5084337b85addce71')  # noqa: E501
@@ -395,7 +401,8 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x0E9B063789909565CEdA1Fba162474405A151E66']])
 def test_increase_locked_amount(base_accounts, base_transaction_decoder):
     user_address, tx_hash = base_accounts[0], deserialize_evm_tx_hash('0xf92e665a95eb270e5362a890628198ac762f8d231754213b49360cce31ab2b86')  # noqa: E501
@@ -446,7 +453,8 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x7264A62ae2f2BbE5Fe003F29108afB3C3dA0Bc16']])
 def test_increase_unlock_time(base_accounts, base_transaction_decoder):
     user_address, tx_hash = base_accounts[0], deserialize_evm_tx_hash('0x6ac4bc89809ef7c5f0fd393fc6d162cb1c041f4d4ccc1ce3339f6c6e5614e753')  # noqa: E501
@@ -486,7 +494,8 @@ def test_increase_unlock_time(base_accounts, base_transaction_decoder):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x051113f273942Ce806965F471665B6215B198A88']])
 def test_vote(base_accounts, base_transaction_decoder):
     user_address, tx_hash = base_accounts[0], deserialize_evm_tx_hash('0x9f4cbe2d67c38f08595fee37b73c65c870dd4784e8756fe41e8bda0b5321ae16')  # noqa: E501
@@ -526,6 +535,7 @@ def test_vote(base_accounts, base_transaction_decoder):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x7264A62ae2f2BbE5Fe003F29108afB3C3dA0Bc16']])
 def test_swap(base_transaction_decoder, base_accounts, load_global_caches):

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 import requests
 
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -72,6 +73,24 @@ def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
+
+
+def test_etherscan_re_enabled(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that etherscan is re-enabled when a user adds a new api key."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    for chain_manager in (chain_managers := (
+        rotki.chains_aggregator.binance_sc,
+        rotki.chains_aggregator.base,
+        rotki.chains_aggregator.optimism,
+    )):
+        chain_manager.node_inquirer.available_indexers.pop(EvmIndexer.ETHERSCAN)
+
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+        json={'services': [{'name': 'etherscan', 'api_key': 'key1'}]},
+    ))
+    for chain_manager in chain_managers:
+        assert EvmIndexer.ETHERSCAN in chain_manager.node_inquirer.available_indexers
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])

@@ -11,8 +11,6 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import MarginPosition
-from rotkehlchen.externalapis.blockscout import Blockscout
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -35,6 +33,7 @@ from rotkehlchen.types import Location, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
     from rotkehlchen.tests.utils.kraken import MockKraken
 
 TEST_END_TS = 1559427707
@@ -721,7 +720,7 @@ def mock_history_processing(
 
 
 def mock_etherscan_like_transaction_response(
-        etherscan_like_api: Etherscan | Blockscout,
+        etherscan_like_api: 'EtherscanLikeApi',
         remote_errors: bool,
 ) -> _patch:
     def mocked_request_dict(url, params, *_args, **_kwargs):
@@ -786,6 +785,7 @@ class TradesTestSetup(NamedTuple):
     accountant_patch: _patch
     etherscan_patch: _patch
     blockscout_patch: _patch
+    routescan_patch: _patch
 
 
 def mock_history_processing_and_exchanges(
@@ -826,6 +826,10 @@ def mock_history_processing_and_exchanges(
         ),
         blockscout_patch=mock_etherscan_like_transaction_response(
             etherscan_like_api=rotki.chains_aggregator.ethereum.node_inquirer.blockscout,
+            remote_errors=remote_errors,
+        ),
+        routescan_patch=mock_etherscan_like_transaction_response(
+            etherscan_like_api=rotki.chains_aggregator.ethereum.node_inquirer.routescan,
             remote_errors=remote_errors,
         ),
     )

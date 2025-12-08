@@ -206,6 +206,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'yearn-v1',
         'yearn-v2',
         'yearn-v3',
+        'yearn_staking',
         'balancer-v1',
         'balancer-v2',
         'balancer-v3',

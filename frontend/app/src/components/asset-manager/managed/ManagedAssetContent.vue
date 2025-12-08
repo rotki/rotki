@@ -42,6 +42,7 @@ const ignoredFilter = ref<{
 const modelValue = ref<SupportedAsset>();
 const editMode = ref<boolean>(false);
 const assetTypes = ref<string[]>([]);
+const openAction = ref<boolean>(false);
 
 const { expanded, selected } = useCommonTableProps<SupportedAsset>();
 
@@ -240,7 +241,10 @@ onBeforeMount(async () => {
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>
-      <RuiMenu :popper="{ placement: 'bottom-end' }">
+      <RuiMenu
+        v-model="openAction"
+        :popper="{ placement: 'bottom-end' }"
+      >
         <template #activator="{ attrs }">
           <RuiButton
             variant="text"
@@ -263,7 +267,7 @@ onBeforeMount(async () => {
             <template #activator>
               <RuiButton
                 variant="list"
-                @click="mergeTool = true"
+                @click="mergeTool = true; openAction = false"
               >
                 <template #prepend>
                   <RuiIcon name="lu-combine" />

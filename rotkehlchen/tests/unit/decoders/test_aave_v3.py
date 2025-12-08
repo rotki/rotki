@@ -34,6 +34,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.unit.decoders.test_metamask import EvmSwapEvent
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_POLYGON_POS_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -797,6 +798,7 @@ def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xaafc3e3C8B4fD93584256E6D49a9C364648E66cE']])
 def test_aave_v3_borrow_base(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x92b6fef0623a3f56daa651968819f2e5b7a982037c19fed2166e4c00ba4d6350')  # noqa: E501
@@ -899,6 +901,7 @@ def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xdbD5D31B7f48adC13A0aB0c591F7e3D4f9642e69']])
 def test_aave_v3_borrow_optimism(optimism_inquirer, optimism_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb043a7f28cccd6cb0392db47cea4607f8cf3b91b6510669a0a62588b66eb7fcf')  # noqa: E501
@@ -1119,7 +1122,7 @@ def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None
     assert events == expected_events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
     """Test that claim rewards for incentives works"""
@@ -2015,6 +2018,7 @@ def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xE37b28362F65060C18c16398cFD23275D8CaE750']])
 def test_aave_v3_collateral_swap(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xdc1a92c8cbda2fe7917e633efd889d17fc62e88e0f584af65f577b5d2a8bcb3c')  # noqa: E501
