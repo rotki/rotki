@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -12,13 +13,16 @@ from rotkehlchen.chain.ethereum.modules.stakedao.constants import (
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_BSC_BNB, A_CRV, A_CVX, A_ETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.binance_sc import ZAN_BINANCE_SC_NODE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import CacheType, Location, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import timestamp_to_date
 
@@ -26,6 +30,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
+
+
+BSC_NODES_TO_CONNECT = [(WeightedNode(node_info=ZAN_BINANCE_SC_NODE, active=True, weight=ONE),)]
 
 
 @pytest.fixture(name='stakedao_gauges')
@@ -361,10 +368,23 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xa99345367044C80D8f01d0618c44B752C4C29Bdb']])
+@pytest.mark.parametrize('binance_sc_manager_connect_at_start', BSC_NODES_TO_CONNECT)
 def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges):
     tx_hash = deserialize_evm_tx_hash('0x0e8556a645758a6747072673fa713f98a5b3dae090b940257e5ef7c86dc73d49')  # noqa: E501
     user_address = binance_sc_accounts[0]
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    original_get = binance_sc_inquirer.etherscan.session.get
+
+    def mocked_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+        params = kwargs.get('params') or {}
+        if params.get('action') == 'txlistinternal':
+            return MockResponse(200, '{"status":"0","message":"No transactions found","result":[]}')  # noqa: E501
+        return original_get(url, *args, **kwargs)
+
+    with patch.object(binance_sc_inquirer.etherscan.session, 'get', side_effect=mocked_get):
+        events, _ = get_decoded_events_of_transaction(
+            evm_inquirer=binance_sc_inquirer,
+            tx_hash=tx_hash,
+        )
     gas_amount, cake_reward, received_amount, timestamp = '0.000358695', '1.156230303623121164', '2000', TimestampMS(1743674447000)  # noqa: E501
     assert events == [EvmEvent(
         tx_ref=tx_hash,

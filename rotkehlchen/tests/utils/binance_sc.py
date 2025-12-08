@@ -32,6 +32,14 @@ ANKR_BINANCE_SC_NODE: Final = NodeName(
     blockchain=SupportedBlockchain.BINANCE_SC,
 )
 
+
+ZAN_BINANCE_SC_NODE: Final = NodeName(
+    name='zan.top',
+    endpoint='https://api.zan.top/bsc-mainnet',
+    owned=False,
+    blockchain=SupportedBlockchain.BINANCE_SC,
+)
+
 BINANCE_SC_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = (
     'binance_sc_manager_connect_at_start',
     [(WeightedNode(
