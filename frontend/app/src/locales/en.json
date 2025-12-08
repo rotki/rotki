@@ -622,6 +622,15 @@
         "message": "This event will not be processed in accounting. To handle it, you must choose one of these options:",
         "re_decode": "Redecode event",
         "title": "Event missing accounting rule"
+      },
+      "report_issue": {
+        "action": "Report Issue",
+        "description_intro": "I have a problem with my history event with these details:",
+        "location": "- Location: {location}",
+        "more_detail": "More detail:",
+        "placeholder": "[Add more context here]",
+        "title": "History Event Issue",
+        "tx_hash": "- Tx Hash: {hash}"
       }
     },
     "history_events_export": {
@@ -3070,6 +3079,51 @@
       "subtitle": "Review our code and open issues",
       "title": "Github"
     },
+    "report_issue": {
+      "dialog": {
+        "description": "Found a bug or have a feature request? Fill out the form below and choose how you'd like to submit it.",
+        "form": {
+          "description": {
+            "hint": "{count}/{max} characters",
+            "label": "Description"
+          },
+          "title": {
+            "hint": "{count}/{max} characters",
+            "label": "Title"
+          }
+        },
+        "submit_options": {
+          "copy_email": "Copy \"{email}\"",
+          "email": "Email",
+          "github": "GitHub",
+          "google_form": "Google Form",
+          "open_gmail": "Open Gmail",
+          "privacy_note": "GitHub and Google Form submissions are public. Use Email for private reports.",
+          "title": "Submit via"
+        },
+        "tips": {
+          "discord": {
+            "action": "Open Discord",
+            "channel": "#support",
+            "description": "Get quick help from our community in the {channel} channel, or you can DM our team.",
+            "title": "Need immediate help?"
+          },
+          "screenshot": {
+            "action": "Open Privacy Settings",
+            "description": "Before taking screenshots, enable privacy or scramble mode to hide sensitive data like balances and addresses.",
+            "enabled_with_mode": "{mode} enabled",
+            "private": "Private mode",
+            "scramble": "Scramble mode",
+            "semi_private": "Semi-private mode",
+            "title": "Taking screenshots?"
+          },
+          "title": "Tips"
+        },
+        "title": "Report an Issue"
+      },
+      "subtitle": "Report bugs or request features",
+      "title": "Report Issue"
+    },
     "support": {
       "subtitle": "Join our active community and get support",
       "title": "Discord"
@@ -5160,6 +5214,17 @@
             "title": "Skipped events processed"
           }
         }
+      },
+      "unsupported": {
+        "description": "This transaction only contains a gas fee with no other events. This typically means the protocol is not yet supported.",
+        "location": "- Location: {location}",
+        "more_detail": "More detail:",
+        "placeholder": "[Add more context here]",
+        "report_action": "Report Transaction",
+        "report_description_intro": "I found a transaction that appears to be unsupported (only gas fee event).",
+        "report_title": "Unsupported Transaction",
+        "title": "Unsupported Transaction",
+        "tx_hash": "- Tx Hash: {hash}"
       },
       "view": {
         "hide": "Hide events",

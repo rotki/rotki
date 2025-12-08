@@ -9,6 +9,8 @@ const GITHUB_BASE_URL = 'https://github.com/rotki/rotki/';
 // Cannot be checked with fetch because it always returns 400
 export const TWITTER_URL = 'https://twitter.com/rotkiapp';
 
+export const SUPPORT_EMAIL = 'support@rotki.com';
+
 // Cannot be checked with fetch because it always returns 403, because it needs authentication,
 // and will be redirected to the register page instead
 export const etherscanLink = 'https://etherscan.io/myapikey';
@@ -52,6 +54,8 @@ export const externalLinks = {
   github: GITHUB_BASE_URL,
   githubIssues: `${GITHUB_BASE_URL}issues`,
   githubNewIssue: `${GITHUB_BASE_URL}issues/new/choose`,
+  githubNewBugReport: `${GITHUB_BASE_URL}issues/new?template=bug_report.md`,
+  gmailCompose: 'https://mail.google.com/mail/?view=cm',
   releases: `${GITHUB_BASE_URL}releases`,
   releasesVersion: `${GITHUB_BASE_URL}releases/tag/v$version`,
   metamaskDownload: 'https://metamask.io/download/',

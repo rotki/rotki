@@ -2,13 +2,14 @@ import type { Nullable } from '@rotki/common';
 import type { Pinned } from '@/types/session';
 
 export const useAreaVisibilityStore = defineStore('session/visibility', () => {
-  const showAbout = ref(false);
+  const showAbout = ref<boolean>(false);
   const pinned = ref<Nullable<Pinned>>(null);
-  const showDrawer = ref(false);
-  const showNotificationBar = ref(false);
-  const showHelpBar = ref(false);
-  const showNotesSidebar = ref(false);
-  const showPinned = ref(false);
+  const showDrawer = ref<boolean>(false);
+  const showNotificationBar = ref<boolean>(false);
+  const showHelpBar = ref<boolean>(false);
+  const showNotesSidebar = ref<boolean>(false);
+  const showPinned = ref<boolean>(false);
+  const showPrivacyModeMenu = ref<boolean>(false);
 
   const toggleDrawer = (): void => {
     set(showDrawer, !get(showDrawer));
@@ -34,6 +35,7 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
     showNotesSidebar,
     showNotificationBar,
     showPinned,
+    showPrivacyModeMenu,
     toggleDrawer,
   };
 });
