@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2,
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.stakedao.utils import (
+    ensure_gauge_token,
     query_stakedao_gauges,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -316,6 +317,12 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return EvmDecodingOutput(action_items=action_items)
 
     def _decode_deposit_withdrawal_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        ensure_gauge_token(
+            gauge_address=context.tx_log.address,
+            evm_inquirer=self.node_inquirer,
+            tx_hash=context.transaction.tx_hash,
+        )
+
         if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
             return self._decode_deposit(context)
         elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V2:
