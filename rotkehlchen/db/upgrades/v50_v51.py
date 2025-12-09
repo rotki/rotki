@@ -18,6 +18,13 @@ log = RotkehlchenLogsAdapter(logger)
 def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v50 to v51. This happened in the v1.42 release."""
 
+    @progress_step(description='Adding Avalanche location to the DB.')
+    def _add_avalanche_location(write_cursor: 'DBCursor') -> None:
+        write_cursor.executescript("""
+        /* Avalanche */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
+        """)
+
     @progress_step(description='Rename event_identifier column to group_identifier in history_events table.')  # noqa: E501
     def _rename_event_identifier_to_group_identifier(write_cursor: 'DBCursor') -> None:
         """Rename event_identifier column to group_identifier in history_events table."""

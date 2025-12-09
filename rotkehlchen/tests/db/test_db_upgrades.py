@@ -3770,6 +3770,9 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         ])
         assert not table_exists(cursor=cursor, name='lido_csm_node_operators')
         assert not table_exists(cursor=cursor, name='lido_csm_node_operator_metrics')
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = 'x'",
+        ).fetchone()[0] == 0
 
     db_v50.logout()
     db = _init_db_with_target_version(
@@ -3788,5 +3791,8 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         ).fetchone()[0].find('UNIQUE(group_identifier, sequence_index)') != -1
         assert table_exists(cursor=cursor, name='lido_csm_node_operators')
         assert table_exists(cursor=cursor, name='lido_csm_node_operator_metrics')
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = 'x' AND seq = 56",
+        ).fetchone()[0] == 1
 
     db.logout()
