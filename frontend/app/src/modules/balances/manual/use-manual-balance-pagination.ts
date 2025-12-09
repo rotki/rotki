@@ -4,7 +4,6 @@ import type { Collection } from '@/types/collection';
 import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortAndFilterManualBalance } from '@/utils/balances/manual/manual-balances';
 
 interface UseManualBalancePaginationReturn {
@@ -14,8 +13,7 @@ interface UseManualBalancePaginationReturn {
 
 export function useManualBalancePagination(): UseManualBalancePaginationReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { assetPrice, isAssetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const { assetPriceInCurrentCurrency } = usePriceUtils();
 
   const resolvers: {
     resolveAssetPrice: (asset: string) => BigNumber | undefined;
@@ -27,20 +25,7 @@ export function useManualBalancePagination(): UseManualBalancePaginationReturn {
      * @param asset The asset for which we want the price
      */
     resolveAssetPrice(asset: string): BigNumber | undefined {
-      const inCurrentCurrency = get(isAssetPriceInCurrentCurrency(asset));
-      const price = get(assetPrice(asset));
-      if (!price)
-        return undefined;
-
-      if (inCurrentCurrency)
-        return price;
-
-      const currentExchangeRate = get(useExchangeRate(get(currencySymbol)));
-
-      if (!currentExchangeRate)
-        return price;
-
-      return price.times(currentExchangeRate);
+      return get(assetPriceInCurrentCurrency(asset));
     },
   };
 

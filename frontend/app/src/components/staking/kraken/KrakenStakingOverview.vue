@@ -6,13 +6,13 @@ import { sum } from '@/utils/balances';
 
 const props = defineProps<{
   loading: boolean;
-  totalUsdHistorical: BigNumber;
+  totalHistorical: BigNumber;
   earned: AssetBalance[];
 }>();
 
 const { earned } = toRefs(props);
 
-const totalUsdCurrent = computed<BigNumber>(() => {
+const totalCurrent = computed<BigNumber>(() => {
   const earnedAssets = get(earned);
   return sum(earnedAssets);
 });
@@ -49,8 +49,8 @@ const { t } = useI18n({ useScope: 'global' });
           <ValueAccuracyHint />
           <AmountDisplay
             show-currency="ticker"
-            fiat-currency="USD"
-            :value="totalUsdHistorical"
+            force-currency
+            :value="totalHistorical"
             class="text-rui-text-secondary"
           />
         </div>
@@ -73,9 +73,9 @@ const { t } = useI18n({ useScope: 'global' });
         </div>
         <AmountDisplay
           show-currency="ticker"
-          fiat-currency="USD"
+          force-currency
           :loading="loading"
-          :value="totalUsdCurrent"
+          :value="totalCurrent"
           class="text-rui-text-secondary"
         />
       </div>

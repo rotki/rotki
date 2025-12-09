@@ -24,7 +24,7 @@ export const KrakenStakingEvents = z.object({
   entriesLimit: z.number().min(-1),
   entriesTotal: z.number().nonnegative(),
   received: z.array(AssetBalance),
-  totalUsdValue: NumericString,
+  totalValue: NumericString,
 });
 
 export type KrakenStakingEvents = z.infer<typeof KrakenStakingEvents>;

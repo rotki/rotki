@@ -43,7 +43,7 @@ const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
     }
     return {
       ...item,
-      usdValue: price.times(item.amount),
+      value: price.times(item.amount),
     };
   });
 
@@ -76,7 +76,7 @@ const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
     <div class="grid md:grid-cols-2 gap-4">
       <KrakenStakingOverview
         :loading="earnedAssetsData[0]"
-        :total-usd-historical="events.totalUsdValue"
+        :total-historical="events.totalValue"
         :earned="earnedAssetsData[1]"
       />
       <KrakenStakingReceived

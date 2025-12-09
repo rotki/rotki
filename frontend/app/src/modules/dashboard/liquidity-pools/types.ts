@@ -4,7 +4,6 @@ import z from 'zod/v4';
 const PoolAsset = z.object({
   asset: z.string(),
   totalAmount: NumericString.nullish(),
-  usdPrice: NumericString,
   userBalance: Balance,
 });
 
@@ -33,7 +32,7 @@ export enum PoolType {
 
 export interface PoolLiquidityBalance {
   id: number;
-  usdValue: BigNumber;
+  value: BigNumber;
   premiumOnly: boolean;
   asset: string;
   type: PoolType;

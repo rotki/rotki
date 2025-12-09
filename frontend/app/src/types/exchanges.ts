@@ -88,7 +88,7 @@ export const ExchangeSavingsCollectionResponse = CollectionCommonFields.extend({
   assets: z.array(z.string()),
   entries: z.array(ExchangeSavingsEvent),
   received: z.array(AssetBalance),
-  totalUsdValue: NumericString,
+  totalValue: NumericString,
 });
 
 export type ExchangeSavingsCollectionResponse = z.infer<typeof ExchangeSavingsCollectionResponse>;

@@ -422,10 +422,10 @@ describe('composables/api/balances/exchanges', () => {
               entries_found: 1,
               entries_limit: 100,
               entries_total: 1,
-              total_usd_value: '3000.00',
+              total_value: '3000.00',
               assets: ['ETH'],
               received: [
-                { asset: 'ETH', amount: '1.5', usd_value: '3000.00' },
+                { asset: 'ETH', amount: '1.5', value: '3000.00' },
               ],
             },
             message: '',
@@ -447,8 +447,8 @@ describe('composables/api/balances/exchanges', () => {
       });
       expect(result.entries).toHaveLength(1);
       expect(result.entriesFound).toBe(1);
-      expect(result.totalUsdValue).toBeInstanceOf(BigNumber);
-      expect(result.totalUsdValue.toString()).toBe('3000');
+      expect(result.totalValue).toBeInstanceOf(BigNumber);
+      expect(result.totalValue.toString()).toBe('3000');
     });
 
     it('throws error on failure', async () => {

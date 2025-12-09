@@ -8,6 +8,7 @@ import { useModules } from '@/composables/session/modules';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -17,6 +18,7 @@ const { isModuleEnabled } = useModules();
 const { fetchPools, fetchStaking, fetchStatistics, setStakingQueryStatus } = useLiquityStore();
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const { shouldShowLoadingScreen } = useStatusStore();
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const moduleEnabled = isModuleEnabled(modules[0]);
 const premium = usePremium();
 const { fetchPrices } = usePriceTaskManager();
@@ -39,14 +41,15 @@ async function fetch(refresh = false) {
   ]);
 }
 
-onMounted(async () => {
-  if (get(moduleEnabled))
+watchImmediate(moduleEnabled, async (enabled) => {
+  if (enabled)
     await fetch();
 });
 
-watch(moduleEnabled, async (enabled) => {
-  if (enabled)
-    await fetch();
+watch(currencySymbol, async () => {
+  if (get(moduleEnabled)) {
+    await fetch(true);
+  }
 });
 
 watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING), async (current, old) => {

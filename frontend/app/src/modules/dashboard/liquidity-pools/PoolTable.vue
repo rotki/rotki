@@ -24,15 +24,15 @@ const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 const expanded = ref<PoolLiquidityBalance[]>([]);
 
 const sort = ref<DataTableSortData<PoolLiquidityBalance>>({
-  column: 'usdValue',
+  column: 'value',
   direction: 'desc' as const,
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const statistics = useStatisticsStore();
-const { totalNetWorthUsd } = storeToRefs(statistics);
-const { balances, fetch, getPoolName, loading, total: totalInUsd } = usePoolBalances();
+const { totalNetWorth } = storeToRefs(statistics);
+const { balances, fetch, getPoolName, loading, total } = usePoolBalances();
 const { t } = useI18n({ useScope: 'global' });
 
 const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
@@ -45,7 +45,7 @@ const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
   }, {
     align: 'end',
     class: 'text-no-wrap',
-    key: 'usdValue',
+    key: 'value',
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
@@ -80,17 +80,21 @@ useRememberTableSorting<PoolLiquidityBalance>(TableId.POOL_LIQUIDITY_BALANCE, so
 const getAssets = (assets: PoolAsset[]) => assets.map(({ asset }) => asset);
 
 function percentageOfTotalNetValue(value: BigNumber) {
-  const netWorth = get(totalNetWorthUsd);
-  const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
-  return calculatePercentage(value, total);
+  const netWorth = get(totalNetWorth);
+  const totalVal = netWorth.lt(0) ? get(total) : netWorth;
+  return calculatePercentage(value, totalVal);
 }
 
 function percentageOfCurrentGroup(value: BigNumber) {
-  return calculatePercentage(value, get(totalInUsd));
+  return calculatePercentage(value, get(total));
 }
 
 onBeforeMount(async () => {
   await fetch();
+});
+
+watch(currencySymbol, async () => {
+  await fetch(true);
 });
 </script>
 
@@ -112,9 +116,9 @@ onBeforeMount(async () => {
     </template>
     <template #shortDetails>
       <AmountDisplay
-        :value="totalInUsd"
+        :value="total"
         show-currency="symbol"
-        fiat-currency="USD"
+        force-currency
         class="text-h6 font-bold"
       />
     </template>
@@ -141,21 +145,21 @@ onBeforeMount(async () => {
           </div>
         </div>
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
-          :value="row.usdValue"
-          fiat-currency="USD"
+          :value="row.value"
+          force-currency
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay
-          :value="percentageOfTotalNetValue(row.usdValue)"
+          :value="percentageOfTotalNetValue(row.value)"
           :asset-padding="0.1"
         />
       </template>
       <template #item.percentageOfTotalCurrentGroup="{ row }">
         <PercentageDisplay
-          :value="percentageOfCurrentGroup(row.usdValue)"
+          :value="percentageOfCurrentGroup(row.value)"
           :asset-padding="0.1"
         />
       </template>
@@ -173,9 +177,9 @@ onBeforeMount(async () => {
           class-name="[&>td]:p-4"
         >
           <AmountDisplay
-            :value="totalInUsd"
+            :value="total"
             show-currency="symbol"
-            fiat-currency="USD"
+            force-currency
           />
         </RowAppend>
       </template>
