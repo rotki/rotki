@@ -1422,11 +1422,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
             raise NoAvailableIndexers(f'No indexers are available for {self.chain_name}')
 
+        assert ordered_indexers[0][1] == self.blockscout, 'Is blockscout'
         errors: list[tuple[str, Exception]] = []
         for indexer_name, indexer in ordered_indexers:
             if indexer_name not in self.available_indexers:
                 continue  # was removed while looping
 
+            assert indexer != self.etherscan, 'got etherscan'
             try:
                 return func(indexer)
             except ChainNotSupported as e:

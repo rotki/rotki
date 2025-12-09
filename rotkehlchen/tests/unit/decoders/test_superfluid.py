@@ -8,9 +8,10 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.decoding.superfluid.constants import CPT_SUPERFLUID
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_OP, A_WXDAI, A_XDAI
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -157,13 +158,14 @@ def test_native_upgrade(
     )]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 @pytest.mark.parametrize('optimism_accounts', [['0x0BeBD2FcA9854F657329324aA7dc90F656395189']])
 def test_token_downgrade(
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
 ) -> None:
+    x = CachedSettings().get_evm_indexers_order_for_chain(chain_id=optimism_inquirer.chain_id)
+    assert x == (EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN)
     super_token = get_or_create_evm_token(
         userdb=optimism_inquirer.database,
         evm_address=string_to_evm_address('0x1828Bff08BD244F7990edDCd9B19cc654b33cDB4'),
@@ -219,6 +221,9 @@ def test_token_downgrade(
         counterparty=CPT_SAFE_MULTISIG,
         address=user_address,
     )]
+
+    x = CachedSettings().get_evm_indexers_order_for_chain(chain_id=optimism_inquirer.chain_id)
+    assert x == (EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

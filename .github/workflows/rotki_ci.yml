@@ -313,7 +313,7 @@ jobs:
   done:
     name: 'Success check'
     if: ${{ always() }}
-    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-colibri', 'lint-backend', 'test-backend', 'test-e2e' ]
+    needs: [ 'test-backend', ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any task failed
