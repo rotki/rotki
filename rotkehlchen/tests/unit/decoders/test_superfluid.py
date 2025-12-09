@@ -51,17 +51,24 @@ def _setup_super_token_cache(
         )
 
 
+@pytest.fixture(name='usdcx_super_token')
+def _fixture_usdcx_super_token() -> tuple['ChecksumEvmAddress', 'ChecksumEvmAddress']:
+    _setup_super_token_cache(
+        chain_id=ChainID.ARBITRUM_ONE,
+        super_token=(super_token_address := string_to_evm_address('0xFc55F2854e74b4f42D01a6d3DAAC4c52D9dfdcFf')),  # noqa: E501
+        underlying_token=(underlying_token_address := string_to_evm_address('0xaf88d065e77c8cC2239327C5EDb3A432268e5831')),  # noqa: E501
+    )
+    return super_token_address, underlying_token_address
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
 def test_token_upgrade(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        usdcx_super_token: tuple['ChecksumEvmAddress', 'ChecksumEvmAddress'],
 ) -> None:
-    _setup_super_token_cache(
-        chain_id=arbitrum_one_inquirer.chain_id,
-        super_token=(super_token_address := string_to_evm_address('0xFc55F2854e74b4f42D01a6d3DAAC4c52D9dfdcFf')),  # noqa: E501
-        underlying_token=(underlying_token_address := string_to_evm_address('0xaf88d065e77c8cC2239327C5EDb3A432268e5831')),  # noqa: E501
-    )
+    super_token_address, underlying_token_address = usdcx_super_token
     tx_hash = deserialize_evm_tx_hash('0x33f13f009fa63df4689bf9011df3174e268cd3b8c15e785bc4693f63dec44bbd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -268,4 +275,78 @@ def test_wrapped_native_downgrade(
         notes=f'Unwrap {unwrap_amount} WXDAI from Superfluid',
         counterparty=CPT_SUPERFLUID,
         address=super_token_address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
+def test_start_stream(
+        arbitrum_one_inquirer: 'OptimismInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        usdcx_super_token: tuple['ChecksumEvmAddress', 'ChecksumEvmAddress'],
+) -> None:
+    super_token_address, _ = usdcx_super_token
+    tx_hash = deserialize_evm_tx_hash('0xb0a06c89d0352da273d504270d045fb87892818ce40890d221bbdb042efc9419')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1765230392000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000353017'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset(f'eip155:42161/erc20:{super_token_address}'),
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Start Superfluid stream of 43.799999999998248000 USDCx per month from {user_address} to 0x706A70067BE19BdadBea3600Db0626859Ff25D74',  # noqa: E501
+        counterparty=CPT_SUPERFLUID,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
+def test_stop_stream(
+        arbitrum_one_inquirer: 'OptimismInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        usdcx_super_token: tuple['ChecksumEvmAddress', 'ChecksumEvmAddress'],
+) -> None:
+    super_token_address, _ = usdcx_super_token
+    tx_hash = deserialize_evm_tx_hash('0x749e683d1761ddfcd2cce863650a9e8a1a9ca93cf4a3d4ba111318520a4c723b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1765230892000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000336898'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=5,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset(f'eip155:42161/erc20:{super_token_address}'),
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Stop Superfluid USDCx stream from {user_address} to 0x706A70067BE19BdadBea3600Db0626859Ff25D74',  # noqa: E501
+        counterparty=CPT_SUPERFLUID,
     )]
