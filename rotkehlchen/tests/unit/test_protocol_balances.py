@@ -110,6 +110,7 @@ from rotkehlchen.tests.unit.decoders.test_curve_lend import (
     fixture_arbitrum_vault_token,  # noqa: F401
     fixture_arbitrum_vault_underlying_token,  # noqa: F401
 )
+from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.balances import find_inheriting_classes
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
@@ -256,6 +257,7 @@ def test_convex_staking_balances_without_gauges(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_velodrome_v2_staking_balances(
@@ -901,6 +903,7 @@ def test_safe_locked(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('optimism_accounts', [[
     '0x4ba257EC214BA1e6a3b4E46Bd7C4654b9E81CED3',
@@ -946,6 +949,7 @@ def test_extrafi_lending_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('base_accounts', [['0x007183900fBbe3e7815b278074a49B8C7319EDba']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
@@ -1070,6 +1074,7 @@ def test_umami_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc0d5dBe750bb5c001Ba8C499385143f566611679']])
 def test_walletconnect_staked_balances(
         optimism_inquirer: 'OptimismInquirer',
@@ -1186,6 +1191,7 @@ def test_gnosis_giveth_staked_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('optimism_accounts', [['0x9924285ff2207D6e36642B6832A515A6a3aedCAB']])
 def test_optimism_giveth_staked_balances(
@@ -1239,6 +1245,7 @@ def test_hedgey_locked_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('optimism_accounts', [['0xD4dd9a1FAc6D7bBe327c2b4A5Dc3197D0B10874b']])
 def test_velodrome_locked_balances(
@@ -1263,6 +1270,7 @@ def test_velodrome_locked_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('base_accounts', [['0xD10c1617e7afF13759Ad45AA373E89d5251B37cC']])
 def test_aerodrome_locked_balances(
@@ -1386,6 +1394,7 @@ def test_pendle_locked_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_runmoney_balances(
