@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4609` rotki will now properly handle Superfluid stream transactions and balances.
 * :feature:`10980` Users will now be able to report unsupported events through the history event page.
 * :feature:`6642` Users will now be able to provide feedback directly though the applications help & support sidebar.
 * :bug:`11099` rotki will now allow to create events manually with location Avalanche.

@@ -7,6 +7,7 @@ from rotkehlchen.assets.utils import (
     asset_normalized_value,
     get_or_create_evm_token,
     get_single_underlying_token,
+    token_normalized_value,
 )
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -18,18 +19,22 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.superfluid.constants import (
+    CFA_V1_ADDRESSES,
     CPT_SUPERFLUID,
+    FLOW_UPDATED_TOPIC,
     TOKEN_DOWNGRADED_TOPIC,
     TOKEN_UPGRADED_TOPIC,
 )
 from rotkehlchen.chain.evm.decoding.superfluid.utils import query_superfluid_tokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, TokenKind
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
@@ -38,6 +43,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# The calculation for converting between the per second and monthly rates is defined as
+# amount of supertoken / ((365/12) * 24 * 60 * 60) = amount per second
+# https://docs.superfluid.org/docs/protocol/money-streaming/overview#flows-and-flow-rates
+MONTHLY_RATE_MULTIPLIER = FVal('2628000')  # ((365/12) * 24 * 60 * 60)
 
 
 class SuperfluidCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
@@ -50,6 +60,8 @@ class SuperfluidCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     ):
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.supertoken_addresses: dict[ChecksumEvmAddress, ChecksumEvmAddress | None] = {}
+        assert self.node_inquirer.chain_id in CFA_V1_ADDRESSES, f'No Superfluid CFA address defined for {self.node_inquirer.chain_id.name}'  # noqa: E501
+        self.cfa_v1_address = CFA_V1_ADDRESSES[self.node_inquirer.chain_id]
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         """Ensure the super token list is up to date.
@@ -97,6 +109,7 @@ class SuperfluidCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             chain_id=self.node_inquirer.chain_id,
             protocol=CPT_SUPERFLUID,
             underlying_tokens=underlying_tokens,
+            evm_inquirer=self.node_inquirer,
         )
 
     def _decode_upgraded_downgraded(
@@ -192,10 +205,42 @@ class SuperfluidCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_flow_updated(self, context: DecoderContext) -> EvmDecodingOutput:
+        if (
+            context.tx_log.topics[0] != FLOW_UPDATED_TOPIC or
+            not self.base.is_tracked(sender := bytes_to_address(context.tx_log.topics[2]))
+        ):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        receiver = bytes_to_address(context.tx_log.topics[3])
+        monthly_flow_rate = token_normalized_value(
+            token=(super_token := self._get_or_create_super_token(
+                address=bytes_to_address(context.tx_log.topics[1]),
+            )),
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+        ) * MONTHLY_RATE_MULTIPLIER
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=super_token,
+            amount=ZERO,
+            location_label=sender,
+            counterparty=CPT_SUPERFLUID,
+            notes=(
+                f'Stop Superfluid {super_token.symbol} stream from {sender} to {receiver}'
+                if monthly_flow_rate == ZERO else
+                f'Start Superfluid stream of {monthly_flow_rate} {super_token.symbol} per month from {sender} to {receiver}'  # noqa: E501
+            ),
+        )])
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(self.supertoken_addresses, (self._decode_supertoken_events, ))
+        return {
+            self.cfa_v1_address: (self._decode_flow_updated,),
+        } | dict.fromkeys(self.supertoken_addresses, (self._decode_supertoken_events,))
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
