@@ -49,7 +49,7 @@ def test_lido_csm_balances_accumulates():
         return_value=FVal('1.5'),
     ), patch.object(
         Inquirer,
-        'find_usd_price',
+        'find_price',
         return_value=FVal('2000'),
     ), patch.object(
         LidoCsmMetricsFetcher,
@@ -71,7 +71,7 @@ def test_lido_csm_balances_accumulates():
 
     assert result[entry.address].assets[A_STETH][CPT_LIDO_CSM] == Balance(
         amount=FVal('1.5'),
-        usd_value=FVal('3000'),
+        value=FVal('3000'),
     )
 
 
@@ -143,4 +143,4 @@ def test_lido_csm_balances_real_data(
 
     operator_balance = result[node_operator_address].assets[A_STETH][CPT_LIDO_CSM]
     assert operator_balance.amount.is_close(FVal('26.318054536101981594'))
-    assert operator_balance.usd_value.is_close(FVal('39.477081804152972391'))
+    assert operator_balance.value.is_close(FVal('39.477081804152972391'))

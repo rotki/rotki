@@ -21,6 +21,7 @@ from rotkehlchen.chain.manager import (
     ChainWithEoA,
 )
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -110,12 +111,12 @@ class EvmManager(
     @staticmethod
     def update_balances_after_token_query(
             balance_result: dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
-            token_usd_price: dict[EvmToken, Price],
+            token_price: dict[EvmToken, Price],
             balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
             proxies_information: dict[ChecksumAddress, tuple['ProxyType', ChecksumAddress]] | None = None,  # noqa: E501
     ) -> None:
         """
-        Update the per account token balance and usd value using the provided
+        Update the per account token balance and value using the provided
         balances dict with the provided balances_result and token prices.
         proxies_information contains the mappings of proxy addresses to their type and
         owner address. If provided balances are added instead of replaced in the balances
@@ -135,7 +136,7 @@ class EvmManager(
             for token, token_balance in token_balances.items():
                 balance = Balance(
                     amount=token_balance,
-                    usd_value=token_balance * token_usd_price[token],
+                    value=token_balance * token_price[token],
                 )
 
                 assets_or_liabilities = balances[owner].liabilities if token.is_liability() else balances[owner].assets  # noqa: E501
@@ -166,7 +167,7 @@ class EvmManager(
         client and the chain is not synced
         """
         try:
-            balance_result, token_usd_price = self.tokens.query_tokens_for_addresses(
+            balance_result, token_price = self.tokens.query_tokens_for_addresses(
                 addresses=accounts,
             )
         except BadFunctionCallOutput as e:
@@ -181,7 +182,7 @@ class EvmManager(
 
         self.update_balances_after_token_query(
             balance_result=balance_result,
-            token_usd_price=token_usd_price,
+            token_price=token_price,
             balances=balances,
         )
         return balances
@@ -199,12 +200,15 @@ class EvmManager(
         client and the chain is not synced
         """
         chain_balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
-        native_token_usd_price = Inquirer.find_usd_price(self.node_inquirer.native_token)
+        native_token_price = Inquirer.find_price(
+            from_asset=self.node_inquirer.native_token,
+            to_asset=CachedSettings().main_currency,
+        )
         for account, balance in self.node_inquirer.get_multi_balance(accounts).items():
             if balance != ZERO:  # accounts (e.g. multisigs) can have zero balances
                 chain_balances[account].assets[self.node_inquirer.native_token][DEFAULT_BALANCE_LABEL] = Balance(  # noqa: E501
                     amount=balance,
-                    usd_value=balance * native_token_usd_price,
+                    value=balance * native_token_price,
                 )
 
         return self.query_evm_tokens(accounts=accounts, balances=chain_balances)

@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -156,6 +157,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
         """
         balances = BalanceSheet()
         gauge_chunks = get_chunks(list(gauges_to_token.keys()), n=chunk_size)
+        main_currency = CachedSettings().main_currency
         for gauge_chunk in gauge_chunks:
             tokens = [gauges_to_token[staking_addr] for staking_addr in gauge_chunk]
             gauges_balances = balances_contract(
@@ -167,10 +169,10 @@ class ProtocolWithGauges(ProtocolWithBalance):
 
             # Now map the gauge to the underlying token
             for lp_token, balance in gauges_balances.items():
-                lp_token_price = Inquirer.find_usd_price(lp_token)
+                lp_token_price = Inquirer.find_price(lp_token, main_currency)
                 balances.assets[lp_token][self.counterparty] += Balance(
                     amount=balance,
-                    usd_value=lp_token_price * balance,
+                    value=lp_token_price * balance,
                 )
 
         return balances

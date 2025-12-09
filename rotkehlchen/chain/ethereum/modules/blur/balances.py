@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.blur.constants import (
     CPT_BLUR,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -65,7 +66,10 @@ class BlurBalances(ProtocolWithBalance):
         if len(results) == 0:
             return balances
 
-        blur_price = Inquirer.find_usd_price(asset := Asset(BLUR_IDENTIFIER))
+        blur_price = Inquirer.find_price(
+            from_asset=(asset := Asset(BLUR_IDENTIFIER)),
+            to_asset=CachedSettings().main_currency,
+        )
         for idx, result in enumerate(results):
             staked_amount_raw = staking_contract.decode(
                 result=result,
@@ -78,7 +82,7 @@ class BlurBalances(ProtocolWithBalance):
             )
             balances[user_address].assets[asset][self.counterparty] += Balance(
                 amount=amount,
-                usd_value=amount * blur_price,
+                value=amount * blur_price,
             )
 
         return balances

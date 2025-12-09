@@ -231,12 +231,12 @@ def test_native_token_balance(
         assert balances == {
             pol: {DEFAULT_BALANCE_LABEL: Balance(
                 amount=FVal('8.204435619126641457'),
-                usd_value=FVal('12.3066534286899621855'),
+                value=FVal('12.3066534286899621855'),
             )},
-            usdc: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.33078'), usd_value=FVal(0.496170))},  # noqa: E501
+            usdc: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.33078'), value=FVal(0.496170))},
             weth: {DEFAULT_BALANCE_LABEL: Balance(
                 amount=FVal('0.007712106620416874'),
-                usd_value=FVal(0.0115681599306253110),
+                value=FVal(0.0115681599306253110),
             )},
-            usdt: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.074222'), usd_value=FVal(0.1113330))},  # noqa: E501
+            usdt: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.074222'), value=FVal(0.1113330))},
         }

@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -75,7 +76,7 @@ class GivethCommonBalances(ProtocolWithBalance):
             return balances
 
         giv_asset = Asset(self.giv_token_id)
-        if (asset_price := Inquirer.find_usd_price(giv_asset)) == ZERO:
+        if (asset_price := Inquirer.find_price(giv_asset, CachedSettings().main_currency)) == ZERO:
             log.error(
                 f'Failed to query price of GIV while querying '
                 f'{self.evm_inquirer.chain_name} staked GIV',
@@ -97,7 +98,7 @@ class GivethCommonBalances(ProtocolWithBalance):
             )
             balances[arguments[idx]].assets[giv_asset][self.counterparty] += Balance(
                 amount=amount,
-                usd_value=amount * asset_price,
+                value=amount * asset_price,
             )
 
         return balances

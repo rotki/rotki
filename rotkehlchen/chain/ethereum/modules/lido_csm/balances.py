@@ -18,6 +18,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -94,8 +95,11 @@ class LidoCsmBalances(ProtocolWithBalance):
         if len(node_operators := self._node_operator_db.get_node_operators()) == 0:
             return balances
 
-        if (steth_price := Inquirer.find_usd_price(A_STETH)) == ZERO:
-            log.error('Failed to fetch stETH USD price; reporting USD values as zero.')
+        if (steth_price := Inquirer.find_price(
+                from_asset=A_STETH,
+                to_asset=CachedSettings().main_currency,
+        )) == ZERO:
+            log.error('Failed to fetch stETH price; reporting values as zero.')
 
         for entry in node_operators:
             # Fetch bond shares and convert to stETH
@@ -126,7 +130,7 @@ class LidoCsmBalances(ProtocolWithBalance):
 
             balances[entry.address].assets[A_STETH][self.counterparty] += Balance(
                 amount=total_steth,
-                usd_value=total_steth * steth_price,
+                value=total_steth * steth_price,
             )
 
         return balances

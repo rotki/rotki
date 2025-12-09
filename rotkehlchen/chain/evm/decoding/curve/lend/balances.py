@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.curve.lend.constants import CURVE_VAULT_CONTROLLER_ABI
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -87,7 +88,7 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
                 token_amount=amount,
                 token=token,
             )),
-            usd_value=normalized_amount * token_prices[token],
+            value=normalized_amount * token_prices[token],
         )
 
     def query_balances(self) -> 'BalancesSheetType':
@@ -161,9 +162,10 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
                 unique_tokens.add(borrowed_token)
 
         # Fetch prices for tokens
+        main_currency = CachedSettings().main_currency
         token_prices: dict[EvmToken, Price] = {}
         for token in unique_tokens:
-            if (price := Inquirer.find_usd_price(asset=token)) == ZERO:
+            if (price := Inquirer.find_price(token, main_currency)) == ZERO:
                 log.error(f'Failed to query price of {token!s} while fetching Curve lending balances.')  # noqa: E501
 
             token_prices[token] = price

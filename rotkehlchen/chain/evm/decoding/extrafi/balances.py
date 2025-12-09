@@ -22,6 +22,7 @@ from rotkehlchen.chain.evm.decoding.extrafi.constants import (
 )
 from rotkehlchen.chain.evm.decoding.extrafi.utils import maybe_query_farm_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -62,6 +63,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
         """Query balances of lending pools and extra locking"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         address_to_deposits = self.addresses_with_deposits()
+        main_currency = CachedSettings().main_currency
         for address, events in address_to_deposits.items():
             unique_reserves = set()
             farm_positions: set[tuple[int, int]] = set()
@@ -78,10 +80,10 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
             if len(unique_reserves) != 0:
                 lending_reserves = self.query_lending_reserves(address, list(unique_reserves))
                 for reserve_token, balance_amount in lending_reserves.items():
-                    price = Inquirer.find_usd_price(asset=reserve_token)
+                    price = Inquirer.find_price(reserve_token, main_currency)
                     balances[address].assets[reserve_token][self.counterparty] += Balance(
                         amount=balance_amount,
-                        usd_value=balance_amount * price,
+                        value=balance_amount * price,
                     )
 
             if len(farm_positions) != 0:
@@ -122,6 +124,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
             log.error(f'Failed to query {self.evm_inquirer.chain_name} extrafi locked balances due to {e!s}')  # noqa: E501
             return
 
+        main_currency = CachedSettings().main_currency
         for idx, result in enumerate(results):
             staked_amount_raw = farm_contract.decode(
                 result=result,
@@ -141,10 +144,10 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
             )
 
             lp_amount = token_normalized_value(lp_amount_raw, lp_token)
-            lp_price = Inquirer.find_usd_price(lp_token)
+            lp_price = Inquirer.find_price(lp_token, main_currency)
             balances[address].assets[lp_token][self.counterparty] += Balance(
                 amount=lp_amount,
-                usd_value=lp_amount * lp_price,
+                value=lp_amount * lp_price,
             )
 
             for debt_token, debt_amount in ((token_0, debt_0_amount), (token_1, debt_1_amount)):
@@ -152,10 +155,10 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                     continue
 
                 amount = token_normalized_value(debt_amount, debt_token)
-                price = Inquirer.find_usd_price(debt_token)
+                price = Inquirer.find_price(debt_token, main_currency)
                 balances[address].liabilities[debt_token][self.counterparty] += Balance(
                     amount=amount,
-                    usd_value=amount * price,
+                    value=amount * price,
                 )
 
     def _query_locked_extra(
@@ -185,7 +188,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
             log.error(f'Failed to query {self.evm_inquirer.chain_name} extrafi locked balances due to {e!s}')  # noqa: E501
             return
 
-        extrafi_price = Inquirer.find_usd_price(self.extrafi_token)
+        extrafi_price = Inquirer.find_price(self.extrafi_token, CachedSettings().main_currency)
         for idx, result in enumerate(results):
             user_address = addresses[idx]
             if (staked_amount_raw := staking_contract.decode(
@@ -201,7 +204,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
             )
             balances[user_address].assets[self.extrafi_token][self.counterparty] += Balance(
                 amount=amount,
-                usd_value=amount * extrafi_price,
+                value=amount * extrafi_price,
             )
 
     def _maybe_query_reserve_idx_to_underlying(

@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.velodrome.constants import VOTING_ESCROW_ABI
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -73,9 +74,12 @@ class VelodromeLikeBalances(ProtocolWithGauges):
             deployed_block=0,
         )
         chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
-        if (price := Inquirer().find_usd_price(self.protocol_token)) == ZERO_PRICE:
+        if (price := Inquirer.find_price(
+                from_asset=self.protocol_token,
+                to_asset=CachedSettings().main_currency,
+        )) == ZERO_PRICE:
             log.error(
-                f'Failed to request the USD price of {self.protocol_token.evm_address}. '
+                f'Failed to request the price of {self.protocol_token.evm_address}. '
                 f"{self.counterparty} locked balances value won't be accurate.",
             )
 
@@ -108,7 +112,7 @@ class VelodromeLikeBalances(ProtocolWithGauges):
                         token_amount=balance,
                         token_decimals=DEFAULT_TOKEN_DECIMALS,  # both AERO and VELO have 18 decimals  # noqa: E501
                     )),
-                    usd_value=amount * price,
+                    value=amount * price,
                 )
 
         return balances

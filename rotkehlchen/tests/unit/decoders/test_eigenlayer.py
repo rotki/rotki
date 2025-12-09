@@ -439,7 +439,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()][balances_inquirer.counterparty] == Balance(  # noqa: E501
         amount=FVal(amount),
-        usd_value=FVal('0.7720684677079537845'),
+        value=FVal('0.7720684677079537845'),
     )
 
 

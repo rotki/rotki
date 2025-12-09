@@ -13,7 +13,9 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_t
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -130,7 +132,7 @@ class UmamiBalances(ProtocolWithBalance):
             user_address: 'ChecksumEvmAddress',
     ) -> None:
         """Process vault balance and add to user's balance sheet."""
-        if (price := get_umami_vault_token_price(
+        if (usd_price := get_umami_vault_token_price(
             inquirer=Inquirer(),
             vault_token=vault_token,
             evm_inquirer=self.evm_inquirer,
@@ -144,7 +146,12 @@ class UmamiBalances(ProtocolWithBalance):
             token_amount=balance,
             token_decimals=vault_token.decimals,
         )
+        main_currency = CachedSettings().main_currency
+        if main_currency != A_USD:
+            price = usd_price * Inquirer.find_price(Inquirer.usd, main_currency)
+        else:
+            price = usd_price
         balances[user_address].assets[vault_token][self.counterparty] += Balance(
             amount=amount,
-            usd_value=amount * price,
+            value=amount * price,
         )

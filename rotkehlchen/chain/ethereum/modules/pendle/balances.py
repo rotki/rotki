@@ -9,6 +9,7 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -72,7 +73,10 @@ class PendleBalances(ProtocolWithBalance):
             log.error(f'Failed to query locked pendle balances for addresses {addresses_with_deposits}')  # noqa: E501
             return balances
 
-        price = Inquirer.find_usd_price(PENDLE_TOKEN)
+        price = Inquirer.find_price(
+            from_asset=PENDLE_TOKEN,
+            to_asset=CachedSettings().main_currency,
+        )
         for user_address, result in zip(addresses_with_deposits, results, strict=False):
             if (balance := self.ve_pendle_contract.decode(
                 result=result,
@@ -87,7 +91,7 @@ class PendleBalances(ProtocolWithBalance):
             )
             balances[user_address].assets[PENDLE_TOKEN][self.counterparty] += Balance(
                 amount=amount,
-                usd_value=amount * price,
+                value=amount * price,
             )
 
         return balances

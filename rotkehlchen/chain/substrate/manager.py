@@ -584,8 +584,9 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             self,
             addresses: Sequence[SubstrateAddress],
     ) -> dict[SubstrateAddress, BalanceSheet]:
-        usd_price = Inquirer.find_usd_price(
-            asset=(asset := A_DOT if self.chain == SupportedBlockchain.POLKADOT else A_KSM),
+        price = Inquirer.find_price(
+            from_asset=(asset := A_DOT if self.chain == SupportedBlockchain.POLKADOT else A_KSM),
+            to_asset=CachedSettings().main_currency,
         )
 
         wait_until_a_node_is_available(
@@ -598,7 +599,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         for account, amount in account_amount.items():
             balance = Balance(
                 amount=amount,
-                usd_value=amount * usd_price,
+                value=amount * price,
             )
             balances[account] = BalanceSheet()
             balances[account].assets[asset][DEFAULT_BALANCE_LABEL] = balance

@@ -601,17 +601,17 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     )
                     amount = asset_normalized_value(raw_amount, asset)
                     try:
-                        usd_price = Inquirer.find_usd_price(asset)
+                        price = Inquirer.find_price(asset, CachedSettings().main_currency)
                     except RemoteError as e:
                         log.error(
                             f'Error processing zksync lite balance entry due to inability to '
-                            f'query USD price: {e!s}. Skipping balance entry',
+                            f'query price: {e!s}. Skipping balance entry',
                         )
                         continue
 
                     balances[address].assets[asset][DEFAULT_BALANCE_LABEL] = Balance(
                         amount=amount,
-                        usd_value=usd_price * amount,
+                        value=price * amount,
                     )
 
             except (KeyError, DeserializationError, RemoteError) as e:

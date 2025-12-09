@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_GMX
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -83,10 +84,12 @@ class GmxBalances(ProtocolWithBalance):
         GMX (collaterals[i], index[i], is_long[i]).
 
         The positions given by the contract are returned using their value in USD and not using
-        the amount of tokens in the position. In our logic we go from USD value to the amount of
-        tokens using the current value of the asset. Also the contract returns the collateral
-        deposit (only its USD value) and a delta value that is how much the position has earned
+        the amount of tokens in the position. The contract returns the collateral deposit
+        (only its USD value) and a delta value that is how much the position has earned
         (also in USD). We sum collateral value + delta to get the current value of the position.
+
+        The total USD value is then converted to the main currency using the current USD price,
+        and the token amount is calculated by dividing the USD value by the token's USD price.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         unique_deposits = self._extract_unique_deposits()
@@ -123,6 +126,7 @@ class GmxBalances(ProtocolWithBalance):
             log.error(f'Failed to query GMX balances due to {e!s}')
             return balances
 
+        main_currency = CachedSettings().main_currency
         for idx, result in enumerate(call_output):  # each iteration is a different address with its positions  # noqa: E501
             pos_information = reader_contract.decode(
                 result=result,
@@ -147,21 +151,24 @@ class GmxBalances(ProtocolWithBalance):
                     )
                     continue
 
-                # query the current price of the collateral asset to obtain the amount inside GMX
-                if (asset_price := Inquirer.find_usd_price(asset=collateral_asset)) == ZERO:
+                prices = Inquirer.find_prices(
+                    from_assets=[collateral_asset, Inquirer.usd],
+                    to_asset=main_currency,
+                )
+                if ZERO in ((asset_price := prices[collateral_asset]), (usd_price := prices[Inquirer.usd])):  # noqa: E501
                     continue
 
-                position_collateral_value = token_normalized_value_decimals(
+                position_collateral_usd = token_normalized_value_decimals(
                     token_amount=pos_result[1] + pos_result[8],  # sum the collateral + delta (gain or loss)  # noqa: E501
                     token_decimals=GMX_USD_DECIMALS,
                 )
                 asset_amount = round(
-                    number=position_collateral_value / asset_price,
+                    number=position_collateral_usd / (asset_price / usd_price),
                     ndigits=collateral_asset.decimals or 18,
                 )
                 balances[user_address].assets[collateral_asset][self.counterparty] += Balance(
                     amount=asset_amount,
-                    usd_value=position_collateral_value,  # it is already given in USD
+                    value=position_collateral_usd * usd_price,
                 )
 
         return balances
@@ -183,7 +190,7 @@ class GmxBalances(ProtocolWithBalance):
             return balances
 
         reward_contract = self.evm_inquirer.contracts.contract(GMX_STAKING_REWARD)
-        gmx_price = Inquirer.find_usd_price(asset=A_GMX)
+        gmx_price = Inquirer.find_price(from_asset=A_GMX, to_asset=CachedSettings().main_currency)
         for user_address in addresses_events:
             staked_amount_raw = reward_contract.call(
                 node_inquirer=self.evm_inquirer,
@@ -196,7 +203,7 @@ class GmxBalances(ProtocolWithBalance):
             )
             balances[user_address].assets[self.gmx][self.counterparty] += Balance(
                 amount=amount,
-                usd_value=amount * gmx_price,
+                value=amount * gmx_price,
             )
 
         return balances

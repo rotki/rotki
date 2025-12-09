@@ -9,7 +9,6 @@ from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
-from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -129,8 +128,8 @@ class Liquity(EthereumModule):
             from_assets=[A_ETH, A_LUSD],
             to_asset=CachedSettings().main_currency,
         )
-        eth_price = main_currency_prices.get(A_ETH, ZERO_PRICE)
-        lusd_price = main_currency_prices.get(A_LUSD, ZERO_PRICE)
+        eth_price = main_currency_prices[A_ETH]
+        lusd_price = main_currency_prices[A_LUSD]
         for idx, output in enumerate(outputs):
             status, result = output
             if status is True:
@@ -255,11 +254,7 @@ class Liquity(EthereumModule):
                     break
 
             # get price information for the asset and deserialize the amount
-            main_currency_prices = Inquirer.find_prices(
-                from_assets=[asset],
-                to_asset=main_currency,
-            )
-            asset_main_price = main_currency_prices.get(asset, ZERO_PRICE)
+            asset_price = Inquirer.find_price(asset, main_currency)
             amount = deserialize_fval(
                 token_normalized_value_decimals(gain_info, 18),
             )
@@ -277,7 +272,7 @@ class Liquity(EthereumModule):
                     asset=asset,
                     balance=Balance(
                         amount=amount,
-                        value=asset_main_price * amount,
+                        value=asset_price * amount,
                     ),
                 )
             else:
@@ -288,7 +283,7 @@ class Liquity(EthereumModule):
                     asset=asset,
                     balance=Balance(
                         amount=amount,
-                        value=asset_main_price * amount,
+                        value=asset_price * amount,
                     ),
                 )
         return data

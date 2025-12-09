@@ -459,15 +459,15 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             # to the mapping above
             amount = asset_normalized_value(amount=total, asset=asset)
             try:
-                usd_price = Inquirer.find_usd_price(asset)
+                price = Inquirer.find_price(asset, CachedSettings().main_currency)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing loopring balance entry due to inability to '
-                    f'query USD price: {e!s}. Skipping balance entry',
+                    f'query price: {e!s}. Skipping balance entry',
                 )
                 continue
 
-            balances[asset] = Balance(amount=amount, usd_value=amount * usd_price)
+            balances[asset] = Balance(amount=amount, value=amount * price)
 
         return balances
 

@@ -7,6 +7,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -62,7 +63,10 @@ class SafeBalances(ProtocolWithBalance):
         if len(results) == 0:
             return balances
 
-        safe_price = Inquirer.find_usd_price(asset := Asset(SAFE_TOKEN_ID))
+        safe_price = Inquirer.find_price(
+            from_asset=(asset := Asset(SAFE_TOKEN_ID)),
+            to_asset=CachedSettings().main_currency,
+        )
         for idx, result in enumerate(results):
             locked_amount_raw = lock_contract.decode(
                 result=result,
@@ -75,7 +79,7 @@ class SafeBalances(ProtocolWithBalance):
             )
             balances[user_address].assets[asset][self.counterparty] += Balance(
                 amount=amount,
-                usd_value=amount * safe_price,
+                value=amount * safe_price,
             )
 
         return balances

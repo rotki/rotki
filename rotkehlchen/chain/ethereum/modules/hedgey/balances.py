@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 
@@ -67,10 +68,11 @@ class HedgeyBalances(ProtocolWithBalance):
             method_name='lockedBalances',
             arguments=call_args,
         )
+        main_currency = CachedSettings().main_currency
         for idx, entry in enumerate(result):
             token = args[idx][1]
             balances[args[idx][0]].assets[token][self.counterparty] += Balance(
                 amount=(amount := token_normalized_value(token_amount=entry[0], token=token)),
-                usd_value=amount * Inquirer.find_usd_price(token),
+                value=amount * Inquirer.find_price(token, main_currency),
             )
         return balances
