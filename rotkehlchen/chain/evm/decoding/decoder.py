@@ -43,6 +43,7 @@ from rotkehlchen.chain.evm.decoding.stakedao.constants import (
     STAKEDAO_SUPPORTED_CHAINS_WITHOUT_CLAIMS,
 )
 from rotkehlchen.chain.evm.decoding.stakedao.decoder import StakedaoCommonDecoder
+from rotkehlchen.chain.evm.decoding.superfluid.decoder import SuperfluidCommonDecoder
 from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITH_SPECIAL_WETH,
     CHAINS_WITHOUT_NATIVE_ETH,
@@ -245,6 +246,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
+        self._add_single_decoder(class_name='Superfluid', decoder_class=SuperfluidCommonDecoder, rules=rules)  # noqa: E501
 
         # Excluding Gnosis and Polygon PoS because they dont have ETH as native token
         # Also arb and scroll because they don't follow the weth9 design

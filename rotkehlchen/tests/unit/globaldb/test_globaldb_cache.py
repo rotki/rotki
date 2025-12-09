@@ -44,6 +44,10 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
     read_gearbox_data_from_cache,
 )
+from rotkehlchen.chain.evm.decoding.superfluid.utils import (
+    _get_token_list as get_superfluid_token_list,
+    query_superfluid_tokens,
+)
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     POOL_DATA_CHUNK_SIZE,
     query_velodrome_like_data,
@@ -56,8 +60,10 @@ from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -673,3 +679,62 @@ def test_query_beefy_legacy_boosts(ethereum_inquirer: 'EthereumInquirer') -> Non
             ('Reward Moo Curve ShezETH-ETH', 'rmooCurveShezETH-ETH', 18),
             ('Reward Moo Silo WETH (weETH Market)', 'rmooSiloWETH', 18),
         ]
+
+
+def test_superfluid_cache(ethereum_inquirer: EthereumInquirer):
+    """Test that the superfluid super tokens are created correctly"""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.SUPERFLUID_SUPER_TOKENS, str(ChainID.ETHEREUM.serialize_for_db())),  # noqa: E501
+        ) == []
+
+    def mock_request_get(url: str, *args, **kwargs):
+        if 'superfluid-org/tokenlist' in url:
+            return json.loads('{"name":"Superfluid Token List","timestamp":"2025-11-04T19:21:20.148Z","version":{"major":5,"minor":35,"patch":0},"tokens":[{"chainId":1,"address":"0x1ba8603da702602a8657980e825a6daa03dee93a","name":"Super USD Coin","symbol":"USDCx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/usdc.svg","tags":["supertoken"],"extensions":{"orderingScore":380,"superTokenInfo":{"type":"Wrapper","underlyingTokenAddress":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"}}},{"chainId":1,"address":"0xc22bea0be9872d8b7b3933cec70ece4d53a900da","name":"Super ETH","symbol":"ETHx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/eth.svg","tags":["supertoken"],"extensions":{"orderingScore":319,"superTokenInfo":{"type":"Native Asset"}}},{"chainId":56,"address":"0x529a4116f160c833c61311569d6b33dff41fd657","name":"Super BNB","symbol":"BNBx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/bnb.svg","tags":["supertoken"],"extensions":{"orderingScore":429,"superTokenInfo":{"type":"Native Asset"}}},{"chainId":1,"address":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","name":"USD Coin","symbol":"USDC","decimals":6,"logoURI":"https://tokenlist.superfluid.org/icons/usdc.svg","tags":["underlying"]}]}')  # noqa: E501
+
+        raise ValueError(f'Unexpected request: {url}')
+
+    with patch('rotkehlchen.chain.evm.decoding.superfluid.utils.request_get_dict', side_effect=mock_request_get):  # noqa: E501
+        query_superfluid_tokens(chain_id=ChainID.ETHEREUM)
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.SUPERFLUID_SUPER_TOKENS, str(ChainID.ETHEREUM.serialize_for_db())),  # noqa: E501
+        ) == [
+            '0x1BA8603DA702602A8657980e825A6DAa03Dee93a,0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            '0xC22BeA0Be9872d8B7B3933CEc70Ece4D53A900da,native',
+        ]
+
+    # Check that querying again doesn't try to process tokens since the cached version is the same.
+    with (
+        patch('rotkehlchen.chain.evm.decoding.superfluid.utils.request_get_dict', side_effect=mock_request_get),  # noqa: E501
+        patch('rotkehlchen.chain.evm.decoding.superfluid.utils.globaldb_set_general_cache_values') as set_cache_mock,  # noqa: E501
+    ):
+        query_superfluid_tokens(chain_id=ChainID.ETHEREUM)
+
+    assert set_cache_mock.call_count == 0
+
+
+@requires_env([TestEnvironment.NIGHTLY])
+def test_superfluid_remote_data_is_as_expected():
+    """Nightly test to check that the Superfluid token list contains the expected data."""
+    _, token_data_list = get_superfluid_token_list()
+    for token_data in token_data_list:
+        tags = token_data.get('tags', [])
+        assert (
+            (is_super := 'supertoken' in tags) or
+            'underlying' in tags
+        ), f'Expected either "supertoken" or "underlying" tag. Got: {tags}'
+        if not is_super:
+            continue
+
+        token_type = token_data.get('extensions', {}).get('superTokenInfo', {}).get('type')
+        assert token_type in ('Pure', 'Native Asset', 'Wrapper'), (
+            f'Expected token type of "Pure", "Native Asset" or "Wrapper", '
+            f'but got "{token_type}". Full token data: {token_data}'
+        )
+
+        for key in ('chainId', 'address'):
+            assert key in token_data, f'Expected key "{key}" in token data. Full token data: {token_data}'  # noqa: E501
