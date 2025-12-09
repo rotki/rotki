@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -155,7 +156,7 @@ class ThegraphCommonBalances(ProtocolWithBalance):
             calls_chunk_size=chunk_size,
         )
 
-        grt_price = Inquirer.find_usd_price(self.token)
+        grt_price = Inquirer.find_price(self.token, CachedSettings().main_currency)
         for idx, stake in enumerate(delegations_active):
             _, indexer, user_address, shares_amount = stake
 
@@ -174,7 +175,7 @@ class ThegraphCommonBalances(ProtocolWithBalance):
             if balance_norm > ZERO:
                 balances[user_address].assets[self.token][self.counterparty] += Balance(
                     amount=balance_norm,
-                    usd_value=grt_price * balance_norm,
+                    value=grt_price * balance_norm,
                 )
 
         return balances

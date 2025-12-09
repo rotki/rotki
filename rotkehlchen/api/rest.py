@@ -943,7 +943,7 @@ class RestAPI:
             self,
             blockchain: SupportedBlockchain | None,
             ignore_cache: bool,
-            usd_value_threshold: FVal | None = None,
+            value_threshold: FVal | None = None,
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> dict[str, Any]:
         msg = ''
@@ -957,7 +957,7 @@ class RestAPI:
             )
 
             # Filter balances before serialization
-            if usd_value_threshold is not None:
+            if value_threshold is not None:
                 for _, chain_balances in balances.per_account:
                     filtered_balances: dict[BlockchainAddress, BalanceSheet | Balance] = {}
                     for account, account_data in chain_balances.items():
@@ -967,12 +967,12 @@ class RestAPI:
 
                             for asset, asset_balances in account_data.assets.items():
                                 for key, balance in asset_balances.items():
-                                    if balance.usd_value > usd_value_threshold:
+                                    if balance.value > value_threshold:
                                         filtered_assets[asset][key] = balance
 
                             for asset, asset_balances in account_data.liabilities.items():
                                 for key, balance in asset_balances.items():
-                                    if balance.usd_value > usd_value_threshold:
+                                    if balance.value > value_threshold:
                                         filtered_liabilities[asset][key] = balance
 
                             if len(filtered_assets) != 0 or len(filtered_liabilities) != 0:
@@ -983,7 +983,7 @@ class RestAPI:
                                 filtered_balances[account] = new_balance_sheet
                         elif isinstance(account_data, Balance):
                             # For BTC and BCH, account_data is a single Balance object
-                            if account_data.usd_value > usd_value_threshold:
+                            if account_data.value > value_threshold:
                                 filtered_balances[account] = account_data
 
                     chain_balances.clear()

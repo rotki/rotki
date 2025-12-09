@@ -820,7 +820,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                 eth_manager = self.get_chain_manager(SupportedBlockchain.ETHEREUM)
                 try:
-                    balance_result, token_usd_price = eth_manager.tokens.query_tokens_for_addresses(  # noqa: E501
+                    balance_result, token_price = eth_manager.tokens.query_tokens_for_addresses(
                         addresses=proxy_addresses,
                     )
                 except BadFunctionCallOutput as e:
@@ -835,7 +835,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                 eth_manager.update_balances_after_token_query(
                     balance_result=balance_result,
-                    token_usd_price=token_usd_price,
+                    token_price=token_price,
                     balances=eth_balances,
                     proxies_information=proxy_to_type_and_owner,
                 )

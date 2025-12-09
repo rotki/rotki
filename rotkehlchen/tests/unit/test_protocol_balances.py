@@ -168,7 +168,7 @@ def test_curve_balances(
     asset = EvmToken('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F')
     assert user_balance.assets[asset][CPT_CURVE] == Balance(
         amount=FVal('2402.233522210805651105'),
-        usd_value=FVal('3603.3502833162084766575'),
+        value=FVal('3603.3502833162084766575'),
     )
 
 
@@ -194,7 +194,7 @@ def test_convex_gauges_balances(
     asset = EvmToken('eip155:1/erc20:0xF9835375f6b268743Ea0a54d742Aa156947f8C06')
     assert user_balance.assets[asset][CPT_CONVEX] == Balance(
         amount=FVal('34.011048723934089999'),
-        usd_value=FVal('51.0165730859011349985'),
+        value=FVal('51.0165730859011349985'),
     )
 
 
@@ -221,7 +221,7 @@ def test_convex_staking_balances(
     # the amount here is the sum of the locked ~44 and the staked tokens ~333
     assert user_balance.assets[A_CVX.resolve_to_evm_token()][CPT_CONVEX] == Balance(
         amount=FVal('18229.934390350508148387'),
-        usd_value=FVal('27344.9015855257622225805'),
+        value=FVal('27344.9015855257622225805'),
     )
 
 
@@ -252,7 +252,7 @@ def test_convex_staking_balances_without_gauges(
     user_balance = convex_balances[ethereum_accounts[0]]
     assert user_balance.assets[A_CVX.resolve_to_evm_token()][CPT_CONVEX] == Balance(
         amount=FVal('18229.934390350508148387'),
-        usd_value=FVal('27344.9015855257622225805'),
+        value=FVal('27344.9015855257622225805'),
     )
 
 
@@ -287,7 +287,7 @@ def test_velodrome_v2_staking_balances(
     )
     assert user_balance.assets[Asset(weth_op_lp_token).resolve_to_evm_token()][CPT_VELODROME] == Balance(  # noqa: E501
         amount=FVal('0.043087772070655563'),  # staked in gauge
-        usd_value=FVal('0.0646316581059833445'),
+        value=FVal('0.0646316581059833445'),
     )
 
 
@@ -313,7 +313,7 @@ def test_thegraph_balances(
     user_balance = thegraph_balances[ethereum_accounts[0]]
     assert user_balance.assets[A_GRT][CPT_THEGRAPH] == Balance(
         amount=FVal(amount),
-        usd_value=FVal(amount) * FVal(1.5),
+        value=FVal(amount) * FVal(1.5),
     )
 
 
@@ -345,7 +345,7 @@ def test_thegraph_balances_arbitrum_one(
     user_balance = thegraph_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[A_GRT_ARB][CPT_THEGRAPH] == Balance(
         amount=amount,
-        usd_value=amount * FVal(1.5),
+        value=amount * FVal(1.5),
     )
 
 
@@ -397,7 +397,7 @@ def test_thegraph_balances_vested_arbitrum_one(
         thegraph_balances = thegraph_balances_inquirer.query_balances()
     assert thegraph_balances[arbitrum_one_accounts[0]].assets[A_GRT_ARB][CPT_THEGRAPH] == Balance(
         amount=expected_grt_balance,
-        usd_value=expected_grt_balance * FVal(1.5),
+        value=expected_grt_balance * FVal(1.5),
     )
 
 
@@ -421,7 +421,7 @@ def test_octant_balances(
     )
     octant_balances = octant_balances_inquirer.query_balances()
     user_balance = octant_balances[ethereum_accounts[0]]
-    assert user_balance.assets[A_GLM.resolve_to_evm_token()][CPT_OCTANT] == Balance(amount=FVal('1000'), usd_value=FVal('1500'))  # noqa: E501
+    assert user_balance.assets[A_GLM.resolve_to_evm_token()][CPT_OCTANT] == Balance(amount=FVal('1000'), value=FVal('1500'))  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -445,7 +445,7 @@ def test_eigenlayer_balances(
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()][CPT_EIGENLAYER] == Balance(  # noqa: E501
         amount=FVal('0.114063122816914142'),
-        usd_value=FVal('0.1710946842253712130'),
+        value=FVal('0.1710946842253712130'),
     )
 
 
@@ -471,7 +471,7 @@ def test_eigenpod_balances(
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[A_ETH][CPT_EIGENLAYER] == Balance(
         amount=eigenpod_balance,
-        usd_value=FVal('1.5') * eigenpod_balance,
+        value=FVal('1.5') * eigenpod_balance,
     )
 
 
@@ -482,9 +482,10 @@ def test_eigenpod_balances(
 ]])
 @pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(weight=ONE, owned=True),)])  # noqa: E501
 @pytest.mark.parametrize('mocked_current_prices', [{
-    'eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f': FVal(69928),  # wBTC
-    'eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1': FVal(1.001),  # dai
-    'eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1': FVal(3583.17),  # weth
+    ('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f', 'EUR'): FVal(69928),  # wBTC
+    ('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', 'EUR'): FVal(1.001),  # dai
+    ('eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 'EUR'): FVal(3583.17),  # weth  # noqa: E501
+    ('USD', 'EUR'): FVal(0.86),
 }])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_gmx_balances(
@@ -536,18 +537,18 @@ def test_gmx_balances(
 
     weth_arb = Asset('eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1')
     assert balances[arbitrum_one_accounts[0]].assets[weth_arb][CPT_GMX] == Balance(
-        amount=FVal('0.020625523771241888'),
-        usd_value=FVal('73.904758011400794198629853957124'),
+        amount=FVal('0.017737950443268023'),
+        value=FVal('63.55809188980468301082167440312664'),
     )
     wbtc_arb = Asset('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f')
     assert balances[arbitrum_one_accounts[0]].assets[wbtc_arb][CPT_GMX] == Balance(
-        amount=FVal('0.00092231'),
-        usd_value=FVal('64.495126014300507906764604009528'),
+        amount=FVal('0.00079318'),
+        value=FVal('55.46580837229843679981755944819408'),
     )
     dai_arb = Asset('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1')
     assert balances[arbitrum_one_accounts[1]].assets[dai_arb][CPT_GMX] == Balance(
-        amount=FVal('42.896760410410693074'),
-        usd_value=FVal('42.939657170821103766867050208907'),
+        amount=FVal('36.891213952953196043'),
+        value=FVal('36.92810516690614923950566317966002'),
     )
 
 
@@ -579,7 +580,7 @@ def test_gmx_balances_staking(
     balances = balances_inquirer.query_balances()
     assert balances[arbitrum_one_accounts[0]].assets[A_GMX][CPT_GMX] == Balance(
         amount=FVal('4.201981641893733976'),
-        usd_value=FVal('164.46556146372074782064'),
+        value=FVal('32.64939735751431299352'),
     )
 
 
@@ -603,7 +604,8 @@ def test_aave_balances_staking(
     )
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[A_AAVE][CPT_AAVE] == Balance(
-        amount=amount, usd_value=amount * FVal(1.5),
+        amount=amount,
+        value=amount * FVal(1.5),
     )
 
 
@@ -665,19 +667,19 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
     # Check individual balances instead of full BalanceSheet comparison
     assert balances[blockchain.accounts.eth[0]].assets[a_eth_usdc][CPT_AAVE_V3] == Balance(
         amount=FVal(123),
-        usd_value=FVal(123) * aave_prices[a_eth_usdc],
+        value=FVal(123) * aave_prices[a_eth_usdc],
     )
     assert balances[blockchain.accounts.eth[0]].liabilities[stable_debt_eth_usdc][CPT_AAVE_V3] == Balance(  # noqa: E501
         amount=FVal(456),
-        usd_value=FVal(456) * aave_prices[stable_debt_eth_usdc],
+        value=FVal(456) * aave_prices[stable_debt_eth_usdc],
     )
     assert balances[blockchain.accounts.eth[1]].liabilities[stable_debt_eth_usdc][CPT_AAVE_V3] == Balance(  # noqa: E501
         amount=FVal(456),
-        usd_value=FVal(456) * aave_prices[stable_debt_eth_usdc],
+        value=FVal(456) * aave_prices[stable_debt_eth_usdc],
     )
     assert balances[blockchain.accounts.eth[1]].liabilities[variable_debt_eth_usdc][CPT_AAVE_V3] == Balance(  # noqa: E501
         amount=FVal(789),
-        usd_value=FVal(789) * aave_prices[variable_debt_eth_usdc],
+        value=FVal(789) * aave_prices[variable_debt_eth_usdc],
     )
 
 
@@ -734,7 +736,7 @@ def test_compound_v3_token_balances_liabilities(
 
     def get_balance(amount: str):
         return Balance(
-            amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK,
+            amount=FVal(amount), value=FVal(amount) * CURRENT_PRICE_MOCK,
         )
     assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC][CPT_COMPOUND_V3] == get_balance('15042.136803')  # noqa: E501
     assert blockchain.balances.eth[ethereum_accounts[1]].assets[c_usdc_v3][CPT_COMPOUND_V3] == get_balance('0.32795')  # noqa: E501
@@ -763,7 +765,7 @@ def test_blur_balances(
     user_balance = blur_balances[ethereum_accounts[0]]
     assert user_balance.assets[Asset(BLUR_IDENTIFIER)][CPT_BLUR] == Balance(
         amount=amount,
-        usd_value=amount * FVal(1.5),
+        value=amount * FVal(1.5),
     )
 
 
@@ -789,10 +791,12 @@ def test_hop_balances_staking(
     hop_lp_token = Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')
     hop_reward_token = Asset('eip155:42161/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC')
     assert balances[arbitrum_one_accounts[0]].assets[hop_lp_token][CPT_HOP] == Balance(
-        amount=lp_amount, usd_value=lp_amount * FVal(1.5),
+        amount=lp_amount,
+        value=lp_amount * FVal(1.5),
     )
     assert balances[arbitrum_one_accounts[0]].assets[hop_reward_token][CPT_HOP] == Balance(
-        amount=reward_amount, usd_value=reward_amount * FVal(1.5),
+        amount=reward_amount,
+        value=reward_amount * FVal(1.5),
     )
 
 
@@ -817,10 +821,12 @@ def test_hop_balances_staking_2(
     balances = balances_inquirer.query_balances()
     hop_lp_token = Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')
     assert balances[arbitrum_one_accounts[0]].assets[hop_lp_token][CPT_HOP] == Balance(
-        amount=lp_amount, usd_value=lp_amount * FVal(1.5),
+        amount=lp_amount,
+        value=lp_amount * FVal(1.5),
     )
     assert balances[arbitrum_one_accounts[0]].assets[A_ARB][CPT_HOP] == Balance(
-        amount=reward_amount, usd_value=reward_amount * FVal(1.5),
+        amount=reward_amount,
+        value=reward_amount * FVal(1.5),
     )
 
 
@@ -846,7 +852,7 @@ def test_gearbox_balances(
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[GEAR_TOKEN][CPT_GEARBOX] == Balance(
         amount=amount,
-        usd_value=amount * FVal(1.5),
+        value=amount * FVal(1.5),
     )
 
 
@@ -872,7 +878,7 @@ def test_gearbox_balances_arb(
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[GEAR_TOKEN_ARB][CPT_GEARBOX] == Balance(
         amount=amount,
-        usd_value=amount * FVal(1.5),
+        value=amount * FVal(1.5),
     )
 
 
@@ -898,7 +904,7 @@ def test_safe_locked(
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[Asset(SAFE_TOKEN_ID)][CPT_SAFE] == Balance(
         amount=amount,
-        usd_value=amount * FVal(1.5),
+        value=amount * FVal(1.5),
     )
 
 
@@ -932,11 +938,11 @@ def test_extrafi_lending_balances(
     protocol_balances, velo_amount, extra_amount = protocol_balances_inquirer.query_balances(), FVal('366399.179130825123704582'), FVal('6405.478041239509217895')  # noqa: E501
     assert protocol_balances[optimism_accounts[0]].assets[Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=velo_amount,
-        usd_value=velo_amount * FVal(1.5),
+        value=velo_amount * FVal(1.5),
     )
     assert protocol_balances[optimism_accounts[1]].assets[Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=extra_amount,
-        usd_value=extra_amount * FVal(1.5),
+        value=extra_amount * FVal(1.5),
     )
 
     with globaldb.conn.read_ctx() as cursor:
@@ -972,11 +978,11 @@ def test_extrafi_farm_balances(
     protocol_balances = protocol_balances_inquirer.query_balances()
     assert protocol_balances[base_accounts[0]].assets[Asset('eip155:8453/erc20:0x61366A4e6b1DB1b85DD701f2f4BFa275EF271197')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=FVal('0.001146519712970269'),
-        usd_value=FVal('15072.492806231623823179919568956'),
+        value=FVal('13715.96845367077767909372680774996'),
     )
     assert protocol_balances[base_accounts[0]].liabilities[Asset('eip155:8453/erc20:0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=FVal('10015.072706'),
-        usd_value=FVal('10012.6978598973939729841870'),
+        value=FVal('9111.555052506628515415610170'),
     )
 
     with globaldb.conn.read_ctx() as cursor:
@@ -990,11 +996,11 @@ def test_extrafi_farm_balances(
     # query again to verify that it works as expected
     assert (protocol_balances := protocol_balances_inquirer.query_balances())[base_accounts[0]].assets[Asset('eip155:8453/erc20:0x61366A4e6b1DB1b85DD701f2f4BFa275EF271197')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=FVal('0.001146519712970269'),
-        usd_value=FVal('15072.492806231623823179919568956'),
+        value=FVal('13715.96845367077767909372680774996'),
     )
     assert protocol_balances[base_accounts[0]].liabilities[Asset('eip155:8453/erc20:0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376')][CPT_EXTRAFI] == Balance(  # noqa: E501
         amount=FVal('10015.072706'),
-        usd_value=FVal('10012.6978598973939729841870'),
+        value=FVal('9111.555052506628515415610170'),
     )
 
 
@@ -1055,7 +1061,6 @@ def test_umami_balances(
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check that staked balances of Umami are properly detected."""
-    amount, usd_value, gm_usdc_vault = FVal('46.422107'), FVal('74.988646874055'), Asset('eip155:42161/erc20:0x5f851F67D24419982EcD7b7765deFD64fBb50a97')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=deserialize_evm_tx_hash('0x4688c10bc6fadf06c2348fffe1e13c6d7a0b0c586438944aa9557b447a5f319a'),
@@ -1067,9 +1072,9 @@ def test_umami_balances(
     )
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
-    assert user_balance.assets[gm_usdc_vault][CPT_UMAMI] == Balance(
-        amount=amount,
-        usd_value=usd_value,
+    assert user_balance.assets[Asset('eip155:42161/erc20:0x5f851F67D24419982EcD7b7765deFD64fBb50a97')][CPT_UMAMI] == Balance(  # noqa: E501
+        amount=FVal('46.422107'),
+        value=FVal('112.4829703110825'),
     )
 
 
@@ -1096,7 +1101,7 @@ def test_walletconnect_staked_balances(
     user_balance = protocol_balances[optimism_accounts[0]]
     assert user_balance.assets[Asset(WCT_TOKEN_ID)][CPT_WALLETCONNECT] == Balance(
         amount=amount,
-        usd_value=amount * FVal(1.5),
+        value=amount * FVal(1.5),
     )
 
 
@@ -1123,11 +1128,11 @@ def test_curve_lend_balances(
 
     assert user_balance.assets[A_WETH_ARB][CPT_CURVE] == Balance(
         amount=FVal('0.013968407653526627'),
-        usd_value=FVal('50.14490726724216773476'),
+        value=FVal('39.90019772599266896042'),
     )
     assert user_balance.liabilities[Asset('eip155:42161/erc20:0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5')][CPT_CURVE] == Balance(  # noqa: E501
         amount=FVal('30.100455885544052449'),
-        usd_value=FVal('30.055997512201103883532827'),
+        value=FVal('25.839194546739352031899968'),
     )
 
 
@@ -1155,11 +1160,11 @@ def test_curve_crvusd_balances(
 
     assert user_balance.assets[A_WBTC][CPT_CURVE] == Balance(
         amount=FVal('0.04999999'),
-        usd_value=FVal('4251.14914977'),
+        value=FVal('3947.84921043'),
     )
     assert user_balance.liabilities[Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')][CPT_CURVE] == Balance(  # noqa: E501
         amount=FVal('3591.07534296748961703'),
-        usd_value=FVal('3591.04302328940290962344673'),
+        value=FVal('3081.63462158809263748927311'),
     )
 
 
@@ -1186,7 +1191,7 @@ def test_gnosis_giveth_staked_balances(
 
     assert user_balance.assets[giv_asset][CPT_GIVETH] == Balance(
         amount=FVal('21266652.068337565927179618'),
-        usd_value=FVal('170838.63139580728447924149192906'),
+        value=FVal('9666.11869810079046522167997336'),
     )
 
 
@@ -1214,7 +1219,7 @@ def test_optimism_giveth_staked_balances(
 
     assert user_balance.assets[giv_asset][CPT_GIVETH] == Balance(
         amount=FVal('31641.865744797163817899'),
-        usd_value=FVal('247.43907370565637308433200101'),
+        value=FVal('14.38818919147416633127503328'),
     )
 
 
@@ -1240,7 +1245,7 @@ def test_hedgey_locked_balances(
 
     assert user_balance.assets[A_ENS][CPT_HEDGEY] == Balance(
         amount=FVal('2943.901116977446327568'),
-        usd_value=FVal('92114.66595022429558960272'),
+        value=FVal('29026.86501339762078982048'),
     )
 
 
@@ -1265,7 +1270,7 @@ def test_velodrome_locked_balances(
     user_balance = protocol_balances[optimism_accounts[0]]
     assert user_balance.assets[Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db')][CPT_VELODROME] == Balance(  # noqa: E501
         amount=FVal('215.817657296359655794'),
-        usd_value=FVal('12.717487091502585436973038'),
+        value=FVal('5.29471501539563441629782432'),
     )
 
 
@@ -1290,7 +1295,7 @@ def test_aerodrome_locked_balances(
     user_balance = protocol_balances[base_accounts[0]]
     assert user_balance.assets[Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631')][CPT_AERODROME] == Balance(  # noqa: E501
         amount=FVal('927'),
-        usd_value=FVal('538.76313'),
+        value=FVal('520.361253'),
     )
 
 
@@ -1364,9 +1369,9 @@ def test_hyperliquid(
     protocol_balances = hyper_balances.query_balances()
     user_4e = arbitrum_one_accounts[0]
     user_3b = arbitrum_one_accounts[1]
-    assert protocol_balances[user_4e].assets[arb_usdc][CPT_HYPER] == Balance(amount=FVal(519.955570), usd_value=FVal(519.887455820330))  # noqa: E501
-    assert protocol_balances[user_3b].assets[Asset('HYPE')][CPT_HYPER] == Balance(amount=FVal(14.79852012), usd_value=FVal(232.9287066888))  # noqa: E501
-    assert protocol_balances[user_3b].assets[arb_usdc][CPT_HYPER] == Balance(amount=FVal(27.20794226), usd_value=FVal(27.20437801956394))  # noqa: E501
+    assert protocol_balances[user_4e].assets[arb_usdc][CPT_HYPER] == Balance(amount=FVal(519.955570), value=FVal(446.540963249420))  # noqa: E501
+    assert protocol_balances[user_3b].assets[Asset('HYPE')][CPT_HYPER] == Balance(amount=FVal(14.79852012), value=FVal(368.1871805856))  # noqa: E501
+    assert protocol_balances[user_3b].assets[arb_usdc][CPT_HYPER] == Balance(amount=FVal(27.20794226), value=FVal(23.36634406054156))  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1389,7 +1394,7 @@ def test_pendle_locked_balances(
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[PENDLE_TOKEN][CPT_PENDLE] == Balance(
         amount=FVal('367.772672118320474345'),
-        usd_value=FVal('901.04304668988516214525'),
+        value=FVal('750.25625112137376766380'),
     )
 
 
@@ -1413,5 +1418,5 @@ def test_runmoney_balances(
     user_balance = protocol_balances[base_accounts[0]]
     assert user_balance.assets[Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')][CPT_RUNMONEY] == Balance(  # noqa: E501
         amount=FVal('102.973178'),
-        usd_value=FVal('102.942697939312'),
+        value=FVal('94.6941344888'),
     )

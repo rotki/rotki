@@ -109,7 +109,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
 
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
-    Inquirer.find_usd_prices = MagicMock(side_effect=Inquirer.find_usd_prices)
+    Inquirer.find_prices = MagicMock(side_effect=Inquirer.find_prices)
     with (
         patch(
             target='rotkehlchen.chain.evm.tokens.EvmTokens._query_new_tokens',
@@ -193,7 +193,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
 
     # Confirm that prices were not queried for a token in evm_accounts_details that has no balance.
     assert A_CRV not in found_tokens
-    assert all(asset in found_tokens for asset in Inquirer.find_usd_prices.call_args_list[0][0][0])
+    assert all(asset in found_tokens for asset in Inquirer.find_prices.call_args_list[0][0][0])
 
 
 def test_generate_chunks():

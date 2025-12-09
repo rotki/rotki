@@ -151,22 +151,22 @@ def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argu
     eth, mana, uni, wbtc, link, dai, frax, usdc, storj, lrc, snx, pan, usdt = FVal('0.00002036000092'), FVal('16.38'), FVal('2.1409'), FVal('0.00012076'), FVal('0.47523'), FVal('53.83503876'), FVal('2.4306'), FVal('98.233404'), FVal('2.2064'), FVal('0.95'), FVal('0.95'), FVal('9202.65'), FVal('4.1')  # noqa: E501
     assert balances == {
         lefty: BalanceSheet(assets={
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(lefty_eth_amount, lefty_eth_amount * CURRENT_PRICE_MOCK)},  # noqa: E501
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=lefty_eth_amount, value=lefty_eth_amount * CURRENT_PRICE_MOCK)},  # noqa: E501
         }),
         rotki: BalanceSheet(assets={
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(eth, eth * CURRENT_PRICE_MOCK)},
-            A_MANA: {DEFAULT_BALANCE_LABEL: Balance(mana, mana * CURRENT_PRICE_MOCK)},
-            A_UNI: {DEFAULT_BALANCE_LABEL: Balance(uni, uni * CURRENT_PRICE_MOCK)},
-            A_WBTC: {DEFAULT_BALANCE_LABEL: Balance(wbtc, wbtc * CURRENT_PRICE_MOCK)},
-            A_LINK: {DEFAULT_BALANCE_LABEL: Balance(link, link * CURRENT_PRICE_MOCK)},
-            A_DAI: {DEFAULT_BALANCE_LABEL: Balance(dai, dai * CURRENT_PRICE_MOCK)},
-            EvmToken('eip155:1/erc20:0x853d955aCEf822Db058eb8505911ED77F175b99e'): {DEFAULT_BALANCE_LABEL: Balance(frax, frax * CURRENT_PRICE_MOCK)},  # noqa: E501  # FRAX
-            A_USDC: {DEFAULT_BALANCE_LABEL: Balance(usdc, usdc * CURRENT_PRICE_MOCK)},
-            EvmToken('eip155:1/erc20:0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC'): {DEFAULT_BALANCE_LABEL: Balance(storj, storj * CURRENT_PRICE_MOCK)},  # noqa: E501  # STORJ
-            A_LRC: {DEFAULT_BALANCE_LABEL: Balance(lrc, lrc * CURRENT_PRICE_MOCK)},
-            A_SNX: {DEFAULT_BALANCE_LABEL: Balance(snx, snx * CURRENT_PRICE_MOCK)},
-            A_PAN: {DEFAULT_BALANCE_LABEL: Balance(pan, pan * CURRENT_PRICE_MOCK)},
-            A_USDT: {DEFAULT_BALANCE_LABEL: Balance(usdt, usdt * CURRENT_PRICE_MOCK)},
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=eth, value=eth * CURRENT_PRICE_MOCK)},
+            A_MANA: {DEFAULT_BALANCE_LABEL: Balance(amount=mana, value=mana * CURRENT_PRICE_MOCK)},
+            A_UNI: {DEFAULT_BALANCE_LABEL: Balance(amount=uni, value=uni * CURRENT_PRICE_MOCK)},
+            A_WBTC: {DEFAULT_BALANCE_LABEL: Balance(amount=wbtc, value=wbtc * CURRENT_PRICE_MOCK)},
+            A_LINK: {DEFAULT_BALANCE_LABEL: Balance(amount=link, value=link * CURRENT_PRICE_MOCK)},
+            A_DAI: {DEFAULT_BALANCE_LABEL: Balance(amount=dai, value=dai * CURRENT_PRICE_MOCK)},
+            EvmToken('eip155:1/erc20:0x853d955aCEf822Db058eb8505911ED77F175b99e'): {DEFAULT_BALANCE_LABEL: Balance(amount=frax, value=frax * CURRENT_PRICE_MOCK)},  # noqa: E501  # FRAX
+            A_USDC: {DEFAULT_BALANCE_LABEL: Balance(amount=usdc, value=usdc * CURRENT_PRICE_MOCK)},
+            EvmToken('eip155:1/erc20:0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC'): {DEFAULT_BALANCE_LABEL: Balance(amount=storj, value=storj * CURRENT_PRICE_MOCK)},  # noqa: E501  # STORJ
+            A_LRC: {DEFAULT_BALANCE_LABEL: Balance(amount=lrc, value=lrc * CURRENT_PRICE_MOCK)},
+            A_SNX: {DEFAULT_BALANCE_LABEL: Balance(amount=snx, value=snx * CURRENT_PRICE_MOCK)},
+            A_PAN: {DEFAULT_BALANCE_LABEL: Balance(amount=pan, value=pan * CURRENT_PRICE_MOCK)},
+            A_USDT: {DEFAULT_BALANCE_LABEL: Balance(amount=usdt, value=usdt * CURRENT_PRICE_MOCK)},
         }),
         empty: BalanceSheet(),
     }

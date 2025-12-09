@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.constants.assets import A_AAVE
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -62,7 +63,10 @@ class AaveBalances(ProtocolWithBalance):
         )) == 0:
             return balances
 
-        token_price = Inquirer.find_usd_price(A_AAVE)
+        token_price = Inquirer.find_price(
+            from_asset=A_AAVE,
+            to_asset=CachedSettings().main_currency,
+        )
         for user, result in zip(addresses_with_deposits, staked_rewards, strict=True):
             balance: int
             if (balance := staking_contract.decode(
@@ -78,7 +82,7 @@ class AaveBalances(ProtocolWithBalance):
             )) > ZERO:
                 balances[user].assets[A_AAVE][self.counterparty] += Balance(
                     amount=balance_norm,
-                    usd_value=token_price * balance_norm,
+                    value=token_price * balance_norm,
                 )
 
         return balances

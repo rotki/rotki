@@ -11,6 +11,7 @@ from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.manager import ChainManager, ChainWithEoA
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_AVAX
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import BlockchainQueryError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -99,12 +100,12 @@ class AvalancheManager(ChainManager[ChecksumEvmAddress], ChainWithEoA):
         May raise RemoteError if no nodes are available or the balances request fails.
         """
         balances: dict[ChecksumEvmAddress, BalanceSheet] = {}
-        avax_usd_price = Inquirer.find_usd_price(A_AVAX)
+        avax_price = Inquirer.find_price(A_AVAX, CachedSettings().main_currency)
         for account in addresses:
             balances[account] = BalanceSheet()
             balances[account].assets[A_AVAX][DEFAULT_BALANCE_LABEL] = Balance(
                 amount=(amount := self.get_avax_balance(account)),
-                usd_value=amount * avax_usd_price,
+                value=amount * avax_price,
             )
 
         return balances

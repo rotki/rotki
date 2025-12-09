@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, Pr
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CVX
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -58,7 +59,10 @@ class ConvexBalances(ProtocolWithGauges):
         is variable.
         The balances variable is mutated in this function.
         """
-        cvx_price = Inquirer.find_usd_price(self.cvx)
+        cvx_price = Inquirer.find_price(
+            from_asset=self.cvx,
+            to_asset=CachedSettings().main_currency,
+        )
         try:
             call_output = self.evm_inquirer.multicall(
                 calls=[(
@@ -77,7 +81,7 @@ class ConvexBalances(ProtocolWithGauges):
             if amount == ZERO:
                 continue
 
-            balance = Balance(amount=amount, usd_value=cvx_price * amount)
+            balance = Balance(amount=amount, value=cvx_price * amount)
             balances[address].assets[self.cvx][self.counterparty] += balance
 
         return None

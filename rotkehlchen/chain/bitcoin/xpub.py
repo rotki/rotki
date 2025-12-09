@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.constants.assets import A_BCH, A_BTC
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import replace_tag_mappings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -247,17 +248,18 @@ class XpubManager:
             )
 
         # also add queried balances
+        main_currency = CachedSettings().main_currency
         if xpub_data.blockchain == SupportedBlockchain.BITCOIN:
             balances = self.chains_aggregator.balances.btc
-            asset_usd_price = Inquirer.find_usd_price(A_BTC)
+            asset_price = Inquirer.find_price(A_BTC, main_currency)
         else:  # BCH
             balances = self.chains_aggregator.balances.bch
-            asset_usd_price = Inquirer.find_usd_price(A_BCH)
+            asset_price = Inquirer.find_price(A_BCH, main_currency)
 
         for entry in derived_addresses_data:
             new_balance = Balance(
                 amount=entry.balance,
-                usd_value=entry.balance * asset_usd_price,
+                value=entry.balance * asset_price,
             )
             balances[entry.address] = new_balance
         self.chains_aggregator.totals = self.chains_aggregator.balances.recalculate_totals()

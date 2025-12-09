@@ -24,6 +24,7 @@ from rotkehlchen.chain.manager import ChainManagerWithTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -145,14 +146,14 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         May raise RemoteError if the query fails.
         """
         balances = {}
-        btc_usd_price = Inquirer.find_usd_price(self.asset)
+        btc_price = Inquirer.find_price(self.asset, CachedSettings().main_currency)
         for account, balance in self._query(
                 action=BtcQueryAction.BALANCES,
                 accounts=addresses,
         ).items():
             balances[account] = Balance(
                 amount=balance,
-                usd_value=balance * btc_usd_price,
+                value=balance * btc_price,
             )
 
         return balances

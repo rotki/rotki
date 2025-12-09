@@ -68,9 +68,9 @@ def assert_btc_balances_result(
         balance = satoshis_to_btc(FVal(btc_balances[idx]))
         assert FVal(standalone[account]['amount']) == balance
         if balance == ZERO:
-            assert FVal(standalone[account]['usd_value']) == ZERO
+            assert FVal(standalone[account]['value']) == ZERO
         else:
-            assert FVal(standalone[account]['usd_value']) > ZERO
+            assert FVal(standalone[account]['value']) > ZERO
 
     totals = result['totals'].get('assets', result['totals'])
     if also_eth:
@@ -81,9 +81,9 @@ def assert_btc_balances_result(
     expected_btc_total = sum(satoshis_to_btc(FVal(balance)) for balance in btc_balances)
     assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['amount']) == expected_btc_total
     if expected_btc_total == ZERO:
-        assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['usd_value']) == ZERO
+        assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['value']) == ZERO
     else:
-        assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['usd_value']) > ZERO
+        assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['value']) > ZERO
 
 
 def assert_eth_balances_result(
@@ -111,12 +111,12 @@ def assert_eth_balances_result(
         for idx, account in enumerate(eth_accounts):
             expected_amount = from_wei(FVal(eth_balances[idx]))
             amount = FVal(per_account[account]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'])  # noqa: E501
-            usd_value = FVal(per_account[account]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['usd_value'])  # noqa: E501
+            value = FVal(per_account[account]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['value'])  # noqa: E501
             assert amount == expected_amount
             if amount == ZERO:
-                assert usd_value == ZERO
+                assert value == ZERO
             else:
-                assert usd_value > ZERO
+                assert value > ZERO
             for token, balances in token_balances.items():
                 expected_token_amount = FVal(balances[idx])
                 if expected_token_amount == ZERO:
@@ -124,9 +124,6 @@ def assert_eth_balances_result(
                     assert token.identifier not in per_account[account], msg
                 else:
                     token_amount = FVal(per_account[account]['assets'][token.identifier][DEFAULT_BALANCE_LABEL]['amount'])  # noqa: E501
-                    usd_value = FVal(
-                        per_account[account]['assets'][token.identifier][DEFAULT_BALANCE_LABEL]['usd_value'],
-                    )
                     assert token_amount == from_wei(expected_token_amount)
 
     if totals_only:

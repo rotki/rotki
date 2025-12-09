@@ -19,6 +19,7 @@ from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_t
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotSPLConformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -136,7 +137,10 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
         May raise RemoteError if there is a problem with querying the external service.
         """
         chain_balances: defaultdict[SolanaAddress, BalanceSheet] = defaultdict(BalanceSheet)
-        native_token_usd_price = Inquirer.find_usd_price(A_SOL)
+        native_token_usd_price = Inquirer.find_price(
+            from_asset=A_SOL,
+            to_asset=(main_currency := CachedSettings().main_currency),
+        )
         for account, balance in self.get_multi_balance(addresses).items():
             if balance != ZERO:
                 chain_balances[account].assets[A_SOL][DEFAULT_BALANCE_LABEL] = Balance(
@@ -146,7 +150,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
 
         for account in addresses:
             token_balances = self.get_token_balances(account)
-            token_prices = Inquirer.find_usd_prices(list(token_balances))
+            token_prices = Inquirer.find_prices(from_assets=list(token_balances), to_asset=main_currency)  # noqa: E501
             for token, balance in token_balances.items():
                 chain_balances[account].assets[token][DEFAULT_BALANCE_LABEL] = Balance(
                     amount=balance,

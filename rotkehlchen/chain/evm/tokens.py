@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -500,8 +501,8 @@ class EvmTokens(ABC):  # noqa: B024
                     else:
                         addresses_to_balances[address][token] = balance
 
-        token_usd_price = cast('dict[EvmToken, Price]', Inquirer.find_usd_prices(list(tokens_with_balance)))  # noqa: E501
-        return dict(addresses_to_balances), token_usd_price
+        token_price = cast('dict[EvmToken, Price]', Inquirer.find_prices(list(tokens_with_balance), CachedSettings().main_currency))  # noqa: E501
+        return dict(addresses_to_balances), token_price
 
     def _get_token_exceptions(self) -> set[ChecksumEvmAddress]:
         """Returns a list of token addresses for which balances will not be queried"""

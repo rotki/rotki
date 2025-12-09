@@ -1003,7 +1003,7 @@ def test_balances_behaviour_with_manual_current_prices(
         # (3 ETH) * (10 BTC per ETH) * (1,5 USD per BTC) = 45 USD of ETH
         eth_result = result['assets'][A_ETH.identifier]
         assert eth_result['amount'] == '3'
-        assert eth_result['usd_value'] == '45.0'
+        assert eth_result['value'] == '45.0'
         # (5 RDN) * (2 ETH per RDN) * (10 BTC per RDN) * (1,5 USD per BTC) = 150 USD of RDN
         rdn_result = result['assets']['eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']
         assert rdn_result['amount'] == '5'
@@ -1022,8 +1022,8 @@ def test_blockchain_balances_refresh(
         collateral_type='ctype',
         owner=ethereum_accounts[0],
         collateral_asset=A_USDT.resolve_to_crypto_asset(),
-        collateral=Balance(FVal(3), FVal(54)),
-        debt=Balance(ZERO),
+        collateral=Balance(amount=FVal(3), value=FVal(54)),
+        debt=Balance(amount=ZERO),
         collateralization_ratio=None,
         liquidation_ratio=ZERO,
         liquidation_price=None,
@@ -1036,8 +1036,8 @@ def test_blockchain_balances_refresh(
     a_dai = A_DAI.resolve_to_evm_token()
     account_balance = {ethereum_accounts[0]: BalanceSheet(
         assets=defaultdict(lambda: defaultdict(Balance), {
-            a_usdc: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(ONE, FVal(24))}),
-            a_dai: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(FVal(2), FVal(42))}),
+            a_usdc: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=FVal(24))}),  # noqa: E501
+            a_dai: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal(2), value=FVal(42))}),  # noqa: E501
         }),
     )}
     account_balance_patch = patch.object(chains_aggregator.balances, 'eth', account_balance)
@@ -1048,7 +1048,7 @@ def test_blockchain_balances_refresh(
         return (mock_balances, mock_prices) if len(addresses) != 0 else ({}, {})
 
     query_tokens_patch = patch('rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses', side_effect=mock_query_tokens)  # noqa: E501
-    price_inquirer_patch = patch('rotkehlchen.inquirer.Inquirer.find_usd_price', side_effect=lambda _: Price(ZERO))  # noqa: E501
+    price_inquirer_patch = patch('rotkehlchen.inquirer.Inquirer.find_price', side_effect=lambda *args, **kwargs: Price(ZERO))  # noqa: E501
     proxies_inquirer_patch = patch('rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy', side_effect=dict)  # noqa: E501
     multieth_balance_patch = patch.object(chains_aggregator.ethereum.node_inquirer, 'get_multi_balance', lambda accounts: {ethereum_accounts[0]: ZERO})  # noqa: E501
     protocols_patch = patch('rotkehlchen.chain.aggregator.CHAIN_TO_BALANCE_PROTOCOLS', side_effect={ChainID.ETHEREUM: ()})  # noqa: E501
@@ -1069,9 +1069,9 @@ def test_blockchain_balances_refresh(
 
         one_time_query_result = query_blockchain_balance(1)
         assert one_time_query_result['per_account']['eth'][ethereum_accounts[0]]['assets'] == {
-            A_USDC.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '23', 'usd_value': '230', 'value': '0'}},  # noqa: E501
-            A_DAI.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '3', 'usd_value': '33', 'value': '0'}},  # noqa: E501
-            A_USDT.identifier: {'makerdao vault': {'amount': '3', 'usd_value': '54', 'value': '0'}},  # noqa: E501
+            A_USDC.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '23', 'value': '230', 'usd_value': '0'}},  # noqa: E501
+            A_DAI.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '3', 'value': '33', 'usd_value': '0'}},  # noqa: E501
+            A_USDT.identifier: {'makerdao vault': {'amount': '3', 'value': '54', 'usd_value': '0'}},  # noqa: E501
         }
         assert one_time_query_result == query_blockchain_balance(4)
 
@@ -1138,17 +1138,17 @@ def test_query_balances_with_threshold(
         setup.enter_all_patches(stack)
 
         results = []
-        for endpoint, threshold_param in (
-            ('blockchainbalancesresource', 'usd_value_threshold'),
-            ('exchangebalancesresource', 'value_threshold'),
-            ('manuallytrackedbalancesresource', 'value_threshold'),
+        for endpoint in (
+            'blockchainbalancesresource',
+            'exchangebalancesresource',
+            'manuallytrackedbalancesresource',
         ):
             response = requests.get(
                 api_url_for(
                     rotkehlchen_api_server_with_exchanges,
                     endpoint,
                 ),
-               params={threshold_param: threshold.to_int(exact=True)},
+               params={'value_threshold': threshold.to_int(exact=True)},
             )
             results.append(assert_proper_sync_response_with_result(response))
 
@@ -1159,11 +1159,11 @@ def test_query_balances_with_threshold(
             for address, balances in chain_balances.items():
                 if chain == 'btc':
                     for balance in balances.values():
-                        assert FVal(balance['usd_value']) > threshold
+                        assert FVal(balance['value']) > threshold
                 else:
                     assets = balances['assets']
                     for balance in assets.values():
-                        assert FVal(balance['usd_value']) > threshold
+                        assert FVal(balance['value']) > threshold
 
                     if address == ethereum_accounts[0]:
                         assert balances['liabilies'] == {A_DAI: FVal(15)}
@@ -1211,7 +1211,7 @@ def test_query_liquity_balances(
 
     account_balances = result['per_account'][eth_chain_key][ethereum_accounts[0]]
     assert account_balances['assets'] == {A_ETH: {
-        DEFAULT_BALANCE_LABEL: {'amount': '0.068955497233628915', 'usd_value': '0.1034332458504433725', 'value': '0'},  # noqa: E501
+        DEFAULT_BALANCE_LABEL: {'amount': '0.068955497233628915', 'value': '0.1034332458504433725', 'usd_value': '0'},  # noqa: E501
         CPT_LIQUITY: {'amount': '4.08915844880891399', 'value': '6.133737673213370985', 'usd_value': '0'},  # noqa: E501
     }}
     assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'value': '3283.0103582835479670825', 'usd_value': '0'}}}  # noqa: E501

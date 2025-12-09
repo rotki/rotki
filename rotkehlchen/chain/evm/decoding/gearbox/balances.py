@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, Pr
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -68,7 +69,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
         if len(results) == 0:
             return balances
 
-        gear_price = Inquirer.find_usd_price(self.gear_token)
+        gear_price = Inquirer.find_price(self.gear_token, CachedSettings().main_currency)
         for idx, result in enumerate(results):
             staked_amount_raw = staking_contract.decode(
                 result=result,
@@ -81,7 +82,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
             )
             balances[user_address].assets[self.gear_token][self.counterparty] += Balance(
                 amount=amount,
-                usd_value=amount * gear_price,
+                value=amount * gear_price,
             )
 
         return balances

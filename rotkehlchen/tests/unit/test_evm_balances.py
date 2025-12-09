@@ -49,4 +49,4 @@ def test_optimism_balances(
         ignore_cache=True,
     )
     account_balance = blockchain_result.per_account.optimism[optimism_accounts[0]].assets[velodrome_v2_weth_op_lp_token]  # noqa: E501
-    assert account_balance == {CPT_VELODROME: Balance(amount=FVal('0.086313645974870917'), usd_value=FVal('0.1294704689623063755'))}  # noqa: E501
+    assert account_balance == {CPT_VELODROME: Balance(amount=FVal('0.086313645974870917'), value=FVal('0.1294704689623063755'))}  # noqa: E501

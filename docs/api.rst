@@ -3222,7 +3222,7 @@ Querying onchain balances
 
    Query on-chain balances for tracked accounts. Specify a blockchain to query only that chain. Available blockchains: ``BTC``, ``BCH``, ``ETH``, ``ETH2``, ``KSM``, ``DOT``, ``AVAX``, ``SOL``.
 
-   When addresses are provided and cache is ignored, those addresses are queried fresh and combined with existing balances for the blockchain. Results include balances above the ``usd_value_threshold`` if specified.
+   When addresses are provided and cache is ignored, those addresses are queried fresh and combined with existing balances for the blockchain. Results include balances above the ``value_threshold`` if specified.
 
    .. note::
       This endpoint can be queried asynchronously using ``"async_query": true``.
@@ -3234,7 +3234,7 @@ Querying onchain balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/balances/blockchains/?usd_value_threshold=1000 HTTP/1.1
+      GET /api/1/balances/blockchains/?value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -3243,7 +3243,7 @@ Querying onchain balances
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :param list[str] addresses: Optional. List of blockchain addresses to query balances for. If not provided, all tracked addresses are queried.
-   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
+   :query decimal value_threshold: Optional. If provided, only returns balances with value (in user's preferred currency) greater than this threshold.
 
 .. _blockchain_balances_result:
 

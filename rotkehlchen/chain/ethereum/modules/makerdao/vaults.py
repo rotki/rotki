@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -143,7 +144,6 @@ class MakerdaoVaults(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.reset_last_query_ts()
         self.lock = Semaphore()
-        self.usd_price: dict[str, FVal] = defaultdict(FVal)
         self.vault_mappings: dict[ChecksumEvmAddress, list[MakerdaoVault]] = defaultdict(list)
         self.ilk_to_stability_fee: dict[bytes, FVal] = {}
 
@@ -197,27 +197,28 @@ class MakerdaoVaults(EthereumModule):
         mat = result[1]
         liquidation_ratio = FVal(mat / RAY)
         price = FVal((spot / RAY) * liquidation_ratio)
-        self.usd_price[asset.identifier] = price
         collateral_value = FVal(price * collateral_amount)
         if debt_value == 0:
             collateralization_ratio = None
         else:
             collateralization_ratio = FVal(collateral_value / debt_value).to_percentage(2)
 
-        collateral_usd_value = price * collateral_amount
         if collateral_amount == 0:
             liquidation_price = None
         else:
             liquidation_price = (debt_value * liquidation_ratio) / collateral_amount
 
-        dai_usd_price = Inquirer.find_usd_price(A_DAI)
+        prices = Inquirer.find_prices(
+            from_assets=[asset, A_DAI],
+            to_asset=CachedSettings().main_currency,
+        )
         return MakerdaoVault(
             identifier=identifier,
             owner=owner,
             collateral_type=collateral_type,
             collateral_asset=asset,
-            collateral=Balance(collateral_amount, collateral_usd_value),
-            debt=Balance(debt_value, dai_usd_price * debt_value),
+            collateral=Balance(amount=collateral_amount, value=prices[asset] * collateral_amount),
+            debt=Balance(amount=debt_value, value=prices[A_DAI] * debt_value),
             liquidation_ratio=liquidation_ratio,
             collateralization_ratio=collateralization_ratio,
             liquidation_price=liquidation_price,

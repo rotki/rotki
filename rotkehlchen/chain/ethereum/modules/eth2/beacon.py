@@ -193,7 +193,7 @@ class BeaconInquirer:
         May Raise:
         - RemoteError
         """
-        usd_price = Inquirer.find_usd_price(A_ETH)
+        price = Inquirer.find_price(A_ETH, CachedSettings().main_currency)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
         if self.node is not None:
             try:
@@ -206,14 +206,14 @@ class BeaconInquirer:
             else:
                 for entry in node_results:
                     amount = from_gwei(int(entry['balance']))
-                    balance_mapping[entry['validator']['pubkey']] = Balance(amount, amount * usd_price)  # noqa: E501
+                    balance_mapping[entry['validator']['pubkey']] = Balance(amount=amount, value=amount * price)  # noqa: E501
                 return balance_mapping
 
         # else we have to query beaconcha.in
         for entry in self.beaconchain.get_validator_data(indices_or_pubkeys):
             try:
                 amount = from_gwei(entry['balance'])
-                balance_mapping[entry['pubkey']] = Balance(amount, amount * usd_price)
+                balance_mapping[entry['pubkey']] = Balance(amount=amount, value=amount * price)
             except KeyError as e:
                 log.error(f'Skipping beaconchain validator data {entry} due to missing key {e!s}')
                 continue

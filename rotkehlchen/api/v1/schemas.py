@@ -227,10 +227,6 @@ def validate_predicate(
     return inner_validate
 
 
-class AssetValueThresholdSchema(Schema):
-    usd_value_threshold = AmountField(load_default=None)
-
-
 class ValueThresholdSchema(Schema):
     value_threshold = AmountField(load_default=None)
 
@@ -1917,7 +1913,7 @@ class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema)
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):
+class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
     blockchain = BlockchainField(load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
     addresses = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
