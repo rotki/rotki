@@ -243,7 +243,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
             with suppress(ValueError):  # If not existing raises ValueError, so ignore
                 web3.middleware_onion.remove(middleware)
 
-        if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE):  # noqa: E501
+        if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE, ChainID.BINANCE_SC):  # noqa: E501
             # TODO: Is it needed for all non-mainet EVM chains?
             # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
             web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)

@@ -9,6 +9,7 @@ Changelog
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
 * :bug:`11084` Indexer related backend query task will no longer randomly die.
+* :bug:`11094` rotki should now process correctly all the RPCs responses from Binance SC nodes.
 
 * :release:`1.41.2 <2025-12-05>`
 * :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.
