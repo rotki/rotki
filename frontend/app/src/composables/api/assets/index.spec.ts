@@ -98,6 +98,38 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(789);
     });
 
+    it('preserves asset identifier keys in conflicts without snake_case transformation', async () => {
+      let capturedBody: Record<string, unknown> | null = null;
+
+      server.use(
+        http.post(`${backendUrl}/api/1/assets/updates`, async ({ request }) => {
+          capturedBody = await request.json() as Record<string, unknown>;
+          return HttpResponse.json({
+            result: { task_id: 999 },
+            message: '',
+          });
+        }),
+      );
+
+      const { performUpdate } = useAssetsApi();
+      // Asset identifiers in CAIP format should NOT be transformed to snake_case
+      const conflicts: Readonly<Record<string, 'local' | 'remote'>> = {
+        'eip155:1/erc20:0x6B175474E89094C44Da98b954EesdicdDAD': 'local',
+        'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48': 'remote',
+        'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/spl:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'local',
+      };
+      const result = await performUpdate(17, conflicts);
+
+      // Verify the payload keys are NOT transformed to snake_case
+      // Before the fix, 'eip155:1/erc20:0x...' would be incorrectly transformed
+      expect(capturedBody).toEqual({
+        async_query: true,
+        up_to_version: 17,
+        conflicts,
+      });
+      expect(result.taskId).toBe(999);
+    });
+
     it('throws error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/updates`, () =>

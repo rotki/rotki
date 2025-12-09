@@ -31,10 +31,10 @@ export function useAssetsApi(): UseAssetApiReturn {
 
   const performUpdate = async (version: number, conflicts?: ConflictResolution): Promise<PendingTask> => {
     const response = await api.post<PendingTask>('/assets/updates', {
-      asyncQuery: true,
+      async_query: true,
       conflicts,
-      upToVersion: version,
-    });
+      up_to_version: version,
+    }, { skipSnakeCase: true });
     return PendingTaskSchema.parse(response);
   };
 
