@@ -25,6 +25,7 @@ def patch_decoder_should_update_protocol_caches(stack: ExitStack) -> None:
         'ethereum.modules.curve.crvusd.decoder',
         'evm.decoding.pendle.decoder',
         'evm.decoding.beefy_finance.decoder',
+        'evm.decoding.superfluid.decoder',
     ):
         stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
             target=f'rotkehlchen.chain.{target}.should_update_protocol_cache',

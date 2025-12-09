@@ -1351,6 +1351,8 @@ class CacheType(Enum):
     BEEFY_VAULTS = auto()
     MERKL_REWARD_PROTOCOLS = auto()
     STAKEDAO_V2_VAULTS = auto()
+    SUPERFLUID_TOKEN_LIST_VERSION = auto()
+    SUPERFLUID_SUPER_TOKENS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1419,6 +1421,7 @@ UniqueCacheType = Literal[
     CacheType.BEEFY_VAULTS,
     CacheType.MERKL_REWARD_PROTOCOLS,
     CacheType.STAKEDAO_V2_VAULTS,
+    CacheType.SUPERFLUID_TOKEN_LIST_VERSION,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
@@ -1450,6 +1453,7 @@ GeneralCacheType = Literal[
     CacheType.STAKEDAO_GAUGES,
     CacheType.PENDLE_POOLS,
     CacheType.PENDLE_SY_TOKENS,
+    CacheType.SUPERFLUID_SUPER_TOKENS,
 ]
 
 
