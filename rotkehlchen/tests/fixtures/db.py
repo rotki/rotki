@@ -12,6 +12,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, USERSDIR_NAME
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -180,6 +181,7 @@ def database(
         yield db_handler
 
         db_handler.logout()
+        CachedSettings().reset()
 
 
 @pytest.fixture(name='db_settings')
