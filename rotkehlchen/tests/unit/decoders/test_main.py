@@ -128,6 +128,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Stakedao',
         'Stakedaov2',
         'SummerFi',
+        'Superfluid',
         'Sushiswap',
         'Thegraph',
         'Uniswapv1',
@@ -257,6 +258,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'merkl',
         'summer-fi',
         'rotki',
+        'superfluid',
     }
 
 

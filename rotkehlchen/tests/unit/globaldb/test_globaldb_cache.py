@@ -13,6 +13,7 @@ from freezegun import freeze_time
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
@@ -44,6 +45,8 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
     read_gearbox_data_from_cache,
 )
+from rotkehlchen.chain.evm.decoding.superfluid.constants import CPT_SUPERFLUID
+from rotkehlchen.chain.evm.decoding.superfluid.utils import query_superfluid_tokens
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     POOL_DATA_CHUNK_SIZE,
     query_velodrome_like_data,
@@ -673,3 +676,48 @@ def test_query_beefy_legacy_boosts(ethereum_inquirer: 'EthereumInquirer') -> Non
             ('Reward Moo Curve ShezETH-ETH', 'rmooCurveShezETH-ETH', 18),
             ('Reward Moo Silo WETH (weETH Market)', 'rmooSiloWETH', 18),
         ]
+
+
+def test_superfluid_cache(ethereum_inquirer: EthereumInquirer):
+    """Test that the superfluid super tokens are created correctly"""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM evm_tokens WHERE protocol=?', (CPT_SUPERFLUID,)).fetchone()[0] == 0  # noqa: E501
+
+    def mock_request_get(url: str, *args, **kwargs):
+        if 'superfluid-org/tokenlist' in url:
+            return json.loads('{"name":"Superfluid Token List","timestamp":"2025-11-04T19:21:20.148Z","version":{"major":5,"minor":35,"patch":0},"tokens":[{"chainId":1,"address":"0x1ba8603da702602a8657980e825a6daa03dee93a","name":"Super USD Coin","symbol":"USDCx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/usdc.svg","tags":["supertoken"],"extensions":{"orderingScore":380,"superTokenInfo":{"type":"Wrapper","underlyingTokenAddress":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"}}},{"chainId":1,"address":"0xc22bea0be9872d8b7b3933cec70ece4d53a900da","name":"Super ETH","symbol":"ETHx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/eth.svg","tags":["supertoken"],"extensions":{"orderingScore":319,"superTokenInfo":{"type":"Native Asset"}}},{"chainId":56,"address":"0x529a4116f160c833c61311569d6b33dff41fd657","name":"Super BNB","symbol":"BNBx","decimals":18,"logoURI":"https://tokenlist.superfluid.org/icons/bnb.svg","tags":["supertoken"],"extensions":{"orderingScore":429,"superTokenInfo":{"type":"Native Asset"}}},{"chainId":1,"address":"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","name":"USD Coin","symbol":"USDC","decimals":6,"logoURI":"https://tokenlist.superfluid.org/icons/usdc.svg","tags":["underlying"]}]}')  # noqa: E501
+
+        raise ValueError(f'Unexpected request: {url}')
+
+    with patch('rotkehlchen.chain.evm.decoding.superfluid.utils.request_get_dict', side_effect=mock_request_get):  # noqa: E501
+        query_superfluid_tokens(evm_inquirer=ethereum_inquirer)
+
+    # Check that both ethereum super tokens are present
+    assert (usdcx := get_evm_token(
+        evm_address=string_to_evm_address('0x1ba8603da702602a8657980e825a6daa03dee93a'),
+        chain_id=ChainID.ETHEREUM,
+    )) is not None
+    assert usdcx.protocol == CPT_SUPERFLUID
+    assert usdcx.name == 'Super USD Coin'
+    assert usdcx.symbol == 'USDCx'
+    assert (ethx := get_evm_token(
+        evm_address=string_to_evm_address('0xc22bea0be9872d8b7b3933cec70ece4d53a900da'),
+        chain_id=ChainID.ETHEREUM,
+    )) is not None
+    assert ethx.protocol == CPT_SUPERFLUID
+    assert ethx.name == 'Super ETH'
+    assert ethx.symbol == 'ETHx'
+    # Check that the supertoken on BSC was not processed
+    assert get_evm_token(
+        evm_address=string_to_evm_address('0x529a4116f160c833c61311569d6b33dff41fd657'),
+        chain_id=ChainID.BINANCE_SC,
+    ) is None
+
+    # Check that querying again doesn't try to process tokens since the cached version is the same.
+    with (
+        patch('rotkehlchen.chain.evm.decoding.superfluid.utils.request_get_dict', side_effect=mock_request_get),  # noqa: E501
+        patch('rotkehlchen.chain.evm.decoding.superfluid.utils.get_or_create_evm_token') as create_token_mock,  # noqa: E501
+    ):
+        query_superfluid_tokens(evm_inquirer=ethereum_inquirer)
+
+    assert create_token_mock.call_count == 0
