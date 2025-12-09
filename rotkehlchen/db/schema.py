@@ -114,6 +114,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('v', 54);
 /* Solana */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('w', 55);
+/* Avalanche */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
 """
 
 # Custom enum table for Balance categories (asset/liability)

@@ -74,6 +74,7 @@ LOCATION_DETAILS: dict = {
     Location.GNOSIS: {'image': 'gnosis.svg'},
     Location.SCROLL: {'image': 'scroll.svg'},
     Location.BINANCE_SC: {'image': 'binance_sc.svg'},
+    Location.AVALANCHE: {'image': 'avalanche.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},
     Location.HTX: {
