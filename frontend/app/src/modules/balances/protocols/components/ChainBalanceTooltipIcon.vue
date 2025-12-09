@@ -45,8 +45,8 @@ const chainName = getChainName(chainId);
       />
       <AmountDisplay
         :asset-padding="0.1"
-        fiat-currency="USD"
-        :value="chainBalance.usdValue"
+        force-currency
+        :value="chainBalance.value"
         show-currency="symbol"
         data-cy="chain-balance-value"
       />

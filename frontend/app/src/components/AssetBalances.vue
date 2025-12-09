@@ -59,7 +59,7 @@ const { balances } = toRefs(props);
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-  column: 'usdValue',
+  column: 'value',
   direction: 'desc' as const,
 });
 
@@ -68,7 +68,7 @@ const debouncedSearch = debouncedRef(search, 200);
 const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const statistics = useStatisticsStore();
-const { totalNetWorthUsd } = storeToRefs(statistics);
+const { totalNetWorth } = storeToRefs(statistics);
 
 const isExpanded = (asset: string) => some(get(expanded), { asset });
 
@@ -89,14 +89,14 @@ function assetFilter(item: Nullable<AssetBalance>) {
 
 const filteredBalances = computed(() => get(balances).filter(assetFilter));
 
-const total = computed(() => bigNumberSum(get(filteredBalances).map(({ usdValue }) => usdValue)));
+const total = computed<BigNumber>(() => bigNumberSum(get(filteredBalances).map(({ value }) => value)));
 
-function percentageOfTotalNetValue(value: BigNumber) {
-  return calculatePercentage(value, get(totalNetWorthUsd));
+function percentageOfTotalNetValue(val: BigNumber): string {
+  return calculatePercentage(val, get(totalNetWorth));
 }
 
-function percentageOfCurrentGroup(value: BigNumber) {
-  return calculatePercentage(value, get(total));
+function percentageOfCurrentGroup(val: BigNumber): string {
+  return calculatePercentage(val, get(total));
 }
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
@@ -124,7 +124,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     align: 'end',
     cellClass: 'py-0',
     class: 'text-no-wrap',
-    key: 'usdValue',
+    key: 'value',
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
@@ -227,25 +227,25 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
     <template #item.amount="{ row }">
       <AmountDisplay :value="row.amount" />
     </template>
-    <template #item.usdValue="{ row }">
+    <template #item.value="{ row }">
       <AmountDisplay
         show-currency="symbol"
         :amount="row.amount"
         :price-asset="row.asset"
         :price-of-asset="row.usdPrice"
-        fiat-currency="USD"
-        :value="row.usdValue"
+        force-currency
+        :value="row.value"
       />
     </template>
     <template #item.percentageOfTotalNetValue="{ row }">
       <PercentageDisplay
-        :value="percentageOfTotalNetValue(row.usdValue)"
+        :value="percentageOfTotalNetValue(row.value)"
         :asset-padding="0.1"
       />
     </template>
     <template #item.percentageOfTotalCurrentGroup="{ row }">
       <PercentageDisplay
-        :value="percentageOfCurrentGroup(row.usdValue)"
+        :value="percentageOfCurrentGroup(row.value)"
         :asset-padding="0.1"
       />
     </template>
@@ -261,7 +261,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
         class-name="[&>td]:p-4 text-sm"
       >
         <AmountDisplay
-          fiat-currency="USD"
+          force-currency
           show-currency="symbol"
           :value="total"
         />

@@ -10,15 +10,15 @@ interface UseManualBalancesApiReturn {
   addManualBalances: (balances: RawManualBalance[]) => Promise<PendingTask>;
   editManualBalances: (balances: ManualBalance[]) => Promise<PendingTask>;
   deleteManualBalances: (ids: number[]) => Promise<ManualBalances>;
-  queryManualBalances: (usdValueThreshold?: string) => Promise<PendingTask>;
+  queryManualBalances: (valueThreshold?: string) => Promise<PendingTask>;
 }
 
 export function useManualBalancesApi(): UseManualBalancesApiReturn {
-  const queryManualBalances = async (usdValueThreshold?: string): Promise<PendingTask> => {
+  const queryManualBalances = async (valueThreshold?: string): Promise<PendingTask> => {
     const response = await api.get<PendingTask>('balances/manual', {
       query: {
         asyncQuery: true,
-        usdValueThreshold,
+        valueThreshold,
       },
       validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
     });

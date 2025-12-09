@@ -3,9 +3,9 @@ import type { BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 
 interface Props {
-  includedUsdValue: BigNumber | undefined;
+  includedValue: BigNumber | undefined;
   loading: boolean;
-  usdValue: BigNumber;
+  value: BigNumber;
 }
 
 defineProps<Props>();
@@ -14,13 +14,13 @@ defineProps<Props>();
 <template>
   <div class="flex flex-col items-end justify-end">
     <div
-      v-if="includedUsdValue && !loading"
+      v-if="includedValue && !loading"
       class="text-xs"
     >
       <AmountDisplay
-        v-if="includedUsdValue"
-        fiat-currency="USD"
-        :value="includedUsdValue"
+        v-if="includedValue"
+        force-currency
+        :value="includedValue"
         show-currency="symbol"
       />
       /
@@ -28,8 +28,8 @@ defineProps<Props>();
     <AmountDisplay
       data-cy="usd-value"
       class="font-medium"
-      fiat-currency="USD"
-      :value="usdValue"
+      force-currency
+      :value="value"
       show-currency="symbol"
       :loading="loading"
     />

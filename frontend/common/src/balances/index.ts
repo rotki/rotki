@@ -1,9 +1,10 @@
 import z from 'zod/v4';
-import { NumericString } from '../numbers';
+import { bigNumberify, NumericString } from '../numbers';
 
 export const Balance = z.object({
   amount: NumericString,
   usdValue: NumericString,
+  value: NumericString.optional().default(bigNumberify(0)),
 });
 
 export type Balance = z.infer<typeof Balance>;

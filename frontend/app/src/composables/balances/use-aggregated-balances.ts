@@ -31,7 +31,7 @@ interface UseAggregatedBalancesReturn {
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { getAssetPrice, toSelectedCurrency } = usePriceUtils();
+  const { getAssetPrice } = usePriceUtils();
   const { exchanges, useBaseExchangeBalances } = useExchangeData();
   const { balances: blockchainBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { manualBalanceByLocation } = useManualBalanceData();
@@ -173,27 +173,28 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       amount: assetValue?.amount ?? Zero,
       usdPrice: assetValue?.usdPrice ?? Zero,
       usdValue: assetValue?.usdValue ?? Zero,
+      value: assetValue?.value ?? Zero,
     };
   });
 
   const balancesByLocation = computed<Record<string, BigNumber>>(() => {
     const blockchainAssets = getBlockchainLocationBreakdown(get(blockchainBalances), get(assetAssociationMap), asset => isAssetIgnored(asset));
-    const blockchainTotal = bigNumberSum(Object.values(blockchainAssets).map(asset => asset.usdValue));
+    const blockchainTotal = bigNumberSum(Object.values(blockchainAssets).map(asset => asset.value));
     const map: Record<string, BigNumber> = {
-      [TRADE_LOCATION_BLOCKCHAIN]: get(toSelectedCurrency(blockchainTotal)),
+      [TRADE_LOCATION_BLOCKCHAIN]: blockchainTotal,
     };
 
-    const exchange = getExchangeByLocationBalances(get(exchanges), bn => get(toSelectedCurrency(bn)));
+    const exchange = getExchangeByLocationBalances(get(exchanges));
     for (const location in exchange) {
       const total = map[location];
-      const usdValue = exchange[location];
-      map[location] = total ? total.plus(usdValue) : usdValue;
+      const locationValue = exchange[location];
+      map[location] = total ? total.plus(locationValue) : locationValue;
     }
 
     const manual = get(manualBalanceByLocation);
-    for (const { location, usdValue } of manual) {
+    for (const { location, value } of manual) {
       const total = map[location];
-      map[location] = total ? total.plus(usdValue) : usdValue;
+      map[location] = total ? total.plus(value) : value;
     }
 
     return map;

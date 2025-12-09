@@ -40,7 +40,7 @@ const exchangeLocationRoute = computed<string>(() => {
         {{ exchangeName(location) }}
         <AmountDisplay
           show-currency="symbol"
-          fiat-currency="USD"
+          force-currency
           :value="amount"
           class="font-medium"
         />

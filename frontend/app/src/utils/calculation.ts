@@ -9,7 +9,7 @@ export function assetSum(balances: Record<string, ProtocolBalances>): BigNumber 
     if (get(useIsAssetIgnored(asset)))
       return sum;
 
-    return sum.plus(Object.entries(protocols).reduce((previousValue, [_protocol, balance]) => previousValue.plus(balance.usdValue), Zero));
+    return sum.plus(Object.entries(protocols).reduce((previousValue, [_protocol, balance]) => previousValue.plus(balance.value), Zero));
   }, Zero);
 }
 
@@ -20,14 +20,15 @@ export function exchangeAssetSum(balances: Record<string, Balance>): BigNumber {
     if (get(useIsAssetIgnored(asset)))
       return sum;
 
-    return sum.plus(balance.usdValue);
+    return sum.plus(balance.value);
   }, Zero);
 }
 
-export function balanceSum(sum: Balance, { amount, usdValue }: Balance): Balance {
+export function balanceSum(sum: Balance, { amount, usdValue, value }: Balance): Balance {
   return {
     amount: sum.amount.plus(amount),
     usdValue: sum.usdValue.plus(usdValue),
+    value: sum.value.plus(value),
   };
 }
 
@@ -43,13 +44,4 @@ export function calculatePercentage(value: BigNumber, divider: BigNumber): strin
 
 export function bigNumberSum(value: BigNumber[]): BigNumber {
   return value.reduce((previousValue, currentValue) => previousValue.plus(currentValue), Zero);
-}
-
-export function aggregateTotal(balances: any[], mainCurrency: string, exchangeRate: BigNumber): BigNumber {
-  return balances.reduce((previousValue, currentValue) => {
-    if (currentValue.asset === mainCurrency)
-      return previousValue.plus(currentValue.amount);
-
-    return previousValue.plus(currentValue.usdValue.multipliedBy(exchangeRate));
-  }, Zero);
 }

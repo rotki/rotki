@@ -298,9 +298,11 @@ export function* iterateAssets(
         const balance = Object.values(protocolBalances).reduce((previousValue, currentValue) => ({
           amount: previousValue.amount.plus(currentValue.amount),
           usdValue: previousValue.usdValue.plus(currentValue.usdValue),
+          value: previousValue.value.plus(currentValue.value),
         }), {
           amount: Zero,
           usdValue: Zero,
+          value: Zero,
         });
         yield [assetIdentifier, balance] as const;
       }
@@ -336,16 +338,19 @@ export function getAccountBalance(account: BlockchainAccount, chainBalances: Blo
   const accountBalances = chainBalances?.[address] ?? {};
   const assets = accountBalances?.assets;
   const nativeAsset = account.nativeAsset;
+  const valueSum = assets ? assetSum(assets) : Zero;
   const balance = assets
     ? {
         amount: assets[nativeAsset] && !isEmpty(assets[nativeAsset])
           ? Object.values(assets[nativeAsset]).reduce((previousValue, currentValue) => previousValue.plus(currentValue.amount), Zero)
           : Zero,
-        usdValue: assetSum(accountBalances.assets),
+        usdValue: valueSum,
+        value: valueSum,
       }
     : {
         amount: Zero,
         usdValue: Zero,
+        value: Zero,
       };
 
   const expandable = hasTokens(nativeAsset, accountBalances.assets)

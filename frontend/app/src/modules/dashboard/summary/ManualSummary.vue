@@ -45,7 +45,7 @@ const { t } = useI18n({ useScope: 'global' });
           v-for="manualBalance in manualBalanceByLocation"
           :key="manualBalance.location"
           :name="manualBalance.location"
-          :amount="manualBalance.usdValue"
+          :amount="manualBalance.value"
         />
       </div>
     </SummaryCard>

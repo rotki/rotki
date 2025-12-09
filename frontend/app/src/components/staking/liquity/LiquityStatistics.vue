@@ -83,6 +83,7 @@ const totalDepositedStabilityPoolBalance = useRefMap<LiquityStatisticDetails | n
     return {
       amount: data.totalDepositedStabilityPool,
       usdValue: data.totalDepositedStabilityPoolUsdValue,
+      value: data.totalDepositedStabilityPoolUsdValue,
     };
   },
 );
@@ -96,6 +97,7 @@ const totalWithdrawnStabilityPoolBalance = useRefMap<LiquityStatisticDetails | n
     return {
       amount: data.totalWithdrawnStabilityPool,
       usdValue: data.totalWithdrawnStabilityPoolUsdValue,
+      value: data.totalWithdrawnStabilityPoolUsdValue,
     };
   },
 );

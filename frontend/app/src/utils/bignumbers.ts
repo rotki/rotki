@@ -15,6 +15,7 @@ export function zeroBalance(): Balance {
   return {
     amount: Zero,
     usdValue: Zero,
+    value: Zero,
   };
 }
 

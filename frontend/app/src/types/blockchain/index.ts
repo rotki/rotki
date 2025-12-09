@@ -6,7 +6,7 @@ export const samePriceAssets: Record<string, string[]> = {
 
 export interface BlockchainTotal {
   readonly chain: string;
-  readonly usdValue: BigNumber;
+  readonly value: BigNumber;
   readonly loading: boolean;
 }
 

@@ -29,6 +29,7 @@ describe('useBlockchainValidatorsStore', () => {
   const mockBalance: Balance = {
     amount: Zero,
     usdValue: Zero,
+    value: Zero,
   };
 
   beforeEach(() => {

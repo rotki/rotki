@@ -62,18 +62,21 @@ describe('useAssetBalancesBreakdown', () => {
       location: 'kraken',
       tags: undefined,
       usdValue: bigNumberify(2000),
+      value: bigNumberify(2000),
     }, {
       address: '0xaddress2',
       amount: bigNumberify(400),
       location: 'ethereum',
       tags: undefined,
       usdValue: bigNumberify(400),
+      value: bigNumberify(400),
     }, {
       address: '0xaddress1',
       amount: bigNumberify(300),
       location: 'ethereum',
       tags: undefined,
       usdValue: bigNumberify(300),
+      value: bigNumberify(300),
     }];
 
     expect(get(assetBreakdown)).toMatchObject(expectedResult);
@@ -122,6 +125,7 @@ describe('useAssetBalancesBreakdown', () => {
         location: TRADE_LOCATION_BANKS,
         tags: undefined,
         usdValue: bigNumberify(60),
+        value: bigNumberify(60),
       }]);
     });
 
@@ -133,6 +137,7 @@ describe('useAssetBalancesBreakdown', () => {
         location: TRADE_LOCATION_BLOCKCHAIN,
         tags: undefined,
         usdValue: bigNumberify(30),
+        value: bigNumberify(30),
       }]);
 
       expect(get(useAssetBreakdown('DAI'))).toMatchObject([{
@@ -141,6 +146,7 @@ describe('useAssetBalancesBreakdown', () => {
         location: TRADE_LOCATION_BLOCKCHAIN,
         tags: undefined,
         usdValue: bigNumberify(50),
+        value: bigNumberify(50),
       }]);
 
       // Breakdown for liabilities
@@ -168,6 +174,7 @@ describe('useAssetBalancesBreakdown', () => {
         location: 'external',
         tags: undefined,
         usdValue: bigNumberify(50),
+        value: bigNumberify(50),
       }]);
 
       updateGeneralSettings({
@@ -180,6 +187,7 @@ describe('useAssetBalancesBreakdown', () => {
         location: 'external',
         tags: undefined,
         usdValue: bigNumberify(150),
+        value: bigNumberify(150),
       }]);
     });
   });

@@ -10,7 +10,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 const props = withDefaults(
   defineProps<{
     asset?: string;
-    value?: Balance | null;
+    value?: Partial<Balance> | null;
     noIcon?: boolean;
     noJustify?: boolean;
     align?: 'start' | 'end';

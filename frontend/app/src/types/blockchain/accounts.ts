@@ -57,6 +57,7 @@ export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = 
   readonly category?: string;
   readonly amount: BigNumber;
   readonly usdValue: BigNumber;
+  readonly value: BigNumber;
   readonly includedUsdValue?: BigNumber;
 }
 
@@ -73,6 +74,7 @@ export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountDa
   readonly category?: string;
   readonly amount?: BigNumber;
   readonly usdValue: BigNumber;
+  readonly value: BigNumber;
   readonly includedUsdValue?: BigNumber;
   readonly nativeAsset?: string;
   readonly aggregatedAssets?: AssetBalance[];

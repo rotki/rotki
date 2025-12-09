@@ -128,8 +128,8 @@ defineExpose({
     </template>
     <template #item.usdValue="{ row }">
       <AccountBalanceValue
-        :included-usd-value="row.includedUsdValue"
-        :usd-value="row.usdValue"
+        :included-value="row.includedUsdValue"
+        :value="row.value"
         :loading="isRowLoading(row)"
       />
     </template>
@@ -160,7 +160,7 @@ defineExpose({
           <td class="text-end">
             <AmountDisplay
               :loading="isSectionLoading"
-              fiat-currency="USD"
+              force-currency
               show-currency="symbol"
               :value="totalValue"
             />

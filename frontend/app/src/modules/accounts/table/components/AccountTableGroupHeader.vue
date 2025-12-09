@@ -42,7 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
   <td class="text-end text-body-2 px-4 py-0">
     <AmountDisplay
       v-if="category"
-      fiat-currency="USD"
+      force-currency
       :value="categoryTotal"
       show-currency="symbol"
       :loading="isSectionLoading"

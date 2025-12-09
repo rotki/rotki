@@ -61,7 +61,7 @@ const {
 >(fetch, {
   defaultSortBy: [
     {
-      column: 'usdValue',
+      column: 'value',
       direction: 'desc',
     },
   ],
@@ -84,6 +84,7 @@ async function refresh() {
 function edit(balance: ManualBalanceWithPrice) {
   emit('edit', {
     ...omit(balance, [
+      'value',
       'usdValue',
       'usdPrice',
       'assetIsMissing',
@@ -125,7 +126,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
   sortable: true,
 }, {
   align: 'end',
-  key: 'usdValue',
+  key: 'value',
   label: t('common.value_in_symbol', {
     symbol: get(currencySymbol),
   }),
@@ -258,15 +259,15 @@ watchDebounced(
           :value="row.amount"
         />
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
           v-if="!row.assetIsMissing"
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
           :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
-          :value="row.usdValue"
+          force-currency
+          :value="row.value"
         />
         <template v-else>
           -

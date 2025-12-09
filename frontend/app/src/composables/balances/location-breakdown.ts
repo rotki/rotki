@@ -26,17 +26,15 @@ export function getBlockchainLocationBreakdown(
 }
 
 /**
- * Gets exchange balances by location
+ * Gets exchange balances by location (values already in main currency)
  */
 export function getExchangeByLocationBalances(
   exchanges: ExchangeInfo[],
-  convert: (bn: BigNumber) => BigNumber,
 ): Record<string, BigNumber> {
   const balances: Record<string, BigNumber> = {};
   for (const { location, total } of exchanges) {
     const balance = balances[location];
-    const value = convert(total);
-    balances[location] = !balance ? value : value.plus(balance);
+    balances[location] = !balance ? total : total.plus(balance);
   }
   return balances;
 }

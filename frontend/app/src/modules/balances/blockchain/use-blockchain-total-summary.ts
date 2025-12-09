@@ -24,12 +24,12 @@ export function useBlockchainTotalSummary(): UseBlockchainTotalsSummaryReturn {
           continue;
 
         for (const protocol of Object.values(assets)) {
-          for (const { usdValue } of Object.values(protocol)) {
+          for (const { value } of Object.values(protocol)) {
             if (!sums[chain]) {
-              sums[chain] = usdValue;
+              sums[chain] = value;
             }
             else {
-              sums[chain] = sums[chain].plus(usdValue);
+              sums[chain] = sums[chain].plus(value);
             }
           }
         }
@@ -38,11 +38,11 @@ export function useBlockchainTotalSummary(): UseBlockchainTotalsSummaryReturn {
 
     return Object.entries(sums)
       .filter(([, sum]) => sum.gt(0))
-      .sort(([, aUsdValue], [, bUsdValue]) => sortDesc(aUsdValue, bUsdValue))
-      .map(([chain, usdValue]) => ({
+      .sort(([, aValue], [, bValue]) => sortDesc(aValue, bValue))
+      .map(([chain, value]) => ({
         chain,
         loading: false,
-        usdValue,
+        value,
       }) satisfies BlockchainTotal);
   });
 

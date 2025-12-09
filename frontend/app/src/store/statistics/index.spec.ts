@@ -9,6 +9,17 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useCurrencies } from '@/types/currencies';
 import { useStatisticsStore } from './index';
 
+// Store reference for accessing currency in mocks
+let generalSettingsStore: ReturnType<typeof useGeneralSettingsStore> | null = null;
+
+function getExchangeRate(currency: string): BigNumber {
+  if (currency === 'JPY')
+    return new BigNumber('150');
+  if (currency === 'EUR')
+    return new BigNumber('0.9');
+  return new BigNumber('1');
+}
+
 function createBalanceWithPrice(
   amount: string,
   asset: string,
@@ -17,12 +28,18 @@ function createBalanceWithPrice(
   const amountBN = new BigNumber(amount);
   const priceBN = new BigNumber(usdPrice);
   const usdValue = amountBN.multipliedBy(priceBN);
+  // Get current currency from settings store
+  const currency = generalSettingsStore ? get(generalSettingsStore.currency).tickerSymbol : 'USD';
+  const rate = getExchangeRate(currency);
+  // If asset matches main currency, value = amount; otherwise value = usdValue * rate
+  const value = asset === currency ? amountBN : usdValue.multipliedBy(rate);
 
   return {
     amount: amountBN,
     asset,
     usdPrice: priceBN,
     usdValue,
+    value,
   };
 }
 
@@ -46,11 +63,8 @@ vi.mock('@/composables/utils/useNumberScrambler', () => ({
 vi.mock('@/modules/prices/use-price-utils', () => ({
   usePriceUtils: (): Pick<ReturnType<typeof usePriceUtils>, 'useExchangeRate'> => ({
     useExchangeRate: (currency: any): any => computed(() => {
-      if (get(currency) === 'JPY')
-        return new BigNumber('150'); // 1 USD = 150 JPY
-      if (get(currency) === 'EUR')
-        return new BigNumber('0.9'); // 1 USD = 0.9 EUR
-      return new BigNumber('1');
+      const curr = get(currency);
+      return getExchangeRate(curr);
     }),
   }),
 }));
@@ -65,6 +79,9 @@ describe('useStatisticsStore', () => {
     // Initialize stores
     generalSettings = useGeneralSettingsStore();
     currencies = useCurrencies();
+
+    // Set the store reference for use in mocks
+    generalSettingsStore = generalSettings;
 
     // Reset currency to USD before each test
     generalSettings.update({

@@ -67,21 +67,10 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { logged } = storeToRefs(useSessionAuthStore());
 
   /**
-   * Calculates the sum of balances, converting to the main currency
-   * If the asset is the main currency, uses the amount directly
-   * Otherwise, converts the USD value to the main currency
+   * Calculates the sum of balances using the `value` field (already in main currency)
    */
-  function calculateSum(
-    items: AssetBalanceWithPriceAndChains[],
-    mainCurrency: string,
-    rate: BigNumber,
-  ): BigNumber {
-    return items.reduce((sum, value) => {
-      if (value.asset === mainCurrency)
-        return sum.plus(value.amount);
-
-      return sum.plus(value.usdValue.multipliedBy(rate));
-    }, Zero);
+  function calculateSum(items: AssetBalanceWithPriceAndChains[]): BigNumber {
+    return items.reduce((sum, item) => sum.plus(item.value), Zero);
   }
 
   const calculateTotalValue = (includeNft: MaybeRef<boolean> = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
@@ -90,8 +79,9 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const nftTotal = get(includeNft) ? get(nonFungibleTotalValue) : Zero;
     const mainCurrency = get(currencySymbol);
     const rate = get(useExchangeRate(mainCurrency)) ?? One;
-    const assetValue = calculateSum(aggregatedBalances, mainCurrency, rate);
-    const liabilityValue = calculateSum(totalLiabilities, mainCurrency, rate);
+    const assetValue = calculateSum(aggregatedBalances);
+    const liabilityValue = calculateSum(totalLiabilities);
+    // NFT value is still in USD, so we convert it
     return assetValue.plus(nftTotal.multipliedBy(rate)).minus(liabilityValue);
   });
 

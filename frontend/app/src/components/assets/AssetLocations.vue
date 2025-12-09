@@ -57,7 +57,7 @@ const { useAssetBreakdown } = useAssetBalancesBreakdown();
 const { addressNameSelector } = useAddressesNamesStore();
 const { getChainName, matchChain } = useSupportedChains();
 
-const totalUsdValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).usdValue);
+const totalValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).value);
 
 const assetLocations = computed<AssetLocations>(() => {
   const breakdowns = get(useAssetBreakdown(get(identifier)));
@@ -98,8 +98,8 @@ const visibleAssetLocations = computed<AssetLocations>(() => {
   });
 });
 
-function getPercentage(usdValue: BigNumber): string {
-  const percentage = get(totalUsdValue).isZero() ? 0 : usdValue.div(get(totalUsdValue)).multipliedBy(100);
+function getPercentage(value: BigNumber): string {
+  const percentage = get(totalValue).isZero() ? 0 : value.div(get(totalValue)).multipliedBy(100);
 
   return percentage.toFixed(2);
 }
@@ -153,7 +153,7 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
-    key: 'usdValue',
+    key: 'value',
     label: t('asset_locations.header.value', {
       symbol: get(currencySymbol) ?? CURRENCY_USD,
     }),
@@ -253,18 +253,18 @@ watch([onlyTags, locationFilter, selectedAccounts], () => {
       <template #item.amount="{ row }">
         <AmountDisplay :value="row.amount" />
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="identifier"
-          fiat-currency="USD"
-          :value="row.usdValue"
+          force-currency
+          :value="row.value"
         />
       </template>
       <template #item.percentage="{ row }">
         <PercentageDisplay
-          :value="getPercentage(row.usdValue)"
+          :value="getPercentage(row.value)"
           :asset-padding="0.1"
         />
       </template>

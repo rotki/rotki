@@ -37,7 +37,7 @@ describe('composables/api/balances/manual', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes usd_value_threshold when provided', async () => {
+    it('includes value_threshold when provided', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -57,7 +57,7 @@ describe('composables/api/balances/manual', () => {
       await queryManualBalances('1000');
 
       expect(capturedParams!.get('async_query')).toBe('true');
-      expect(capturedParams!.get('usd_value_threshold')).toBe('1000');
+      expect(capturedParams!.get('value_threshold')).toBe('1000');
     });
 
     it('throws error on failure', async () => {
@@ -268,6 +268,7 @@ describe('composables/api/balances/manual', () => {
                   location: 'blockchain',
                   tags: null,
                   usd_value: '2000.00',
+                  value: '2000.00',
                 },
               ],
             },

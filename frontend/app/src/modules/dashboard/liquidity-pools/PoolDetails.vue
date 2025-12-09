@@ -68,6 +68,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
     asset: item.asset,
     usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
     usdValue: item.userBalance.usdValue,
+    value: item.userBalance.value ?? item.userBalance.usdValue,
   }));
 
   return sortAssetBalances(transformed, get(sort), assetInfo);
