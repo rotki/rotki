@@ -20,6 +20,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -43,26 +44,28 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def query_usd_price_or_use_default(
+def query_price_or_use_default(
         asset: Asset,
         time: Timestamp,
         default_value: FVal,
         location: str,
 ) -> Price:
+    """Query price in the user's main currency, or use default if unavailable"""
+    main_currency = CachedSettings().main_currency
     try:
-        usd_price = PriceHistorian().query_historical_price(
+        price = PriceHistorian().query_historical_price(
             from_asset=asset,
-            to_asset=A_USD,
+            to_asset=main_currency,
             timestamp=time,
         )
     except (RemoteError, NoPriceForGivenTimestamp):
         log.error(
-            f'Could not query usd price for {asset.identifier} and time {time} '
-            f'when processing {location}. Assuming price of ${default_value!s}',
+            f'Could not query price for {asset.identifier} and time {time} in {main_currency=} '
+            f'when processing {location}. Assuming price of {default_value!s}',
         )
-        usd_price = Price(default_value)
+        price = Price(default_value)
 
-    return usd_price
+    return price
 
 
 class PriceHistorian:

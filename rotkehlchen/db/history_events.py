@@ -58,7 +58,7 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.price import query_usd_price_or_use_default
+from rotkehlchen.history.price import query_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -1113,8 +1113,8 @@ class DBHistoryEvents:
             bindings: list[Any],
             counterparty: str,
     ) -> tuple[list[tuple[str, FVal, FVal]], FVal]:
-        """Returns the sum of the amounts received by asset and the sum of USD value
-        at the time of the events and the total USD value of all the assets queried.
+        """Returns the sum of the amounts received by asset and the sum of value in main currency
+        at the time of the events and the total value of all the assets queried in main currency.
         """
         total_events = cursor.execute(
             f'SELECT COUNT(*) FROM history_events {query_filters}',
@@ -1123,7 +1123,7 @@ class DBHistoryEvents:
 
         assets_amounts: dict[str, FVal] = defaultdict(FVal)
         assets_value: dict[str, FVal] = defaultdict(FVal)
-        total_usd_value: FVal = ZERO
+        total_value: FVal = ZERO
         query_location: str = 'get_amount_stats'
         log.debug(f'Will process {counterparty} stats for {total_events} events')
         send_ws_every_events = self.db.msg_aggregator.how_many_events_per_ws(total_events)
@@ -1149,15 +1149,15 @@ class DBHistoryEvents:
                     name='total amount in history events stats',
                     location=query_location,
                 )
-                usd_price = query_usd_price_or_use_default(
+                price = query_price_or_use_default(
                     asset=Asset(asset),
                     time=ts_ms_to_sec(row[2]),
                     default_value=ZERO,
                     location=query_location,
                 )
                 assets_amounts[asset] += amount
-                assets_value[asset] += (usd_value := amount * usd_price)
-                total_usd_value += usd_value
+                assets_value[asset] += (value := amount * price)
+                total_value += value
             except DeserializationError as e:
                 log.debug(f'Failed to deserialize amount {row[1]}. {e!s}')
 
@@ -1175,7 +1175,7 @@ class DBHistoryEvents:
         for asset, amount in assets_amounts.items():
             final_amounts.append((asset, amount, assets_value[asset]))
 
-        return final_amounts, total_usd_value
+        return final_amounts, total_value
 
     def get_hidden_event_ids(self, cursor: 'DBCursor') -> list[int]:
         """Returns all event identifiers that should be hidden in the UI
