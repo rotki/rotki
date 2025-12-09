@@ -1305,7 +1305,7 @@ Query the result of an ongoing backend task
                   "per_account": {"BTC": { "standalone": {
                       "1Ec9S8KSw4UXXhqkoG3ZD31yjtModULKGg": {
                               "amount": "10",
-                              "usd_value": "70500.15"
+                              "value": "70500.15"
                           }}
                   }},
                   "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}},
@@ -3391,38 +3391,38 @@ Querying all balances
                   "ETH": {
                       "amount": "1",
                       "percentage_of_net_value": "9.5%",
-                      "usd_value": "180"
+                      "value": "180"
                    },
                    "BTC": {
                       "amount": "0.5",
                       "percentage_of_net_value": "90%",
-                      "usd_value": "4000"
+                      "value": "4000"
                    },
                    "EUR": {
                       "amount": "2",
                       "percentage_of_net_value": "0.5%",
-                      "usd_value": "2.8"
+                      "value": "2.8"
                    }
                },
                "liabilities": {
                    "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                        "amount": "100",
-                       "usd_value": "102.5",
+                       "value": "102.5",
                        "percentage_of_net_value": "1%"
                    }
                },
                "location": {
                    "banks": {
                        "percentage_of_net_value": "0.5%",
-                       "usd_value": "2.8"
+                       "value": "2.8"
                    },
                    "binance": {
                        "percentage_of_net_value": "9.5%",
-                       "usd_value": "180"
+                       "value": "180"
                    },
                    "blockchain": {
                        "percentage_of_net_value": "90%",
-                       "usd_value": "4000"
+                       "value": "4000"
                    }
                }
 
@@ -7278,7 +7278,7 @@ Getting all DeFi balances
                       "token_symbol": "yDAI+yUSDC+yUSDT+yTUSD",
                       "balance": {
                           "amount": "1000",
-                          "usd_value": "1009.12"
+                          "value": "1009.12"
                       }
                   },
                   "underlying_balances": [{
@@ -7287,7 +7287,7 @@ Getting all DeFi balances
                       "token_symbol": "DAI",
                       "balance": {
                           "amount": "200",
-                          "usd_value": "201.12"
+                          "value": "201.12"
                       }
                   }, {
                       "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -7295,7 +7295,7 @@ Getting all DeFi balances
                       "token_symbol": "USDC",
                       "balance": {
                           "amount": "300",
-                          "usd_value": "302.14"
+                          "value": "302.14"
                       }
                   }, {
                       "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -7303,7 +7303,7 @@ Getting all DeFi balances
                       "token_symbol": "USDT",
                       "balance": {
                           "amount": "280",
-                          "usd_value": "281.98"
+                          "value": "281.98"
                       }
                   }, {
                       "token_address": "0x0000000000085d4780B73119b644AE5ecd22b376",
@@ -7311,7 +7311,7 @@ Getting all DeFi balances
                       "token_symbol": "TUSD",
                       "balance": {
                           "amount": "220",
-                          "usd_value": "221.201"
+                          "value": "221.201"
                       }
                   }]
               }, {
@@ -7323,7 +7323,7 @@ Getting all DeFi balances
                       "token_symbol": "cBAT",
                       "balance": {
                           "amount": "8000",
-                          "usd_value": "36.22"
+                          "value": "36.22"
                       }
                   },
                   "underlying_balances": [{
@@ -7332,7 +7332,7 @@ Getting all DeFi balances
                       "token_symbol": "BAT",
                       "balance": {
                           "amount": "150",
-                          "usd_value": "36.21"
+                          "value": "36.21"
                       }
                   }]
               }, {
@@ -7344,7 +7344,7 @@ Getting all DeFi balances
                       "token_symbol": "COMP",
                       "balance": {
                           "amount": "0.01",
-                          "usd_value": "1.9"
+                          "value": "1.9"
                       }
                   },
                   "underlying_balances": []
@@ -7358,7 +7358,7 @@ Getting all DeFi balances
                       "token_symbol": "aDAI",
                       "balance": {
                           "amount": "2000",
-                          "usd_value": "2001.95"
+                          "value": "2001.95"
                       }
                   },
                   "underlying_balances": [{
@@ -7367,7 +7367,7 @@ Getting all DeFi balances
                       "token_symbol": "DAI",
                       "balance": {
                           "amount": "2000",
-                          "usd_value": "2001.95"
+                          "value": "2001.95"
                       }
                   }]
               }],
@@ -7422,11 +7422,11 @@ Getting current ethereum MakerDAO DSR balance
               "balances": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                       "amount": "125.24423",
-                      "usd_value": "126.5231"
+                      "value": "126.5231"
                   },
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                       "amount": "456.323",
-                      "usd_value": "460.212"
+                      "value": "460.212"
                   }
                 }
           },
@@ -7479,11 +7479,11 @@ Getting ethereum MakerDAO DSR historical report
                       "movement_type": "deposit",
                       "gain_so_far": {
                           "amount": "0",
-                          "usd_value": "0"
+                          "value": "0"
                       },
                       "value": {
                           "amount": "350",
-                          "usd_value": "351.21"
+                          "value": "351.21"
                       },
                       "block_number": 9128160,
                       "timestamp": 1582706553,
@@ -7492,11 +7492,11 @@ Getting ethereum MakerDAO DSR historical report
                       "movement_type": "deposit",
                       "gain_so_far": {
                           "amount": "0.875232",
-                          "usd_value": "0.885292"
+                          "value": "0.885292"
                       },
                       "value": {
                           "amount": "50",
-                          "usd_value": "50.87"
+                          "value": "50.87"
                       },
                       "block_number": 9129165,
                       "timestamp": 1582806553,
@@ -7505,11 +7505,11 @@ Getting ethereum MakerDAO DSR historical report
                       "movement_type": "withdrawal",
                       "gain_so_far": {
                           "amount": "1.12875932",
-                          "usd_value": "1.34813"
+                          "value": "1.34813"
                       },
                       "value": {
                           "amount": "350",
-                          "usd_value": "353.12"
+                          "value": "353.12"
                       },
                       "block_number": 9149160,
                       "timestamp": 1592706553,
@@ -7518,7 +7518,7 @@ Getting ethereum MakerDAO DSR historical report
                   }],
                   "gain_so_far": {
                       "amount": "1.14875932",
-                      "usd_value": "1.2323"
+                      "value": "1.2323"
                   }
               },
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
@@ -7526,11 +7526,11 @@ Getting ethereum MakerDAO DSR historical report
                       "movement_type": "deposit",
                       "gain_so_far": {
                           "amount": "0",
-                          "usd_value": "0"
+                          "value": "0"
                       },
                       "value": {
                           "amount": "550",
-                          "usd_value": "553.43"
+                          "value": "553.43"
                       },
                       "block_number": 9128174,
                       "timestamp": 1583706553,
@@ -7538,7 +7538,7 @@ Getting ethereum MakerDAO DSR historical report
                   }],
                   "gain_so_far": {
                       "amount": "0.953423",
-                      "usd_value": "0.998421"
+                      "value": "0.998421"
                   }
               }
           },
@@ -7598,11 +7598,11 @@ Getting MakerDAO vaults basic data
               "collateral_asset": "ETH",
               "collateral": {
                   "amount": "5.232",
-                  "usd_value": "950.13"
+                  "value": "950.13"
               },
               "debt": {
                   "amount": "650",
-                  "usd_value": "653.42"
+                  "value": "653.42"
               },
               "collateralization_ratio": "234.21%",
               "liquidation_ratio": "150%",
@@ -7615,11 +7615,11 @@ Getting MakerDAO vaults basic data
               "collateral_asset": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
               "collateral": {
                   "amount": "150",
-                  "usd_value": "150"
+                  "value": "150"
               },
               "debt": {
                   "amount": "50",
-                  "usd_value": "53.2"
+                  "value": "53.2"
               },
               "collateralization_ratio": "250.551%",
               "liquidation_ratio": "150%",
@@ -7687,13 +7687,13 @@ Getting MakerDAO vault details
               "total_interest_owed": "0.02341",
               "total_liquidated": {
                   "amount": "0",
-                  "usd_value": "0"
+                  "value": "0"
               },
               "events": [{
                   "event_type": "deposit",
                   "value": {
                       "amount": "5.551",
-                      "usd_value": "120.32"
+                      "value": "120.32"
                   },
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
@@ -7701,7 +7701,7 @@ Getting MakerDAO vault details
                   "event_type": "generate",
                   "value": {
                       "amount": "325",
-                      "usd_value": "12003.32"
+                      "value": "12003.32"
                   },
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
@@ -7713,13 +7713,13 @@ Getting MakerDAO vault details
               "total_interest_owed": "-751.32",
               "total_liquidated": {
                   "amount": "1050.21",
-                  "usd_value": "2501.234"
+                  "value": "2501.234"
               },
               "events": [{
                   "event_type": "deposit",
                   "value": {
                       "amount": "1050.21",
-                      "usd_value": "10500.21"
+                      "value": "10500.21"
                   },
                   "timestamp": 1589067899,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
@@ -7727,7 +7727,7 @@ Getting MakerDAO vault details
                   "event_type": "generate",
                   "value": {
                       "amount": "721.32",
-                      "usd_value": "7213.2"
+                      "value": "7213.2"
                   },
                   "timestamp": 1589067900,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
@@ -7735,7 +7735,7 @@ Getting MakerDAO vault details
                   "event_type": "liquidation",
                   "value": {
                       "amount": "500",
-                      "usd_value": "5000"
+                      "value": "5000"
                   },
                   "timestamp": 1589068000,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
@@ -7743,7 +7743,7 @@ Getting MakerDAO vault details
                   "event_type": "liquidation",
                   "value": {
                       "amount": "550.21",
-                      "usd_value": "5502.1"
+                      "value": "5502.1"
                   },
                   "timestamp": 1589068001,
                   "tx_hash": "0x678f31d49dd70d76c0ce441343c0060dc600f4c8dbb4cee2b08c6b451b6097cd"
@@ -7810,12 +7810,12 @@ Getting Liquity balances
                   "collateral": {
                      "asset": "ETH"
                      "amount": "5.3100000000000005",
-                     "usd_value": "16161.675300000001521815"
+                     "value": "16161.675300000001521815"
                   },
                   "debt": {
                      "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                      "amount": "6029.001719188487",
-                     "usd_value": "6089.29173638037187"
+                     "value": "6089.29173638037187"
                   },
                   "collateralization_ratio": "268.0655281381374051287323733",
                   "liquidation_price": "1261.435199626818912670885158",
@@ -7878,17 +7878,17 @@ Getting Liquity staked amount
                   "staked": {
                     "asset": "ETH",
                     "amount": "43.180853032438783295",
-                    "usd_value": "43.180853032438783295",
+                    "value": "43.180853032438783295",
                   },
                   "lusd_rewards": {
                     "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                     "amount": "94477.70111867384658505",
-                    "usd_value": "94477.70111867384658505",
+                    "value": "94477.70111867384658505",
                   },
                   "eth_rewards": {
                     "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                     "amount": "10211401.723115634393264567",
-                    "usd_value": "10211401.723115634393264567",
+                    "value": "10211401.723115634393264567",
                   }
                 },
                 "proxies": {
@@ -7896,17 +7896,17 @@ Getting Liquity staked amount
                       "staked": {
                         "asset": "ETH",
                         "amount": "43.180853032438783295",
-                        "usd_value": "43.180853032438783295",
+                        "value": "43.180853032438783295",
                       },
                       "lusd_rewards": {
                         "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                         "amount": "94477.70111867384658505",
-                        "usd_value": "94477.70111867384658505",
+                        "value": "94477.70111867384658505",
                       },
                       "eth_rewards": {
                         "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                         "amount": "10211401.723115634393264567",
-                        "usd_value": "10211401.723115634393264567",
+                        "value": "10211401.723115634393264567",
                       }
                 }
             }
@@ -7960,17 +7960,17 @@ Getting Liquity stability pool information
                   "gains": {
                     "asset": "ETH",
                     "amount": "43.180853032438783295",
-                    "usd_value": "43.180853032438783295",
+                    "value": "43.180853032438783295",
                   },
                   "rewards": {
                     "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                     "amount": "94477.70111867384658505",
-                    "usd_value": "94477.70111867384658505",
+                    "value": "94477.70111867384658505",
                   },
                   "deposited": {
                     "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                     "amount": "10211401.723115634393264567",
-                    "usd_value": "10211401.723115634393264567",
+                    "value": "10211401.723115634393264567",
                   }
                 },
                 "proxies": {
@@ -7978,17 +7978,17 @@ Getting Liquity stability pool information
                       "gains": {
                         "asset": "ETH",
                         "amount": "43.180853032438783295",
-                        "usd_value": "43.180853032438783295",
+                        "value": "43.180853032438783295",
                       },
                       "rewards": {
                         "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                         "amount": "94477.70111867384658505",
-                        "usd_value": "94477.70111867384658505",
+                        "value": "94477.70111867384658505",
                       },
                       "deposited": {
                         "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                         "amount": "10211401.723115634393264567",
-                        "usd_value": "10211401.723115634393264567",
+                        "value": "10211401.723115634393264567",
                       }
                 }
             }
@@ -8040,109 +8040,109 @@ Getting Liquity staking information
       {
         "result": {
           "global_stats": {
-            "total_usd_gains_stability_pool": "41902.74041824219",
-            "total_usd_gains_staking": "190.09104568340678",
+            "total_value_gains_stability_pool": "41902.74041824219",
+            "total_value_gains_staking": "190.09104568340678",
             "total_deposited_stability_pool": "1915600.7290263602",
             "total_withdrawn_stability_pool": "914454.5094041774",
-            "total_deposited_stability_pool_usd_value": "0.0",
-            "total_withdrawn_stability_pool_usd_value": "0.0",
+            "total_deposited_stability_pool_value": "0.0",
+            "total_withdrawn_stability_pool_value": "0.0",
             "staking_gains": [
               {
                 "asset": "ETH",
                 "amount": "0.19015022103888912",
-                "usd_value": "23.001055387590114"
+                "value": "23.001055387590114"
               },
               {
                 "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                 "amount": "168.7710091203543",
-                "usd_value": "167.08999029581668"
+                "value": "167.08999029581668"
               },
               {
                 "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                 "amount": "1445.7823568041297",
-                "usd_value": "0.0"
+                "value": "0.0"
               }
             ],
             "stability_pool_gains": [
               {
                 "asset": "ETH",
                 "amount": "14.0767134582469",
-                "usd_value": "31051.389153894255"
+                "value": "31051.389153894255"
               },
               {
                 "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                 "amount": "11887.091269011284",
-                "usd_value": "10851.35126434794"
+                "value": "10851.35126434794"
               }
             ]
           },
           "by_address": {
             "0xF662f831361c8Ab48d807f7753eb3d641be25d24": {
-              "total_usd_gains_stability_pool": "0.0",
-              "total_usd_gains_staking": "0.0",
+              "total_value_gains_stability_pool": "0.0",
+              "total_value_gains_staking": "0.0",
               "total_deposited_stability_pool": "1519146.7290263602",
               "total_withdrawn_stability_pool": "914454.5094041774",
-              "total_deposited_stability_pool_usd_value": "0.0",
-              "total_withdrawn_stability_pool_usd_value": "0.0",
+              "total_deposited_stability_pool_value": "0.0",
+              "total_withdrawn_stability_pool_value": "0.0",
               "staking_gains": [
                 {
                   "asset": "ETH",
                   "amount": "0.18236022449762773",
-                  "usd_value": "0.0"
+                  "value": "0.0"
                 },
                 {
                   "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                   "amount": "2.23017071973649",
-                  "usd_value": "0.0"
+                  "value": "0.0"
                 },
                 {
                   "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                   "amount": "1445.7823568041297",
-                  "usd_value": "0.0"
+                  "value": "0.0"
                 }
               ],
               "stability_pool_gains": [
                 {
                   "asset": "ETH",
                   "amount": "1.7820064710306824",
-                  "usd_value": "0.0"
+                  "value": "0.0"
                 },
                 {
                   "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                   "amount": "7646.741845927703",
-                  "usd_value": "0.0"
+                  "value": "0.0"
                 }
               ]
             },
             "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4": {
-              "total_usd_gains_stability_pool": "41902.74041824219",
-              "total_usd_gains_staking": "190.09104568340678",
+              "total_value_gains_stability_pool": "41902.74041824219",
+              "total_value_gains_staking": "190.09104568340678",
               "total_deposited_stability_pool": "396454.0",
               "total_withdrawn_stability_pool": "0",
-              "total_deposited_stability_pool_usd_value": "0.0",
-              "total_withdrawn_stability_pool_usd_value": "0",
+              "total_deposited_stability_pool_value": "0.0",
+              "total_withdrawn_stability_pool_value": "0",
               "staking_gains": [
                 {
                   "asset": "ETH",
                   "amount": "0.007789996541261418",
-                  "usd_value": "23.001055387590114"
+                  "value": "23.001055387590114"
                 },
                 {
                   "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
                   "amount": "166.54083840061782",
-                  "usd_value": "167.08999029581668"
+                  "value": "167.08999029581668"
                 }
               ],
               "stability_pool_gains": [
                 {
                   "asset": "ETH",
                   "amount": "12.294706987216218",
-                  "usd_value": "31051.389153894255"
+                  "value": "31051.389153894255"
                 },
                 {
                   "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
                   "amount": "4240.34942308358",
-                  "usd_value": "10851.35126434794"
+                  "value": "10851.35126434794"
                 }
               ]
             }
@@ -8154,12 +8154,12 @@ Getting Liquity staking information
    :resjson object result: A mapping with the keys ``global_stats`` and ``by_address``.
    :resjson object global_stats: Stats aggregating the information for all the addresses tracked in the liquity module.
    :resjson object global_stats: Breakdown by tracked address of the stats.
-   :resjson string total_usd_gains_stability_pool: Sum of all the gains valued at the moment of the event for the stability pool.
-   :resjson string total_usd_gains_staking: Sum of all the gains valued at the moment of the event for liquity staking.
+   :resjson string total_value_gains_stability_pool: Sum of all the gains valued at the moment of the event for the stability pool in the user's main currency.
+   :resjson string total_value_gains_staking: Sum of all the gains valued at the moment of the event for liquity staking in the user's main currency.
    :resjson string total_deposited_stability_pool: Total amount of LUSD deposited in the stability pool.
    :resjson string total_withdrawn_stability_pool: Total amount of LUSD withdrawn from the stability pool.
-   :resjson string total_deposited_stability_pool_usd_value: Sum of the USD value deposited in the stability pool at the time of the events.
-   :resjson string total_withdrawn_stability_pool_usd_value: Sum of the USD value withdrawn from the stability pool at the time of the events.
+   :resjson string total_deposited_stability_pool_value: Sum of the value deposited in the stability pool at the time of the events in the user's main currency.
+   :resjson string total_withdrawn_stability_pool_value: Sum of the value withdrawn from the stability pool at the time of the events in the user's main currency.
    :resjson list[object] staking_gains: Breakdown by asset of the gains claimed by staking.
    :resjson list[object] stability_pool_gains: Breakdown by asset of the gains claimed by depositing in the stability pool.
 
@@ -8212,7 +8212,7 @@ Getting Uniswap balances
                   "usd_price": "0.3015901111469715543448531276626107",
                   "user_balance": {
                     "amount": "4424094.631122964837017895643",
-                    "usd_value": "1334263.191525095084350185834"
+                    "value": "1334263.191525095084350185834"
                   }
                 },
                 {
@@ -8221,14 +8221,14 @@ Getting Uniswap balances
                   "usd_price": "1.001",
                   "user_balance": {
                     "amount": "1336837.868136041506994516873",
-                    "usd_value": "1338174.706004177548501511390"
+                    "value": "1338174.706004177548501511390"
                   }
                 }
               ],
               "total_supply": "5.255427314262137581",
               "user_balance": {
                 "amount": "2.424878911648769806",
-                "usd_value": "2672437.897529272632851697224"
+                "value": "2672437.897529272632851697224"
               }
             }
           ],
@@ -8292,7 +8292,7 @@ Getting Uniswap V3 balances
                   "usd_price": "0.3015901111469715543448531276626107",
                   "user_balance": {
                     "amount": "4.631122964837017895643",
-                    "usd_value": "1334263.191525095084350185834"
+                    "value": "1334263.191525095084350185834"
                   }
                 },
                 {
@@ -8301,14 +8301,14 @@ Getting Uniswap V3 balances
                   "usd_price": "1.001",
                   "user_balance": {
                     "amount": "1336837.868136041506994516873",
-                    "usd_value": "1338174.706004177548501511390"
+                    "value": "1338174.706004177548501511390"
                   }
                 }
               ],
               "total_supply": null,
               "user_balance": {
                 "amount": "0",
-                "usd_value": "2672437.897529272632851697224"
+                "value": "2672437.897529272632851697224"
               }
             }
           ],
@@ -8362,11 +8362,11 @@ Getting Loopring balances
             "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": [{
                     "ETH": {
                         "amount": "1050",
-                        "usd_value": "950"
+                        "value": "950"
                     },
                     "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96": {
                         "amount": "1",
-                        "usd_value": "5"
+                        "value": "5"
                     }
             }]
         },
@@ -8716,12 +8716,12 @@ Getting Pickle's DILL balances
                 "0x5c4D8CEE7dE74E31cE69E76276d862180545c307": {
                     "locked_amount": {
                         "amount": "4431.204412216798860222",
-                        "usd_value": "43735.98754857980475039114",
+                        "value": "43735.98754857980475039114",
                         "asset": "eip155:1/erc20:0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
                     },
                     "pending_rewards": {
                         "amount": "82.217560698031032969",
-                        "usd_value": "811.48732408956629540403",
+                        "value": "811.48732408956629540403",
                         "asset": "eip155:1/erc20:0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
                     },
                     "locked_until": 1755129600
@@ -11406,7 +11406,7 @@ Staking events
                     "timestamp": 1636740198,
                     "location": "kraken",
                     "amount": "0.0600000000",
-                    "usd_value": "278.7345000000000"
+                    "value": "278.7345000000000"
                 },
                 {
                   "event_type": "get reward",
@@ -11414,7 +11414,7 @@ Staking events
                   "timestamp": 1636864588,
                   "location": "kraken",
                   "amount": "0.0000103220",
-                  "usd_value": "0.0478582110500"
+                  "value": "0.0478582110500"
                 },
                 {
                     "event_type": "stake asset",
@@ -11422,7 +11422,7 @@ Staking events
                     "timestamp": 1636738550,
                     "location": "kraken",
                     "amount": "0.0600000000",
-                    "usd_value": "278.7345000000000"
+                    "value": "278.7345000000000"
                 }
               ],
               "entries_found": 3,
@@ -11434,7 +11434,7 @@ Staking events
                   {
                       "asset": "ETH2",
                       "amount": "0.0000103220",
-                      "usd_value": "0.21935353362"
+                      "value": "0.21935353362"
                   }
               ]
           },
@@ -11450,9 +11450,9 @@ Staking events
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
-   :resjsonarr string total_usd_value: Sum of the USD value for the assets received computed at the time of acquisition of each event.
+   :resjsonarr string total_value: Sum of the value for the assets received computed at the time of acquisition of each event in the user's main currency.
    :resjson list[string] assets: Assets involved in events ignoring all filters.
-   :resjson list[object] received: Assets received with the total amount received for each asset and the aggregated USD value at time of acquisition.
+   :resjson list[object] received: Assets received with the total amount received for each asset and the aggregated value at time of acquisition in the user's main currency.
 
    :statuscode 200: Events are successfully returned
    :statuscode 400: Provided JSON is in some way malformed
@@ -11578,19 +11578,19 @@ Handling snapshot manipulation
                         "category": "asset",
                         "asset_identifier": "AVAX",
                         "amount": "1000.00",
-                        "usd_value": "12929.00",
+                        "value": "12929.00",
                     }
                 ],
               "location_data_snapshot": [
                     {
                         "timestamp": 149095883,
                         "location": "external",
-                        "usd_value": "12929.00"
+                        "value": "12929.00"
                     },
                     {
                         "timestamp": 149095883,
                         "location": "total",
-                        "usd_value": "12929.00"
+                        "value": "12929.00"
                     }
               ]
           },
@@ -11718,19 +11718,19 @@ Handling snapshot manipulation
                     "category": "asset",
                     "asset_identifier": "AVAX",
                     "amount": "1000.00",
-                    "usd_value": "12929.00"
+                    "value": "12929.00"
                 }
             ],
             "location_data_snapshot": [
                 {
                     "timestamp": 149095883,
                     "location": "external",
-                    "usd_value": "12929.00"
+                    "value": "12929.00"
                 },
                 {
                     "timestamp": 149095883,
                     "location": "total",
-                    "usd_value": "12929.00"
+                    "value": "12929.00"
                 }
             ]
         }
@@ -12687,9 +12687,9 @@ Get Binance Savings Interests History
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
-   :resjson string total_usd_value: Sum of the USD value for the assets received computed at the time of acquisition of each event.
+   :resjson string total_value: Sum of the value for the assets received computed at the time of acquisition of each event in the user's main currency.
    :resjson list[string] assets: Assets involved in events ignoring all filters.
-   :resjson list[object] received: Assets received with the total amount received for each asset and the aggregated USD value at time of acquisition.
+   :resjson list[object] received: Assets received with the total amount received for each asset and the aggregated value at time of acquisition in the user's main currency.
 
    :statuscode 200: The balances were returned successfully.
    :statuscode 400: Invalid location provided.

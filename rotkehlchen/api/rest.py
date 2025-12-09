@@ -4825,7 +4825,7 @@ class RestAPI:
                 entries_limit=entries_limit,
             )
             value_query_filters, value_bindings = value_filter.prepare(with_pagination=False, with_order=False)  # noqa: E501
-            asset_amounts_and_value, total_usd = history_events_db.get_amount_and_value_stats(
+            asset_amounts_and_value, total_value = history_events_db.get_amount_and_value_stats(
                 cursor=cursor,
                 query_filters=value_query_filters,
                 bindings=value_bindings,
@@ -4836,7 +4836,7 @@ class RestAPI:
                 'entries_found': entries_found,
                 'entries_limit': entries_limit,
                 'entries_total': entries_total,
-                'total_usd_value': total_usd,
+                'total_value': total_value,
                 'assets': history_events_db.get_entries_assets_history_events(
                     cursor=cursor,
                     query_filter=table_filter,
@@ -4845,7 +4845,7 @@ class RestAPI:
                     {
                         'asset': entry[0],
                         'amount': entry[1],
-                        'usd_value': entry[2],
+                        'value': entry[2],
                     } for entry in asset_amounts_and_value
                 ],
             }
