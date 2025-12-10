@@ -204,6 +204,10 @@ class Rotkehlchen:
             coingecko=self.coingecko,
             greenlet_manager=self.greenlet_manager,
         )
+        self.assets_updater = AssetsUpdater(
+            msg_aggregator=self.msg_aggregator,
+            globaldb=GlobalDBHandler(),
+        )
 
         # Initialize the Inquirer singleton
         Inquirer(
@@ -558,10 +562,6 @@ class Rotkehlchen:
         )
 
         self.migration_manager.maybe_migrate_data()
-        self.assets_updater = AssetsUpdater(
-            msg_aggregator=self.msg_aggregator,
-            globaldb=GlobalDBHandler(),
-        )
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Check data updates',
