@@ -12,34 +12,26 @@ interface BaseTxQueryStatusData {
   status: TransactionsQueryStatus;
 }
 
-export interface EvmTxQueryStatusData extends BaseTxQueryStatusData {
+interface EvmTxQueryStatusData extends BaseTxQueryStatusData {
   subtype: 'evm';
   period: [number, number];
 }
 
-export interface EvmlikeTxQueryStatusData extends BaseTxQueryStatusData {
+interface EvmlikeTxQueryStatusData extends BaseTxQueryStatusData {
   subtype: 'evmlike';
   period: [number, number];
 }
 
-export interface BitcoinTxQueryStatusData extends BaseTxQueryStatusData {
+interface BitcoinTxQueryStatusData extends BaseTxQueryStatusData {
   subtype: 'bitcoin';
 }
 
-export interface SolanaTxQueryStatusData extends BaseTxQueryStatusData {
+interface SolanaTxQueryStatusData extends BaseTxQueryStatusData {
   subtype: 'solana';
   period: [number, number];
 }
 
 export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData | SolanaTxQueryStatusData;
-
-export function isEvmTxQueryStatusData(data: TxQueryStatusData): data is EvmTxQueryStatusData {
-  return data.subtype === 'evm';
-}
-
-export function isEvmlikeTxQueryStatusData(data: TxQueryStatusData): data is EvmlikeTxQueryStatusData {
-  return data.subtype === 'evmlike';
-}
 
 export function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQueryStatusData {
   return data.subtype === 'bitcoin';

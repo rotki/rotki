@@ -11,7 +11,7 @@ const Source = {
 
 export type Source = typeof Source[keyof typeof Source];
 
-export enum Preference {
+enum Preference {
   SNAPSHOT,
   EVENTS,
 }

@@ -1,5 +1,3 @@
-import type { WebSocket } from 'ws';
-
 export interface WalletBridgeIpcCallbacks {
   sendIpcMessage: (channel: string, ...args: any[]) => void;
 }
@@ -8,12 +6,6 @@ export interface PendingRequest {
   resolve: (value: any) => void;
   reject: (error: Error) => void;
   connectionId: number;
-}
-
-export interface ConnectionInfo {
-  id: number;
-  websocket: WebSocket;
-  isActive: boolean;
 }
 
 // Constants

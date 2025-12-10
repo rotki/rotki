@@ -30,24 +30,3 @@ export const DatabaseInfoSchema = z.object({
 });
 
 export type DatabaseInfo = z.infer<typeof DatabaseInfoSchema>;
-
-export const DatabaseInfoResponse = z.object({
-  message: z.string(),
-  result: DatabaseInfoSchema,
-});
-
-export type DatabaseInfoResponse = z.infer<typeof DatabaseInfoResponse>;
-
-export const CreateDatabaseResponse = z.object({
-  message: z.string(),
-  result: z.string(),
-});
-
-export type CreateDatabaseResponse = z.infer<typeof CreateDatabaseResponse>;
-
-export const DeleteDatabaseResponse = z.object({
-  message: z.string(),
-  result: z.boolean(),
-});
-
-export type DeleteDatabaseResponse = z.infer<typeof DeleteDatabaseResponse>;

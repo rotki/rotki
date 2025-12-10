@@ -1,16 +1,16 @@
 import type { ThemeColors } from '@rotki/common';
 
-export const LIGHT_PRIMARY = '#4e5ba6';
+const LIGHT_PRIMARY = '#4e5ba6';
 
-export const LIGHT_ACCENT = '#667085';
+const LIGHT_ACCENT = '#667085';
 
-export const LIGHT_GRAPH = '#96DFD2';
+const LIGHT_GRAPH = '#96DFD2';
 
-export const DARK_PRIMARY = '#5b68b2';
+const DARK_PRIMARY = '#5b68b2';
 
-export const DARK_ACCENT = '#667085';
+const DARK_ACCENT = '#667085';
 
-export const DARK_GRAPH = '#E96930';
+const DARK_GRAPH = '#E96930';
 
 export const DARK_COLORS: ThemeColors = {
   accent: DARK_ACCENT,

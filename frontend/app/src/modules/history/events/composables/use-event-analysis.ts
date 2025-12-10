@@ -13,7 +13,7 @@ export interface SwapGroup {
   selectedIds: number[];
 }
 
-export interface AnalyzedEvents {
+interface AnalyzedEvents {
   completeTransactions: Map<string, TransactionGroup>;
   partialEventIds: number[];
   partialSwapGroups: SwapGroup[];

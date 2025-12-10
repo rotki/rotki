@@ -36,5 +36,3 @@ export const HTTPStatus = {
   // Custom status codes used by rotki backend
   DB_UPGRADE_ERROR: 542,
 } as const;
-
-export type HTTPStatusCode = (typeof HTTPStatus)[keyof typeof HTTPStatus];

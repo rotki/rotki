@@ -5,7 +5,7 @@ import { type AppKit, createAppKit } from '@reown/appkit/vue';
 import { BrowserProvider, getAddress } from 'ethers';
 import { logger } from '@/utils/logging';
 
-export const ROTKI_DAPP_METADATA = {
+const ROTKI_DAPP_METADATA = {
   description: 'Rotki Dapp',
   icons: ['https://raw.githubusercontent.com/rotki/data/refs/heads/main/assets/default_icons/website_logo.png'],
   name: 'Rotki Dapp',

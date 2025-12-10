@@ -8,7 +8,7 @@ const CACHE_EXPIRY = 1000 * 60 * 10;
 const CACHE_SIZE = 500;
 const DEBOUNCE_TIME = 800;
 
-export interface CacheEntry<T> {
+interface CacheEntry<T> {
   key: string;
   item: T;
 }

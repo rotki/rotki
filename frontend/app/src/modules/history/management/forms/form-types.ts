@@ -36,17 +36,3 @@ export type StandaloneEventData<
 > = AddEventData | GroupAddEventData<I> | EditStandaloneEventData<I>;
 
 export type HistoryEventEditData = EditGroupEventData | EditStandaloneEventData;
-
-export interface ShowMissingRuleForm {
-  readonly type: 'missingRule';
-  readonly data: HistoryEventEditData;
-}
-
-export type ShowFormData = GroupEventData | StandaloneEventData;
-
-export interface ShowEventForm {
-  readonly type: 'event';
-  readonly data: ShowFormData;
-}
-
-export type ShowEventHistoryForm = ShowEventForm | ShowMissingRuleForm;

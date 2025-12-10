@@ -12,7 +12,7 @@ const JsonRpcBaseSchema = z.object({
 });
 
 // Wallet Bridge Request Schema (JSON-RPC format)
-export const WalletBridgeRequestSchema = JsonRpcBaseSchema.extend({
+const WalletBridgeRequestSchema = JsonRpcBaseSchema.extend({
   method: z.string().min(1),
   params: z.array(z.unknown()).optional(),
 });
@@ -45,7 +45,7 @@ const NotificationTypeSchema = z.enum([
 ]);
 
 // Wallet Bridge Notification Schema
-export const WalletBridgeNotificationSchema = z.object({
+const WalletBridgeNotificationSchema = z.object({
   type: NotificationTypeSchema,
   eventName: z.string().optional(),
   eventData: z.unknown().optional(),
@@ -61,7 +61,7 @@ export const WalletBridgeMessageSchema = z.union([
   WalletBridgeNotificationSchema,
 ]);
 
-export type WalletBridgeMessage = z.infer<typeof WalletBridgeMessageSchema>;
+type WalletBridgeMessage = z.infer<typeof WalletBridgeMessageSchema>;
 
 // Type guards
 export function isWalletBridgeRequest(message: unknown): message is WalletBridgeRequest {

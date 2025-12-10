@@ -161,7 +161,7 @@ function aggregateAddressProtocol(
 /**
  * Helper function to aggregate balance for a protocol
  */
-export function aggregateBalanceForProtocol(
+function aggregateBalanceForProtocol(
   existingBalance: BalanceWithManual | undefined,
   newBalance: Balance,
   isManualSource: boolean,
@@ -226,7 +226,7 @@ export function aggregateSourceBalances(
 /**
  * Gets sorted protocol balances
  */
-export function getSortedProtocolBalances(protocolBalances: ProtocolBalancesWithManual): ProtocolBalanceWithChains[] {
+function getSortedProtocolBalances(protocolBalances: ProtocolBalancesWithManual): ProtocolBalanceWithChains[] {
   return Object.entries(protocolBalances)
     .filter(([, balance]) => balance.amount.gt(0))
     .map(([protocol, balance]) => {

@@ -20,7 +20,7 @@ export interface PremiumSetup {
   readonly syncDatabase: boolean;
 }
 
-export interface InitialSettings {
+interface InitialSettings {
   readonly submitUsageAnalytics: boolean;
 }
 

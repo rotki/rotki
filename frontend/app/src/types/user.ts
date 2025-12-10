@@ -69,7 +69,7 @@ export enum CostBasisMethod {
   ACB = 'acb',
 }
 
-export const CostBasisMethodEnum = z.enum(CostBasisMethod);
+const CostBasisMethodEnum = z.enum(CostBasisMethod);
 
 export const BaseAccountingSettings = z.object({
   calculatePastCostBasis: z.boolean(),
@@ -116,7 +116,7 @@ const BaseData = z.object({
 
 type BaseData = z.infer<typeof BaseData>;
 
-export const UserSettings = z.object({
+const UserSettings = z.object({
   ...BaseData.shape,
   ...Settings.shape,
 });

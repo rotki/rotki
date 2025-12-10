@@ -33,7 +33,7 @@ export type NewDetectedToken = z.infer<typeof NewDetectedToken>;
 
 export const NewDetectedTokens = z.array(NewDetectedToken);
 
-export const RefreshBalancesType = {
+const RefreshBalancesType = {
   BLOCKCHAIN_BALANCES: 'blockchain_balances',
 } as const;
 

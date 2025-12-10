@@ -80,7 +80,7 @@ async function loadComponents(): Promise<string[]> {
   }
 }
 
-export async function loadLibrary(): Promise<any> {
+async function loadLibrary(): Promise<any> {
   const [component] = await loadComponents();
   // @ts-expect-error component is dynamic and not added in the window type
   const library = window[component];

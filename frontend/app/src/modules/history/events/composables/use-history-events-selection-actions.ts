@@ -20,7 +20,7 @@ export interface IgnoreStatus {
   notIgnoredCount: number;
 }
 
-export interface HistoryEventsSelectionActions {
+interface HistoryEventsSelectionActions {
   accountingRuleToEdit: Ref<AccountingRuleEntry | undefined>;
   handleAccountingRuleRefresh: () => void;
   handleSelectionAction: (action: string) => Promise<void>;

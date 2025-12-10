@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 
-export type LogType = 'info' | 'success' | 'error';
+type LogType = 'info' | 'success' | 'error';
 
 export interface LogEntry {
   message: string;
@@ -8,7 +8,7 @@ export interface LogEntry {
   type: LogType;
 }
 
-export interface BridgeLoggingComposable {
+interface BridgeLoggingComposable {
   addLog: (message: string, type?: 'info' | 'success' | 'error') => void;
   clearLogs: () => void;
   logs: Ref<LogEntry[]>;

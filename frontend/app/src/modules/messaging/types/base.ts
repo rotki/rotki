@@ -3,7 +3,7 @@ import { z } from 'zod/v4';
 export const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';
 
-export const MessageVerbosity = z.enum([MESSAGE_WARNING, MESSAGE_ERROR]);
+const MessageVerbosity = z.enum([MESSAGE_WARNING, MESSAGE_ERROR]);
 
 export const LegacyMessageData = z.object({
   value: z.string(),
@@ -36,10 +36,6 @@ export const SocketMessageType = {
 } as const;
 
 export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];
-
-export function isSocketMessageType(type: string): type is SocketMessageType {
-  return Object.values(SocketMessageType).includes(type as SocketMessageType);
-}
 
 export const SocketMessageProgressUpdateSubType = {
   CSV_IMPORT_RESULT: 'csv_import_result',

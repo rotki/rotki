@@ -5,11 +5,11 @@ import { useDefiMetadata } from '@/composables/defi/metadata';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useLocations } from '@/composables/locations';
 
-export interface ImageProtocol { image: string; type: 'image'; name: string }
+interface ImageProtocol { image: string; type: 'image'; name: string }
 
-export interface IconProtocol { icon: string; type: 'icon'; name: string }
+interface IconProtocol { icon: string; type: 'icon'; name: string }
 
-export type ProtocolData = ImageProtocol | IconProtocol | undefined;
+type ProtocolData = ImageProtocol | IconProtocol | undefined;
 
 interface UseProtocolDataReturn { protocolData: ComputedRef<ProtocolData> }
 

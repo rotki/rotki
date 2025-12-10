@@ -12,9 +12,9 @@ export interface FilterObjectWithBehaviour<T> {
   values: T;
 }
 
-export type StringSuggestion = () => string[];
+type StringSuggestion = () => string[];
 
-export type AssetSuggestion = (value: string) => Promise<AssetsWithId>;
+type AssetSuggestion = (value: string) => Promise<AssetsWithId>;
 
 interface BaseMatcher<K, KV = void> {
   readonly key: K;

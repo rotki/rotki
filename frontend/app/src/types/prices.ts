@@ -3,7 +3,7 @@ import { forEach } from 'es-toolkit/compat';
 import { z } from 'zod/v4';
 import { PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
 
-export const AssetPriceInput = z.tuple([NumericString, z.number()]);
+const AssetPriceInput = z.tuple([NumericString, z.number()]);
 
 export const AssetPrice = z.object({
   isManualPrice: z.boolean(),
@@ -42,12 +42,12 @@ export const AssetPriceResponse = z.object({
 
 export type AssetPriceResponse = z.infer<typeof AssetPriceResponse>;
 
-export const AssetPair = z.object({
+const AssetPair = z.object({
   fromAsset: z.string(),
   toAsset: z.string(),
 });
 
-export type AssetPair = z.infer<typeof AssetPair>;
+type AssetPair = z.infer<typeof AssetPair>;
 
 export interface OracleCachePayload extends AssetPair {
   readonly source: PriceOracle;

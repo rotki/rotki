@@ -33,7 +33,7 @@ interface AssetWithResolutionStatus extends AssetInfoWithId {
   resolved: boolean;
 }
 
-export interface AssetContractInfo {
+interface AssetContractInfo {
   location: string;
   address: string;
   nftId?: string;
@@ -45,7 +45,7 @@ export type AssetSymbolReturn = (identifier: MaybeRef<string | undefined>, optio
 
 export type AssetNameReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
 
-export type AssetContractInfoReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetContractInfo | undefined>;
+type AssetContractInfoReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetContractInfo | undefined>;
 
 interface UseAssetInfoRetrievalReturn {
   assetAssociationMap: ComputedRef<Record<string, string>>;

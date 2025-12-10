@@ -8,12 +8,12 @@ export const DialogType = {
 
 export type DialogType = (typeof DialogType)[keyof typeof DialogType];
 
-export interface DialogTheme {
+interface DialogTheme {
   readonly icon: RuiIcons;
   readonly color: ContextColorsType;
 }
 
-export type DialogThemes = { [type in DialogType]: DialogTheme };
+type DialogThemes = { [type in DialogType]: DialogTheme };
 
 export const themes: DialogThemes = {
   info: { color: 'primary', icon: 'lu-info' },

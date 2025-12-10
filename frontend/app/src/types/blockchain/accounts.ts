@@ -47,7 +47,7 @@ export interface AccountExtraParams {
   readonly groupHeader?: boolean;
 }
 
-export interface AccountExpansion {
+interface AccountExpansion {
   readonly expansion?: 'accounts' | 'assets';
 }
 
@@ -158,7 +158,7 @@ export interface DeleteBlockchainAccountParams {
   readonly accounts: string[];
 }
 
-export interface BasicBlockchainAccountPayload {
+interface BasicBlockchainAccountPayload {
   readonly blockchain: string;
   readonly xpub?: XpubPayload;
   readonly accounts?: string[];

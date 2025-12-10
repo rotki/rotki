@@ -59,7 +59,7 @@ export interface EditExchange {
   readonly newName?: string;
 }
 
-export interface ExchangePayload {
+interface ExchangePayload {
   readonly name: string;
   readonly location: string;
   readonly apiKey: string;

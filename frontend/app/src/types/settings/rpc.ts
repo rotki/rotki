@@ -29,12 +29,12 @@ export function getPlaceholderNode(chain: Blockchain): BlockchainRpcNode {
   };
 }
 
-export interface EvmRpcNodeAddState {
+interface EvmRpcNodeAddState {
   mode: 'add';
   node: BlockchainRpcNode;
 }
 
-export interface EvmRpcNodeEditState {
+interface EvmRpcNodeEditState {
   mode: 'edit';
   node: BlockchainRpcNode;
 }

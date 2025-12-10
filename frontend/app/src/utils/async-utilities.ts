@@ -1,7 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { logger } from '@/utils/logging';
 
-export interface WaitForConditionOptions {
+interface WaitForConditionOptions {
   timeout?: number;
   interval?: number;
   initialDelay?: number;
@@ -9,21 +9,21 @@ export interface WaitForConditionOptions {
   signal?: AbortSignal;
 }
 
-export class AsyncUtilityError extends Error {
+class AsyncUtilityError extends Error {
   constructor(message: string, public code: string, public cause?: Error) {
     super(message);
     this.name = 'AsyncUtilityError';
   }
 }
 
-export class TimeoutError extends AsyncUtilityError {
+class TimeoutError extends AsyncUtilityError {
   constructor(operation: string, timeout: number, cause?: Error) {
     super(`Timeout waiting for ${operation} (${timeout}ms)`, 'TIMEOUT', cause);
     this.name = 'TimeoutError';
   }
 }
 
-export class AbortedError extends AsyncUtilityError {
+class AbortedError extends AsyncUtilityError {
   constructor(operation: string, cause?: Error) {
     super(`Operation ${operation} was aborted`, 'ABORTED', cause);
     this.name = 'AbortedError';
