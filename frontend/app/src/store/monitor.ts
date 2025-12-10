@@ -196,6 +196,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   return {
     restart,
     start,
+    startTaskMonitoring,
     stop,
   };
 });

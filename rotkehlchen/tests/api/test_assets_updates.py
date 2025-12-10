@@ -20,7 +20,6 @@ from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_error_response,
     assert_ok_async_response,
     assert_proper_sync_response_with_result,
     wait_for_async_task,
@@ -914,11 +913,7 @@ def test_update_no_user_loggedin(rotkehlchen_api_server: 'APIServer') -> None:
             'assetupdatesresource',
         ),
     )
-    assert_error_response(
-        response=response,
-        contained_in_msg='No user is currently logged in',
-        status_code=HTTPStatus.UNAUTHORIZED,
-    )
+    assert_proper_sync_response_with_result(response)
 
 
 def test_async_db_reset(rotkehlchen_api_server: 'APIServer') -> None:

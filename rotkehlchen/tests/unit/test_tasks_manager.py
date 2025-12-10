@@ -663,6 +663,11 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
                 'detect_exited_validators',
                 side_effect=lambda *args, **kwargs: None,
             ),
+            patch.object(
+                eth2.ethereum,
+                'maybe_timestamp_to_block_range',
+                return_value=('blocks', 0, 19000000),
+            ),
         ):
             task_manager.schedule()
             gevent.joinall(task_manager.greenlet_manager.greenlets)

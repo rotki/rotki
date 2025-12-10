@@ -12,6 +12,7 @@ import { useLogout } from '@/modules/account/use-logout';
 import { useConfirmStore } from '@/store/confirm';
 import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {
   headless: false,
@@ -49,6 +50,7 @@ const { logout } = useLogout();
 const { applyUpdates, checkForUpdate } = useAssets();
 const { connect, setConnected } = useMainStore();
 const { restartBackend } = useBackendManagement();
+const { logged } = storeToRefs(useSessionAuthStore());
 
 const { t } = useI18n({ useScope: 'global' });
 const { setMessage } = useMessageStore();
@@ -122,7 +124,11 @@ async function updateComplete() {
     return;
 
   set(restarting, true);
-  await logout(true);
+
+  // Only logout if user is actually logged in
+  if (get(logged))
+    await logout(true);
+
   setConnected(false);
   await restartBackend();
   await connect();

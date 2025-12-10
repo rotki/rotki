@@ -3643,8 +3643,6 @@ class RestAPI:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         if result is None:
-            with self.rotkehlchen.data.db.user_write() as cursor:
-                self.rotkehlchen.data.db.sync_globaldb_assets(cursor)
             return OK_RESULT
 
         return {
