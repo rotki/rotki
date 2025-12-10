@@ -7,6 +7,7 @@ export const CollectionCommonFields = z.object({
   entriesLimit: z.number().default(-1),
   entriesTotal: z.number(),
   totalUsdValue: NumericString.nullish(),
+  totalValue: NumericString.nullish(),
 });
 
 export interface Collection<T> {
@@ -16,6 +17,7 @@ export interface Collection<T> {
   total: number;
   entriesFoundTotal?: number;
   totalUsdValue?: BigNumber | null;
+  totalValue?: BigNumber | null;
 }
 
 export interface CollectionResponse<T> {
@@ -25,4 +27,5 @@ export interface CollectionResponse<T> {
   entriesTotal: number;
   entriesFoundTotal?: number;
   totalUsdValue?: BigNumber | null;
+  totalValue?: BigNumber | null;
 }

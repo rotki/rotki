@@ -5,7 +5,6 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = withDefaults(
   defineProps<{
@@ -42,32 +41,18 @@ const amount = useValueOrDefault(
   useRefMap(value, value => value?.amount),
   Zero,
 );
-const usdValue = useValueOrDefault(
-  useRefMap(value, value => value?.usdValue),
+const balanceValue = useValueOrDefault(
+  useRefMap(value, value => value?.value),
   Zero,
 );
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetPrice, toSelectedCurrency } = usePriceUtils();
-
-const valueCurrency = computed(() => {
-  if (!get(calculateValue))
-    return 'USD';
-
-  return get(currencySymbol);
-});
+const { assetPriceInCurrentCurrency } = usePriceUtils();
 
 const valueInCurrency = computed(() => {
   if (!get(calculateValue))
-    return get(usdValue);
+    return get(balanceValue);
 
-  const owned = get(amount);
-  const ethPrice = assetPrice(get(asset));
-
-  if (isDefined(ethPrice))
-    return owned.multipliedBy(get(toSelectedCurrency(ethPrice)));
-
-  return Zero;
+  return get(assetPriceInCurrentCurrency(get(asset))).multipliedBy(get(amount));
 });
 </script>
 
@@ -95,7 +80,7 @@ const valueInCurrency = computed(() => {
         class="block font-medium"
       />
       <AmountDisplay
-        :fiat-currency="valueCurrency"
+        force-currency
         :asset-padding="assetPadding"
         :value="valueInCurrency"
         :show-currency="ticker ? 'ticker' : 'none'"

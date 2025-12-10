@@ -5,7 +5,6 @@ import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useStatusStore } from '@/store/status';
-import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
 import { bigNumberSum } from '@/utils/calculation';
 
@@ -21,9 +20,9 @@ const props = withDefaults(
 );
 
 const { pool, statistic } = toRefs(props);
-const { assetPrice } = usePriceUtils();
+const { assetPriceInCurrentCurrency } = usePriceUtils();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
-const lusdPrice = assetPrice(LUSD_ID);
+const lusdPrice = assetPriceInCurrentCurrency(LUSD_ID);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -42,35 +41,35 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
     return statisticVal;
 
   const stakingGains = statisticVal.stakingGains.map((stakingGain: AssetBalance) => {
-    const price = get(assetPrice(stakingGain.asset)) ?? One;
+    const price = get(assetPriceInCurrentCurrency(stakingGain.asset)) ?? One;
 
     return {
       ...stakingGain,
-      usdValue: stakingGain.amount.multipliedBy(price),
+      value: stakingGain.amount.multipliedBy(price),
     };
   });
 
   const stabilityPoolGains = statisticVal.stabilityPoolGains.map((stabilityPoolGain: AssetBalance) => {
-    const price = get(assetPrice(stabilityPoolGain.asset)) ?? One;
+    const price = get(assetPriceInCurrentCurrency(stabilityPoolGain.asset)) ?? One;
 
     return {
       ...stabilityPoolGain,
-      usdValue: stabilityPoolGain.amount.multipliedBy(price),
+      value: stabilityPoolGain.amount.multipliedBy(price),
     };
   });
 
-  const totalUsdGainsStabilityPool = bigNumberSum(stabilityPoolGains.map(({ usdValue }) => usdValue));
+  const totalValueGainsStabilityPool = bigNumberSum(stabilityPoolGains.map(({ value }) => value));
 
-  const totalUsdGainsStaking = bigNumberSum(stakingGains.map(({ usdValue }) => usdValue));
+  const totalValueGainsStaking = bigNumberSum(stakingGains.map(({ value }) => value));
 
   return {
     ...statisticVal,
     stabilityPoolGains,
     stakingGains,
-    totalDepositedStabilityPoolUsdValue: statisticVal.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
-    totalUsdGainsStabilityPool,
-    totalUsdGainsStaking,
-    totalWithdrawnStabilityPoolUsdValue: statisticVal.totalWithdrawnStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    totalDepositedStabilityPoolValue: statisticVal.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    totalValueGainsStabilityPool,
+    totalValueGainsStaking,
+    totalWithdrawnStabilityPoolValue: statisticVal.totalWithdrawnStabilityPool.multipliedBy(get(lusdPrice) ?? One),
   };
 });
 
@@ -82,8 +81,8 @@ const totalDepositedStabilityPoolBalance = useRefMap<LiquityStatisticDetails | n
 
     return {
       amount: data.totalDepositedStabilityPool,
-      usdValue: data.totalDepositedStabilityPoolUsdValue,
-      value: data.totalDepositedStabilityPoolUsdValue,
+      usdValue: data.totalDepositedStabilityPoolValue,
+      value: data.totalDepositedStabilityPoolValue,
     };
   },
 );
@@ -96,8 +95,8 @@ const totalWithdrawnStabilityPoolBalance = useRefMap<LiquityStatisticDetails | n
 
     return {
       amount: data.totalWithdrawnStabilityPool,
-      usdValue: data.totalWithdrawnStabilityPoolUsdValue,
-      value: data.totalWithdrawnStabilityPoolUsdValue,
+      usdValue: data.totalWithdrawnStabilityPoolValue,
+      value: data.totalWithdrawnStabilityPoolValue,
     };
   },
 );
@@ -117,7 +116,7 @@ const totalWithdrawnStabilityPoolBalance = useRefMap<LiquityStatisticDetails | n
  *
  * @param totalDepositedStabilityPool
  * @param totalWithdrawnStabilityPool
- * @param totalUsdGainsStabilityPool
+ * @param totalValueGainsStabilityPool
  * @param poolGains
  * @param poolRewards
  * @param poolDeposited
@@ -126,7 +125,7 @@ const totalWithdrawnStabilityPoolBalance = useRefMap<LiquityStatisticDetails | n
 function calculatePnl(
   totalDepositedStabilityPool: BigNumber,
   totalWithdrawnStabilityPool: BigNumber,
-  totalUsdGainsStabilityPool: BigNumber,
+  totalValueGainsStabilityPool: BigNumber,
   poolGains: AssetBalance,
   poolRewards: AssetBalance,
   poolDeposited: AssetBalance,
@@ -134,11 +133,11 @@ function calculatePnl(
   return computed(() => {
     const expectedAmount = totalDepositedStabilityPool.minus(totalWithdrawnStabilityPool);
 
-    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(get(assetPrice(poolGains.asset)) ?? One);
+    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(get(assetPriceInCurrentCurrency(poolGains.asset)) ?? One);
 
-    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(get(assetPrice(poolRewards.asset)) ?? One);
+    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(get(assetPriceInCurrentCurrency(poolRewards.asset)) ?? One);
 
-    const totalWithdrawals = totalUsdGainsStabilityPool
+    const totalWithdrawals = totalValueGainsStabilityPool
       .plus(liquidationGainsInCurrentPrice)
       .plus(rewardsInCurrentPrice);
 
@@ -161,7 +160,7 @@ const totalPnl = computed<BigNumber | null>(() => {
     calculatePnl(
       statisticVal.totalDepositedStabilityPool,
       statisticVal.totalWithdrawnStabilityPool,
-      statisticVal.totalUsdGainsStabilityPool,
+      statisticVal.totalValueGainsStabilityPool,
       poolVal.gains,
       poolVal.rewards,
       poolVal.deposited,
@@ -199,8 +198,8 @@ const totalPnl = computed<BigNumber | null>(() => {
             {{ t('liquity_statistic.total_gains_stability_pool') }}
           </div>
           <AmountDisplay
-            :value="statisticWithAdjustedPrice.totalUsdGainsStabilityPool"
-            :fiat-currency="CURRENCY_USD"
+            :value="statisticWithAdjustedPrice.totalValueGainsStabilityPool"
+            force-currency
             class="font-bold"
             :loading="loading"
           />
@@ -210,8 +209,8 @@ const totalPnl = computed<BigNumber | null>(() => {
             {{ t('liquity_statistic.total_gains_staking') }}
           </div>
           <AmountDisplay
-            :value="statisticWithAdjustedPrice.totalUsdGainsStaking"
-            :fiat-currency="CURRENCY_USD"
+            :value="statisticWithAdjustedPrice.totalValueGainsStaking"
+            force-currency
             class="font-bold"
             :loading="loading"
           />
@@ -298,8 +297,9 @@ const totalPnl = computed<BigNumber | null>(() => {
                   </div>
                   <AmountDisplay
                     :value="totalPnl"
-                    :fiat-currency="CURRENCY_USD"
+                    force-currency
                     :loading="loading"
+                    show-currency="symbol"
                     pnl
                   />
                 </div>

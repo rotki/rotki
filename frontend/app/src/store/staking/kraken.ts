@@ -33,7 +33,7 @@ function defaultEventState(): KrakenStakingEvents {
     entriesLimit: 0,
     entriesTotal: 0,
     received: [],
-    totalUsdValue: Zero,
+    totalValue: Zero,
   };
 }
 

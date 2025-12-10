@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<PoolDetailsProps>(), {
 });
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-  column: 'usdValue',
+  column: 'value',
   direction: 'desc' as const,
 });
 
@@ -53,7 +53,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
 }, {
   align: 'end',
   class: 'text-no-wrap',
-  key: 'usdValue',
+  key: 'value',
   label: t('common.value_in_symbol', {
     symbol: get(currencySymbol),
   }),
@@ -66,9 +66,9 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const transformed: AssetBalanceWithPrice[] = props.assets.map(item => ({
     amount: item.userBalance.amount,
     asset: item.asset,
-    usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
-    usdValue: item.userBalance.usdValue,
-    value: item.userBalance.value ?? item.userBalance.usdValue,
+    usdPrice: get(assetPrice(item.asset)) ?? Zero,
+    usdValue: item.userBalance.usdValue ?? Zero,
+    value: item.userBalance.value,
   }));
 
   return sortAssetBalances(transformed, get(sort), assetInfo);
@@ -104,14 +104,14 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
     <template #item.amount="{ row }">
       <AmountDisplay :value="row.amount" />
     </template>
-    <template #item.usdValue="{ row }">
+    <template #item.value="{ row }">
       <AmountDisplay
         show-currency="symbol"
         :amount="row.amount"
         :price-asset="row.asset"
         :price-of-asset="row.usdPrice"
         fiat-currency="USD"
-        :value="row.usdValue"
+        :value="row.value"
       />
     </template>
   </RuiDataTable>

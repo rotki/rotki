@@ -6,76 +6,76 @@
         "timestamp": 1670895975,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0012292140"
+        "value": "0.0012292140"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670809568,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0012807872"
+        "value": "0.0012807872"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670723131,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0013056020"
+        "value": "0.0013056020"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670636721,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0012947992"
+        "value": "0.0012947992"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670550371,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0013086304"
+        "value": "0.0013086304"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670463935,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0012825500"
+        "value": "0.0012825500"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670377528,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0013090372"
+        "value": "0.0013090372"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670291151,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.0013097152"
+        "value": "0.0013097152"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670204715,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.00133676740"
+        "value": "0.00133676740"
       },
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "timestamp": 1670118314,
         "location": "binance",
         "amount": "0.00000452",
-        "usd_value": "0.00132013380"
+        "value": "0.00132013380"
       }
     ],
     "entries_found": 260,
     "entries_limit": -1,
     "entries_total": 260,
-    "total_usd_value": "0.6206537810999999",
+    "total_value": "0.6206537810999999",
     "assets": [
       "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
       "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52"
@@ -84,12 +84,12 @@
       {
         "asset": "eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52",
         "amount": "0.0010938400000000052",
-        "usd_value": "0.31907988540000004"
+        "value": "0.31907988540000004"
       },
       {
         "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
         "amount": "0.301378",
-        "usd_value": "0.30157389570000004"
+        "value": "0.30157389570000004"
       }
     ]
   },

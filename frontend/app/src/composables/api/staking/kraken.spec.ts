@@ -72,7 +72,7 @@ describe('composables/api/staking/kraken', () => {
                 { asset: 'ETH', amount: '1.5', usd_value: '3000' },
                 { asset: 'DOT', amount: '100', usd_value: '500' },
               ],
-              total_usd_value: '3500',
+              total_value: '3500',
             },
             message: '',
           });
@@ -99,8 +99,8 @@ describe('composables/api/staking/kraken', () => {
       expect(result.entriesFound).toBe(10);
       expect(result.entriesTotal).toBe(50);
       expect(result.received).toHaveLength(2);
-      expect(result.totalUsdValue).toBeInstanceOf(BigNumber);
-      expect(result.totalUsdValue.toString()).toBe('3500');
+      expect(result.totalValue).toBeInstanceOf(BigNumber);
+      expect(result.totalValue.toString()).toBe('3500');
     });
 
     it('handles pagination with filters', async () => {
@@ -118,7 +118,7 @@ describe('composables/api/staking/kraken', () => {
               received: [
                 { asset: 'ETH', amount: '0.5', usd_value: '1000' },
               ],
-              total_usd_value: '1000',
+              total_value: '1000',
             },
             message: '',
           });
@@ -161,7 +161,7 @@ describe('composables/api/staking/kraken', () => {
               entries_limit: 100,
               entries_total: 0,
               received: [],
-              total_usd_value: '0',
+              total_value: '0',
             },
             message: '',
           })),

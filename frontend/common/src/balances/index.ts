@@ -3,7 +3,7 @@ import { bigNumberify, NumericString } from '../numbers';
 
 export const Balance = z.object({
   amount: NumericString,
-  usdValue: NumericString,
+  usdValue: NumericString.optional().default(bigNumberify(0)),
   value: NumericString.optional().default(bigNumberify(0)),
 });
 

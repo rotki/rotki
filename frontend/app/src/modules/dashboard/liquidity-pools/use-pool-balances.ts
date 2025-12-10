@@ -88,7 +88,7 @@ export function usePoolBalances(): UsePoolBalancesReturn {
       id: index,
       premiumOnly: false,
       type: PoolType.UNISWAP_V2,
-      usdValue: item.userBalance.usdValue,
+      value: item.userBalance.value,
     }) satisfies PoolLiquidityBalance);
 
     const sushiswapBalances = sushiswap.map((item, index) => ({
@@ -97,16 +97,16 @@ export function usePoolBalances(): UsePoolBalancesReturn {
       id: index,
       premiumOnly: true,
       type: PoolType.SUSHISWAP,
-      usdValue: item.userBalance.usdValue,
+      value: item.userBalance.value,
     }) satisfies PoolLiquidityBalance);
 
     return [
       ...uniswapBalances,
       ...sushiswapBalances,
-    ].sort((a, b) => sortDesc(a.usdValue, b.usdValue)).map((item, id) => ({ ...item, id }));
+    ].sort((a, b) => sortDesc(a.value, b.value)).map((item, id) => ({ ...item, id }));
   });
 
-  const total = computed<BigNumber>(() => bigNumberSum(get(balances).map(item => item.usdValue)));
+  const total = computed<BigNumber>(() => bigNumberSum(get(balances).map(item => item.value)));
 
   const getPoolName = (type: PoolType, assets: string[]): string => {
     const concatAssets = (assets: string[]): string => assets.map(asset => get(assetSymbol(asset))).join('-');
@@ -165,7 +165,7 @@ export function usePoolBalances(): UsePoolBalancesReturn {
       refresh,
       requires: {
         module: Module.SUSHISWAP,
-        premium: true,
+        premium: false,
       },
       state: {
         activeModules,

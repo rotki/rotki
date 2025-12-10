@@ -62,11 +62,11 @@ export const LiquityStatisticDetails = z.object({
   stabilityPoolGains: z.array(AssetBalance),
   stakingGains: z.array(AssetBalance),
   totalDepositedStabilityPool: NumericString,
-  totalDepositedStabilityPoolUsdValue: NumericString,
-  totalUsdGainsStabilityPool: NumericString,
-  totalUsdGainsStaking: NumericString,
+  totalDepositedStabilityPoolValue: NumericString,
+  totalValueGainsStabilityPool: NumericString,
+  totalValueGainsStaking: NumericString,
   totalWithdrawnStabilityPool: NumericString,
-  totalWithdrawnStabilityPoolUsdValue: NumericString,
+  totalWithdrawnStabilityPoolValue: NumericString,
 });
 
 export type LiquityStatisticDetails = z.infer<typeof LiquityStatisticDetails>;
