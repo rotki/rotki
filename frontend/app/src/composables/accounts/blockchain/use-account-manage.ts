@@ -35,7 +35,7 @@ export interface StakingValidatorManage extends AccountManageMode {
   data: Eth2Validator;
 }
 
-export interface AccountManageAdd extends AccountManageMode {
+interface AccountManageAdd extends AccountManageMode {
   readonly mode: 'add';
   chain: string;
   type: 'account';
@@ -46,7 +46,7 @@ export interface AccountManageAdd extends AccountManageMode {
   modules?: Module[];
 }
 
-export interface AccountManageEdit extends AccountManageMode {
+interface AccountManageEdit extends AccountManageMode {
   readonly mode: 'edit';
   chain: string;
   type: 'account';

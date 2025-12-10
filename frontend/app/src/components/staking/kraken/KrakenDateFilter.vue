@@ -22,9 +22,9 @@ enum KrakenStakingFilterValueKeys {
   END = 'toTimestamp',
 }
 
-export type KrakenStakingMatcher = SearchMatcher<KrakenStakingFilterKeys, KrakenStakingFilterValueKeys>;
+type KrakenStakingMatcher = SearchMatcher<KrakenStakingFilterKeys, KrakenStakingFilterValueKeys>;
 
-export type KrakenStakingFilters = MatchedKeyword<KrakenStakingFilterValueKeys>;
+type KrakenStakingFilters = MatchedKeyword<KrakenStakingFilterValueKeys>;
 
 const matchers = computed<KrakenStakingMatcher[]>(() => [{
   description: t('common.filter.start_date'),

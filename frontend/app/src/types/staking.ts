@@ -1,14 +1,14 @@
 import { AssetBalance, NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
 
-export enum KrakenStakingEventType {
+enum KrakenStakingEventType {
   REWARD = 'reward',
   RECEIVE_WRAPPED = 'receive wrapped',
   DEPOSIT_ASSET = 'deposit asset',
   REMOVE_ASSET = 'remove asset',
 }
 
-export const KrakenStakingEventTypeEnum = z.enum(KrakenStakingEventType);
+const KrakenStakingEventTypeEnum = z.enum(KrakenStakingEventType);
 
 const KrakenStakingEvent = AssetBalance.extend({
   eventType: KrakenStakingEventTypeEnum,
@@ -16,7 +16,7 @@ const KrakenStakingEvent = AssetBalance.extend({
   timestamp: z.number().nonnegative(),
 });
 
-export type KrakenStakingEvent = z.infer<typeof KrakenStakingEvent>;
+type KrakenStakingEvent = z.infer<typeof KrakenStakingEvent>;
 
 export const KrakenStakingEvents = z.object({
   assets: z.array(z.string()),
@@ -78,16 +78,14 @@ const LidoCsmRewardsSchema = z.object({
   pending: NumericString.optional(),
 }).strict().partial();
 
-export const LidoCsmNodeOperatorMetricsSchema = z.object({
+const LidoCsmNodeOperatorMetricsSchema = z.object({
   bond: LidoCsmBondSchema.nullish(),
   keys: LidoCsmKeysSchema.nullish(),
   operatorType: LidoCsmOperatorTypeSchema.nullish(),
   rewards: LidoCsmRewardsSchema.nullish().optional(),
 });
 
-export type LidoCsmNodeOperatorMetrics = z.infer<typeof LidoCsmNodeOperatorMetricsSchema>;
-
-export const LidoCsmNodeOperatorSchema = LidoCsmNodeOperatorPayloadSchema.extend({
+const LidoCsmNodeOperatorSchema = LidoCsmNodeOperatorPayloadSchema.extend({
   metrics: LidoCsmNodeOperatorMetricsSchema.nullish(),
 });
 

@@ -64,7 +64,7 @@ export const TransactionsQueryStatus = {
 
 export type TransactionsQueryStatus = (typeof TransactionsQueryStatus)[keyof typeof TransactionsQueryStatus];
 
-export const EvmTransactionStatusData = z.object({
+const EvmTransactionStatusData = z.object({
   address: z.string(),
   chain: z.string(),
   period: z.tuple([z.number(), z.number()]),
@@ -72,14 +72,14 @@ export const EvmTransactionStatusData = z.object({
   subtype: z.literal('evm').or(z.literal('evmlike')),
 });
 
-export const BitcoinTransactionStatusData = z.object({
+const BitcoinTransactionStatusData = z.object({
   addresses: z.array(z.string()),
   chain: z.string(),
   status: z.enum(TransactionsQueryStatus),
   subtype: z.literal('bitcoin'),
 });
 
-export const SolanaTransactionStatusData = z.object({
+const SolanaTransactionStatusData = z.object({
   address: z.string(),
   chain: z.string(),
   period: z.tuple([z.number(), z.number()]),
@@ -102,7 +102,7 @@ export const EvmUnDecodedTransactionsData = CommonQueryStatusData.extend({
 
 export type EvmUnDecodedTransactionsData = z.infer<typeof EvmUnDecodedTransactionsData>;
 
-export const EvmUndecodedTransactionBreakdown = z.object({
+const EvmUndecodedTransactionBreakdown = z.object({
   total: z.number(),
   undecoded: z.number(),
 });
@@ -111,7 +111,7 @@ export const EvmUndecodedTransactionResponse = z.record(z.string(), EvmUndecoded
 
 export type EvmUndecodedTransactionResponse = z.infer<typeof EvmUndecodedTransactionResponse>;
 
-export const EvmUnDecodedTransactionsDataWithSubtype = EvmUnDecodedTransactionsData.extend({
+const EvmUnDecodedTransactionsDataWithSubtype = EvmUnDecodedTransactionsData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS),
 });
 
@@ -121,15 +121,15 @@ export const StatsPriceQueryData = CommonQueryStatusData.extend({
 
 export type StatsPriceQueryData = z.infer<typeof StatsPriceQueryData>;
 
-export const LiquityStakingQueryDataWithSubtype = CommonQueryStatusData.extend({
+const LiquityStakingQueryDataWithSubtype = CommonQueryStatusData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY),
 });
 
-export const StatsPriceQueryDataWithSubtype = StatsPriceQueryData.extend({
+const StatsPriceQueryDataWithSubtype = StatsPriceQueryData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.STATS_PRICE_QUERY),
 });
 
-export const MultiplePricesQueryStatusWithSubtype = CommonQueryStatusData.extend({
+const MultiplePricesQueryStatusWithSubtype = CommonQueryStatusData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS),
 });
 
@@ -146,11 +146,11 @@ export const CsvImportResult = z.object({
 
 export type CsvImportResult = z.infer<typeof CsvImportResult>;
 
-export const CsvImportResultWithSubtype = CsvImportResult.extend({
+const CsvImportResultWithSubtype = CsvImportResult.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT),
 });
 
-export const HistoricalPriceQueryStatusDataWithSubtype = CommonQueryStatusData.extend({
+const HistoricalPriceQueryStatusDataWithSubtype = CommonQueryStatusData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS),
 });
 
@@ -160,7 +160,7 @@ export const ProtocolCacheUpdatesData = EvmUnDecodedTransactionsData.extend({
 
 export type ProtocolCacheUpdatesData = z.infer<typeof ProtocolCacheUpdatesData>;
 
-export const ProtocolCacheUpdatesDataWithSubtype = ProtocolCacheUpdatesData.extend({
+const ProtocolCacheUpdatesDataWithSubtype = ProtocolCacheUpdatesData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES),
 });
 

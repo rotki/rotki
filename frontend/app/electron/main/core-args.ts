@@ -7,7 +7,7 @@ import { assert } from '@rotki/common';
 
 const BACKEND_DIRECTORY = 'backend';
 
-export class RotkiCoreConfigBuilder {
+class RotkiCoreConfigBuilder {
   private readonly args: string[] = [];
   private cmd: string = '';
   private workDir: string = '../../';
@@ -76,7 +76,7 @@ export class RotkiCoreConfigBuilder {
   }
 }
 
-export class RotkiConfigError extends Error {
+class RotkiConfigError extends Error {
   constructor(message?: string, readonly terminate = false) {
     super(message);
     this.name = 'RotkiConfigError';

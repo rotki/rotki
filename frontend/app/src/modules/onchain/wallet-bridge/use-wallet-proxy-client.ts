@@ -13,7 +13,7 @@ import { useBridgeMessageHandlers } from '@/modules/onchain/wallet-bridge/use-br
 import { logger } from '@/utils/logging';
 import { CLIENT_CONFIG } from './bridge-config';
 
-export interface WalletProxyClientComposable {
+interface WalletProxyClientComposable {
   cleanup: () => void;
   connect: () => Promise<void>;
   disconnect: () => void;

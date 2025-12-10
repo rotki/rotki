@@ -44,7 +44,7 @@ export const SupportedChains = z.array(ChainInfo);
 
 export type SupportedChains = z.infer<typeof SupportedChains>;
 
-export const EvmChainEntry = z.object({
+const EvmChainEntry = z.object({
   id: z.number(),
   label: z.string(),
   name: z.string(),

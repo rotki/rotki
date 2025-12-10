@@ -10,7 +10,7 @@ export function getDefaultLogLevel(): LogLevel {
   return isDevelopment ? LogLevel.DEBUG : LogLevel.CRITICAL;
 }
 
-export function getDefaultFrontendLogLevel(): ConsolaLogLevel {
+function getDefaultFrontendLogLevel(): ConsolaLogLevel {
   return isDevelopment ? LogLevels.debug : LogLevels.silent;
 }
 
@@ -23,7 +23,7 @@ const mapping = {
   [LogLevel.WARNING]: LogLevels.warn,
 };
 
-export function mapToFrontendLogLevel(logLevel?: LogLevel): ConsolaLogLevel {
+function mapToFrontendLogLevel(logLevel?: LogLevel): ConsolaLogLevel {
   if (!logLevel)
     return getDefaultFrontendLogLevel();
 

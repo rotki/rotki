@@ -2,7 +2,7 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
 import { api } from '@/modules/api/rotki-api';
 
-export const WrapStatisticsSchema = z.object({
+const WrapStatisticsSchema = z.object({
   ethOnGas: NumericString,
   ethOnGasPerAddress: z.record(z.string(), NumericString),
   gnosisMaxPaymentsByCurrency: z.array(

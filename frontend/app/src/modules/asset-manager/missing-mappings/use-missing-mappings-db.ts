@@ -16,7 +16,7 @@ export interface MissingMappingsRequestPayload extends PaginationRequestPayload<
 
 export type AddMissingMapping = Omit<MissingMapping, 'id'>;
 
-export type DeleteMissingMapping = Pick<MissingMapping, 'location' | 'identifier'>;
+type DeleteMissingMapping = Pick<MissingMapping, 'location' | 'identifier'>;
 
 interface UseMappingDBReturn {
   put: (mapping: AddMissingMapping) => Promise<number>;

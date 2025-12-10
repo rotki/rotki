@@ -17,7 +17,7 @@ interface AxisConfig {
   yAxis: YAXisComponentOption;
 }
 
-export interface UseNetValueChartConfigReturn {
+interface UseNetValueChartConfigReturn {
   chartOption: ComputedRef<EChartsOption>;
 }
 

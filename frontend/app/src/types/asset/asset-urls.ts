@@ -9,7 +9,7 @@ export interface ExplorerUrls {
 
 export type Chains = Blockchain | 'ETC';
 
-export type AssetExplorerUrls = {
+type AssetExplorerUrls = {
   [key in Chains]: ExplorerUrls;
 };
 

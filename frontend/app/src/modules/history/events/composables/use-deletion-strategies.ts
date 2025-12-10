@@ -7,7 +7,7 @@ export const DELETION_STRATEGY_TYPE = {
   IGNORE_EVENTS: 'ignore-events',
 } as const;
 
-export type DeletionStrategyType = typeof DELETION_STRATEGY_TYPE[keyof typeof DELETION_STRATEGY_TYPE];
+type DeletionStrategyType = typeof DELETION_STRATEGY_TYPE[keyof typeof DELETION_STRATEGY_TYPE];
 
 export interface DeletionStrategy {
   eventIds?: number[];

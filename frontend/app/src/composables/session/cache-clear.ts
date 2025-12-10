@@ -9,7 +9,7 @@ interface UseCacheClearReturn<T> {
   showConfirmation: (source: T) => void;
 }
 
-export interface Clearable<T> { id: T; text: string }
+interface Clearable<T> { id: T; text: string }
 
 export function useCacheClear<T>(
   clearable: MaybeRef<Clearable<T>[]>,

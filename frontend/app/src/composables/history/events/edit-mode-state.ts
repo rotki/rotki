@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import { cloneDeep, isEqual } from 'es-toolkit';
 
-export interface EditModeStateTracker {
+interface EditModeStateTracker {
   editModeStateSnapshot: Ref<Record<string, any> | undefined>;
   captureEditModeState: (state: Record<string, any>) => void;
   captureEditModeStateFromRefs: (statesRefs: Record<string, Ref<any>>) => void;

@@ -1,4 +1,3 @@
-import type { Notification } from '@rotki/common';
 import { z } from 'zod/v4';
 import { CalendarEventWithReminder } from '@/types/history/calendar';
 import { LegacyMessageData, SocketMessageType } from './types/base';
@@ -149,7 +148,3 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;
-
-export interface CommonMessageHandler<T> {
-  handle: (data: T) => Promise<Notification | null>;
-}

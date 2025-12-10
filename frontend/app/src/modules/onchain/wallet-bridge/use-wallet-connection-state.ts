@@ -2,7 +2,7 @@ import { createSharedComposable, set } from '@vueuse/core';
 import { ref, type Ref } from 'vue';
 import { logger } from '@/utils/logging';
 
-export interface WalletConnectionStateComposable {
+interface WalletConnectionStateComposable {
   isRequestingAccounts: Readonly<Ref<boolean>>;
   setRequestingAccounts: (isRequesting: boolean) => void;
   trackAccountsRequest: <T>(promise: Promise<T>) => Promise<T>;

@@ -19,7 +19,7 @@ export function getAssociatedAssetIdentifier(identifier: string, associationMap:
   return associationMap[identifier] ?? identifier;
 }
 
-export function getAssetNameFallback(id: string): string {
+function getAssetNameFallback(id: string): string {
   if (isEvmIdentifier(id)) {
     const address = getAddressFromEvmIdentifier(id);
     return `EVM Token: ${address}`;

@@ -7,7 +7,7 @@ interface ActionFailure<T = string> {
   readonly success: false;
 }
 
-export interface ActionSuccess {
+interface ActionSuccess {
   readonly success: true;
 }
 
@@ -36,7 +36,7 @@ export interface ActionDataEntry<T = string> {
   readonly detailPath?: string;
 }
 
-export const ActionDataEntrySchema = z.object({
+const ActionDataEntrySchema = z.object({
   identifier: z.string(),
   label: z.string(),
   icon: z.string().optional(),

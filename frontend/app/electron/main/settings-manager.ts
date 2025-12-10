@@ -9,7 +9,7 @@ const AppSettingsSchema = z.object({
   showNetWorthOnTray: z.boolean().default(false),
 });
 
-export type AppSettings = z.infer<typeof AppSettingsSchema>;
+type AppSettings = z.infer<typeof AppSettingsSchema>;
 
 export class SettingsManager {
   private readonly _appSettings: AppSettings = {

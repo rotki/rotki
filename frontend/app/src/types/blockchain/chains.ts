@@ -12,7 +12,7 @@ export function isBlockchain(chain: string): chain is Blockchain {
   return Object.values(Blockchain).includes(chain as any);
 }
 
-export interface EvmTokenData {
+interface EvmTokenData {
   identifier: EvmTokenKind;
   label: string;
 }
@@ -28,7 +28,7 @@ export const evmTokenKindsData: EvmTokenData[] = [
   },
 ];
 
-export interface SolanaTokenData {
+interface SolanaTokenData {
   identifier: SolanaTokenKind;
   label: string;
 }

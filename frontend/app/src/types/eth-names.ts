@@ -22,7 +22,7 @@ export const AddressBookSimplePayload = AddressNameRequestPayload.extend({
 
 export type AddressBookSimplePayload = z.infer<typeof AddressBookSimplePayload>;
 
-export const AddressBookInfo = z.object({
+const AddressBookInfo = z.object({
   name: z.string(),
   source: z.string().optional(),
 });

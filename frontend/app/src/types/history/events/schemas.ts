@@ -3,7 +3,7 @@ import { z } from 'zod/v4';
 import { CollectionCommonFields } from '@/types/collection';
 import { EntryMeta } from '@/types/history/meta';
 
-export const CommonHistoryEvent = z.object({
+const CommonHistoryEvent = z.object({
   amount: NumericString,
   asset: z.string(),
   autoNotes: z.string().optional(),
@@ -74,14 +74,14 @@ export const AssetMovementEvent = CommonHistoryEvent.extend({
 
 export type AssetMovementEvent = z.infer<typeof AssetMovementEvent>;
 
-export const SwapEventSchema = CommonHistoryEvent.extend({
+const SwapEventSchema = CommonHistoryEvent.extend({
   entryType: z.literal(HistoryEventEntryType.SWAP_EVENT),
   extraData: z.unknown().nullable(),
 });
 
 export type SwapEvent = z.infer<typeof SwapEventSchema>;
 
-export const EvmSwapEventSchema = CommonHistoryEvent.extend({
+const EvmSwapEventSchema = CommonHistoryEvent.extend({
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.EVM_SWAP_EVENT),
@@ -91,7 +91,7 @@ export const EvmSwapEventSchema = CommonHistoryEvent.extend({
 
 export type EvmSwapEvent = z.infer<typeof EvmSwapEventSchema>;
 
-export const SolanaEventSchema = CommonHistoryEvent.extend({
+const SolanaEventSchema = CommonHistoryEvent.extend({
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.SOLANA_EVENT),
@@ -101,7 +101,7 @@ export const SolanaEventSchema = CommonHistoryEvent.extend({
 
 export type SolanaEvent = z.infer<typeof SolanaEventSchema>;
 
-export const SolanaSwapEventSchema = CommonHistoryEvent.extend({
+const SolanaSwapEventSchema = CommonHistoryEvent.extend({
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.SOLANA_SWAP_EVENT),
@@ -188,7 +188,7 @@ export type EditEvmHistoryEventPayload = Omit<
 
 export type NewEvmHistoryEventPayload = Omit<EditEvmHistoryEventPayload, 'identifier'>;
 
-export type EditSolanaEventPayload = Omit<
+type EditSolanaEventPayload = Omit<
   SolanaEvent,
   'ignoredInAccounting' | 'customized' | 'groupIdentifier' | 'location'
 > & {
@@ -197,11 +197,11 @@ export type EditSolanaEventPayload = Omit<
 
 export type NewSolanaEventPayload = Omit<EditSolanaEventPayload, 'identifier'>;
 
-export type EditOnlineHistoryEventPayload = Omit<OnlineHistoryEvent, 'ignoredInAccounting' | 'customized'>;
+type EditOnlineHistoryEventPayload = Omit<OnlineHistoryEvent, 'ignoredInAccounting' | 'customized'>;
 
 export type NewOnlineHistoryEventPayload = Omit<EditOnlineHistoryEventPayload, 'identifier'>;
 
-export interface EditEthBlockEventPayload {
+interface EditEthBlockEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
   identifier: number;
   timestamp: number;
@@ -215,7 +215,7 @@ export interface EditEthBlockEventPayload {
 
 export type NewEthBlockEventPayload = Omit<EditEthBlockEventPayload, 'identifier'>;
 
-export interface EditEthDepositEventPayload {
+interface EditEthDepositEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_DEPOSIT_EVENT;
   identifier: number;
   timestamp: number;
@@ -230,7 +230,7 @@ export interface EditEthDepositEventPayload {
 
 export type NewEthDepositEventPayload = Omit<EditEthDepositEventPayload, 'identifier'>;
 
-export interface EditEthWithdrawalEventPayload {
+interface EditEthWithdrawalEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
   identifier: number;
   timestamp: number;
@@ -243,7 +243,7 @@ export interface EditEthWithdrawalEventPayload {
 
 export type NewEthWithdrawalEventPayload = Omit<EditEthWithdrawalEventPayload, 'identifier'>;
 
-export interface EditAssetMovementEventPayload {
+interface EditAssetMovementEventPayload {
   entryType: typeof HistoryEventEntryType.ASSET_MOVEMENT_EVENT;
   identifier: number;
   timestamp: number;
@@ -307,9 +307,9 @@ export enum HistoryEventAccountingRuleStatus {
   PROCESSED = 'processed',
 }
 
-export const HistoryEventAccountingRuleStatusEnum = z.enum(HistoryEventAccountingRuleStatus);
+const HistoryEventAccountingRuleStatusEnum = z.enum(HistoryEventAccountingRuleStatus);
 
-export const HistoryEventMeta = z.object({
+const HistoryEventMeta = z.object({
   ...EntryMeta.shape,
   customized: z.boolean().optional(),
   eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
@@ -318,14 +318,14 @@ export const HistoryEventMeta = z.object({
   hidden: z.boolean().optional(),
 });
 
-export type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
+type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
 
 const HistoryEventEntryWithMeta = z.object({
   entry: HistoryEvent,
   ...HistoryEventMeta.shape,
 });
 
-export type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
+type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
 
 const HistoryEventCollectionRowSchema = z.array(HistoryEventEntryWithMeta.or(z.array(HistoryEventEntryWithMeta)));
 

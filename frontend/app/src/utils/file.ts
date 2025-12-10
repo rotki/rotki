@@ -14,7 +14,7 @@ export function getFilename(fullPath: string): string {
   return normalizedPath.substring(normalizedPath.lastIndexOf('/') + 1);
 }
 
-export function getPublicAssetImagePath(path: string): string {
+function getPublicAssetImagePath(path: string): string {
   return `./assets/images/${path}`;
 }
 

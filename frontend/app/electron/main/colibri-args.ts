@@ -4,7 +4,7 @@ import process from 'node:process';
 import { assert } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
 
-export class ColibriConfigBuilder {
+class ColibriConfigBuilder {
   private readonly args: string[] = [];
   private cmd: string = '';
   private workDir: string = '../../';

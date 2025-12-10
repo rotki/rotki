@@ -7,7 +7,7 @@ import { useWalletConnectionState } from '@/modules/onchain/wallet-bridge/use-wa
 import { logger } from '@/utils/logging';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 
-export interface BridgeMessageHandlersComposable {
+interface BridgeMessageHandlersComposable {
   handleRequest: (message: WalletBridgeRequest) => Promise<WalletBridgeResponse>;
 }
 

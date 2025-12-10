@@ -12,7 +12,7 @@ import {
   LidoCsmNodeOperatorPayloadSchema,
 } from '@/types/staking';
 
-export interface LidoCsmApiResult {
+interface LidoCsmApiResult {
   entries: LidoCsmNodeOperator[];
   message: string;
 }

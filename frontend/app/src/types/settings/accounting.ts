@@ -75,11 +75,11 @@ export const AccountingRuleConflictCollectionResponse = CollectionCommonFields.e
 
 export interface AccountingRuleConflictRequestPayload extends PaginationRequestPayload<AccountingRuleConflict> {}
 
-export interface AccountingRuleConflictAllResolution {
+interface AccountingRuleConflictAllResolution {
   solveAllUsing: ConflictResolutionStrategy;
 }
 
-export interface AccountingRuleConflictManualResolution {
+interface AccountingRuleConflictManualResolution {
   localId: string;
   solveUsing: ConflictResolutionStrategy;
 }

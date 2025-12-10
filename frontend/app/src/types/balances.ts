@@ -28,7 +28,7 @@ export enum BalanceType {
   LIABILITY = 'liability',
 }
 
-export const EvmTokens = z.object({
+const EvmTokens = z.object({
   lastUpdateTimestamp: z.number().nullish(),
   tokens: z.array(z.string()).nullish(),
 });

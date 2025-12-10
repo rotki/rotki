@@ -19,7 +19,7 @@ interface UnifiedDetectionOptions extends ProviderDetectionOptions {
 type OnProviderChangedCallback = (provider: EIP1193Provider | undefined, oldProvider: EIP1193Provider | undefined) => void;
 
 // Comprehensive return interface combining both systems
-export interface UnifiedProvidersComposable {
+interface UnifiedProvidersComposable {
   // Core provider data
   availableProviders: Readonly<Ref<EnhancedProviderDetail[]>>;
   selectedProvider: Readonly<Ref<EnhancedProviderDetail | undefined>>;

@@ -13,7 +13,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const TEN_MEGABYTES = 1000 * 1000 * 10;
 const execFile = promisify(childProcess.execFile);
 
-export interface Options {
+interface Options {
   /**
    Include other users' processes as well as your own.
 

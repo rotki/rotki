@@ -1,9 +1,9 @@
-export const KEY_BACKEND_URL = 'rotki.backend_url';
+const KEY_BACKEND_URL = 'rotki.backend_url';
 
-export const KEY_BACKEND_URL_SESSION_ONLY = 'rotki.backend_url_session';
+const KEY_BACKEND_URL_SESSION_ONLY = 'rotki.backend_url_session';
 const KEY_LAST_LOGIN = 'rotki.last_login';
 
-export interface BackendSettings {
+interface BackendSettings {
   readonly url: string;
   readonly sessionOnly: boolean;
 }

@@ -38,7 +38,7 @@ interface ExternalUrl { external: string; route: RouteLocationRaw }
  * Returns the registration url of a specified Etherscan registration link, and the page to fill it
  * @returns {{external: string, route: RouteLocationRaw} | undefined}
  */
-export function getEtherScanRegisterUrl(): ExternalUrl | undefined {
+function getEtherScanRegisterUrl(): ExternalUrl | undefined {
   return {
     external: etherscanLink,
     route: {
@@ -48,7 +48,7 @@ export function getEtherScanRegisterUrl(): ExternalUrl | undefined {
   };
 }
 
-export function getTheGraphRegisterUrl(): ExternalUrl {
+function getTheGraphRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.applyTheGraphApiKey,
     route: {
@@ -58,7 +58,7 @@ export function getTheGraphRegisterUrl(): ExternalUrl {
   };
 }
 
-export function getHeliusRegisterUrl(): ExternalUrl {
+function getHeliusRegisterUrl(): ExternalUrl {
   return {
     external: 'https://dev.helius.xyz/dashboard/app',
     route: {
@@ -68,7 +68,7 @@ export function getHeliusRegisterUrl(): ExternalUrl {
   };
 }
 
-export function getBeaconchainRegisterUrl(): ExternalUrl {
+function getBeaconchainRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.beaconChainApiKey,
     route: {

@@ -9,7 +9,7 @@ import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
-export const loadUserOptions: () => Partial<BackendOptions> = () => {
+const loadUserOptions: () => Partial<BackendOptions> = () => {
   try {
     const opts = localStorage.getItem(BACKEND_OPTIONS);
     let options: Writeable<Partial<BackendOptions>> = {};

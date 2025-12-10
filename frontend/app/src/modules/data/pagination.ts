@@ -2,12 +2,12 @@ import type { IDType, InsertType, Table } from 'dexie';
 
 export type ItemFilter<T> = (item: T) => boolean;
 
-export interface DataSet<T> {
+interface DataSet<T> {
   data: T[];
   total: number;
 }
 
-export interface IndexedPagination<T> {
+interface IndexedPagination<T> {
   orderBy: keyof T extends string ? keyof T : never;
   order: 'asc' | 'desc';
   offset: number;

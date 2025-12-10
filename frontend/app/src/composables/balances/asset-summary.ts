@@ -10,7 +10,7 @@ import { sortDesc } from '@/utils/bignumbers';
 /**
  * Configuration for asset sources and associations
  */
-export interface AssetSourceConfig {
+interface AssetSourceConfig {
   /** Asset protocol balances from different sources */
   sources: Record<string, AssetProtocolBalances>;
   /** Map of associated assets */
@@ -20,7 +20,7 @@ export interface AssetSourceConfig {
 /**
  * Configuration for asset filtering
  */
-export interface AssetFilterConfig {
+interface AssetFilterConfig {
   /** Function to check if an asset is ignored */
   isAssetIgnored: (identifier: string) => boolean;
   /** Whether to hide ignored assets */
@@ -56,12 +56,12 @@ interface GroupCollectionConfig {
  * Use this type to define the input configuration for operations requiring collection setups,
  * and to ensure proper validation and alignment with collection-related functionalities.
  */
-export type CollectionConfig = NoGroupCollectionConfig | GroupCollectionConfig;
+type CollectionConfig = NoGroupCollectionConfig | GroupCollectionConfig;
 
 /**
  * Configuration for asset pricing
  */
-export interface PricingConfig {
+interface PricingConfig {
   /** Function to get price for an asset */
   getAssetPrice: (asset: string, defaultValue: BigNumber) => BigNumber;
   /** Default value for no price */

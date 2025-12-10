@@ -7,19 +7,19 @@ import type {
 } from '@/modules/onchain/types';
 import { assert } from '@rotki/common';
 
-export interface ValidationOptions {
+interface ValidationOptions {
   params: TransactionParams;
   connectedAddress: string | undefined;
   connectedChainId: number | undefined;
   getEvmChainName: (chain: string) => string | undefined;
 }
 
-export interface TransactionDependencies {
+interface TransactionDependencies {
   prepareERC20Transfer: (payload: PrepareERC20TransferPayload) => Promise<PrepareERC20TransferResponse>;
   prepareNativeTransfer: (payload: PrepareNativeTransferPayload) => Promise<PrepareNativeTransferResponse>;
 }
 
-export interface ErrorHandlers {
+interface ErrorHandlers {
   setPreparing: (value: boolean) => void;
   setWaitingForWalletConfirmation: (value: boolean) => void;
   updateTransactionStatus: (hash: string, status: 'completed' | 'failed') => void;

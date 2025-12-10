@@ -20,7 +20,7 @@ interface MetamaskImportSupport {
   readonly addresses: string[];
 }
 
-export type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
+type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
 
 export interface Credentials {
   readonly username: string;
@@ -50,7 +50,7 @@ export const BackendOptions = z.object({
   maxLogfilesNum: z.number().int().positive().optional(),
 });
 
-export type StoredBackendOptions = z.infer<typeof BackendOptions>;
+type StoredBackendOptions = z.infer<typeof BackendOptions>;
 
 export type BackendOptions = Required<StoredBackendOptions>;
 
@@ -63,7 +63,7 @@ export interface TrayUpdate {
   readonly period?: string;
 }
 
-export interface OAuthSuccess {
+interface OAuthSuccess {
   readonly success: true;
   readonly service: string;
   readonly accessToken: string;
@@ -71,7 +71,7 @@ export interface OAuthSuccess {
   readonly expiresIn?: number;
 }
 
-export interface OAuthFailure {
+interface OAuthFailure {
   readonly success: false;
   readonly service?: string;
   readonly error: Error;
