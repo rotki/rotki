@@ -219,17 +219,17 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
             assert nft_balance['name'] == 'yabir.eth'
             assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
             assert nft_balance['is_lp'] is False
-            assert FVal(nft_balance['usd_price']) > ZERO
+            assert FVal(nft_balance['price']) > ZERO
         elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC4_2:
             assert nft_balance['name'] == 'GasHawk Nest NFT'
             assert nft_balance['collection_name'] == 'GasHawk NFTs'
             assert nft_balance['is_lp'] is False
-            assert FVal(nft_balance['usd_price']) >= ZERO
+            assert FVal(nft_balance['price']) >= ZERO
         elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC5:
             assert nft_balance['name'] == 'nebolax.eth'
             assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
             assert nft_balance['is_lp'] is False
-            assert FVal(nft_balance['usd_price']) > ZERO
+            assert FVal(nft_balance['price']) > ZERO
         else:
             raise AssertionError('NFT has to be one of the expected')
 
@@ -338,7 +338,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
                 'price_asset': 'ETH',
             }
             price = nft.pop('price_in_asset')
-            price_usd = nft.pop('usd_price')
+            price_usd = nft.pop('price')
             assert expected_result == nft
             assert FVal(price) > 0
             assert FVal(price_usd) > 0
@@ -516,7 +516,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server: 'APIServer', endpoint: str)
                 'entries': [],
                 'entries_found': 0,
                 'entries_total': 0,
-                'total_usd_value': '0',
+                'total_value': '0',
             }
 
     # remove the nft from the ignored list.
@@ -622,13 +622,13 @@ def test_nft_no_price(rotkehlchen_api_server: 'APIServer') -> None:
                 'manually_input': False,
                 'is_lp': False,
                 'image_url': 'https://resources.smarttokenlabs.com/devcon6/ETH.webp',
-                'usd_price': '0.0',
+                'price': '0.0',
                 'collection_name': 'Devcon VI Souvenir V4',
             },
         ],
         'entries_found': 1,
         'entries_total': 1,
-        'total_usd_value': '0.0',
+        'total_value': '0.0',
     }
 
 

@@ -1172,7 +1172,7 @@ class Rotkehlchen:
                         balances[str(Location.BLOCKCHAIN)] = {}
 
                     for balance_entry in nft_balances:
-                        if balance_entry['usd_price'] == ZERO:
+                        if balance_entry['price'] == ZERO:
                             continue
 
                         # It can happen that the asset was manually added
@@ -1181,17 +1181,15 @@ class Rotkehlchen:
                         # in the chain balances we update the price and continue
                         blockchain_balances = balances[blockchain_location]
                         nft = Nft(balance_entry['id'])
-                        nft_as_token = GlobalDBHandler.get_evm_token(
+                        if (nft_as_token := GlobalDBHandler.get_evm_token(
                             address=nft.evm_address,
                             chain_id=nft.chain_id,
-                        )  # we need the eip155 identifier instead of the _nft_ one.
-
-                        if nft_as_token in blockchain_balances:
-                            blockchain_balances[nft_as_token].usd_value = balance_entry['usd_price']  # noqa: E501
+                        )) in blockchain_balances:  # we need the eip155 identifier instead of the _nft_ one.  # noqa: E501
+                            blockchain_balances[nft_as_token].value = balance_entry['price']
                         else:
                             blockchain_balances[nft] = Balance(
                                 amount=ONE,
-                                usd_value=balance_entry['usd_price'],
+                                value=balance_entry['price'],
                             )
 
         balances = account_for_manually_tracked_asset_balances(db=self.data.db, balances=balances)

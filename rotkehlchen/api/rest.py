@@ -3446,7 +3446,7 @@ class RestAPI:
                     query_specific_balances_before=None,
                 )
                 oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
-                assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value]
+                assets_price[asset] = [Price(nft_price_data['price']), oracle.value]
             else:
                 non_nft_assets.append(asset)
 

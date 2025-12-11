@@ -1501,18 +1501,18 @@ Get current price and custom price for NFT assets
                   "manually_input": true,
                   "price_asset": "ETH",
                   "price_in_asset": "1",
-                  "usd_price": "2505.13"
+                  "price": "2505.13"
               }, {
                   "asset": "nft_uniqueid2",
                   "manually_input": false,
                   "price_asset": "USD",
                   "price_in_asset": "155.13",
-                  "usd_price": "155.13"
+                  "price": "155.13"
               }]
           "message": ""
       }
 
-   :resjson object result: A list of results of assets along with their uds prices
+   :resjson object result: A list of results of assets along with their prices in the user's preferred currency.
    :statuscode 200: Successful query
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: Nft module is not activated.
@@ -10579,7 +10579,7 @@ Querying  NFTs
                 "external_link": "https://www.bastardganpunks.club/v2/8636",
                 "price_in_asset": "0.025",
                 "price_asset": "ETH",
-                "price_usd": "250",
+                "price": "250",
                 "collection": {
                   "name": "BASTARD GAN PUNKS V2",
                   "banner_image": "https://lh3.googleusercontent.com/InX38GA4YmuR2ukDhN0hjf8-Qj2U3Tdw3wD24IsbjuXNtrTZXNwWiIeWR9bJ_-rEUOnQgkpLbj71TDKrzNzHLHkOSRdLo8Yd2tE3_jg=s2500",
@@ -10607,7 +10607,7 @@ Querying  NFTs
    :resjson string permalink: [Optional]. A link to the NFT in opensea.
    :resjson string price_in_asset: The last known price of the NFT in `price_asset`. Can be zero.
    :resjson string price_asset: The identifier of the asset used for `price_in_asset`.
-   :resjson string price_usd: The last known price of the NFT in USD. Can be zero.
+   :resjson string price: The last known price of the NFT in the user's preferred currency. Can be zero.
    :statuscode 200: NFTs successfully queried
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.
@@ -10669,7 +10669,7 @@ Show NFT Balances
                     "manually_input": true,
                     "price_asset": "ETH",
                     "price_in_asset": "1",
-                    "usd_price": "2501.15"
+                    "price": "2501.15"
                     "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov",
                     "is_lp": false
                   }, {
@@ -10679,14 +10679,14 @@ Show NFT Balances
                     "manually_input": false,
                     "price_asset": "USD",
                     "price_in_asset": "150.55",
-                    "usd_price": "150.55"
+                    "price": "150.55"
                     "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w",
                     "is_lp": true
                   },
                 ],
                 "entries_found": 2,
                 "entries_total": 10,
-                "total_usd_value": "2651.70"
+                "total_value": "2651.70"
             },
             "message": ""
         }
@@ -10695,7 +10695,7 @@ Show NFT Balances
    :resjson object entries: A list of nfts balances. ``name`` can also be null. ``collection_name`` can be null if nft does not have a collection.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_total: The number of total entries ignoring all filters.
-   :resjson int total_usd_value: Total usd value of the nfts in the filter.
+   :resjson int total_value: Total value (in user's preferred currency) of the nfts in the filter.
    :statuscode 200: NFT balances successfully queried
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.
