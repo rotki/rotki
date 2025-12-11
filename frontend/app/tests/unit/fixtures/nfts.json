@@ -9,7 +9,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://openseauserdata.com/files/c613a68160e50f9f88fb88dc9b6f87f3.svg",
-        "usd_price": "0.0182821",
+        "price": "0.0182821",
         "collection_name": "ENS: Ethereum Name Service"
       },
       {
@@ -20,7 +20,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://openseauserdata.com/files/2d19d6764633af5baaa1d2591616ee8c.svg",
-        "usd_price": "18.2821",
+        "price": "18.2821",
         "collection_name": "Kudos"
       },
       {
@@ -31,7 +31,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://i.seadn.io/gcs/files/b23245fe4ec0fbb4c4bd4ae91c431629.jpg?w=500&auto=format",
-        "usd_price": "0.00",
+        "price": "0.00",
         "collection_name": "Pictūrae Pecūniārum Novārum"
       },
       {
@@ -42,7 +42,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://i.seadn.io/gae/K52eErCbHct_OM4kB2wQxY3Z3-ZnsxvgltbsfSMyt47d3kSTMzsFtN3hNhlYrSXck5cZ7vcHEEY0Z6O9dJezkyVKCw?w=500&auto=format",
-        "usd_price": "27.42315",
+        "price": "27.42315",
         "collection_name": "POAP"
       },
       {
@@ -53,7 +53,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://i.seadn.io/gcs/files/d8ebdc66a15b627b3cfbb31ee5b349d9.png?w=500&auto=format",
-        "usd_price": "402.023379",
+        "price": "402.023379",
         "collection_name": "MoonCats"
       },
       {
@@ -64,7 +64,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://openseauserdata.com/files/709bb4491b34a35053b53ad8f28e3801.svg",
-        "usd_price": "18.2821",
+        "price": "18.2821",
         "collection_name": "Kudos"
       },
       {
@@ -75,7 +75,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://openseauserdata.com/files/0c561a3cfa2cbc0b2b3724933778c6c6.svg",
-        "usd_price": "18.2821",
+        "price": "18.2821",
         "collection_name": "Kudos"
       },
       {
@@ -86,7 +86,7 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://i.seadn.io/gae/IHK6Uuxr4ghLEGReFmmApHLovNyrdfjkSkh5Vcf3-V1HYEDb6ldH4pViyPcojX2NM37b1_EnnUdnFKnndHrrazyu9T7m54yddgSLXQ?w=500&auto=format",
-        "usd_price": "0.00",
+        "price": "0.00",
         "collection_name": "Dr. Strangehack or: How I Learned to Stop Worrying and Love the Code"
       },
       {
@@ -97,13 +97,13 @@
         "manually_input": false,
         "is_lp": false,
         "image_url": "https://i.seadn.io/gae/m7dK7v7_yF5uWm7VrGjGWO2shAmcZsvlXN_QoJfKxB2TlwEwlRAgoxGLkQQksDy_LeimYGl0Ul5e7jDquElSX41-_Y9qd1K0FptL2w?w=500&auto=format",
-        "usd_price": "0.00",
+        "price": "0.00",
         "collection_name": "The Rebels of Gyaku"
       }
     ],
     "entries_found": 29,
     "entries_total": 30,
-    "total_usd_value": "4605.0964511"
+    "total_value": "4605.0964511"
   },
   "message": ""
 }

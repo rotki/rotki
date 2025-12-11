@@ -20,7 +20,7 @@ export function useNftTableConfig(
   const group = DashboardTableType.NFT;
 
   const sort = ref<DataTableSortData<NonFungibleBalance>>({
-    column: 'usdPrice',
+    column: 'price',
     direction: 'desc' as const,
   });
 
@@ -43,7 +43,7 @@ export function useNftTableConfig(
       align: 'end',
       cellClass: 'py-0',
       class: 'text-no-wrap',
-      key: 'usdPrice',
+      key: 'price',
       label: t('common.price_in_symbol', {
         symbol: toValue(currencySymbol),
       }),

@@ -158,7 +158,7 @@ const fallbackData = computed(() => {
           </div>
         </div>
         <div v-else>
-          <div class="flex">
+          <div class="flex items-center">
             <div>{{ t('nft_balance_table.contract_address') }}:</div>
             <div class="pl-1 font-medium">
               <HashLink

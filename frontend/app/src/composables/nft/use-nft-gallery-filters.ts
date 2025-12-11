@@ -11,7 +11,7 @@ interface UseNftGalleryFiltersReturn {
   items: ComputedRef<GalleryNft[]>;
   selectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
   selectedCollection: Ref<string | undefined>;
-  sortBy: Ref<'name' | 'priceUsd' | 'collection'>;
+  sortBy: Ref<'name' | 'price' | 'collection'>;
   sortDescending: Ref<boolean>;
   updateSortBy: (value: string) => void;
 }
@@ -23,7 +23,7 @@ export function useNftGalleryFilters(
   // State
   const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
   const selectedCollection = ref<string | undefined>();
-  const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
+  const sortBy = ref<'name' | 'price' | 'collection'>('name');
   const sortDescending = ref<boolean>(false);
 
   // Computed properties
@@ -59,12 +59,12 @@ export function useNftGalleryFilters(
 
   // Methods
   function updateSortBy(value: string): void {
-    assert(['name', 'priceUsd', 'collection'].includes(value));
-    set(sortBy, value as 'name' | 'priceUsd' | 'collection');
+    assert(['name', 'price', 'collection'].includes(value));
+    set(sortBy, value as 'name' | 'price' | 'collection');
   }
 
   function sortNfts(
-    sortBy: Ref<'name' | 'priceUsd' | 'collection'>,
+    sortBy: Ref<'name' | 'price' | 'collection'>,
     sortDesc: Ref<boolean>,
     a: GalleryNft,
     b: GalleryNft,

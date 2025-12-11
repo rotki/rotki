@@ -24,7 +24,7 @@ interface UseNftDataReturn {
   sectionLoading: ComputedRef<boolean>;
   sort: ComputedRef<DataTableSortData<NonFungibleBalance>>;
   cols: ComputedRef<DataTableColumn<NonFungibleBalance>[]>;
-  totalUsdValue: ComputedRef<BigNumber | undefined | null>;
+  totalValue: ComputedRef<BigNumber | undefined | null>;
 }
 
 export function useNftData(): UseNftDataReturn {
@@ -56,7 +56,7 @@ export function useNftData(): UseNftDataReturn {
   }, {
     align: 'end',
     class: 'text-no-wrap',
-    key: 'usdPrice',
+    key: 'price',
     label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
     sortable: true,
   }, {
@@ -85,7 +85,7 @@ export function useNftData(): UseNftDataReturn {
     NonFungibleBalancesRequestPayload
   >(fetchNonFungibleBalances, {
     defaultSortBy: [{
-      column: 'usdPrice',
+      column: 'price',
       direction: 'desc',
     }],
     extraParams,
@@ -98,7 +98,7 @@ export function useNftData(): UseNftDataReturn {
   useRememberTableSorting<NonFungibleBalance>(TableId.NON_FUNGIBLE_BALANCES, sort, cols);
 
   // Extract collection data
-  const { data, totalUsdValue } = getCollectionData(balances);
+  const { data, totalValue } = getCollectionData(balances);
 
   // Watch ignoredAssetsHandling changes and reset to page 1
   watch(ignoredAssetsHandling, () => {
@@ -117,6 +117,6 @@ export function useNftData(): UseNftDataReturn {
     refreshNonFungibleBalances,
     sectionLoading,
     sort,
-    totalUsdValue,
+    totalValue,
   };
 }

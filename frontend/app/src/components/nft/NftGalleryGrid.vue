@@ -29,7 +29,7 @@ const { t } = useI18n({ useScope: 'global' });
     <div
       v-for="item in items"
       :key="item.tokenIdentifier"
-      v-memo="[item.tokenIdentifier, item.name, item.priceUsd]"
+      v-memo="[item.tokenIdentifier, item.name, item.price]"
       class="overflow-hidden"
       role="gridcell"
     >

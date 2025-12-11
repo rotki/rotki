@@ -397,7 +397,7 @@ describe('composables/api/assets/prices', () => {
                 manually_input: false,
                 price_asset: 'ETH',
                 price_in_asset: '0.5',
-                usd_price: '1000',
+                price: '1000',
               },
             ],
             message: '',

@@ -49,11 +49,11 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
   });
 
   const totalValue = computed<BigNumber | undefined>(() => {
-    const totalUsdValue = get(accounts).totalUsdValue;
-    if (!totalUsdValue)
+    const totalVal = get(accounts).totalValue;
+    if (!totalVal)
       return undefined;
 
-    return totalUsdValue.minus(sum(get(collapsed)));
+    return totalVal.minus(sum(get(collapsed)));
   });
 
   function getCategoryTotal(category: string): BigNumber {

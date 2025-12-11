@@ -30,7 +30,7 @@ const Nft = z.object({
   permalink: z.string().nullable(),
   priceAsset: z.string(),
   priceInAsset: NumericString,
-  priceUsd: NumericString,
+  price: NumericString,
   tokenIdentifier: z.string().min(1),
 });
 
