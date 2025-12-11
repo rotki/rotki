@@ -7,21 +7,17 @@ import WalletAddressesImport from '@/components/accounts/blockchain/WalletAddres
 import { trimOnPaste } from '@/utils/event';
 import { toMessages } from '@/utils/validation';
 
+const addresses = defineModel<string[]>('addresses', { required: true });
+const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 const props = defineProps<{
-  addresses: string[];
   disabled: boolean;
   multi: boolean;
-  errorMessages: ValidationErrors;
   showWalletImport?: boolean;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:addresses', addresses: string[]): void;
-  (e: 'update:error-messages', errorMessages: ValidationErrors): void;
-}>();
-
 const { t } = useI18n({ useScope: 'global' });
-const { addresses, disabled, errorMessages } = toRefs(props);
+const { disabled } = toRefs(props);
 
 const address = ref<string>('');
 const userAddresses = ref<string>('');
@@ -62,8 +58,8 @@ function onPasteAddress(event: ClipboardEvent) {
     set(address, paste);
 }
 
-function updateErrorMessages(errorMessages: ValidationErrors) {
-  emit('update:error-messages', errorMessages);
+function updateErrorMessages(newErrors: ValidationErrors): void {
+  set(errorMessages, newErrors);
 }
 
 watch(entries, addresses => updateAddresses(addresses));
@@ -133,9 +129,9 @@ const v$ = useVuelidate(
   },
 );
 
-function updateAddresses(addresses: string[]) {
+function updateAddresses(newAddresses: string[]): void {
   get(v$).$clearExternalResults();
-  emit('update:addresses', addresses);
+  set(addresses, newAddresses);
 }
 
 function validate(): Promise<boolean> {

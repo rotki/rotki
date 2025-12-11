@@ -13,7 +13,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'set-today'): void;
+  'set-today': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

@@ -10,8 +10,8 @@ const props = defineProps<{
   snapshot: BalanceSnapshot | null;
 }>();
 const emit = defineEmits<{
-  (e: 'cancel'): void;
-  (e: 'confirm'): void;
+  cancel: [];
+  confirm: [];
 }>();
 const { t } = useI18n({ useScope: 'global' });
 

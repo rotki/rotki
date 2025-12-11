@@ -14,7 +14,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'regenerate'): void;
+  regenerate: [];
 }>();
 
 function regenerateReport() {

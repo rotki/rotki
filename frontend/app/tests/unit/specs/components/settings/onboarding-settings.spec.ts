@@ -101,7 +101,7 @@ describe('onboardingSetting.vue', () => {
           RuiMenuSelect: {
             template: `
             <div>
-              <input :value="modelValue" class="input" type="text" @input="$emit('update:model-value', $event.value)">
+              <input :value="modelValue" class="input" type="text" @input="$emit('update:modelValue', $event.value)">
             </div>
           `,
             props: {

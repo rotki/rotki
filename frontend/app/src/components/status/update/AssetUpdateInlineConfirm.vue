@@ -3,7 +3,9 @@ import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 
 defineProps<{ remoteVersion: number }>();
 
-const emit = defineEmits<{ (e: 'confirm'): void }>();
+const emit = defineEmits<{
+  confirm: [];
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

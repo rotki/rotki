@@ -1,29 +1,17 @@
 <script setup lang="ts">
-import { assert, TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
+import { TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { usePremium } from '@/composables/premium';
-import { isOfEnum } from '@/utils';
 import { isPeriodAllowed } from '@/utils/settings';
 
-const props = defineProps<{
-  modelValue: TimeFrameSetting;
+const modelValue = defineModel<TimeFrameSetting>({ required: true });
+
+defineProps<{
   visibleTimeframes: TimeFrameSetting[];
   disabled?: boolean;
 }>();
 
-const emit = defineEmits<{ (e: 'update:model-value', value: TimeFrameSetting): void }>();
-
 const premium = usePremium();
-
-const internalValue = computed({
-  get() {
-    return props.modelValue;
-  },
-  set(value: string) {
-    assert(isOfEnum(TimeFramePersist)(value) || isOfEnum(TimeFramePeriod)(value));
-    emit('update:model-value', value);
-  },
-});
 
 function worksWithoutPremium(period: TimeFrameSetting): boolean {
   return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
@@ -39,7 +27,7 @@ const { t } = useI18n({ useScope: 'global' });
       :tooltip="t('overall_balances.premium_hint')"
     />
     <RuiButtonGroup
-      v-model="internalValue"
+      v-model="modelValue"
       :disabled="disabled"
       class="flex-wrap justify-center border border-rui-grey-200 dark:border-rui-grey-800 !divide-rui-grey-200 dark:!divide-rui-grey-800"
       active-color="primary"

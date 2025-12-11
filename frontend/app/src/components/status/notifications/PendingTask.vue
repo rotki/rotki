@@ -8,7 +8,9 @@ import { TaskType } from '@/types/task-type';
 import { calculatePercentage } from '@/utils/calculation';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();
-const emit = defineEmits<{ (e: 'cancel', task: Task<TaskMeta>): void }>();
+const emit = defineEmits<{
+  cancel: [task: Task<TaskMeta>];
+}>();
 
 const { task } = toRefs(props);
 const { progress: taskProgress } = storeToRefs(useReportsStore());

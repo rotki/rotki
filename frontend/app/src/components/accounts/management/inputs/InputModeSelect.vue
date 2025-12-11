@@ -5,28 +5,24 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isOfEnum } from '@/utils';
 
+const inputMode = defineModel<InputMode>('inputMode', { required: true });
+
 const props = defineProps<{
   blockchain: string;
-  inputMode: InputMode;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:input-mode', mode: InputMode): void;
-}>();
-const { blockchain, inputMode } = toRefs(props);
-
-const internalValue = computed({
+const internalValue = computed<string>({
   get() {
-    return props.inputMode;
+    return get(inputMode);
   },
   set(value: string) {
     assert(isOfEnum(InputMode)(value));
-    emit('update:input-mode', value);
+    set(inputMode, value);
   },
 });
 
-const isBitcoin = computed(() => isBtcChain(get(blockchain)));
-const isXpub = computed(() => get(inputMode) === InputMode.XPUB_ADD);
+const isBitcoin = computed<boolean>(() => isBtcChain(props.blockchain));
+const isXpub = computed<boolean>(() => get(inputMode) === InputMode.XPUB_ADD);
 
 const { t } = useI18n({ useScope: 'global' });
 const { isAccountOperationRunning } = useAccountLoading();
@@ -36,11 +32,11 @@ const invalidCombination = logicAnd(logicNot(isBitcoin), isXpub);
 
 watch(invalidCombination, (invalid) => {
   if (invalid)
-    emit('update:input-mode', InputMode.MANUAL_ADD);
+    set(inputMode, InputMode.MANUAL_ADD);
 });
 
 onUnmounted(() => {
-  emit('update:input-mode', InputMode.MANUAL_ADD);
+  set(inputMode, InputMode.MANUAL_ADD);
 });
 </script>
 

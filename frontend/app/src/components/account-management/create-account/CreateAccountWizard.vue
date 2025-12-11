@@ -11,9 +11,10 @@ import CreateAccountPremium from '@/components/account-management/create-account
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 
+const step = defineModel<number>('step', { required: true });
+
 const props = withDefaults(
   defineProps<{
-    step: number;
     loading: boolean;
     error?: string;
   }>(),
@@ -21,29 +22,24 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'cancel'): void;
-  (e: 'update:step', step: number): void;
-  (e: 'confirm', payload: CreateAccountPayload): void;
-  (e: 'clear-error'): void;
+  'cancel': [];
+  'confirm': [payload: CreateAccountPayload];
+  'clear-error': [];
 }>();
 
-const { error, step } = toRefs(props);
+const { error } = toRefs(props);
 
-function setStep(newStep: number) {
-  emit('update:step', newStep);
-}
+const cancel = (): void => emit('cancel');
+const errorClear = (): void => emit('clear-error');
 
-const cancel = () => emit('cancel');
-const errorClear = () => emit('clear-error');
-
-function prevStep() {
-  setStep(get(step) - 1);
+function prevStep(): void {
+  set(step, get(step) - 1);
   if (get(error))
     errorClear();
 }
 
-function nextStep() {
-  setStep(get(step) + 1);
+function nextStep(): void {
+  set(step, get(step) + 1);
 }
 
 const { t } = useI18n({ useScope: 'global' });

@@ -3,13 +3,14 @@ import type { LoginCredentials } from '@/types/login';
 import CreateAccountCredentialsForm
   from '@/components/account-management/create-account/credentials/CreateAccountCredentialsForm.vue';
 
+const form = defineModel<LoginCredentials>('form', { required: true });
+const passwordConfirm = defineModel<string>('passwordConfirm', { required: true });
+const userPrompted = defineModel<boolean>('userPrompted', { required: true });
+
 withDefaults(
   defineProps<{
     syncDatabase?: boolean;
     loading: boolean;
-    form: LoginCredentials;
-    passwordConfirm: string;
-    userPrompted: boolean;
   }>(),
   {
     syncDatabase: false,
@@ -17,11 +18,8 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'back'): void;
-  (e: 'next'): void;
-  (e: 'update:form', form: LoginCredentials): void;
-  (e: 'update:password-confirm', value: string): void;
-  (e: 'update:user-prompted', value: boolean): void;
+  back: [];
+  next: [];
 }>();
 
 const valid = ref<boolean>(false);
@@ -43,14 +41,11 @@ const { t } = useI18n({ useScope: 'global' });
     </i18n-t>
     <CreateAccountCredentialsForm
       v-model:valid="valid"
+      v-model:form="form"
+      v-model:password-confirm="passwordConfirm"
+      v-model:user-prompted="userPrompted"
       class="mt-8"
-      :form="form"
-      :password-confirm="passwordConfirm"
-      :user-prompted="userPrompted"
       :loading="loading"
-      @update:form="emit('update:form', $event)"
-      @update:password-confirm="emit('update:password-confirm', $event)"
-      @update:user-prompted="emit('update:user-prompted', $event)"
     />
     <div>
       <RuiAlert

@@ -1,18 +1,9 @@
 <script setup lang="ts">
 const sortByModel = defineModel<string>('sortBy', { required: true });
+const sortDescModel = defineModel<boolean>('sortDesc', { required: true });
 
-const props = defineProps<{
-  sortDesc: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:sort-desc', sortDesc: boolean): void;
-}>();
-
-const { sortDesc: sortDescending } = toRefs(props);
-
-function toggleSortDesc() {
-  emit('update:sort-desc', !get(sortDescending));
+function toggleSortDesc(): void {
+  set(sortDescModel, !get(sortDescModel));
 }
 
 const { t } = useI18n({ useScope: 'global' });
@@ -45,10 +36,10 @@ const sortProperties = [
           class="rounded-r-none"
           @click="toggleSortDesc()"
         >
-          <RuiIcon :name="sortDescending ? 'lu-arrow-down-z-a' : 'lu-arrow-down-a-z'" />
+          <RuiIcon :name="sortDescModel ? 'lu-arrow-down-z-a' : 'lu-arrow-down-a-z'" />
         </RuiButton>
       </template>
-      <span v-if="sortDescending">
+      <span v-if="sortDescModel">
         {{ t('sorting_selector.desc.sort_asc_tooltip') }}
       </span>
       <span v-else>

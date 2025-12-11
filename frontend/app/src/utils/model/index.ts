@@ -22,7 +22,8 @@ export function usePropVModel<
   S extends P[K] extends object ? keyof P[K] : never,
   Name extends string,
 >(props: P, key: K, subKey: S, emit?: (name: Name, ...args: any[]) => void): WritableComputedRef<P[K][S]> {
-  const eventName = (key === 'value' ? 'input' : `update:${kebabCase(key.toString())}`) as Name;
+  const keyStr = key.toString();
+  const eventName = `update:${keyStr === 'modelValue' ? keyStr : kebabCase(keyStr)}` as Name;
   return computed({
     get() {
       return props[key][subKey];

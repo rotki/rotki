@@ -8,7 +8,7 @@ import { useAddressBookImport } from '@/composables/address-book/use-address-boo
 import { useNotificationsStore } from '@/store/notifications';
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
+  refresh: [];
 }>();
 
 const importFileUploader = useTemplateRef<ComponentExposed<typeof FileUpload>>('uploader');

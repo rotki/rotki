@@ -10,7 +10,7 @@ defineOptions({
 const url = defineModel<string>({ required: true });
 
 const emit = defineEmits<{
-  (e: 'save-data', value?: string): void;
+  'save-data': [value?: string];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

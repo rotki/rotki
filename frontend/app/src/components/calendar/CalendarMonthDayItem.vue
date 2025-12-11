@@ -14,9 +14,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'select-date'): void;
-  (e: 'edit', event: CalendarEvent): void;
-  (e: 'add'): void;
+  'select-date': [];
+  'edit': [event: CalendarEvent];
+  'add': [];
 }>();
 
 const { day, events, isPast } = toRefs(props);

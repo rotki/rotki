@@ -8,6 +8,7 @@ defineOptions({
 
 const primaryValue = defineModel<string>('primaryValue', { required: true });
 const secondaryValue = defineModel<string>('secondaryValue', { required: true });
+const reversed = defineModel<boolean>('reversed', { default: false });
 
 const props = withDefaults(
   defineProps<{
@@ -27,21 +28,14 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:reversed', reversed: boolean): void;
-}>();
-
 const { disabled, errorMessages } = toRefs(props);
 
 const primaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
 const secondaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
 
-const reversed = ref<boolean>(false);
-
 function reverse(): void {
   const newReversed = !get(reversed);
   set(reversed, newReversed);
-  emit('update:reversed', newReversed);
 
   nextTick(() => {
     if (!newReversed)

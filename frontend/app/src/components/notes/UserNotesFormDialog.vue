@@ -15,8 +15,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'reset'): void;
-  (e: 'refresh'): void;
+  reset: [];
+  refresh: [];
 }>();
 
 function resetForm() {

@@ -23,7 +23,7 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'import'): boolean;
+  import: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

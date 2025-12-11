@@ -2,65 +2,62 @@
 import type { AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import { useAccountingRuleMappings } from '@/composables/settings/accounting/rule-mapping';
-import { useSimplePropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/utils/model';
+
+const modelValue = defineModel<AccountingRuleWithLinkedProperty>({ required: true });
 
 const props = defineProps<{
   identifier: string;
-  modelValue: AccountingRuleWithLinkedProperty;
   label: string;
   hint: string;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: AccountingRuleWithLinkedProperty): void;
 }>();
 
 const { identifier } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 
-const value = useSimplePropVModel(props, 'value', emit);
+const value = useRefPropVModel(modelValue, 'value');
 
-function updateModelValue(newValue: AccountingRuleWithLinkedProperty) {
-  emit('update:model-value', newValue);
+function updateModelValue(newValue: AccountingRuleWithLinkedProperty): void {
+  set(modelValue, newValue);
 }
 
 const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
 
 const linkableSettingOptions = accountingRuleLinkedMappingData(identifier);
 
-const linkedModel = computed({
+const linkedModel = computed<boolean>({
   get() {
-    return !!props.modelValue.linkedSetting;
+    return !!get(modelValue).linkedSetting;
   },
   set(newValue: boolean) {
     if (newValue) {
       updateModelValue({
         linkedSetting: get(linkableSettingOptions)[0]?.identifier || '',
-        value: props.modelValue.value,
+        value: get(modelValue).value,
       });
     }
     else {
       updateModelValue({
-        value: props.modelValue.value,
+        value: get(modelValue).value,
       });
     }
   },
 });
 
-const linkedSettingModel = computed({
+const linkedSettingModel = computed<string | undefined>({
   get() {
-    return props.modelValue.linkedSetting;
+    return get(modelValue).linkedSetting;
   },
   set(newLinkedSetting: string | undefined) {
     updateModelValue({
-      value: props.modelValue.value,
+      value: get(modelValue).value,
       ...(newLinkedSetting ? { linkedSetting: newLinkedSetting } : {}),
     });
   },
 });
 
-const linkedPropertyValue = computed(() => {
-  const property = props.modelValue.linkedSetting;
+const linkedPropertyValue = computed<boolean | null>(() => {
+  const property = get(modelValue).linkedSetting;
   if (!property)
     return null;
 

@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:selection', pairs: string[]): void;
+  'update:selection': [pairs: string[]];
 }>();
 
 const MAX_RETRIES = 3;

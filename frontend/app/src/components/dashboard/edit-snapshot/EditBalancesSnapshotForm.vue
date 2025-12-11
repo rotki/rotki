@@ -29,7 +29,7 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:asset', asset: string): void;
+  'update:asset': [asset: string];
 }>();
 
 interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {

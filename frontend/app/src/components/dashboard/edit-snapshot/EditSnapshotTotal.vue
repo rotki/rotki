@@ -12,15 +12,15 @@ import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
 import { toMessages } from '@/utils/validation';
 
+const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
+
 const props = defineProps<{
-  modelValue: LocationDataSnapshot[];
   timestamp: number;
   balancesSnapshot: BalanceSnapshot[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:step', step: number): void;
-  (e: 'update:model-value', value: LocationDataSnapshot[]): void;
+  'update:step': [step: number];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -53,7 +53,7 @@ const assetTotal = computed<BigNumber>(() => {
 });
 
 const locationTotal = computed<BigNumber>(() => {
-  const numbers = props.modelValue.map((item: LocationDataSnapshot) => {
+  const numbers = get(modelValue).map((item: LocationDataSnapshot) => {
     if (item.location === 'total')
       return Zero;
 
@@ -106,7 +106,7 @@ const suggestions = computed(() => {
 });
 
 watchImmediate(rate, (rate) => {
-  const totalEntry = props.modelValue.find(item => item.location === 'total');
+  const totalEntry = get(modelValue).find((item: LocationDataSnapshot) => item.location === 'total');
 
   if (totalEntry) {
     const convertedFiatValue
@@ -118,11 +118,7 @@ watchImmediate(rate, (rate) => {
   }
 });
 
-function input(value: LocationDataSnapshot[]) {
-  emit('update:model-value', value);
-}
-
-function updateStep(step: number) {
+function updateStep(step: number): void {
   emit('update:step', step);
 }
 
@@ -153,23 +149,23 @@ const suggestionsLabel = computed(() => ({
     length: get(balancesSnapshot).length,
   }),
   location: t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
-    length: props.modelValue.length,
+    length: get(modelValue).length,
   }),
   total: t('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
 }));
 
-async function save() {
+async function save(): Promise<void> {
   if (!(await get(v$).$validate()))
     return;
 
-  const val = props.modelValue;
-  const index = val.findIndex(item => item.location === 'total')!;
+  const val = get(modelValue);
+  const index = val.findIndex((item: LocationDataSnapshot) => item.location === 'total')!;
 
   const newValue = [...val];
 
   newValue[index].usdValue = get(numericTotal);
 
-  input(newValue);
+  set(modelValue, newValue);
 }
 </script>
 

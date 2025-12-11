@@ -10,7 +10,7 @@ import { IndexedDb } from '@/utils/indexed-db';
 const display = defineModel<boolean>({ required: true });
 
 const emit = defineEmits<{
-  (e: 'about'): void;
+  about: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

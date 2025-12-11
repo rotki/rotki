@@ -15,7 +15,7 @@ describe('model utilities', () => {
       expect(get(model)).toBe(1);
       set(model, 12);
 
-      expect(emit).toHaveBeenCalledWith('update:model-value', {
+      expect(emit).toHaveBeenCalledWith('update:modelValue', {
         counter: 12,
         name: 'test',
       });

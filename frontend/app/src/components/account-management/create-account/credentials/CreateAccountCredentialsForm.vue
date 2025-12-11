@@ -2,37 +2,27 @@
 import type { LoginCredentials } from '@/types/login';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
+import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
-const props = withDefaults(
+const form = defineModel<LoginCredentials>('form', { required: true });
+const valid = defineModel<boolean>('valid', { required: true });
+const passwordConfirm = defineModel<string>('passwordConfirm', { required: true });
+const userPrompted = defineModel<boolean>('userPrompted', { required: true });
+
+withDefaults(
   defineProps<{
     loading?: boolean;
-    form: LoginCredentials;
-    passwordConfirm: string;
-    userPrompted: boolean;
   }>(),
   {
     loading: false,
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:form', form: LoginCredentials): void;
-  (e: 'update:valid', valid: boolean): void;
-  (e: 'update:password-confirm', value: string): void;
-  (e: 'update:user-prompted', value: boolean): void;
-}>();
-
-const { form, passwordConfirm, userPrompted } = toRefs(props);
-
-function input(newInput: Partial<LoginCredentials>) {
-  emit('update:form', {
-    ...get(form),
-    ...newInput,
-  });
-}
-
 const { t } = useI18n({ useScope: 'global' });
+
+const username = useRefPropVModel(form, 'username');
+const password = useRefPropVModel(form, 'password');
 
 const rules = {
   password: {
@@ -41,7 +31,7 @@ const rules = {
   passwordConfirm: {
     isMatch: helpers.withMessage(
       t('create_account.credentials.validation.password_confirmation_mismatch'),
-      sameAs(computed(() => get(form).password)),
+      sameAs(computed<string>(() => get(form).password)),
     ),
     required: helpers.withMessage(t('create_account.credentials.validation.non_empty_password_confirmation'), required),
   },
@@ -60,9 +50,9 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    password: computed(() => get(form).password),
+    password,
     passwordConfirm,
-    username: computed(() => get(form).username),
+    username,
     userPrompted,
   },
   {
@@ -71,43 +61,7 @@ const v$ = useVuelidate(
 );
 
 watchImmediate(v$, ({ $invalid }) => {
-  emit('update:valid', !$invalid);
-});
-
-const username = computed({
-  get() {
-    return get(form).username;
-  },
-  set(value: string) {
-    input({ username: value });
-  },
-});
-
-const password = computed({
-  get() {
-    return get(form).password;
-  },
-  set(value: string) {
-    input({ password: value });
-  },
-});
-
-const passwordConfirmModel = computed({
-  get() {
-    return get(passwordConfirm);
-  },
-  set(value: string) {
-    emit('update:password-confirm', value);
-  },
-});
-
-const userPromptedModel = computed({
-  get() {
-    return get(userPrompted);
-  },
-  set(value: boolean) {
-    emit('update:user-prompted', value);
-  },
+  set(valid, !$invalid);
 });
 </script>
 
@@ -136,7 +90,7 @@ const userPromptedModel = computed({
         :disabled="loading"
       />
       <RuiRevealableTextField
-        v-model="passwordConfirmModel"
+        v-model="passwordConfirm"
         dense
         color="primary"
         variant="outlined"
@@ -147,7 +101,7 @@ const userPromptedModel = computed({
       />
     </div>
     <RuiCheckbox
-      v-model="userPromptedModel"
+      v-model="userPrompted"
       data-cy="create-account__boxes__user-prompted"
       :disabled="loading"
       color="primary"

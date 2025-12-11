@@ -11,7 +11,7 @@ import { useMessageStore } from '@/store/message';
 const modelValue = defineModel<ManualBalance | RawManualBalance | undefined>({ required: true });
 
 const emit = defineEmits<{
-  (e: 'update-tab', tab: string | number): void;
+  'update-tab': [tab: string | number];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

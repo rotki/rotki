@@ -13,14 +13,14 @@ import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 
+const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
+
 const props = defineProps<{
-  modelValue: LocationDataSnapshot[];
   timestamp: number;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:step', step: number): void;
-  (e: 'update:model-value', value: LocationDataSnapshot[]): void;
+  'update:step': [step: number];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -35,7 +35,7 @@ const submitting = ref<boolean>(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const editedIndex = ref<number | null>(null);
-const modelValue = ref<LocationDataSnapshotPayload | null>(null);
+const formModel = ref<LocationDataSnapshotPayload | null>(null);
 const excludedLocations = ref<string[]>([]);
 const tableRef = ref<any>();
 const sort = ref<DataTableSortData<LocationDataSnapshot>>({
@@ -73,18 +73,14 @@ const { useExchangeRate } = usePriceUtils();
 const fiatExchangeRate = computed<BigNumber>(() => get(useExchangeRate(get(currencySymbol))) ?? One);
 
 const data = computed<IndexedLocationDataSnapshot[]>(() =>
-  props.modelValue.map((item, index) => ({ ...item, index })).filter(item => item.location !== 'total'),
+  get(modelValue).map((item: LocationDataSnapshot, index: number) => ({ ...item, index })).filter((item: IndexedLocationDataSnapshot) => item.location !== 'total'),
 );
 
-function input(value: LocationDataSnapshot[]) {
-  emit('update:model-value', value);
-}
-
-function updateStep(step: number) {
+function updateStep(step: number): void {
   emit('update:step', step);
 }
 
-function editClick(item: IndexedLocationDataSnapshot) {
+function editClick(item: IndexedLocationDataSnapshot): void {
   set(editedIndex, item.index);
 
   const convertedFiatValue
@@ -92,57 +88,57 @@ function editClick(item: IndexedLocationDataSnapshot) {
       ? item.usdValue.toFixed()
       : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
 
-  set(modelValue, {
+  set(formModel, {
     ...item,
     usdValue: convertedFiatValue,
   });
 
   set(
     excludedLocations,
-    props.modelValue.map(item => item.location).filter(identifier => identifier !== item.location),
+    get(modelValue).map((item: LocationDataSnapshot) => item.location).filter((identifier: string) => identifier !== item.location),
   );
 
   set(openDialog, true);
 }
 
-function add() {
+function add(): void {
   set(editedIndex, null);
-  set(modelValue, {
+  set(formModel, {
     location: '',
     timestamp: get(timestamp),
     usdValue: '',
   });
   set(
     excludedLocations,
-    props.modelValue.map(item => item.location),
+    get(modelValue).map((item: LocationDataSnapshot) => item.location),
   );
   set(openDialog, true);
 }
 
-async function save() {
+async function save(): Promise<boolean> {
   const formRef = get(form);
   const valid = await formRef?.validate();
   if (!valid)
     return false;
 
-  const data = get(modelValue);
+  const formData = get(formModel);
 
-  if (!data)
+  if (!formData)
     return false;
 
   set(submitting, true);
   const index = get(editedIndex);
-  const val = props.modelValue;
+  const val = get(modelValue);
   const timestampVal = get(timestamp);
 
   const convertedUsdValue
     = get(currencySymbol) === CURRENCY_USD
-      ? bigNumberify(data.usdValue)
-      : bigNumberify(data.usdValue).dividedBy(get(fiatExchangeRate));
+      ? bigNumberify(formData.usdValue)
+      : bigNumberify(formData.usdValue).dividedBy(get(fiatExchangeRate));
 
   const newValue = [...val];
   const payload = {
-    location: data.location,
+    location: formData.location,
     timestamp: timestampVal,
     usdValue: convertedUsdValue,
   };
@@ -153,19 +149,20 @@ async function save() {
 
   set(submitting, false);
 
-  input(newValue);
+  set(modelValue, newValue);
   clearEditDialog();
+  return true;
 }
 
-function clearEditDialog() {
+function clearEditDialog(): void {
   set(openDialog, false);
   set(editedIndex, null);
-  set(modelValue, null);
+  set(formModel, null);
   set(excludedLocations, []);
 }
 
-function confirmDelete(index: number) {
-  const val = props.modelValue;
+function confirmDelete(index: number): void {
+  const val = get(modelValue);
 
   if (index === null)
     return;
@@ -173,11 +170,11 @@ function confirmDelete(index: number) {
   const newValue = [...val];
   newValue.splice(index, 1);
 
-  input(newValue);
+  set(modelValue, newValue);
 }
 
 const total = computed<BigNumber>(() => {
-  const totalEntry = props.modelValue.find(item => item.location === 'total');
+  const totalEntry = get(modelValue).find((item: LocationDataSnapshot) => item.location === 'total');
 
   if (!totalEntry)
     return Zero;
@@ -297,9 +294,9 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
       @cancel="clearEditDialog()"
     >
       <EditLocationDataSnapshotForm
-        v-if="modelValue"
+        v-if="formModel"
         ref="form"
-        v-model="modelValue"
+        v-model="formModel"
         v-model:state-updated="stateUpdated"
         :excluded-locations="excludedLocations"
       />

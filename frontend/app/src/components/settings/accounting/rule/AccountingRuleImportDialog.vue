@@ -10,7 +10,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
+  refresh: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

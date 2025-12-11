@@ -13,7 +13,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:matches', matches: Suggestion[]): void;
+  'update:matches': [matches: Suggestion[]];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

@@ -18,7 +18,7 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'reload', event: LocationAndTxRef): void;
+  reload: [event: LocationAndTxRef];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

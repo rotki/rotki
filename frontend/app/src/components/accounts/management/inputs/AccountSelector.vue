@@ -5,46 +5,31 @@ import InputModeSelect from '@/components/accounts/management/inputs/InputModeSe
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { isBtcChain } from '@/types/blockchain/chains';
 
-const props = defineProps<{
-  chain: string;
-  inputMode: InputMode;
+const chain = defineModel<string>('chain', { required: true });
+const inputMode = defineModel<InputMode>('inputMode', { required: true });
+
+defineProps<{
   editMode: boolean;
   chainIds: string[];
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:chain', selection: string): void;
-  (e: 'update:input-mode', mode: InputMode): void;
-}>();
-
-const chain = toRef(props, 'chain');
-
 const { loading } = useAccountLoading();
 
 const showInputModeSelector = logicOr(
-  computed(() => isBtcChain(get(chain))),
+  computed<boolean>(() => isBtcChain(get(chain))),
 );
-
-function updateModelValue(value?: string) {
-  if (!value)
-    return;
-
-  emit('update:chain', value);
-}
 </script>
 
 <template>
   <ChainSelect
+    v-model="chain"
     :disabled="loading || editMode"
-    :model-value="chain"
     :items="chainIds"
-    @update:model-value="updateModelValue($event)"
   />
 
   <InputModeSelect
     v-if="!editMode && showInputModeSelector"
-    :input-mode="inputMode"
+    v-model:input-mode="inputMode"
     :blockchain="chain"
-    @update:input-mode="emit('update:input-mode', $event)"
   />
 </template>

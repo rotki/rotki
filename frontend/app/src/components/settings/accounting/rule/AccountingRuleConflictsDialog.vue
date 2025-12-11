@@ -22,8 +22,8 @@ import { useMessageStore } from '@/store/message';
 import { getCollectionData } from '@/utils/collection';
 
 const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'refresh'): void;
+  close: [];
+  refresh: [];
 }>();
 
 const close = () => emit('close');

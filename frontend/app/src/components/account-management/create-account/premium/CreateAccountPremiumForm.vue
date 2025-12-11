@@ -2,49 +2,24 @@
 import type { PremiumSetup } from '@/types/login';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
+import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
+
+const form = defineModel<PremiumSetup>('form', { required: true });
+const valid = defineModel<boolean>('valid', { required: true });
 
 const props = defineProps<{
   loading: boolean;
   enabled: boolean;
-  form: PremiumSetup;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:form', form: PremiumSetup): void;
-  (e: 'update:valid', valid: boolean): void;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { enabled, form } = toRefs(props);
+const { enabled } = toRefs(props);
 
-const apiKey = computed({
-  get() {
-    return get(form).apiKey;
-  },
-  set(value?: string) {
-    input({ apiKey: value || '' });
-  },
-});
-
-const apiSecret = computed({
-  get() {
-    return get(form).apiSecret;
-  },
-  set(value?: string) {
-    input({ apiSecret: value || '' });
-  },
-});
-
-const syncDatabase = computed({
-  get() {
-    return get(form).syncDatabase;
-  },
-  set(value: boolean) {
-    input({ syncDatabase: value });
-  },
-});
+const apiKey = useRefPropVModel(form, 'apiKey');
+const apiSecret = useRefPropVModel(form, 'apiSecret');
+const syncDatabase = useRefPropVModel(form, 'syncDatabase');
 
 watch(enabled, (enabled) => {
   if (!enabled)
@@ -66,15 +41,8 @@ const v$ = useVuelidate(rules, form, {
 });
 
 watchImmediate(v$, ({ $invalid }) => {
-  emit('update:valid', !$invalid);
+  set(valid, !$invalid);
 });
-
-function input(newInput: Partial<PremiumSetup>) {
-  emit('update:form', {
-    ...get(form),
-    ...newInput,
-  });
-}
 </script>
 
 <template>

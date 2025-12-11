@@ -9,7 +9,7 @@ import { getDomain } from '@/utils/url';
 
 type RenderOption = 'all' | 'whitelisted';
 
-const emit = defineEmits<{ (e: 'dialog-open', value: boolean): void }>();
+const emit = defineEmits<{ 'dialog-open': [value: boolean] }>();
 
 const { t } = useI18n({ useScope: 'global' });
 

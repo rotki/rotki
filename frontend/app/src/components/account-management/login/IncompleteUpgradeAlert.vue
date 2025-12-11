@@ -2,7 +2,7 @@
 import LoginActionAlert from '@/components/account-management/login/LoginActionAlert.vue';
 import { useSessionAuthStore } from '@/store/session/auth';
 
-const emit = defineEmits<{ (e: 'confirm'): void; (e: 'cancel'): void }>();
+const emit = defineEmits<{ confirm: []; cancel: [] }>();
 
 const { t } = useI18n({ useScope: 'global' });
 

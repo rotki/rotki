@@ -18,7 +18,9 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{ (e: 'click', location: string): void }>();
+const emit = defineEmits<{
+  click: [location: string];
+}>();
 
 const { item } = toRefs(props);
 

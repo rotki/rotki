@@ -4,20 +4,17 @@ import CreateAccountPremiumForm
   from '@/components/account-management/create-account/premium/CreateAccountPremiumForm.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 
-const props = defineProps<{
+const form = defineModel<PremiumSetup>('form', { required: true });
+const premiumEnabled = defineModel<boolean>('premiumEnabled', { required: true });
+
+defineProps<{
   loading: boolean;
-  form: PremiumSetup;
-  premiumEnabled: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'back'): void;
-  (e: 'next'): void;
-  (e: 'update:form', form: PremiumSetup): void;
-  (e: 'update:premium-enabled', enabled: boolean): void;
+  back: [];
+  next: [];
 }>();
-
-const { form, premiumEnabled } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -51,7 +48,7 @@ const premiumSelectionButtons = computed(() => [
         rounded
         :variant="button.value === premiumEnabled ? 'default' : 'outlined'"
         color="primary"
-        @click="emit('update:premium-enabled', button.value)"
+        @click="premiumEnabled = button.value"
       >
         <template #prepend>
           <RuiIcon
@@ -64,11 +61,10 @@ const premiumSelectionButtons = computed(() => [
     </div>
     <CreateAccountPremiumForm
       v-model:valid="valid"
+      v-model:form="form"
       class="mt-8"
       :loading="loading"
       :enabled="premiumEnabled"
-      :form="form"
-      @update:form="emit('update:form', $event)"
     />
     <div class="grid grid-cols-2 gap-4">
       <RuiButton

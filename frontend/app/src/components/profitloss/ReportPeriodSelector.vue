@@ -10,8 +10,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:period', period: PeriodChangedEvent | null): void;
-  (e: 'update:selection', selection: SelectionChangedEvent): void;
+  'update:period': [period: PeriodChangedEvent | null];
+  'update:selection': [selection: SelectionChangedEvent];
 }>();
 
 const QUARTER_STARTS: { [quarter in Quarter]: string } = {

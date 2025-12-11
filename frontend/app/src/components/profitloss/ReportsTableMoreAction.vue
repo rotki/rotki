@@ -6,7 +6,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'delete'): void;
+  delete: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

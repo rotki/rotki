@@ -17,7 +17,7 @@ import { useMainStore } from '@/store/main';
 import { toMessages } from '@/utils/validation';
 
 const emit = defineEmits<{
-  (e: 'dismiss'): void;
+  dismiss: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

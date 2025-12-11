@@ -4,7 +4,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const emit = defineEmits<{
-  (e: 'updated'): void;
+  updated: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

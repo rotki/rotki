@@ -30,10 +30,10 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'touched'): void;
-  (e: 'new-account'): void;
-  (e: 'login', credentials: LoginCredentials): void;
-  (e: 'backend-changed', url: string | null): void;
+  'touched': [];
+  'new-account': [];
+  'login': [credentials: LoginCredentials];
+  'backend-changed': [url: string | null];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

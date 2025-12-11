@@ -12,7 +12,7 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
+  refresh: [];
 }>();
 </script>
 

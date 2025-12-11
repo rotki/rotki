@@ -9,7 +9,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'dismiss'): void;
+  dismiss: [];
 }>();
 
 const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(props.messages.length);
