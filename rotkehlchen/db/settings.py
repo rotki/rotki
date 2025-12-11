@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.types import (
     SerializableChainIndexerOrder,
 )
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.timing import YEAR_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.utils import str_to_bool
@@ -77,6 +77,7 @@ DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
 DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
 DEFAULT_AUTO_DETECT_TOKENS = True
 DEFAULT_CSV_EXPORT_DELIMITER = ','
+DEFAULT_EVENTS_PROCESSING_FREQUENCY = DAY_IN_SECONDS
 
 LIST_KEYS = (
     'current_price_oracles',
@@ -117,6 +118,7 @@ INTEGER_KEYS = (
     'read_timeout',
     'oracle_penalty_threshold_count',
     'oracle_penalty_duration',
+    'events_processing_frequency',
 )
 STRING_KEYS = (
     'ksm_rpc_endpoint',
@@ -175,6 +177,7 @@ CachedDBSettingsFieldNames = Literal[
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
     'ask_user_upon_size_discrepancy',
+    'events_processing_frequency',
 ]
 
 DBSettingsFieldTypes = (
@@ -241,6 +244,7 @@ class DBSettings:
     ask_user_upon_size_discrepancy: bool = DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY
     auto_detect_tokens: bool = DEFAULT_AUTO_DETECT_TOKENS
     csv_export_delimiter: str = DEFAULT_CSV_EXPORT_DELIMITER
+    events_processing_frequency: int = DEFAULT_EVENTS_PROCESSING_FREQUENCY
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -304,6 +308,7 @@ class ModifiableDBSettings(NamedTuple):
     auto_detect_tokens: bool | None = None
     csv_export_delimiter: str | None = None
     btc_mempool_api: str | None = None
+    events_processing_frequency: int | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

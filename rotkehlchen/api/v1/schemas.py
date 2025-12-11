@@ -1635,6 +1635,13 @@ class ModifiableSettingsSchema(Schema):
     ask_user_upon_size_discrepancy = fields.Boolean(load_default=None)
     auto_detect_tokens = fields.Boolean(load_default=None)
     csv_export_delimiter = EmptyAsNoneStringField(load_default=None)
+    events_processing_frequency = fields.Integer(
+        load_default=None,
+        validate=webargs.validate.Range(
+            min=60,
+            error='The frequency should be >= 60 seconds',
+        ),
+    )
 
     @validates_schema
     def validate_settings_schema(
@@ -1700,6 +1707,7 @@ class ModifiableSettingsSchema(Schema):
             ask_user_upon_size_discrepancy=data['ask_user_upon_size_discrepancy'],
             auto_detect_tokens=data['auto_detect_tokens'],
             csv_export_delimiter=data['csv_export_delimiter'],
+            events_processing_frequency=data['events_processing_frequency'],
         )
 
 

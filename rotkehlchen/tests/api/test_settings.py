@@ -8,6 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.types import EvmIndexer
+from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.db.settings import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_QUERY_RETRY_LIMIT,
@@ -228,6 +229,8 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
             value = ['hardcoded_mappings', 'ethereum_tokens']
         elif setting == 'csv_export_delimiter':
             value = ';'
+        elif setting == 'events_processing_frequency':
+            value = HOUR_IN_SECONDS
         else:
             raise AssertionError(f'Unexpected setting {setting} encountered')
 
