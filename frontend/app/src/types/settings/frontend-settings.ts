@@ -21,7 +21,7 @@ import { PrivacyMode } from '@/types/session';
 import { TableColumnEnum } from '@/types/table-column';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
-export const FRONTEND_SETTINGS_SCHEMA_VERSION = 1;
+export const FRONTEND_SETTINGS_SCHEMA_VERSION = 2;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -181,7 +181,7 @@ export const FrontendSettings = z.object({
     .default({})
     // eslint-disable-next-line unicorn/prefer-top-level-await
     .catch({}),
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   scrambleData: z.boolean().default(false),
   scrambleMultiplier: z.number().optional().default(generateRandomScrambleMultiplier()),
   selectedTheme: ThemeEnum.default(Theme.AUTO),

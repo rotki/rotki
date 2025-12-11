@@ -17,7 +17,7 @@ import { OtherSettings } from '@/types/user';
 describe('types/user', () => {
   it('otherSettings parsed correctly', () => {
     const frontendSettings: FrontendSettings = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       defiSetupDone: true,
       language: SupportedLanguage.EN,
       timeframeSetting: TimeFramePeriod.YEAR,
