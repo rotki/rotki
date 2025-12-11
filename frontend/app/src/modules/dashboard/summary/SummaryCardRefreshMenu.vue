@@ -42,7 +42,7 @@ defineSlots<{
         />
         <RuiButton
           :disabled="disabled"
-          :class="$style.expander"
+          class="z-[2] text-black -right-2 top-4 w-4 h-4 lg:w-[1.125rem] lg:h-[1.125rem] !p-0 !absolute !bg-black/[.12] dark:!bg-black dark:text-white"
           icon
           variant="text"
           size="sm"
@@ -58,10 +58,3 @@ defineSlots<{
     </RuiMenu>
   </div>
 </template>
-
-<style lang="scss" module>
-.expander {
-  @apply z-[2] text-black -right-2 top-4 w-4 h-4 lg:w-[1.125rem] lg:h-[1.125rem];
-  @apply p-0 absolute bg-black/[.12] dark:bg-black dark:text-white #{!important};
-}
-</style>

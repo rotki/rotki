@@ -94,14 +94,13 @@ watch(
 <template>
   <RuiNavigationDrawer
     v-model="display"
-    :content-class="$style.sidebar"
     width="400px"
     position="right"
     temporary
     :stateless="dialogVisible"
   >
     <DefineNoMessages>
-      <div :class="$style['no-messages']">
+      <div class="flex flex-col items-center justify-center flex-1">
         <RuiIcon
           size="64px"
           color="primary"
@@ -129,7 +128,7 @@ watch(
       <ReuseNoMessages v-if="!hasRunningTasks && allNotifications.length === 0" />
       <div
         v-else
-        :class="$style.messages"
+        class="flex flex-col h-[calc(100%-133px)]"
       >
         <PendingTasks />
         <div class="border-b border-default mx-4">
@@ -151,7 +150,7 @@ watch(
         <div
           v-if="selectedNotifications.length > 0"
           ref="contentWrapper"
-          :class="$style.content"
+          class="ps-3.5 pe-2 mt-2 flex flex-col gap-2 !overflow-y-auto"
         >
           <LazyLoader
             v-for="item in selectedNotifications"
@@ -213,19 +212,3 @@ watch(
     </div>
   </RuiNavigationDrawer>
 </template>
-
-<style module lang="scss">
-.no-messages {
-  @apply flex flex-col items-center justify-center flex-1;
-}
-
-.messages {
-  @apply flex flex-col;
-  height: calc(100% - 133px);
-}
-
-.content {
-  @apply ps-3.5 pe-2 mt-2 flex flex-col gap-2;
-  @apply overflow-y-auto #{!important};
-}
-</style>

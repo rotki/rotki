@@ -130,8 +130,8 @@ watch(search, (value) => {
     <template v-if="!(chip && isBoolean)">
       <span
         :class="{
-          [$style.comparator]: chip,
-          ['text-rui-primary']: !chip,
+          'py-0.5 border-l border-r border-white dark:!border-rui-grey-900 mx-1.5 flex items-center': chip,
+          'text-rui-primary': !chip,
         }"
         class="px-1"
       >
@@ -174,15 +174,3 @@ watch(search, (value) => {
     </template>
   </span>
 </template>
-
-<style lang="scss" module>
-.comparator {
-  @apply py-0.5 border-l border-r border-white mx-1.5 flex items-center;
-}
-
-:global(.dark) {
-  .comparator {
-    @apply border-rui-grey-900 #{!important};
-  }
-}
-</style>

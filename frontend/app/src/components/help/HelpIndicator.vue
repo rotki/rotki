@@ -19,14 +19,8 @@ function toggleVisibility() {
     @click="toggleVisibility()"
   >
     <RuiIcon
-      :class="{ [$style.visible]: visible }"
+      :class="{ '-rotate-[25deg]': visible }"
       name="lu-circle-question-mark"
     />
   </MenuTooltipButton>
 </template>
-
-<style module lang="scss">
-.visible {
-  transform: rotate(-25deg);
-}
-</style>

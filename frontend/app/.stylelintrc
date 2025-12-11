@@ -1,69 +1,53 @@
 {
   "plugins": [
-    "stylelint-scss",
     "stylelint-order"
   ],
-  "extends": "stylelint-config-recommended-vue/scss",
-  "overrides": [
-    {
-      "files": [
-        "**/*.scss"
-      ],
-      "customSyntax": "postcss-scss"
-    }
-    ],
+  "extends": "stylelint-config-recommended-vue",
   "rules": {
     "no-empty-source": null,
     "selector-pseudo-element-no-unknown": [
       true,
-      {}
+      {
+        "ignorePseudoElements": ["v-deep", "v-global", "v-slotted"]
+      }
     ],
     "selector-pseudo-class-no-unknown": [
       true,
       {
-        "ignorePseudoClasses": ["global", "deep"]
+        "ignorePseudoClasses": ["global", "deep", "slotted"]
       }
     ],
-    "scss/selector-nest-combinators": "always",
-    "scss/selector-no-redundant-nesting-selector": true,
-    "scss/at-rule-no-unknown": [
+    "at-rule-no-unknown": [
       true,
       {
-        "ignoreAtRules": ["tailwind", "apply", "variants", "responsive", "screen", "each", "for"]
+        "ignoreAtRules": ["tailwind", "apply", "layer", "config", "variants", "responsive", "screen"]
       }
     ],
     "rule-empty-line-before": [
-      "always", {
-        "except": ["first-nested"]
+      "always",
+      {
+        "except": ["first-nested"],
+        "ignore": ["after-comment"]
       }
     ],
     "comment-no-empty": true,
     "declaration-block-no-duplicate-properties": true,
     "declaration-block-single-line-max-declarations": 1,
-    "selector-class-pattern": "^(?:(?![^&](__|--))[\\s\\S])*$",
-    "selector-nested-pattern": "^(?:(?![^&](__|--))[\\s\\S])*$",
+    "function-no-unknown": [
+      true,
+      {
+        "ignoreFunctions": ["theme", "screen"]
+      }
+    ],
     "order/order": [
       {
         "type": "at-rule",
         "name": "apply"
       },
       "custom-properties",
-      "dollar-variables",
       "declarations",
       "rules",
       "at-rules"
-    ],
-    "at-rule-no-unknown": [
-      true,
-      {
-        "ignoreAtRules": ["tailwind", "apply", "variants", "responsive", "screen", "each", "for", "use"]
-      }
-    ],
-    "at-rule-no-deprecated": [
-      true,
-      {
-        "ignoreAtRules": ["apply"]
-      }
     ]
   }
 }

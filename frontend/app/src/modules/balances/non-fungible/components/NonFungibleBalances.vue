@@ -164,15 +164,3 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
     />
   </TablePageLayout>
 </template>
-
-<style scoped lang="scss">
-.non-fungible-balances {
-  &__item {
-    &__preview {
-      width: 50px;
-      height: 50px;
-      max-width: 50px;
-    }
-  }
-}
-</style>

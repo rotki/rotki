@@ -51,21 +51,11 @@ watch(visibility, (visibility) => {
 <template>
   <div
     ref="wrapper"
-    :class="[$style.wrapper, { [$style.appear]: usedAppear }]"
+    class="transition-all"
+    :class="usedAppear ? 'opacity-100' : 'opacity-0'"
+    :style="{ height, minHeight: minHeightUsed }"
     @mouseenter="!usedAppear && show()"
   >
     <slot v-if="usedAppear" />
   </div>
 </template>
-
-<style module lang="scss">
-.wrapper {
-  @apply opacity-0 transition-all;
-  height: v-bind(height);
-  min-height: v-bind(minHeightUsed);
-
-  &.appear {
-    @apply opacity-100;
-  }
-}
-</style>

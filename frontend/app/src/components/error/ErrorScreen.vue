@@ -37,7 +37,7 @@ const errorText = computed(() => {
 </script>
 
 <template>
-  <div class="error-screen py-6">
+  <div class="py-6 bg-white dark:bg-black h-full w-full z-[99999] flex flex-col items-center justify-center">
     <div>
       <RuiIcon
         size="120"
@@ -47,7 +47,7 @@ const errorText = computed(() => {
     </div>
     <div
       v-if="header"
-      class="error-screen__title"
+      class="mt-6 mb-5"
     >
       <div class="text-h4">
         {{ header }}
@@ -58,7 +58,7 @@ const errorText = computed(() => {
 
     <RuiCard
       v-if="!alternative"
-      class="error-screen__message flex-1 my-6 overflow-hidden"
+      class="flex-1 my-6 overflow-hidden max-w-[80%]"
       content-class="h-full"
     >
       <template #header>
@@ -72,8 +72,8 @@ const errorText = computed(() => {
       <template #subheader>
         {{ subtitle }}
       </template>
-      <div class="font-light text-rui-text-secondary error-screen__description">
-        <pre class="text-caption text-wrap error-screen__description__message">
+      <div class="font-light text-rui-text-secondary">
+        <pre class="text-caption text-wrap">
           {{ message }}
           <RuiDivider
             v-if="error"
@@ -83,7 +83,7 @@ const errorText = computed(() => {
         </pre>
         <textarea
           v-model="errorText"
-          class="error-screen__copy-area"
+          class="absolute -top-[999em] -left-[999em]"
         />
       </div>
     </RuiCard>
@@ -96,32 +96,3 @@ const errorText = computed(() => {
     <slot name="bottom" />
   </div>
 </template>
-
-<style scoped lang="scss">
-.error-screen {
-  @apply bg-white dark:bg-black;
-
-  height: 100%;
-  width: 100%;
-  z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  &__message {
-    max-width: 80%;
-  }
-
-  &__title {
-    margin-top: 25px;
-    margin-bottom: 20px;
-  }
-
-  &__copy-area {
-    position: absolute;
-    top: -999em;
-    left: -999em;
-  }
-}
-</style>

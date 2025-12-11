@@ -4,7 +4,7 @@ export class AccountSettingsPage {
     cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('[data-cy=settings-button]').click();
     cy.get('[data-cy=user-dropdown]').should('not.exist');
-    cy.get('a.settings__account').click();
+    cy.get('[data-cy="settings__account"]').click();
   }
 
   changePassword(currentPassword: string, newPassword: string) {

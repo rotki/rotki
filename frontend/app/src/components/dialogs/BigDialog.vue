@@ -131,8 +131,8 @@ function promptClose() {
         <div
           v-if="display"
           ref="wrapper"
-          class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4"
-          :class="[$style.card, { [$style['auto-height']]: autoHeight }]"
+          class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4 max-h-[calc(90vh-190px)]"
+          :class="{ 'min-h-[50vh]': !autoHeight }"
         >
           <slot :wrapper="wrapper" />
         </div>
@@ -167,13 +167,3 @@ function promptClose() {
     </form>
   </RuiBottomSheet>
 </template>
-
-<style module lang="scss">
-.card {
-  max-height: calc(90vh - 190px);
-
-  &:not(.auto-height) {
-    min-height: 50vh;
-  }
-}
-</style>

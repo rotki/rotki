@@ -45,7 +45,7 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiButton
         variant="text"
         icon
-        class="back-button__button"
+        class="ml-6 w-12"
         @click="goBack()"
       >
         <RuiIcon name="lu-arrow-left" />
@@ -55,16 +55,6 @@ const { t } = useI18n({ useScope: 'global' });
   </RuiTooltip>
   <div
     v-else
-    class="back-button__placeholder"
+    class="ml-6 w-12"
   />
 </template>
-
-<style scoped lang="scss">
-.back-button {
-  &__button,
-  &__placeholder {
-    margin-left: 24px;
-    width: 48px;
-  }
-}
-</style>

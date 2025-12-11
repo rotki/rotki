@@ -145,7 +145,7 @@ export class BlockchainAccountsPage {
     cy.get('@address-tooltip').find('div[role=tooltip-content]').contains(balance.label);
     cy.get('@address-tooltip').find('div[role=tooltip-content]').contains(balance.address);
 
-    for (const tag of balance.tags) cy.get('@row').find('.tag').contains(tag).should('be.visible');
+    for (const tag of balance.tags) cy.get('@row').find('[data-cy=tag]').contains(tag).should('be.visible');
 
     cy.get('@row').find('[data-cy=labeled-address-display]').as('address-label');
     cy.get('@address-label').scrollIntoView();
@@ -164,7 +164,7 @@ export class BlockchainAccountsPage {
         .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
         .each((row) => {
           const value = row.find('[data-cy=usd-value] [data-cy=display-amount]').text();
-          const asset = row.find('.account-chain').eq(0).attr('data-chain');
+          const asset = row.find('[data-cy=account-chain]').eq(0).attr('data-chain');
 
           if (!value || !asset)
             return;

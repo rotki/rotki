@@ -21,7 +21,8 @@ withDefaults(
 <template>
   <div class="flex items-center">
     <RuiChip
-      class="tag font-medium !rounded-md shrink-0"
+      class="font-medium !rounded-md shrink-0"
+      data-cy="tag"
       tile
       content-class="flex font-mono"
       :size="small ? 'sm' : 'md'"

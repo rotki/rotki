@@ -171,11 +171,8 @@ const { copied, copy } = useCopy(identifier);
       >
         <div
           v-if="showChain && chain"
-          class="chain"
-          :class="{
-            [$style.circle]: true,
-            [$style.chain]: true,
-          }"
+          class="!rounded-full !overflow-hidden bg-white z-[0] absolute flex items-center justify-center shadow-sm -bottom-1 -right-1 border border-rui-grey-300 dark:border-rui-grey-900"
+          :style="{ marginTop: chainIconMargin, marginLeft: chainIconMargin }"
         >
           <EvmChainIcon
             :chain="chain"
@@ -186,7 +183,7 @@ const { copied, copy } = useCopy(identifier);
         <div
           class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
           :class="{
-            [$style.circle]: circle,
+            '!rounded-full !overflow-hidden': circle,
           }"
         >
           <GeneratedIcon
@@ -262,22 +259,3 @@ const { copied, copy } = useCopy(identifier);
     </template>
   </RuiTooltip>
 </template>
-
-<style module lang="scss">
-.circle {
-  @apply rounded-full overflow-hidden #{!important};
-}
-
-.chain {
-  @apply bg-white z-[0] absolute flex items-center justify-center rounded-full shadow-sm -bottom-1 -right-1;
-  @apply border border-rui-grey-300;
-  margin-top: v-bind(chainIconMargin);
-  margin-left: v-bind(chainIconMargin);
-}
-
-:global(.dark) {
-  .chain {
-    @apply border-rui-grey-900;
-  }
-}
-</style>

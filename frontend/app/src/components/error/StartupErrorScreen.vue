@@ -12,7 +12,7 @@ const { closeApp } = useInterop();
 
 <template>
   <ErrorScreen
-    :class="$style.overlay"
+    class="fixed top-0 left-0"
     :header="t('error_screen.start_failure')"
     :title="t('error_screen.backend_error')"
     :subtitle="t('error_screen.message')"
@@ -26,9 +26,3 @@ const { closeApp } = useInterop();
     </RuiButton>
   </ErrorScreen>
 </template>
-
-<style module lang="scss">
-.overlay {
-  @apply fixed top-0 left-0;
-}
-</style>

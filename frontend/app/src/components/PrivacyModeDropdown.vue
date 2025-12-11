@@ -80,7 +80,7 @@ watch(persistPrivacySettings, setData);
           </RuiBadge>
         </MenuTooltipButton>
         <RuiButton
-          :class="$style.expander"
+          class="p-0 z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem] !bg-rui-grey-100 !absolute dark:text-white dark:!bg-black"
           icon
           variant="text"
           v-bind="{ ...attrs, 'data-cy': 'privacy-menu' }"
@@ -177,7 +177,7 @@ watch(persistPrivacySettings, setData);
       <div class="border-t border-default p-4 flex flex-col gap-4">
         <SettingsOption
           #default="{ updateImmediate: updateScramble }"
-          :class="$style.scrambler__toggle"
+          class="bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px]"
           setting="scrambleData"
           frontend-setting
         >
@@ -224,22 +224,3 @@ watch(persistPrivacySettings, setData);
     </RuiMenu>
   </div>
 </template>
-
-<style module lang="scss">
-.expander {
-  @apply p-0 z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem];
-  @apply bg-rui-grey-100 absolute #{!important};
-}
-
-.scrambler {
-  &__toggle {
-    @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px];
-  }
-}
-
-:global(.dark) {
-  .expander {
-    @apply text-white bg-black #{!important};
-  }
-}
-</style>

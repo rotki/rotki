@@ -218,15 +218,15 @@ onMounted(async () => {
           class="h-full !block"
         >
           <template #activator>
-            <div :class="$style.group">
+            <div class="relative h-full w-2.5 ml-6">
               <div
                 v-if="row.groupLine.top"
-                :class="[$style.group__line, $style['group__line-top']]"
+                class="absolute h-1/2 left-1/2 w-0 transform -translate-x-1/2 border-l-2 border-dashed border-rui-primary top-0"
               />
-              <div :class="$style.group__dot" />
+              <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-rui-primary" />
               <div
                 v-if="row.groupLine.bottom"
-                :class="[$style.group__line, $style['group__line-bottom']]"
+                class="absolute h-1/2 left-1/2 w-0 transform -translate-x-1/2 border-l-2 border-dashed border-rui-primary bottom-0"
               />
             </div>
           </template>
@@ -361,25 +361,3 @@ onMounted(async () => {
     </RuiDataTable>
   </RuiCard>
 </template>
-
-<style module lang="scss">
-.group {
-  @apply relative h-full w-2.5 ml-6;
-
-  &__dot {
-    @apply absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-rui-primary;
-  }
-
-  &__line {
-    @apply absolute h-1/2 left-1/2 w-0 transform -translate-x-1/2 border-l-2 border-dashed border-rui-primary;
-
-    &-top {
-      @apply top-0;
-    }
-
-    &-bottom {
-      @apply bottom-0;
-    }
-  }
-}
-</style>

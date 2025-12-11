@@ -6,7 +6,7 @@ export class RpcSettingsPage {
     cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('[data-cy=settings-button]').click();
     cy.get('[data-cy=user-dropdown]').should('not.exist');
-    cy.get('a.settings__rpc').click();
+    cy.get('[data-cy="settings__rpc"]').click();
   }
 
   changePassword(currentPassword: string, newPassword: string) {

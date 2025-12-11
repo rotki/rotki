@@ -54,11 +54,11 @@ onBeforeMount(() => {
 
     <AppSidebars />
     <div
-      class="app-main"
+      class="pt-6 pb-16 w-full transition-all min-h-[calc(100vh-64px)]"
       :class="{
-        small: isMini,
-        expanded,
-        pinned: showPinned,
+        'pl-[3.5rem]': isMini,
+        'pl-[300px]': expanded,
+        'xl:pr-[500px]': showPinned,
       }"
     >
       <main>
@@ -112,24 +112,3 @@ onBeforeMount(() => {
     </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.app {
-  &-main {
-    @apply pt-6 pb-16 w-full transition-all;
-    min-height: calc(100vh - 64px);
-
-    &.small {
-      @apply pl-[3.5rem];
-    }
-
-    &.expanded {
-      @apply pl-[300px];
-    }
-
-    &.pinned {
-      @apply xl:pr-[500px];
-    }
-  }
-}
-</style>

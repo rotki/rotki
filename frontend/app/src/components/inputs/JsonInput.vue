@@ -58,31 +58,8 @@ onBeforeUnmount(() => {
     >
       {{ label }}
     </div>
-    <div :class="$style.editor">
+    <div class="json-editor rounded border border-rui-grey-500 dark:border-rui-grey-700">
       <div ref="jsonEditorContainer" />
     </div>
   </div>
 </template>
-
-<style lang="scss" module>
-.editor {
-  @apply rounded border border-rui-grey-500;
-
-  --jse-background-color: transparent;
-  --jse-main-border: none;
-  --jse-theme-color: rgb(var(--rui-light-primary-main));
-}
-
-:global(.dark) {
-  .editor {
-    @apply border-rui-grey-700;
-
-    --jse-theme-color: rgb(var(--rui-dark-primary-main));
-    --jse-delimiter-color: var(--rui-dark-text-secondary);
-    --jse-text-color: var(--rui-dark-text-secondary);
-    --jse-key-color: var(--rui-dark-text-secondary);
-    --jse-tag-color: var(--rui-dark-text-secondary);
-    --jse-tag-background: var(--rui-dark-text-secondary);
-  }
-}
-</style>

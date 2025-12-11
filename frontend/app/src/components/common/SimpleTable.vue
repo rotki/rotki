@@ -33,61 +33,15 @@ const style = computed<StyleValue | undefined>(() => {
 
 <template>
   <div
-    :class="[
-      $style.table,
-      {
-        [$style.outlined]: variant === 'outlined',
-      },
-    ]"
+    class="w-full overflow-y-auto"
+    :class="{
+      'border rounded-md border-rui-grey-200 dark:border-rui-grey-800': variant === 'outlined',
+    }"
     :style="style"
     v-bind="$attrs"
   >
-    <table>
+    <table class="w-full [&_th]:py-2 [&_th]:px-4 [&_td]:py-2 [&_td]:px-4 [&_thead]:border-b [&_thead]:w-full [&_thead]:border-rui-grey-200 dark:[&_thead]:border-rui-grey-800 [&_thead_th]:font-medium [&_thead_th]:text-sm [&_thead_th]:text-rui-text-secondary [&_thead_th]:text-start [&_tbody_td]:!border-b-0">
       <slot />
     </table>
   </div>
 </template>
-
-<style module lang="scss">
-.table {
-  @apply w-full overflow-y-auto;
-
-  table {
-    @apply w-full;
-
-    th,
-    td {
-      @apply py-2 px-4;
-    }
-
-    thead {
-      @apply border-b w-full border-rui-grey-200;
-
-      th {
-        @apply font-medium text-sm text-rui-text-secondary text-start;
-      }
-    }
-
-    tbody {
-      tr {
-        td {
-          @apply border-b-0 #{!important};
-        }
-      }
-    }
-  }
-
-  &.outlined {
-    @apply border rounded-md border-rui-grey-200;
-  }
-}
-
-:global(.dark) {
-  .table {
-    &.outlined,
-    thead {
-      @apply border-rui-grey-800;
-    }
-  }
-}
-</style>

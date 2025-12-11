@@ -91,9 +91,9 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
   <div class="relative">
     <div
       v-if="showGroupLine"
-      :class="$style.group"
+      class="absolute w-0.5 -top-4 -bottom-4 left-[0.8125rem]"
     >
-      <div :class="$style.group__line" />
+      <div class="border-l-2 border-dashed border-rui-primary h-full transform -translate-x-1/2" />
     </div>
 
     <div
@@ -125,7 +125,6 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
       >
         <RuiDataTable
           v-model:sort="sort"
-          :class="$style.table"
           :rows="matchedAcquisitions"
           :cols="cols"
           row-attr="amount"
@@ -168,13 +167,3 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.group {
-  @apply absolute w-0.5 -top-4 -bottom-4 left-[0.8125rem];
-
-  &__line {
-    @apply border-l-2 border-dashed border-rui-primary h-full transform -translate-x-1/2;
-  }
-}
-</style>

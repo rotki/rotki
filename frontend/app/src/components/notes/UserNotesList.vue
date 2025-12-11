@@ -395,7 +395,7 @@ watch(shouldIncreasePage, (increasePage) => {
   />
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 .note-list-move,
 .note-list-enter-active,
 .note-list-leave-active {

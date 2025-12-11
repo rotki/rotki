@@ -213,10 +213,3 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
     <DateFormatHelp v-model="formatHelp" />
   </div>
 </template>
-
-<style module lang="scss">
-.image {
-  padding: 10px;
-  max-width: 200px;
-}
-</style>

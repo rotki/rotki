@@ -15,7 +15,7 @@ import { setupDayjs } from '@/utils/date';
 import { setupFormatter } from '@/utils/setup-formatter';
 
 /* istanbul ignore file */
-import './main.scss';
+import './main.css';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import 'flag-icons/css/flag-icons.min.css';

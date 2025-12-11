@@ -43,21 +43,15 @@ const asset = computed<string>(() => get(snapshot)?.assetIdentifier ?? '');
       <NftDetails
         v-if="isNft(asset)"
         :identifier="asset"
-        :class="$style.asset"
+        class="max-w-[640px]"
       />
       <AssetDetails
         v-else
         hide-menu
-        :class="$style.asset"
+        class="max-w-[640px]"
         :asset="asset"
         :enable-association="false"
       />
     </div>
   </ConfirmDialog>
 </template>
-
-<style module lang="scss">
-.asset {
-  max-width: 640px;
-}
-</style>

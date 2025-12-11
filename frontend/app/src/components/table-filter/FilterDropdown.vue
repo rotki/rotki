@@ -151,7 +151,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
     >
       <div
         v-if="suggested.length > 0"
-        :class="$style.suggestions"
+        class="max-h-[12rem] overflow-x-hidden overflow-y-auto"
         data-cy="suggestions"
       >
         <RuiButton
@@ -223,7 +223,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
       </div>
       <RuiDivider class="my-2" />
       <div
-        :class="$style.suggestions"
+        class="max-h-[12rem] overflow-x-hidden overflow-y-auto"
         data-cy="suggestions"
       >
         <FilterEntry
@@ -268,9 +268,3 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
     </div>
   </div>
 </template>
-
-<style lang="scss" module>
-.suggestions {
-  @apply max-h-[12rem] overflow-x-hidden overflow-y-auto;
-}
-</style>

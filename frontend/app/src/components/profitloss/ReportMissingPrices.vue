@@ -181,7 +181,7 @@ onMounted(async () => {
       v-model:sort="sort"
       class="table-inside-dialog"
       :class="{
-        [$style['table--pinned']]: isPinned,
+        'max-h-full h-[calc(100vh-245px)]': isPinned,
       }"
       :cols="headers"
       :rows="formattedItems"
@@ -229,7 +229,7 @@ onMounted(async () => {
         </div>
         <AmountInput
           v-model="row.price"
-          :class="$style.input"
+          class="text-left min-w-[120px]"
           dense
           :disabled="row.useRefreshedHistoricalPrice"
           :label="t('profit_loss_report.actionable.missing_prices.input_price')"
@@ -277,17 +277,3 @@ onMounted(async () => {
     />
   </div>
 </template>
-
-<style module lang="scss">
-.table {
-  &--pinned {
-    max-height: 100%;
-    height: calc(100vh - 245px);
-  }
-}
-
-.input {
-  @apply text-left;
-  min-width: 120px;
-}
-</style>

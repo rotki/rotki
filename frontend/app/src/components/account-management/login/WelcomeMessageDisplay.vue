@@ -46,8 +46,7 @@ onMounted(async () => {
 <template>
   <div
     v-if="activeItem"
-    class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden rounded-lg"
-    :class="$style.card"
+    class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden rounded-lg bg-[rgba(78,91,166,0.04)]"
   >
     <FadeTransition tag="div">
       <div
@@ -61,8 +60,7 @@ onMounted(async () => {
           class="bg-white rounded-[0.625rem] p-3"
         >
           <div
-            class="object-contain text-rui-primary h-6 w-6"
-            :class="$style.icon"
+            class="object-contain text-rui-primary h-6 w-6 [&_svg_path]:!fill-rui-primary"
             v-html="svg"
           />
         </div>
@@ -102,17 +100,3 @@ onMounted(async () => {
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.card {
-  background: rgba(78, 91, 166, 0.04);
-}
-
-.icon {
-  svg {
-    path {
-      fill: rgb(var(--rui-primary-main)) !important;
-    }
-  }
-}
-</style>

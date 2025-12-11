@@ -73,7 +73,7 @@ const usedLoading = useRefWithDebounce(loading, 500);
           </div>
         </template>
 
-        <div :class="$style.content">
+        <div class="overflow-y-auto -mx-4 px-4 pb-4 flex flex-col gap-8 max-h-[calc(90vh-11.875rem)] min-h-[50vh]">
           <HistoryEventsQueryStatus
             :locations="locations"
             :events="events"
@@ -131,12 +131,3 @@ const usedLoading = useRefWithDebounce(loading, 500);
     </template>
   </RuiDialog>
 </template>
-
-<style module lang="scss">
-.content {
-  @apply overflow-y-auto -mx-4 px-4 pb-4 flex flex-col gap-8;
-  max-height: calc(90vh - 11.875rem);
-  min-height: 50vh;
-
-}
-</style>

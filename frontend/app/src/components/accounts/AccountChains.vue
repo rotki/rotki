@@ -90,9 +90,10 @@ function reset() {
       >
         <template #activator>
           <div
-            class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 relative z-[0] hover:z-[1] cursor-pointer account-chain transition-all overflow-hidden"
+            class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 relative z-[0] hover:z-[1] cursor-pointer transition-all overflow-hidden"
             :class="{ '!border-0': !item.enabled }"
             :data-chain="item.chain"
+            data-cy="account-chain"
             @click="updateChain(item.chain, !item.enabled)"
           >
             <ChainIcon

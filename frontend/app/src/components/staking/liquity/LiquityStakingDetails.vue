@@ -302,15 +302,11 @@ function refresh() {
                   }}
                 </span>
               </div>
-              <div
-                class="ml-3 pl-4 pt-2"
-                :class="$style['proxies-wrapper']"
-              >
+              <div class="ml-3 pl-4 pt-2 relative before:content-[''] before:absolute before:top-0 before:left-0 before:border-l before:border-rui-grey-200 before:h-[calc(100%-0.8rem)] dark:before:border-rui-grey-800">
                 <div
                   v-for="proxy in proxies"
                   :key="proxy"
-                  class="mb-1 flex"
-                  :class="$style['proxies-item']"
+                  class="mb-1 flex relative before:content-[''] before:absolute before:w-4 before:right-full before:top-1/2 before:border-t before:border-rui-grey-200 dark:before:border-rui-grey-800"
                 >
                   <HashLink
                     :text="proxy"
@@ -386,44 +382,3 @@ function refresh() {
     />
   </TablePageLayout>
 </template>
-
-<style lang="scss" module>
-.proxies {
-  &-wrapper,
-  &-item {
-    &::before {
-      @apply border-rui-grey-200;
-    }
-  }
-
-  &-wrapper {
-    @apply relative;
-
-    &::before {
-      @apply absolute top-0 left-0 border-l;
-      content: '';
-      height: calc(100% - 0.8rem);
-    }
-  }
-
-  &-item {
-    @apply relative;
-
-    &::before {
-      @apply absolute w-4 right-full top-1/2 border-t;
-      content: '';
-    }
-  }
-}
-
-:global(.dark) {
-  .proxies {
-    &-wrapper,
-    &-item {
-      &::before {
-        @apply border-rui-grey-800;
-      }
-    }
-  }
-}
-</style>

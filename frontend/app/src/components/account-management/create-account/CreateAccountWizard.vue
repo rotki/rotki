@@ -105,8 +105,8 @@ function confirm() {
     leave-to-class="-translate-y-5 opacity-0"
     leave-active-class="transform duration-100"
   >
-    <div :class="$style.register">
-      <div :class="$style.register__wrapper">
+    <div>
+      <div class="max-w-[22.5rem] mx-auto">
         <div class="flex flex-col items-center">
           <RotkiLogo unique-key="1b" />
           <h4 class="text-h4 mb-3 mt-8">
@@ -193,7 +193,7 @@ function confirm() {
               </RuiTabItem>
             </RuiTabItems>
           </div>
-          <div :class="$style.register__actions__footer">
+          <div class="items-center flex justify-stretch py-6 text-rui-text-secondary">
             <span>{{ t('create_account.have_account.description') }}</span>
             <RuiButton
               color="primary"
@@ -213,17 +213,3 @@ function confirm() {
     </div>
   </Transition>
 </template>
-
-<style module lang="scss">
-.register {
-  &__wrapper {
-    @apply max-w-[22.5rem] mx-auto;
-  }
-
-  &__actions {
-    &__footer {
-      @apply items-center flex justify-stretch py-6 text-rui-text-secondary;
-    }
-  }
-}
-</style>

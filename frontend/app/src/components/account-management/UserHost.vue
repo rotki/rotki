@@ -29,7 +29,7 @@ const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(
   <div
     v-if="displayRouter"
     data-cy="account-management-forms"
-    :class="$style.router"
+    class="min-h-[150px]"
   >
     <slot />
   </div>
@@ -47,9 +47,3 @@ const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(
     />
   </div>
 </template>
-
-<style lang="scss" module>
-.router {
-  min-height: 150px;
-}
-</style>

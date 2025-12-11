@@ -63,7 +63,7 @@ watch(search, () => setPage(1));
         dense
         prepend-icon="lu-search"
         :label="t('common.actions.search')"
-        :class="$style['dashboard-asset-table__search']"
+        class="max-w-[28rem] w-full"
         hide-details
         clearable
         @click:clear="search = ''"
@@ -173,7 +173,7 @@ watch(search, () => setPage(1));
           label-colspan="4"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
-          :class-name="$style['dashboard-asset-table__body-append']"
+          class-name="text-sm [&_td]:p-4"
         >
           <AmountDisplay
             force-currency
@@ -199,19 +199,3 @@ watch(search, () => setPage(1));
     </RuiDataTable>
   </DashboardExpandableTable>
 </template>
-
-<style module lang="scss">
-.dashboard-asset-table {
-  &__search {
-    @apply max-w-[28rem] w-full;
-  }
-
-  &__body-append {
-    @apply text-sm;
-
-    td {
-      @apply p-4;
-    }
-  }
-}
-</style>

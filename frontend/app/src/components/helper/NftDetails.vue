@@ -111,8 +111,7 @@ const fallbackData = computed(() => {
           <template #activator>
             <div
               class="my-2 bg-rui-grey-200 rounded flex items-center justify-center"
-              :class="$style.preview"
-              :style="styled"
+              :style="[styled, { width: size, height: size, maxWidth: size, minWidth: size }]"
               @click="!shouldRender ? showAllowDomainConfirmation() : null"
             >
               <video
@@ -146,7 +145,7 @@ const fallbackData = computed(() => {
         </template>
         <div
           v-else-if="name"
-          :class="$style['nft-details']"
+          class="flex-1 max-w-[400px]"
         >
           <div class="font-medium text-truncate">
             {{ name }}
@@ -179,17 +178,3 @@ const fallbackData = computed(() => {
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.preview {
-  width: v-bind(size);
-  height: v-bind(size);
-  max-width: v-bind(size);
-  min-width: v-bind(size);
-}
-
-.nft-details {
-  flex: 1;
-  max-width: 400px;
-}
-</style>

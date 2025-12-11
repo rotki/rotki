@@ -15,6 +15,7 @@
     "cypress.config.*",
     "nightwatch.conf.*",
     "playwright.config.*",
+    "tailwind.config.*",
     "scripts/**/*",
     "shared/external-links.ts",
     ".electron-builder.config.*"

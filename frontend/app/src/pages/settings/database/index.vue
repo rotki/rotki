@@ -48,11 +48,3 @@ const navigation = [
     <AssetDatabaseCategory :id="Category.ASSET_DATABASE" />
   </SettingsPage>
 </template>
-
-<style scoped lang="scss">
-.database-settings {
-  &_database-info {
-    font-size: 2em;
-  }
-}
-</style>

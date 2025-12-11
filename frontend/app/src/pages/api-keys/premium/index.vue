@@ -217,13 +217,11 @@ onMounted(() => {
       />
 
       <template #footer>
-        <div
-          class="flex flex-row gap-2"
-          :class="$style.buttons"
-        >
+        <div class="flex flex-row gap-2">
           <template v-if="premium">
             <RuiButton
               v-if="edit"
+              class="min-w-28"
               color="primary"
               variant="outlined"
               @click="cancelEdit()"
@@ -233,6 +231,7 @@ onMounted(() => {
 
             <RuiButton
               v-else
+              class="min-w-28"
               variant="outlined"
               color="primary"
               type="submit"
@@ -244,6 +243,7 @@ onMounted(() => {
           </template>
 
           <RuiButton
+            class="min-w-28"
             color="primary"
             type="submit"
             data-cy="premium__setup"
@@ -257,11 +257,3 @@ onMounted(() => {
     <PremiumDeviceList v-if="premium" />
   </TablePageLayout>
 </template>
-
-<style lang="scss" module>
-.buttons {
-  > button {
-    @apply min-w-[7rem];
-  }
-}
-</style>

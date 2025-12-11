@@ -37,10 +37,10 @@ const avatarSizeClasses = computed(() => {
 
 <template>
   <div
+    class="flex items-center py-2 gap-2 cursor-pointer"
     :class="[
-      $style.wrapper,
       {
-        [$style['with-padding']]: !noPadding,
+        'px-4': !noPadding,
         'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover,
       },
     ]"
@@ -89,13 +89,3 @@ const avatarSizeClasses = computed(() => {
     </div>
   </div>
 </template>
-
-<style lang="scss" module>
-.wrapper {
-  @apply flex items-center py-2 gap-2 cursor-pointer;
-
-  &.with-padding {
-    @apply px-4;
-  }
-}
-</style>

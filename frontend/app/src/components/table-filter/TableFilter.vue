@@ -463,7 +463,7 @@ const { t } = useI18n({ useScope: 'global' });
           :model-value="selection"
           :class="{
             '[&_input:not(.edit-input)]:hidden': !!suggestionBeingEdited,
-            [$style.shake]: shaking,
+            'animate-shake': shaking,
           }"
           variant="outlined"
           dense
@@ -528,26 +528,3 @@ const { t } = useI18n({ useScope: 'global' });
     <slot name="tooltip" />
   </RuiTooltip>
 </template>
-
-<style module lang="scss">
-.shake {
-  @apply animate-[shake_0.5s_ease-in-out];
-}
-
-@keyframes shake {
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-4px);
-  }
-
-  20%,
-  40%,
-  60%,
-  80% {
-    transform: translateX(4px);
-  }
-}
-</style>
