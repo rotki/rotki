@@ -416,6 +416,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
     assert performance['validators'] == {}
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])

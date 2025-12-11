@@ -1,8 +1,9 @@
 import logging
+from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import asset_normalized_value, get_single_underlying_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -12,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
     EvmDecodingOutput,
 )
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -146,6 +148,15 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         Returns the final list of the decoded events."""
         supply_events, withdraw_events, return_events, receive_events = [], [], [], []
         swap_event = migrateout_event = migratein_event = swap_receive_event = maybe_earned_event = None  # noqa: E501
+        # list of every interest event we've decoded in this transaction. We iterate this later
+        # to append any remaining interest events after all pairings are done.
+        interest_events_in_order: list[EvmEvent] = []
+        # interest_event_lookup tells us which interest event belongs to that same asset/user
+        # so we can insert it right after that pair instead of leaving it somewhere unrelated
+        # in the sequence.
+        interest_event_lookup: dict[Asset, list[EvmEvent]] = defaultdict(list)
+        used_interest_event_ids: set[int] = set()
+
         for event in decoded_events:  # identify the events decoded till now
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
@@ -218,6 +229,9 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     maybe_earned_event = event  # this may also be the mint transfer event which was already decoded (for some chains and assets) -- remember it to check it down later  # noqa: E501
 
                 event.counterparty = self.counterparty
+                if event.event_subtype == HistoryEventSubType.INTEREST:
+                    interest_events_in_order.append(event)
+                    interest_event_lookup[event.asset].append(event)
 
         if swap_event and swap_receive_event:
             maybe_reshuffle_events(  # groups together the receive/interest event and then the collateral swap  # noqa: E501
@@ -290,13 +304,18 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                         notes=f'Receive {balance_increase} {earned_token.symbol} as interest earned from {self.label}',  # noqa: E501
                         counterparty=self.counterparty,
                     ))
+                    interest_events_in_order.append(earned_event)
+                    interest_event_lookup[earned_event.asset].append(earned_event)
 
-        if len(supply_events) != 0 and len(receive_events) != 0 and earned_event is not None:  # re-assign the receive amount  # noqa: E501
+        if len(supply_events) != 0 and len(receive_events) != 0:  # re-assign the receive amount  # noqa: E501
             for receive_event in receive_events:
-                if receive_event.asset != earned_event.asset:
+                if (interest_amount := self._get_interest_amount_for_event(
+                    event=receive_event,
+                    interest_event_lookup=interest_event_lookup,
+                )) == ZERO:
                     continue
 
-                receive_event.amount = FVal((receive_event.amount - earned_event.amount).num.normalize())  # noqa: E501
+                receive_event.amount = FVal((receive_event.amount - interest_amount).num.normalize())  # noqa: E501
                 receive_event.notes = f'Receive {receive_event.amount} {receive_event.asset.resolve_to_asset_with_symbol().symbol} from {self.label}'  # noqa: E501
 
         if len(withdraw_events) != 0 and earned_event is not None:
@@ -318,6 +337,18 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     receive_events.remove(receive_event)
                     return_event = receive_event
                     return_events.append(return_event)
+                    if return_event in interest_events_in_order:
+                        interest_events_in_order.remove(return_event)
+
+                    if (interest_entries := interest_event_lookup.get(return_event.asset)) is not None:  # noqa: E501
+                        interest_event_lookup[return_event.asset] = [
+                            evt for evt in interest_entries
+                            if evt is not return_event
+                        ]
+                        if len(interest_event_lookup[return_event.asset]) == 0:
+                            interest_event_lookup.pop(return_event.asset, None)
+
+                    used_interest_event_ids.discard(return_event.sequence_index)
                     # re-assign the values to the return event
                     if (matching_withdraw := next((x for x in withdraw_events if x.asset.resolve_to_asset_with_symbol().symbol == withdraw_asset.symbol), None)) is None:  # noqa: E501
                         log.error(f'Failed to find matching withdraw event for asset {withdraw_asset} in transaction {transaction}. Skipping')  # noqa: E501
@@ -334,8 +365,8 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 primary_events=supply_events,
                 secondary_events=receive_events,
                 ordered_events=ordered_events,
-                maybe_earned_event=maybe_earned_event,
-                earned_event=earned_event,
+                interest_event_lookup=interest_event_lookup,
+                used_interest_event_ids=used_interest_event_ids,
                 match_fn=lambda primary, secondary: (
                     (underlying_token := get_single_underlying_token(secondary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
                     (underlying_token == primary.asset or (underlying_token == self.node_inquirer.wrapped_native_token and primary.asset == self.node_inquirer.native_token))  # noqa: E501
@@ -347,13 +378,18 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 primary_events=return_events,
                 secondary_events=withdraw_events,
                 ordered_events=ordered_events,
-                maybe_earned_event=maybe_earned_event,
-                earned_event=earned_event,
+                interest_event_lookup=interest_event_lookup,
+                used_interest_event_ids=used_interest_event_ids,
                 match_fn=lambda primary, secondary: (  # use symbols due to Monerium and its different versions  # noqa: E501
                     (underlying_token := get_single_underlying_token(primary.asset.resolve_to_evm_token())) is not None and  # noqa: E501
                     (underlying_token.symbol == secondary.asset.resolve_to_crypto_asset().symbol or (underlying_token == self.node_inquirer.wrapped_native_token and secondary.asset == self.node_inquirer.native_token))  # noqa: E501
                 ),
             )
+
+        for interest_event in interest_events_in_order:
+            if interest_event.sequence_index not in used_interest_event_ids:
+                ordered_events.append(interest_event)
+                used_interest_event_ids.add(interest_event.sequence_index)
 
         maybe_reshuffle_events(
             ordered_events=ordered_events,
@@ -366,26 +402,64 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
             primary_events: list['EvmEvent'],
             secondary_events: list['EvmEvent'],
             ordered_events: list['EvmEvent'],
-            maybe_earned_event: 'EvmEvent | None',
-            earned_event: 'EvmEvent | None',
+            interest_event_lookup: 'dict[Asset, list["EvmEvent"]]',
+            used_interest_event_ids: set[int],
             match_fn: 'Callable[["EvmEvent", "EvmEvent"], bool]',
     ) -> None:
         """Helper to pair events by underlying asset and track assets for interest events."""
         for primary_event in primary_events:
-            matched_asset_symbols = set()  # using symbols due to Monerium and its different versions  # noqa: E501
-            matched_asset_symbols.add(primary_event.asset.resolve_to_crypto_asset().symbol)
+            matched_asset = {primary_event.asset}
+            found_match = False
             for secondary_event in secondary_events:
                 if match_fn(primary_event, secondary_event):
-                    matched_asset_symbols.add(secondary_event.asset.resolve_to_crypto_asset().symbol)
+                    matched_asset.add(secondary_event.asset)
                     ordered_events.extend([primary_event, secondary_event])
+                    found_match = True
 
             # add matching interest events for this asset pair
-            if len(matched_asset_symbols) > 0:
-                ordered_events.extend(
-                    earn_event for earn_event in (maybe_earned_event, earned_event)
-                    if earn_event is not None and earn_event.asset.resolve_to_crypto_asset().symbol in matched_asset_symbols and earn_event not in ordered_events  # noqa: E501
+            if found_match:
+                Aavev3LikeCommonDecoder._append_interest_events(
+                    matched_asset=matched_asset,
+                    location_label=primary_event.location_label,  # type: ignore  # we know it is an address
+                    ordered_events=ordered_events,
+                    interest_event_lookup=interest_event_lookup,
+                    used_interest_event_ids=used_interest_event_ids,
                 )
-                matched_asset_symbols = set()
+
+    @staticmethod
+    def _append_interest_events(
+            matched_asset: set['Asset'],
+            location_label: 'ChecksumEvmAddress | None',
+            ordered_events: list['EvmEvent'],
+            interest_event_lookup: 'dict[Asset, list[EvmEvent]]',
+            used_interest_event_ids: set[int],
+    ) -> None:
+        """Attach interest events matching the provided identifiers/location."""
+        for asset in matched_asset:
+            for interest_event in interest_event_lookup.get(asset, []):
+                if (
+                    interest_event.location_label != location_label or
+                    interest_event.sequence_index in used_interest_event_ids
+                ):
+                    continue
+
+                ordered_events.append(interest_event)
+                used_interest_event_ids.add(interest_event.sequence_index)
+
+    @staticmethod
+    def _get_interest_amount_for_event(
+            event: 'EvmEvent',
+            interest_event_lookup: 'dict[Asset, list[EvmEvent]]',
+    ) -> FVal:
+        """Return the total interest amount already decoded for the same asset."""
+        if (interest_events := interest_event_lookup.get(event.asset)) is None:
+            return ZERO
+
+        return FVal(sum(
+            (interest_event.amount for interest_event in interest_events
+            if interest_event.location_label == event.location_label),
+            start=ZERO,
+        ))
 
     def _collateral_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decode a collateral swap event from aave.

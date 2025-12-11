@@ -643,6 +643,7 @@ def test_add_get_edit_delete_eth2_validators(
     assert result == {'entries': [validator.serialize() for validator in custom_percentage_validators], 'entries_limit': -1, 'entries_found': 2}  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
