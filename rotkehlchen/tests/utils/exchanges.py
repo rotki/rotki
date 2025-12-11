@@ -474,9 +474,9 @@ BINANCE_FUNDING_WALLET_BALANCES_RESPONSE: Final = """[{
 
 def assert_binance_balances_result(balances: dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '4723846.89208129'
-    assert balances['BTC']['usd_value'] is not None
+    assert balances['BTC']['value'] is not None
     assert balances['ETH']['amount'] == '4763368.68006011'
-    assert balances['ETH']['usd_value'] is not None
+    assert balances['ETH']['value'] is not None
 
 
 def assert_binance_asset_movements_result(
@@ -592,9 +592,9 @@ def assert_binance_asset_movements_result(
 
 def assert_poloniex_balances_result(balances: dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '5.5'
-    assert balances['BTC']['usd_value'] is not None
+    assert balances['BTC']['value'] is not None
     assert balances['ETH']['amount'] == '11.0'
-    assert balances['ETH']['usd_value'] is not None
+    assert balances['ETH']['value'] is not None
 
 
 def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argument

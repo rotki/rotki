@@ -1025,7 +1025,7 @@ def test_consolidated_validator_pending_withdrawal_outstanding_rewards(
         )])
 
     with (
-        patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.get_balances', return_value={pub_key: Balance(amount=(small_balance := FVal('0.5')), usd_value=small_balance)}),  # mock a small balance (pending withdrawal) that's less than MIN_EFFECTIVE_BALANCE  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.get_balances', return_value={pub_key: Balance(amount=(small_balance := FVal('0.5')), value=small_balance)}),  # mock a small balance (pending withdrawal) that's less than MIN_EFFECTIVE_BALANCE  # noqa: E501
         patch('rotkehlchen.chain.ethereum.modules.eth2.eth2.DBEth2.group_validators_by_type', return_value=(set(), set())),  # no accumulating validators  # noqa: E501
     ):
         result = eth2.get_performance(

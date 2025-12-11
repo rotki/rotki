@@ -57,6 +57,7 @@ from rotkehlchen.chain.substrate.utils import (
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -90,7 +91,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.history.manager import HistoryQueryingManager
-from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.history.price import Price, PriceHistorian
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
@@ -1194,28 +1195,28 @@ class Rotkehlchen:
 
         balances = account_for_manually_tracked_asset_balances(db=self.data.db, balances=balances)
 
-        # Calculate usd totals
+        # Calculate value totals (in main currency)
         assets_total_balance: defaultdict[Asset, Balance] = defaultdict(Balance)
-        total_usd_per_location: dict[str, FVal] = {}
+        total_value_per_location: dict[str, FVal] = {}
         for location, asset_balance in balances.items():
-            total_usd_per_location[location] = ZERO
+            total_value_per_location[location] = ZERO
             for asset, balance in asset_balance.items():
                 assets_total_balance[asset] += balance
-                total_usd_per_location[location] += balance.usd_value
+                total_value_per_location[location] += balance.value
 
-        net_usd = sum((balance.usd_value for _, balance in assets_total_balance.items()), ZERO)
-        liabilities_total_usd = sum((liability.usd_value for _, liability in liabilities.items()), ZERO)  # noqa: E501
-        net_usd -= liabilities_total_usd
+        net_value = sum((balance.value for _, balance in assets_total_balance.items()), ZERO)
+        liabilities_total_value = sum((liability.value for _, liability in liabilities.items()), ZERO)  # noqa: E501
+        net_value -= liabilities_total_value
 
         # Calculate location stats
         location_stats: dict[str, Any] = {}
-        for location, total_usd in total_usd_per_location.items():
+        for location, total_value in total_value_per_location.items():
             if location == str(Location.BLOCKCHAIN):
-                total_usd -= liabilities_total_usd  # noqa: PLW2901
+                total_value -= liabilities_total_value  # noqa: PLW2901
 
-            percentage = (total_usd / net_usd).to_percentage() if net_usd != ZERO else '0%'
+            percentage = (total_value / net_value).to_percentage() if net_value != ZERO else '0%'
             location_stats[location] = {
-                'usd_value': total_usd,
+                'value': total_value,
                 'percentage_of_net_value': percentage,
             }
 
@@ -1227,11 +1228,11 @@ class Rotkehlchen:
             asset: balance.to_dict() for asset, balance in liabilities.items()
         }
         for asset, balance_dict in assets_total_balance_as_dict.items():
-            percentage = (balance_dict['usd_value'] / net_usd).to_percentage() if net_usd != ZERO else '0%'  # noqa: E501
+            percentage = (balance_dict['value'] / net_value).to_percentage() if net_value != ZERO else '0%'  # noqa: E501
             assets_total_balance_as_dict[asset]['percentage_of_net_value'] = percentage
 
         for asset, balance_dict in liabilities_as_dict.items():
-            percentage = (balance_dict['usd_value'] / net_usd).to_percentage() if net_usd != ZERO else '0%'  # noqa: E501
+            percentage = (balance_dict['value'] / net_value).to_percentage() if net_value != ZERO else '0%'  # noqa: E501
             liabilities_as_dict[asset]['percentage_of_net_value'] = percentage
 
         # Compose balances response
@@ -1239,18 +1240,24 @@ class Rotkehlchen:
             'assets': assets_total_balance_as_dict,
             'liabilities': liabilities_as_dict,
             'location': location_stats,
-            'net_usd': net_usd,
+            'net_value': net_value,
         }
         with self.data.db.conn.read_ctx() as cursor:
             allowed_to_save = requested_save_data or self.data.db.should_save_balances(cursor)
             if (problem_free or save_despite_errors) and allowed_to_save:
                 if not timestamp:
                     timestamp = Timestamp(int(time.time()))
+                main_to_usd_rate = PriceHistorian.query_historical_price(
+                    from_asset=main_currency,
+                    to_asset=A_USD,
+                    timestamp=timestamp,
+                ) if (main_currency := CachedSettings().main_currency) != A_USD else Price(ONE)
                 with self.data.db.user_write() as write_cursor:
                     self.data.db.save_balances_data(
                         write_cursor=write_cursor,
                         data=result_dict,
                         timestamp=timestamp,
+                        main_to_usd_rate=main_to_usd_rate,
                     )
                 self._save_manual_prices_as_historical(result_dict)
                 log.debug('query_balances data saved')

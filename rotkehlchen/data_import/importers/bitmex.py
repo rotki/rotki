@@ -3,9 +3,8 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     UnsupportedCSVEntry,
@@ -21,7 +20,6 @@ from rotkehlchen.history.events.structures.asset_movement import (
     create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
-from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -69,17 +67,14 @@ class BitMEXImporter(BaseExchangeImporter):
             fee=fee,
             notes=notes,
         )
-        usd_price = PriceHistorian().query_historical_price(A_BTC, A_USD, close_time)
-        abs_amount = abs(realised_pnl)
-        asset_balance = AssetBalance(A_BTC, Balance(abs_amount, usd_price * abs_amount))
         return MarginPosition(
             location=Location.BITMEX,
             open_time=None,
             close_time=close_time,
             profit_loss=realised_pnl,
-            pl_currency=asset_balance.asset,
+            pl_currency=A_BTC,
             fee=fee,
-            fee_currency=asset_balance.asset,
+            fee_currency=A_BTC,
             notes=notes,
             link=f'Imported from BitMEX CSV file. Transact Type: {csv_row["transactType"]}',
         )

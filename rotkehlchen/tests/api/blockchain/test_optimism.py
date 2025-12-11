@@ -55,13 +55,13 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     assert 'liabilities' in account_balances
     asset_eth = account_balances['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_eth['amount']) >= ZERO
-    assert FVal(asset_eth['usd_value']) >= ZERO
+    assert FVal(asset_eth['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
     total_eth = result['totals']['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_eth['amount']) >= ZERO
-    assert FVal(total_eth['usd_value']) >= ZERO
+    assert FVal(total_eth['value']) >= ZERO
 
     now = ts_now()
     # now check that detecting tokens works
@@ -125,7 +125,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     for asset_id in (A_ETH.identifier, *optimism_tokens):
         asset = account_balances['assets'][asset_id][DEFAULT_BALANCE_LABEL]
         assert FVal(asset['amount']) >= ZERO
-        assert FVal(asset['usd_value']) >= ZERO
+        assert FVal(asset['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
@@ -133,4 +133,4 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     for asset_id in ('ETH', *optimism_tokens):
         asset = result['totals']['assets'][asset_id][DEFAULT_BALANCE_LABEL]
         assert FVal(asset['amount']) >= ZERO
-        assert FVal(asset['usd_value']) >= ZERO
+        assert FVal(asset['value']) >= ZERO

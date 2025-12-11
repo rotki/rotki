@@ -137,7 +137,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
         May raise RemoteError if there is a problem with querying the external service.
         """
         chain_balances: defaultdict[SolanaAddress, BalanceSheet] = defaultdict(BalanceSheet)
-        native_token_usd_price = Inquirer.find_price(
+        native_token_price = Inquirer.find_price(
             from_asset=A_SOL,
             to_asset=(main_currency := CachedSettings().main_currency),
         )
@@ -145,7 +145,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
             if balance != ZERO:
                 chain_balances[account].assets[A_SOL][DEFAULT_BALANCE_LABEL] = Balance(
                     amount=balance,
-                    usd_value=balance * native_token_usd_price,
+                    value=balance * native_token_price,
                 )
 
         for account in addresses:
@@ -154,7 +154,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
             for token, balance in token_balances.items():
                 chain_balances[account].assets[token][DEFAULT_BALANCE_LABEL] = Balance(
                     amount=balance,
-                    usd_value=balance * token_prices[token],
+                    value=balance * token_prices[token],
                 )
 
         return dict(chain_balances)

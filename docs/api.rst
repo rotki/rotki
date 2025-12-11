@@ -3424,13 +3424,14 @@ Querying all balances
                        "percentage_of_net_value": "90%",
                        "value": "4000"
                    }
-               }
+               },
+               "net_value": "4080.3"
 
           },
           "message": ""
       }
 
-   :resjson object result: The result object has two main subkeys. Assets and liabilities. Both assets and liabilities value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset or owed in total as a liability. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset or liability represents. And finally ``"usd_value"`` is the total $ value this asset/liability is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
+   :resjson object result: The result object has two main subkeys. Assets and liabilities. Both assets and liabilities value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset or owed in total as a liability. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset or liability represents. And finally ``"value"`` is the total value this asset/liability is worth in the user's main currency as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above. Finally, there is a ``"net_value"`` key which represents the total net value of all assets minus liabilities in the user's main currency.
    :statuscode 200: Balances successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.

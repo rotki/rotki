@@ -96,12 +96,12 @@ def test_evmlike_blockchain_balances(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     addy_0_balances = {
-        A_ETH: Balance(amount=FVal(10), usd_value=FVal(1000)),
-        A_DAI: Balance(amount=FVal(100), usd_value=FVal(100)),
+        A_ETH: Balance(amount=FVal(10), value=FVal(1000)),
+        A_DAI: Balance(amount=FVal(100), value=FVal(100)),
     }
     addy_1_balances = {
-        A_ETH: Balance(amount=FVal(5), usd_value=FVal(500)),
-        A_GNO: Balance(amount=FVal(50), usd_value=FVal(25)),
+        A_ETH: Balance(amount=FVal(5), value=FVal(500)),
+        A_GNO: Balance(amount=FVal(50), value=FVal(25)),
     }
 
     def serialize_balances(value: dict[Asset, Balance]) -> dict[str, dict]:

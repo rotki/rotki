@@ -98,13 +98,13 @@ def test_add_ksm_blockchain_account(
     assert 'liabilities' in account_balances
     asset_ksm = account_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
-    assert FVal(asset_ksm['usd_value']) >= ZERO
+    assert FVal(asset_ksm['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
     total_ksm = result['totals']['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_ksm['amount']) >= ZERO
-    assert FVal(total_ksm['usd_value']) >= ZERO
+    assert FVal(total_ksm['value']) >= ZERO
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -142,13 +142,13 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server: 'APIServer') -> N
     assert 'liabilities' in account_balances
     asset_ksm = account_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
-    assert FVal(asset_ksm['usd_value']) >= ZERO
+    assert FVal(asset_ksm['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
     total_ksm = result['totals']['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_ksm['amount']) >= ZERO
-    assert FVal(total_ksm['usd_value']) >= ZERO
+    assert FVal(total_ksm['value']) >= ZERO
 
     # Also make sure it's removed from the DB
     with rotki.data.db.conn.read_ctx() as cursor:

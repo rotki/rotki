@@ -80,13 +80,13 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
     assert 'liabilities' in account_balances
     asset_avax = account_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
-    assert FVal(asset_avax['usd_value']) >= ZERO
+    assert FVal(asset_avax['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
     total_avax = result['totals']['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_avax['amount']) >= ZERO
-    assert FVal(total_avax['usd_value']) >= ZERO
+    assert FVal(total_avax['value']) >= ZERO
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -124,13 +124,13 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> 
     assert 'liabilities' in account_balances
     asset_avax = account_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
-    assert FVal(asset_avax['usd_value']) >= ZERO
+    assert FVal(asset_avax['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
     total_avax = result['totals']['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_avax['amount']) >= ZERO
-    assert FVal(total_avax['usd_value']) >= ZERO
+    assert FVal(total_avax['value']) >= ZERO
     # Also make sure it's removed from the DB
     with rotki.data.db.conn.read_ctx() as cursor:
         db_accounts = rotki.data.db.get_blockchain_accounts(cursor)
