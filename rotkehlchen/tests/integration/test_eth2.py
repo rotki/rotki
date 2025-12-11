@@ -151,7 +151,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
     assert account1_events == 47
 
 
-# @pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-04-24 21:00:00 GMT')
 @pytest.mark.parametrize('ethereum_accounts', [[

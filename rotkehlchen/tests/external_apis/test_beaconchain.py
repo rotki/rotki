@@ -18,6 +18,7 @@ def test_query_chunks_empty_list():
     assert calculate_query_chunks([]) == []
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_eth1_validator_indices_single(beaconchain):
     address = '0x2bCF6fE9F95Fe5eCec37f69dFE00Bfb4668ac35D'
     validators = beaconchain.get_eth1_address_validators(address=address)
@@ -32,6 +33,7 @@ def test_get_eth1_validator_indices_single(beaconchain):
     assert validators[0].public_key == '0xadefb3de3c892823aa8d389a4b9582f56f64463db2b72b4d77c515d268cf695f9047604371eb73d2a514c8f711ae7eba'  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_eth1_validator_indices_multiple(beaconchain):
     address = '0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c'
     validators = beaconchain.get_eth1_address_validators(address=address)
