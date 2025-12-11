@@ -116,6 +116,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import (
@@ -857,6 +858,34 @@ class Inquirer:
         return Inquirer._find_prices(
             from_assets=from_assets,
             to_asset=to_asset,
+            ignore_cache=ignore_cache,
+            skip_onchain=skip_onchain,
+        )
+
+    @staticmethod
+    def find_main_currency_price(
+            from_asset: Asset,
+            ignore_cache: bool = False,
+            skip_onchain: bool = False,
+    ) -> Price:
+        """Find the price of an asset in the user's main currency."""
+        return Inquirer.find_price(
+            from_asset=from_asset,
+            to_asset=CachedSettings().main_currency,
+            ignore_cache=ignore_cache,
+            skip_onchain=skip_onchain,
+        )
+
+    @staticmethod
+    def find_main_currency_prices(
+            from_assets: Sequence[Asset],
+            ignore_cache: bool = False,
+            skip_onchain: bool = False,
+    ) -> dict[Asset, Price]:
+        """Find the prices of multiple assets in the user's main currency."""
+        return Inquirer.find_prices(
+            from_assets=from_assets,
+            to_asset=CachedSettings().main_currency,
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
         )
