@@ -15,6 +15,7 @@ const props = withDefaults(
     sizes?: string;
     alt?: string;
     contain?: boolean;
+    cover?: boolean;
     loading?: boolean;
   }>(),
   {
@@ -80,7 +81,7 @@ function onLoadStart() {
     <img
       v-else-if="error"
       :src="getPublicPlaceholderImagePath('image.svg')"
-      :class="{ 'object-contain': contain }"
+      :class="{ 'object-contain': contain, 'object-cover': cover }"
       loading="lazy"
       :style="style"
       :sizes="sizes"
@@ -89,7 +90,7 @@ function onLoadStart() {
     <img
       v-else
       :alt="alt"
-      :class="{ 'object-contain': contain }"
+      :class="{ 'object-contain': contain, 'object-cover': cover }"
       :style="style"
       :src="src"
       :sizes="sizes"
