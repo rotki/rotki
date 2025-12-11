@@ -6,13 +6,7 @@ import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInpu
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
-defineProps<{
-  modelValue: EthStakingFilter;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: EthStakingFilter): void;
-}>();
+const modelValue = defineModel<EthStakingFilter>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -21,16 +15,16 @@ const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 
 const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
 
-function updateValidators(validators: Eth2ValidatorEntry[]) {
-  emit('update:model-value', { validators });
+function updateValidators(validators: Eth2ValidatorEntry[]): void {
+  set(modelValue, { validators });
 }
 
-function updateAccounts(accounts: BlockchainAccount<AddressData>[]) {
+function updateAccounts(accounts: BlockchainAccount<AddressData>[]): void {
   const accountList = accounts.map(account => ({
     address: getAccountAddress(account),
     chain: account.chain,
   }));
-  emit('update:model-value', { accounts: accountList });
+  set(modelValue, { accounts: accountList });
 }
 
 watch(accounts, accounts => updateAccounts(accounts));

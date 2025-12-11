@@ -7,9 +7,10 @@ import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue'
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { EmptyListId, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
 
+const modelValue = defineModel<PrioritizedListId[]>({ required: true });
+
 const props = withDefaults(
   defineProps<{
-    modelValue: PrioritizedListId[];
     allItems: PrioritizedListData<PrioritizedListId>;
     itemDataName?: string;
     disableAdd?: boolean;
@@ -26,10 +27,6 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: PrioritizedListId[]): void;
-}>();
-
 defineSlots<{
   default: () => any;
   title: () => any;
@@ -38,7 +35,7 @@ defineSlots<{
 const { allItems, itemDataName } = toRefs(props);
 const selection = ref<Nullable<PrioritizedListId>>(null);
 
-const input = (items: PrioritizedListId[]) => emit('update:model-value', items);
+const input = (items: PrioritizedListId[]): void => set(modelValue, items);
 
 const itemNameTr = computed(() => {
   const name = get(itemDataName);
@@ -48,14 +45,14 @@ const itemNameTr = computed(() => {
   };
 });
 
-const missing = computed<PrioritizedListId[]>(() => get(allItems).itemIdsNotIn(props.modelValue));
+const missing = computed<PrioritizedListId[]>(() => get(allItems).itemIdsNotIn(get(modelValue)));
 
-const noResults = computed<boolean>(() => props.modelValue.length === 0);
+const noResults = computed<boolean>(() => get(modelValue).length === 0);
 
-const isFirst = (item: string): boolean => props.modelValue[0] === item;
+const isFirst = (item: string): boolean => get(modelValue)[0] === item;
 
 function isLast(item: string): boolean {
-  const items = props.modelValue;
+  const items = get(modelValue);
   return items.at(-1) === item;
 }
 
@@ -64,16 +61,16 @@ function itemData(identifier: PrioritizedListId): PrioritizedListItemData<Priori
   return data.itemDataForId(identifier) ?? { identifier: EmptyListId };
 }
 
-function addItem() {
+function addItem(): void {
   assert(get(selection));
-  const items = [...props.modelValue];
+  const items = [...get(modelValue)];
   items.push(get(selection)!);
   input(items);
   set(selection, null);
 }
 
-function move(item: PrioritizedListId, down: boolean) {
-  const items = [...props.modelValue];
+function move(item: PrioritizedListId, down: boolean): void {
+  const items = [...get(modelValue)];
   const itemIndex = items.indexOf(item);
   const nextIndex = itemIndex + (down ? 1 : -1);
   const nextItem = items[nextIndex];
@@ -82,8 +79,8 @@ function move(item: PrioritizedListId, down: boolean) {
   input(items);
 }
 
-function remove(item: PrioritizedListId) {
-  const items = [...props.modelValue];
+function remove(item: PrioritizedListId): void {
+  const items = [...get(modelValue)];
   const itemIndex = items.indexOf(item);
   items.splice(itemIndex, 1);
   input(items);

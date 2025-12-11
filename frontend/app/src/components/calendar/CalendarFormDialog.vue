@@ -16,8 +16,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'delete'): void;
-  (e: 'refresh'): void;
+  delete: [];
+  refresh: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

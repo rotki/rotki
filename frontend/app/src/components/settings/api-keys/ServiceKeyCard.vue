@@ -31,7 +31,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'confirm'): void;
+  confirm: [];
 }>();
 
 defineSlots<{

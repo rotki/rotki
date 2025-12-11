@@ -8,7 +8,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:addresses', addresses: string[]): void;
+  'update:addresses': [addresses: string[]];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

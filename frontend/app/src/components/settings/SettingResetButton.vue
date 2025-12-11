@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const emit = defineEmits<{ (e: 'click'): void }>();
+const emit = defineEmits<{
+  click: [];
+}>();
 const { t } = useI18n({ useScope: 'global' });
 </script>
 

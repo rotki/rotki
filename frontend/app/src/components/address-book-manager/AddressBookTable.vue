@@ -18,8 +18,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'edit', item: AddressBookEntry): void;
-  (e: 'refresh'): void;
+  edit: [item: AddressBookEntry];
+  refresh: [];
 }>();
 
 const { location } = toRefs(props);

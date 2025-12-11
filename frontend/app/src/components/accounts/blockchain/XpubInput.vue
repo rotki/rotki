@@ -11,28 +11,24 @@ import { toMessages } from '@/utils/validation';
 import { getKeyType, getPrefix, isPrefixed, keyType, XpubPrefix, type XpubType } from '@/utils/xpub';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const xpub = defineModel<XpubPayload | undefined>('xpub');
 
 const props = defineProps<{
   disabled: boolean;
-  xpub: XpubPayload | undefined;
   blockchain: BtcChains;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:xpub', xpub: XpubPayload | undefined): void;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { blockchain, disabled, xpub } = toRefs(props);
+const { blockchain, disabled } = toRefs(props);
 
 const xpubKey = ref<string>('');
 const derivationPath = ref<string>('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
 const advanced = ref(false);
 
-function updateXpub(event?: XpubPayload) {
-  emit('update:xpub', event);
+function updateXpub(event?: XpubPayload): void {
+  set(xpub, event);
 }
 
 function setXpubKeyType(value: string) {

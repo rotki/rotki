@@ -22,14 +22,14 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
 
+const modelValue = defineModel<Snapshot>({ required: true });
+
 const props = defineProps<{
-  modelValue: Snapshot;
   timestamp: number;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:step', step: number): void;
-  (e: 'update:model-value', value: Snapshot): void;
+  'update:step': [step: number];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -47,7 +47,7 @@ const showDeleteConfirmation = ref<boolean>(false);
 const indexToEdit = ref<number | null>(null);
 const indexToDelete = ref<number | null>(null);
 const locationToDelete = ref<string>('');
-const modelValue = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
+const formModel = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
 const tableRef = ref<any>();
 const sort = ref<DataTableSortData<BalanceSnapshot>>({
   column: 'usdValue',
@@ -60,7 +60,7 @@ const { useExchangeRate } = usePriceUtils();
 const fiatExchangeRate = computed<BigNumber>(() => get(useExchangeRate(get(currencySymbol))) ?? One);
 
 const data = computed<IndexedBalanceSnapshot[]>(() =>
-  props.modelValue.balancesSnapshot.map((item, index) => ({
+  get(modelValue).balancesSnapshot.map((item: BalanceSnapshot, index: number) => ({
     ...item,
     categoryLabel: isNft(item.assetIdentifier)
       ? `${item.category} (${t('dashboard.snapshot.edit.dialog.balances.nft')})`
@@ -79,7 +79,7 @@ const filteredData = computed<IndexedBalanceSnapshot[]>(() => {
 });
 
 const total = computed<BigNumber>(() => {
-  const totalEntry = props.modelValue.locationDataSnapshot.find(item => item.location === 'total');
+  const totalEntry = get(modelValue).locationDataSnapshot.find(item => item.location === 'total');
 
   if (!totalEntry)
     return Zero;
@@ -123,35 +123,34 @@ const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
 
 useRememberTableSorting<BalanceSnapshot>(TableId.EDIT_BALANCE_SNAPSHOT, sort, tableHeaders);
 
-function input(value: Snapshot) {
-  emit('update:model-value', value);
-}
-
-function updateStep(step: number) {
+function updateStep(step: number): void {
   emit('update:step', step);
 }
 
 const conflictedBalanceSnapshot = ref<BalanceSnapshot | null>(null);
 
-function checkAssetExist(asset: string) {
-  const assetFound = props.modelValue.balancesSnapshot.find(item => item.assetIdentifier === asset);
+function checkAssetExist(asset: string): void {
+  const assetFound = get(modelValue).balancesSnapshot.find((item: BalanceSnapshot) => item.assetIdentifier === asset);
   set(conflictedBalanceSnapshot, assetFound || null);
 }
 
-function closeConvertToEditDialog() {
+function closeConvertToEditDialog(): void {
   set(conflictedBalanceSnapshot, null);
 }
 
-function cancelConvertToEdit() {
-  set(modelValue, {
-    ...get(modelValue),
-    assetIdentifier: '',
-  });
+function cancelConvertToEdit(): void {
+  const currentFormModel = get(formModel);
+  if (currentFormModel) {
+    set(formModel, {
+      ...currentFormModel,
+      assetIdentifier: '',
+    });
+  }
 
   closeConvertToEditDialog();
 }
 
-function convertToEdit() {
+function convertToEdit(): void {
   assert(conflictedBalanceSnapshot);
   const item = get(data).find(
     ({ assetIdentifier }) => assetIdentifier === get(conflictedBalanceSnapshot)?.assetIdentifier,
@@ -163,7 +162,7 @@ function convertToEdit() {
   closeConvertToEditDialog();
 }
 
-function editClick(item: IndexedBalanceSnapshot) {
+function editClick(item: IndexedBalanceSnapshot): void {
   set(indexToEdit, item.index);
 
   const convertedFiatValue
@@ -171,7 +170,7 @@ function editClick(item: IndexedBalanceSnapshot) {
       ? item.usdValue.toFixed()
       : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
 
-  set(modelValue, {
+  set(formModel, {
     ...item,
     amount: item.amount.toFixed(),
     location: '',
@@ -182,18 +181,18 @@ function editClick(item: IndexedBalanceSnapshot) {
 }
 
 const existingLocations = computed<string[]>(() =>
-  props.modelValue.locationDataSnapshot.filter(item => item.location !== 'total').map(item => item.location),
+  get(modelValue).locationDataSnapshot.filter(item => item.location !== 'total').map(item => item.location),
 );
 
-function deleteClick(item: IndexedBalanceSnapshot) {
+function deleteClick(item: IndexedBalanceSnapshot): void {
   set(indexToDelete, item.index);
   set(showDeleteConfirmation, true);
   set(locationToDelete, '');
 }
 
-function add() {
+function add(): void {
   set(indexToEdit, null);
-  set(modelValue, {
+  set(formModel, {
     amount: '',
     assetIdentifier: '',
     category: BalanceType.ASSET,
@@ -205,13 +204,13 @@ function add() {
 }
 
 const previewLocationBalance = computed<Record<string, BigNumber> | null>(() => {
-  const formVal = get(modelValue);
+  const formVal = get(formModel);
 
   if (!formVal?.amount || !formVal.usdValue || !formVal.location)
     return null;
 
   const index = get(indexToEdit);
-  const val = props.modelValue;
+  const val = get(modelValue);
 
   const locationData = val.locationDataSnapshot.find(item => item.location === formVal.location);
 
@@ -251,7 +250,7 @@ const previewDeleteLocationBalance = computed<Record<string, BigNumber> | null>(
   if (index === null || !location)
     return null;
 
-  const val = props.modelValue;
+  const val = get(modelValue);
   const locationData = val.locationDataSnapshot.find(item => item.location === location);
   const balanceData = val.balancesSnapshot[index];
 
@@ -272,8 +271,8 @@ function updateData(
   balancesSnapshot: BalanceSnapshot[],
   location = '',
   calculatedBalance: Record<string, BigNumber> | null = null,
-) {
-  const val = props.modelValue;
+): void {
+  const val = get(modelValue);
   const locationDataSnapshot = [...val.locationDataSnapshot];
 
   if (location) {
@@ -297,41 +296,41 @@ function updateData(
     return item.usdValue.negated();
   });
 
-  const total = bigNumberSum(assetsValue);
+  const totalValue = bigNumberSum(assetsValue);
 
   const totalDataIndex = locationDataSnapshot.findIndex(item => item.location === 'total');
 
-  locationDataSnapshot[totalDataIndex].usdValue = total;
+  locationDataSnapshot[totalDataIndex].usdValue = totalValue;
 
-  input({
+  set(modelValue, {
     balancesSnapshot,
     locationDataSnapshot,
   });
 }
 
-async function save() {
+async function save(): Promise<boolean> {
   const formRef = get(form);
   const valid = await formRef?.validate();
   if (!valid)
     return false;
 
-  const data = get(modelValue);
+  const formData = get(formModel);
 
-  if (!data)
+  if (!formData)
     return false;
 
   set(submitting, true);
   const index = get(indexToEdit);
-  const val = props.modelValue;
+  const val = get(modelValue);
   const timestampVal = get(timestamp);
 
   const balancesSnapshot = [...val.balancesSnapshot];
   const payload = {
-    amount: bigNumberify(data.amount),
-    assetIdentifier: data.assetIdentifier,
-    category: data.category,
+    amount: bigNumberify(formData.amount),
+    assetIdentifier: formData.assetIdentifier,
+    category: formData.category,
     timestamp: timestampVal,
-    usdValue: bigNumberify(data.usdValue),
+    usdValue: bigNumberify(formData.usdValue),
   };
 
   if (index !== null)
@@ -340,26 +339,27 @@ async function save() {
 
   set(submitting, false);
 
-  updateData(balancesSnapshot, data.location, get(previewLocationBalance));
+  updateData(balancesSnapshot, formData.location, get(previewLocationBalance));
   formRef?.submitPrice();
   clearEditDialog();
+  return true;
 }
 
-function clearEditDialog() {
+function clearEditDialog(): void {
   set(openDialog, false);
   set(indexToEdit, null);
-  set(modelValue, null);
+  set(formModel, null);
 }
 
-function clearDeleteDialog() {
+function clearDeleteDialog(): void {
   set(indexToDelete, null);
   set(showDeleteConfirmation, false);
   set(locationToDelete, '');
 }
 
-function confirmDelete() {
+function confirmDelete(): void {
   const index = get(indexToDelete);
-  const val = props.modelValue;
+  const val = get(modelValue);
   const location = get(locationToDelete);
 
   if (index === null)
@@ -489,9 +489,9 @@ function confirmDelete() {
       @cancel="clearEditDialog()"
     >
       <EditBalancesSnapshotForm
-        v-if="modelValue"
+        v-if="formModel"
         ref="form"
-        v-model="modelValue"
+        v-model="formModel"
         v-model:state-updated="stateUpdated"
         :edit="!!indexToEdit"
         :preview-location-balance="previewLocationBalance"

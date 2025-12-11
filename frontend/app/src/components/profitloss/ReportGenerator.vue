@@ -8,9 +8,9 @@ import { Routes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 const emit = defineEmits<{
-  (e: 'generate', data: ProfitLossReportPeriod): void;
-  (e: 'export-data', data: ProfitLossReportPeriod): void;
-  (e: 'import-data'): void;
+  'generate': [data: ProfitLossReportPeriod];
+  'export-data': [data: ProfitLossReportPeriod];
+  'import-data': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

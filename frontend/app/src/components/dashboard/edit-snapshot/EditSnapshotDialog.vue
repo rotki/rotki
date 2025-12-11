@@ -15,8 +15,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'finish'): void;
+  close: [];
+  finish: [];
 }>();
 
 const { timestamp } = toRefs(props);

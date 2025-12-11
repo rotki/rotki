@@ -23,8 +23,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'delete-key', value: string): void;
-  (e: 'save', value: { name: string; apiKey: string }): void;
+  'delete-key': [value: string];
+  'save': [value: { name: string; apiKey: string }];
 }>();
 
 defineSlots<{

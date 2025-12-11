@@ -15,7 +15,7 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const props = defineProps<{ module: Module }>();
 
-const emit = defineEmits<{ (e: 'close'): void }>();
+const emit = defineEmits<{ close: [] }>();
 
 const { module } = toRefs(props);
 

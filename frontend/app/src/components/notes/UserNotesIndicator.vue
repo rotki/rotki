@@ -2,17 +2,12 @@
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useNotesCount } from '@/composables/notes/use-notes-count';
 
-const props = defineProps<{
-  visible: boolean;
-}>();
+const visible = defineModel<boolean>('visible', { required: true });
 
-const emit = defineEmits<{ (e: 'update:visible', visible: boolean): void }>();
-
-const { visible } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 
 function toggleVisibility(): void {
-  emit('update:visible', !get(visible));
+  set(visible, !get(visible));
 }
 
 const { hasSpecialNotes, notesCount } = useNotesCount();

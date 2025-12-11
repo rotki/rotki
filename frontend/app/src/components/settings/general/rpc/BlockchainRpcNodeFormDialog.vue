@@ -13,7 +13,7 @@ import { isBlockchain } from '@/types/blockchain/chains';
 const model = defineModel<BlockchainRpcNodeManageState | undefined>({ required: true });
 
 const emit = defineEmits<{
-  (e: 'complete'): void;
+  complete: [];
 }>();
 
 function resetForm() {

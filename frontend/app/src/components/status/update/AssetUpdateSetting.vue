@@ -7,7 +7,9 @@ defineProps<{
   loading: boolean;
 }>();
 
-const emit = defineEmits<{ (e: 'check'): void }>();
+const emit = defineEmits<{
+  check: [];
+}>();
 const { t } = useI18n({ useScope: 'global' });
 </script>
 

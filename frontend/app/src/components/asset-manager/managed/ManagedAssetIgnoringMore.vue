@@ -12,8 +12,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'toggle-whitelist'): void;
-  (e: 'toggle-spam'): void;
+  'toggle-whitelist': [];
+  'toggle-spam': [];
 }>();
 
 const { identifier } = toRefs(props);

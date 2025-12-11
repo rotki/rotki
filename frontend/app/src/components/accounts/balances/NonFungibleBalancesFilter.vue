@@ -2,31 +2,18 @@
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 
-const props = defineProps<{
-  selected: string[];
-  ignoredAssetsHandling: IgnoredAssetsHandlingType;
-}>();
+const selected = defineModel<string[]>('selected', { required: true });
+const ignoredAssetsHandling = defineModel<IgnoredAssetsHandlingType>('ignoredAssetsHandling', { required: true });
 
 const emit = defineEmits<{
-  (e: 'update:selected', selected: string[]): void;
-  (e: 'update:ignored-assets-handling', ignoredAssetsHandling: IgnoredAssetsHandlingType): void;
-  (e: 'mass-ignore', ignored: boolean): void;
+  'mass-ignore': [ignored: boolean];
 }>();
 
-const internalValue = computed({
-  get() {
-    return props.ignoredAssetsHandling;
-  },
-  set(value: IgnoredAssetsHandlingType) {
-    emit('update:ignored-assets-handling', value);
-  },
-});
-
-const disabledIgnoreActions = computed(() => {
-  const ignoredAssetsHandling = get(internalValue);
+const disabledIgnoreActions = computed<{ ignore: boolean; unIgnore: boolean }>(() => {
+  const handling = get(ignoredAssetsHandling);
   return {
-    ignore: ignoredAssetsHandling === IgnoredAssetHandlingType.SHOW_ONLY,
-    unIgnore: ignoredAssetsHandling === IgnoredAssetHandlingType.EXCLUDE,
+    ignore: handling === IgnoredAssetHandlingType.SHOW_ONLY,
+    unIgnore: handling === IgnoredAssetHandlingType.EXCLUDE,
   };
 });
 
@@ -55,7 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiButton
           size="sm"
           variant="outlined"
-          @click="emit('update:selected', [])"
+          @click="selected = []"
         >
           {{ t('common.actions.clear_selection') }}
         </RuiButton>
@@ -80,7 +67,7 @@ const { t } = useI18n({ useScope: 'global' });
           </div>
           <div class="pb-2 px-3">
             <RuiRadioGroup
-              v-model="internalValue"
+              v-model="ignoredAssetsHandling"
               class="mt-0"
               data-cy="asset-filter-ignored"
               hide-details

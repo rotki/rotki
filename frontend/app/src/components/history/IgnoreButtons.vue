@@ -7,7 +7,9 @@ withDefaults(
   { disabled: false, disabledActions: undefined },
 );
 
-const emit = defineEmits<{ (e: 'ignore', ignored: boolean): void }>();
+const emit = defineEmits<{
+  ignore: [ignored: boolean];
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

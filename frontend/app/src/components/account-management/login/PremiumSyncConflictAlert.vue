@@ -4,7 +4,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useSessionAuthStore } from '@/store/session/auth';
 
-const emit = defineEmits<{ (e: 'proceed', approval: 'yes' | 'no'): void }>();
+const emit = defineEmits<{ proceed: [approval: 'yes' | 'no'] }>();
 
 const { t } = useI18n({ useScope: 'global' });
 

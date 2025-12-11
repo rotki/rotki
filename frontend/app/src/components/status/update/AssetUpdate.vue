@@ -18,7 +18,9 @@ const props = withDefaults(defineProps<{ headless?: boolean }>(), {
   headless: false,
 });
 
-const emit = defineEmits<{ (e: 'skip'): void }>();
+const emit = defineEmits<{
+  skip: [];
+}>();
 
 const { headless } = toRefs(props);
 const checking = ref<boolean>(false);

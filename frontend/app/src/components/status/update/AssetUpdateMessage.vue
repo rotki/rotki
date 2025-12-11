@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import type { AssetVersionUpdate } from '@/types/asset';
 
-const props = defineProps<{
+const versions = defineModel<AssetVersionUpdate>('versions', { required: true });
+
+defineProps<{
   headless: boolean;
-  versions: AssetVersionUpdate;
 }>();
 
 const emit = defineEmits<{
-  (e: 'confirm'): void;
-  (e: 'dismiss', skipUpdate: boolean): void;
-  (e: 'update:versions', versions: AssetVersionUpdate): void;
+  confirm: [];
+  dismiss: [skipUpdate: boolean];
 }>();
-
-const { versions } = toRefs(props);
 
 const partial = ref<boolean>(false);
 const upToVersion = ref<string>('0');
@@ -43,7 +41,7 @@ function setUpdateVersion(version: number) {
   set(upToVersion, version.toString());
   const update = get(versions);
 
-  emit('update:versions', {
+  set(versions, {
     ...update,
     upToVersion: version,
   });

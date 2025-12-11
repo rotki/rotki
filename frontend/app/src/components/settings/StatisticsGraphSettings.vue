@@ -4,7 +4,7 @@ import InferZeroTimedBalancesSetting from '@/components/settings/InferZeroTimedB
 import SsfGraphMultiplierSetting from '@/components/settings/SsfGraphMultiplierSetting.vue';
 
 const emit = defineEmits<{
-  (e: 'updated'): void;
+  updated: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

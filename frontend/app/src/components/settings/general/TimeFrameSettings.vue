@@ -14,8 +14,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'timeframe-change', timeframe: TimeFrameSetting): void;
-  (e: 'visible-timeframes-change', timeframes: TimeFrameSetting[]): void;
+  'timeframe-change': [timeframe: TimeFrameSetting];
+  'visible-timeframes-change': [timeframes: TimeFrameSetting[]];
 }>();
 
 const { currentSessionTimeframe, message, value, visibleTimeframes } = toRefs(props);

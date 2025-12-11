@@ -4,33 +4,33 @@ import dayjs, { type Dayjs } from 'dayjs';
 import CalendarMonthDayItem from '@/components/calendar/CalendarMonthDayItem.vue';
 import CalendarWeekdays from '@/components/calendar/CalendarWeekdays.vue';
 
+const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });
+
 const props = defineProps<{
   today: Dayjs;
-  selectedDate: Dayjs;
   visibleDate: Dayjs;
   eventsWithDate: (CalendarEvent & { date: string })[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:selected-date', selectedDate: Dayjs): void;
-  (e: 'update:range', range: [number, number]): void;
-  (e: 'edit', event: CalendarEvent): void;
-  (e: 'add', selectedDate: Dayjs): void;
+  'update:range': [range: [number, number]];
+  'edit': [event: CalendarEvent];
+  'add': [selectedDate: Dayjs];
 }>();
 
-function setSelectedDate(day: Dayjs) {
-  emit('update:selected-date', day);
+function setSelectedDate(day: Dayjs): void {
+  set(selectedDate, day);
 }
 
-function edit(event: CalendarEvent) {
+function edit(event: CalendarEvent): void {
   emit('edit', event);
 }
 
-function add(day: Dayjs) {
+function add(day: Dayjs): void {
   emit('add', day);
 }
 
-const { eventsWithDate, selectedDate, today, visibleDate } = toRefs(props);
+const { eventsWithDate, today, visibleDate } = toRefs(props);
 
 const month = computed(() => Number(get(visibleDate).format('M')));
 const year = computed(() => Number(get(visibleDate).format('YYYY')));

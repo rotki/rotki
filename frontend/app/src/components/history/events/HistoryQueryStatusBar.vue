@@ -6,7 +6,7 @@ defineProps<{
   finished: boolean;
 }>();
 
-const emit = defineEmits<{ (e: 'reset'): void }>();
+const emit = defineEmits<{ reset: [] }>();
 </script>
 
 <template>

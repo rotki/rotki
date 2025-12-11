@@ -23,8 +23,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'edit-click'): void;
-  (e: 'delete-click'): void;
+  'edit-click': [];
+  'delete-click': [];
 }>();
 
 const editClick = () => emit('edit-click');

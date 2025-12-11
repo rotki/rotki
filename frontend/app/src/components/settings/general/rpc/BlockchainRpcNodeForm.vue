@@ -6,23 +6,16 @@ import { between, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { useRefPropVModel, useSimplePropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
-
-const props = defineProps<{
-  modelValue: BlockchainRpcNodeManageState;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: BlockchainRpcNodeManageState): void;
-}>();
+const modelValue = defineModel<BlockchainRpcNodeManageState>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
 
-const node = useSimplePropVModel(props, 'node', emit);
+const node = useRefPropVModel(modelValue, 'node');
 const owned = useRefPropVModel(node, 'owned');
 const name = useRefPropVModel(node, 'name');
 const endpoint = useRefPropVModel(node, 'endpoint');

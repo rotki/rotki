@@ -11,10 +11,11 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { size } from '@/utils/data';
 import { getFilepath } from '@/utils/file';
 
+const selected = defineModel<UserDbBackupWithId[]>('selected', { required: true });
+
 const props = withDefaults(
   defineProps<{
     items: UserDbBackupWithId[];
-    selected: UserDbBackupWithId[];
     loading?: boolean;
     directory: string;
   }>(),
@@ -24,8 +25,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:selected', backup: UserDbBackupWithId[]): void;
-  (e: 'remove', backup: UserDbBackupWithId): void;
+  remove: [backup: UserDbBackupWithId];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -35,18 +35,17 @@ const sort = ref<DataTableSortData<UserDbBackupWithId>>({
   direction: 'desc',
 });
 
-const selection = computed({
+const selection = computed<number[] | undefined>({
   get() {
-    return props.selected.map(x => x.id);
+    return get(selected).map(x => x.id);
   },
   set(value?: number[]) {
-    if (!value)
-      return [];
+    if (!value) {
+      set(selected, []);
+      return;
+    }
 
-    emit(
-      'update:selected',
-      props.items.filter(x => value.includes(x.id)),
-    );
+    set(selected, props.items.filter(x => value.includes(x.id)));
   },
 });
 

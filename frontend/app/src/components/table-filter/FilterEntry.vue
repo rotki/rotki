@@ -7,7 +7,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'click', matcher: SearchMatcher<any>): void;
+  click: [matcher: SearchMatcher<any>];
 }>();
 
 function click(matcher: SearchMatcher<any>) {

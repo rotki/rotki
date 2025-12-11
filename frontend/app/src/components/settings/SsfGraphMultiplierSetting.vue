@@ -7,7 +7,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
 
 const emit = defineEmits<{
-  (e: 'updated'): void;
+  updated: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

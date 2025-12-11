@@ -29,8 +29,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
-  (e: 'edit', value: ManualBalance): void;
+  refresh: [];
+  edit: [value: ManualBalance];
 }>();
 
 const { type } = toRefs(props);

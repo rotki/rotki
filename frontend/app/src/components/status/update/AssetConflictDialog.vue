@@ -12,8 +12,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'cancel'): void;
-  (e: 'resolve', resolution: ConflictResolution): void;
+  cancel: [];
+  resolve: [resolution: ConflictResolution];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

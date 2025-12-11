@@ -19,8 +19,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'set-dialog', value: boolean): void;
-  (e: 'regenerate'): void;
+  'set-dialog': [value: boolean];
+  'regenerate': [];
 }>();
 const ReportMissingAcquisitions = defineAsyncComponent(
   () => import('@/components/profitloss/ReportMissingAcquisitions.vue'),

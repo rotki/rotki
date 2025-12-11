@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  (e: 'update:matches', matches: MatchedKeywordWithBehaviour<any>): void;
+  'update:matches': [matches: MatchedKeywordWithBehaviour<any>];
 }>();
 
 defineSlots<{

@@ -12,7 +12,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'delete'): void;
+  delete: [];
 }>();
 
 const { latest } = toRefs(props);

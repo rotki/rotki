@@ -22,8 +22,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:uploaded', uploaded: boolean): void;
-  (e: 'update:error-message', message: string): void;
+  'update:uploaded': [uploaded: boolean];
+  'update:error-message': [message: string];
 }>();
 const { errorMessage, fileFilter, source, uploaded } = toRefs(props);
 

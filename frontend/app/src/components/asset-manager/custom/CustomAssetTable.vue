@@ -29,8 +29,8 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'edit', asset: CustomAsset): void;
-  (e: 'delete-asset', asset: CustomAsset): void;
+  'edit': [asset: CustomAsset];
+  'delete-asset': [asset: CustomAsset];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

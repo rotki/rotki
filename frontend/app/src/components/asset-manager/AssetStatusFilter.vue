@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
-import { useSimplePropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/utils/model';
 
 interface Model {
   onlyShowOwned: boolean;
@@ -9,22 +9,22 @@ interface Model {
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 }
 
-const props = defineProps<{
-  modelValue: Model;
+const modelValue = defineModel<Model>({ required: true });
+
+defineProps<{
   count: number;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: Model): void;
-  (e: 'refresh:ignored'): void;
+  'refresh:ignored': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const showMenu = ref(false);
+const showMenu = ref<boolean>(false);
 
-const handlingSelection = useSimplePropVModel(props, 'ignoredAssetsHandling', emit);
-const onlyShowOwned = useSimplePropVModel(props, 'onlyShowOwned', emit);
-const onlyShowWhitelisted = useSimplePropVModel(props, 'onlyShowWhitelisted', emit);
+const handlingSelection = useRefPropVModel(modelValue, 'ignoredAssetsHandling');
+const onlyShowOwned = useRefPropVModel(modelValue, 'onlyShowOwned');
+const onlyShowWhitelisted = useRefPropVModel(modelValue, 'onlyShowWhitelisted');
 
 watch(handlingSelection, (value) => {
   if (value === IgnoredAssetHandlingType.SHOW_ONLY)

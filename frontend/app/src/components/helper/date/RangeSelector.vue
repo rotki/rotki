@@ -13,7 +13,7 @@ import { toMessages } from '@/utils/validation';
 const modelValue = defineModel<{ start: number | undefined; end: number }>({ required: true });
 
 const emit = defineEmits<{
-  (e: 'update:valid', valid: boolean): void;
+  'update:valid': [valid: boolean];
 }>();
 
 const store = useFrontendSettingsStore();

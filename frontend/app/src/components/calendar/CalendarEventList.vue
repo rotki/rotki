@@ -10,7 +10,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'edit', event: CalendarEvent): void;
+  edit: [event: CalendarEvent];
 }>();
 
 function edit(event: CalendarEvent) {

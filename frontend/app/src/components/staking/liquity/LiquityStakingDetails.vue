@@ -28,7 +28,7 @@ import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
 const emit = defineEmits<{
-  (e: 'refresh', refresh: boolean): void;
+  refresh: [refresh: boolean];
 }>();
 
 defineSlots<{

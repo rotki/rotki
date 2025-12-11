@@ -26,8 +26,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:tab', tab: number): void;
-  (e: 'refresh'): void;
+  'update:tab': [tab: number];
+  'refresh': [];
 }>();
 
 const { editableItem, editMode, location, selectedChain } = toRefs(props);

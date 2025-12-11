@@ -13,7 +13,9 @@ const props = withDefaults(
   { popup: false },
 );
 
-const emit = defineEmits<{ (e: 'dismiss', id: number): void }>();
+const emit = defineEmits<{
+  dismiss: [id: number];
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { copy: copyToClipboard } = useClipboard();

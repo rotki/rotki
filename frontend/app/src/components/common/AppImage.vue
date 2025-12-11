@@ -34,9 +34,9 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'error'): void;
-  (e: 'load'): void;
-  (e: 'loadstart'): void;
+  error: [];
+  load: [];
+  loadstart: [];
 }>();
 
 const { height, maxHeight, maxWidth, size, width } = toRefs(props);

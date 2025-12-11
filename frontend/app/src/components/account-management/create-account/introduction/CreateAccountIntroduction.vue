@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 const emit = defineEmits<{
-  (e: 'next'): void;
+  next: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
