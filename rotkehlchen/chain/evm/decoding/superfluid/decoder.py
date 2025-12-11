@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
@@ -47,7 +47,7 @@ log = RotkehlchenLogsAdapter(logger)
 # The calculation for converting between the per second and monthly rates is defined as
 # amount of supertoken / ((365/12) * 24 * 60 * 60) = amount per second
 # https://docs.superfluid.org/docs/protocol/money-streaming/overview#flows-and-flow-rates
-MONTHLY_RATE_MULTIPLIER = FVal('2628000')  # ((365/12) * 24 * 60 * 60)
+MONTHLY_RATE_MULTIPLIER: Final = FVal('2628000')  # ((365/12) * 24 * 60 * 60)
 
 
 class SuperfluidCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):

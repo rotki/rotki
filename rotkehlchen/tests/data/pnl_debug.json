@@ -200,7 +200,8 @@
     "auto_detect_tokens": true,
     "csv_export_delimiter": ",",
     "default_evm_indexer_order": ["etherscan", "blockscout", "routescan"],
-    "evm_indexers_order": {"ethereum": ["etherscan", "blockscout", "routescan"], "optimism": ["etherscan", "blockscout", "routescan"], "polygon_pos": ["etherscan", "blockscout", "routescan"], "arbitrum_one": ["etherscan", "blockscout", "routescan"], "base": ["etherscan", "blockscout", "routescan"], "gnosis": ["etherscan", "blockscout", "routescan"], "scroll": ["etherscan", "blockscout", "routescan"], "binance_sc": ["etherscan", "blockscout", "routescan"]}
+    "evm_indexers_order": {"ethereum": ["etherscan", "blockscout", "routescan"], "optimism": ["etherscan", "blockscout", "routescan"], "polygon_pos": ["etherscan", "blockscout", "routescan"], "arbitrum_one": ["etherscan", "blockscout", "routescan"], "base": ["etherscan", "blockscout", "routescan"], "gnosis": ["etherscan", "blockscout", "routescan"], "scroll": ["etherscan", "blockscout", "routescan"], "binance_sc": ["etherscan", "blockscout", "routescan"]},
+    "events_processing_frequency": 86400
   },
   "ignored_events_ids": ["100x0xca0a482213c17ccb0471b02ffab40b92279ae7f25da53e426fda5e73e915509f"],
   "pnl_settings": {

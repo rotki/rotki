@@ -1498,3 +1498,39 @@ def test_maybe_update_morpho_cache_with_chain_ids(task_manager: TaskManager) -> 
         for mock_fn in (mock_vaults, mock_distributors):
             assert mock_fn.call_count == 2
             assert mock_fn.call_args[1]['chain_id'] in {ChainID.ETHEREUM, ChainID.BASE}
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('max_tasks_num', [1])
+def test_process_events_frequency(
+        task_manager: TaskManager,
+        db_settings: dict[str, Any],
+        freezer,
+) -> None:
+    """Check that the process events task frequency is controlled via the DB setting."""
+    database = task_manager.database
+    # check both the default (1 day) and a custom value of 1 hour
+    for time_delta, processing_frequency, should_run in (
+        (datetime.timedelta(), None, True),
+        (datetime.timedelta(hours=23), None, False),
+        (datetime.timedelta(hours=25), None, True),
+        (datetime.timedelta(minutes=59), HOUR_IN_SECONDS, False),
+        (datetime.timedelta(minutes=61), HOUR_IN_SECONDS, True),
+    ):
+        if processing_frequency is not None:
+            with database.conn.write_ctx() as write_cursor:
+                database.set_settings(
+                    write_cursor=write_cursor,
+                    settings=ModifiableDBSettings(
+                        events_processing_frequency=processing_frequency,
+                    ),
+                )
+
+        freezer.move_to(datetime.datetime.now(tz=datetime.UTC) + time_delta)
+        with patch('rotkehlchen.tasks.events.match_asset_movements') as match_events_mock:
+            task_manager.potential_tasks = [task_manager._maybe_run_events_processing]
+            task_manager.schedule()
+            if len(task_manager.running_greenlets):
+                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_run_events_processing])
+
+        assert match_events_mock.call_count == (1 if should_run else 0)

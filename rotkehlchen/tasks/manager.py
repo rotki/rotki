@@ -643,12 +643,14 @@ class TaskManager:
 
     def _maybe_run_events_processing(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules the events processing task which may combine/edit events"""
-        now = ts_now()
         with self.database.conn.read_ctx() as cursor:
-            result = self.database.get_static_cache(
-                cursor=cursor, name=DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
-            )
-            if result is not None and now - result <= DAY_IN_SECONDS:
+            if (
+                (result := self.database.get_static_cache(
+                    cursor=cursor,
+                    name=DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
+                )) is not None and
+                ts_now() - result <= CachedSettings().get_settings().events_processing_frequency
+            ):
                 return None
 
         task_name = 'Periodically process events'
