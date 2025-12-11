@@ -1,7 +1,7 @@
 {
   "abbreviateNumber": false,
   "amountRoundingMode": 0,
-  "balanceValueThreshold": {
+  "balanceUsdValueThreshold": {
     "BLOCKCHAIN": "0",
     "EXCHANGES": "0",
     "MANUAL": "0"

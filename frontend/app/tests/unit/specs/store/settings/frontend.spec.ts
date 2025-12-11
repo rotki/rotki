@@ -102,7 +102,7 @@ describe('settings:frontend', () => {
   it('restore', () => {
     const store = useFrontendSettingsStore(pinia);
     const state: FrontendSettings = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       defiSetupDone: true,
       language: SupportedLanguage.EN,
       timeframeSetting: TimeFramePeriod.YEAR,
