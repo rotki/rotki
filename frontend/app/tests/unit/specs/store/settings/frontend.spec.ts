@@ -88,7 +88,7 @@ describe('settings:frontend', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       savedFilters: {},
-      balanceUsdValueThreshold: {},
+      balanceValueThreshold: {},
       persistPrivacySettings: false,
     });
   });
@@ -168,7 +168,7 @@ describe('settings:frontend', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       subscriptDecimals: false,
       savedFilters: {},
-      balanceUsdValueThreshold: {
+      balanceValueThreshold: {
         [BalanceSource.EXCHANGES]: '0',
         [BalanceSource.BLOCKCHAIN]: '0',
         [BalanceSource.MANUAL]: '0',

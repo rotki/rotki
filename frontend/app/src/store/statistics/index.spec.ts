@@ -38,7 +38,6 @@ function createBalanceWithPrice(
     amount: amountBN,
     asset,
     usdPrice: priceBN,
-    usdValue,
     value,
   };
 }

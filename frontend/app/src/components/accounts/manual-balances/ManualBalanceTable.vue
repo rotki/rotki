@@ -85,7 +85,6 @@ function edit(balance: ManualBalanceWithPrice) {
   emit('edit', {
     ...omit(balance, [
       'value',
-      'usdValue',
       'usdPrice',
       'assetIsMissing',
     ]),

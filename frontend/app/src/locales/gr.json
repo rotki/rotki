@@ -30,9 +30,6 @@
       }
     },
     "edit_tooltip": "Επεξεργασία λογαριασμού",
-    "headers": {
-      "usd_value": "{symbol} value"
-    },
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
   },
   "account_form": {
@@ -774,8 +771,7 @@
   "asset_locations": {
     "header": {
       "percentage": "Percentage",
-      "validator": "Validator Index | Public Key",
-      "value": "{symbol} value"
+      "validator": "Validator Index | Public Key"
     },
     "title": "Asset Locations"
   },

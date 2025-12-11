@@ -100,7 +100,7 @@ function applyExclusionFilter<T extends BlockchainAccountBalance>(
 
   return {
     ...account,
-    includedUsdValue: sum(selectedAccounts),
+    includedValue: sum(selectedAccounts),
   };
 }
 
@@ -171,17 +171,17 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
             const chains = matches.map(match => match.chain).filter(uniqueStrings);
             const groupId = getGroupId({ chains, data: account.data });
             const exclusion = excluded[groupId];
-            const usdValue = sum(matches);
-            const includedUsdValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined;
+            const value = sum(matches);
+            const includedValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined;
 
             return {
               ...account,
               allChains: groupAccounts.map(item => item.chain),
               chains,
               expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
-              includedUsdValue,
+              includedValue,
               tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
-              usdValue,
+              value,
             };
           }
         }
@@ -297,11 +297,9 @@ export function* iterateAssets(
         const assetIdentifier = assetAssociationMap[identifier] ?? identifier;
         const balance = Object.values(protocolBalances).reduce((previousValue, currentValue) => ({
           amount: previousValue.amount.plus(currentValue.amount),
-          usdValue: previousValue.usdValue.plus(currentValue.usdValue),
           value: previousValue.value.plus(currentValue.value),
         }), {
           amount: Zero,
-          usdValue: Zero,
           value: Zero,
         });
         yield [assetIdentifier, balance] as const;
@@ -344,12 +342,10 @@ export function getAccountBalance(account: BlockchainAccount, chainBalances: Blo
         amount: assets[nativeAsset] && !isEmpty(assets[nativeAsset])
           ? Object.values(assets[nativeAsset]).reduce((previousValue, currentValue) => previousValue.plus(currentValue.amount), Zero)
           : Zero,
-        usdValue: valueSum,
         value: valueSum,
       }
     : {
         amount: Zero,
-        usdValue: Zero,
         value: Zero,
       };
 

@@ -24,10 +24,9 @@ export function exchangeAssetSum(balances: Record<string, Balance>): BigNumber {
   }, Zero);
 }
 
-export function balanceSum(sum: Balance, { amount, usdValue, value }: Balance): Balance {
+export function balanceSum(sum: Balance, { amount, value }: Balance): Balance {
   return {
     amount: sum.amount.plus(amount),
-    usdValue: sum.usdValue.plus(usdValue),
     value: sum.value.plus(value),
   };
 }

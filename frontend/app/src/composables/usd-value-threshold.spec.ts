@@ -1,12 +1,8 @@
-import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref, type ToRefs } from 'vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useCurrencies } from '@/types/currencies';
 import { BalanceSource } from '@/types/settings/frontend-settings';
-import { useUsdValueThreshold } from './usd-value-threshold';
+import { useValueThreshold } from './usd-value-threshold';
 
 type MockedStore<T extends (...args: any[]) => any> = ToRefs<Partial<ReturnType<T>>>;
 
@@ -19,71 +15,35 @@ function createMock<T>(overrides: ToRefs<Partial<T>>): T {
 
 vi.mock('@/store/settings/frontend', () => ({
   useFrontendSettingsStore: vi.fn((): MockedStore<typeof useFrontendSettingsStore> => ({
-    balanceUsdValueThreshold: ref({ BLOCKCHAIN: '10', EXCHANGES: '10', MANUAL: '10' }),
+    balanceValueThreshold: ref({ BLOCKCHAIN: '10', EXCHANGES: '10', MANUAL: '10' }),
   })),
 }));
 
-describe('useUsdValueThreshold', () => {
+describe('useValueThreshold', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    const { exchangeRates } = storeToRefs(useBalancePricesStore());
-    set(exchangeRates, {
-      EUR: bigNumberify(1.1),
-      JPY: bigNumberify(0.008),
-    });
   });
 
-  it('should return the threshold as is when currency is USD and value exists', () => {
-    const result = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
+  it('should return the threshold value for BLOCKCHAIN', () => {
+    const result = useValueThreshold(BalanceSource.BLOCKCHAIN);
     expect(get(result)).toBe('10');
   });
 
-  it('should convert the threshold value based on exchange rate when currency is not USD for BLOCKCHAIN', () => {
-    const currencies = useCurrencies();
-    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('EUR');
-    const result = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
-    expect(result.value).toBe('11'); // 10 * 1.1
+  it('should return the threshold value for EXCHANGES', () => {
+    const result = useValueThreshold(BalanceSource.EXCHANGES);
+    expect(get(result)).toBe('10');
   });
 
-  it('should NOT convert the threshold value for EXCHANGES even when currency is not USD', () => {
-    const currencies = useCurrencies();
-    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('EUR');
-    const result = useUsdValueThreshold(BalanceSource.EXCHANGES);
-    expect(result.value).toBe('10'); // No conversion
-  });
-
-  it('should NOT convert the threshold value for MANUAL even when currency is not USD', () => {
-    const currencies = useCurrencies();
-    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('EUR');
-    const result = useUsdValueThreshold(BalanceSource.MANUAL);
-    expect(result.value).toBe('10'); // No conversion
-  });
-
-  it('should return zero if the threshold is defined and is set to 0', () => {
-    vi.mocked(useFrontendSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useFrontendSettingsStore>>({
-      balanceUsdValueThreshold: ref({ BLOCKCHAIN: '0' }),
-    }));
-    const currencies = useCurrencies();
-    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('TRY');
-    const result = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
-    expect(result.value).toBe('0');
-  });
-
-  it('should return undefined when a threshold is zero after currency conversion', () => {
-    vi.mocked(useFrontendSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useFrontendSettingsStore>>({
-      balanceUsdValueThreshold: ref({ }),
-    }));
-    const currencies = useCurrencies();
-    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('TRY');
-    const result = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
-    expect(result.value).toBeUndefined();
+  it('should return the threshold value for MANUAL', () => {
+    const result = useValueThreshold(BalanceSource.MANUAL);
+    expect(get(result)).toBe('10');
   });
 
   it('should return undefined when no value threshold exists for the balance source', () => {
     vi.mocked(useFrontendSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useFrontendSettingsStore>>({
-      balanceUsdValueThreshold: ref({ }),
+      balanceValueThreshold: ref({}),
     }));
-    const result = useUsdValueThreshold(BalanceSource.MANUAL);
-    expect(result.value).toBeUndefined();
+    const result = useValueThreshold(BalanceSource.MANUAL);
+    expect(get(result)).toBeUndefined();
   });
 });

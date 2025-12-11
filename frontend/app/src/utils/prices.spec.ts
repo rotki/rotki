@@ -28,9 +28,10 @@ describe('utils/prices', () => {
 
       const result = updateBalancesPrices(balances, mockPrices);
 
-      expect(result.ETH.uniswap.usdValue).toEqual(bigNumberify(25000));
-      expect(result.ETH.compound.usdValue).toEqual(bigNumberify(12500));
-      expect(result.BTC.protocol1.usdValue).toEqual(bigNumberify(80000));
+      // Uses price.value (2000) for ETH, not usdPrice (2500)
+      expect(result.ETH.uniswap.value).toEqual(bigNumberify(20000));
+      expect(result.ETH.compound.value).toEqual(bigNumberify(10000));
+      expect(result.BTC.protocol1.value).toEqual(bigNumberify(80000));
     });
 
     it('should handle empty balances', () => {
@@ -57,7 +58,7 @@ describe('utils/prices', () => {
       };
 
       const result = updateBalancesPrices(balances, mockPrices);
-      expect(result.BTC.protocol1.usdValue).toEqual(bigNumberify(40000));
+      expect(result.BTC.protocol1.value).toEqual(bigNumberify(40000));
     });
 
     it('should handle empty protocols', () => {
@@ -77,8 +78,9 @@ describe('utils/prices', () => {
 
       const result = updateBalancesPrices(balances, mockPrices);
 
-      expect(result.ETH.protocol1.usdValue).toEqual(bigNumberify(2500));
-      expect(result.ETH.protocol2.usdValue).toEqual(bigNumberify(5000));
+      // Uses price.value (2000) for ETH, not usdPrice (2500)
+      expect(result.ETH.protocol1.value).toEqual(bigNumberify(2000));
+      expect(result.ETH.protocol2.value).toEqual(bigNumberify(4000));
     });
   });
 
@@ -91,8 +93,9 @@ describe('utils/prices', () => {
 
       const result = updateExchangeBalancesPrices(balances, mockPrices);
 
-      expect(result.ETH.usdValue).toEqual(bigNumberify(25000));
-      expect(result.DAI.usdValue).toEqual(bigNumberify(1000));
+      // Uses price.value (2000) for ETH, not usdPrice (2500)
+      expect(result.ETH.value).toEqual(bigNumberify(20000));
+      expect(result.DAI.value).toEqual(bigNumberify(1000));
     });
 
     it('should handle empty balances', () => {
@@ -133,10 +136,11 @@ describe('utils/prices', () => {
 
       const result = updateBlockchainAssetBalances(balances, mockPrices);
 
-      expect(result.eth['0xAddress1'].assets.ETH.native.usdValue).toEqual(bigNumberify(25000));
-      expect(result.eth['0xAddress1'].liabilities.DAI.compound.usdValue).toEqual(bigNumberify(1000));
-      expect(result.eth['0xAddress2'].assets.ETH.uniswap.usdValue).toEqual(bigNumberify(12500));
-      expect(result.btc.bc1Address.assets.BTC.native.usdValue).toEqual(bigNumberify(80000));
+      // Uses price.value (2000) for ETH, not usdPrice (2500)
+      expect(result.eth['0xAddress1'].assets.ETH.native.value).toEqual(bigNumberify(20000));
+      expect(result.eth['0xAddress1'].liabilities.DAI.compound.value).toEqual(bigNumberify(1000));
+      expect(result.eth['0xAddress2'].assets.ETH.uniswap.value).toEqual(bigNumberify(10000));
+      expect(result.btc.bc1Address.assets.BTC.native.value).toEqual(bigNumberify(80000));
     });
 
     it('should handle empty balances', () => {
@@ -184,7 +188,8 @@ describe('utils/prices', () => {
 
       const result = updateBlockchainAssetBalances(balances, mockPrices);
 
-      expect(result.eth['0xAddress'].assets.ETH.native.usdValue).toEqual(bigNumberify(25000));
+      // Uses price.value (2000) for ETH, not usdPrice (2500)
+      expect(result.eth['0xAddress'].assets.ETH.native.value).toEqual(bigNumberify(20000));
       expect(result.eth['0xAddress'].assets.UNKNOWN).toEqual(balances.eth['0xAddress'].assets.UNKNOWN);
     });
 
@@ -209,10 +214,11 @@ describe('utils/prices', () => {
 
       const result = updateBlockchainAssetBalances(balances, mockPrices);
 
-      expect(result.eth['0xAddress1'].assets.ETH.protocol1.usdValue).toEqual(bigNumberify(2500));
-      expect(result.eth['0xAddress1'].assets.DAI.protocol2.usdValue).toEqual(bigNumberify(100));
-      expect(result.eth['0xAddress1'].liabilities.DAI.lending1.usdValue).toEqual(bigNumberify(50));
-      expect(result.polygon['0xAddress2'].assets.ETH.bridge.usdValue).toEqual(bigNumberify(5000));
+      // Uses price.value (2000) for ETH, not usdPrice (2500)
+      expect(result.eth['0xAddress1'].assets.ETH.protocol1.value).toEqual(bigNumberify(2000));
+      expect(result.eth['0xAddress1'].assets.DAI.protocol2.value).toEqual(bigNumberify(100));
+      expect(result.eth['0xAddress1'].liabilities.DAI.lending1.value).toEqual(bigNumberify(50));
+      expect(result.polygon['0xAddress2'].assets.ETH.bridge.value).toEqual(bigNumberify(4000));
     });
   });
 
@@ -243,7 +249,7 @@ describe('utils/prices', () => {
 
       expect(endTime - startTime).toBeLessThan(100); // Should complete in less than 100ms
       expect(Object.keys(result)).toHaveLength(1000);
-      expect(result.ASSET_0.protocol_0.usdValue).toEqual(bigNumberify(1000));
+      expect(result.ASSET_0.protocol_0.value).toEqual(bigNumberify(1000));
     });
   });
 });

@@ -97,7 +97,7 @@ const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
     align: 'end',
     cellClass: 'py-2',
     key: 'value',
-    label: t('asset_locations.header.value', {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol) ?? CURRENCY_USD,
     }),
     sortable: true,
@@ -138,7 +138,6 @@ function getAssets(location: string): AssetBalance[] {
         amount: entry.amount,
         asset,
         value: entry.value,
-        usdValue: entry.usdValue,
       });
     }
   }

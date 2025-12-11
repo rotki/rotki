@@ -6,7 +6,7 @@ import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
-import { BalanceSource, type BalanceUsdValueThreshold } from '@/types/settings/frontend-settings';
+import { BalanceSource, type BalanceValueThreshold } from '@/types/settings/frontend-settings';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 
@@ -23,7 +23,7 @@ const applyToAllBalances = ref<boolean>(true);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const frontendStore = useFrontendSettingsStore();
-const { balanceUsdValueThreshold } = storeToRefs(frontendStore);
+const { balanceValueThreshold } = storeToRefs(frontendStore);
 
 const { useIsTaskRunning } = useTaskStore();
 const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);
@@ -67,12 +67,12 @@ const hint = computed(() => {
   return t('hide_small_balances.hint_zero');
 });
 
-async function applyChanges() {
+async function applyChanges(): Promise<void> {
   if (!(await get(v$).$validate())) {
     return;
   }
   const usedNumber = get(hide) ? get(hideBelow) : undefined;
-  let newState: BalanceUsdValueThreshold;
+  let newState: BalanceValueThreshold;
 
   if (get(applyToAllBalances)) {
     newState = usedNumber
@@ -85,16 +85,16 @@ async function applyChanges() {
   }
   else {
     newState = {
-      ...omit(get(balanceUsdValueThreshold), [props.source]),
+      ...omit(get(balanceValueThreshold), [props.source]),
       ...(usedNumber ? { [props.source]: usedNumber } : {}),
     };
   }
 
-  frontendStore.updateSetting({ balanceUsdValueThreshold: newState });
+  frontendStore.updateSetting({ balanceValueThreshold: newState });
 }
 
-watchImmediate([balanceUsdValueThreshold, open], ([balanceUsdValueThreshold]) => {
-  const data = balanceUsdValueThreshold[props.source];
+watchImmediate([balanceValueThreshold, open], ([balanceValueThreshold]) => {
+  const data = balanceValueThreshold[props.source];
 
   if (data) {
     set(hide, true);

@@ -28,7 +28,6 @@ describe('useBlockchainValidatorsStore', () => {
 
   const mockBalance: Balance = {
     amount: Zero,
-    usdValue: Zero,
     value: Zero,
   };
 
@@ -81,7 +80,7 @@ describe('useBlockchainValidatorsStore', () => {
       expect(validators[1], 'maps to zero balance').toEqual({
         ...mockValidatorData2,
         amount: Zero,
-        usdValue: Zero,
+        value: Zero,
       });
     });
   });

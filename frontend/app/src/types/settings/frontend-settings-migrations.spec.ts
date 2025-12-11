@@ -11,13 +11,13 @@ describe('frontend-settings-migrations', () => {
   it('should apply the frontend schema migration and preserve any user values', () => {
     const settings = {
       ...frontendSettings,
-      balanceUsdValueThreshold: {
+      balanceValueThreshold: {
         BLOCKCHAIN: '10',
         EXCHANGES: '11',
       },
     };
     expect(FrontendSettings.parse(applyMigrations(settings as any))).toEqual(getDefaultFrontendSettings({
-      balanceUsdValueThreshold: {
+      balanceValueThreshold: {
         BLOCKCHAIN: '10',
         EXCHANGES: '11',
       },

@@ -60,12 +60,12 @@ describe('useExchangeData', () => {
       address: '',
       amount: bigNumberify(2000),
       location: 'coinbase',
-      usdValue: bigNumberify(2000),
+      value: bigNumberify(2000),
     }, {
       address: '',
       amount: bigNumberify(1000),
       location: 'kraken',
-      usdValue: bigNumberify(1000),
+      value: bigNumberify(1000),
     }]);
 
     updateGeneralSettings({
@@ -76,12 +76,12 @@ describe('useExchangeData', () => {
       address: '',
       amount: bigNumberify(4000),
       location: 'coinbase',
-      usdValue: bigNumberify(4000),
+      value: bigNumberify(4000),
     }, {
       address: '',
       amount: bigNumberify(2000),
       location: 'kraken',
-      usdValue: bigNumberify(2000),
+      value: bigNumberify(2000),
     }]);
   });
 });

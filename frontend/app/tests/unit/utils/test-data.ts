@@ -14,7 +14,6 @@ export const testManualBalances: ManualBalanceWithValue[] = [{
   label: 'test 1',
   location: 'external',
   tags: [],
-  usdValue: bigNumberify(500),
   value: bigNumberify(500),
 }, {
   amount: bigNumberify(500),
@@ -24,7 +23,6 @@ export const testManualBalances: ManualBalanceWithValue[] = [{
   label: 'test 2',
   location: 'external',
   tags: [],
-  usdValue: bigNumberify(500),
   value: bigNumberify(500),
 }, {
   amount: bigNumberify(1000),
@@ -34,7 +32,6 @@ export const testManualBalances: ManualBalanceWithValue[] = [{
   label: 'test 3',
   location: 'kraken',
   tags: [],
-  usdValue: bigNumberify(1000),
   value: bigNumberify(1000),
 }, {
   amount: bigNumberify(500),
@@ -44,7 +41,6 @@ export const testManualBalances: ManualBalanceWithValue[] = [{
   label: 'test 4',
   location: 'kraken',
   tags: [],
-  usdValue: bigNumberify(500),
   value: bigNumberify(500),
 }, {
   amount: bigNumberify(500),
@@ -54,7 +50,6 @@ export const testManualBalances: ManualBalanceWithValue[] = [{
   label: 'test 5',
   location: 'kraken',
   tags: [],
-  usdValue: bigNumberify(500),
   value: bigNumberify(500),
 }];
 
@@ -62,17 +57,14 @@ export const testExchangeBalances: ExchangeData = {
   kraken: {
     aUSDC: {
       amount: bigNumberify(2000),
-      usdValue: bigNumberify(2000),
       value: bigNumberify(2000),
     },
     cUSDC: {
       amount: bigNumberify(1000),
-      usdValue: bigNumberify(1000),
       value: bigNumberify(1000),
     },
     GNO: {
       amount: bigNumberify(1000),
-      usdValue: bigNumberify(1000),
       value: bigNumberify(1000),
     },
   },
@@ -86,21 +78,18 @@ export const testEthereumBalances: BlockchainBalances = {
           aUSDC: {
             address: {
               amount: bigNumberify(400),
-              usdValue: bigNumberify(400),
               value: bigNumberify(400),
             },
           },
           cUSDC: {
             address: {
               amount: bigNumberify(300),
-              usdValue: bigNumberify(300),
               value: bigNumberify(300),
             },
           },
           GNO: {
             address: {
               amount: bigNumberify(300),
-              usdValue: bigNumberify(300),
               value: bigNumberify(300),
             },
           },
@@ -113,21 +102,18 @@ export const testEthereumBalances: BlockchainBalances = {
           aUSDC: {
             address: {
               amount: bigNumberify(800),
-              usdValue: bigNumberify(800),
               value: bigNumberify(800),
             },
           },
           cUSDC: {
             address: {
               amount: bigNumberify(800),
-              usdValue: bigNumberify(800),
               value: bigNumberify(800),
             },
           },
           GNO: {
             address: {
               amount: bigNumberify(400),
-              usdValue: bigNumberify(400),
               value: bigNumberify(400),
             },
           },

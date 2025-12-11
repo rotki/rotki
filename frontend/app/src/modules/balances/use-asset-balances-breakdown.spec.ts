@@ -61,21 +61,18 @@ describe('useAssetBalancesBreakdown', () => {
       amount: bigNumberify(2000),
       location: 'kraken',
       tags: undefined,
-      usdValue: bigNumberify(2000),
       value: bigNumberify(2000),
     }, {
       address: '0xaddress2',
       amount: bigNumberify(400),
       location: 'ethereum',
       tags: undefined,
-      usdValue: bigNumberify(400),
       value: bigNumberify(400),
     }, {
       address: '0xaddress1',
       amount: bigNumberify(300),
       location: 'ethereum',
       tags: undefined,
-      usdValue: bigNumberify(300),
       value: bigNumberify(300),
     }];
 
@@ -124,7 +121,6 @@ describe('useAssetBalancesBreakdown', () => {
         amount: bigNumberify(60),
         location: TRADE_LOCATION_BANKS,
         tags: undefined,
-        usdValue: bigNumberify(60),
         value: bigNumberify(60),
       }]);
     });
@@ -136,7 +132,6 @@ describe('useAssetBalancesBreakdown', () => {
         amount: bigNumberify(30),
         location: TRADE_LOCATION_BLOCKCHAIN,
         tags: undefined,
-        usdValue: bigNumberify(30),
         value: bigNumberify(30),
       }]);
 
@@ -145,7 +140,6 @@ describe('useAssetBalancesBreakdown', () => {
         amount: bigNumberify(50),
         location: TRADE_LOCATION_BLOCKCHAIN,
         tags: undefined,
-        usdValue: bigNumberify(50),
         value: bigNumberify(50),
       }]);
 
@@ -173,7 +167,6 @@ describe('useAssetBalancesBreakdown', () => {
         amount: bigNumberify(50),
         location: 'external',
         tags: undefined,
-        usdValue: bigNumberify(50),
         value: bigNumberify(50),
       }]);
 
@@ -186,7 +179,6 @@ describe('useAssetBalancesBreakdown', () => {
         amount: bigNumberify(150),
         location: 'external',
         tags: undefined,
-        usdValue: bigNumberify(150),
         value: bigNumberify(150),
       }]);
     });

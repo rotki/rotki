@@ -1,7 +1,7 @@
 import type { BlockchainBalancePayload, FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useStatusStore } from '@/store/status';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
@@ -17,7 +17,7 @@ interface UseBlockchainBalancesReturn {
 export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { supportedChains } = useSupportedChains();
   const { isLoading } = useStatusStore();
-  const usdValueThreshold = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
+  const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
   // Use services
   const { handleFetch } = useBalanceProcessingService();
@@ -34,7 +34,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     if (get(loading))
       await until(loading).toBe(false);
 
-    await handleFetch(payload, get(usdValueThreshold));
+    await handleFetch(payload, get(valueThreshold));
   };
 
   const fetchBlockchainBalances = async (

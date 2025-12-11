@@ -38,7 +38,12 @@ const itemsPerPage = useItemsPerPage();
 const { isMdAndDown } = useBreakpoint();
 
 const rui = createRuiPlugin({
-  table: { globalItemsPerPage: true, itemsPerPage, limits: [10, 25, 50, 100], stickyOffset: computed(() => get(isMdAndDown) ? 56 : 64) },
+  table: {
+    globalItemsPerPage: true,
+    itemsPerPage,
+    limits: [10, 25, 50, 100],
+    stickyOffset: computed(() => get(isMdAndDown) ? 56 : 64),
+  },
 });
 
 const search = window.location.search;

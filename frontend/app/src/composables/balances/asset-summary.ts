@@ -93,7 +93,7 @@ export function summarizeAssetProtocols(
       .map(([asset, protocolBalances]) =>
         createAssetBalanceFromAggregated(asset, protocolBalances, asset => getAssetPrice(asset, noPrice)),
       )
-      .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+      .sort((a, b) => sortDesc(a.value, b.value));
   }
 
   const { useCollectionId, useCollectionMainAsset } = collectionConfig;

@@ -83,7 +83,7 @@ describe('types/user', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       subscriptDecimals: false,
       savedFilters: {},
-      balanceUsdValueThreshold: {},
+      balanceValueThreshold: {},
       useHistoricalAssetBalances: false,
       scrambleData: false,
       scrambleMultiplier: 1,

@@ -45,7 +45,7 @@ const {
   state: accounts,
 } = usePaginationFilters<BlockchainAccountWithBalance, BlockchainAccountGroupRequestPayload>(fetchGroupAccounts, {
   defaultSortBy: {
-    column: 'usdValue',
+    column: 'value',
     direction: 'desc',
   },
   extraParams: computed(() => ({

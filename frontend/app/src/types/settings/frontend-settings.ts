@@ -106,15 +106,15 @@ export enum BalanceSource {
   MANUAL = 'MANUAL',
 }
 
-export const BalanceUsdValueThresholdV0 = z.object({
+export const BalanceValueThresholdV0 = z.object({
   [BalanceSource.BLOCKCHAIN]: z.string().default('0'),
   [BalanceSource.EXCHANGES]: z.string().default('0'),
   [BalanceSource.MANUAL]: z.string().default('0'),
 }).optional();
 
-export const BalanceUsdValueThresholdV1 = z.partialRecord(z.enum(BalanceSource), z.string().optional());
+export const BalanceValueThreshold = z.partialRecord(z.enum(BalanceSource), z.string().optional());
 
-export type BalanceUsdValueThreshold = z.infer<typeof BalanceUsdValueThresholdV1>;
+export type BalanceValueThreshold = z.infer<typeof BalanceValueThreshold>;
 
 const EvmQueryIndicatorMinOutOfSyncPeriod = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
 const EvmQueryIndicatorDismissalThreshold = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
@@ -126,7 +126,7 @@ const EnablePasswordConfirmation = z.boolean();
 export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
   amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
-  balanceUsdValueThreshold: BalanceUsdValueThresholdV1.default({}),
+  balanceValueThreshold: BalanceValueThreshold.default({}),
   blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
   ),

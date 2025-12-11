@@ -12,7 +12,6 @@ import { useEthValidatorData } from '@/composables/staking/eth/use-eth-validator
 import { useEthValidatorOperations } from '@/composables/staking/eth/use-eth-validator-operations';
 import { useEthValidatorUtils } from '@/composables/staking/eth/use-eth-validator-utils';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { SavedFilterLocation } from '@/types/filtering';
 
 const emit = defineEmits<{
@@ -41,9 +40,9 @@ const {
   refresh,
 } = useEthValidatorOperations();
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { getOwnershipPercentage, useTotal } = useEthValidatorUtils();
-const total = useTotal(rows);
+const { getOwnershipPercentage, useTotal, useTotalAmount } = useEthValidatorUtils();
+const totalValue = useTotal(rows);
+const totalAmount = useTotalAmount(rows);
 
 function edit(account: EthereumValidator) {
   emit('edit', editValidator(account));
@@ -157,10 +156,10 @@ defineExpose({
             :asset-padding="0.1"
           />
         </template>
-        <template #item.usdValue="{ row }">
+        <template #item.value="{ row }">
           <AmountDisplay
-            fiat-currency="USD"
-            :value="row.usdValue"
+            force-currency
+            :value="row.value"
             show-currency="symbol"
           />
         </template>
@@ -193,9 +192,18 @@ defineExpose({
             :right-patch-colspan="cols.length - 2"
             class-name="[&>td]:p-4 text-sm"
           >
+            <template #custom-columns>
+              <td class="text-end">
+                <AmountDisplay
+                  :value="totalAmount"
+                  asset="ETH"
+                  :asset-padding="0.1"
+                />
+              </td>
+            </template>
             <AmountDisplay
-              :fiat-currency="currencySymbol"
-              :value="total"
+              :value="totalValue"
+              force-currency
               show-currency="symbol"
             />
           </RowAppend>

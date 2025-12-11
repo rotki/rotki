@@ -29,9 +29,6 @@
       }
     },
     "edit_tooltip": "Konto ändern",
-    "headers": {
-      "usd_value": "{symbol} Wert"
-    },
     "refresh_tooltip": "Aktualisierung der {blockchain} Salden - gecachte Einträge werden ignoriert"
   },
   "account_form": {

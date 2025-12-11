@@ -2,7 +2,7 @@ import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
 import { useManualBalancesApi } from '@/composables/api/balances/manual';
 import { useStatusUpdater } from '@/composables/status';
-import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
@@ -36,7 +36,7 @@ export function useManualBalances(): UseManualBalancesReturn {
   const { awaitTask } = useTaskStore();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.MANUAL_BALANCES);
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
-  const usdValueThreshold = useUsdValueThreshold(BalanceSource.MANUAL);
+  const valueThreshold = useValueThreshold(BalanceSource.MANUAL);
   const { t } = useI18n({ useScope: 'global' });
 
   function updateBalances(balances: ManualBalanceWithValue[]): void {
@@ -66,7 +66,7 @@ export function useManualBalances(): UseManualBalancesReturn {
     const newStatus = currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus);
 
-    const threshold = get(usdValueThreshold);
+    const threshold = get(valueThreshold);
 
     try {
       const taskType = TaskType.MANUAL_BALANCES;

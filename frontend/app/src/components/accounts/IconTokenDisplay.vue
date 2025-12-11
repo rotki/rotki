@@ -22,7 +22,7 @@ const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 const showMore = computed<number>(() => get(assets).length - get(visible));
 const router = useRouter();
 
-async function navigateToAsset(asset: AssetBalance) {
+async function navigateToAsset(asset: AssetBalance): Promise<void> {
   await router.push({
     name: '/assets/[identifier]',
     params: {

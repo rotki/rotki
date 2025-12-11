@@ -42,21 +42,21 @@ describe('summarizeAssetProtocols with chains', () => {
     expect(result).toHaveLength(1);
     expect(result[0].asset).toBe('ETH');
     expect(result[0].amount.toString()).toBe('3');
-    expect(result[0].usdValue.toString()).toBe('300');
+    expect(result[0].value.toString()).toBe('300');
 
     // Check that chains data is preserved in perProtocol array
     expect(result[0].perProtocol).toBeDefined();
     const addressProtocol = result[0].perProtocol!.find(p => p.protocol === 'address')!;
     expect(addressProtocol).toBeDefined();
     // Assert that address protocol has chains property
-    const addressWithChains = addressProtocol as typeof addressProtocol & { chains: Record<string, { amount: any; usdValue: any }> };
+    const addressWithChains = addressProtocol as typeof addressProtocol & { chains: Record<string, { amount: any; value: any }> };
     expect(addressWithChains.chains).toBeDefined();
     expect(addressWithChains.chains.eth).toBeDefined();
     expect(addressWithChains.chains.eth.amount.toString()).toBe('1');
-    expect(addressWithChains.chains.eth.usdValue.toString()).toBe('100');
+    expect(addressWithChains.chains.eth.value.toString()).toBe('100');
     expect(addressWithChains.chains.polygon).toBeDefined();
     expect(addressWithChains.chains.polygon.amount.toString()).toBe('2');
-    expect(addressWithChains.chains.polygon.usdValue.toString()).toBe('200');
+    expect(addressWithChains.chains.polygon.value.toString()).toBe('200');
   });
 
   it('should not have chains property for non-address protocols', () => {
@@ -89,7 +89,7 @@ describe('summarizeAssetProtocols with chains', () => {
     expect(result).toHaveLength(1);
     expect(result[0].asset).toBe('ETH');
     expect(result[0].amount.toString()).toBe('3');
-    expect(result[0].usdValue.toString()).toBe('300');
+    expect(result[0].value.toString()).toBe('300');
     // Check that chains data is not present for non-address protocols
     expect(result[0].perProtocol).toBeDefined();
     const uniswapProtocol = result[0].perProtocol!.find(p => p.protocol === 'uniswap-v3')!;
@@ -152,14 +152,14 @@ describe('summarizeAssetProtocols with chains', () => {
     expect(result).toHaveLength(1);
     expect(result[0].asset).toBe('asset-1');
     expect(result[0].amount.toString()).toBe('3');
-    expect(result[0].usdValue.toString()).toBe('300');
+    expect(result[0].value.toString()).toBe('300');
 
     // Check that chains data is aggregated in perProtocol array
     expect(result[0].perProtocol).toBeDefined();
     const addressProtocol = result[0].perProtocol!.find(p => p.protocol === 'address')!;
     expect(addressProtocol).toBeDefined();
     // Assert that address protocol has chains property
-    const addressWithChains = addressProtocol as typeof addressProtocol & { chains: Record<string, { amount: any; usdValue: any }> };
+    const addressWithChains = addressProtocol as typeof addressProtocol & { chains: Record<string, { amount: any; value: any }> };
     expect(addressWithChains.chains).toBeDefined();
     expect(addressWithChains.chains.eth).toBeDefined();
     expect(addressWithChains.chains.eth.amount.toString()).toBe('1');

@@ -10,7 +10,7 @@ import { EvmTokensRecord } from '@/types/balances';
 import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseBlockchainBalancesApiReturn {
-  queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, usdValueThreshold?: string) => Promise<PendingTask>;
+  queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<PendingTask>;
   queryXpubBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   queryLoopringBalances: () => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
@@ -27,7 +27,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const queryBlockchainBalances = async ({ addresses, blockchain, ignoreCache }: FetchBlockchainBalancePayload, usdValueThreshold?: string): Promise<PendingTask> => {
+  const queryBlockchainBalances = async ({ addresses, blockchain, ignoreCache }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
@@ -37,7 +37,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
         addresses,
         asyncQuery: true,
         ignoreCache: ignoreCache ? true : undefined,
-        usdValueThreshold,
+        valueThreshold,
       },
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
     });

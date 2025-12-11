@@ -52,7 +52,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const enableAliasNames = useComputedRef(settings, 'enableAliasNames');
   const blockchainRefreshButtonBehaviour = useComputedRef(settings, 'blockchainRefreshButtonBehaviour');
   const savedFilters = useComputedRef(settings, 'savedFilters');
-  const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
+  const balanceValueThreshold = useComputedRef(settings, 'balanceValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
   const notifyNewNfts = useComputedRef(settings, 'notifyNewNfts');
   const persistPrivacySettings = useComputedRef(settings, 'persistPrivacySettings');
@@ -126,7 +126,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   return {
     abbreviateNumber,
     amountRoundingMode,
-    balanceUsdValueThreshold,
+    balanceValueThreshold,
     blockchainRefreshButtonBehaviour,
     currencyLocation,
     darkTheme,
