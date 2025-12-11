@@ -444,7 +444,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 'kraken balance query result',
                 currency=our_asset,
                 amount=balance.amount,
-                usd_value=balance.usd_value,
+                value=balance.value,
             )
 
         return dict(assets_balance), ''

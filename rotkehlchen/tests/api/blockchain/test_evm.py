@@ -101,13 +101,13 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server: 'APISe
         assert 'liabilities' in account_balances
         asset_token = account_balances['assets'][native_token.identifier][DEFAULT_BALANCE_LABEL]
         assert FVal(asset_token['amount']) >= ZERO
-        assert FVal(asset_token['usd_value']) >= ZERO
+        assert FVal(asset_token['value']) >= ZERO
 
         # Check totals
         assert 'liabilities' in result['totals']
         total_token = result['totals']['assets'][native_token.identifier][DEFAULT_BALANCE_LABEL]
         assert FVal(total_token['amount']) >= ZERO
-        assert FVal(total_token['usd_value']) >= ZERO
+        assert FVal(total_token['value']) >= ZERO
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

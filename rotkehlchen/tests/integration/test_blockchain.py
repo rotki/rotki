@@ -24,7 +24,7 @@ def test_query_btc_balances(blockchain):
     )
 
     blockchain._query_chain_balances(blockchain=SupportedBlockchain.BITCOIN)
-    assert blockchain.totals.assets[A_BTC][DEFAULT_BALANCE_LABEL].usd_value is not None
+    assert blockchain.totals.assets[A_BTC][DEFAULT_BALANCE_LABEL].value is not None
     assert blockchain.totals.assets[A_BTC][DEFAULT_BALANCE_LABEL].amount is not None
 
 

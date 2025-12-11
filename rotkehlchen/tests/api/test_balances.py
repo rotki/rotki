@@ -95,32 +95,32 @@ def assert_all_balances(
     assert result['liabilities'] == {}
     assets = result['assets']
     assert FVal(assets['ETH']['amount']) == total_eth
-    assert assets['ETH']['usd_value'] is not None
+    assert assets['ETH']['value'] is not None
     assert assets['ETH']['percentage_of_net_value'] is not None
     assert FVal(assets[A_RDN.identifier]['amount']) == total_rdn
-    assert assets[A_RDN.identifier]['usd_value'] is not None
+    assert assets[A_RDN.identifier]['value'] is not None
     assert assets[A_RDN.identifier]['percentage_of_net_value'] is not None
     assert FVal(assets['BTC']['amount']) == total_btc
-    assert assets['BTC']['usd_value'] is not None
+    assert assets['BTC']['value'] is not None
     assert assets['BTC']['percentage_of_net_value'] is not None
     if total_eur != ZERO:
         assert FVal(assets['EUR']['amount']) == total_eur
         assert assets['EUR']['percentage_of_net_value'] is not None
 
-    assert result['net_usd'] is not None
+    assert result['net_value'] is not None
     # Check that the 4 locations are there
     assert len(result['location']) == 5 if got_external else 4
-    assert result['location']['binance']['usd_value'] is not None
+    assert result['location']['binance']['value'] is not None
     assert result['location']['binance']['percentage_of_net_value'] is not None
-    assert result['location']['poloniex']['usd_value'] is not None
+    assert result['location']['poloniex']['value'] is not None
     assert result['location']['poloniex']['percentage_of_net_value'] is not None
-    assert result['location']['blockchain']['usd_value'] is not None
+    assert result['location']['blockchain']['value'] is not None
     assert result['location']['blockchain']['percentage_of_net_value'] is not None
     if total_eur != ZERO:
-        assert result['location']['banks']['usd_value'] is not None
+        assert result['location']['banks']['value'] is not None
         assert result['location']['banks']['percentage_of_net_value'] is not None
     if got_external:
-        assert result['location']['external']['usd_value'] is not None
+        assert result['location']['external']['value'] is not None
         assert result['location']['external']['percentage_of_net_value'] is not None
 
     with db.conn.read_ctx() as cursor:
@@ -177,7 +177,6 @@ def assert_all_balances(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-@pytest.mark.skip(reason='Skip test until usd_value -> value migration is complete')
 def test_query_all_balances(
         rotkehlchen_api_server_with_exchanges: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
@@ -266,7 +265,6 @@ def test_query_all_balances(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-@pytest.mark.skip(reason='Skip test until usd_value -> value migration is complete')
 def test_query_all_balances_ignore_cache(
         rotkehlchen_api_server_with_exchanges: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
@@ -407,7 +405,6 @@ def test_query_all_balances_ignore_cache(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-@pytest.mark.skip(reason='Skip test until usd_value -> value migration is complete')
 def test_query_all_balances_with_manually_tracked_balances(
         rotkehlchen_api_server_with_exchanges: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
@@ -630,7 +627,7 @@ def test_balance_snapshot_error_message(
         )
 
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'assets': {}, 'liabilities': {}, 'location': {}, 'net_usd': '0'}
+    assert result == {'assets': {}, 'liabilities': {}, 'location': {}, 'net_value': '0'}
     websocket_connection.wait_until_messages_num(num=2, timeout=10)
     assert websocket_connection.messages_num() == 2
     msg = websocket_connection.pop_message()
@@ -657,7 +654,6 @@ def test_balance_snapshot_error_message(
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('separate_blockchain_calls', [True, False])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-@pytest.mark.skip(reason='Skip test until usd_value -> value migration is complete')
 def test_multiple_balance_queries_not_concurrent(
         rotkehlchen_api_server_with_exchanges: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
@@ -863,19 +859,19 @@ def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer', ksm_accounts: l
     assert 'liabilities' in account_1_balances
     asset_ksm = account_1_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
-    assert FVal(asset_ksm['usd_value']) >= ZERO
+    assert FVal(asset_ksm['value']) >= ZERO
 
     account_2_balances = result['per_account'][ksm_chain_key][ksm_accounts[1]]
     assert 'liabilities' in account_2_balances
     asset_ksm = account_2_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
-    assert FVal(asset_ksm['usd_value']) >= ZERO
+    assert FVal(asset_ksm['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
     total_ksm = result['totals']['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_ksm['amount']) >= ZERO
-    assert FVal(total_ksm['usd_value']) >= ZERO
+    assert FVal(total_ksm['value']) >= ZERO
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -915,19 +911,19 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
     assert 'liabilities' in account_1_balances
     asset_avax = account_1_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
-    assert FVal(asset_avax['usd_value']) >= ZERO
+    assert FVal(asset_avax['value']) >= ZERO
 
     account_2_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC2_AVAX_ADDR]
     assert 'liabilities' in account_2_balances
     asset_avax = account_2_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
-    assert FVal(asset_avax['usd_value']) >= ZERO
+    assert FVal(asset_avax['value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
     total_avax = result['totals']['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_avax['amount']) >= ZERO
-    assert FVal(total_avax['usd_value']) >= ZERO
+    assert FVal(total_avax['value']) >= ZERO
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1069,9 +1065,9 @@ def test_blockchain_balances_refresh(
 
         one_time_query_result = query_blockchain_balance(1)
         assert one_time_query_result['per_account']['eth'][ethereum_accounts[0]]['assets'] == {
-            A_USDC.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '23', 'value': '230', 'usd_value': '0'}},  # noqa: E501
-            A_DAI.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '3', 'value': '33', 'usd_value': '0'}},  # noqa: E501
-            A_USDT.identifier: {'makerdao vault': {'amount': '3', 'value': '54', 'usd_value': '0'}},  # noqa: E501
+            A_USDC.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '23', 'value': '230'}},
+            A_DAI.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '3', 'value': '33'}},
+            A_USDT.identifier: {'makerdao vault': {'amount': '3', 'value': '54'}},
         }
         assert one_time_query_result == query_blockchain_balance(4)
 
@@ -1211,10 +1207,10 @@ def test_query_liquity_balances(
 
     account_balances = result['per_account'][eth_chain_key][ethereum_accounts[0]]
     assert account_balances['assets'] == {A_ETH: {
-        DEFAULT_BALANCE_LABEL: {'amount': '0.068955497233628915', 'value': '0.1034332458504433725', 'usd_value': '0'},  # noqa: E501
-        CPT_LIQUITY: {'amount': '4.08915844880891399', 'value': '6.133737673213370985', 'usd_value': '0'},  # noqa: E501
+        DEFAULT_BALANCE_LABEL: {'amount': '0.068955497233628915', 'value': '0.1034332458504433725'},  # noqa: E501
+        CPT_LIQUITY: {'amount': '4.08915844880891399', 'value': '6.133737673213370985'},
     }}
-    assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'value': '3283.0103582835479670825', 'usd_value': '0'}}}  # noqa: E501
+    assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'value': '3283.0103582835479670825'}}}  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

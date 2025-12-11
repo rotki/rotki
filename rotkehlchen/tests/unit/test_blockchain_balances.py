@@ -46,20 +46,20 @@ def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_
         xpub_data = xpub2
         a = BlockchainBalances(db)
         for btc_addy in all_btc_addresses:
-            a.btc[btc_addy] = Balance(amount=ONE, usd_value=ONE)
+            a.btc[btc_addy] = Balance(amount=ONE, value=ONE)
     else:
         a = BlockchainBalances(None)
-        a.btc[UNIT_BTC_ADDRESS1] = Balance(amount=ONE, usd_value=ONE)
-        a.bch[UNIT_BTC_ADDRESS1] = Balance(amount=ONE, usd_value=ONE)
+        a.btc[UNIT_BTC_ADDRESS1] = Balance(amount=ONE, value=ONE)
+        a.bch[UNIT_BTC_ADDRESS1] = Balance(amount=ONE, value=ONE)
         all_btc_addresses = (UNIT_BTC_ADDRESS1,)
         xpub_data = None
 
     address1 = make_evm_address()
     address2 = make_evm_address()
     a.eth[address1] = BalanceSheet()
-    a.eth[address1].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, usd_value=ONE)
-    a.optimism[address2].assets[OPTIMISM_OP_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, usd_value=ONE)  # noqa: E501
-    a.optimism[address2].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, usd_value=ONE)
+    a.eth[address1].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    a.optimism[address2].assets[OPTIMISM_OP_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)  # noqa: E501
+    a.optimism[address2].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
 
     yield a, address1, address2, all_btc_addresses, xpub_data
     if use_db is True:
@@ -70,40 +70,40 @@ def test_copy():
     a = BlockchainBalances(None)
     address = make_evm_address()
     a.eth[address] = BalanceSheet()
-    a.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, usd_value=ONE)
+    a.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
     b = a.copy()
 
-    a.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] += Balance(amount=ONE, usd_value=ONE)
+    a.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] += Balance(amount=ONE, value=ONE)
 
-    assert a.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=FVal('2'), usd_value=FVal('2'))  # noqa: E501
-    assert b.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=ONE, usd_value=ONE)  # noqa: E501
+    assert a.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=FVal('2'), value=FVal('2'))  # noqa: E501
+    assert b.eth[address].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(amount=ONE, value=ONE)
 
 
 def test_recalculate_totals(blockchain_balances):
     a, address1, address2, _, _ = blockchain_balances
     assert a.recalculate_totals() == BalanceSheet(
         assets={
-            OPTIMISM_OP_TOKEN: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, usd_value=ONE)},
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))},
-            A_BTC: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, usd_value=ONE)},
-            A_BCH: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, usd_value=ONE)},
+            OPTIMISM_OP_TOKEN: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), value=FVal('2'))},
+            A_BTC: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
+            A_BCH: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
         },
     )
 
     # do a change and see it's taken into account at recalculate
     a.eth[address2] = BalanceSheet()
-    a.eth[address2].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, usd_value=ONE)
-    a.eth[address1].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('4'), usd_value=FVal('4'))  # noqa: E501
-    a.bch[UNIT_BTC_ADDRESS1] = Balance(amount=FVal('5'), usd_value=FVal('5'))
-    a.optimism[address2].assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), usd_value=FVal('100'))  # noqa: E501
+    a.eth[address2].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    a.eth[address1].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('4'), value=FVal('4'))  # noqa: E501
+    a.bch[UNIT_BTC_ADDRESS1] = Balance(amount=FVal('5'), value=FVal('5'))
+    a.optimism[address2].assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), value=FVal('100'))  # noqa: E501
     a.optimism[address2].assets.pop('ETH')
     assert a.recalculate_totals() == BalanceSheet(
         assets={
-            OPTIMISM_OP_TOKEN: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, usd_value=ONE)},
-            OPTIMISM_USDC_TOKEN:  {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('100'), usd_value=FVal('100'))},  # noqa: E501
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5'))},
-            A_BTC: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, usd_value=ONE)},
-            A_BCH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5'))},
+            OPTIMISM_OP_TOKEN: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
+            OPTIMISM_USDC_TOKEN:  {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('100'), value=FVal('100'))},  # noqa: E501
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), value=FVal('5'))},
+            A_BTC: {DEFAULT_BALANCE_LABEL: Balance(amount=ONE, value=ONE)},
+            A_BCH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), value=FVal('5'))},
         },
     )
 
@@ -116,33 +116,33 @@ def test_serialize(blockchain_balances):
     expected_serialized_dict = {
         SupportedBlockchain.BITCOIN.serialize(): {
             'standalone': {
-                '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                '16zNpyv8KxChtjXnE5nYcPqcXcrSQXX2JW': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                '16zNpyv8KxChtjXnE5oYcPqcXcrSQXX2JJ': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe': {'amount': '1', 'usd_value': '1', 'value': '0'}},  # noqa: E501
+                '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd': {'amount': '1', 'value': '1'},
+                '16zNpyv8KxChtjXnE5nYcPqcXcrSQXX2JW': {'amount': '1', 'value': '1'},
+                '16zNpyv8KxChtjXnE5oYcPqcXcrSQXX2JJ': {'amount': '1', 'value': '1'},
+                '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r': {'amount': '1', 'value': '1'},
+                '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe': {'amount': '1', 'value': '1'}},
             'xpubs': [
                 {
                     'addresses': {
-                        'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                        'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                        'bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                        'bc1qr5r8vryfzexvhjrx5fh5uj0s2ead8awpqspalz': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
-                        'bc1qup7f8g5k3h5uqzfjed03ztgn8hhe542w69wc0g': {'amount': '1', 'usd_value': '1', 'value': '0'},  # noqa: E501
+                        'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5': {'amount': '1', 'value': '1'},  # noqa: E501
+                        'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev': {'amount': '1', 'value': '1'},  # noqa: E501
+                        'bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra': {'amount': '1', 'value': '1'},  # noqa: E501
+                        'bc1qr5r8vryfzexvhjrx5fh5uj0s2ead8awpqspalz': {'amount': '1', 'value': '1'},  # noqa: E501
+                        'bc1qup7f8g5k3h5uqzfjed03ztgn8hhe542w69wc0g': {'amount': '1', 'value': '1'},  # noqa: E501
                     },
                     'derivation_path': 'm/0',
                     'xpub': xpub_data.xpub.xpub}]},
         ethereum_chain_key: {
             address1: {
-                'assets': {'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1', 'value': '0'}}},  # noqa: E501
+                'assets': {'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'value': '1'}}},
                 'liabilities': {},
             },
         },
         optimism_chain_key: {
             address2: {
                 'assets': {
-                    'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1', 'value': '0'}},  # noqa: E501
-                    OPTIMISM_OP_TOKEN.serialize(): {DEFAULT_BALANCE_LABEL: {'amount': '1', 'usd_value': '1', 'value': '0'}},  # noqa: E501
+                    'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '1', 'value': '1'}},
+                    OPTIMISM_OP_TOKEN.serialize(): {DEFAULT_BALANCE_LABEL: {'amount': '1', 'value': '1'}},  # noqa: E501
                 },
                 'liabilities': {},
             },
@@ -151,8 +151,8 @@ def test_serialize(blockchain_balances):
     assert a.serialize(given_chain=None) == expected_serialized_dict
 
     # change something and see it is also reflected in the serialized dict
-    a.optimism[address2].assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), usd_value=FVal('100'))  # noqa: E501
-    expected_serialized_dict[optimism_chain_key][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {DEFAULT_BALANCE_LABEL: {'amount': '100', 'usd_value': '100', 'value': '0'}}  # noqa: E501
+    a.optimism[address2].assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), value=FVal('100'))  # noqa: E501
+    expected_serialized_dict[optimism_chain_key][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {DEFAULT_BALANCE_LABEL: {'amount': '100', 'value': '100'}}  # noqa: E501
     a.eth[address1].assets.pop(A_ETH.identifier)
     expected_serialized_dict[ethereum_chain_key][address1] = {'assets': {}, 'liabilities': {}}
     assert a.serialize(given_chain=None) == expected_serialized_dict

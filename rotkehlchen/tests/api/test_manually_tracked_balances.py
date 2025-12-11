@@ -97,8 +97,6 @@ def assert_balances_match(
                 continue
             if key == 'asset_is_missing':
                 continue
-            if key == 'usd_value':
-                continue  # TODO(isaac): remove once usd_value -> migration is complete
 
             msg = f'Expected balances {key} is {expected_balances[idx][key]} but got {val}'
             assert expected_balances[idx][key] == val, msg

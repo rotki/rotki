@@ -253,7 +253,6 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: 'APIServe
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}, {'treat_eth2_as_eth': False}])  # noqa: E501
-@pytest.mark.skip(reason='Skip test until usd_value -> value migration is complete')
 def test_query_statistics_value_distribution(
         rotkehlchen_api_server_with_exchanges: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],

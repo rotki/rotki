@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Literal, Optional, Unpack, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Unpack, cast, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -155,6 +155,9 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
+
+if TYPE_CHECKING:
+    from rotkehlchen.history.price import Price
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1821,10 +1824,17 @@ class DBHandler:
                 f'manually tracked balance ids that do not exist',
             )
 
-    def save_balances_data(self, write_cursor: 'DBCursor', data: dict[str, Any], timestamp: Timestamp) -> None:  # noqa: E501
+    def save_balances_data(
+            self,
+            write_cursor: 'DBCursor',
+            data: dict[str, Any],
+            timestamp: Timestamp,
+            main_to_usd_rate: 'Price',
+    ) -> None:
         """The keys of the data dictionary can be any kind of asset plus 'location'
-        and 'net_usd'. This gives us the balance data per assets, the balance data
-        per location and finally the total balance
+        and 'net_value'. This gives us the balance data per assets, the balance data
+        per location and finally the total balance. `main_to_usd_rate` is the conversion
+        rate from the main currency to USD.
 
         The balances are saved in the DB at the given timestamp
         """
@@ -1839,7 +1849,7 @@ class DBHandler:
                 time=timestamp,
                 asset=key,
                 amount=val['amount'],
-                usd_value=val['usd_value'],
+                usd_value=val['value'] * main_to_usd_rate,
             ))
 
         for key, val in data['liabilities'].items():
@@ -1850,7 +1860,7 @@ class DBHandler:
                 time=timestamp,
                 asset=key,
                 amount=val['amount'],
-                usd_value=val['usd_value'],
+                usd_value=val['value'] * main_to_usd_rate,
             ))
 
         for key2, val2 in data['location'].items():
@@ -1858,12 +1868,14 @@ class DBHandler:
             val2 = cast('dict', val2)
             location = Location.deserialize(key2).serialize_for_db()
             locations.append(LocationData(
-                time=timestamp, location=location, usd_value=str(val2['usd_value']),
+                time=timestamp,
+                location=location,
+                usd_value=str(val2['value'] * main_to_usd_rate),
             ))
         locations.append(LocationData(
             time=timestamp,
             location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-            usd_value=str(data['net_usd']),
+            usd_value=str(data['net_value'] * main_to_usd_rate),
         ))
         try:
             self.add_multiple_balances(write_cursor, balances)

@@ -653,7 +653,6 @@ def test_replace_asset(
         'balance_type': 'asset',
     }]
     expected_balances = deepcopy(balances)
-    expected_balances[0]['usd_value'] = '0'
     expected_balances[0]['value'] = str(FVal(balances[0]['amount']) * FVal('1.5'))
     expected_balances[0]['tags'] = None
     expected_balances[0]['identifier'] = 1
@@ -799,7 +798,6 @@ def test_replace_asset_not_in_globaldb(
         'asset': 'ICP',
         'label': 'forgotten balance',
         'amount': '1',
-        'usd_value': '0',
         'value': '1.5',
         'tags': None,
         'location': 'external',

@@ -95,11 +95,11 @@ def _check_xpub_addition_outcome(outcome: dict[str, Any], xpub: str) -> None:
     for address in EXPECTED_XPUB_ADDRESSES:
         assert address in xpub_data['addresses']
         assert xpub_data['addresses'][address]['amount'] is not None
-        assert xpub_data['addresses'][address]['usd_value'] is not None
+        assert xpub_data['addresses'][address]['value'] is not None
 
     totals = outcome['totals']['assets']
     assert totals['BTC'][DEFAULT_BALANCE_LABEL]['amount'] is not None
-    assert totals['BTC'][DEFAULT_BALANCE_LABEL]['usd_value'] is not None
+    assert totals['BTC'][DEFAULT_BALANCE_LABEL]['value'] is not None
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
