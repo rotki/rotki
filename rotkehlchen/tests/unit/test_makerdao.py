@@ -177,6 +177,7 @@ def test_get_vault_balance(
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_ilk_registry_and_update_cache(globaldb, ethereum_inquirer):
     """Test at the state of the global DB going from 1.27.0 to 1.27.1 when ilk cache is introduced
 
