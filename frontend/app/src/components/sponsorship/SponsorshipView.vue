@@ -51,21 +51,21 @@ const sponsors: Sponsor[] = [
 const loginIndex = useLocalStorage<number>('rotki.sponsorship.login_index', -1);
 
 function getCurrentSponsor(): Sponsor {
+  const length = sponsors.length;
   if (!props.drawer) {
     const loginIndexVal = get(loginIndex);
     // Login screen: determine and save the flipped index
     if (loginIndexVal === -1) {
-      // First time: random 50/50
-      set(loginIndex, Math.random() < 0.5 ? 0 : 1);
+      set(loginIndex, Math.floor(Math.random() * length));
     }
     else {
       // Flip from previous
-      set(loginIndex, loginIndexVal === 0 ? 1 : 0);
+      set(loginIndex, (loginIndexVal + 1) % length);
     }
-    return sponsors[loginIndexVal];
+    return sponsors[get(loginIndex)];
   }
   // Drawer: use the opposite of what's stored for login
-  const drawerIndex = get(loginIndex) === 0 ? 1 : 0;
+  const drawerIndex = (get(loginIndex) + 1) % length;
   return sponsors[drawerIndex];
 }
 
