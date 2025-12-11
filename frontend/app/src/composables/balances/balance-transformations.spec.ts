@@ -35,7 +35,7 @@ describe('balance transformations with chains', () => {
 
     // Should have aggregated totals
     expect(result.ETH.address.amount.toString()).toBe('3');
-    expect(result.ETH.address.usdValue.toString()).toBe('300');
+    expect(result.ETH.address.value.toString()).toBe('300');
 
     // Should have per-chain breakdown
     expect(result.ETH.address.chains).toBeDefined();
@@ -43,10 +43,10 @@ describe('balance transformations with chains', () => {
     expect(result.ETH.address.chains!.polygon).toBeDefined();
 
     expect(result.ETH.address.chains!.eth.amount.toString()).toBe('1');
-    expect(result.ETH.address.chains!.eth.usdValue.toString()).toBe('100');
+    expect(result.ETH.address.chains!.eth.value.toString()).toBe('100');
 
     expect(result.ETH.address.chains!.polygon.amount.toString()).toBe('2');
-    expect(result.ETH.address.chains!.polygon.usdValue.toString()).toBe('200');
+    expect(result.ETH.address.chains!.polygon.value.toString()).toBe('200');
   });
 
   it('should not add chains property for non-address protocols', () => {
@@ -80,7 +80,7 @@ describe('balance transformations with chains', () => {
 
     // Should have aggregated totals
     expect(result.ETH['uniswap-v3'].amount.toString()).toBe('3');
-    expect(result.ETH['uniswap-v3'].usdValue.toString()).toBe('300');
+    expect(result.ETH['uniswap-v3'].value.toString()).toBe('300');
 
     // Should NOT have per-chain breakdown for non-address protocols
     expect(result.ETH['uniswap-v3'].chains).toBeUndefined();
@@ -107,12 +107,12 @@ describe('balance transformations with chains', () => {
 
     // Should have the balance values
     expect(result.ETH.address.amount.toString()).toBe('1');
-    expect(result.ETH.address.usdValue.toString()).toBe('100');
+    expect(result.ETH.address.value.toString()).toBe('100');
 
     // Should have per-chain breakdown even for single chain
     expect(result.ETH.address.chains).toBeDefined();
     expect(result.ETH.address.chains!.eth).toBeDefined();
     expect(result.ETH.address.chains!.eth.amount.toString()).toBe('1');
-    expect(result.ETH.address.chains!.eth.usdValue.toString()).toBe('100');
+    expect(result.ETH.address.chains!.eth.value.toString()).toBe('100');
   });
 });

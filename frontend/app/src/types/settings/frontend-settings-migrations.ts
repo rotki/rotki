@@ -1,8 +1,8 @@
 import { isEmpty } from 'es-toolkit/compat';
 import {
   type BalanceSource,
-  BalanceUsdValueThresholdV0,
-  BalanceUsdValueThresholdV1,
+  BalanceValueThreshold,
+  BalanceValueThresholdV0,
   deserializeFrontendSettings,
   FRONTEND_SETTINGS_SCHEMA_VERSION,
   type FrontendSettings,
@@ -37,8 +37,8 @@ export function applyMigrations(settings: FrontendSettings): FrontendSettings | 
 
 function applyV1Migrations(settings: FrontendSettings): FrontendSettings {
   logger.info('migrating from v0 to v1');
-  const v0Threshold = BalanceUsdValueThresholdV0.parse(settings.balanceUsdValueThreshold);
-  const v1Threshold = BalanceUsdValueThresholdV1.parse({});
+  const v0Threshold = BalanceValueThresholdV0.parse(settings.balanceValueThreshold);
+  const v1Threshold = BalanceValueThreshold.parse({});
   for (const key in v0Threshold) {
     const value = v0Threshold[key as BalanceSource];
     if (value !== undefined && value !== '0') {
@@ -46,6 +46,6 @@ function applyV1Migrations(settings: FrontendSettings): FrontendSettings {
     }
   }
   settings.schemaVersion = FRONTEND_SETTINGS_SCHEMA_VERSION;
-  settings.balanceUsdValueThreshold = v1Threshold;
+  settings.balanceValueThreshold = v1Threshold;
   return settings;
 }

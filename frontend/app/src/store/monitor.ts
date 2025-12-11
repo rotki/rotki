@@ -44,7 +44,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
-  const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
+  const { balanceValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
 
   const ws = useWebsocketStore();
   const { connected } = storeToRefs(ws);
@@ -159,7 +159,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     start(true);
   };
 
-  watch(balanceUsdValueThreshold, (current, old) => {
+  watch(balanceValueThreshold, (current, old) => {
     if (!isEqual(current[BalanceSource.MANUAL], old[BalanceSource.MANUAL])) {
       startPromise(fetchManualBalances(true));
     }

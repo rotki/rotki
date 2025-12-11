@@ -62,9 +62,6 @@
     "edit_tooltip": "Edit account",
     "enter_selection_mode": "Enter selection mode to bulk ignore or mark assets as spam",
     "exit_selection_mode": "Exit selection mode",
-    "headers": {
-      "usd_value": "{symbol} value"
-    },
     "per_chain": "Per chain",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
   },
@@ -1106,8 +1103,7 @@
   "asset_locations": {
     "header": {
       "percentage": "Percentage",
-      "validator": "Validator Index | Public Key",
-      "value": "{symbol} value"
+      "validator": "Validator Index | Public Key"
     },
     "title": "Asset Locations"
   },

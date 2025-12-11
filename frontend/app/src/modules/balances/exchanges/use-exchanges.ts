@@ -4,7 +4,7 @@ import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
-import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
@@ -36,7 +36,7 @@ export function useExchanges(): UseExchangesReturn {
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { setConnectedExchanges } = useSessionSettingsStore();
   const { queryExchangeBalances } = useExchangeApi();
-  const balanceUsdValueThreshold = useUsdValueThreshold(BalanceSource.EXCHANGES);
+  const valueThreshold = useValueThreshold(BalanceSource.EXCHANGES);
 
   const { callSetupExchange, queryRemoveExchange } = useExchangeApi();
   const { setMessage } = useMessageStore();
@@ -46,7 +46,7 @@ export function useExchanges(): UseExchangesReturn {
     const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
     const meta = metadata<ExchangeMeta>(taskType);
 
-    const threshold = get(balanceUsdValueThreshold);
+    const threshold = get(valueThreshold);
 
     if (isTaskRunning(taskType) && meta?.location === location)
       return;

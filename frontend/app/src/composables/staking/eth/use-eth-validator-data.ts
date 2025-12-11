@@ -1,6 +1,9 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
-import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
+import type {
+  EthereumValidator,
+  EthereumValidatorRequestPayload,
+} from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/composables/filters/eth-validator';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
@@ -81,8 +84,8 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
       {
         align: 'end',
         cellClass: 'py-0',
-        key: 'usdValue',
-        label: t('account_balances.headers.usd_value', currency),
+        key: 'value',
+        label: t('common.value_in_symbol', currency),
         sortable: true,
       },
       {

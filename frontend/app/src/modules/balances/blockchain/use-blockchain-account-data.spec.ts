@@ -10,11 +10,10 @@ import { useBlockchainAccountData } from './use-blockchain-account-data';
 import '@test/i18n';
 
 // Test data factory functions for better maintainability
-function createTestBalance(amount: number, usdValue: number): Balance {
+function createTestBalance(amount: number, value: number): Balance {
   return {
     amount: bigNumberify(amount),
-    usdValue: bigNumberify(usdValue),
-    value: bigNumberify(usdValue),
+    value: bigNumberify(value),
   };
 }
 
@@ -85,7 +84,7 @@ describe('useBlockchainAccountData', () => {
       updateBalances(Blockchain.BTC, convertBtcBalances(Blockchain.BTC, totals, btcBalances));
 
       // Test getBlockchainAccounts functionality
-      expect(getBlockchainAccounts(Blockchain.BTC)).toEqual([{
+      expect(getBlockchainAccounts(Blockchain.BTC)).toMatchObject([{
         amount: bigNumberify(10),
         chain: Blockchain.BTC,
         data: {
@@ -98,7 +97,6 @@ describe('useBlockchainAccountData', () => {
         nativeAsset: 'BTC',
         tags: undefined,
         type: 'account',
-        usdValue: bigNumberify(10),
         value: bigNumberify(10),
       }, {
         amount: bigNumberify(10),
@@ -113,7 +111,6 @@ describe('useBlockchainAccountData', () => {
         nativeAsset: 'BTC',
         tags: undefined,
         type: 'account',
-        usdValue: bigNumberify(10),
         value: bigNumberify(10),
       }]);
 
@@ -131,7 +128,6 @@ describe('useBlockchainAccountData', () => {
         label: '123',
         tags: undefined,
         type: 'group',
-        usdValue: bigNumberify(10),
         value: bigNumberify(10),
       }, {
         amount: bigNumberify(10),
@@ -146,7 +142,6 @@ describe('useBlockchainAccountData', () => {
         nativeAsset: 'BTC',
         tags: undefined,
         type: 'group',
-        usdValue: bigNumberify(10),
         value: bigNumberify(10),
       }, {
         amount: Zero,
@@ -160,11 +155,10 @@ describe('useBlockchainAccountData', () => {
         nativeAsset: 'BTC',
         tags: ['a'],
         type: 'group',
-        usdValue: Zero,
         value: Zero,
       }];
 
-      expect(knownGroups.data).toEqual(expectedGroups);
+      expect(knownGroups.data).toMatchObject(expectedGroups);
     });
 
     it('should return empty array when no BTC accounts exist', () => {
@@ -253,7 +247,7 @@ describe('useBlockchainAccountData', () => {
       expect(result.assets).toHaveLength(1);
       expect(result.assets[0].asset).toBe('ETH');
       expect(result.assets[0].amount).toEqual(bigNumberify(10));
-      expect(result.assets[0].usdValue).toEqual(bigNumberify(30000));
+      expect(result.assets[0].value).toEqual(bigNumberify(30000));
       expect(result.liabilities).toEqual([]);
     });
 

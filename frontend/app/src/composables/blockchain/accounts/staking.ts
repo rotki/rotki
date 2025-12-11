@@ -175,18 +175,18 @@ export function useEthStaking(): UseEthStakingReturn {
 
     const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
 
-    const { amount, usdValue } = eth2[publicKey].assets[ETH2_ASSET].address;
+    const { amount, value } = eth2[publicKey].assets[ETH2_ASSET].address;
 
     // we should not need to update anything if amount and value are zero
-    if (amount.isZero() && usdValue.isZero())
+    if (amount.isZero() && value.isZero())
       return;
 
-    const calc = (value: BigNumber, oldPercentage: BigNumber, newPercentage: BigNumber): BigNumber =>
-      value.dividedBy(oldPercentage).multipliedBy(newPercentage);
+    const calc = (val: BigNumber, oldPercentage: BigNumber, newPercentage: BigNumber): BigNumber =>
+      val.dividedBy(oldPercentage).multipliedBy(newPercentage);
 
     const newAmount = calc(amount, oldOwnershipPercentage, newOwnershipPercentage);
 
-    const newValue = calc(usdValue, oldOwnershipPercentage, newOwnershipPercentage);
+    const newValue = calc(value, oldOwnershipPercentage, newOwnershipPercentage);
 
     const updatedBalance: BlockchainAssetBalances = {
       [publicKey]: {
@@ -194,7 +194,6 @@ export function useEthStaking(): UseEthStakingReturn {
           [ETH2_ASSET]: {
             address: {
               amount: newAmount,
-              usdValue: newValue,
               value: newValue,
             },
           },

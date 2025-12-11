@@ -64,8 +64,8 @@ export function useAccountTableConfig<
     }, {
       align: 'end',
       cellClass: 'py-0',
-      key: 'usdValue',
-      label: t('account_balances.headers.usd_value', currency),
+      key: 'value',
+      label: t('common.value_in_symbol', currency),
       sortable: true,
     }, {
       align: 'end',

@@ -39,15 +39,14 @@ export function updateBalancesPrices(
     }
 
     const protocolResult: typeof protocols = {};
-    const priceMultiplier = assetPrice.usdPrice ?? assetPrice.value;
     const currentCurrencyPrice = getAssetPriceInCurrentCurrency?.(asset);
 
     for (const protocol of protocolKeys) {
       const balance = protocols[protocol];
+      const priceToUse = currentCurrencyPrice ?? assetPrice.value;
       const newBalance: Balance = {
         amount: balance.amount,
-        usdValue: balance.amount.times(priceMultiplier),
-        value: currentCurrencyPrice ? balance.amount.times(currentCurrencyPrice) : balance.value,
+        value: priceToUse ? balance.amount.times(priceToUse) : balance.value,
       };
       protocolResult[protocol] = newBalance;
     }
@@ -78,10 +77,10 @@ export function updateExchangeBalancesPrices(
     }
 
     const currentCurrencyPrice = getAssetPriceInCurrentCurrency?.(asset);
+    const priceToUse = currentCurrencyPrice ?? assetPrice.value;
     result[asset] = {
       amount: assetInfo.amount,
-      usdValue: assetInfo.amount.times(assetPrice.usdPrice ?? assetPrice.value),
-      value: currentCurrencyPrice ? assetInfo.amount.times(currentCurrencyPrice) : assetInfo.value,
+      value: priceToUse ? assetInfo.amount.times(priceToUse) : assetInfo.value,
     };
   }
   return result;
@@ -130,7 +129,6 @@ export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices
 
     return {
       ...item,
-      usdValue: item.amount.times(assetPrice.usdPrice ?? assetPrice.value),
       value: item.amount.times(get(assetPriceInCurrentCurrency(item.asset))),
     };
   });

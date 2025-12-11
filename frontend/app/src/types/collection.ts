@@ -18,6 +18,7 @@ export interface Collection<T> {
   entriesFoundTotal?: number;
   totalUsdValue?: BigNumber | null;
   totalValue?: BigNumber | null;
+  totalAmount?: BigNumber | null;
 }
 
 export interface CollectionResponse<T> {

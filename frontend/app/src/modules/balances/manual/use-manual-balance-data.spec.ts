@@ -27,8 +27,7 @@ vi.mock('@/store/tasks', () => ({
   }),
 }));
 
-interface ManualBalance extends Omit<ManualBalanceWithValue, 'usdValue' | 'amount' | 'value'> {
-  usdValue: string;
+interface ManualBalance extends Omit<ManualBalanceWithValue, 'amount' | 'value'> {
   amount: string;
   value: string;
 }
@@ -37,7 +36,6 @@ function toParsed(balance: ManualBalance): ManualBalanceWithValue {
   return {
     ...balance,
     amount: bigNumberify(balance.amount),
-    usdValue: bigNumberify(balance.usdValue),
     value: bigNumberify(balance.value),
   };
 }
@@ -50,7 +48,6 @@ const balances: ManualBalance[] = [{
   label: 'My monero wallet',
   location: TRADE_LOCATION_BLOCKCHAIN,
   tags: [],
-  usdValue: '50',
   value: '50',
 }, {
   amount: '30',
@@ -60,7 +57,6 @@ const balances: ManualBalance[] = [{
   label: 'My another wallet',
   location: TRADE_LOCATION_BLOCKCHAIN,
   tags: [],
-  usdValue: '30',
   value: '30',
 }, {
   amount: '60',
@@ -70,7 +66,6 @@ const balances: ManualBalance[] = [{
   label: 'My Bank Account',
   location: TRADE_LOCATION_BANKS,
   tags: [],
-  usdValue: '60',
   value: '60',
 }];
 
@@ -137,7 +132,7 @@ describe('store::balances/manual', () => {
   });
 
   it('should update the prices for all assets and liabilities', () => {
-    const prices: AssetPrices = {
+    const newPrices: AssetPrices = {
       BTC: {
         isManualPrice: false,
         oracle: 'coingecko',
@@ -148,13 +143,22 @@ describe('store::balances/manual', () => {
         oracle: 'coingecko',
         value: bigNumberify(2),
       },
+      EUR: {
+        isManualPrice: false,
+        oracle: 'coingecko',
+        value: bigNumberify(1),
+      },
     };
 
-    store.updatePrices(prices);
+    // Update the price store so assetPriceInCurrentCurrency can find the prices
+    const { prices } = storeToRefs(useBalancePricesStore());
+    set(prices, newPrices);
+
+    store.updatePrices(newPrices);
     const { manualBalances, manualLiabilities } = storeToRefs(store);
-    expect(get(manualBalances)[0].usdValue).toEqual(bigNumberify(50).multipliedBy(2));
-    expect(get(manualBalances)[1].usdValue).toEqual(bigNumberify(30).multipliedBy(3));
-    expect(get(manualLiabilities)[0].usdValue).toEqual(bigNumberify(60).multipliedBy(1));
+    expect(get(manualBalances)[0].value).toEqual(bigNumberify(50).multipliedBy(2));
+    expect(get(manualBalances)[1].value).toEqual(bigNumberify(30).multipliedBy(3));
+    expect(get(manualLiabilities)[0].value).toEqual(bigNumberify(60).multipliedBy(1));
   });
 
   describe('should run create/update/delete operations', () => {

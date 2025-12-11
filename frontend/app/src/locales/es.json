@@ -34,9 +34,6 @@
       }
     },
     "edit_tooltip": "Editar cuenta",
-    "headers": {
-      "usd_value": "{symbol} valor"
-    },
     "refresh_tooltip": "Actualizar los saldos de {blockchain} ignorando cualquier entrada en caché"
   },
   "account_form": {
@@ -763,8 +760,7 @@
   "asset_locations": {
     "header": {
       "percentage": "Percentage",
-      "validator": "Validator Index | Public Key",
-      "value": "{symbol} value"
+      "validator": "Validator Index | Public Key"
     },
     "title": "Asset Locations"
   },

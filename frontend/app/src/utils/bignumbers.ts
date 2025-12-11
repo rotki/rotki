@@ -14,7 +14,6 @@ export function bigNumberifyFromRef(value: Ref<string | number> | WritableComput
 export function zeroBalance(): Balance {
   return {
     amount: Zero,
-    usdValue: Zero,
     value: Zero,
   };
 }

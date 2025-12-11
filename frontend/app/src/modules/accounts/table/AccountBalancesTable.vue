@@ -126,9 +126,9 @@ defineExpose({
         :loading="isRowLoading(row)"
       />
     </template>
-    <template #item.usdValue="{ row }">
+    <template #item.value="{ row }">
       <AccountBalanceValue
-        :included-value="row.includedUsdValue"
+        :included-value="row.includedValue"
         :value="row.value"
         :loading="isRowLoading(row)"
       />

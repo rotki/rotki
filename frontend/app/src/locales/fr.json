@@ -36,9 +36,6 @@
       }
     },
     "edit_tooltip": "Modifier le compte",
-    "headers": {
-      "usd_value": "Valeur en {symbol}"
-    },
     "refresh_tooltip": "Actualiser les soldes {blockchain} en ignorant toutes les entrées en cache"
   },
   "account_form": {
@@ -894,8 +891,7 @@
   "asset_locations": {
     "header": {
       "percentage": "Pourcentage",
-      "validator": "Index du validateur | Clé publique",
-      "value": "{symbol} valeur"
+      "validator": "Index du validateur | Clé publique"
     },
     "title": "Localisations d'actifs"
   },

@@ -72,7 +72,7 @@ const {
   Matcher
 >(fetchAccountsPage, {
   defaultSortBy: {
-    column: 'usdValue',
+    column: 'value',
     direction: 'desc',
   },
   extraParams: computed(() => ({

@@ -151,7 +151,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
       const accountAssets = Object.values(balanceData)
         .filter(data => !isEmpty(data) && !isEmpty(data[address]))
         .map(data => data[address]);
-      const usdValue = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets)), Zero);
+      const value = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets)), Zero);
 
       const accountsForAddress = Object.values(accountData).flatMap(
         accounts => accounts.filter(account => getAccountAddress(account) === address),
@@ -176,15 +176,14 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
         label,
         tags: tags.length > 0 ? tags : undefined,
         type: 'group',
-        usdValue,
-        value: usdValue,
+        value,
       } satisfies BlockchainAccountGroupWithBalance;
     });
 
     const preGrouped = Object.values(accountData)
       .flatMap(accounts => accounts.filter(account => account.groupHeader))
       .map((account) => {
-        const balance: Balance = { amount: Zero, usdValue: Zero, value: Zero };
+        const balance: Balance = { amount: Zero, value: Zero };
         const chainBalances = balanceData[account.chain];
         const accounts = accountData[account.chain];
         const groupAccounts = accounts.filter(acc => !acc.groupHeader && acc.groupId === account.groupId);
@@ -193,7 +192,6 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
           if (account.nativeAsset === subAccount.nativeAsset)
             balance.amount = balance.amount.plus(subBalance.amount);
 
-          balance.usdValue = balance.usdValue.plus(subBalance.usdValue);
           balance.value = balance.value.plus(subBalance.value);
         }
         return {

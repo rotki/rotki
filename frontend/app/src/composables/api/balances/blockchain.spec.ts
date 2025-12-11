@@ -137,7 +137,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(capturedParams!.get('ignore_cache')).toBe('true');
     });
 
-    it('includes usd_value_threshold when provided', async () => {
+    it('includes value_threshold when provided', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -157,7 +157,7 @@ describe('composables/api/balances/blockchain', () => {
       const payload: FetchBlockchainBalancePayload = { blockchain: '', ignoreCache: false };
       await queryBlockchainBalances(payload, '1000');
 
-      expect(capturedParams!.get('usd_value_threshold')).toBe('1000');
+      expect(capturedParams!.get('value_threshold')).toBe('1000');
     });
 
     it('throws error on failure', async () => {

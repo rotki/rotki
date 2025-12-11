@@ -36,9 +36,6 @@
       }
     },
     "edit_tooltip": "编辑账户",
-    "headers": {
-      "usd_value": "{symbol} 值"
-    },
     "refresh_tooltip": "刷新 {blockchain} 余额忽略任何缓存条目"
   },
   "account_form": {
@@ -771,8 +768,7 @@
   "asset_locations": {
     "header": {
       "percentage": "百分比",
-      "validator": "验证器索引|公钥",
-      "value": "{symbol} 值"
+      "validator": "验证器索引|公钥"
     },
     "title": "资产位置"
   },

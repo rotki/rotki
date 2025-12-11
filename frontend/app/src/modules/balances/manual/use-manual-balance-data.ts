@@ -1,8 +1,6 @@
 import type { ComputedRef } from 'vue';
 import type { BalanceByLocation, LocationBalance } from '@/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortDesc } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
@@ -15,8 +13,6 @@ interface UseManualBalanceDataReturn {
 
 export function useManualBalanceData(): UseManualBalanceDataReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { useExchangeRate } = usePriceUtils();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
   const manualLabels = computed<string[]>(() => {
     const labels: string[] = [];
@@ -59,11 +55,7 @@ export function useManualBalanceData(): UseManualBalanceDataReturn {
   });
 
   const manualBalanceByLocation = computed<LocationBalance[]>(() => {
-    const mainCurrency = get(currencySymbol);
     const balances = get(manualBalances);
-    const currentExchangeRate = get(useExchangeRate(mainCurrency));
-    if (currentExchangeRate === undefined)
-      return [];
 
     // Aggregate all balances per location
     const aggregateManualBalancesByLocation: BalanceByLocation = balances.reduce(

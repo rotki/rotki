@@ -9,7 +9,7 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
-const chainEntries = computed<[string, Balance][]>(() => Object.entries(props.chains).sort((a, b) => sortDesc(a[1].usdValue, b[1].usdValue)));
+const chainEntries = computed<[string, Balance][]>(() => Object.entries(props.chains).sort((a, b) => sortDesc(a[1].value, b[1].value)));
 </script>
 
 <template>

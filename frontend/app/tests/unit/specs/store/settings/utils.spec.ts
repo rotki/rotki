@@ -61,7 +61,7 @@ describe('settings:utils', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       savedFilters: {},
-      balanceUsdValueThreshold: {},
+      balanceValueThreshold: {},
     });
   });
 });

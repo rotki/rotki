@@ -154,7 +154,7 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
   }, {
     align: 'end',
     key: 'value',
-    label: t('asset_locations.header.value', {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol) ?? CURRENCY_USD,
     }),
     sortable: true,

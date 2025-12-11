@@ -14,7 +14,7 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
 
     // Clear hide small balances state, if the currency is changed
     startPromise(updateSetting({
-      balanceUsdValueThreshold: {},
+      balanceValueThreshold: {},
     }));
   }
 

@@ -36,8 +36,8 @@ type AssetProtocolBalancesWithManual = Record<string, ProtocolBalancesWithManual
 export function manualToAssetProtocolBalances(balances: ManualBalanceWithValue[]): AssetProtocolBalances {
   const protocolBalances: AssetProtocolBalances = {};
 
-  for (const { amount, asset, location, usdValue, value } of balances) {
-    const balance: Balance = { amount, usdValue, value };
+  for (const { amount, asset, location, value } of balances) {
+    const balance: Balance = { amount, value };
 
     protocolBalances[asset] ??= {};
 
@@ -276,7 +276,6 @@ interface IntermediateGroupRepresentation {
   asset: string;
   isMain?: boolean;
   perProtocol: ProtocolBalancesWithManual;
-  usdValue: BigNumber;
   value: BigNumber;
   amount: BigNumber;
   usdPrice: BigNumber;
@@ -365,13 +364,11 @@ export function processCollectionGrouping(
     }
 
     let groupAmount = Zero;
-    let groupUsdValue = Zero;
     let groupValue = Zero;
     const groupProtocolBalances: Record<string, BalanceWithManual> = {};
 
     for (const asset of groupAssets) {
       groupAmount = groupAmount.plus(asset.amount);
-      groupUsdValue = groupUsdValue.plus(asset.usdValue);
       groupValue = groupValue.plus(asset.value);
 
       for (const [protocol, balance] of Object.entries(asset.perProtocol)) {
@@ -393,7 +390,6 @@ export function processCollectionGrouping(
           perProtocol: getSortedProtocolBalances(value.perProtocol),
         })),
       perProtocol: getSortedProtocolBalances(groupProtocolBalances),
-      usdValue: groupUsdValue,
       value: groupValue,
     };
   });

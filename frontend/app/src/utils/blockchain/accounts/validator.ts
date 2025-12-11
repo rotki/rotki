@@ -1,8 +1,12 @@
-import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
+import type {
+  EthereumValidator,
+  EthereumValidatorRequestPayload,
+} from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import { camelCase } from 'es-toolkit';
 import { sum } from '@/utils/balances';
 import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
+import { bigNumberSum } from '@/utils/calculation';
 
 function filterValidator(
   validator: EthereumValidator,
@@ -68,11 +72,14 @@ export function sortAndFilterValidators(
         return 0;
       });
 
+  const totalAmount = bigNumberSum(filtered.map(account => account.amount));
+
   return {
     data: sorted.slice(offset, offset + limit),
     found: sorted.length,
     limit: -1,
     total: validators.length,
-    totalUsdValue: sum(filtered),
+    totalValue: sum(filtered),
+    totalAmount,
   };
 }
