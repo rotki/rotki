@@ -3,7 +3,7 @@ export class AccountingSettingsPage {
     cy.get('[data-cy=user-menu-button]').click();
     cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('[data-cy=settings-button]').click();
-    cy.get('a.settings__accounting').click();
+    cy.get('[data-cy="settings__accounting"]').click();
     cy.get('[data-cy=user-dropdown]').should('not.exist');
   }
 

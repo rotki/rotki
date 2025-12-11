@@ -261,25 +261,23 @@ watch(shouldExpand, () => {
   </div>
 </template>
 
-<style lang="scss" scoped>
-.transition-wrapper {
-  .list-move,
-  .list-enter-active,
-  .list-leave-active {
-    @apply transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)];
-  }
+<style scoped>
+.transition-wrapper .list-move,
+.transition-wrapper .list-enter-active,
+.transition-wrapper .list-leave-active {
+  @apply transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)];
+}
 
-  .list-enter-from,
-  .list-leave-to {
-    @apply opacity-0;
-  }
+.transition-wrapper .list-enter-from,
+.transition-wrapper .list-leave-to {
+  @apply opacity-0;
+}
 
-  .list-leave-active {
-    @apply absolute w-full;
+.transition-wrapper .list-leave-active {
+  @apply absolute w-full;
+}
 
-    &[data-subtype="fee"] {
-      @apply transition-none !important;
-    }
-  }
+.transition-wrapper .list-leave-active[data-subtype="fee"] {
+  @apply !transition-none;
 }
 </style>

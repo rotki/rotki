@@ -126,9 +126,9 @@ describe('table-filter/SuggestedItem.vue', () => {
     };
     wrapper = createWrapper({ suggestion, chip: true });
 
-    expect(wrapper.find('span > span:nth-child(2)').classes()).toEqual(
-      expect.arrayContaining([expect.stringMatching(/_comparator_/)]),
-    );
+    const comparatorClasses = wrapper.find('span > span:nth-child(2)').classes();
+    expect(comparatorClasses).toContain('border-l');
+    expect(comparatorClasses).toContain('border-r');
   });
 
   it('for boolean value', async () => {

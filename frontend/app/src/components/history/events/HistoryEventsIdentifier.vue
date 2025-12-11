@@ -86,7 +86,7 @@ const key = computed(() => {
       #blockNumber
     >
       <HashLink
-        :class="$style.wrapper"
+        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="blockEvent.blockNumber.toString()"
         type="block"
       />
@@ -97,7 +97,7 @@ const key = computed(() => {
       #validatorIndex
     >
       <HashLink
-        :class="$style.wrapper"
+        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="withdrawEvent.validatorIndex.toString()"
         :location="Blockchain.ETH2"
       />
@@ -109,7 +109,7 @@ const key = computed(() => {
     >
       <HashLink
         v-if="eventWithTxRef"
-        :class="$style.wrapper"
+        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="eventWithTxRef.txRef"
         type="transaction"
         :location="eventWithTxRef.location"
@@ -117,7 +117,7 @@ const key = computed(() => {
       />
       <HashLink
         v-else-if="assetMovementTransactionId"
-        :class="$style.wrapper"
+        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="assetMovementTransactionId"
         type="transaction"
         :location="assetMovementEvent?.extraData?.blockchain || undefined"
@@ -138,15 +138,3 @@ const key = computed(() => {
     </template>
   </i18n-t>
 </template>
-
-<style lang="scss" module>
-.wrapper {
-  @apply bg-rui-grey-300 pr-1 pl-2 rounded-full m-0.5;
-}
-
-:global(.dark) {
-  .wrapper {
-    @apply bg-rui-grey-800;
-  }
-}
-</style>

@@ -8,7 +8,7 @@ const { closeApp } = useInterop();
 
 <template>
   <ErrorScreen
-    class="win-unsupported"
+    class="py-8"
     :header="t('win_unsupported.header')"
     :alternative="t('win_unsupported.message')"
   >
@@ -21,9 +21,3 @@ const { closeApp } = useInterop();
     </RuiButton>
   </ErrorScreen>
 </template>
-
-<style scoped lang="scss">
-.win-unsupported {
-  padding: 2rem 0;
-}
-</style>

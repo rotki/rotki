@@ -8,10 +8,7 @@ const { link, version } = useUpdateMessage();
 </script>
 
 <template>
-  <div
-    class="flex flex-col items-start gap-4 w-full p-6"
-    :class="$style.card"
-  >
+  <div class="flex flex-col items-start gap-4 w-full p-6 bg-[rgba(78,91,166,0.04)]">
     <div class="bg-white rounded-[0.625rem] p-3">
       <RuiIcon
         color="primary"
@@ -35,9 +32,3 @@ const { link, version } = useUpdateMessage();
     </ExternalLink>
   </div>
 </template>
-
-<style module lang="scss">
-.card {
-  background: rgba(78, 91, 166, 0.04);
-}
-</style>

@@ -112,12 +112,9 @@ async function addToSavedFilter() {
           />
         </RuiButton>
       </template>
-      <div
-        class="text-center"
-        :class="$style['add-tooltip']"
-      >
+      <div class="text-center h-4 overflow-hidden">
         <div
-          class="h-4 transition-all"
+          class="h-4 transition-all duration-200"
           :class="{ '-mt-4': added }"
         >
           <div>
@@ -265,18 +262,3 @@ async function addToSavedFilter() {
     </RuiMenu>
   </div>
 </template>
-
-<style module lang="scss">
-.add-tooltip {
-  height: 1rem;
-  overflow: hidden;
-
-  &__wrapper {
-    transition: 0.2s all;
-
-    &--added {
-      margin-top: -1rem;
-    }
-  }
-}
-</style>

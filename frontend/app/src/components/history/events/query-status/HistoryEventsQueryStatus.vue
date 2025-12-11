@@ -45,7 +45,6 @@ const { containerProps, list, wrapperProps } = useVirtualList(events, {
     <div
       v-if="events.length > 0"
       v-bind="containerProps"
-      :class="$style['scroll-container']"
       :style="wrapperComponentStyle"
     >
       <div v-bind="wrapperProps">
@@ -60,11 +59,3 @@ const { containerProps, list, wrapperProps } = useVirtualList(events, {
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.scroll-container {
-  &::-webkit-scrollbar-thumb {
-    min-height: 30px;
-  }
-}
-</style>

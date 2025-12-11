@@ -8,7 +8,7 @@ const { closeApp } = useInterop();
 
 <template>
   <ErrorScreen
-    class="macos-unsupported"
+    class="py-8"
     :header="t('macos_unsupported.header')"
     :alternative="t('macos_unsupported.message')"
   >
@@ -21,9 +21,3 @@ const { closeApp } = useInterop();
     </RuiButton>
   </ErrorScreen>
 </template>
-
-<style scoped lang="scss">
-.macos-unsupported {
-  padding: 2rem 0;
-}
-</style>

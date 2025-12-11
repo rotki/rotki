@@ -47,21 +47,10 @@ defineSlots<{
       <RuiButton
         variant="text"
         color="primary"
-        :class="$style.button"
+        class="!inline !text-[1em] !p-0 !px-0.5 !-mx-0.5 !font-[inherit] [&_span]:underline"
       >
         <slot />
       </RuiButton>
     </a>
   </RouterLink>
 </template>
-
-<style lang="scss" module>
-.button {
-  @apply inline text-[1em] p-0 px-0.5 -mx-0.5 #{!important};
-  font-weight: inherit !important;
-
-  span {
-    @apply underline;
-  }
-}
-</style>

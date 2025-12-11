@@ -452,8 +452,8 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           'blur': !shouldShowAmount,
           'text-rui-success': pnl && displayValue.gt(0),
           'text-rui-error': pnl && displayValue.lt(0),
-          [$style.xl]: xl,
-          [`skeleton min-w-[3.5rem] max-w-[4rem] ${$style.loading}`]: anyLoading,
+          'text-[2rem] leading-[3rem] sm:text-[3rem] sm:leading-[4rem]': xl,
+          'skeleton min-w-[3.5rem] max-w-[4rem] after:content-[\'\\200B\']': anyLoading,
         },
       ]"
       class="inline-flex items-center gap-1 transition duration-200 rounded-lg max-w-full"
@@ -520,19 +520,3 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
     </span>
   </div>
 </template>
-
-<style module lang="scss">
-.xl {
-  @apply text-[2rem] leading-[3rem];
-
-  @screen sm {
-    @apply text-[3rem] leading-[4rem];
-  }
-}
-
-.loading {
-  &:after {
-    content: '\200B';
-  }
-}
-</style>

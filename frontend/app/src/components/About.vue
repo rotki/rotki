@@ -124,7 +124,7 @@ const { copy } = useClipboard({ source: versionText });
       <table class="w-full">
         <tbody>
           <tr>
-            <td :class="$style.label">
+            <td class="font-medium py-0.5 min-w-[150px]">
               {{ t('about.data_directory') }}
             </td>
             <td>
@@ -134,14 +134,11 @@ const { copy } = useClipboard({ source: versionText });
                   :open-delay="400"
                 >
                   <template #activator>
-                    <div
-                      class="truncate text-rui-text-secondary"
-                      :class="$style.directory"
-                    >
+                    <div class="truncate text-rui-text-secondary max-w-[280px]">
                       {{ dataDirectory }}
                     </div>
                   </template>
-                  <span :class="$style.directory">
+                  <span class="max-w-[280px]">
                     {{ dataDirectory }}
                   </span>
                 </RuiTooltip>
@@ -180,7 +177,7 @@ const { copy } = useClipboard({ source: versionText });
             </td>
           </tr>
           <tr>
-            <td :class="$style.label">
+            <td class="font-medium py-0.5 min-w-[150px]">
               {{ t('about.frontend_version') }}
             </td>
             <td class="text-rui-text-secondary">
@@ -189,7 +186,7 @@ const { copy } = useClipboard({ source: versionText });
           </tr>
           <template v-if="webVersion">
             <tr>
-              <td :class="$style.label">
+              <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.platform') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -197,7 +194,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr>
-              <td :class="$style.label">
+              <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.user_agent') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -207,7 +204,7 @@ const { copy } = useClipboard({ source: versionText });
           </template>
           <template v-if="electronVersion">
             <tr>
-              <td :class="$style.label">
+              <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.platform') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -216,7 +213,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr>
-              <td :class="$style.label">
+              <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.electron') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -233,7 +230,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr v-if="componentsVersion.version">
-              <td :class="$style.label">
+              <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.components.version') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -241,7 +238,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr v-if="componentsVersion.build">
-              <td :class="$style.label">
+              <td class="font-medium py-0.5 min-w-[150px]">
                 {{ t('about.components.build') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -270,14 +267,3 @@ const { copy } = useClipboard({ source: versionText });
     </template>
   </RuiCard>
 </template>
-
-<style module lang="scss">
-.label {
-  @apply font-medium py-0.5;
-  min-width: 150px;
-}
-
-.directory {
-  max-width: 280px;
-}
-</style>

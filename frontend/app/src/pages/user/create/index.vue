@@ -43,9 +43,9 @@ const steps = [
 </script>
 
 <template>
-  <section :class="$style.section">
-    <div :class="$style.container">
-      <div :class="$style.wrapper">
+  <section class="w-full flex flex-col flex-1 overflow-auto">
+    <div class="h-full grow flex flex-col">
+      <div class="flex flex-col px-4 pt-16 lg:pt-24 grow">
         <div
           class="pb-4"
           data-cy="account-management"
@@ -71,7 +71,7 @@ const steps = [
           variant="pill"
         />
       </div>
-      <footer :class="$style.container__footer">
+      <footer class="p-6 lg:p-8 flex items-center justify-between">
         <AccountManagementFooterText #default="{ copyright }">
           {{ copyright }}
         </AccountManagementFooterText>
@@ -99,21 +99,3 @@ const steps = [
     </div>
   </AccountManagementAside>
 </template>
-
-<style module lang="scss">
-.section {
-  @apply w-full flex flex-col flex-1 overflow-auto;
-}
-
-.container {
-  @apply h-full grow flex flex-col;
-
-  &__footer {
-    @apply p-6 lg:p-8 flex items-center justify-between;
-  }
-}
-
-.wrapper {
-  @apply flex flex-col px-4 pt-16 lg:pt-24 grow;
-}
-</style>

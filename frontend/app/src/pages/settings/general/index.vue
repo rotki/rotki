@@ -44,20 +44,3 @@ const navigation = [
     <BackendServiceSettingsCategory :id="Category.BACKEND" />
   </SettingsPage>
 </template>
-
-<style scoped lang="scss">
-.general-settings {
-  &__currency-list {
-    font-size: 2em;
-    font-weight: bold;
-  }
-
-  &__timeframe {
-    min-height: 55px;
-  }
-
-  &__date-restore {
-    margin-top: -6px;
-  }
-}
-</style>

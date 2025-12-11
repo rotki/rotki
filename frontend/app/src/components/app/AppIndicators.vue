@@ -66,9 +66,3 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
     />
   </div>
 </template>
-
-<style module lang="scss">
-.language {
-  width: 110px;
-}
-</style>

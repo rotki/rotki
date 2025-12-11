@@ -95,8 +95,7 @@ const mediaStyle = computed<StyleValue>(() => {
               width="auto"
               :src="renderedMedia"
               :style="mediaStyle"
-              class="w-full"
-              :class="$style.media"
+              class="w-full max-w-full h-auto object-contain aspect-square"
             />
             <AppImage
               v-else
@@ -104,7 +103,7 @@ const mediaStyle = computed<StyleValue>(() => {
               contain
               :style="mediaStyle"
               width="100%"
-              :class="$style.media"
+              class="object-contain aspect-square"
             />
           </ExternalLink>
         </template>
@@ -116,7 +115,7 @@ const mediaStyle = computed<StyleValue>(() => {
         v-if="!shouldRender"
         :popper="{ placement: 'top' }"
         :open-delay="400"
-        :class="$style['unlock-button']"
+        class="absolute right-2 bottom-2"
       >
         <template #activator>
           <RuiButton
@@ -188,18 +187,3 @@ const mediaStyle = computed<StyleValue>(() => {
     </template>
   </RuiCard>
 </template>
-
-<style lang="scss" module>
-video {
-  @apply max-w-full h-auto;
-}
-
-.unlock-button {
-  @apply absolute right-2 bottom-2;
-}
-
-.media {
-  @apply object-contain;
-  aspect-ratio: 1 / 1;
-}
-</style>

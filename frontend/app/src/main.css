@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* JSON Editor (vanilla-jsoneditor) theme overrides */
+.json-editor {
+  --jse-background-color: transparent;
+  --jse-main-border: none;
+  --jse-theme-color: rgb(var(--rui-light-primary-main));
+}
+
+.dark .json-editor {
+  --jse-theme-color: rgb(var(--rui-dark-primary-main));
+  --jse-delimiter-color: var(--rui-dark-text-secondary);
+  --jse-text-color: var(--rui-dark-text-secondary);
+  --jse-key-color: var(--rui-dark-text-secondary);
+  --jse-tag-color: var(--rui-dark-text-secondary);
+  --jse-tag-background: var(--rui-dark-text-secondary);
+}
+
+/* Global animation disable toggle */
+.animations-disabled *:not(.animate),
+.animations-disabled *:not(.animate)::before,
+.animations-disabled *:not(.animate)::after {
+  animation-timing-function: steps(5, end) !important;
+}
+
+/* Custom scrollbar styles */
+* {
+  scrollbar-width: auto;
+}
+
+*::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+*::-webkit-scrollbar-thumb {
+  @apply bg-rui-grey-300 dark:bg-rui-grey-700;
+  height: 6px;
+  background-clip: padding-box;
+  border-radius: 7px;
+  border: 4px solid transparent;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  @apply bg-rui-grey-400 dark:bg-rui-grey-600;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  @apply bg-rui-grey-500 dark:bg-rui-grey-500;
+}

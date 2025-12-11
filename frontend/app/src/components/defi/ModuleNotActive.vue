@@ -30,7 +30,7 @@ const { top } = useElementBounding(wrapper);
     :style="`height: calc(100vh - ${top + 100}px);`"
     class="flex flex-col items-center justify-center"
   >
-    <div class="module-not-active__container flex flex-col items-center gap-8">
+    <div class="w-full flex flex-col items-center gap-8">
       <div class="flex items-center justify-center gap-4">
         <div
           v-for="module in modules"
@@ -51,7 +51,7 @@ const { top } = useElementBounding(wrapper);
       >
         <template #link>
           <InternalLink
-            class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
+            class="!normal-case font-weight-regular text-body-1 text-decoration-none"
             :to="Routes.SETTINGS_MODULES"
           >
             {{ t('module_not_active.settings_link') }}
@@ -66,7 +66,7 @@ const { top } = useElementBounding(wrapper);
           <span
             v-for="module in modules"
             :key="`mod-${module}`"
-            class="module-not-active__module"
+            class="before:content-['&_'] first:before:content-none"
           >
             {{ name(module) }}
           </span>
@@ -75,23 +75,3 @@ const { top } = useElementBounding(wrapper);
     </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.module-not-active {
-  &__link {
-    text-transform: none !important;
-  }
-
-  &__container {
-    width: 100%;
-  }
-
-  &__module {
-    &:not(:first-child) {
-      &:before {
-        content: '& ';
-      }
-    }
-  }
-}
-</style>

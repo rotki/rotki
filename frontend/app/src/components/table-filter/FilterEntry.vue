@@ -20,7 +20,7 @@ function click(matcher: SearchMatcher<any>) {
     variant="text"
     class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary [&>span]:overflow-hidden [&>span]:text-ellipsis"
     :class="{
-      [$style.selected]: active,
+      '!bg-rui-primary-lighter/20': active,
     }"
     @click="click(matcher)"
   >
@@ -33,9 +33,3 @@ function click(matcher: SearchMatcher<any>) {
     </span>
   </RuiButton>
 </template>
-
-<style lang="scss" module>
-.selected {
-  @apply bg-rui-primary-lighter/20 #{!important};
-}
-</style>

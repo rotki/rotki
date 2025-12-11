@@ -79,9 +79,8 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
       <HashLink
         v-else-if="note.showHashLink && note.address && isLinkType(note.type)"
         :key="index"
-        class="inline-flex"
+        class="inline-flex align-middle bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"
         :class="{
-          [$style.address]: true,
           'pl-2': isLinkTypeWithoutImage(note.type, note.chain ?? chain),
         }"
         :text="note.address"
@@ -122,15 +121,3 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
     </template>
   </div>
 </template>
-
-<style lang="scss" module>
-.address {
-  @apply align-middle bg-rui-grey-300 pr-1 rounded-full m-0.5;
-}
-
-:global(.dark) {
-  .address {
-    @apply bg-rui-grey-800;
-  }
-}
-</style>

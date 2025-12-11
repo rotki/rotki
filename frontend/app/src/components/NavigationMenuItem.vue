@@ -36,6 +36,8 @@ const inner = ref<HTMLDivElement>();
 const { height: innerHeight } = useElementSize(inner);
 const subMenuExpanded = ref<boolean>(false);
 
+const submenuWrapperStyle = computed(() => get(subMenuExpanded) ? { height: `${get(innerHeight)}px` } : {});
+
 function expandParent() {
   if (!get(parent))
     return;
@@ -54,27 +56,22 @@ function expandParent() {
 <template>
   <div ref="outer">
     <div
-      :class="[
-        $style.wrapper,
-        {
-          [$style.active]: active,
-          [$style.active__parent]: active && parent,
-          [$style.mini]: mini,
-          [$style.submenu]: subMenu,
-        },
-      ]"
+      class="flex items-center grow rounded px-3 py-0 text-rui-text hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800 transition cursor-pointer"
+      :class="{
+        'bg-rui-primary font-bold text-white hover:!bg-rui-primary': active && !parent,
+        'font-medium bg-transparent !text-rui-primary': active && parent,
+        'pl-12 pr-0 text-sm': subMenu && !mini,
+        'px-0 justify-center': mini,
+        'pl-0': mini && subMenu,
+      }"
       @click="expandParent()"
     >
       <DefineImage>
         <div
           :class="[
-            $style.icon,
-            {
-              ['mr-2']: subMenu && !mini,
-              ['mr-3']: !subMenu && !mini,
-              ['my-2']: subMenu,
-              ['my-3']: !subMenu,
-            },
+            mini ? '' : (subMenu ? 'mr-2' : 'mr-3'),
+            subMenu ? 'my-2' : 'my-3',
+            active ? (parent ? 'text-rui-primary' : 'text-white') : 'text-rui-text-secondary',
           ]"
         >
           <AppImage
@@ -82,7 +79,7 @@ function expandParent() {
             contain
             width="24px"
             :src="image"
-            :class="$style.image"
+            :class="active ? 'opacity-100 brightness-0 invert' : 'opacity-70 brightness-0 dark:opacity-100 dark:invert'"
           />
           <Component
             :is="iconComponent"
@@ -113,7 +110,7 @@ function expandParent() {
       </template>
       <div
         v-if="parent && !mini"
-        :class="$style.toggle"
+        :class="active ? 'text-rui-primary' : 'text-rui-grey-500'"
       >
         <RuiIcon
           name="lu-chevron-down"
@@ -124,13 +121,10 @@ function expandParent() {
     </div>
     <div
       v-if="parent"
-      :class="[
-        $style['submenu-wrapper'],
-        {
-          [`${$style.expanded} submenu-wrapper__expanded`]: subMenuExpanded,
-        },
-      ]"
-      class="submenu-wrapper"
+      class="transition-all h-0 overflow-hidden"
+      :style="submenuWrapperStyle"
+      data-cy="submenu-wrapper"
+      :data-expanded="subMenuExpanded"
     >
       <div ref="inner">
         <slot />
@@ -138,82 +132,3 @@ function expandParent() {
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.wrapper {
-  @apply flex items-center grow rounded px-3 py-0 text-rui-text hover:bg-rui-grey-100 transition cursor-pointer;
-
-  .icon {
-    @apply text-rui-text-secondary;
-
-    .image {
-      @apply opacity-70 brightness-0;
-    }
-  }
-
-  .toggle {
-    @apply text-rui-grey-500;
-  }
-
-  &.active {
-    @apply bg-rui-primary font-bold text-white hover:bg-rui-primary;
-
-    .icon {
-      @apply text-white;
-
-      .image {
-        @apply opacity-100 filter brightness-0 invert;
-      }
-    }
-
-    &__parent {
-      @apply font-medium bg-transparent text-rui-primary hover:bg-rui-grey-100;
-
-      .icon,
-      .toggle {
-        @apply text-rui-primary;
-      }
-    }
-  }
-
-  &.submenu {
-    @apply pl-12 pr-0 text-sm;
-  }
-
-  &.mini {
-    @apply px-0 flex justify-center;
-
-    &.submenu {
-      @apply pl-0;
-    }
-  }
-}
-
-.submenu-wrapper {
-  @apply transition-all h-0 overflow-hidden;
-
-  &.expanded {
-    height: calc(v-bind(innerHeight) * 1px) !important;
-  }
-}
-
-:global(.dark) {
-  .wrapper {
-    @apply hover:bg-rui-grey-800;
-
-    &.active {
-      @apply hover:bg-rui-primary;
-
-      &__parent {
-        @apply hover:bg-rui-grey-800;
-      }
-    }
-
-    .icon {
-      .image {
-        @apply opacity-100 brightness-0 invert;
-      }
-    }
-  }
-}
-</style>

@@ -290,11 +290,3 @@ onMounted(() => refresh());
     </template>
   </RuiCard>
 </template>
-
-<style module lang="scss">
-.content {
-  @apply overflow-y-auto -mx-4 px-4 -mt-2 pb-px;
-  max-height: calc(90vh - 11.875rem);
-  min-height: 50vh;
-}
-</style>

@@ -35,31 +35,10 @@ watch(adaptiveLanguage, (language) => {
     v-if="!isPlayground"
     id="rotki"
     :key="adaptiveLanguage"
-    class="app !text-rui-text bg-rui-grey-50 dark:bg-[#121212]"
-    :class="{ ['app--animations-disabled']: !animationsEnabled }"
+    class="overflow-hidden !text-rui-text bg-rui-grey-50 dark:bg-[#121212]"
+    :class="{ 'animations-disabled': !animationsEnabled }"
   >
     <slot />
   </div>
   <DevApp v-else />
 </template>
-
-<style scoped lang="scss">
-.app {
-  overflow: hidden;
-
-  &--animations-disabled {
-    /* stylelint-disable plugin/stylelint-bem-namics */
-
-    :deep(:not(.animate)) {
-      // ignore manual animation (e.g. animation on login screen)
-
-      &,
-      &::before,
-      &::after {
-        animation-timing-function: steps(5, end) !important;
-      }
-    }
-    /* stylelint-enable plugin/stylelint-bem-namics */
-  }
-}
-</style>

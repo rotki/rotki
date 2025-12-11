@@ -102,7 +102,8 @@ const truncatedLabelDisplayed = computed(() => {
 <template>
   <RuiChip
     variant="outlined"
-    :class="$style['labeled-address-display']"
+    class="w-full hover:cursor-default max-w-[32rem] min-w-[15rem] !bg-rui-grey-100 dark:!bg-rui-grey-900"
+    content-class="w-full flex items-center px-0"
     size="sm"
     color="primary"
   >
@@ -115,7 +116,7 @@ const truncatedLabelDisplayed = computed(() => {
       <template #activator>
         <div
           data-cy="labeled-address-display"
-          :class="[$style['labeled-address-display__address']]"
+          class="flex items-center gap-2 text-rui-text-secondary w-full"
         >
           <EnsAvatar
             :address="address"
@@ -155,9 +156,9 @@ const truncatedLabelDisplayed = computed(() => {
     </RuiTooltip>
     <RuiDivider
       vertical
-      :class="$style['labeled-address-display__divider']"
+      class="h-[1.75rem] mx-1 border-black/[.12] dark:border-white/[.12]"
     />
-    <div :class="$style['labeled-address-display__actions']">
+    <div class="flex items-center h-[1.75rem]">
       <HashLink
         class="h-full"
         :text="accountAddress"
@@ -169,32 +170,3 @@ const truncatedLabelDisplayed = computed(() => {
     </div>
   </RuiChip>
 </template>
-
-<style module lang="scss">
-.labeled-address-display {
-  @apply w-full hover:cursor-default max-w-[32rem] min-w-[15rem];
-  @apply bg-rui-grey-100 #{!important};
-
-  > span {
-    @apply w-full flex items-center px-0;
-  }
-
-  &__address {
-    @apply flex items-center gap-2 text-rui-text-secondary w-full;
-  }
-
-  &__divider {
-    @apply h-[1.75rem] mx-1 border-black/[.12] dark:border-white/[.12];
-  }
-
-  &__actions {
-    @apply flex items-center h-[1.75rem];
-  }
-}
-
-:global(.dark) {
-  .labeled-address-display {
-    @apply bg-rui-grey-900 #{!important};
-  }
-}
-</style>

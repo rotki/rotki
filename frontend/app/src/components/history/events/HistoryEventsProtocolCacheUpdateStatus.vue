@@ -109,7 +109,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
     </div>
     <div
       v-else-if="protocolCacheStatus.length > 0"
-      :class="$style.content"
+      class="overflow-y-auto -mx-4 px-4 -mt-2 pb-px max-h-[calc(90vh-11.875rem)] min-h-[50vh]"
     >
       <DefineProgress #default="{ data }">
         <div
@@ -191,11 +191,3 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
     </div>
   </RuiCard>
 </template>
-
-<style module lang="scss">
-.content {
-  @apply overflow-y-auto -mx-4 px-4 -mt-2 pb-px;
-  max-height: calc(90vh - 11.875rem);
-  min-height: 50vh;
-}
-</style>

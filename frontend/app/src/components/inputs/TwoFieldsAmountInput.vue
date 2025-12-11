@@ -31,14 +31,14 @@ const emit = defineEmits<{
   (e: 'update:reversed', reversed: boolean): void;
 }>();
 
-const { errorMessages } = toRefs(props);
+const { disabled, errorMessages } = toRefs(props);
 
 const primaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
 const secondaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
 
 const reversed = ref<boolean>(false);
 
-function reverse() {
+function reverse(): void {
   const newReversed = !get(reversed);
   set(reversed, newReversed);
   emit('update:reversed', newReversed);
@@ -50,7 +50,7 @@ function reverse() {
   });
 }
 
-const aggregatedErrorMessages = computed(() => {
+const aggregatedErrorMessages = computed<string[]>(() => {
   const val = get(errorMessages);
   const primary = val?.primary || [];
   const secondary = val?.secondary || [];
@@ -58,17 +58,44 @@ const aggregatedErrorMessages = computed(() => {
   return [...arrayify(primary), ...arrayify(secondary)];
 });
 
+const hasError = computed<boolean>(() => get(aggregatedErrorMessages).length > 0);
+
 const focused = ref<boolean>(false);
+
+const uiClasses = {
+  disabledInput: `
+    [&_label]:!border-t-0
+    [&_label]:border
+    [&_label]:border-[#0000006b]
+    [&_label]:rounded-b
+    [&_label]:!rounded-t-none
+    [&_label]:!bg-rui-grey-300/40
+    dark:[&_label]:border-white/[0.42]
+    dark:[&_label]:!bg-rui-grey-800/40
+    [&_input]:!pt-6
+    [&_input]:!pb-2
+  `,
+  enabledInput: `
+    [&_label]:border
+    [&_label]:rounded-t
+    [&_label]:!rounded-b-none
+    [&_label]:!bg-transparent
+    [&_input]:!pt-6
+    [&_input]:!pb-2
+  `,
+} as const;
 </script>
 
 <template>
   <div
-    class="wrapper flex"
+    class="relative flex [&>*]:!-my-px"
     :class="{
-      'flex-col': !reversed,
-      'flex-col-reverse': reversed,
-      'focused': focused,
-      disabled,
+      'flex-col-reverse': get(reversed),
+      'flex-col': !get(reversed),
+      '[&_label]:border-dotted [&_label]:!border-rui-grey-400 dark:[&_label]:!border-rui-grey-700': disabled,
+      '[&_label]:!border-rui-primary [&_label]:!border-2': focused,
+      '[&_label]:!border-rui-error [&_label]:!border-2': hasError,
+
     }"
     v-bind="$attrs"
   >
@@ -80,7 +107,7 @@ const focused = ref<boolean>(false);
       variant="filled"
       persistent-hint
       data-cy="primary"
-      :class="`${!reversed ? 'input__enabled' : ''}`"
+      :class="reversed ? uiClasses.disabledInput : uiClasses.enabledInput"
       :label="label.primary"
       :error-messages="aggregatedErrorMessages"
       @focus="focused = true"
@@ -103,7 +130,7 @@ const focused = ref<boolean>(false);
       variant="filled"
       persistent-hint
       data-cy="secondary"
-      :class="`${reversed ? 'input__enabled' : ''}`"
+      :class="reversed ? uiClasses.enabledInput : uiClasses.disabledInput"
       :label="label.secondary"
       :error-messages="aggregatedErrorMessages"
       @focus="focused = true"
@@ -112,7 +139,7 @@ const focused = ref<boolean>(false);
 
     <RuiButton
       icon
-      class="swap-button !p-2"
+      class="absolute right-5 top-14 transform -translate-y-1/2 z-[1] !p-2"
       color="primary"
       data-cy="grouped-amount-input__swap-button"
       @click="reverse()"
@@ -124,90 +151,3 @@ const focused = ref<boolean>(false);
     </RuiButton>
   </div>
 </template>
-
-<style scoped lang="scss">
-.wrapper {
-  @apply relative;
-
-  > * {
-    margin: -1px 0;
-  }
-
-  &.disabled {
-    :deep(label) {
-      @apply border-dotted border-rui-grey-400;
-    }
-  }
-
-  :deep(label) {
-    @apply border-t-0 border border-[#0000006b];
-    @apply rounded-b rounded-t-none #{!important};
-    @apply bg-rui-grey-300 bg-opacity-40 #{!important};
-  }
-
-  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-  :deep(.input__enabled) {
-    label {
-      @apply border-t;
-      @apply border-b #{!important};
-      @apply rounded-t rounded-b-none #{!important};
-      @apply bg-transparent #{!important};
-    }
-  }
-  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-
-  &.focused {
-    :deep(label) {
-      @apply border-rui-primary #{!important};
-      @apply border-2;
-    }
-  }
-
-  :deep([class*='with-error']) {
-    label {
-      @apply border-rui-error #{!important};
-      @apply border-2;
-    }
-  }
-
-  :deep(input) {
-    @apply pt-6 pb-2 #{!important};
-
-    &:not(:placeholder-shown),
-    &:focus {
-      + label {
-        @apply leading-7 #{!important};
-      }
-    }
-  }
-}
-
-.swap-button {
-  @apply absolute right-5 top-14 transform -translate-y-1/2 z-[1];
-}
-
-.dark {
-  .wrapper {
-    &.disabled {
-      :deep(label) {
-        @apply border-rui-grey-700;
-      }
-    }
-
-    :deep(label) {
-      @apply border-white/[0.42];
-      @apply bg-rui-grey-800 bg-opacity-40 #{!important};
-    }
-
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    :deep(.input__enabled) {
-      label {
-        @apply bg-transparent #{!important};
-      }
-    }
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-  }
-}
-</style>

@@ -6,7 +6,7 @@ export class EvmSettingsPage {
     cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('[data-cy=settings-button]').click();
     cy.get('[data-cy=user-dropdown]').should('not.exist');
-    cy.get('a.settings__evm').click();
+    cy.get('[data-cy="settings__evm"]').click();
   }
 
   confirmInlineSuccess(target: string, messageContains?: string): void {

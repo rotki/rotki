@@ -225,12 +225,3 @@ onMounted(async () => {
     />
   </div>
 </template>
-
-<style scoped lang="scss">
-.asset-update {
-  &__partial {
-    margin-top: 6px !important;
-    height: 60px;
-  }
-}
-</style>

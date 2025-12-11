@@ -47,7 +47,7 @@ const icon = computed<RuiIcons>(() => {
   }
 });
 
-const color = computed(() => {
+const color = computed<string>(() => {
   if (get(notification).action)
     return 'warning';
 
@@ -60,6 +60,21 @@ const color = computed(() => {
       return 'warning';
     case Severity.REMINDER:
       return 'reminder';
+    default:
+      return '';
+  }
+});
+
+const colorBgClass = computed<string>(() => {
+  switch (get(color)) {
+    case 'warning':
+      return '!bg-rui-warning/10';
+    case 'error':
+      return '!bg-rui-error/10';
+    case 'info':
+      return '!bg-rui-info/10';
+    case 'reminder':
+      return '!bg-rui-secondary/10';
     default:
       return '';
   }
@@ -139,14 +154,12 @@ function getIcon(action: NotificationAction): RuiIcons {
 <template>
   <RuiCard
     :class="[
-      $style.notification,
+      colorBgClass,
       {
-        [$style[`bg_${color}`]]: color,
-        [$style.flat]: !color,
-        [$style.popup]: popup,
+        '!rounded-none': popup,
       },
     ]"
-    class="!p-2 !pb-1.5"
+    class="!p-2 !pb-1.5 max-w-[400px]"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
   >
@@ -182,14 +195,11 @@ function getIcon(action: NotificationAction): RuiIcons {
       </RuiButton>
     </div>
     <div
-      class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group overflow-hidden"
-      :class="[
-        $style.message,
-        {
-          'cursor-pointer': showExpandArrow && !expanded,
-          'pb-6': showExpandArrow && expanded,
-        },
-      ]"
+      class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group overflow-hidden whitespace-pre-line relative transition-all"
+      :class="{
+        'cursor-pointer': showExpandArrow && !expanded,
+        'pb-6': showExpandArrow && expanded,
+      }"
       :style="messageWrapperStyle"
       @click="messageClicked()"
     >
@@ -212,11 +222,12 @@ function getIcon(action: NotificationAction): RuiIcons {
       </div>
       <div
         v-if="showExpandArrow"
-        :class="$style.expand"
+        class="bg-gradient-to-b from-transparent to-white absolute bottom-0 w-full"
+        :class="color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]'"
       >
         <RuiButton
-          class="!p-0.5"
-          :class="$style['expand-button']"
+          class="!p-0.5 w-full bg-gradient-to-b from-transparent to-white rounded-none !bg-transparent"
+          :class="color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]'"
           @click.stop="buttonClicked()"
         >
           <RuiIcon
@@ -263,58 +274,3 @@ function getIcon(action: NotificationAction): RuiIcons {
     </div>
   </RuiCard>
 </template>
-
-<style module lang="scss">
-.notification {
-  max-width: 400px;
-
-  &.popup {
-    @apply rounded-none #{!important};
-  }
-
-  .expand {
-    @apply bg-gradient-to-b from-transparent to-white absolute bottom-0 w-full;
-
-    &-button {
-      @apply w-full bg-gradient-to-b from-transparent to-white rounded-none;
-      background-color: transparent !important;
-    }
-  }
-
-  @each $color in (warning, error, info, secondary) {
-    &.bg_#{$color} {
-      @apply bg-rui-#{$color}/[.1] #{!important};
-
-      .expand {
-        &-button {
-          @apply to-rui-#{$color}/[.1] #{!important};
-        }
-      }
-    }
-  }
-}
-
-.message {
-  @apply overflow-hidden whitespace-pre-line relative transition-all;
-}
-
-:global(.dark) {
-  .notification {
-    &.flat {
-      .expand {
-        @apply to-[#1E1E1E];
-
-        &-button {
-          @apply to-[#1E1E1E];
-        }
-      }
-    }
-
-    &:not(.flat) {
-      .expand {
-        @apply to-[#363636];
-      }
-    }
-  }
-}
-</style>

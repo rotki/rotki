@@ -75,7 +75,7 @@ export class ManualBalancesPage {
 
     cy.get('@row').find('[data-cy=list-title]').should('contain.text', balance.asset);
 
-    for (const tag of balance.tags) cy.get('@row').find('.tag').contains(tag).should('be.visible');
+    for (const tag of balance.tags) cy.get('@row').find('[data-cy=tag]').contains(tag).should('be.visible');
   }
 
   private getLocationBalances() {

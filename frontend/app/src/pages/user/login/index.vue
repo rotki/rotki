@@ -107,13 +107,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section :class="$style.section">
-    <div :class="$style.container">
+  <section class="w-full flex flex-col flex-1 overflow-auto">
+    <div class="h-full grow flex flex-col">
       <RotkiLogo
-        :class="$style.logo__mobile"
+        class="my-5 lg:hidden max-w-[27.5rem] mx-auto max-[487px]:px-4 max-[487px]:max-w-full"
         unique-key="0"
       />
-      <div :class="$style.wrapper">
+      <div class="flex flex-col justify-start lg:justify-center max-w-full grow px-4 pt-10 pb-6">
         <div data-cy="account-management">
           <UserHost>
             <div v-if="performingInitialChecks">
@@ -146,7 +146,7 @@ onMounted(async () => {
           </UserHost>
         </div>
       </div>
-      <footer :class="$style.container__footer">
+      <footer class="p-6 lg:p-8 flex items-center justify-between">
         <AccountManagementFooterText #default="{ copyright }">
           {{ copyright }}
         </AccountManagementFooterText>
@@ -157,7 +157,7 @@ onMounted(async () => {
     </div>
   </section>
   <AccountManagementAside>
-    <span :class="$style.logo">
+    <span class="rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-20">
       <RotkiLogo
         size="2"
         unique-key="0"
@@ -180,40 +180,3 @@ onMounted(async () => {
     />
   </AccountManagementAside>
 </template>
-
-<style module lang="scss">
-.section {
-  @apply w-full flex flex-col flex-1 overflow-auto;
-}
-
-.container {
-  @apply h-full grow flex flex-col;
-
-  &__footer {
-    @apply p-6 lg:p-8 flex items-center justify-between;
-  }
-}
-
-.wrapper {
-  @apply flex flex-col justify-start lg:justify-center max-w-full grow px-4 pt-10 pb-6;
-}
-
-.logo {
-  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-20;
-
-  &__mobile {
-    @apply my-5 lg:hidden max-w-[27.5rem] mx-auto;
-
-    @media screen and (max-width: 487px) {
-      @apply px-4 max-w-full;
-    }
-  }
-}
-
-.footer {
-  &__text {
-    @apply font-normal text-sm leading-6 text-rui-text-secondary;
-    letter-spacing: 0.025rem;
-  }
-}
-</style>

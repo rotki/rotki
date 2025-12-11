@@ -57,7 +57,7 @@ function description(directive: string): string {
       <template #subheader>
         {{ t('date_format_help.subtitle') }}
       </template>
-      <div class="date-format-help__content flex flex-col gap-2">
+      <div class="max-h-[300px] overflow-y-scroll flex flex-col gap-2">
         <div
           v-for="directive in directives"
           :key="directive"
@@ -92,12 +92,3 @@ function description(directive: string): string {
     </RuiCard>
   </RuiDialog>
 </template>
-
-<style scoped lang="scss">
-.date-format-help {
-  &__content {
-    max-height: 300px;
-    overflow-y: scroll;
-  }
-}
-</style>

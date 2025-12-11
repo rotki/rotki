@@ -230,7 +230,6 @@ async function fetchData() {
     'update:msg': [msg: string];
   }>();
   ```
-- Use `$style` in templates instead of `useCssModules`
 - Use `$attrs` in templates instead of `useAttrs`
 
 #### Pinia Store Structure
@@ -240,8 +239,9 @@ async function fetchData() {
 4. Optional watchers
 
 #### Styling
-- Transitioning from scoped SCSS with BEM to tailwind
-- Follow existing patterns for consistency
+- Use Tailwind CSS for all styling
+- Scoped CSS modules (`<style module>`) should only be used for Vue `TransitionGroup` animations
+- Do not use scoped SCSS with BEM naming conventions
 
 #### Localization
 - For the localization files (en.json, es.json, etc.), the keys should be ordered alphabetically.

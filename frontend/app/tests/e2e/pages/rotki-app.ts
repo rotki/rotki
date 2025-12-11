@@ -191,18 +191,18 @@ export class RotkiApp {
       cy.get(selector).click();
     };
 
-    const menuClass = `.navigation__${menu}`;
-    cy.get(menuClass).then((menu) => {
-      const parent = menu.parent().parent();
-      if (!parent.hasClass('submenu-wrapper__expanded'))
-        click(menuClass, true);
+    const menuSelector = `[data-cy="navigation__${menu}"]`;
+    cy.get(menuSelector).then((menuEl) => {
+      const submenuWrapper = menuEl.find('[data-cy=submenu-wrapper]');
+      if (submenuWrapper.length === 0 || submenuWrapper.attr('data-expanded') !== 'true')
+        click(menuSelector, true);
 
       if (submenu) {
-        cy.get(menuClass).find('.submenu-wrapper').scrollIntoView();
-        cy.get(menuClass).find('.submenu-wrapper').should('be.visible');
+        cy.get(menuSelector).find('[data-cy=submenu-wrapper]').scrollIntoView();
+        cy.get(menuSelector).find('[data-cy=submenu-wrapper]').should('be.visible');
 
-        const subMenuClass = `.navigation__${submenu}`;
-        click(subMenuClass);
+        const subMenuSelector = `[data-cy="navigation__${submenu}"]`;
+        click(subMenuSelector);
       }
     });
   }

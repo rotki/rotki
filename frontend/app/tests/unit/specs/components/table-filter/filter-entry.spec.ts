@@ -27,11 +27,11 @@ describe('table-filter/FilterEntry.vue', () => {
   it('common case', () => {
     wrapper = createWrapper({ matcher, active: false });
     expect(wrapper.find('button').text()).toBe(`${matcher.key}: ${matcher.description}`);
-    expect(wrapper.classes()).not.toEqual(expect.arrayContaining([expect.stringMatching(/_selected_/)]));
+    expect(wrapper.find('button').classes()).not.toContain('!bg-rui-primary-lighter/20');
   });
 
   it('active = true', () => {
     wrapper = createWrapper({ matcher, active: true });
-    expect(wrapper.classes()).toEqual(expect.arrayContaining([expect.stringMatching(/_selected_/)]));
+    expect(wrapper.find('button').classes()).toContain('!bg-rui-primary-lighter/20');
   });
 });

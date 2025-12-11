@@ -173,7 +173,7 @@ async function showInHistoryEvent(identifier: number) {
       v-model:expanded="expanded"
       class="table-inside-dialog"
       :class="{
-        [$style['table--pinned']]: isPinned,
+        'max-h-full h-[calc(100vh-245px)]': isPinned,
       }"
       :cols="headers"
       :rows="groupedMissingAcquisitions"
@@ -299,12 +299,3 @@ async function showInHistoryEvent(identifier: number) {
     <slot name="actions" />
   </div>
 </template>
-
-<style module lang="scss">
-.table {
-  &--pinned {
-    max-height: 100%;
-    height: calc(100vh - 245px);
-  }
-}
-</style>

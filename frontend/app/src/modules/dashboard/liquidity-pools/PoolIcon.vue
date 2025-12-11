@@ -42,7 +42,7 @@ const multiple = computed<boolean>(() => props.assets.length > 2);
       <AssetIcon
         v-if="!multiple"
         circle
-        :class="$style['second-icon']"
+        class="z-0 -ml-2.5"
         :identifier="assets[1]"
         size="32px"
         padding="0"
@@ -50,7 +50,7 @@ const multiple = computed<boolean>(() => props.assets.length > 2);
       />
       <RuiMenu v-else>
         <template #activator>
-          <div :class="[$style['second-icon'], $style['more-assets']]">
+          <div class="z-0 -ml-2.5 cursor-pointer rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-rui-grey-700 text-rui-text flex items-center justify-center font-bold">
             +{{ assets.length - 1 }}
           </div>
         </template>
@@ -67,7 +67,7 @@ const multiple = computed<boolean>(() => props.assets.length > 2);
         </div>
       </RuiMenu>
     </div>
-    <div :class="$style['lp-type-icon']">
+    <div class="relative p-0.5 w-5 h-5 rounded-full bg-rui-grey-200 -ml-3 -mt-3">
       <AppImage
         size="1rem"
         :src="icon"
@@ -75,23 +75,3 @@ const multiple = computed<boolean>(() => props.assets.length > 2);
     </div>
   </div>
 </template>
-
-<style module lang="scss">
-.second-icon {
-  @apply z-0 -ml-2.5;
-}
-
-.more-assets {
-  @apply cursor-pointer rounded-full w-8 h-8 bg-rui-grey-300 text-rui-text flex items-center justify-center font-bold;
-}
-
-.lp-type-icon {
-  @apply relative p-0.5 w-5 h-5 rounded-full bg-rui-grey-200 -ml-3 -mt-3;
-}
-
-:global(.dark) {
-  .more-assets {
-    @apply bg-rui-grey-700;
-  }
-}
-</style>

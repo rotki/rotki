@@ -78,7 +78,7 @@ function cancelOpen(): void {
     :target="linkTarget"
     v-bind="$attrs"
     variant="text"
-    :class="$style.button"
+    class="!inline !text-[1em] !p-0 !px-0.5 !-mx-0.5 !font-[inherit] [&_span]:underline"
     @click="onLinkClick($event)"
   >
     <slot>{{ displayText }}</slot>
@@ -125,15 +125,3 @@ function cancelOpen(): void {
     </div>
   </ConfirmDialog>
 </template>
-
-<style lang="scss" module>
-.button {
-  @apply inline text-[1em] p-0 px-0.5 -mx-0.5 #{!important};
-
-  font-weight: inherit !important;
-
-  span {
-    @apply underline;
-  }
-}
-</style>

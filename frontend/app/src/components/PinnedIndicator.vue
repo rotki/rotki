@@ -30,15 +30,9 @@ function toggleVisibility() {
       class="flex items-center"
     >
       <RuiIcon
-        :class="{ [$style.visible]: visible }"
+        :class="{ '-rotate-[25deg]': visible }"
         name="lu-pin"
       />
     </RuiBadge>
   </MenuTooltipButton>
 </template>
-
-<style module lang="scss">
-.visible {
-  transform: rotate(-25deg);
-}
-</style>
