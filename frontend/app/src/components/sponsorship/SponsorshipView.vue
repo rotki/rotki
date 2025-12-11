@@ -4,7 +4,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useMainStore } from '@/store/main';
 
-defineProps<{
+const props = defineProps<{
   drawer?: boolean;
 }>();
 
@@ -32,26 +32,54 @@ const version = computed<string>(() => {
   return splitVersion.join('.');
 });
 
-const data = [
+interface Sponsor {
+  image: string;
+  name: string;
+}
+
+const sponsors: Sponsor[] = [
   {
-    image: '/assets/images/sponsorship/1.41.0_tay.png',
-    name: 'Tay',
+    image: '/assets/images/sponsorship/1.42.0_jespow.eth_1.png',
+    name: 'jespow.eth',
+  },
+  {
+    image: '/assets/images/sponsorship/1.42.0_jespow.eth_2.png',
+    name: 'jespow.eth',
   },
 ];
+
+const loginIndex = useLocalStorage<number>('rotki.sponsorship.login_index', -1);
+
+function getCurrentSponsor(): Sponsor {
+  if (!props.drawer) {
+    const loginIndexVal = get(loginIndex);
+    // Login screen: determine and save the flipped index
+    if (loginIndexVal === -1) {
+      // First time: random 50/50
+      set(loginIndex, Math.random() < 0.5 ? 0 : 1);
+    }
+    else {
+      // Flip from previous
+      set(loginIndex, loginIndexVal === 0 ? 1 : 0);
+    }
+    return sponsors[loginIndexVal];
+  }
+  // Drawer: use the opposite of what's stored for login
+  const drawerIndex = get(loginIndex) === 0 ? 1 : 0;
+  return sponsors[drawerIndex];
+}
+
+const data = ref<Sponsor>(getCurrentSponsor());
 </script>
 
 <template>
   <div class="flex flex-wrap gap-1 gap-x-4 w-[400px] max-w-full mx-auto">
-    <div
-      v-for="(item, index) in data"
-      :key="index"
-      class="flex items-center justify-center w-full gap-2"
-    >
+    <div class="flex items-center justify-center w-full gap-2">
       <AppImage
         class="rounded-md overflow-hidden"
         :class="drawer ? 'size-20' : 'size-24 min-w-24'"
-        :alt="item.name"
-        :src="item.image"
+        :alt="data.name"
+        :src="data.image"
       />
       <div
         class="flex flex-col justify-between flex-1 gap-2"
@@ -81,10 +109,11 @@ const data = [
           <img
             src="/assets/images/ribbon.png"
             class="w-full h-[125%] absolute top-0 left-0 object-fill"
+            alt=""
           />
 
           <div class="relative text-yellow-900 max-w-[80%] px-0.5 text-center">
-            {{ item.name }}
+            {{ data.name }}
           </div>
         </div>
         <div class="w-full flex justify-center">
