@@ -4563,6 +4563,11 @@
     "delete": "Delete report",
     "load": "Load report"
   },
+  "request_queue": {
+    "loading_active": "Loading ({active} active)",
+    "loading_active_and_queued": "Loading ({active} active, {queued} queued)",
+    "loading_queued": "Loading ({queued} queued)"
+  },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
     "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded.",
