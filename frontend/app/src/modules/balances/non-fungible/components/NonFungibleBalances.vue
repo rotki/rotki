@@ -89,7 +89,6 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
         :cols="cols"
         :rows="data"
         :loading="dataLoading"
-        show-select
       >
         <template #item.name="{ row }">
           <NftDetails :identifier="row.id" />

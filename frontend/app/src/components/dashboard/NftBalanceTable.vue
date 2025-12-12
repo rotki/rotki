@@ -6,38 +6,36 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { useNftData } from '@/composables/dashboard/use-nft-data';
-import { useNftTableConfig } from '@/composables/dashboard/use-nft-table-config';
+import { useNftData } from '@/modules/balances/non-fungible/composables/use-nft-data';
 import { Routes } from '@/router/routes';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 
 const nonFungibleRoute = Routes.BALANCES_NON_FUNGIBLE;
 const group = DashboardTableType.NFT;
 
 const { t } = useI18n({ useScope: 'global' });
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const {
+  cols,
+  currencySymbol,
   data,
+  dataLoading,
   fetchData,
-  isLoading,
-  loading,
-  pagination,
   percentageOfCurrentGroup,
   percentageOfTotalNetValue,
   refreshNonFungibleBalances,
+  sectionLoading,
+  sort,
+  pagination,
   totalValue,
-} = useNftData();
-
-const { sort, tableHeaders } = useNftTableConfig(currencySymbol);
+} = useNftData({ dashboard: true });
 
 onMounted(async () => {
   await fetchData();
   await refreshNonFungibleBalances();
 });
 
-watch(loading, async (isLoading, wasLoading) => {
+watch(sectionLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchData();
 });
@@ -47,7 +45,7 @@ watch(loading, async (isLoading, wasLoading) => {
   <DashboardExpandableTable>
     <template #title>
       <RefreshButton
-        :loading="loading"
+        :loading="sectionLoading"
         :tooltip="t('nft_balance_table.refresh')"
         @refresh="refreshNonFungibleBalances(true)"
       />
@@ -78,9 +76,9 @@ watch(loading, async (isLoading, wasLoading) => {
     <RuiDataTable
       v-model:sort.external="sort"
       v-model:pagination.external="pagination"
-      :cols="tableHeaders"
+      :cols="cols"
       :rows="data"
-      :loading="isLoading"
+      :loading="dataLoading"
       :empty="{ description: t('data_table.no_data') }"
       row-attr="id"
       sticky-header
@@ -124,7 +122,7 @@ watch(loading, async (isLoading, wasLoading) => {
         <RowAppend
           label-colspan="2"
           :label="t('common.total')"
-          :right-patch-colspan="tableHeaders.length - 3"
+          :right-patch-colspan="cols.length - 3"
           :is-mobile="false"
           class-name="[&>td]:p-4 text-sm"
         >

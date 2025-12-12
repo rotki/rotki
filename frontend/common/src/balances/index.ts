@@ -1,16 +1,6 @@
 import z from 'zod/v4';
 import { bigNumberify, NumericString } from '../numbers';
 
-// Legacy Balance types that include usdValue (for NFT, ETH staking, snapshots)
-export const LegacyBalance = z.object({
-  amount: NumericString,
-  usdValue: NumericString.optional().transform(item => item || bigNumberify(0)),
-  value: NumericString.optional().default(bigNumberify(0)),
-});
-
-export type LegacyBalance = z.infer<typeof LegacyBalance>;
-
-// Balance type without usdValue (primary type for most use cases)
 export const Balance = z.object({
   amount: NumericString,
   value: NumericString.optional().default(bigNumberify(0)),
@@ -22,15 +12,6 @@ export const AssetEntry = z.object({
   asset: z.string().min(1),
 });
 
-// Legacy AssetBalance that includes usdValue
-export const LegacyAssetBalance = z.object({
-  ...LegacyBalance.shape,
-  ...AssetEntry.shape,
-});
-
-export type LegacyAssetBalance = z.infer<typeof LegacyAssetBalance>;
-
-// AssetBalance without usdValue
 export const AssetBalance = z.object({
   ...Balance.shape,
   ...AssetEntry.shape,

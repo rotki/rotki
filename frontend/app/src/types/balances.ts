@@ -9,7 +9,6 @@ export interface Eth2Validator {
 
 export interface LocationBalance {
   readonly location: string;
-  readonly usdValue?: BigNumber;
   readonly value: BigNumber;
 }
 
