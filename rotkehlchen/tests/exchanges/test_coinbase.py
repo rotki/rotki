@@ -14,6 +14,7 @@ from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_USD, A_
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -25,7 +26,7 @@ from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.factories import make_random_bytes
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import ApiKey, ApiSecret, Location, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -1717,3 +1718,19 @@ def test_coverage_of_products():
                 f'Found unknown asset {e.identifier} with symbol {coin["id"]} in Coinbase. '
                 f'Support for it has to be added',
             ))
+
+
+def test_invalid_api_key(database) -> None:
+    """Test that initializing Coinbase with incorrectly formatted keys doesn't raise any exception,
+    but that any requests fail with a proper error.
+    Regression test for https://github.com/rotki/rotki/issues/11113
+    """
+    coinbase = Coinbase(
+        name='test coinbase',
+        api_key=ApiKey('BOOM'),
+        secret=ApiSecret(b'BOOM'),
+        msg_aggregator=database.msg_aggregator,
+        database=database,
+    )
+    with pytest.raises(RemoteError, match='invalid Coinbase API key'):
+        coinbase.query_history_events()
