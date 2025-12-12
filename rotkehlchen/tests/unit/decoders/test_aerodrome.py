@@ -448,6 +448,7 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
             counterparty=CPT_AERODROME,
             address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
             notes=f'Increase locked amount in veNFT-3334 by {lock_amount} AERO',
+            extra_data={'token_id': 3334},
         ),
     ]
     assert events == expected_events
