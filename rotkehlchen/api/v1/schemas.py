@@ -3694,11 +3694,15 @@ class NFTFilterQuerySchema(
             **_kwargs: Any,
     ) -> dict[str, Any]:
         owner_addresses = self.chains_aggregator.queried_addresses_for_module('nfts') if data['owner_addresses'] is None else data['owner_addresses']  # noqa: E501
+        # frontend sorts by 'price' (main currency value returned in api response) but db column is 'usd_price'  # noqa: E501
+        if (order_by_rules := create_order_by_rules_list(
+            data=data,
+            default_order_by_fields=['name'],
+        )) is not None:
+            order_by_rules = [(column if column != 'price' else 'usd_price', order) for column, order in order_by_rules]  # noqa: E501
+
         filter_query = NFTFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(
-                data=data,
-                default_order_by_fields=['name'],
-            ),
+            order_by_rules=order_by_rules,
             limit=data['limit'],
             offset=data['offset'],
             owner_addresses=owner_addresses,
