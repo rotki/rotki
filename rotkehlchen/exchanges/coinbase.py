@@ -24,7 +24,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -91,11 +91,9 @@ class CoinbaseKeyType(Enum):
     ED25519 = 'EdDSA'
 
     @classmethod
-    def detect_type(cls, api_key: str) -> 'CoinbaseKeyType':
-        """Detect API key type from format
-
-        May raise:
-        - InputError: if api_key format is invalid
+    def detect_type(cls, api_key: str) -> 'CoinbaseKeyType | None':
+        """Detect the API key type of the given key.
+        Returns the detected type or None if the format is invalid.
         """
         if ECDSA_KEY_RE.match(api_key):
             return cls.ECDSA
@@ -103,7 +101,7 @@ class CoinbaseKeyType(Enum):
         if len(api_key) == 36 and api_key.count('-') == 4:  # for ED25519, check uuid format
             return cls.ED25519
 
-        raise InputError(f'Invalid API key format: {api_key}')
+        return None
 
     def validate_secret(self, secret: bytes) -> tuple[bool, str]:
         """Validate secret format for this key type.
@@ -184,10 +182,13 @@ class Coinbase(ExchangeInterface):
             RemoteError: If there is an error during the JWT token generation process.
         """
         try:
-            if self.key_type == CoinbaseKeyType.ECDSA:
-                private_key = serialization.load_pem_private_key(self.secret, password=None)
-            else:  # can only be ED25519
-                private_key = ed25519.Ed25519PrivateKey.from_private_bytes(base64.b64decode(self.secret)[:32])  # noqa: E501
+            match self.key_type:
+                case CoinbaseKeyType.ECDSA:
+                    private_key = serialization.load_pem_private_key(self.secret, password=None)
+                case CoinbaseKeyType.ED25519:
+                    private_key = ed25519.Ed25519PrivateKey.from_private_bytes(base64.b64decode(self.secret)[:32])  # noqa: E501
+                case None:
+                    raise RemoteError('Unable to generate JWT token due to invalid Coinbase API key')  # noqa: E501
 
             current_time = int(time.time())
             jwt_payload = {
@@ -212,10 +213,9 @@ class Coinbase(ExchangeInterface):
         """Validates that the Coinbase API key is good for usage in rotki.
         Checks that the API key format is correct and the secret is properly formatted.
         """
-        try:
-            self.key_type = CoinbaseKeyType.detect_type(self.api_key)
-        except InputError as e:
-            return False, str(e)
+        self.key_type = CoinbaseKeyType.detect_type(self.api_key)
+        if self.key_type is None:
+            return False, f'Invalid API key format: {self.api_key}'
 
         is_valid, error_msg = self.key_type.validate_secret(self.secret)
         if not is_valid:
@@ -224,10 +224,6 @@ class Coinbase(ExchangeInterface):
         return True, ''
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
-        """
-        May raise:
-        - InputError: if credentials.api_key format is invalid
-        """
         changed = super().edit_exchange_credentials(credentials)
         if (
                 credentials.api_key is not None and
